@@ -1,0 +1,699 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  DRIVER
+  COMPANY
+  ADMIN
+}
+
+enum Locale {
+  kk
+  ru
+  zh
+}
+
+enum CompanyMemberRole {
+  OWNER
+  LOGIST
+}
+
+enum ArrivalStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum CargoStatus {
+  PUBLISHED
+  ARCHIVED
+  EXPIRED
+  CANCELLED
+}
+
+enum Currency {
+  USD
+  CNY
+  KZT
+}
+
+enum ResponseStatus {
+  PENDING
+  SELECTED
+  REJECTED
+  CANCELLED
+}
+
+enum DealStatus {
+  SELECTED
+  CONFIRMED_BY_DRIVER
+  LOADED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum ContactEventType {
+  CALL
+  WHATSAPP
+}
+
+enum ReviewAuthorRole {
+  DRIVER
+  COMPANY
+}
+
+enum VerificationDocType {
+  DRIVER_LICENSE
+  VEHICLE_PASSPORT
+  TRAILER_PASSPORT
+  SELFIE
+  COMPANY_REGISTRATION
+  IDENTITY
+  OTHER
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationChannel {
+  PUSH
+  WECOM
+  EMAIL
+  SMS
+}
+
+enum ComplaintTargetType {
+  USER
+  COMPANY
+  CARGO
+  DEAL
+  CHAT_MESSAGE
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentType {
+  SUBSCRIPTION
+  DEAL_FEE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+// ---------------------------------------------------------------------------
+// Справочники. Названия — Json {kk, ru, zh}: новый язык (например kk-Latn)
+// добавляется как новый ключ в JSON, без миграции схемы.
+// ---------------------------------------------------------------------------
+
+model Country {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        Json
+  isCisMember Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  regions            Region[]
+  cities             City[]
+  companies          Company[]
+  driverDirections   DriverDirection[]
+  cargoDestinations  Cargo[]
+
+  @@map("countries")
+}
+
+model Region {
+  id        String   @id @default(uuid())
+  countryId String
+  country   Country  @relation(fields: [countryId], references: [id])
+  name      Json
+  code      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cities City[]
+
+  @@unique([countryId, code])
+  @@index([countryId])
+  @@map("regions")
+}
+
+model City {
+  id        String   @id @default(uuid())
+  countryId String
+  country   Country  @relation(fields: [countryId], references: [id])
+  regionId  String?
+  region    Region?  @relation(fields: [regionId], references: [id])
+  name      Json
+  isCapital Boolean  @default(false)
+  lat       Decimal? @db.Decimal(9, 6)
+  lng       Decimal? @db.Decimal(9, 6)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  points             Point[]
+  driversHomeCity    Driver[]
+  cargoDestinations  Cargo[]
+
+  @@index([countryId])
+  @@index([regionId])
+  @@map("cities")
+}
+
+model Point {
+  id        String   @id @default(uuid())
+  cityId    String
+  city      City     @relation(fields: [cityId], references: [id])
+  name      Json
+  lat       Decimal? @db.Decimal(9, 6)
+  lng       Decimal? @db.Decimal(9, 6)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  arrivals Arrival[]
+  cargos   Cargo[]
+
+  @@index([cityId])
+  @@map("points")
+}
+
+model BodyType {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      Json
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vehicles Vehicle[]
+  cargos   Cargo[]
+
+  @@map("body_types")
+}
+
+model Permit {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      Json
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  driverPermits DriverPermit[]
+
+  @@map("permits")
+}
+
+model MessageTemplate {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  category  String
+  text      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("message_templates")
+}
+
+// ---------------------------------------------------------------------------
+// Пользователи и профили
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  role         UserRole
+  phone        String?  @unique
+  email        String?  @unique
+  passwordHash String?
+  locale       Locale   @default(ru)
+  isActive     Boolean  @default(true)
+  isBlocked    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  driver                 Driver?
+  companyMember          CompanyMember?
+  sentMessages           Message[]
+  contactEventsAsActor   ContactEvent[]      @relation("ContactEventActor")
+  reviewsAuthored        Review[]
+  verificationDocuments  VerificationDocument[]
+  notificationSettings   NotificationSetting[]
+  complaintsFiled        Complaint[]         @relation("ComplaintReporter")
+  complaintsResolved     Complaint[]         @relation("ComplaintResolver")
+  auditLogs              AuditLog[]
+  reviewedDocuments      VerificationDocument[] @relation("VerificationDocumentReviewer")
+
+  @@map("users")
+}
+
+model Driver {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  fullName     String
+  homeCityId   String
+  homeCity     City     @relation(fields: [homeCityId], references: [id])
+  anyCountry   Boolean  @default(false)
+  isVerified   Boolean  @default(false)
+  ratingAvg    Decimal  @default(0) @db.Decimal(3, 2)
+  ratingCount  Int      @default(0)
+  currentLat        Decimal?  @db.Decimal(9, 6)
+  currentLng        Decimal?  @db.Decimal(9, 6)
+  locationUpdatedAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  directions           DriverDirection[]
+  permits              DriverPermit[]
+  vehicles             Vehicle[]
+  arrivals             Arrival[]
+  responses            Response[]
+  deals                Deal[]
+  chats                Chat[]
+  contactEvents        ContactEvent[]
+  verificationDocuments VerificationDocument[] @relation("DriverVerificationDocuments")
+  payments             Payment[]
+
+  @@index([homeCityId])
+  @@map("drivers")
+}
+
+model DriverDirection {
+  id        String   @id @default(uuid())
+  driverId  String
+  driver    Driver   @relation(fields: [driverId], references: [id])
+  countryId String
+  country   Country  @relation(fields: [countryId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([driverId, countryId])
+  @@map("driver_directions")
+}
+
+model DriverPermit {
+  id        String   @id @default(uuid())
+  driverId  String
+  driver    Driver   @relation(fields: [driverId], references: [id])
+  permitId  String
+  permit    Permit   @relation(fields: [permitId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([driverId, permitId])
+  @@map("driver_permits")
+}
+
+model Vehicle {
+  id            String   @id @default(uuid())
+  driverId      String
+  driver        Driver   @relation(fields: [driverId], references: [id])
+  bodyTypeId    String
+  bodyType      BodyType @relation(fields: [bodyTypeId], references: [id])
+  plateNumber   String?
+  brand         String?
+  capacityTons  Decimal? @db.Decimal(6, 2)
+  lengthM       Decimal? @db.Decimal(5, 2)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([driverId])
+  @@index([bodyTypeId])
+  @@map("vehicles")
+}
+
+model Company {
+  id            String   @id @default(uuid())
+  name          String
+  countryId     String
+  country       Country  @relation(fields: [countryId], references: [id])
+  city          String?
+  legalAddress  String?
+  taxId         String?
+  isVerified    Boolean  @default(false)
+  ratingAvg     Decimal  @default(0) @db.Decimal(3, 2)
+  ratingCount   Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  members               CompanyMember[]
+  cargos                Cargo[]
+  deals                 Deal[]
+  chats                 Chat[]
+  contactEvents         ContactEvent[]
+  verificationDocuments VerificationDocument[] @relation("CompanyVerificationDocuments")
+  subscriptions         Subscription[]
+  payments              Payment[]
+
+  @@index([countryId])
+  @@map("companies")
+}
+
+model CompanyMember {
+  id        String            @id @default(uuid())
+  companyId String
+  company   Company           @relation(fields: [companyId], references: [id])
+  userId    String            @unique
+  user      User              @relation(fields: [userId], references: [id])
+  role      CompanyMemberRole
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([companyId])
+  @@map("company_members")
+}
+
+// ---------------------------------------------------------------------------
+// Груз и сделки
+// ---------------------------------------------------------------------------
+
+model Arrival {
+  id                  String        @id @default(uuid())
+  driverId            String
+  driver              Driver        @relation(fields: [driverId], references: [id])
+  pointId             String
+  point               Point         @relation(fields: [pointId], references: [id])
+  arrivedAt           DateTime
+  expectedDepartureAt DateTime?
+  status              ArrivalStatus @default(ACTIVE)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([driverId])
+  @@index([pointId, status])
+  @@map("arrivals")
+}
+
+model Cargo {
+  id                    String      @id @default(uuid())
+  companyId             String
+  company               Company     @relation(fields: [companyId], references: [id])
+  pointId               String
+  point                 Point       @relation(fields: [pointId], references: [id])
+  destinationCountryId  String
+  destinationCountry    Country     @relation(fields: [destinationCountryId], references: [id])
+  destinationCityId     String?
+  destinationCity       City?       @relation(fields: [destinationCityId], references: [id])
+  bodyTypeId            String
+  bodyType              BodyType    @relation(fields: [bodyTypeId], references: [id])
+  weightKg              Decimal?    @db.Decimal(10, 2)
+  volumeM3              Decimal?    @db.Decimal(7, 2)
+  photoUrls             String[]    @default([])
+  price                 Decimal     @db.Decimal(12, 2)
+  currency              Currency
+  readyDate             DateTime
+  description           String?
+  status                CargoStatus @default(PUBLISHED)
+  publishedAt           DateTime    @default(now())
+  expiresAt             DateTime
+  archivedAt            DateTime?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  responses      Response[]
+  deals          Deal[]
+  chats          Chat[]
+  contactEvents  ContactEvent[]
+
+  @@index([status, pointId, destinationCountryId])
+  @@index([companyId])
+  @@map("cargos")
+}
+
+model Response {
+  id        String         @id @default(uuid())
+  cargoId   String
+  cargo     Cargo          @relation(fields: [cargoId], references: [id])
+  driverId  String
+  driver    Driver         @relation(fields: [driverId], references: [id])
+  message   String?
+  status    ResponseStatus @default(PENDING)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  deal Deal?
+
+  @@unique([cargoId, driverId])
+  @@index([cargoId])
+  @@map("responses")
+}
+
+model Deal {
+  id                 String     @id @default(uuid())
+  responseId         String     @unique
+  response           Response   @relation(fields: [responseId], references: [id])
+  cargoId            String
+  cargo              Cargo      @relation(fields: [cargoId], references: [id])
+  driverId           String
+  driver             Driver     @relation(fields: [driverId], references: [id])
+  companyId          String
+  company             Company   @relation(fields: [companyId], references: [id])
+  status             DealStatus @default(SELECTED)
+  cancelReason       String?
+  cancelledByRole    ReviewAuthorRole?
+  confirmedAt        DateTime?
+  loadedAt           DateTime?
+  inTransitAt        DateTime?
+  deliveredAt        DateTime?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  contactEvents ContactEvent[]
+  chats         Chat[]
+  reviews       Review[]
+  payments      Payment[]
+
+  @@index([status])
+  @@index([driverId])
+  @@index([companyId])
+  @@map("deals")
+}
+
+model ContactEvent {
+  id         String           @id @default(uuid())
+  driverId   String
+  driver     Driver           @relation(fields: [driverId], references: [id])
+  companyId  String
+  company    Company          @relation(fields: [companyId], references: [id])
+  cargoId    String?
+  cargo      Cargo?           @relation(fields: [cargoId], references: [id])
+  dealId     String?
+  deal       Deal?            @relation(fields: [dealId], references: [id])
+  actorUserId String
+  actor      User             @relation("ContactEventActor", fields: [actorUserId], references: [id])
+  type       ContactEventType
+  createdAt  DateTime         @default(now())
+
+  @@index([driverId])
+  @@index([companyId])
+  @@map("contact_events")
+}
+
+model Chat {
+  id        String   @id @default(uuid())
+  cargoId   String?
+  cargo     Cargo?   @relation(fields: [cargoId], references: [id])
+  dealId    String?
+  deal      Deal?    @relation(fields: [dealId], references: [id])
+  driverId  String
+  driver    Driver   @relation(fields: [driverId], references: [id])
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+
+  @@index([driverId])
+  @@index([companyId])
+  @@map("chats")
+}
+
+model Message {
+  id            String   @id @default(uuid())
+  chatId        String
+  chat          Chat     @relation(fields: [chatId], references: [id])
+  senderUserId  String
+  sender        User     @relation(fields: [senderUserId], references: [id])
+  originalText  String
+  originalLang  Locale
+  translations  Json?
+  isRead        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([chatId, createdAt])
+  @@map("messages")
+}
+
+model Review {
+  id             String           @id @default(uuid())
+  dealId         String
+  deal           Deal             @relation(fields: [dealId], references: [id])
+  authorUserId   String
+  author         User             @relation(fields: [authorUserId], references: [id])
+  authorRole     ReviewAuthorRole
+  rating         Int
+  comment        String?
+  createdAt      DateTime         @default(now())
+
+  @@unique([dealId, authorRole])
+  @@map("reviews")
+}
+
+// ---------------------------------------------------------------------------
+// Верификация, уведомления, жалобы, курсы, аудит, монетизация
+// ---------------------------------------------------------------------------
+
+model VerificationDocument {
+  id               String              @id @default(uuid())
+  userId           String?
+  user             User?               @relation(fields: [userId], references: [id])
+  driverId         String?
+  driver           Driver?             @relation("DriverVerificationDocuments", fields: [driverId], references: [id])
+  companyId        String?
+  company          Company?            @relation("CompanyVerificationDocuments", fields: [companyId], references: [id])
+  type             VerificationDocType
+  fileUrl          String
+  status           VerificationStatus  @default(PENDING)
+  reviewedByUserId String?
+  reviewedBy       User?               @relation("VerificationDocumentReviewer", fields: [reviewedByUserId], references: [id])
+  reviewedAt       DateTime?
+  rejectReason     String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([companyId])
+  @@map("verification_documents")
+}
+
+model NotificationSetting {
+  id        String              @id @default(uuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id])
+  channel   NotificationChannel
+  enabled   Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@unique([userId, channel])
+  @@map("notification_settings")
+}
+
+model Complaint {
+  id               String              @id @default(uuid())
+  reporterUserId   String
+  reporter         User                @relation("ComplaintReporter", fields: [reporterUserId], references: [id])
+  targetType       ComplaintTargetType
+  targetId         String
+  reason           String
+  description      String?
+  status           ComplaintStatus     @default(OPEN)
+  resolvedByUserId String?
+  resolvedBy       User?               @relation("ComplaintResolver", fields: [resolvedByUserId], references: [id])
+  resolvedAt       DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([targetType, targetId])
+  @@map("complaints")
+}
+
+model ExchangeRate {
+  id            String   @id @default(uuid())
+  currency      Currency
+  rateToKzt     Decimal  @db.Decimal(12, 6)
+  effectiveDate DateTime @db.Date
+  source        String   @default("nbrk")
+  createdAt     DateTime @default(now())
+
+  @@unique([currency, effectiveDate])
+  @@map("exchange_rates")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorUserId String?
+  actor       User?    @relation(fields: [actorUserId], references: [id])
+  action      String
+  entityType  String
+  entityId    String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("audit_log")
+}
+
+model Subscription {
+  id        String             @id @default(uuid())
+  companyId String
+  company   Company            @relation(fields: [companyId], references: [id])
+  plan      String             @default("company_monthly")
+  priceUsd  Decimal            @default(200) @db.Decimal(8, 2)
+  status    SubscriptionStatus @default(TRIAL)
+  startedAt DateTime           @default(now())
+  endsAt    DateTime
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  payments Payment[]
+
+  @@index([companyId])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  dealId         String?
+  deal           Deal?         @relation(fields: [dealId], references: [id])
+  companyId      String?
+  company        Company?      @relation(fields: [companyId], references: [id])
+  driverId       String?
+  driver         Driver?       @relation(fields: [driverId], references: [id])
+  amount         Decimal       @db.Decimal(10, 2)
+  currency       Currency      @default(USD)
+  type           PaymentType
+  status         PaymentStatus @default(PENDING)
+  paidAt         DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([companyId])
+  @@index([driverId])
+  @@map("payments")
+}

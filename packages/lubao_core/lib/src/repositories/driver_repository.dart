@@ -1,0 +1,72 @@
+import '../api/api_client.dart';
+import '../models/common.dart';
+import '../models/user.dart';
+
+class DriverSetupInput {
+  const DriverSetupInput({
+    required this.fullName,
+    required this.homeCityId,
+    required this.anyCountry,
+    required this.directionCountryIds,
+    required this.permitIds,
+    required this.bodyTypeId,
+    this.plateNumber,
+    this.capacityTons,
+  });
+
+  final String fullName;
+  final String homeCityId;
+  final bool anyCountry;
+  final List<String> directionCountryIds;
+  final List<String> permitIds;
+  final String bodyTypeId;
+  final String? plateNumber;
+  final double? capacityTons;
+
+  Map<String, dynamic> toJson() => {
+        'fullName': fullName,
+        'homeCityId': homeCityId,
+        'anyCountry': anyCountry,
+        'directionCountryIds': directionCountryIds,
+        'permitIds': permitIds,
+        'bodyTypeId': bodyTypeId,
+        if (plateNumber != null) 'plateNumber': plateNumber,
+        if (capacityTons != null) 'capacityTons': capacityTons,
+      };
+}
+
+class DriverRepository {
+  DriverRepository(this._client);
+
+  final ApiClient _client;
+
+  Future<Driver> me() async {
+    final res = await _client.dio.get('/drivers/me');
+    return Driver.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<Driver> updateProfile(DriverSetupInput input) async {
+    final res = await _client.dio.patch('/drivers/me', data: input.toJson());
+    return Driver.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> updateLocation({required double lat, required double lng}) async {
+    await _client.dio.patch('/drivers/me/location', data: {'lat': lat, 'lng': lng});
+  }
+
+  Future<List<VerificationDocument>> verificationDocuments() async {
+    final res = await _client.dio.get('/drivers/me/verification-documents');
+    return (res.data as List<dynamic>).map((e) => VerificationDocument.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<VerificationDocument> submitVerificationDocument({
+    required VerificationDocType type,
+    required String fileUrl,
+  }) async {
+    final res = await _client.dio.post('/drivers/me/verification-documents', data: {
+      'type': verificationDocTypeToJson(type),
+      'fileUrl': fileUrl,
+    });
+    return VerificationDocument.fromJson(res.data as Map<String, dynamic>);
+  }
+}

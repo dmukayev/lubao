@@ -1,0 +1,34 @@
+# env
+.env
+.env.*
+!.env.example
+
+# node
+node_modules/
+dist/
+pnpm-lock.yaml.bak
+
+# prisma
+backend/prisma/migrations/**/migration_lock.toml.bak
+
+# flutter / dart
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/build/
+**/.packages
+**/ios/Pods/
+**/ios/.symlinks/
+**/android/.gradle/
+**/*.g.dart.bak
+
+# ide
+.vscode/
+.idea/
+*.iml
+
+# os
+.DS_Store
+
+# docker volumes (bind-mounted data, if any land in repo)
+infra/**/data/

@@ -1,0 +1,16 @@
+{
+  "name": "lubao",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev:backend": "pnpm --filter backend start:dev",
+    "build:backend": "pnpm --filter backend build",
+    "test:backend": "pnpm --filter backend test",
+    "prisma:generate": "pnpm --filter backend prisma:generate",
+    "prisma:migrate": "pnpm --filter backend prisma:migrate",
+    "prisma:seed": "pnpm --filter backend prisma:seed",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  }
+}

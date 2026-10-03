@@ -1,0 +1,349 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lubao_core/lubao_core.dart';
+
+import '../../../providers/api_providers.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/data_providers.dart';
+import '../../shared/status_helpers.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+
+class CargoDetailScreen extends ConsumerStatefulWidget {
+  const CargoDetailScreen({super.key, required this.cargoId});
+
+  final String cargoId;
+
+  @override
+  ConsumerState<CargoDetailScreen> createState() => _CargoDetailScreenState();
+}
+
+class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
+  bool _responding = false;
+  bool _responded = false;
+
+  Future<void> _respond() async {
+    setState(() => _responding = true);
+    try {
+      await ref.read(cargoRepositoryProvider).respond(widget.cargoId);
+      setState(() => _responded = true);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 409) {
+        setState(() => _responded = true);
+      } else if (isDriverNotVerifiedError(e)) {
+        if (mounted) await showVerificationRequiredSheet(context);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.commonError)));
+      }
+    } finally {
+      if (mounted) setState(() => _responding = false);
+    }
+  }
+
+  Future<void> _logContact(Cargo cargo, String type) async {
+    final driverId = ref.read(sessionProvider)?.driver?.id;
+    if (driverId == null) return;
+    await ref.read(cargoRepositoryProvider).logContactEvent(
+          driverId: driverId,
+          companyId: cargo.companyId,
+          cargoId: cargo.id,
+          type: type,
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final cargoAsync = ref.watch(cargoByIdProvider(widget.cargoId));
+    final referenceData = ref.watch(referenceDataProvider);
+
+    return Scaffold(
+      appBar: AppBar(title: Text(t.cargoDetailTitle)),
+      body: cargoAsync.when(
+        loading: () => const LoadingView(),
+        error: (e, st) => ErrorView(message: t.commonError),
+        data: (cargo) => referenceData.when(
+          loading: () => const LoadingView(),
+          error: (e, st) => ErrorView(message: t.commonError),
+          data: (refData) => _CargoDetailBody(cargo: cargo, refData: refData),
+        ),
+      ),
+      bottomNavigationBar: cargoAsync.valueOrNull == null
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, AppSpacing.sm),
+                child: Row(
+                  children: [
+                    IconSquareButton(
+                      icon: LucideIcons.phone,
+                      size: AppSizes.buttonHeight,
+                      onPressed: () => _logContact(cargoAsync.value!, 'CALL'),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    IconSquareButton(
+                      icon: LucideIcons.messageCircle,
+                      size: AppSizes.buttonHeight,
+                      onPressed: () => _logContact(cargoAsync.value!, 'WHATSAPP'),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: PrimaryButton(
+                        label: _responded ? t.cargoAlreadyResponded : t.cargoRespond,
+                        loading: _responding,
+                        onPressed: _responded ? null : _respond,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+class _CargoDetailBody extends StatelessWidget {
+  const _CargoDetailBody({required this.cargo, required this.refData});
+
+  final Cargo cargo;
+  final ReferenceData refData;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final locale = Localizations.localeOf(context).languageCode;
+    final country = refData.countryById(cargo.destinationCountryId);
+    final city = refData.cityById(cargo.destinationCityId);
+    final bodyType = refData.bodyTypeById(cargo.bodyTypeId);
+    final point = refData.pointById(cargo.pointId);
+    final destinationLabel =
+        [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
+
+    final kzt = refData.convertToKzt(cargo.price, cargo.currency);
+    final usd = refData.convertToUsd(cargo.price, cargo.currency);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _RoutePoint(
+                  color: AppColors.primary,
+                  title: point.name.forLanguageCode(locale),
+                  subtitle: formatDateTime(cargo.readyDate),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Container(width: 2, height: 20, color: AppColors.divider),
+                ),
+                _RoutePoint(color: AppColors.accent, title: destinationLabel, subtitle: null),
+                const Divider(height: AppSpacing.xl * 2),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(t.cargoDetailPriceLabel, style: AppTextStyles.caption),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceDetail),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        if (formatKztConversion(kzt) != null)
+                          Text(formatKztConversion(kzt)!, style: AppTextStyles.caption),
+                        if (usd != null) Text(formatMoney(usd, Currency.usd), style: AppTextStyles.caption),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+            child: Row(
+              children: [
+                Expanded(child: _DetailChip(label: t.cargoBodyType, value: bodyType.name.forLanguageCode(locale))),
+                const SizedBox(width: AppSpacing.sm),
+                if (cargo.weightKg != null)
+                  Expanded(child: _DetailChip(label: t.cargoWeight, value: '${cargo.weightKg} ${t.unitKg}')),
+                if (cargo.weightKg != null) const SizedBox(width: AppSpacing.sm),
+                if (cargo.volumeM3 != null)
+                  Expanded(child: _DetailChip(label: t.cargoVolume, value: '${cargo.volumeM3} ${t.unitM3}')),
+              ],
+            ),
+          ),
+          if (cargo.photoUrls.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+              child: Text(t.cargoPhotos, style: AppTextStyles.title),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            SizedBox(
+              height: 96,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                itemCount: cargo.photoUrls.length,
+                separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.sm),
+                itemBuilder: (context, index) => ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.field),
+                  child: GestureDetector(
+                    onTap: () => _openPhoto(context, cargo.photoUrls, index),
+                    child: Image.network(cargo.photoUrls[index], width: 96, height: 96, fit: BoxFit.cover),
+                  ),
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.lg),
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: AppColors.accentSoft,
+                      child: Text(
+                        cargo.companyName.isEmpty ? '' : cargo.companyName.substring(0, 1).toUpperCase(),
+                        style: AppTextStyles.bodyStrong.copyWith(color: AppColors.accentText),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(child: Text(cargo.companyName, style: AppTextStyles.bodyStrong)),
+                              if (cargo.companyIsVerified) ...[
+                                const SizedBox(width: AppSpacing.xs),
+                                const Icon(LucideIcons.badgeCheck, size: 16, color: AppColors.primary),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Row(
+                            children: [
+                              if (cargo.companyRatingCount > 0) ...[
+                                const Icon(LucideIcons.star, size: 14, color: AppColors.accent),
+                                const SizedBox(width: AppSpacing.xs),
+                                Text(cargo.companyRatingAvg.toStringAsFixed(1), style: AppTextStyles.caption),
+                                const Text(' · ', style: AppTextStyles.caption),
+                              ] else ...[
+                                Text(t.cargoDetailNoReviews, style: AppTextStyles.caption),
+                                const Text(' · ', style: AppTextStyles.caption),
+                              ],
+                              Text(t.cargoDetailCompanyDeals(cargo.companyCompletedDeals), style: AppTextStyles.caption),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (cargo.description != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(AppRadius.field)),
+                    child: Text(cargo.description!, style: AppTextStyles.body),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xxl),
+        ],
+      ),
+    );
+  }
+
+  void _openPhoto(BuildContext context, List<String> photoUrls, int initialIndex) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
+        body: PageView.builder(
+          controller: PageController(initialPage: initialIndex),
+          itemCount: photoUrls.length,
+          itemBuilder: (context, index) => InteractiveViewer(
+            child: Center(child: Image.network(photoUrls[index])),
+          ),
+        ),
+      ),
+    ));
+  }
+}
+
+class _RoutePoint extends StatelessWidget {
+  const _RoutePoint({required this.color, required this.title, required this.subtitle});
+
+  final Color color;
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: AppTextStyles.route),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(subtitle!, style: AppTextStyles.caption),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DetailChip extends StatelessWidget {
+  const _DetailChip({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(AppRadius.field)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: AppTextStyles.caption),
+          const SizedBox(height: AppSpacing.xs),
+          Text(value, style: AppTextStyles.bodyStrong),
+        ],
+      ),
+    );
+  }
+}
