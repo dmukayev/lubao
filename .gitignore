@@ -6,6 +6,7 @@
 # node
 node_modules/
 dist/
+<<<<<<< HEAD
 pnpm-lock.yaml.bak
 
 # prisma
@@ -32,3 +33,18 @@ backend/prisma/migrations/**/migration_lock.toml.bak
 
 # docker volumes (bind-mounted data, if any land in repo)
 infra/**/data/
+=======
+
+# flutter / dart
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+
+# os / ide
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+>>>>>>> origin/main
