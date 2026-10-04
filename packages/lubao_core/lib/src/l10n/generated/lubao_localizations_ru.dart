@@ -314,13 +314,65 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get driverHomeCheckInEmpty =>
-      'Отметьтесь, когда будете в Хоргосе — логисты увидят, что вы на месте';
+      'Заявите о прибытии — логисты увидят вас заранее';
 
   @override
   String get driverHomeCheckInButton => 'Я уже на месте';
 
   @override
   String get driverHomeLeaveButton => 'Я уехал';
+
+  @override
+  String get driverHomeCancelButton => 'Отменить';
+
+  @override
+  String get driverHomeAnnounceButton => 'Буду на точке';
+
+  @override
+  String get driverHomeRepeatButton => 'Повторить прошлый анонс';
+
+  @override
+  String get driverHomeEditButton => 'Изменить';
+
+  @override
+  String driverHomePlannedFor(String date) {
+    return 'Будет $date';
+  }
+
+  @override
+  String get announceArrivalTitle => 'Буду на точке';
+
+  @override
+  String get announceArrivalWhen => 'Когда';
+
+  @override
+  String get announceArrivalToday => 'Сегодня';
+
+  @override
+  String get announceArrivalTomorrow => 'Завтра';
+
+  @override
+  String get announceArrivalDayAfter => 'Послезавтра';
+
+  @override
+  String get announceArrivalPickDate => 'Выбрать дату';
+
+  @override
+  String get announceArrivalWhere => 'Где';
+
+  @override
+  String get announceArrivalCountries => 'Куда готов';
+
+  @override
+  String get announceArrivalWaitDays => 'Сколько готовы ждать';
+
+  @override
+  String announceArrivalWaitDaysValue(int days) {
+    return '$days дн.';
+  }
+
+  @override
+  String get announceArrivalSubmit => 'Опубликовать';
 
   @override
   String driverHomeFeedCount(int count) {
@@ -775,6 +827,14 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String driversAtPointArrivedAt(String time) {
     return 'На месте с $time';
   }
+
+  @override
+  String driversAtPointPlannedAt(String time) {
+    return 'Будет $time';
+  }
+
+  @override
+  String get driversAtPointToday => 'Сегодня';
 
   @override
   String get adminLoginTitle => 'Вход в админ-панель';

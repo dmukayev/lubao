@@ -15,28 +15,41 @@ class DriversAtPointScreen extends ConsumerStatefulWidget {
   ConsumerState<DriversAtPointScreen> createState() => _DriversAtPointScreenState();
 }
 
+const _dayStripLength = 7;
+
 class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   String? _countryId;
   String? _bodyTypeId;
   bool _minCapacity = false;
   bool _verifiedOnly = false;
+  int _dayOffset = 0;
   Future<List<ArrivalListing>>? _future;
+  Future<List<ArrivalSummaryDay>>? _summaryFuture;
 
   @override
   void initState() {
     super.initState();
+    _summaryFuture = ref.read(arrivalRepositoryProvider).summary(days: _dayStripLength);
     _reload();
   }
+
+  DateTime get _selectedDate => DateTime.now().add(Duration(days: _dayOffset));
 
   void _reload() {
     setState(() {
       _future = ref.read(arrivalRepositoryProvider).listForCompany(
+            date: _selectedDate,
             countryId: _countryId,
             bodyTypeId: _bodyTypeId,
             minCapacityTons: _minCapacity ? 20 : null,
             verifiedOnly: _verifiedOnly,
           );
     });
+  }
+
+  void _selectDay(int offset) {
+    setState(() => _dayOffset = offset);
+    _reload();
   }
 
   Future<void> _call(String? phone) async {
@@ -117,6 +130,32 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
               padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 0),
               child: Text(t.driversAtPointSubtitle, style: AppTextStyles.caption),
             ),
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              height: 72,
+              child: FutureBuilder<List<ArrivalSummaryDay>>(
+                future: _summaryFuture,
+                builder: (context, snapshot) {
+                  final counts = snapshot.data;
+                  return ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                    itemCount: _dayStripLength,
+                    separatorBuilder: (context, _) => const SizedBox(width: AppSpacing.sm),
+                    itemBuilder: (context, index) {
+                      final date = DateTime.now().add(Duration(days: index));
+                      final count = counts == null || index >= counts.length ? null : counts[index].count;
+                      return _DayChip(
+                        label: index == 0 ? t.driversAtPointToday : _weekdayLabel(context, date),
+                        count: count,
+                        selected: _dayOffset == index,
+                        onTap: () => _selectDay(index),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.all(AppSpacing.screen),
               child: Wrap(
@@ -193,6 +232,58 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                   );
                 },
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+const _weekdayShort = {
+  'ru': ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+  'kk': ['Дс', 'Сс', 'Ср', 'Бс', 'Жм', 'Сб', 'Жс'],
+  'zh': ['一', '二', '三', '四', '五', '六', '日'],
+};
+
+String _weekdayLabel(BuildContext context, DateTime date) {
+  final locale = Localizations.localeOf(context).languageCode;
+  final names = _weekdayShort[locale] ?? _weekdayShort['ru']!;
+  return names[date.weekday - 1];
+}
+
+class _DayChip extends StatelessWidget {
+  const _DayChip({required this.label, required this.count, required this.selected, required this.onTap});
+
+  final String label;
+  final int? count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.field),
+      child: Container(
+        width: 56,
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.field),
+          border: Border.all(color: selected ? AppColors.primary : AppColors.border),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              style: AppTextStyles.caption.copyWith(color: selected ? Colors.white : AppColors.textSecondary),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              count?.toString() ?? '–',
+              style: AppTextStyles.bodyStrong.copyWith(color: selected ? Colors.white : AppColors.text),
             ),
           ],
         ),
@@ -310,11 +401,19 @@ class _DriverCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              Icon(LucideIcons.mapPin, size: 14, color: AppColors.success),
+              Icon(
+                driver.status == ArrivalStatus.onSite ? LucideIcons.mapPin : LucideIcons.calendarClock,
+                size: 14,
+                color: driver.status == ArrivalStatus.onSite ? AppColors.success : AppColors.textSecondary,
+              ),
               const SizedBox(width: AppSpacing.xs),
               Text(
-                t.driversAtPointArrivedAt(_formatTime(driver.arrivedAt)),
-                style: AppTextStyles.caption.copyWith(color: AppColors.success),
+                driver.status == ArrivalStatus.onSite
+                    ? t.driversAtPointArrivedAt(_formatTime(driver.arrivedAt ?? driver.plannedAt))
+                    : t.driversAtPointPlannedAt(_formatTime(driver.plannedAt)),
+                style: AppTextStyles.caption.copyWith(
+                  color: driver.status == ArrivalStatus.onSite ? AppColors.success : AppColors.textSecondary,
+                ),
               ),
             ],
           ),

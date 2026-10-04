@@ -116,9 +116,31 @@
   "@driverHomeSince": {
     "placeholders": { "date": { "type": "String" } }
   },
-  "driverHomeCheckInEmpty": "Отметьтесь, когда будете в Хоргосе — логисты увидят, что вы на месте",
+  "driverHomeCheckInEmpty": "Заявите о прибытии — логисты увидят вас заранее",
   "driverHomeCheckInButton": "Я уже на месте",
   "driverHomeLeaveButton": "Я уехал",
+  "driverHomeCancelButton": "Отменить",
+  "driverHomeAnnounceButton": "Буду на точке",
+  "driverHomeRepeatButton": "Повторить прошлый анонс",
+  "driverHomeEditButton": "Изменить",
+  "driverHomePlannedFor": "Будет {date}",
+  "@driverHomePlannedFor": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "announceArrivalTitle": "Буду на точке",
+  "announceArrivalWhen": "Когда",
+  "announceArrivalToday": "Сегодня",
+  "announceArrivalTomorrow": "Завтра",
+  "announceArrivalDayAfter": "Послезавтра",
+  "announceArrivalPickDate": "Выбрать дату",
+  "announceArrivalWhere": "Где",
+  "announceArrivalCountries": "Куда готов",
+  "announceArrivalWaitDays": "Сколько готовы ждать",
+  "announceArrivalWaitDaysValue": "{days} дн.",
+  "@announceArrivalWaitDaysValue": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "announceArrivalSubmit": "Опубликовать",
   "driverHomeFeedCount": "Подходящие грузы {count}",
   "@driverHomeFeedCount": {
     "placeholders": { "count": { "type": "int" } }
@@ -280,6 +302,11 @@
   "@driversAtPointArrivedAt": {
     "placeholders": { "time": { "type": "String" } }
   },
+  "driversAtPointPlannedAt": "Будет {time}",
+  "@driversAtPointPlannedAt": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "driversAtPointToday": "Сегодня",
   "adminLoginTitle": "Вход в админ-панель",
   "adminLoginEmailLabel": "Email",
   "adminLoginPasswordLabel": "Пароль",

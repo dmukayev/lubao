@@ -47,6 +47,10 @@ final myArrivalProvider = FutureProvider.autoDispose<Arrival?>((ref) {
   return ref.watch(arrivalRepositoryProvider).mine();
 });
 
+final arrivalTemplateProvider = FutureProvider.autoDispose<ArrivalTemplate?>((ref) {
+  return ref.watch(arrivalRepositoryProvider).lastTemplate();
+});
+
 final driverVerificationDocumentsProvider = FutureProvider.autoDispose<List<VerificationDocument>>((ref) {
   return ref.watch(driverRepositoryProvider).verificationDocuments();
 });

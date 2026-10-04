@@ -10,7 +10,7 @@ describe('ReferenceDataService#submitCity', () => {
       region: { findUnique: jest.fn() },
       city: { create: jest.fn() },
     };
-    service = new ReferenceDataService(prisma as any);
+    service = new ReferenceDataService(prisma as any, { get: jest.fn() } as any);
   });
 
   it('creates a PENDING city linked to the region, its country, and the submitting user', async () => {

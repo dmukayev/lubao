@@ -315,13 +315,65 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get driverHomeCheckInEmpty =>
-      'Қорғаста болғанда белгі қойыңыз — логистер сізді көреді';
+      'Келетініңізді хабарлаңыз — логистер сізді алдын ала көреді';
 
   @override
   String get driverHomeCheckInButton => 'Мен қазірдің өзінде осындамын';
 
   @override
   String get driverHomeLeaveButton => 'Кеттім';
+
+  @override
+  String get driverHomeCancelButton => 'Болдырмау';
+
+  @override
+  String get driverHomeAnnounceButton => 'Нүктеде боламын';
+
+  @override
+  String get driverHomeRepeatButton => 'Соңғы анонсты қайталау';
+
+  @override
+  String get driverHomeEditButton => 'Өзгерту';
+
+  @override
+  String driverHomePlannedFor(String date) {
+    return '$date болады';
+  }
+
+  @override
+  String get announceArrivalTitle => 'Нүктеде боламын';
+
+  @override
+  String get announceArrivalWhen => 'Қашан';
+
+  @override
+  String get announceArrivalToday => 'Бүгін';
+
+  @override
+  String get announceArrivalTomorrow => 'Ертең';
+
+  @override
+  String get announceArrivalDayAfter => 'Арғы күні';
+
+  @override
+  String get announceArrivalPickDate => 'Күнді таңдау';
+
+  @override
+  String get announceArrivalWhere => 'Қайда';
+
+  @override
+  String get announceArrivalCountries => 'Қай елдерге дайын';
+
+  @override
+  String get announceArrivalWaitDays => 'Қанша күтуге дайынсыз';
+
+  @override
+  String announceArrivalWaitDaysValue(int days) {
+    return '$days күн';
+  }
+
+  @override
+  String get announceArrivalSubmit => 'Жариялау';
 
   @override
   String driverHomeFeedCount(int count) {
@@ -776,6 +828,14 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String driversAtPointArrivedAt(String time) {
     return '$time бастап орында';
   }
+
+  @override
+  String driversAtPointPlannedAt(String time) {
+    return '$time болады';
+  }
+
+  @override
+  String get driversAtPointToday => 'Бүгін';
 
   @override
   String get adminLoginTitle => 'Әкімші тіркелгісіне кіру';

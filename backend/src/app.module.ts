@@ -19,6 +19,7 @@ import { UploadsModule } from './uploads/uploads.module';
 import { RedisModule } from './redis/redis.module';
 import { SmsModule } from './sms/sms.module';
 import { TokenModule } from './token/token.module';
+import { AppSettingsModule } from './app-settings/app-settings.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { TokenModule } from './token/token.module';
     RedisModule,
     SmsModule,
     TokenModule,
+    AppSettingsModule,
     AuthModule,
     ReferenceDataModule,
     DriversModule,

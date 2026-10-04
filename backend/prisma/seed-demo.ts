@@ -328,13 +328,14 @@ async function main() {
 
     await prisma.arrival.upsert({
       where: { id: demoId(`arrival:${def.key}`) },
-      update: { status: 'ACTIVE' },
+      update: { status: 'ON_SITE' },
       create: {
         id: demoId(`arrival:${def.key}`),
         driverId: driver.id,
         pointId: khorgos.id,
+        plannedAt: daysFromNow(-1),
         arrivedAt: daysFromNow(-1),
-        status: 'ACTIVE',
+        status: 'ON_SITE',
       },
     });
   }

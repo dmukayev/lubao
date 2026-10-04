@@ -1,5 +1,24 @@
-/// Строка списка «Кто будет на Хоргосе» — водитель, сейчас находящийся на
-/// активной точке, со стороны логиста.
+/// Статус анонса прибытия (задача 015): PLANNED — «буду», ON_SITE — «на
+/// месте», COMPLETED/CANCELLED — завершён. Неизвестное значение с бэкенда
+/// не должно падать клиент — фолбэк на `planned`.
+enum ArrivalStatus { planned, onSite, completed, cancelled }
+
+ArrivalStatus arrivalStatusFromJson(String value) {
+  switch (value) {
+    case 'ON_SITE':
+      return ArrivalStatus.onSite;
+    case 'COMPLETED':
+      return ArrivalStatus.completed;
+    case 'CANCELLED':
+      return ArrivalStatus.cancelled;
+    case 'PLANNED':
+    default:
+      return ArrivalStatus.planned;
+  }
+}
+
+/// Строка списка «Кто будет на точке» — водитель с активным (PLANNED или
+/// ON_SITE) анонсом, со стороны логиста.
 class ArrivalListing {
   const ArrivalListing({
     required this.arrivalId,
@@ -9,7 +28,10 @@ class ArrivalListing {
     required this.isVerified,
     required this.ratingAvg,
     required this.ratingCount,
-    required this.arrivedAt,
+    required this.pointId,
+    required this.status,
+    required this.plannedAt,
+    this.arrivedAt,
     this.bodyTypeId,
     this.capacityTons,
     required this.anyCountry,
@@ -23,7 +45,10 @@ class ArrivalListing {
   final bool isVerified;
   final double ratingAvg;
   final int ratingCount;
-  final DateTime arrivedAt;
+  final String pointId;
+  final ArrivalStatus status;
+  final DateTime plannedAt;
+  final DateTime? arrivedAt;
   final String? bodyTypeId;
   final double? capacityTons;
   final bool anyCountry;
@@ -37,7 +62,10 @@ class ArrivalListing {
         isVerified: json['isVerified'] as bool? ?? false,
         ratingAvg: (json['ratingAvg'] as num?)?.toDouble() ?? 0,
         ratingCount: json['ratingCount'] as int? ?? 0,
-        arrivedAt: DateTime.parse(json['arrivedAt'] as String),
+        pointId: json['pointId'] as String,
+        status: arrivalStatusFromJson(json['status'] as String),
+        plannedAt: DateTime.parse(json['plannedAt'] as String),
+        arrivedAt: json['arrivedAt'] == null ? null : DateTime.parse(json['arrivedAt'] as String),
         bodyTypeId: json['bodyTypeId'] as String?,
         capacityTons: (json['capacityTons'] as num?)?.toDouble(),
         anyCountry: json['anyCountry'] as bool? ?? false,
@@ -46,30 +74,64 @@ class ArrivalListing {
       );
 }
 
+/// Шаблон последнего завершённого/отменённого анонса — для «Повторить
+/// прошлый анонс» (показать точку/страны до нажатия кнопки).
+class ArrivalTemplate {
+  const ArrivalTemplate({required this.pointId, required this.anyCountry, required this.countryIds});
+
+  final String pointId;
+  final bool anyCountry;
+  final List<String> countryIds;
+
+  factory ArrivalTemplate.fromJson(Map<String, dynamic> json) => ArrivalTemplate(
+        pointId: json['pointId'] as String,
+        anyCountry: json['anyCountry'] as bool? ?? false,
+        countryIds: (json['countryIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
+      );
+}
+
 class Arrival {
   const Arrival({
     required this.id,
     required this.pointId,
-    required this.arrivedAt,
-    this.expectedDepartureAt,
+    required this.plannedAt,
+    this.arrivedAt,
+    required this.waitDays,
+    required this.anyCountry,
+    required this.countryIds,
     required this.status,
-    required this.logistsCount,
+    required this.viewsCount,
   });
 
   final String id;
   final String pointId;
-  final DateTime arrivedAt;
-  final DateTime? expectedDepartureAt;
-  final String status;
-  final int logistsCount;
+  final DateTime plannedAt;
+  final DateTime? arrivedAt;
+  final int waitDays;
+  final bool anyCountry;
+  final List<String> countryIds;
+  final ArrivalStatus status;
+  final int viewsCount;
 
   factory Arrival.fromJson(Map<String, dynamic> json) => Arrival(
         id: json['id'] as String,
         pointId: json['pointId'] as String,
-        arrivedAt: DateTime.parse(json['arrivedAt'] as String),
-        expectedDepartureAt:
-            json['expectedDepartureAt'] == null ? null : DateTime.parse(json['expectedDepartureAt'] as String),
-        status: json['status'] as String,
-        logistsCount: json['logistsCount'] as int? ?? 0,
+        plannedAt: DateTime.parse(json['plannedAt'] as String),
+        arrivedAt: json['arrivedAt'] == null ? null : DateTime.parse(json['arrivedAt'] as String),
+        waitDays: json['waitDays'] as int? ?? 2,
+        anyCountry: json['anyCountry'] as bool? ?? false,
+        countryIds: (json['countryIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
+        status: arrivalStatusFromJson(json['status'] as String),
+        viewsCount: json['viewsCount'] as int? ?? 0,
       );
+}
+
+class ArrivalSummaryDay {
+  const ArrivalSummaryDay({required this.date, required this.count});
+
+  final DateTime date;
+  final int count;
+
+  factory ArrivalSummaryDay.fromJson(Map<String, dynamic> json) =>
+      ArrivalSummaryDay(date: DateTime.parse(json['date'] as String), count: json['count'] as int? ?? 0);
 }

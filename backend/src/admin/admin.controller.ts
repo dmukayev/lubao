@@ -1,6 +1,7 @@
 import { Body, Controller, ForbiddenException, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
+import { AppSettingsService } from '../app-settings/app-settings.service';
 import { AdminService } from './admin.service';
 import {
   CreateBodyTypeDto,
@@ -10,6 +11,7 @@ import {
   ResolveComplaintDto,
   ReviewVerificationDocumentDto,
   SetActiveDto,
+  SetAppSettingDto,
   SetVerifiedDto,
 } from './dto/admin.dto';
 
@@ -19,7 +21,23 @@ function assertAdmin(ctx: RequestContext) {
 
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly admin: AdminService) {}
+  constructor(
+    private readonly admin: AdminService,
+    private readonly appSettings: AppSettingsService,
+  ) {}
+
+  @Get('settings')
+  async settings(@CurrentUser() ctx: RequestContext) {
+    assertAdmin(ctx);
+    return this.appSettings.all();
+  }
+
+  @Patch('settings/:key')
+  async setSetting(@CurrentUser() ctx: RequestContext, @Param('key') key: string, @Body() dto: SetAppSettingDto) {
+    assertAdmin(ctx);
+    await this.appSettings.set(key, dto.value);
+    return { success: true };
+  }
 
   @Get('stats')
   stats(@CurrentUser() ctx: RequestContext) {

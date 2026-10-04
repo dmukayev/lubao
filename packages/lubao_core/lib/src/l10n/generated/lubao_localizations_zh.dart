@@ -308,13 +308,65 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   }
 
   @override
-  String get driverHomeCheckInEmpty => '到达霍尔果斯后请签到，物流公司将能看到您';
+  String get driverHomeCheckInEmpty => '提前通知到达时间——物流公司会提前看到您';
 
   @override
   String get driverHomeCheckInButton => '我已到达';
 
   @override
   String get driverHomeLeaveButton => '我已离开';
+
+  @override
+  String get driverHomeCancelButton => '取消';
+
+  @override
+  String get driverHomeAnnounceButton => '预告到达';
+
+  @override
+  String get driverHomeRepeatButton => '重复上次预告';
+
+  @override
+  String get driverHomeEditButton => '修改';
+
+  @override
+  String driverHomePlannedFor(String date) {
+    return '预计 $date';
+  }
+
+  @override
+  String get announceArrivalTitle => '预告到达';
+
+  @override
+  String get announceArrivalWhen => '何时';
+
+  @override
+  String get announceArrivalToday => '今天';
+
+  @override
+  String get announceArrivalTomorrow => '明天';
+
+  @override
+  String get announceArrivalDayAfter => '后天';
+
+  @override
+  String get announceArrivalPickDate => '选择日期';
+
+  @override
+  String get announceArrivalWhere => '地点';
+
+  @override
+  String get announceArrivalCountries => '可前往的国家';
+
+  @override
+  String get announceArrivalWaitDays => '愿意等待多久';
+
+  @override
+  String announceArrivalWaitDaysValue(int days) {
+    return '$days 天';
+  }
+
+  @override
+  String get announceArrivalSubmit => '发布';
 
   @override
   String driverHomeFeedCount(int count) {
@@ -763,6 +815,14 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String driversAtPointArrivedAt(String time) {
     return '到达时间：$time';
   }
+
+  @override
+  String driversAtPointPlannedAt(String time) {
+    return '预计：$time';
+  }
+
+  @override
+  String get driversAtPointToday => '今天';
 
   @override
   String get adminLoginTitle => '管理员登录';

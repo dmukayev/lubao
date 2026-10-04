@@ -673,7 +673,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @driverHomeCheckInEmpty.
   ///
   /// In ru, this message translates to:
-  /// **'Отметьтесь, когда будете в Хоргосе — логисты увидят, что вы на месте'**
+  /// **'Заявите о прибытии — логисты увидят вас заранее'**
   String get driverHomeCheckInEmpty;
 
   /// No description provided for @driverHomeCheckInButton.
@@ -687,6 +687,102 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Я уехал'**
   String get driverHomeLeaveButton;
+
+  /// No description provided for @driverHomeCancelButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменить'**
+  String get driverHomeCancelButton;
+
+  /// No description provided for @driverHomeAnnounceButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Буду на точке'**
+  String get driverHomeAnnounceButton;
+
+  /// No description provided for @driverHomeRepeatButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повторить прошлый анонс'**
+  String get driverHomeRepeatButton;
+
+  /// No description provided for @driverHomeEditButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменить'**
+  String get driverHomeEditButton;
+
+  /// No description provided for @driverHomePlannedFor.
+  ///
+  /// In ru, this message translates to:
+  /// **'Будет {date}'**
+  String driverHomePlannedFor(String date);
+
+  /// No description provided for @announceArrivalTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Буду на точке'**
+  String get announceArrivalTitle;
+
+  /// No description provided for @announceArrivalWhen.
+  ///
+  /// In ru, this message translates to:
+  /// **'Когда'**
+  String get announceArrivalWhen;
+
+  /// No description provided for @announceArrivalToday.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сегодня'**
+  String get announceArrivalToday;
+
+  /// No description provided for @announceArrivalTomorrow.
+  ///
+  /// In ru, this message translates to:
+  /// **'Завтра'**
+  String get announceArrivalTomorrow;
+
+  /// No description provided for @announceArrivalDayAfter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Послезавтра'**
+  String get announceArrivalDayAfter;
+
+  /// No description provided for @announceArrivalPickDate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выбрать дату'**
+  String get announceArrivalPickDate;
+
+  /// No description provided for @announceArrivalWhere.
+  ///
+  /// In ru, this message translates to:
+  /// **'Где'**
+  String get announceArrivalWhere;
+
+  /// No description provided for @announceArrivalCountries.
+  ///
+  /// In ru, this message translates to:
+  /// **'Куда готов'**
+  String get announceArrivalCountries;
+
+  /// No description provided for @announceArrivalWaitDays.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сколько готовы ждать'**
+  String get announceArrivalWaitDays;
+
+  /// No description provided for @announceArrivalWaitDaysValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'{days} дн.'**
+  String announceArrivalWaitDaysValue(int days);
+
+  /// No description provided for @announceArrivalSubmit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опубликовать'**
+  String get announceArrivalSubmit;
 
   /// No description provided for @driverHomeFeedCount.
   ///
@@ -1563,6 +1659,18 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'На месте с {time}'**
   String driversAtPointArrivedAt(String time);
+
+  /// No description provided for @driversAtPointPlannedAt.
+  ///
+  /// In ru, this message translates to:
+  /// **'Будет {time}'**
+  String driversAtPointPlannedAt(String time);
+
+  /// No description provided for @driversAtPointToday.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сегодня'**
+  String get driversAtPointToday;
 
   /// No description provided for @adminLoginTitle.
   ///

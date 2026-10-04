@@ -30,7 +30,8 @@ enum CompanyMemberRole {
 }
 
 enum ArrivalStatus {
-  ACTIVE
+  PLANNED
+  ON_SITE
   COMPLETED
   CANCELLED
 }
@@ -155,6 +156,7 @@ model Country {
   cities             City[]
   companies          Company[]
   driverDirections   DriverDirection[]
+  arrivalDirections  ArrivalDirection[]
   cargoDestinations  Cargo[]
 
   @@map("countries")
@@ -410,6 +412,7 @@ model Company {
   deals                 Deal[]
   chats                 Chat[]
   contactEvents         ContactEvent[]
+  arrivalViews          ArrivalView[]
   verificationDocuments VerificationDocument[] @relation("CompanyVerificationDocuments")
   subscriptions         Subscription[]
   payments              Payment[]
@@ -436,21 +439,68 @@ model CompanyMember {
 // Груз и сделки
 // ---------------------------------------------------------------------------
 
+/// Анонс прибытия (задача 015 — ядро продукта): водитель сообщает, что
+/// будет на точке в будущем (`plannedAt`, до +14 дней), не только «сейчас».
+/// Один активный (PLANNED/ON_SITE) анонс на водителя — новый вызов
+/// announce() заменяет предыдущий, а не плодит дубли.
 model Arrival {
-  id                  String        @id @default(uuid())
-  driverId            String
-  driver              Driver        @relation(fields: [driverId], references: [id])
-  pointId             String
-  point               Point         @relation(fields: [pointId], references: [id])
-  arrivedAt           DateTime
-  expectedDepartureAt DateTime?
-  status              ArrivalStatus @default(ACTIVE)
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  id         String        @id @default(uuid())
+  driverId   String
+  driver     Driver        @relation(fields: [driverId], references: [id])
+  pointId    String
+  point      Point         @relation(fields: [pointId], references: [id])
+  plannedAt  DateTime
+  arrivedAt  DateTime?
+  waitDays   Int           @default(2)
+  anyCountry Boolean       @default(false)
+  status     ArrivalStatus @default(PLANNED)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  directions ArrivalDirection[]
+  views      ArrivalView[]
 
   @@index([driverId])
   @@index([pointId, status])
+  @@index([status, plannedAt])
   @@map("arrivals")
+}
+
+/// Страны на конкретную поездку (п. 12 задачи 015) — может отличаться от
+/// постоянных направлений в профиле водителя (`DriverDirection`).
+model ArrivalDirection {
+  id        String  @id @default(uuid())
+  arrivalId String
+  arrival   Arrival @relation(fields: [arrivalId], references: [id])
+  countryId String
+  country   Country @relation(fields: [countryId], references: [id])
+
+  @@unique([arrivalId, countryId])
+  @@map("arrival_directions")
+}
+
+/// Счётчик «N логистов посмотрели» (п. 8 задачи 015) — уникальные компании,
+/// не количество открытий.
+model ArrivalView {
+  id        String   @id @default(uuid())
+  arrivalId String
+  arrival   Arrival  @relation(fields: [arrivalId], references: [id])
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  viewedAt  DateTime @default(now())
+
+  @@unique([arrivalId, companyId])
+  @@map("arrival_views")
+}
+
+/// Настройки приложения уровня ключ-значение, редактируются в админке
+/// (задача 015: `defaultPointCityId`). Значение — всегда строка; парсинг на
+/// стороне использующего кода.
+model AppSetting {
+  key   String @id
+  value String
+
+  @@map("app_settings")
 }
 
 model Cargo {

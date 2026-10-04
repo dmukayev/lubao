@@ -8,6 +8,7 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
+import 'announce_arrival_sheet.dart';
 
 class CargoFeedScreen extends ConsumerWidget {
   const CargoFeedScreen({super.key});
@@ -152,20 +153,40 @@ class _AnonsCard extends ConsumerWidget {
 
   final ReferenceData refData;
 
+  Future<void> _openSheet(BuildContext context, WidgetRef ref, {ArrivalTemplate? template}) async {
+    final driver = ref.read(sessionProvider)?.driver;
+    final result = await showAnnounceArrivalSheet(
+      context,
+      refData: refData,
+      template: template,
+      driverAnyCountry: driver?.anyCountry ?? false,
+      driverDirectionCountryIds: driver?.directionCountryIds ?? const [],
+    );
+    if (result == true) {
+      ref.invalidate(myArrivalProvider);
+      ref.invalidate(arrivalTemplateProvider);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final arrivalAsync = ref.watch(myArrivalProvider);
-    final driver = ref.watch(sessionProvider)?.driver;
 
     Future<void> checkIn() async {
       await ref.read(arrivalRepositoryProvider).checkIn();
       ref.invalidate(myArrivalProvider);
     }
 
-    Future<void> leave() async {
-      await ref.read(arrivalRepositoryProvider).leave();
+    Future<void> cancel() async {
+      await ref.read(arrivalRepositoryProvider).cancel();
+      ref.invalidate(myArrivalProvider);
+      ref.invalidate(arrivalTemplateProvider);
+    }
+
+    Future<void> repeat() async {
+      await ref.read(arrivalRepositoryProvider).repeat();
       ref.invalidate(myArrivalProvider);
     }
 
@@ -179,6 +200,7 @@ class _AnonsCard extends ConsumerWidget {
         data: (arrival) {
           final pill = _Pill(label: t.driverHomeAnonsTitle);
           if (arrival == null) {
+            final templateAsync = ref.watch(arrivalTemplateProvider);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -189,18 +211,39 @@ class _AnonsCard extends ConsumerWidget {
                   style: AppTextStyles.body.copyWith(color: Colors.white),
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                AccentButton(label: t.driverHomeCheckInButton, icon: LucideIcons.mapPin, onPressed: checkIn),
+                AccentButton(
+                  label: t.driverHomeAnnounceButton,
+                  icon: LucideIcons.calendarPlus,
+                  onPressed: () => _openSheet(context, ref),
+                ),
+                templateAsync.maybeWhen(
+                  data: (template) => template == null
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.sm),
+                          child: Center(
+                            child: TextButton(
+                              onPressed: repeat,
+                              child: Text(
+                                t.driverHomeRepeatButton,
+                                style: AppTextStyles.caption.copyWith(color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ),
+                  orElse: () => const SizedBox.shrink(),
+                ),
               ],
             );
           }
 
           final point = refData.pointById(arrival.pointId);
+          final isOnSite = arrival.status == ArrivalStatus.onSite;
           final countryChips = <Widget>[
-            if (driver?.anyCountry ?? false)
+            if (arrival.anyCountry)
               _Pill(label: t.driverSetupAnyCountry)
             else
-              for (final countryId in driver?.directionCountryIds ?? const <String>[])
-                CountryCode(code: refData.countryById(countryId).code, onDark: true),
+              for (final countryId in arrival.countryIds) CountryCode(code: refData.countryById(countryId).code, onDark: true),
           ];
 
           return Column(
@@ -213,7 +256,7 @@ class _AnonsCard extends ConsumerWidget {
                   Icon(LucideIcons.eye, color: Colors.white.withAlpha(200), size: 16),
                   const SizedBox(width: AppSpacing.xs),
                   Text(
-                    t.driverHomeLogistsCount(arrival.logistsCount),
+                    t.driverHomeLogistsCount(arrival.viewsCount),
                     style: AppTextStyles.caption.copyWith(color: Colors.white.withAlpha(200)),
                   ),
                 ],
@@ -222,7 +265,9 @@ class _AnonsCard extends ConsumerWidget {
               Text(point.name.forLanguageCode(locale), style: AppTextStyles.headline.copyWith(color: Colors.white)),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                t.driverHomeSince(formatDateTime(arrival.arrivedAt)),
+                isOnSite
+                    ? t.driverHomeSince(formatDateTime(arrival.arrivedAt ?? arrival.plannedAt))
+                    : t.driverHomePlannedFor(formatDateTime(arrival.plannedAt)),
                 style: AppTextStyles.body.copyWith(color: Colors.white.withAlpha(200)),
               ),
               if (countryChips.isNotEmpty) ...[
@@ -230,13 +275,33 @@ class _AnonsCard extends ConsumerWidget {
                 Wrap(spacing: AppSpacing.sm, runSpacing: AppSpacing.sm, children: countryChips),
               ],
               const SizedBox(height: AppSpacing.lg),
-              AccentButton(label: t.driverHomeCheckInButton, icon: LucideIcons.mapPin, onPressed: checkIn),
-              const SizedBox(height: AppSpacing.sm),
-              Center(
-                child: TextButton(
-                  onPressed: leave,
-                  child: Text(t.driverHomeLeaveButton, style: AppTextStyles.caption.copyWith(color: Colors.white)),
-                ),
+              if (!isOnSite) ...[
+                AccentButton(label: t.driverHomeCheckInButton, icon: LucideIcons.mapPin, onPressed: checkIn),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => _openSheet(
+                      context,
+                      ref,
+                      template: ArrivalTemplate(
+                        pointId: arrival.pointId,
+                        anyCountry: arrival.anyCountry,
+                        countryIds: arrival.countryIds,
+                      ),
+                    ),
+                    child: Text(t.driverHomeEditButton, style: AppTextStyles.caption.copyWith(color: Colors.white)),
+                  ),
+                  TextButton(
+                    onPressed: cancel,
+                    child: Text(
+                      isOnSite ? t.driverHomeLeaveButton : t.driverHomeCancelButton,
+                      style: AppTextStyles.caption.copyWith(color: Colors.white),
+                    ),
+                  ),
+                ],
               ),
             ],
           );

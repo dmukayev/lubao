@@ -295,6 +295,17 @@ async function main() {
     });
   }
 
+  // Точка загрузки по умолчанию (задача 015) — город из справочника по
+  // стабильному коду, не текстом "Хоргос" (решение 2026-10-04).
+  const defaultPointCity = await prisma.city.findUnique({ where: { code: 'KZ-ZHETYSU-KHORGOS' } });
+  if (defaultPointCity) {
+    await prisma.appSetting.upsert({
+      where: { key: 'defaultPointCityId' },
+      update: { value: defaultPointCity.id },
+      create: { key: 'defaultPointCityId', value: defaultPointCity.id },
+    });
+  }
+
   console.log('Seed завершён.');
 }
 

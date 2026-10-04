@@ -60,6 +60,11 @@ export class SetActiveDto {
   isActive!: boolean;
 }
 
+export class SetAppSettingDto {
+  @IsString()
+  value!: string;
+}
+
 export class ModerateCityDto {
   @IsIn(['APPROVE', 'MERGE', 'REJECT'])
   action!: 'APPROVE' | 'MERGE' | 'REJECT';

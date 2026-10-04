@@ -27,6 +27,7 @@ class ReferenceDataRepository {
               ?.map((e) => ExchangeRate.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
+      defaultPointCityId: data['defaultPointCityId'] as String?,
     );
   }
 

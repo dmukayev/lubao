@@ -139,6 +139,7 @@ class ReferenceData {
     required this.permits,
     required this.points,
     this.exchangeRates = const [],
+    this.defaultPointCityId,
   });
 
   final List<Country> countries;
@@ -148,6 +149,11 @@ class ReferenceData {
   final List<Permit> permits;
   final List<LoadingPoint> points;
   final List<ExchangeRate> exchangeRates;
+
+  /// Точка загрузки по умолчанию (задача 015, `app_settings`) — пока
+  /// активна только одна точка, выбор города не показываем, но id уже
+  /// пробрасываем для будущего (задача 008 — несколько терминалов).
+  final String? defaultPointCityId;
 
   Country countryById(String id) => countries.firstWhere((c) => c.id == id, orElse: () => countries.first);
   City? cityById(String? id) => id == null ? null : cities.where((c) => c.id == id).firstOrNull;

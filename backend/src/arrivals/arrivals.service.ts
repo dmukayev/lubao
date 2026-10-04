@@ -1,107 +1,261 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Arrival } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AnnounceArrivalDto } from './dto/arrival.dto';
+
+const MAX_DAYS_AHEAD = 14;
+const STALE_AFTER_HOURS = 24;
+
+function startOfDay(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function sameDay(a: Date, b: Date): boolean {
+  return startOfDay(a).getTime() === startOfDay(b).getTime();
+}
 
 @Injectable()
 export class ArrivalsService {
   constructor(private readonly prisma: PrismaService) {}
 
   private async toDto(arrival: Arrival) {
-    const logists = await this.prisma.cargo.groupBy({
-      by: ['companyId'],
-      where: { pointId: arrival.pointId, status: 'PUBLISHED' },
-    });
+    const [directions, viewsCount] = await Promise.all([
+      this.prisma.arrivalDirection.findMany({ where: { arrivalId: arrival.id }, select: { countryId: true } }),
+      this.prisma.arrivalView.count({ where: { arrivalId: arrival.id } }),
+    ]);
 
     return {
       id: arrival.id,
       pointId: arrival.pointId,
+      plannedAt: arrival.plannedAt,
       arrivedAt: arrival.arrivedAt,
-      expectedDepartureAt: arrival.expectedDepartureAt,
+      waitDays: arrival.waitDays,
+      anyCountry: arrival.anyCountry,
+      countryIds: directions.map((d) => d.countryId),
       status: arrival.status,
-      logistsCount: logists.length,
+      viewsCount,
     };
+  }
+
+  /// PLANNED, чей plannedAt прошёл больше чем на 24 ч без перехода в
+  /// ON_SITE, сам угасает (п. 4 задачи 015). Полноценный фоновый cron —
+  /// задача 018; здесь — ленивая проверка при каждом чтении, достаточная
+  /// для текущего масштаба.
+  private async expireStale(where: { driverId: string } | Record<string, never> = {}) {
+    const staleBefore = new Date(Date.now() - STALE_AFTER_HOURS * 60 * 60 * 1000);
+    await this.prisma.arrival.updateMany({
+      where: { ...where, status: 'PLANNED', plannedAt: { lt: staleBefore } },
+      data: { status: 'CANCELLED' },
+    });
   }
 
   async getMine(userId: string) {
     const driver = await this.prisma.driver.findUnique({ where: { userId } });
     if (!driver) throw new NotFoundException('Driver profile not found');
 
+    await this.expireStale({ driverId: driver.id });
+
     const arrival = await this.prisma.arrival.findFirst({
-      where: { driverId: driver.id, status: 'ACTIVE' },
-      orderBy: { arrivedAt: 'desc' },
+      where: { driverId: driver.id, status: { in: ['PLANNED', 'ON_SITE'] } },
+      orderBy: { createdAt: 'desc' },
     });
     return arrival ? this.toDto(arrival) : null;
   }
 
-  /// «Я уже на месте»: подтверждает присутствие в единственной активной точке
-  /// старта (сейчас — только Хоргос). Повторный вызов просто обновляет
-  /// arrivedAt на текущий момент — логисты должны видеть, что водитель
-  /// на месте СЕЙЧАС, а не был там когда-то раньше.
+  /// Шаблон для «Повторить прошлый анонс» (п. 6) — последний отменённый
+  /// или завершённый анонс водителя, без привязки к дате.
+  async getLastTemplate(userId: string) {
+    const driver = await this.prisma.driver.findUnique({ where: { userId } });
+    if (!driver) throw new NotFoundException('Driver profile not found');
+
+    const last = await this.prisma.arrival.findFirst({
+      where: { driverId: driver.id, status: { in: ['COMPLETED', 'CANCELLED'] } },
+      orderBy: { updatedAt: 'desc' },
+    });
+    if (!last) return null;
+
+    const directions = await this.prisma.arrivalDirection.findMany({
+      where: { arrivalId: last.id },
+      select: { countryId: true },
+    });
+    return { pointId: last.pointId, anyCountry: last.anyCountry, countryIds: directions.map((d) => d.countryId) };
+  }
+
+  /// Анонс «буду на точке» — создаёт новый активный анонс или обновляет уже
+  /// существующий PLANNED (один активный анонс на водителя, п. 2). Если
+  /// водитель уже ON_SITE, дата/точка не трогаются — меняются только
+  /// направления/срок ожидания на эту поездку.
+  async announce(userId: string, dto: AnnounceArrivalDto) {
+    const driver = await this.prisma.driver.findUnique({ where: { userId } });
+    if (!driver) throw new NotFoundException('Driver profile not found');
+
+    const point = await this.prisma.point.findUnique({ where: { id: dto.pointId } });
+    if (!point || !point.isActive) throw new NotFoundException('Point not found');
+
+    const plannedAt = new Date(dto.plannedAt);
+    const maxDate = new Date(Date.now() + MAX_DAYS_AHEAD * 24 * 60 * 60 * 1000);
+    if (plannedAt > maxDate) {
+      throw new BadRequestException(`plannedAt must be within ${MAX_DAYS_AHEAD} days`);
+    }
+
+    const anyCountry = dto.anyCountry ?? false;
+    const countryIds = anyCountry ? [] : (dto.countryIds ?? []);
+    const waitDays = dto.waitDays ?? 2;
+
+    const existing = await this.prisma.arrival.findFirst({
+      where: { driverId: driver.id, status: { in: ['PLANNED', 'ON_SITE'] } },
+    });
+
+    const arrival = await this.prisma.$transaction(async (tx) => {
+      const saved =
+        existing && existing.status === 'ON_SITE'
+          ? await tx.arrival.update({ where: { id: existing.id }, data: { anyCountry, waitDays } })
+          : existing
+            ? await tx.arrival.update({
+                where: { id: existing.id },
+                data: { pointId: dto.pointId, plannedAt, anyCountry, waitDays, status: 'PLANNED' },
+              })
+            : await tx.arrival.create({
+                data: { driverId: driver.id, pointId: dto.pointId, plannedAt, anyCountry, waitDays, status: 'PLANNED' },
+              });
+
+      await tx.arrivalDirection.deleteMany({ where: { arrivalId: saved.id } });
+      if (!anyCountry && countryIds.length > 0) {
+        await tx.arrivalDirection.createMany({
+          data: countryIds.map((countryId) => ({ arrivalId: saved.id, countryId })),
+          skipDuplicates: true,
+        });
+      }
+      return saved;
+    });
+
+    return this.toDto(arrival);
+  }
+
+  /// «Повторить прошлый анонс» (п. 6) — тот же терминал и страны, дата —
+  /// сегодня.
+  async repeat(userId: string) {
+    const template = await this.getLastTemplate(userId);
+    if (!template) throw new NotFoundException('No previous announcement to repeat');
+
+    return this.announce(userId, {
+      pointId: template.pointId,
+      plannedAt: new Date().toISOString(),
+      anyCountry: template.anyCountry,
+      countryIds: template.countryIds,
+    });
+  }
+
+  /// «Я уже на месте»: переводит PLANNED в ON_SITE. Если активного анонса
+  /// нет — короткий путь без похода в шторку (как раньше): анонс создаётся
+  /// сразу ON_SITE на первой активной точке с направлениями из профиля.
   async checkIn(userId: string) {
     const driver = await this.prisma.driver.findUnique({ where: { userId } });
     if (!driver) throw new NotFoundException('Driver profile not found');
 
+    const existing = await this.prisma.arrival.findFirst({
+      where: { driverId: driver.id, status: { in: ['PLANNED', 'ON_SITE'] } },
+    });
+
+    if (existing) {
+      const arrival = await this.prisma.arrival.update({
+        where: { id: existing.id },
+        data: { status: 'ON_SITE', arrivedAt: new Date() },
+      });
+      return this.toDto(arrival);
+    }
+
     const point = await this.prisma.point.findFirst({ where: { isActive: true } });
     if (!point) throw new NotFoundException('No active loading point configured');
 
-    const existing = await this.prisma.arrival.findFirst({
-      where: { driverId: driver.id, status: 'ACTIVE' },
-    });
+    const directions = await this.prisma.driverDirection.findMany({ where: { driverId: driver.id } });
 
-    const arrival = existing
-      ? await this.prisma.arrival.update({
-          where: { id: existing.id },
-          data: { pointId: point.id, arrivedAt: new Date() },
-        })
-      : await this.prisma.arrival.create({
-          data: { driverId: driver.id, pointId: point.id, arrivedAt: new Date() },
+    const arrival = await this.prisma.$transaction(async (tx) => {
+      const saved = await tx.arrival.create({
+        data: {
+          driverId: driver.id,
+          pointId: point.id,
+          plannedAt: new Date(),
+          arrivedAt: new Date(),
+          status: 'ON_SITE',
+          anyCountry: driver.anyCountry,
+        },
+      });
+      if (!driver.anyCountry && directions.length > 0) {
+        await tx.arrivalDirection.createMany({
+          data: directions.map((d) => ({ arrivalId: saved.id, countryId: d.countryId })),
+          skipDuplicates: true,
         });
+      }
+      return saved;
+    });
 
     return this.toDto(arrival);
   }
 
-  async leave(userId: string) {
+  /// «Отменить» (и алиас для старого «Я уехал») — завершает активный анонс.
+  async cancel(userId: string) {
     const driver = await this.prisma.driver.findUnique({ where: { userId } });
     if (!driver) throw new NotFoundException('Driver profile not found');
 
     const existing = await this.prisma.arrival.findFirst({
-      where: { driverId: driver.id, status: 'ACTIVE' },
+      where: { driverId: driver.id, status: { in: ['PLANNED', 'ON_SITE'] } },
     });
     if (!existing) return null;
 
-    const arrival = await this.prisma.arrival.update({
-      where: { id: existing.id },
-      data: { status: 'COMPLETED' },
-    });
+    const status = existing.status === 'ON_SITE' ? 'COMPLETED' : 'CANCELLED';
+    const arrival = await this.prisma.arrival.update({ where: { id: existing.id }, data: { status } });
     return this.toDto(arrival);
   }
 
-  /// «Кто будет на Хоргосе» — список водителей, которые сейчас на активной
-  /// точке, для логистов. N+1 по машине/направлениям — приемлемо на текущем
-  /// масштабе (тот же подход, что и в DriversService.toDto).
-  async listForCompany(filters: {
-    countryId?: string;
-    bodyTypeId?: string;
-    minCapacityTons?: number;
-    verifiedOnly?: boolean;
-  }) {
+  /// «Кто будет на точке» (макет 06) — для логиста, по дню. `date` не задан
+  /// → сегодня. Для сегодняшнего дня считаются и ON_SITE, и PLANNED на
+  /// сегодня; для остальных дней — только PLANNED на этот день (п. 10).
+  /// Фильтр по стране — по направлениям ЭТОЙ поездки (ArrivalDirection),
+  /// не по постоянному профилю водителя (п. 12 — отличие от старой версии).
+  async listForCompany(
+    companyId: string,
+    filters: {
+      date?: Date;
+      pointId?: string;
+      countryId?: string;
+      bodyTypeId?: string;
+      minCapacityTons?: number;
+      verifiedOnly?: boolean;
+    },
+  ) {
+    await this.expireStale();
+
+    const targetDate = filters.date ?? new Date();
+    const isToday = sameDay(targetDate, new Date());
+
     const arrivals = await this.prisma.arrival.findMany({
-      where: { status: 'ACTIVE' },
-      include: { driver: { include: { user: true } } },
-      orderBy: { arrivedAt: 'desc' },
+      where: {
+        status: { in: ['PLANNED', 'ON_SITE'] },
+        pointId: filters.pointId,
+      },
+      include: { driver: { include: { user: true } }, directions: true },
+      orderBy: { plannedAt: 'asc' },
+    });
+
+    const dayFiltered = arrivals.filter((a) => {
+      if (isToday && a.status === 'ON_SITE') return true;
+      return sameDay(a.plannedAt, targetDate);
     });
 
     const rows = await Promise.all(
-      arrivals.map(async (arrival) => {
-        const [vehicle, directions] = await Promise.all([
-          this.prisma.vehicle.findFirst({ where: { driverId: arrival.driverId }, orderBy: { createdAt: 'asc' } }),
-          this.prisma.driverDirection.findMany({ where: { driverId: arrival.driverId } }),
-        ]);
-        return { arrival, vehicle, directionCountryIds: directions.map((d) => d.countryId) };
+      dayFiltered.map(async (arrival) => {
+        const vehicle = await this.prisma.vehicle.findFirst({
+          where: { driverId: arrival.driverId },
+          orderBy: { createdAt: 'asc' },
+        });
+        return { arrival, vehicle };
       }),
     );
 
-    return rows
+    const filtered = rows
       .filter((r) => !filters.verifiedOnly || r.arrival.driver.isVerified)
       .filter((r) => !filters.bodyTypeId || r.vehicle?.bodyTypeId === filters.bodyTypeId)
       .filter(
@@ -110,21 +264,62 @@ export class ArrivalsService {
           (r.vehicle?.capacityTons != null && Number(r.vehicle.capacityTons) >= filters.minCapacityTons!),
       )
       .filter(
-        (r) => !filters.countryId || r.arrival.driver.anyCountry || r.directionCountryIds.includes(filters.countryId!),
-      )
-      .map((r) => ({
-        arrivalId: r.arrival.id,
-        driverId: r.arrival.driver.id,
-        driverName: r.arrival.driver.fullName,
-        phone: r.arrival.driver.user.phone,
-        isVerified: r.arrival.driver.isVerified,
-        ratingAvg: Number(r.arrival.driver.ratingAvg),
-        ratingCount: r.arrival.driver.ratingCount,
-        arrivedAt: r.arrival.arrivedAt,
-        bodyTypeId: r.vehicle?.bodyTypeId ?? null,
-        capacityTons: r.vehicle?.capacityTons ? Number(r.vehicle.capacityTons) : null,
-        anyCountry: r.arrival.driver.anyCountry,
-        directionCountryIds: r.directionCountryIds,
-      }));
+        (r) =>
+          !filters.countryId ||
+          r.arrival.anyCountry ||
+          r.arrival.directions.some((d) => d.countryId === filters.countryId),
+      );
+
+    if (filtered.length > 0) {
+      await this.prisma.arrivalView.createMany({
+        data: filtered.map((r) => ({ arrivalId: r.arrival.id, companyId })),
+        skipDuplicates: true,
+      });
+    }
+
+    return filtered.map((r) => ({
+      arrivalId: r.arrival.id,
+      driverId: r.arrival.driver.id,
+      driverName: r.arrival.driver.fullName,
+      phone: r.arrival.driver.user.phone,
+      isVerified: r.arrival.driver.isVerified,
+      ratingAvg: Number(r.arrival.driver.ratingAvg),
+      ratingCount: r.arrival.driver.ratingCount,
+      pointId: r.arrival.pointId,
+      status: r.arrival.status,
+      plannedAt: r.arrival.plannedAt,
+      arrivedAt: r.arrival.arrivedAt,
+      bodyTypeId: r.vehicle?.bodyTypeId ?? null,
+      capacityTons: r.vehicle?.capacityTons ? Number(r.vehicle.capacityTons) : null,
+      anyCountry: r.arrival.anyCountry,
+      directionCountryIds: r.arrival.directions.map((d) => d.countryId),
+    }));
+  }
+
+  /// Полоса дней у логиста (п. 9-10) — число водителей по каждому из
+  /// ближайших `days` дней, начиная с сегодня.
+  async summary(days: number, pointId?: string) {
+    await this.expireStale();
+
+    const today = startOfDay(new Date());
+    const arrivals = await this.prisma.arrival.findMany({
+      where: { status: { in: ['PLANNED', 'ON_SITE'] }, pointId },
+      select: { plannedAt: true, status: true },
+    });
+
+    const result: { date: string; count: number }[] = [];
+    for (let i = 0; i < days; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() + i);
+      const isToday = i === 0;
+      // ON_SITE считается только в сегодняшний день, даже если plannedAt
+      // (когда собирались приехать) приходится на другую дату — водитель
+      // физически уже на месте сейчас, а не "планируется" на будущий день.
+      const count = arrivals.filter((a) =>
+        isToday ? a.status === 'ON_SITE' || sameDay(a.plannedAt, date) : a.status === 'PLANNED' && sameDay(a.plannedAt, date),
+      ).length;
+      result.push({ date: date.toISOString(), count });
+    }
+    return result;
   }
 }

@@ -1,23 +1,29 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AppSettingsService } from '../app-settings/app-settings.service';
 import { SubmitCityDto } from './dto/submit-city.dto';
 
 @Injectable()
 export class ReferenceDataService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly appSettings: AppSettingsService,
+  ) {}
 
   async getAll() {
-    const [countries, regions, cities, bodyTypes, permits, points, exchangeRates] = await Promise.all([
-      this.prisma.country.findMany({ orderBy: { sortOrder: 'asc' } }),
-      this.prisma.region.findMany(),
-      this.prisma.city.findMany(),
-      this.prisma.bodyType.findMany({ orderBy: { sortOrder: 'asc' } }),
-      this.prisma.permit.findMany({ orderBy: { sortOrder: 'asc' } }),
-      this.prisma.point.findMany({ where: { isActive: true } }),
-      this.latestExchangeRates(),
-    ]);
+    const [countries, regions, cities, bodyTypes, permits, points, exchangeRates, defaultPointCityId] =
+      await Promise.all([
+        this.prisma.country.findMany({ orderBy: { sortOrder: 'asc' } }),
+        this.prisma.region.findMany(),
+        this.prisma.city.findMany(),
+        this.prisma.bodyType.findMany({ orderBy: { sortOrder: 'asc' } }),
+        this.prisma.permit.findMany({ orderBy: { sortOrder: 'asc' } }),
+        this.prisma.point.findMany({ where: { isActive: true } }),
+        this.latestExchangeRates(),
+        this.appSettings.get('defaultPointCityId'),
+      ]);
 
-    return { countries, regions, cities, bodyTypes, permits, points, exchangeRates };
+    return { countries, regions, cities, bodyTypes, permits, points, exchangeRates, defaultPointCityId };
   }
 
   /// Водитель/логист не нашёл свой город в справочнике — создаём его сразу
