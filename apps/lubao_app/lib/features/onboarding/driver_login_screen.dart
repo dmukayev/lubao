@@ -143,7 +143,10 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
           children: [
             referenceData.when(
               loading: () => const LoadingView(),
-              error: (e, st) => ErrorView(message: t.commonError),
+              error: (e, st) {
+                debugPrint('DriverLoginScreen: $e');
+                return ErrorView(message: t.commonError);
+              },
               data: (refData) {
                 final countries = refData.countries.where((c) => countryDialCodes.containsKey(c.code)).toList();
                 return InputDecorator(

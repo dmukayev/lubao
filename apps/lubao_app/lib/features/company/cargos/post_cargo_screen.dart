@@ -132,7 +132,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       appBar: AppBar(title: Text(_isEditing ? t.editCargoTitle : t.postCargoTitle)),
       body: referenceData.when(
         loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(message: t.commonError),
+        error: (e, st) {
+          debugPrint('PostCargoScreen: $e');
+          return ErrorView(message: t.commonError);
+        },
         data: (refData) {
           final destinationOptions = refData.countryCityOptions(locale, wholeCountrySuffix: t.wholeCountrySuffix);
           String initialDestinationLabel = '';

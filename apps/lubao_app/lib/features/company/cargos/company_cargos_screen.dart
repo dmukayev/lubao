@@ -26,7 +26,10 @@ class CompanyCargosScreen extends ConsumerWidget {
       ),
       body: cargos.when(
         loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(myCargosProvider)),
+        error: (e, st) {
+          debugPrint('CompanyCargosScreen: $e');
+          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(myCargosProvider));
+        },
         data: (list) {
           if (list.isEmpty) return EmptyState(message: t.myCargosEmpty);
           final refData = referenceData.valueOrNull;

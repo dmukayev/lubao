@@ -61,10 +61,16 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
       appBar: AppBar(title: Text(t.cargoDetailTitle)),
       body: cargoAsync.when(
         loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(message: t.commonError),
+        error: (e, st) {
+          debugPrint('CargoDetailScreen (cargo): $e');
+          return ErrorView(message: t.commonError);
+        },
         data: (cargo) => referenceData.when(
           loading: () => const LoadingView(),
-          error: (e, st) => ErrorView(message: t.commonError),
+          error: (e, st) {
+            debugPrint('CargoDetailScreen (referenceData): $e');
+            return ErrorView(message: t.commonError);
+          },
           data: (refData) => _CargoDetailBody(cargo: cargo, refData: refData),
         ),
       ),

@@ -164,7 +164,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Expanded(
             child: messagesAsync.when(
               loading: () => const LoadingView(),
-              error: (e, st) => ErrorView(message: t.commonError),
+              error: (e, st) {
+                debugPrint('ChatScreen: $e');
+                return ErrorView(message: t.commonError);
+              },
               data: (list) {
                 if (list.isEmpty) return EmptyState(message: t.chatEmpty, icon: LucideIcons.messageCircle);
                 final showConfirmCard = isDriver && deal?.status == DealStatus.selected;

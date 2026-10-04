@@ -25,14 +25,20 @@ class CargoFeedScreen extends ConsumerWidget {
       body: SafeArea(
         child: referenceData.when(
           loading: () => const LoadingView(),
-          error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(referenceDataProvider)),
+          error: (e, st) {
+            debugPrint('CargoFeedScreen (referenceData): $e');
+            return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(referenceDataProvider));
+          },
           data: (refData) => cargoFeed.when(
             loading: () => const LoadingView(),
-            error: (e, st) => ErrorView(
-              message: t.commonError,
-              onRetry: () => ref.invalidate(cargoFeedProvider),
-              retryLabel: t.commonRetry,
-            ),
+            error: (e, st) {
+              debugPrint('CargoFeedScreen (cargoFeed): $e');
+              return ErrorView(
+                message: t.commonError,
+                onRetry: () => ref.invalidate(cargoFeedProvider),
+                retryLabel: t.commonRetry,
+              );
+            },
             data: (cargos) {
               final homeCity = driver == null ? null : refData.cityById(driver.homeCityId);
               final items = sortCargoFeed(
@@ -196,16 +202,19 @@ class _AnonsCard extends ConsumerWidget {
       decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(AppRadius.cardLarge)),
       child: arrivalAsync.when(
         loading: () => const SizedBox(height: 160, child: Center(child: CircularProgressIndicator(color: Colors.white))),
-        error: (e, st) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(t.commonError, style: AppTextStyles.body.copyWith(color: Colors.white)),
-            TextButton(
-              onPressed: () => ref.invalidate(myArrivalProvider),
-              child: Text(t.commonRetry, style: AppTextStyles.body.copyWith(color: Colors.white)),
-            ),
-          ],
-        ),
+        error: (e, st) {
+          debugPrint('CargoFeedScreen (myArrival): $e');
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.commonError, style: AppTextStyles.body.copyWith(color: Colors.white)),
+              TextButton(
+                onPressed: () => ref.invalidate(myArrivalProvider),
+                child: Text(t.commonRetry, style: AppTextStyles.body.copyWith(color: Colors.white)),
+              ),
+            ],
+          );
+        },
         data: (arrival) {
           final pill = _Pill(label: t.driverHomeAnonsTitle);
           if (arrival == null) {

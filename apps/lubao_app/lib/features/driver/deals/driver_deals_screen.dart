@@ -20,7 +20,10 @@ class DriverDealsScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(t.dealsTitle)),
       body: deals.when(
         loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(dealsMineProvider)),
+        error: (e, st) {
+          debugPrint('DriverDealsScreen: $e');
+          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(dealsMineProvider));
+        },
         data: (list) {
           if (list.isEmpty) return EmptyState(message: t.dealsEmpty);
           final refData = referenceData.valueOrNull;

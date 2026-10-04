@@ -123,7 +123,10 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
       ),
       body: dealAsync.when(
         loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(message: t.commonError),
+        error: (e, st) {
+          debugPrint('DealDetailScreen: $e');
+          return ErrorView(message: t.commonError);
+        },
         data: (deal) {
           final (statusLabel, statusColor) = dealStatusPresentation(t, deal.status);
           return SingleChildScrollView(
@@ -237,7 +240,10 @@ class _ReviewsSection extends ConsumerWidget {
 
     return reviewsAsync.when(
       loading: () => const LoadingView(),
-      error: (e, st) => Text(t.commonError),
+      error: (e, st) {
+        debugPrint('DealDetailScreen (reviews): $e');
+        return Text(t.commonError);
+      },
       data: (reviews) {
         final myRole = session?.user.role == UserRole.driver ? UserRole.driver : UserRole.company;
         final alreadyReviewed = reviews.any((r) => r.authorRole == myRole);

@@ -61,7 +61,10 @@ export class ArrivalsService {
       where: { driverId: driver.id, status: { in: ['PLANNED', 'ON_SITE'] } },
       orderBy: { createdAt: 'desc' },
     });
-    return arrival ? this.toDto(arrival) : null;
+    // Обёртка в объект, а не голый null (задача 027): NestJS отдаёт bare
+    // null пустым телом без Content-Type, и Dio кладёт в res.data пустую
+    // строку '' вместо null — `'' as Map` падает на клиенте.
+    return { arrival: arrival ? await this.toDto(arrival) : null };
   }
 
   /// Шаблон для «Повторить прошлый анонс» (п. 6) — последний отменённый
@@ -74,13 +77,15 @@ export class ArrivalsService {
       where: { driverId: driver.id, status: { in: ['COMPLETED', 'CANCELLED'] } },
       orderBy: { updatedAt: 'desc' },
     });
-    if (!last) return null;
+    if (!last) return { template: null };
 
     const directions = await this.prisma.arrivalDirection.findMany({
       where: { arrivalId: last.id },
       select: { countryId: true },
     });
-    return { pointId: last.pointId, anyCountry: last.anyCountry, countryIds: directions.map((d) => d.countryId) };
+    return {
+      template: { pointId: last.pointId, anyCountry: last.anyCountry, countryIds: directions.map((d) => d.countryId) },
+    };
   }
 
   /// Анонс «буду на точке» — создаёт новый активный анонс или обновляет уже
@@ -137,7 +142,7 @@ export class ArrivalsService {
   /// «Повторить прошлый анонс» (п. 6) — тот же терминал и страны, дата —
   /// сегодня.
   async repeat(userId: string) {
-    const template = await this.getLastTemplate(userId);
+    const { template } = await this.getLastTemplate(userId);
     if (!template) throw new NotFoundException('No previous announcement to repeat');
 
     return this.announce(userId, {

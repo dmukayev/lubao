@@ -287,7 +287,10 @@ class CompanyProfileScreen extends ConsumerWidget {
           Text(t.profileMembers, style: Theme.of(context).textTheme.titleSmall),
           members.when(
             loading: () => const LoadingView(),
-            error: (e, st) => Text(t.commonError),
+            error: (e, st) {
+              debugPrint('CompanyProfileScreen (members): $e');
+              return Text(t.commonError);
+            },
             data: (list) => Column(
               children: list
                   .map((m) => ListTile(

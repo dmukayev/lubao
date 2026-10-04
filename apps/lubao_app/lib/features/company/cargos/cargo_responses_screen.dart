@@ -74,7 +74,10 @@ class CargoResponsesScreen extends ConsumerWidget {
       ),
       body: responses.when(
         loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(cargoResponsesProvider(cargoId))),
+        error: (e, st) {
+          debugPrint('CargoResponsesScreen: $e');
+          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(cargoResponsesProvider(cargoId)));
+        },
         data: (list) {
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(cargoResponsesProvider(cargoId)),

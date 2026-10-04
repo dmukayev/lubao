@@ -164,7 +164,10 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
       ),
       body: referenceData.when(
         loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(message: t.commonError),
+        error: (e, st) {
+          debugPrint('DriversAtPointScreen: $e');
+          return ErrorView(message: t.commonError);
+        },
         data: (refData) => Column(
           children: [
             Padding(

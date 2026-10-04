@@ -127,7 +127,10 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
       appBar: AppBar(title: Text(t.companyRegisterTitle)),
       body: referenceData.when(
         loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(message: t.commonError),
+        error: (e, st) {
+          debugPrint('CompanyRegisterScreen: $e');
+          return ErrorView(message: t.commonError);
+        },
         data: (refData) {
           final china = refData.countries.where((c) => c.code == 'CN').firstOrNull;
           final kazakhstan = refData.countries.where((c) => c.code == 'KZ').firstOrNull;

@@ -8,16 +8,22 @@ class ArrivalRepository {
 
   Future<Arrival?> mine() async {
     final res = await _client.dio.get('/arrivals/me');
-    // Нет активного анонса → NestJS отдаёт `null` пустым телом без
-    // Content-Type, и Dio возвращает '' (пустую строку), а не null.
+    // Бэкенд всегда отдаёт объект-обёртку `{ arrival: ... | null }` (задача
+    // 027) — но на пустое тело без Content-Type (старые/прокси-ответы)
+    // Dio кладёт в res.data пустую строку, а не null, так что проверка типа
+    // всё равно нужна как защита от этого случая.
     final data = res.data;
-    return data is Map<String, dynamic> ? Arrival.fromJson(data) : null;
+    if (data is! Map<String, dynamic>) return null;
+    final arrival = data['arrival'];
+    return arrival is Map<String, dynamic> ? Arrival.fromJson(arrival) : null;
   }
 
   Future<ArrivalTemplate?> lastTemplate() async {
     final res = await _client.dio.get('/arrivals/last-template');
     final data = res.data;
-    return data is Map<String, dynamic> ? ArrivalTemplate.fromJson(data) : null;
+    if (data is! Map<String, dynamic>) return null;
+    final template = data['template'];
+    return template is Map<String, dynamic> ? ArrivalTemplate.fromJson(template) : null;
   }
 
   /// Анонс «буду на точке» (задача 015) — дата/время прибытия, точка,

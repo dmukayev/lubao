@@ -41,7 +41,10 @@ class DevicesScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(t.devicesTitle)),
       body: devicesAsync.when(
         loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(devicesProvider)),
+        error: (e, st) {
+          debugPrint('DevicesScreen: $e');
+          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(devicesProvider));
+        },
         data: (devices) {
           if (devices.isEmpty) {
             return EmptyState(message: t.devicesEmpty, icon: LucideIcons.smartphone);

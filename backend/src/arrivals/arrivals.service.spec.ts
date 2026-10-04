@@ -207,7 +207,7 @@ describe('ArrivalsService.getMine — lazy expiry', () => {
         data: { status: 'CANCELLED' },
       }),
     );
-    expect(result).toBeNull();
+    expect(result).toEqual({ arrival: null });
   });
 });
 

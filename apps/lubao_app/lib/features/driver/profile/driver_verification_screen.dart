@@ -36,7 +36,10 @@ class DriverVerificationScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(t.driverVerificationTitle)),
       body: docsAsync.when(
         loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(driverVerificationDocumentsProvider)),
+        error: (e, st) {
+          debugPrint('DriverVerificationScreen: $e');
+          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(driverVerificationDocumentsProvider));
+        },
         data: (docs) {
           final byType = {for (final d in docs) d.type: d};
           return ListView(
@@ -80,8 +83,8 @@ class _DocSlotState extends ConsumerState<_DocSlot> {
     setState(() => _uploading = true);
     try {
       final bytes = await picked.readAsBytes();
-      final url = await ref.read(uploadsRepositoryProvider).uploadImage(bytes, filename: picked.name);
-      await ref.read(driverRepositoryProvider).submitVerificationDocument(type: widget.type, fileUrl: url);
+      final key = await ref.read(uploadsRepositoryProvider).uploadDocument(bytes, filename: picked.name);
+      await ref.read(driverRepositoryProvider).submitVerificationDocument(type: widget.type, fileUrl: key);
       ref.invalidate(driverVerificationDocumentsProvider);
     } catch (_) {
       if (mounted) {
