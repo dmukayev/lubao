@@ -54,7 +54,7 @@ class CargoFeedScreen extends ConsumerWidget {
                   ref.invalidate(myArrivalProvider);
                 },
                 child: ListView(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                  padding: const EdgeInsets.only(top: AppSpacing.xxl, bottom: AppSpacing.lg),
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),

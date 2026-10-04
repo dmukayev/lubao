@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../shared/status_helpers.dart';
@@ -136,7 +137,33 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(t.announceArrivalTitle, style: AppTextStyles.title),
+              Row(
+                children: [
+                  Expanded(child: Text(t.announceArrivalTitle, style: AppTextStyles.title)),
+                  IconButton(
+                    icon: const Icon(LucideIcons.x),
+                    onPressed: () => Navigator.of(context).pop(),
+                    tooltip: t.commonBack,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              Text(t.announceArrivalWhere, style: AppTextStyles.bodyStrong),
+              const SizedBox(height: AppSpacing.sm),
+              InputDecorator(
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _pointId.isEmpty ? null : _pointId,
+                    isExpanded: true,
+                    items: widget.refData.points
+                        .map((p) => DropdownMenuItem(value: p.id, child: Text(p.name.forLanguageCode(locale))))
+                        .toList(),
+                    onChanged: (value) => setState(() => _pointId = value ?? _pointId),
+                  ),
+                ),
+              ),
               const SizedBox(height: AppSpacing.lg),
 
               Text(t.announceArrivalWhen, style: AppTextStyles.bodyStrong),
@@ -168,23 +195,6 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
                     onTap: _pickCustomDate,
                   ),
                 ],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              Text(t.announceArrivalWhere, style: AppTextStyles.bodyStrong),
-              const SizedBox(height: AppSpacing.sm),
-              InputDecorator(
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _pointId.isEmpty ? null : _pointId,
-                    isExpanded: true,
-                    items: widget.refData.points
-                        .map((p) => DropdownMenuItem(value: p.id, child: Text(p.name.forLanguageCode(locale))))
-                        .toList(),
-                    onChanged: (value) => setState(() => _pointId = value ?? _pointId),
-                  ),
-                ),
               ),
               const SizedBox(height: AppSpacing.lg),
 
