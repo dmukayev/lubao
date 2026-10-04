@@ -196,7 +196,16 @@ class _AnonsCard extends ConsumerWidget {
       decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(AppRadius.cardLarge)),
       child: arrivalAsync.when(
         loading: () => const SizedBox(height: 160, child: Center(child: CircularProgressIndicator(color: Colors.white))),
-        error: (e, st) => Text(t.commonError, style: const TextStyle(color: Colors.white)),
+        error: (e, st) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.commonError, style: AppTextStyles.body.copyWith(color: Colors.white)),
+            TextButton(
+              onPressed: () => ref.invalidate(myArrivalProvider),
+              child: Text(t.commonRetry, style: AppTextStyles.body.copyWith(color: Colors.white)),
+            ),
+          ],
+        ),
         data: (arrival) {
           final pill = _Pill(label: t.driverHomeAnonsTitle);
           if (arrival == null) {

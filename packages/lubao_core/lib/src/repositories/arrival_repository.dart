@@ -8,12 +8,16 @@ class ArrivalRepository {
 
   Future<Arrival?> mine() async {
     final res = await _client.dio.get('/arrivals/me');
-    return res.data == null ? null : Arrival.fromJson(res.data as Map<String, dynamic>);
+    // Нет активного анонса → NestJS отдаёт `null` пустым телом без
+    // Content-Type, и Dio возвращает '' (пустую строку), а не null.
+    final data = res.data;
+    return data is Map<String, dynamic> ? Arrival.fromJson(data) : null;
   }
 
   Future<ArrivalTemplate?> lastTemplate() async {
     final res = await _client.dio.get('/arrivals/last-template');
-    return res.data == null ? null : ArrivalTemplate.fromJson(res.data as Map<String, dynamic>);
+    final data = res.data;
+    return data is Map<String, dynamic> ? ArrivalTemplate.fromJson(data) : null;
   }
 
   /// Анонс «буду на точке» (задача 015) — дата/время прибытия, точка,
