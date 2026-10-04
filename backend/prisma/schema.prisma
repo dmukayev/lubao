@@ -22,6 +22,7 @@ enum Locale {
   kk
   ru
   zh
+  en
 }
 
 enum CompanyMemberRole {
@@ -404,6 +405,10 @@ model Company {
   legalAddress  String?
   taxId         String?
   isVerified    Boolean  @default(false)
+  /// Блокировка компании целиком (задача 026, п.5) — отдельно от
+  /// User.isBlocked у каждого сотрудника: блокировка компании блокирует
+  /// всех её участников И скрывает активные грузы из ленты водителя.
+  isBlocked     Boolean  @default(false)
   ratingAvg     Decimal  @default(0) @db.Decimal(3, 2)
   ratingCount   Int      @default(0)
   createdAt     DateTime @default(now())

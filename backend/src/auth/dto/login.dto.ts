@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, Length } from 'class-validator';
+import { IsEmail, IsIn, IsOptional, IsString, Length } from 'class-validator';
 
 export class RequestCodeDto {
   @IsString()
@@ -85,4 +85,13 @@ export class RefreshDto {
 export class LogoutDto {
   @IsString()
   refreshToken!: string;
+}
+
+/// Смена языка (задача 013) — хранится на сервере (`users.locale`), не
+/// только в состоянии клиента: push/WeCom/перевод чата и выбор языка
+/// синхронизируются на все устройства пользователя (decisions.md «Смена
+/// языка»).
+export class UpdateLocaleDto {
+  @IsIn(['kk', 'ru', 'zh', 'en'])
+  locale!: 'kk' | 'ru' | 'zh' | 'en';
 }

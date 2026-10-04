@@ -1,4 +1,5 @@
-import { IsBoolean, IsIn, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class ReviewVerificationDocumentDto {
   @IsIn(['APPROVED', 'REJECTED'])
@@ -17,6 +18,48 @@ export class ResolveComplaintDto {
 export class SetVerifiedDto {
   @IsBoolean()
   isVerified!: boolean;
+
+  @IsString()
+  reason!: string;
+
+  /// Поставить «Проверен» без всех одобренных обязательных документов —
+  /// только с явным флагом и причиной (задача 026, п.5: «проверил лично»).
+  @IsOptional()
+  @IsBoolean()
+  force?: boolean;
+}
+
+export class BlockUserDto {
+  @IsString()
+  reason!: string;
+}
+
+export class SearchQueryDto {
+  @IsOptional()
+  @IsString()
+  q?: string;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  verified?: boolean;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  blocked?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  pageSize?: number;
 }
 
 export class UpsertI18nNameDto {

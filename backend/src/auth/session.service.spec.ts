@@ -1,4 +1,4 @@
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { SessionService } from './session.service';
 
 function makePrismaMock() {
@@ -102,6 +102,19 @@ describe('SessionService', () => {
         'EX',
         30,
       );
+    });
+
+    it('rejects a blocked user with ACCOUNT_BLOCKED instead of issuing new tokens (задача 026, п.5)', async () => {
+      prisma.session.findUnique.mockResolvedValueOnce({
+        id: 'session-1',
+        userId: 'user-1',
+        revokedAt: null,
+        expiresAt: new Date(Date.now() + 1000),
+        user: { role: 'COMPANY', isBlocked: true },
+      });
+
+      await expect(service.rotateSession('old-refresh')).rejects.toThrow(ForbiddenException);
+      expect(prisma.session.updateMany).not.toHaveBeenCalled();
     });
 
     it('throws on an unknown refresh token — no grace-cache retry delay for garbage tokens', async () => {

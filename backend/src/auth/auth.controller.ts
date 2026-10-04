@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import { ClientIp } from '../common/client-ip.decorator';
 import { CurrentUser } from '../common/current-user.decorator';
 import { Public } from '../common/public.decorator';
@@ -13,6 +13,7 @@ import {
   RequestCodeDto,
   RequestPasswordResetDto,
   ResetPasswordDto,
+  UpdateLocaleDto,
   VerifyCodeDto,
   VerifyEmailDto,
 } from './dto/login.dto';
@@ -106,6 +107,12 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() ctx: RequestContext) {
     return this.auth.me(ctx.user.id);
+  }
+
+  @Patch('me/locale')
+  async setLocale(@CurrentUser() ctx: RequestContext, @Body() dto: UpdateLocaleDto) {
+    await this.auth.setLocale(ctx.user.id, dto.locale);
+    return { success: true };
   }
 
   @Get('sessions')

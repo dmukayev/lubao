@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
@@ -73,6 +73,14 @@ export class SessionService {
     const hash = this.tokens.hashToken(presentedRefreshToken);
 
     const session = await this.prisma.session.findUnique({ where: { refreshTokenHash: hash }, include: { user: true } });
+    // Блокировка (задача 026, п.5) — без этой проверки заблокированный
+    // пользователь тихо продолжал бы получать новые access-токены через
+    // /auth/refresh, даже когда JwtAuthGuard уже режет его на каждом другом
+    // запросе; явный код ACCOUNT_BLOCKED, а не generic 401, чтобы клиент
+    // показал понятный экран, а не бесконечный цикл релогина.
+    if (session?.user.isBlocked) {
+      throw new ForbiddenException({ code: 'ACCOUNT_BLOCKED', message: 'Аккаунт заблокирован' });
+    }
     if (session && !session.revokedAt && session.expiresAt > new Date()) {
       const newRefreshToken = this.tokens.generateRefreshToken();
       const newHash = this.tokens.hashToken(newRefreshToken);

@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcryptjs';
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
 /// Минимальная in-memory замена ioredis — только методы, которые реально
@@ -310,5 +310,44 @@ describe('AuthService email verification (задача 025, п. 7 — не бл�
 
     await expect(service.verifyEmail('u1', '000000')).rejects.toThrow(BadRequestException);
     expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthService — blocked accounts cannot log in (задача 026, п.5)', () => {
+  it('loginCompany: a blocked user with the right password still gets rejected with ACCOUNT_BLOCKED', async () => {
+    const passwordHash = await bcrypt.hash('correct-password', 4);
+    const prisma: any = {
+      user: { findUnique: jest.fn().mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'a@b.com', passwordHash, isBlocked: true }) },
+      companyMember: { findUnique: jest.fn() },
+    };
+    const redis = { client: new FakeRedisClient() };
+    const sessions = { createSession: jest.fn() };
+    const service = new AuthService(prisma, redis as any, {} as any, {} as any, {} as any, {} as any, sessions as any);
+
+    await expect(service.loginCompany('a@b.com', 'correct-password', '1.1.1.1')).rejects.toThrow(ForbiddenException);
+    expect(sessions.createSession).not.toHaveBeenCalled();
+  });
+
+  it('verifyDriverCode: a blocked existing driver still gets rejected with ACCOUNT_BLOCKED even with the right SMS code', async () => {
+    const prisma: any = {
+      user: { findUnique: jest.fn().mockResolvedValue({ id: 'u1', role: 'DRIVER', phone: '+77011234567', isBlocked: true }) },
+    };
+    const sms = { verifyCode: jest.fn().mockResolvedValue(true) };
+    const drivers = { findByUserId: jest.fn() };
+    const sessions = { createSession: jest.fn() };
+    const service = new AuthService(prisma, {} as any, drivers as any, {} as any, sms as any, {} as any, sessions as any);
+
+    await expect(service.verifyDriverCode('+77011234567', '1111', '1.1.1.1')).rejects.toThrow(ForbiddenException);
+    expect(sessions.createSession).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthService.setLocale (задача 013 — язык хранится на сервере)', () => {
+  it('writes the new locale to the user row', async () => {
+    const prisma: any = { user: { update: jest.fn().mockResolvedValue({}) } };
+    const service = new AuthService(prisma, {} as any, {} as any, {} as any, {} as any, {} as any, {} as any);
+
+    await service.setLocale('u1', 'en');
+    expect(prisma.user.update).toHaveBeenCalledWith({ where: { id: 'u1' }, data: { locale: 'en' } });
   });
 });

@@ -1,4 +1,11 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -34,6 +41,17 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+/// Без этой проверки заблокированный пользователь получал бы токены при
+/// входе и только потом ловил 401 от JwtAuthGuard на первом же запросе —
+/// непонятный бесконечный цикл релогина вместо явного «аккаунт заблокирован»
+/// (задача 026, п.5). Код ACCOUNT_BLOCKED в теле ответа, не просто текст,
+/// чтобы клиент мог показать отдельный экран, а не трактовать как 401.
+function assertNotBlocked(user: { isBlocked: boolean }): void {
+  if (user.isBlocked) {
+    throw new ForbiddenException({ code: 'ACCOUNT_BLOCKED', message: 'Аккаунт заблокирован' });
+  }
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -67,6 +85,7 @@ export class AuthService {
     } else if (user.role !== 'DRIVER') {
       throw new BadRequestException('Этот номер уже используется другой ролью');
     }
+    assertNotBlocked(user);
 
     const driver = await this.drivers.findByUserId(user.id);
     const tokens = await this.sessions.createSession(user.id, user.role, deviceName, platform);
@@ -95,6 +114,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
     await this.clearLockout('company', normalizedEmail);
+    assertNotBlocked(user!);
 
     const member = await this.prisma.companyMember.findUnique({
       where: { userId: user!.id },
@@ -254,6 +274,10 @@ export class AuthService {
 
   async logout(refreshToken: string): Promise<void> {
     await this.sessions.revokeByRefreshToken(refreshToken);
+  }
+
+  async setLocale(userId: string, locale: 'kk' | 'ru' | 'zh' | 'en') {
+    await this.prisma.user.update({ where: { id: userId }, data: { locale } });
   }
 
   async me(userId: string) {

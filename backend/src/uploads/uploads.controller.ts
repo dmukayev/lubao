@@ -24,4 +24,18 @@ export class UploadsController {
     const url = await this.uploads.uploadImage(file.buffer, file.originalname, file.mimetype);
     return { url };
   }
+
+  /// Для документов верификации (селфи, техпаспорта, права) — персональные
+  /// данные, бакет приватный (задача 026, п.6). Возвращает `key`, не
+  /// публичный URL; его и кладут в `VerificationDocument.fileUrl`.
+  @Post('document')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_SIZE_BYTES } }))
+  async uploadDocument(@UploadedFile() file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    if (!file.mimetype.startsWith('image/')) {
+      throw new BadRequestException('Only image files are allowed');
+    }
+    const key = await this.uploads.uploadDocument(file.buffer, file.originalname, file.mimetype);
+    return { key };
+  }
 }
