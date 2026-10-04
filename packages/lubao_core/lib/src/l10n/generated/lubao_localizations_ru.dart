@@ -108,6 +108,33 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
       'Слишком много попыток — запросите новый код';
 
   @override
+  String get companyRegisterTitle => 'Новая компания';
+
+  @override
+  String get companyRegisterOwnerName => 'Ваше имя';
+
+  @override
+  String get companyRegisterCompanyName => 'Название компании';
+
+  @override
+  String get companyRegisterCompanyNameRu => 'Название по-русски';
+
+  @override
+  String get companyRegisterNameError => 'Введите название, минимум 2 символа';
+
+  @override
+  String get companyRegisterCountry => 'Страна';
+
+  @override
+  String get companyRegisterCountryError => 'Выберите страну';
+
+  @override
+  String get companyRegisterOtherCountry => 'Другая';
+
+  @override
+  String get companyRegisterSubmit => 'Создать компанию';
+
+  @override
   String get companyLoginTitle => 'Вход для компании';
 
   @override

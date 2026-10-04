@@ -107,6 +107,33 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get driverOtpTooManyAttempts => '尝试次数过多——请获取新验证码';
 
   @override
+  String get companyRegisterTitle => '新建公司';
+
+  @override
+  String get companyRegisterOwnerName => '您的姓名';
+
+  @override
+  String get companyRegisterCompanyName => '公司名称';
+
+  @override
+  String get companyRegisterCompanyNameRu => '俄语名称';
+
+  @override
+  String get companyRegisterNameError => '请输入名称，至少2个字符';
+
+  @override
+  String get companyRegisterCountry => '国家';
+
+  @override
+  String get companyRegisterCountryError => '请选择国家';
+
+  @override
+  String get companyRegisterOtherCountry => '其他';
+
+  @override
+  String get companyRegisterSubmit => '创建公司';
+
+  @override
   String get companyLoginTitle => '公司登录';
 
   @override

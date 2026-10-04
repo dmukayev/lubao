@@ -121,6 +121,7 @@ class Company {
   const Company({
     required this.id,
     required this.name,
+    this.nameRu,
     required this.countryId,
     this.city,
     required this.isVerified,
@@ -130,6 +131,7 @@ class Company {
 
   final String id;
   final String name;
+  final String? nameRu;
   final String countryId;
   final String? city;
   final bool isVerified;
@@ -139,6 +141,7 @@ class Company {
   factory Company.fromJson(Map<String, dynamic> json) => Company(
         id: json['id'] as String,
         name: json['name'] as String,
+        nameRu: json['nameRu'] as String?,
         countryId: json['countryId'] as String,
         city: json['city'] as String?,
         isVerified: json['isVerified'] as bool? ?? false,

@@ -292,6 +292,60 @@ abstract class LubaoLocalizations {
   /// **'Слишком много попыток — запросите новый код'**
   String get driverOtpTooManyAttempts;
 
+  /// No description provided for @companyRegisterTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новая компания'**
+  String get companyRegisterTitle;
+
+  /// No description provided for @companyRegisterOwnerName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ваше имя'**
+  String get companyRegisterOwnerName;
+
+  /// No description provided for @companyRegisterCompanyName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название компании'**
+  String get companyRegisterCompanyName;
+
+  /// No description provided for @companyRegisterCompanyNameRu.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название по-русски'**
+  String get companyRegisterCompanyNameRu;
+
+  /// No description provided for @companyRegisterNameError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите название, минимум 2 символа'**
+  String get companyRegisterNameError;
+
+  /// No description provided for @companyRegisterCountry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Страна'**
+  String get companyRegisterCountry;
+
+  /// No description provided for @companyRegisterCountryError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите страну'**
+  String get companyRegisterCountryError;
+
+  /// No description provided for @companyRegisterOtherCountry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Другая'**
+  String get companyRegisterOtherCountry;
+
+  /// No description provided for @companyRegisterSubmit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Создать компанию'**
+  String get companyRegisterSubmit;
+
   /// No description provided for @companyLoginTitle.
   ///
   /// In ru, this message translates to:

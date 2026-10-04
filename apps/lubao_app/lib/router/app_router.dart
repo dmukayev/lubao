@@ -8,6 +8,7 @@ import '../features/onboarding/role_select_screen.dart';
 import '../features/onboarding/driver_login_screen.dart';
 import '../features/onboarding/company_login_screen.dart';
 import '../features/onboarding/company_otp_screen.dart';
+import '../features/onboarding/company_register_screen.dart';
 import '../features/driver/driver_shell.dart';
 import '../features/driver/feed/cargo_feed_screen.dart';
 import '../features/driver/feed/cargo_detail_screen.dart';
@@ -59,8 +60,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (loc == '/splash') {
         if (session == null) return '/role-select';
         final isDriverSplash = session.user.role == UserRole.driver;
-        if (isDriverSplash && session.driver == null) return '/driver/register';
-        return isDriverSplash ? '/driver/feed' : '/company/cargos';
+        if (isDriverSplash) return session.driver == null ? '/driver/register' : '/driver/feed';
+        return session.companyMember == null ? '/company/register' : '/company/cargos';
       }
 
       final onAuthScreen = loc == '/role-select' || loc.startsWith('/login');
@@ -76,6 +77,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       final needsDriverRegistration = isDriver && session.driver == null;
       if (needsDriverRegistration) {
         return loc == '/driver/register' ? null : '/driver/register';
+      }
+
+      // Вошёл по коду на email, но компании ещё нет (задача 022) — на
+      // экран «Новая компания», пока не создаст свою.
+      final needsCompanyRegistration = !isDriver && session.companyMember == null;
+      if (needsCompanyRegistration) {
+        return loc == '/company/register' ? null : '/company/register';
       }
 
       if (onAuthScreen) {
@@ -118,6 +126,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/driver/verification',
         builder: (context, state) => const DriverVerificationScreen(),
+      ),
+      GoRoute(
+        path: '/company/register',
+        builder: (context, state) => const CompanyRegisterScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => CompanyShell(child: child),

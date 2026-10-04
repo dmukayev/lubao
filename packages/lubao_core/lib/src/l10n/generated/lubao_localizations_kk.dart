@@ -107,6 +107,33 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get driverOtpTooManyAttempts => 'Әрекет тым көп — жаңа код сұраңыз';
 
   @override
+  String get companyRegisterTitle => 'Жаңа компания';
+
+  @override
+  String get companyRegisterOwnerName => 'Атыңыз';
+
+  @override
+  String get companyRegisterCompanyName => 'Компания атауы';
+
+  @override
+  String get companyRegisterCompanyNameRu => 'Орысша атауы';
+
+  @override
+  String get companyRegisterNameError => 'Атауын енгізіңіз, кемінде 2 таңба';
+
+  @override
+  String get companyRegisterCountry => 'Ел';
+
+  @override
+  String get companyRegisterCountryError => 'Елді таңдаңыз';
+
+  @override
+  String get companyRegisterOtherCountry => 'Басқа';
+
+  @override
+  String get companyRegisterSubmit => 'Компания құру';
+
+  @override
   String get companyLoginTitle => 'Компания үшін кіру';
 
   @override

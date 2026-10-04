@@ -273,6 +273,7 @@ model User {
   phone        String?  @unique
   email        String?  @unique
   passwordHash String?
+  name         String?
   locale       Locale   @default(ru)
   isActive     Boolean  @default(true)
   isBlocked    Boolean  @default(false)
@@ -392,6 +393,7 @@ model Vehicle {
 model Company {
   id            String   @id @default(uuid())
   name          String
+  nameRu        String?
   countryId     String
   country       Country  @relation(fields: [countryId], references: [id])
   city          String?
