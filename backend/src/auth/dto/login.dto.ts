@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class RequestCodeDto {
   @IsString()
@@ -11,14 +11,35 @@ export class VerifyCodeDto {
 
   @IsString()
   code!: string;
+
+  @IsOptional()
+  @IsString()
+  deviceName?: string;
+
+  @IsOptional()
+  @IsString()
+  platform?: string;
 }
 
-export class CompanyLoginDto {
+export class RequestEmailCodeDto {
+  @IsString()
+  email!: string;
+}
+
+export class VerifyEmailCodeDto {
   @IsString()
   email!: string;
 
   @IsString()
-  password!: string;
+  code!: string;
+
+  @IsOptional()
+  @IsString()
+  deviceName?: string;
+
+  @IsOptional()
+  @IsString()
+  platform?: string;
 }
 
 export class AdminLoginDto {
@@ -27,4 +48,22 @@ export class AdminLoginDto {
 
   @IsString()
   password!: string;
+
+  @IsOptional()
+  @IsString()
+  deviceName?: string;
+
+  @IsOptional()
+  @IsString()
+  platform?: string;
+}
+
+export class RefreshDto {
+  @IsString()
+  refreshToken!: string;
+}
+
+export class LogoutDto {
+  @IsString()
+  refreshToken!: string;
 }

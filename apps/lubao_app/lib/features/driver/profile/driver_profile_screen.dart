@@ -63,6 +63,11 @@ class DriverProfileScreen extends ConsumerWidget {
               },
             ),
           ),
+          ListTile(
+            leading: const Icon(LucideIcons.smartphone),
+            title: Text(t.profileMyDevices),
+            onTap: () => context.push('/devices'),
+          ),
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: () => ref.read(sessionProvider.notifier).logout(),

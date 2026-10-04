@@ -2,9 +2,14 @@ import { createHash } from 'crypto';
 import { PrismaClient, Currency } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
+if (process.env.NODE_ENV === 'production') {
+  console.error('prisma:seed:demo is blocked when NODE_ENV=production');
+  process.exit(1);
+}
+
 const prisma = new PrismaClient();
 
-const DEMO_PASSWORD = 'Demo12345!';
+const DEMO_PASSWORD = 'DemoLubao2026!';
 
 function demoId(seed: string): string {
   const hash = createHash('sha1').update(`lubao-demo:${seed}`).digest('hex');
@@ -394,7 +399,7 @@ async function main() {
 
     const ownerUser = await prisma.user.upsert({
       where: { email: def.ownerEmail },
-      update: { locale: 'zh' },
+      update: { locale: 'zh', passwordHash },
       create: { role: 'COMPANY', email: def.ownerEmail, passwordHash, locale: 'zh' },
     });
 
@@ -423,7 +428,7 @@ async function main() {
     if (def.logistEmail) {
       const logistUser = await prisma.user.upsert({
         where: { email: def.logistEmail },
-        update: { locale: 'zh' },
+        update: { locale: 'zh', passwordHash },
         create: { role: 'COMPANY', email: def.logistEmail, passwordHash, locale: 'zh' },
       });
       await prisma.companyMember.upsert({
@@ -838,7 +843,7 @@ async function main() {
   const adminEmail = 'admin@lubao.kz';
   const adminUser = await prisma.user.upsert({
     where: { email: adminEmail },
-    update: { locale: 'ru' },
+    update: { locale: 'ru', passwordHash },
     create: { role: 'ADMIN', email: adminEmail, passwordHash, locale: 'ru' },
   });
 

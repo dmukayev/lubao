@@ -180,6 +180,10 @@ class Session {
             : CompanyMember.fromJson(json['companyMember'] as Map<String, dynamic>),
       );
 
-  Session copyWith({Driver? driver}) =>
-      Session(user: user, driver: driver ?? this.driver, company: company, companyMember: companyMember);
+  Session copyWith({Driver? driver, Company? company, CompanyMember? companyMember}) => Session(
+        user: user,
+        driver: driver ?? this.driver,
+        company: company ?? this.company,
+        companyMember: companyMember ?? this.companyMember,
+      );
 }

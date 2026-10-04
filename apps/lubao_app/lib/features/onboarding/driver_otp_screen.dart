@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/auth_provider.dart';
+import '../shared/status_helpers.dart';
 
 class DriverOtpScreen extends ConsumerStatefulWidget {
   const DriverOtpScreen({super.key, required this.phone});
@@ -59,7 +60,8 @@ class _DriverOtpScreenState extends ConsumerState<DriverOtpScreen> {
       // водителя ещё нет — на регистрацию, иначе сразу в ленту.
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.driverOtpInvalidCode)));
+        final message = isTooManyAttemptsError(e) ? t.driverOtpTooManyAttempts : t.driverOtpInvalidCode;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       }
     } finally {
       if (mounted) setState(() => _verifying = false);

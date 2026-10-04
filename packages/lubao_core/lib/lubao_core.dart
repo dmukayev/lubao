@@ -12,6 +12,7 @@ export 'src/models/review.dart';
 export 'src/models/admin.dart';
 export 'src/models/dial_codes.dart';
 export 'src/models/arrival.dart';
+export 'src/models/session_device.dart';
 
 export 'src/theme/app_theme.dart';
 

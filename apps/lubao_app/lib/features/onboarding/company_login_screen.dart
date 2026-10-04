@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/auth_provider.dart';
 
+/// Вход логиста без пароля (задачи 006, 022): email → код, как у водителя
+/// по SMS. Регистрация новой компании продолжается после кода — см.
+/// CompanyOtpScreen и роутер.
 class CompanyLoginScreen extends ConsumerStatefulWidget {
   const CompanyLoginScreen({super.key});
 
@@ -13,23 +17,22 @@ class CompanyLoginScreen extends ConsumerStatefulWidget {
 
 class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
   bool _loading = false;
 
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     final t = context.l10n;
+    final email = _emailController.text.trim();
+    if (email.isEmpty) return;
     setState(() => _loading = true);
     try {
-      await ref
-          .read(sessionProvider.notifier)
-          .loginCompany(_emailController.text.trim(), _passwordController.text);
+      await ref.read(sessionProvider.notifier).requestEmailCode(email);
+      if (mounted) context.push('/login/company/otp', extra: email);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.commonError)));
@@ -53,14 +56,8 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
             ),
-            const SizedBox(height: 12),
-            AppTextField(
-              label: t.companyLoginPasswordLabel,
-              controller: _passwordController,
-              obscureText: true,
-            ),
             const SizedBox(height: 16),
-            PrimaryButton(label: t.companyLoginSubmit, loading: _loading, onPressed: _submit),
+            PrimaryButton(label: t.companyLoginSendCode, loading: _loading, onPressed: _submit),
           ],
         ),
       ),

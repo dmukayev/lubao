@@ -104,16 +104,27 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get driverOtpInvalidCode => '验证码错误';
 
   @override
+  String get driverOtpTooManyAttempts => '尝试次数过多——请获取新验证码';
+
+  @override
   String get companyLoginTitle => '公司登录';
 
   @override
   String get companyLoginEmailLabel => '邮箱';
 
   @override
-  String get companyLoginPasswordLabel => '密码';
+  String get companyLoginSendCode => '获取验证码';
 
   @override
-  String get companyLoginSubmit => '登录';
+  String get companyLoginVerify => '登录';
+
+  @override
+  String companyOtpSubtitle(String email) {
+    return '验证码已发送至 $email';
+  }
+
+  @override
+  String get companyOtpCodeLabel => '邮箱验证码';
 
   @override
   String get driverSetupTitle => '设置个人资料';
@@ -586,6 +597,30 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get profileMembers => '员工';
 
   @override
+  String get profileMyDevices => '我的设备';
+
+  @override
+  String get devicesTitle => '我的设备';
+
+  @override
+  String get devicesCurrentBadge => '当前设备';
+
+  @override
+  String get devicesLogoutThis => '退出此设备';
+
+  @override
+  String get devicesLogoutAllOthers => '退出所有其他设备';
+
+  @override
+  String get devicesLogoutAllOthersConfirm => '所有其他设备将被登出。是否继续？';
+
+  @override
+  String get devicesEmpty => '没有活跃设备';
+
+  @override
+  String get adminLoginLockedOut => '错误尝试次数过多，请15分钟后重试';
+
+  @override
   String get languageKk => '哈萨克语';
 
   @override
@@ -657,6 +692,15 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminLoginTitle => '管理员登录';
+
+  @override
+  String get adminLoginEmailLabel => '邮箱';
+
+  @override
+  String get adminLoginPasswordLabel => '密码';
+
+  @override
+  String get adminLoginSubmit => '登录';
 
   @override
   String get adminDashboardTitle => '概览';

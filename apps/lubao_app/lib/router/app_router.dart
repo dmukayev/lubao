@@ -8,6 +8,7 @@ import '../features/onboarding/role_select_screen.dart';
 import '../features/onboarding/driver_login_screen.dart';
 import '../features/onboarding/driver_otp_screen.dart';
 import '../features/onboarding/company_login_screen.dart';
+import '../features/onboarding/company_otp_screen.dart';
 import '../features/driver/driver_shell.dart';
 import '../features/driver/feed/cargo_feed_screen.dart';
 import '../features/driver/feed/cargo_detail_screen.dart';
@@ -24,10 +25,13 @@ import '../features/company/drivers/drivers_at_point_screen.dart';
 import '../features/company/profile/company_profile_screen.dart';
 import '../features/shared/deal_detail_screen.dart';
 import '../features/shared/chat_screen.dart';
+import '../features/shared/devices_screen.dart';
+import '../features/shared/splash_screen.dart';
 
 class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
     ref.listen(sessionProvider, (previous, next) => notifyListeners());
+    ref.listen(sessionRestoringProvider, (previous, next) => notifyListeners());
   }
 }
 
@@ -35,11 +39,31 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _RouterRefresh(ref);
 
   return GoRouter(
-    initialLocation: '/role-select',
+    initialLocation: '/splash',
     refreshListenable: refresh,
     redirect: (context, state) {
-      final session = ref.read(sessionProvider);
       final loc = state.matchedLocation;
+
+      // Пока идёт восстановление сессии из secure storage — остаёмся на
+      // сплэше, чтобы не мигнуть экраном входа перед тем, как токен
+      // окажется валидным (см. SessionController._restore).
+      if (ref.read(sessionRestoringProvider)) {
+        return loc == '/splash' ? null : '/splash';
+      }
+
+      final session = ref.read(sessionProvider);
+
+      // Сплэш — временная точка, с которой всегда нужно уйти дальше (в
+      // отличие от role-select/login, куда можно оставаться, если сессии
+      // ещё нет): иначе при session == null и loc == '/splash' ветка ниже
+      // считала бы сплэш "экраном входа" и никогда не делала редирект.
+      if (loc == '/splash') {
+        if (session == null) return '/role-select';
+        final isDriverSplash = session.user.role == UserRole.driver;
+        if (isDriverSplash && session.driver == null) return '/driver/register';
+        return isDriverSplash ? '/driver/feed' : '/company/cargos';
+      }
+
       final onAuthScreen = loc == '/role-select' || loc.startsWith('/login');
 
       if (session == null) {
@@ -63,6 +87,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
+      GoRoute(path: '/devices', builder: (context, state) => const DevicesScreen()),
       GoRoute(path: '/role-select', builder: (context, state) => const RoleSelectScreen()),
       GoRoute(path: '/login/driver', builder: (context, state) => const DriverLoginScreen()),
       GoRoute(
@@ -70,6 +96,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => DriverOtpScreen(phone: state.extra as String),
       ),
       GoRoute(path: '/login/company', builder: (context, state) => const CompanyLoginScreen()),
+      GoRoute(
+        path: '/login/company/otp',
+        builder: (context, state) => CompanyOtpScreen(email: state.extra as String),
+      ),
       ShellRoute(
         builder: (context, state, child) => DriverShell(child: child),
         routes: [

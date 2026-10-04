@@ -50,3 +50,7 @@ final myArrivalProvider = FutureProvider.autoDispose<Arrival?>((ref) {
 final driverVerificationDocumentsProvider = FutureProvider.autoDispose<List<VerificationDocument>>((ref) {
   return ref.watch(driverRepositoryProvider).verificationDocuments();
 });
+
+final devicesProvider = FutureProvider.autoDispose<List<DeviceSession>>((ref) {
+  return ref.watch(authRepositoryProvider).listSessions();
+});

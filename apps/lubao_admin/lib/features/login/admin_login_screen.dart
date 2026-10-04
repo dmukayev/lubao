@@ -1,8 +1,18 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/auth_provider.dart';
+
+/// true, если бэкенд отклонил вход из-за 15-минутной блокировки после
+/// 5 неверных попыток (см. auth.service.ts#loginAdmin) — отличаем от
+/// обычного "неверный email/пароль", чтобы объяснить пользователю причину.
+bool _isLockedOutError(Object error) {
+  if (error is! DioException) return false;
+  final data = error.response?.data;
+  return data is Map && data['message'] == 'Слишком много неверных попыток, попробуйте через 15 минут';
+}
 
 class AdminLoginScreen extends ConsumerStatefulWidget {
   const AdminLoginScreen({super.key});
@@ -30,7 +40,8 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
       await ref.read(sessionProvider.notifier).login(_emailController.text.trim(), _passwordController.text);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.commonError)));
+        final message = _isLockedOutError(e) ? t.adminLoginLockedOut : t.commonError;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -54,14 +65,14 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                 Text(t.adminLoginTitle, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 24),
                 AppTextField(
-                  label: t.companyLoginEmailLabel,
+                  label: t.adminLoginEmailLabel,
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 12),
-                AppTextField(label: t.companyLoginPasswordLabel, controller: _passwordController, obscureText: true),
+                AppTextField(label: t.adminLoginPasswordLabel, controller: _passwordController, obscureText: true),
                 const SizedBox(height: 16),
-                PrimaryButton(label: t.companyLoginSubmit, loading: _loading, onPressed: _submit),
+                PrimaryButton(label: t.adminLoginSubmit, loading: _loading, onPressed: _submit),
               ],
             ),
           ),

@@ -86,6 +86,15 @@ bool isDriverNotVerifiedError(Object error) {
   return data is Map && data['message'] == 'DRIVER_NOT_VERIFIED';
 }
 
+/// true, если SMS-код сгорел после 6-й неверной попытки (см. sms.service.ts) —
+/// в отличие от просто неверного кода, повторный ввод того же кода никогда
+/// не пройдёт, нужен новый код через «Отправить код ещё раз».
+bool isTooManyAttemptsError(Object error) {
+  if (error is! DioException) return false;
+  final data = error.response?.data;
+  return data is Map && data['message'] == 'Слишком много попыток, запросите новый код';
+}
+
 /// Шторка «Чтобы откликнуться/подтвердить, подтвердите личность — 2 минуты»
 /// с переходом на экран верификации.
 Future<void> showVerificationRequiredSheet(BuildContext context) {

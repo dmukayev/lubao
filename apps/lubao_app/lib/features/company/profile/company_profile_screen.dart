@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../../providers/auth_provider.dart';
@@ -70,6 +71,11 @@ class CompanyProfileScreen extends ConsumerWidget {
                       ))
                   .toList(),
             ),
+          ),
+          ListTile(
+            leading: const Icon(LucideIcons.smartphone),
+            title: Text(t.profileMyDevices),
+            onTap: () => context.push('/devices'),
           ),
           const SizedBox(height: 16),
           OutlinedButton(

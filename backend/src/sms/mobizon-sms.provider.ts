@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { SmsProvider } from './sms-provider';
 
@@ -11,7 +12,7 @@ export class MobizonSmsProvider extends SmsProvider {
   private readonly apiKey = process.env.MOBIZON_API_KEY;
 
   generateCode(): string {
-    return String(Math.floor(1000 + Math.random() * 9000));
+    return String(crypto.randomInt(1000, 10000));
   }
 
   async sendCode(phone: string, code: string): Promise<void> {

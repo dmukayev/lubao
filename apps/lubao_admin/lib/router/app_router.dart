@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
 import '../features/login/admin_login_screen.dart';
+import '../features/login/admin_splash_screen.dart';
 import '../features/shell/admin_shell.dart';
 import '../features/dashboard/dashboard_screen.dart';
 import '../features/verification/verification_screen.dart';
@@ -15,6 +16,7 @@ import '../features/reference/reference_screen.dart';
 class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
     ref.listen(sessionProvider, (previous, next) => notifyListeners());
+    ref.listen(sessionRestoringProvider, (previous, next) => notifyListeners());
   }
 }
 
@@ -22,16 +24,30 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _RouterRefresh(ref);
 
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/splash',
     refreshListenable: refresh,
     redirect: (context, state) {
+      final loc = state.matchedLocation;
+      if (ref.read(sessionRestoringProvider)) {
+        return loc == '/splash' ? null : '/splash';
+      }
+
       final session = ref.read(sessionProvider);
-      final onLogin = state.matchedLocation == '/login';
+
+      // Сплэш всегда нужно покинуть (в отличие от /login, где можно
+      // оставаться без сессии) — иначе при session == null сплэш считался
+      // бы "экраном логина" и редиректа никогда бы не было.
+      if (loc == '/splash') {
+        return session == null ? '/login' : '/dashboard';
+      }
+
+      final onLogin = loc == '/login';
       if (session == null) return onLogin ? null : '/login';
       if (onLogin) return '/dashboard';
       return null;
     },
     routes: [
+      GoRoute(path: '/splash', builder: (context, state) => const AdminSplashScreen()),
       GoRoute(path: '/login', builder: (context, state) => const AdminLoginScreen()),
       ShellRoute(
         builder: (context, state, child) => AdminShell(child: child),

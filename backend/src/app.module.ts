@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthController } from './health/health.controller';
-import { DevAuthGuard } from './common/dev-auth.guard';
+import { JwtAuthGuard } from './common/jwt-auth.guard';
 import { AuthModule } from './auth/auth.module';
 import { ReferenceDataModule } from './reference-data/reference-data.module';
 import { DriversModule } from './drivers/drivers.module';
@@ -18,6 +18,7 @@ import { AdminModule } from './admin/admin.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { RedisModule } from './redis/redis.module';
 import { SmsModule } from './sms/sms.module';
+import { TokenModule } from './token/token.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SmsModule } from './sms/sms.module';
     PrismaModule,
     RedisModule,
     SmsModule,
+    TokenModule,
     AuthModule,
     ReferenceDataModule,
     DriversModule,
@@ -39,6 +41,6 @@ import { SmsModule } from './sms/sms.module';
     UploadsModule,
   ],
   controllers: [HealthController],
-  providers: [{ provide: APP_GUARD, useClass: DevAuthGuard }],
+  providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
 export class AppModule {}

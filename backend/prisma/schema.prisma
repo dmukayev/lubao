@@ -275,8 +275,26 @@ model User {
   complaintsResolved     Complaint[]         @relation("ComplaintResolver")
   auditLogs              AuditLog[]
   reviewedDocuments      VerificationDocument[] @relation("VerificationDocumentReviewer")
+  sessions               Session[]
 
   @@map("users")
+}
+
+model Session {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  refreshTokenHash  String    @unique
+  previousTokenHash String?   @unique
+  deviceName        String?
+  platform          String?
+  createdAt         DateTime  @default(now())
+  lastUsedAt        DateTime  @default(now())
+  expiresAt         DateTime
+  revokedAt         DateTime?
+
+  @@index([userId])
+  @@map("sessions")
 }
 
 model Driver {

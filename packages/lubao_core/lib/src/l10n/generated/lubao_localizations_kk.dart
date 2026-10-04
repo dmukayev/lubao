@@ -104,16 +104,27 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get driverOtpInvalidCode => 'Код дұрыс емес';
 
   @override
+  String get driverOtpTooManyAttempts => 'Әрекет тым көп — жаңа код сұраңыз';
+
+  @override
   String get companyLoginTitle => 'Компания үшін кіру';
 
   @override
   String get companyLoginEmailLabel => 'Email';
 
   @override
-  String get companyLoginPasswordLabel => 'Құпия сөз';
+  String get companyLoginSendCode => 'Кодты алу';
 
   @override
-  String get companyLoginSubmit => 'Кіру';
+  String get companyLoginVerify => 'Кіру';
+
+  @override
+  String companyOtpSubtitle(String email) {
+    return 'Код $email поштасына жіберілді';
+  }
+
+  @override
+  String get companyOtpCodeLabel => 'Хаттан алынған код';
 
   @override
   String get driverSetupTitle => 'Профильді баптау';
@@ -594,6 +605,32 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get profileMembers => 'Қызметкерлер';
 
   @override
+  String get profileMyDevices => 'Менің құрылғыларым';
+
+  @override
+  String get devicesTitle => 'Менің құрылғыларым';
+
+  @override
+  String get devicesCurrentBadge => 'Ағымдағы құрылғы';
+
+  @override
+  String get devicesLogoutThis => 'Осы құрылғыда шығу';
+
+  @override
+  String get devicesLogoutAllOthers => 'Барлық басқаларынан шығу';
+
+  @override
+  String get devicesLogoutAllOthersConfirm =>
+      'Барлық басқа құрылғылар жүйеден шығады. Жалғастыру керек пе?';
+
+  @override
+  String get devicesEmpty => 'Белсенді құрылғылар жоқ';
+
+  @override
+  String get adminLoginLockedOut =>
+      'Қате әрекеттер тым көп, 15 минуттан кейін қайталап көріңіз';
+
+  @override
   String get languageKk => 'Қазақша';
 
   @override
@@ -666,6 +703,15 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminLoginTitle => 'Әкімші тіркелгісіне кіру';
+
+  @override
+  String get adminLoginEmailLabel => 'Email';
+
+  @override
+  String get adminLoginPasswordLabel => 'Құпия сөз';
+
+  @override
+  String get adminLoginSubmit => 'Кіру';
 
   @override
   String get adminDashboardTitle => 'Шолу';

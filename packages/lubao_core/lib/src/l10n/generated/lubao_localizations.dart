@@ -286,6 +286,12 @@ abstract class LubaoLocalizations {
   /// **'Неверный код'**
   String get driverOtpInvalidCode;
 
+  /// No description provided for @driverOtpTooManyAttempts.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком много попыток — запросите новый код'**
+  String get driverOtpTooManyAttempts;
+
   /// No description provided for @companyLoginTitle.
   ///
   /// In ru, this message translates to:
@@ -298,17 +304,29 @@ abstract class LubaoLocalizations {
   /// **'Email'**
   String get companyLoginEmailLabel;
 
-  /// No description provided for @companyLoginPasswordLabel.
+  /// No description provided for @companyLoginSendCode.
   ///
   /// In ru, this message translates to:
-  /// **'Пароль'**
-  String get companyLoginPasswordLabel;
+  /// **'Получить код'**
+  String get companyLoginSendCode;
 
-  /// No description provided for @companyLoginSubmit.
+  /// No description provided for @companyLoginVerify.
   ///
   /// In ru, this message translates to:
   /// **'Войти'**
-  String get companyLoginSubmit;
+  String get companyLoginVerify;
+
+  /// No description provided for @companyOtpSubtitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Код отправлен на {email}'**
+  String companyOtpSubtitle(String email);
+
+  /// No description provided for @companyOtpCodeLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Код из письма'**
+  String get companyOtpCodeLabel;
 
   /// No description provided for @driverSetupTitle.
   ///
@@ -1222,6 +1240,54 @@ abstract class LubaoLocalizations {
   /// **'Сотрудники'**
   String get profileMembers;
 
+  /// No description provided for @profileMyDevices.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мои устройства'**
+  String get profileMyDevices;
+
+  /// No description provided for @devicesTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мои устройства'**
+  String get devicesTitle;
+
+  /// No description provided for @devicesCurrentBadge.
+  ///
+  /// In ru, this message translates to:
+  /// **'Текущее устройство'**
+  String get devicesCurrentBadge;
+
+  /// No description provided for @devicesLogoutThis.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выйти на этом устройстве'**
+  String get devicesLogoutThis;
+
+  /// No description provided for @devicesLogoutAllOthers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выйти на всех остальных'**
+  String get devicesLogoutAllOthers;
+
+  /// No description provided for @devicesLogoutAllOthersConfirm.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все остальные устройства будут разлогинены. Продолжить?'**
+  String get devicesLogoutAllOthersConfirm;
+
+  /// No description provided for @devicesEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет активных устройств'**
+  String get devicesEmpty;
+
+  /// No description provided for @adminLoginLockedOut.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком много неверных попыток, попробуйте через 15 минут'**
+  String get adminLoginLockedOut;
+
   /// No description provided for @languageKk.
   ///
   /// In ru, this message translates to:
@@ -1359,6 +1425,24 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Вход в админ-панель'**
   String get adminLoginTitle;
+
+  /// No description provided for @adminLoginEmailLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Email'**
+  String get adminLoginEmailLabel;
+
+  /// No description provided for @adminLoginPasswordLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пароль'**
+  String get adminLoginPasswordLabel;
+
+  /// No description provided for @adminLoginSubmit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Войти'**
+  String get adminLoginSubmit;
 
   /// No description provided for @adminDashboardTitle.
   ///

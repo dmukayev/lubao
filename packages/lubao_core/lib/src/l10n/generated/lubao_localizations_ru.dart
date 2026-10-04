@@ -104,16 +104,28 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get driverOtpInvalidCode => 'Неверный код';
 
   @override
+  String get driverOtpTooManyAttempts =>
+      'Слишком много попыток — запросите новый код';
+
+  @override
   String get companyLoginTitle => 'Вход для компании';
 
   @override
   String get companyLoginEmailLabel => 'Email';
 
   @override
-  String get companyLoginPasswordLabel => 'Пароль';
+  String get companyLoginSendCode => 'Получить код';
 
   @override
-  String get companyLoginSubmit => 'Войти';
+  String get companyLoginVerify => 'Войти';
+
+  @override
+  String companyOtpSubtitle(String email) {
+    return 'Код отправлен на $email';
+  }
+
+  @override
+  String get companyOtpCodeLabel => 'Код из письма';
 
   @override
   String get driverSetupTitle => 'Настройка профиля';
@@ -593,6 +605,32 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get profileMembers => 'Сотрудники';
 
   @override
+  String get profileMyDevices => 'Мои устройства';
+
+  @override
+  String get devicesTitle => 'Мои устройства';
+
+  @override
+  String get devicesCurrentBadge => 'Текущее устройство';
+
+  @override
+  String get devicesLogoutThis => 'Выйти на этом устройстве';
+
+  @override
+  String get devicesLogoutAllOthers => 'Выйти на всех остальных';
+
+  @override
+  String get devicesLogoutAllOthersConfirm =>
+      'Все остальные устройства будут разлогинены. Продолжить?';
+
+  @override
+  String get devicesEmpty => 'Нет активных устройств';
+
+  @override
+  String get adminLoginLockedOut =>
+      'Слишком много неверных попыток, попробуйте через 15 минут';
+
+  @override
   String get languageKk => 'Қазақша';
 
   @override
@@ -665,6 +703,15 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminLoginTitle => 'Вход в админ-панель';
+
+  @override
+  String get adminLoginEmailLabel => 'Email';
+
+  @override
+  String get adminLoginPasswordLabel => 'Пароль';
+
+  @override
+  String get adminLoginSubmit => 'Войти';
 
   @override
   String get adminDashboardTitle => 'Обзор';

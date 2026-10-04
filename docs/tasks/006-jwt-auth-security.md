@@ -1,6 +1,69 @@
 # 006 — Настоящая авторизация (JWT) и защита SMS-кода
 
-Статус: не начато · **ПРИОРИТЕТ: до любого показа реальным пользователям**
+Статус: готово
+
+## Что сделано (2026-10-04)
+- JWT access (15 мин) + opaque refresh (хэш SHA-256 в новой модели `Session`),
+  ротация при `/auth/refresh` с reuse-detection (повторное использование
+  уже заменённого токена отзывает сессию), выход через `/auth/logout`.
+  Скользящий TTL по роли: DRIVER 90д / COMPANY 30д / ADMIN 12ч.
+  Несколько устройств одновременно; `GET /auth/sessions`,
+  `DELETE /auth/sessions/:id`, `DELETE /auth/sessions?except=current`.
+- `DevAuthGuard` и `X-User-Id` удалены полностью; `JwtAuthGuard` проверяет
+  Bearer-токен, статус пользователя в БД и живость сессии на каждый запрос
+  (поэтому «выйти на всех остальных» действует уже на следующий запрос
+  второго устройства, а не только после истечения access-токена).
+- Маршруты переименованы: `/auth/phone/request-code`, `/auth/phone/verify`,
+  `/auth/email/login`, `/auth/admin/login`; добавлен `GET /auth/me`.
+- SMS: максимум 5 неверных попыток на код (6-я — код сгорает), лимит
+  20 запросов/час на IP (+`trust proxy` в `main.ts`, иначе за nginx лимит
+  не работал бы), `crypto.randomInt` в `MobizonSmsProvider`, сравнение кода
+  через `crypto.timingSafeEqual`.
+- Админ: блокировка на 15 мин после 5 неверных попыток (Redis-счётчик),
+  каждая попытка логируется в `audit_log`. Демо-пароль поднят до 14 символов
+  (`DemoLubao2026!`), обновлён в seed и `DEMO_CREDENTIALS.md`;
+  `prisma:seed:demo` отказывается запускаться при `NODE_ENV=production`.
+- Flutter (`lubao_core`): токены в `flutter_secure_storage`, Dio-интерсептор
+  с авто-обновлением по 401 (с защитой от параллельных refresh) и выходом
+  при неудачном refresh; восстановление сессии при перезапуске через
+  `GET /auth/me`; экран «Мои устройства» в `lubao_app` (профиль водителя и
+  компании); `lubao_admin` получил тот же интерсептор + сообщение о
+  блокировке.
+- Тесты (Jest): `jwt-auth.guard.spec.ts`, `token.service.spec.ts`,
+  `session.service.spec.ts`, `sms.service.spec.ts`, `auth.service.spec.ts`
+  (40 тестов, все зелёные). Все критерии «Готово, когда» проверены вживую
+  через curl (401 без токена/с X-User-Id, 6-я попытка кода, два устройства +
+  «выйти на всех остальных», вход в приложение/админку с кодом `1111` в деве).
+  Flutter-часть проверена `flutter analyze` + `flutter build web` (без
+  живого прогона в браузере).
+
+## Дополнено (2026-10-04) — вход логиста без пароля
+Спецификация обновилась: `/auth/email/login` (пароль) заменён на
+`/auth/email/request` + `/auth/email/verify` (код на email, как у SMS).
+- `EmailProvider`/`EmailService` (`backend/src/email/`) — точная копия
+  структуры `SmsProvider`/`SmsService`: лимиты 1/мин + 5/час + 20/час на IP,
+  5 неверных попыток → код сгорает, `timingSafeEqual`. TTL кода 10 минут
+  (не 5, почта медленнее SMS). `ConsoleEmailProvider` в деве — код всегда
+  `111111`, пишется в лог; прод-провайдер (Alibaba DirectMail и др. для
+  qq.com/163.com — задача 022, п. 14-15) подключается туда же по готовности
+  учётных данных, пока не выбран.
+- `AuthService.verifyEmailCode`: известный email — вход (как раньше, просто
+  без пароля); новый — создаётся «голый» `User{role: COMPANY}` без компании
+  (`company: null`), регистрация компании — отдельный шаг (задача 022).
+  Старый `CompanyLoginDto`/`loginCompany` (пароль) удалены полностью.
+- Admin — без изменений, вход по-прежнему email + пароль (`/auth/admin/login`).
+- Flutter: `CompanyLoginScreen` (email) → `CompanyOtpScreen` (код), по
+  образцу `DriverLoginScreen`/`DriverOtpScreen`; `adminLoginEmailLabel/
+  PasswordLabel/Submit` — новые отдельные ключи ARB (раньше админка
+  заимствовала строки у `companyLogin*`, которые теперь про код, а не пароль).
+- Тесты: `email.service.spec.ts` (копия `sms.service.spec.ts`, 9 тестов),
+  `auth.service.spec.ts` — 6 новых (request/verify, новый пользователь,
+  существующий владелец, чужая роль). Весь backend-сьют 71/71 зелёный.
+- Проверено живым curl: 401 без токена и с `X-User-Id` (бесполезен), код на
+  email для существующего владельца → вход с токенами и компанией; для
+  нового email → токены, `company: null`; 6-я неверная попытка кода жжёт
+  код (верный код после этого тоже не проходит); `/auth/email/login` → 404
+  (маршрут удалён); `/auth/admin/login` работает как раньше.
 
 ## Проблема (найдено при ревью 2026-10-04)
 - `backend/src/common/dev-auth.guard.ts` доверяет заголовку `X-User-Id`. Любой, кто знает или подберёт id, действует от имени любого пользователя, включая админа.
