@@ -40,4 +40,31 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
   end
+
+  # CocoaPods 1.17 doesn't emit a bare $(PODS_CONFIGURATION_BUILD_DIR) search
+  # path in Pods-Runner.{config}.xcconfig (only per-plugin subfolders), so
+  # the Runner target can't find Pods_Runner.framework itself at link time
+  # ("ld: framework 'Pods_Runner' not found"). Append it directly to the
+  # generated xcconfig files so it survives every `pod install`.
+  missing_entry = '"${PODS_CONFIGURATION_BUILD_DIR}"'
+  Dir.glob(File.join(__dir__, 'Pods', 'Target Support Files', 'Pods-Runner', '*.xcconfig')).each do |xcconfig_path|
+    contents = File.read(xcconfig_path)
+    next unless contents =~ /^FRAMEWORK_SEARCH_PATHS = .*$/
+    next if contents.include?(missing_entry)
+    fixed = contents.sub(/^FRAMEWORK_SEARCH_PATHS = (.*)$/) { "FRAMEWORK_SEARCH_PATHS = #{$1} #{missing_entry}" }
+    File.write(xcconfig_path, fixed)
+  end
+
+  # Same root cause breaks [CP] Embed Pods Frameworks: Runner's own
+  # BUILT_PRODUCTS_DIR (Flutter's custom build/ios/iphoneos) isn't where the
+  # per-plugin frameworks actually land (PODS_CONFIGURATION_BUILD_DIR) — the
+  # embed script's `install_framework "${BUILT_PRODUCTS_DIR}/<plugin>/..."`
+  # calls can't find them ("unbound variable" under `set -u`). Point those
+  # specific lookups at PODS_CONFIGURATION_BUILD_DIR instead.
+  frameworks_script = File.join(__dir__, 'Pods', 'Target Support Files', 'Pods-Runner', 'Pods-Runner-frameworks.sh')
+  if File.exist?(frameworks_script)
+    contents = File.read(frameworks_script)
+    fixed = contents.gsub(/install_framework "\$\{BUILT_PRODUCTS_DIR\}\//, 'install_framework "${PODS_CONFIGURATION_BUILD_DIR}/')
+    File.write(frameworks_script, fixed) if fixed != contents
+  end
 end

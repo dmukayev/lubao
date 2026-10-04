@@ -26,6 +26,17 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Бэкенд в деве поднят по http:// на локальной сети (--dart-define=API_BASE_URL=http://<lan-ip>:3000,
+		     см. providers/api_providers.dart) — без этого исключения ATS молча блокирует все запросы на
+		     физическом устройстве. NSAllowsLocalNetworking не покрывает произвольный LAN IP (только
+		     localhost/.local), поэтому для дева отключаем ATS целиком. В проде бэкенд за nginx по https,
+		     это исключение его не касается — релизная сборка для App Store не использует этот Info.plist
+		     как есть без ревью. -->
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Компания увидит, где сейчас находится ваш груз, пока вы едете и приложение открыто.</string>
 	<key>NSCameraUsageDescription</key>
