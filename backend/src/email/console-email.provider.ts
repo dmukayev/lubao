@@ -14,4 +14,8 @@ export class ConsoleEmailProvider extends EmailProvider {
   async sendCode(email: string, code: string): Promise<void> {
     this.logger.log(`[DEV EMAIL] ${email}: ваш код — ${code}`);
   }
+
+  async sendMessage(email: string, subject: string, bodyText: string): Promise<void> {
+    this.logger.log(`[DEV EMAIL] ${email}: ${subject}\n${bodyText}`);
+  }
 }

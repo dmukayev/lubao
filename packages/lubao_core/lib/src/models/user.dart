@@ -1,7 +1,14 @@
 import 'common.dart';
 
 class AppUser {
-  const AppUser({required this.id, required this.role, this.phone, this.email, required this.locale});
+  const AppUser({
+    required this.id,
+    required this.role,
+    this.phone,
+    this.email,
+    required this.locale,
+    this.emailVerifiedAt,
+  });
 
   final String id;
   final UserRole role;
@@ -9,12 +16,31 @@ class AppUser {
   final String? email;
   final String locale;
 
+  /// Подтверждение email не блокирует вход (задача 025, п. 7) — только
+  /// показывает плашку-напоминание в кабинете.
+  final DateTime? emailVerifiedAt;
+
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
         id: json['id'] as String,
         role: userRoleFromJson(json['role'] as String),
         phone: json['phone'] as String?,
         email: json['email'] as String?,
         locale: json['locale'] as String? ?? 'ru',
+        emailVerifiedAt: json['emailVerifiedAt'] == null ? null : DateTime.parse(json['emailVerifiedAt'] as String),
+      );
+}
+
+class CompanyInviteInfo {
+  const CompanyInviteInfo({required this.companyName, required this.role, required this.email});
+
+  final String companyName;
+  final CompanyMemberRole role;
+  final String email;
+
+  factory CompanyInviteInfo.fromJson(Map<String, dynamic> json) => CompanyInviteInfo(
+        companyName: json['companyName'] as String,
+        role: companyMemberRoleFromJson(json['role'] as String),
+        email: json['email'] as String,
       );
 }
 
@@ -183,8 +209,8 @@ class Session {
             : CompanyMember.fromJson(json['companyMember'] as Map<String, dynamic>),
       );
 
-  Session copyWith({Driver? driver, Company? company, CompanyMember? companyMember}) => Session(
-        user: user,
+  Session copyWith({AppUser? user, Driver? driver, Company? company, CompanyMember? companyMember}) => Session(
+        user: user ?? this.user,
         driver: driver ?? this.driver,
         company: company ?? this.company,
         companyMember: companyMember ?? this.companyMember,

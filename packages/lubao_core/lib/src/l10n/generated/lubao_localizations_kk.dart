@@ -134,30 +134,152 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get companyRegisterSubmit => 'Компания құру';
 
   @override
+  String get companyRegisterEmailError => 'Email енгізіңіз';
+
+  @override
+  String get companyRegisterPasswordError => 'Кемінде 8 таңба';
+
+  @override
+  String get companyRegisterEmailTaken =>
+      'Бұл email бұрын тіркелген. Кіру керек пе?';
+
+  @override
   String get companyLoginTitle => 'Компания үшін кіру';
 
   @override
   String get companyLoginEmailLabel => 'Email';
 
   @override
-  String get companyLoginByCode => 'Код бойынша';
-
-  @override
-  String get companyLoginByPassword => 'Құпия сөз бойынша';
-
-  @override
-  String get companyLoginSendCode => 'Кодты алу';
-
-  @override
   String get companyLoginVerify => 'Кіру';
 
   @override
-  String companyOtpSubtitle(String email) {
-    return 'Код $email поштасына жіберілді';
+  String get companyLoginLockedOut =>
+      'Әрекет тым көп. 15 минуттан кейін қайталаңыз';
+
+  @override
+  String get companyLoginShowPassword => 'Құпия сөзді көрсету';
+
+  @override
+  String get companyLoginHidePassword => 'Құпия сөзді жасыру';
+
+  @override
+  String get companyLoginRegisterLink => 'Тіркелу';
+
+  @override
+  String get companyLoginForgotPasswordLink =>
+      'Құпия сөзді ұмытып қалдыңыз ба?';
+
+  @override
+  String get forgotPasswordTitle => 'Құпия сөзді қалпына келтіру';
+
+  @override
+  String get forgotPasswordSendCode => 'Код жіберу';
+
+  @override
+  String get forgotPasswordCodeLabel => 'Хаттан алынған код';
+
+  @override
+  String get forgotPasswordNewPasswordLabel => 'Жаңа құпия сөз';
+
+  @override
+  String get forgotPasswordSubmit => 'Құпия сөзді ауыстыру';
+
+  @override
+  String get forgotPasswordSuccess =>
+      'Құпия сөз ауыстырылды, жаңасымен кіріңіз';
+
+  @override
+  String get forgotPasswordResend => 'Кодты қайта жіберу';
+
+  @override
+  String get forgotPasswordInvalidCode => 'Код дұрыс емес немесе мерзімі өтті';
+
+  @override
+  String get forgotPasswordNoEmailLink => 'Хат келмей тұр ма?';
+
+  @override
+  String get supportContactTitle => 'Қолдау қызметіне хабарласу';
+
+  @override
+  String get supportContactBody =>
+      'Хат келмесе, бізге қолайлы тәсілмен жазыңыз';
+
+  @override
+  String get supportContactWhatsapp => 'WhatsApp';
+
+  @override
+  String get supportContactWechat => 'WeChat';
+
+  @override
+  String get supportContactEmail => 'Email';
+
+  @override
+  String get supportContactNone =>
+      'Қолдау қызметінің байланыстары жақында осында пайда болады';
+
+  @override
+  String get acceptInviteTitle => 'Компанияға шақыру';
+
+  @override
+  String acceptInviteSubtitle(String companyName, String role) {
+    return 'Сізді «$companyName» компаниясына шақырды — рөлі: $role';
   }
 
   @override
-  String get companyOtpCodeLabel => 'Хаттан алынған код';
+  String get acceptInviteNameLabel => 'Атыңыз';
+
+  @override
+  String get acceptInvitePhoneLabel => 'Телефон (жүргізушілер үшін)';
+
+  @override
+  String get acceptInviteWechatLabel => 'WeChat (міндетті емес)';
+
+  @override
+  String get acceptInviteSubmit => 'Компанияға кіру';
+
+  @override
+  String get acceptInviteInvalidToken =>
+      'Шақыру жарамсыз немесе бұрын қолданылған';
+
+  @override
+  String get emailVerifyBannerText => 'Email расталмаған';
+
+  @override
+  String get emailVerifyBannerAction => 'Растау';
+
+  @override
+  String get emailVerifyDialogTitle => 'Email-ды растау';
+
+  @override
+  String get emailVerifyDialogCodeLabel => 'Хаттан алынған код';
+
+  @override
+  String get emailVerifyDialogSubmit => 'Растау';
+
+  @override
+  String get employeesInviteButton => 'Қызметкерді шақыру';
+
+  @override
+  String get employeesInviteEmailLabel => 'Қызметкердің email-ы';
+
+  @override
+  String get employeesInviteRoleOwner => 'Иесі';
+
+  @override
+  String get employeesInviteRoleLogist => 'Логист';
+
+  @override
+  String get employeesInviteSubmit => 'Сілтеме құру';
+
+  @override
+  String get employeesInviteLinkReady =>
+      'Шақыру сілтемесі 7 күн жарамды. Көшіріп, WeChat/WhatsApp-қа жіберіңіз:';
+
+  @override
+  String get employeesInviteCopyLink => 'Көшіру';
+
+  @override
+  String get employeesInviteCopied => 'Сілтеме көшірілді';
 
   @override
   String get driverSetupTitle => 'Профильді баптау';
@@ -729,8 +851,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get companySetPasswordTitle => 'Кіру құпия сөзі';
 
   @override
-  String get companySetPasswordHint =>
-      'Міндетті емес — email-кодсыз кіруге мүмкіндік береді';
+  String get companySetPasswordHint => 'Кіру құпия сөзін ауыстыру';
 
   @override
   String get companySetPasswordTooShort => 'Кемінде 8 таңба';

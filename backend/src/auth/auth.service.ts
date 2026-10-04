@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,12 +8,21 @@ import { CompaniesService } from '../companies/companies.service';
 import { SmsService } from '../sms/sms.service';
 import { EmailService } from '../email/email.service';
 import { SessionService, TokenPair } from './session.service';
+import { RegisterCompanyAuthDto } from './dto/register-company.dto';
+import { AcceptInviteDto } from '../companies/dto/invite.dto';
 
-const ADMIN_LOCKOUT_THRESHOLD = 5;
-const ADMIN_LOCKOUT_SECONDS = 15 * 60;
+const LOCKOUT_THRESHOLD = 5;
+const LOCKOUT_SECONDS = 15 * 60;
 
 function toUserDto(user: User) {
-  return { id: user.id, role: user.role, phone: user.phone, email: user.email, locale: user.locale };
+  return {
+    id: user.id,
+    role: user.role,
+    phone: user.phone,
+    email: user.email,
+    locale: user.locale,
+    emailVerifiedAt: user.emailVerifiedAt,
+  };
 }
 
 /** Убирает пробелы/скобки/дефисы, которые пользователь обычно вставляет при наборе номера. */
@@ -64,38 +73,36 @@ export class AuthService {
     return { user: toUserDto(user), driver, company: null, companyMember: null, ...tokens };
   }
 
-  async requestEmailCode(email: string, ip: string) {
-    const normalized = normalizeEmail(email);
-    const existing = await this.prisma.user.findUnique({ where: { email: normalized } });
-    if (existing && existing.role !== 'COMPANY') {
-      throw new BadRequestException('Этот email уже используется другой ролью');
-    }
-    await this.email.requestCode(normalized, ip);
-  }
-
   /**
-   * Пароль — альтернатива коду (решение 2026-10-04, «Вход логиста — код
-   * ИЛИ пароль»): у компании, которая задала пароль (CompaniesService.
-   * setPassword), можно войти сразу, не дожидаясь письма. У большинства
-   * новых компаний пароля нет — для них только verifyEmailCode.
+   * Вход логиста по email и паролю (задача 025, заменяет вход по коду из
+   * 006/022 — см. docs/decisions.md). Та же защита, что у админа: 5
+   * неверных паролей → блокировка на 15 минут, одинаковая ошибка для
+   * неверного email и пароля (не раскрываем, существует ли аккаунт).
    */
-  async loginCompanyPassword(email: string, password: string, deviceName?: string, platform?: string) {
-    const user = await this.prisma.user.findUnique({ where: { email: normalizeEmail(email) } });
-    if (!user || user.role !== 'COMPANY' || !user.passwordHash) {
-      throw new UnauthorizedException('Invalid email or password');
+  async loginCompany(email: string, password: string, ip: string, deviceName?: string, platform?: string) {
+    const normalizedEmail = normalizeEmail(email);
+    const locked = await this.isLockedOut('company', normalizedEmail);
+    if (locked) {
+      throw new UnauthorizedException('Слишком много неверных попыток, попробуйте через 15 минут');
     }
-    const passwordOk = await bcrypt.compare(password, user.passwordHash);
+
+    const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+    const passwordOk =
+      user?.role === 'COMPANY' && user.passwordHash ? await bcrypt.compare(password, user.passwordHash) : false;
+
     if (!passwordOk) {
+      await this.recordFailure('company', normalizedEmail);
       throw new UnauthorizedException('Invalid email or password');
     }
+    await this.clearLockout('company', normalizedEmail);
 
     const member = await this.prisma.companyMember.findUnique({
-      where: { userId: user.id },
+      where: { userId: user!.id },
       include: { company: true },
     });
-    const tokens = await this.sessions.createSession(user.id, user.role, deviceName, platform);
+    const tokens = await this.sessions.createSession(user!.id, user!.role, deviceName, platform);
     return {
-      user: toUserDto(user),
+      user: toUserDto(user!),
       driver: null,
       company: member ? this.companies.toCompanyDto(member.company) : null,
       companyMember: member ? this.companies.toMemberDto(member) : null,
@@ -104,69 +111,135 @@ export class AuthService {
   }
 
   /**
-   * Вход и начало регистрации логиста в одном шаге — без пароля (задачи
-   * 006, 022), по аналогии с verifyDriverCode: известный email — сразу
-   * вход, новый — создаём пользователя роли COMPANY без компании
-   * (company: null), регистрация компании продолжается через
-   * POST /companies/register (задача 022).
+   * Регистрация компании в один шаг — email, пароль, имя владельца,
+   * название компании, страна (задача 025). Переиспользует
+   * CompaniesService для создания Company+CompanyMember. Письмо
+   * подтверждения отправляется, но не блокирует (п. 7 задачи) — доходимость
+   * на qq.com/163.com ненадёжна.
    */
-  async verifyEmailCode(email: string, code: string, deviceName?: string, platform?: string) {
-    const normalized = normalizeEmail(email);
-    const ok = await this.email.verifyCode(normalized, code);
+  async registerCompany(dto: RegisterCompanyAuthDto, ip: string) {
+    const normalizedEmail = normalizeEmail(dto.email);
+    const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (existing) {
+      throw new ConflictException('Email already registered');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const user = await this.prisma.user.create({
+      data: { role: 'COMPANY', email: normalizedEmail, passwordHash },
+    });
+
+    const { company, companyMember } = await this.companies.registerOwnedCompany(user.id, dto);
+
+    try {
+      await this.email.requestCode(normalizedEmail, ip);
+    } catch {
+      // Письмо подтверждения — не блокирует регистрацию (п. 7); пользователь
+      // может запросить его повторно из кабинета (resendVerification).
+    }
+
+    const tokens = await this.sessions.createSession(user.id, user.role);
+    return { user: toUserDto(user), driver: null, company, companyMember, ...tokens };
+  }
+
+  /// Принять приглашение сотрудника (задача 025, «Путь Б» из 022) — создание
+  /// пользователя/членства живёт в CompaniesService, сессия — здесь (та же
+  /// причина разделения, что у registerCompany: CompaniesService не должен
+  /// зависеть от AuthModule).
+  async acceptInvite(token: string, dto: AcceptInviteDto) {
+    const { user, company, companyMember } = await this.companies.acceptInvite(token, dto);
+    const tokens = await this.sessions.createSession(user.id, user.role);
+    return { user: toUserDto(user), driver: null, company, companyMember, ...tokens };
+  }
+
+  async requestEmailVerification(userId: string, ip: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user?.email) throw new NotFoundException('User has no email');
+    if (user.emailVerifiedAt) return;
+    await this.email.requestCode(normalizeEmail(user.email), ip);
+  }
+
+  async verifyEmail(userId: string, code: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user?.email) throw new NotFoundException('User has no email');
+
+    const ok = await this.email.verifyCode(normalizeEmail(user.email), code);
     if (!ok) throw new BadRequestException('Неверный или истёкший код');
 
-    let user = await this.prisma.user.findUnique({ where: { email: normalized } });
-    if (!user) {
-      user = await this.prisma.user.create({ data: { role: 'COMPANY', email: normalized } });
-    } else if (user.role !== 'COMPANY') {
-      throw new BadRequestException('Этот email уже используется другой ролью');
-    }
+    await this.prisma.user.update({ where: { id: userId }, data: { emailVerifiedAt: new Date() } });
+  }
 
-    const member = await this.prisma.companyMember.findUnique({
-      where: { userId: user.id },
-      include: { company: true },
-    });
-    const tokens = await this.sessions.createSession(user.id, user.role, deviceName, platform);
-    return {
-      user: toUserDto(user),
-      driver: null,
-      company: member ? this.companies.toCompanyDto(member.company) : null,
-      companyMember: member ? this.companies.toMemberDto(member) : null,
-      ...tokens,
-    };
+  /// «Забыли пароль» (п. 9) — не раскрываем, существует ли email: всегда
+  /// отвечаем успехом, код отправляем только если аккаунт реально есть.
+  async requestPasswordReset(email: string, ip: string) {
+    const normalizedEmail = normalizeEmail(email);
+    const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (user?.role === 'COMPANY') {
+      await this.email.requestCode(normalizedEmail, ip);
+    }
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string) {
+    const normalizedEmail = normalizeEmail(email);
+    const ok = await this.email.verifyCode(normalizedEmail, code);
+    if (!ok) throw new BadRequestException('Неверный или истёкший код');
+
+    const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (!user || user.role !== 'COMPANY') throw new NotFoundException('User not found');
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+    // Пароль мог утечь — разлогиниваем все устройства, новый вход только с новым паролем.
+    await this.sessions.revokeAllForUser(user.id);
   }
 
   async loginAdmin(email: string, password: string, ip: string, deviceName?: string, platform?: string) {
     const normalizedEmail = normalizeEmail(email);
-    const client = this.redis.client;
-    const failKey = `admin:fail:${normalizedEmail}`;
-    const lockKey = `admin:lockout:${normalizedEmail}`;
 
-    const locked = await client.get(lockKey);
+    const locked = await this.isLockedOut('admin', normalizedEmail);
     if (locked) {
       await this.logAdminAttempt(null, normalizedEmail, ip, 'ADMIN_LOGIN_LOCKED');
       throw new UnauthorizedException('Слишком много неверных попыток, попробуйте через 15 минут');
     }
 
     const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
-    const passwordOk = user?.role === 'ADMIN' && user.passwordHash ? await bcrypt.compare(password, user.passwordHash) : false;
+    const passwordOk =
+      user?.role === 'ADMIN' && user.passwordHash ? await bcrypt.compare(password, user.passwordHash) : false;
 
     if (!passwordOk) {
-      const attempts = await client.incr(failKey);
-      if (attempts === 1) await client.expire(failKey, ADMIN_LOCKOUT_SECONDS);
-      if (attempts >= ADMIN_LOCKOUT_THRESHOLD) {
-        await client.set(lockKey, '1', 'EX', ADMIN_LOCKOUT_SECONDS);
-        await client.del(failKey);
-      }
+      await this.recordFailure('admin', normalizedEmail);
       await this.logAdminAttempt(user?.id ?? null, normalizedEmail, ip, 'ADMIN_LOGIN_FAILURE');
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    await Promise.all([client.del(failKey), client.del(lockKey)]);
+    await this.clearLockout('admin', normalizedEmail);
     await this.logAdminAttempt(user!.id, normalizedEmail, ip, 'ADMIN_LOGIN_SUCCESS');
 
     const tokens = await this.sessions.createSession(user!.id, user!.role, deviceName, platform);
     return { user: toUserDto(user!), driver: null, company: null, companyMember: null, ...tokens };
+  }
+
+  /// Общая защита от перебора пароля — один и тот же Redis-паттерн для
+  /// админа (задача 006) и логиста (задача 025), с отдельным неймспейсом
+  /// по `scope`, чтобы блокировки не пересекались между ролями.
+  private async isLockedOut(scope: 'admin' | 'company', email: string): Promise<boolean> {
+    return (await this.redis.client.get(`${scope}:lockout:${email}`)) !== null;
+  }
+
+  private async recordFailure(scope: 'admin' | 'company', email: string): Promise<void> {
+    const client = this.redis.client;
+    const failKey = `${scope}:fail:${email}`;
+    const lockKey = `${scope}:lockout:${email}`;
+    const attempts = await client.incr(failKey);
+    if (attempts === 1) await client.expire(failKey, LOCKOUT_SECONDS);
+    if (attempts >= LOCKOUT_THRESHOLD) {
+      await client.set(lockKey, '1', 'EX', LOCKOUT_SECONDS);
+      await client.del(failKey);
+    }
+  }
+
+  private async clearLockout(scope: 'admin' | 'company', email: string): Promise<void> {
+    await Promise.all([this.redis.client.del(`${scope}:fail:${email}`), this.redis.client.del(`${scope}:lockout:${email}`)]);
   }
 
   private async logAdminAttempt(actorUserId: string | null, email: string, ip: string, action: string) {

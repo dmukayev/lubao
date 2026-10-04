@@ -28,6 +28,9 @@ class ReferenceDataRepository {
               .toList() ??
           const [],
       defaultPointCityId: data['defaultPointCityId'] as String?,
+      supportWhatsapp: data['supportWhatsapp'] as String?,
+      supportWechat: data['supportWechat'] as String?,
+      supportEmail: data['supportEmail'] as String?,
     );
   }
 

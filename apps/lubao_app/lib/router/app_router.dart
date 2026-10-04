@@ -7,8 +7,9 @@ import '../providers/auth_provider.dart';
 import '../features/onboarding/role_select_screen.dart';
 import '../features/onboarding/driver_login_screen.dart';
 import '../features/onboarding/company_login_screen.dart';
-import '../features/onboarding/company_otp_screen.dart';
 import '../features/onboarding/company_register_screen.dart';
+import '../features/onboarding/forgot_password_screen.dart';
+import '../features/onboarding/accept_invite_screen.dart';
 import '../features/driver/driver_shell.dart';
 import '../features/driver/feed/cargo_feed_screen.dart';
 import '../features/driver/feed/cargo_detail_screen.dart';
@@ -61,10 +62,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (session == null) return '/role-select';
         final isDriverSplash = session.user.role == UserRole.driver;
         if (isDriverSplash) return session.driver == null ? '/driver/register' : '/driver/feed';
-        return session.companyMember == null ? '/company/register' : '/company/cargos';
+        return '/company/cargos';
       }
 
-      final onAuthScreen = loc == '/role-select' || loc.startsWith('/login');
+      final onAuthScreen = loc == '/role-select' || loc.startsWith('/login') || loc.startsWith('/invite');
 
       if (session == null) {
         return onAuthScreen ? null : '/role-select';
@@ -79,12 +80,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         return loc == '/driver/register' ? null : '/driver/register';
       }
 
-      // Вошёл по коду на email, но компании ещё нет (задача 022) — на
-      // экран «Новая компания», пока не создаст свою.
-      final needsCompanyRegistration = !isDriver && session.companyMember == null;
-      if (needsCompanyRegistration) {
-        return loc == '/company/register' ? null : '/company/register';
-      }
+      // Регистрация и приглашение компании теперь атомарны (задача 025) —
+      // COMPANY-сессия всегда приходит с уже привязанной компанией, отдельный
+      // промежуточный шаг /company/register больше не нужен.
 
       if (onAuthScreen) {
         return isDriver ? '/driver/feed' : '/company/cargos';
@@ -98,10 +96,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/devices', builder: (context, state) => const DevicesScreen()),
       GoRoute(path: '/role-select', builder: (context, state) => const RoleSelectScreen()),
       GoRoute(path: '/login/driver', builder: (context, state) => const DriverLoginScreen()),
-      GoRoute(path: '/login/company', builder: (context, state) => const CompanyLoginScreen()),
       GoRoute(
-        path: '/login/company/otp',
-        builder: (context, state) => CompanyOtpScreen(email: state.extra as String),
+        path: '/login/company',
+        builder: (context, state) => CompanyLoginScreen(prefillEmail: state.extra as String?),
+      ),
+      GoRoute(
+        path: '/login/company/register',
+        builder: (context, state) => const CompanyRegisterScreen(),
+      ),
+      GoRoute(
+        path: '/login/company/forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/invite/:token',
+        builder: (context, state) => AcceptInviteScreen(token: state.pathParameters['token']!),
       ),
       ShellRoute(
         builder: (context, state, child) => DriverShell(child: child),
@@ -126,10 +135,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/driver/verification',
         builder: (context, state) => const DriverVerificationScreen(),
-      ),
-      GoRoute(
-        path: '/company/register',
-        builder: (context, state) => const CompanyRegisterScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => CompanyShell(child: child),

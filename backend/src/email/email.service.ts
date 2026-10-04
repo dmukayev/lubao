@@ -91,4 +91,10 @@ export class EmailService {
     await Promise.all([client.del(this.codeKey(email)), client.del(this.attemptsKey(email))]);
     return true;
   }
+
+  /// Письмо без кода — приглашение сотрудника (задача 025). Без лимитов
+  /// requestCode: отправляется владельцем вручную, не по вводу пользователя.
+  async sendMessage(email: string, subject: string, bodyText: string): Promise<void> {
+    await this.provider.sendMessage(email, subject, bodyText);
+  }
 }

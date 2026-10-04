@@ -11,10 +11,13 @@ import {
   LogoutDto,
   RefreshDto,
   RequestCodeDto,
-  RequestEmailCodeDto,
+  RequestPasswordResetDto,
+  ResetPasswordDto,
   VerifyCodeDto,
-  VerifyEmailCodeDto,
+  VerifyEmailDto,
 } from './dto/login.dto';
+import { RegisterCompanyAuthDto } from './dto/register-company.dto';
+import { AcceptInviteDto } from '../companies/dto/invite.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -37,22 +40,47 @@ export class AuthController {
   }
 
   @Public()
-  @Post('email/request')
-  async requestEmailCode(@Body() dto: RequestEmailCodeDto, @ClientIp() ip: string) {
-    await this.auth.requestEmailCode(dto.email, ip);
+  @Post('company/login')
+  loginCompany(@Body() dto: CompanyPasswordLoginDto, @ClientIp() ip: string) {
+    return this.auth.loginCompany(dto.email, dto.password, ip, dto.deviceName, dto.platform);
+  }
+
+  @Public()
+  @Post('company/register')
+  registerCompany(@Body() dto: RegisterCompanyAuthDto, @ClientIp() ip: string) {
+    return this.auth.registerCompany(dto, ip);
+  }
+
+  @Public()
+  @Post('company/invites/:token/accept')
+  acceptInvite(@Param('token') token: string, @Body() dto: AcceptInviteDto) {
+    return this.auth.acceptInvite(token, dto);
+  }
+
+  @Public()
+  @Post('company/forgot-password')
+  async requestPasswordReset(@Body() dto: RequestPasswordResetDto, @ClientIp() ip: string) {
+    await this.auth.requestPasswordReset(dto.email, ip);
     return { success: true };
   }
 
   @Public()
-  @Post('email/verify')
-  verifyEmailCode(@Body() dto: VerifyEmailCodeDto) {
-    return this.auth.verifyEmailCode(dto.email, dto.code, dto.deviceName, dto.platform);
+  @Post('company/reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.auth.resetPassword(dto.email, dto.code, dto.newPassword);
+    return { success: true };
   }
 
-  @Public()
-  @Post('email/login')
-  loginCompanyPassword(@Body() dto: CompanyPasswordLoginDto) {
-    return this.auth.loginCompanyPassword(dto.email, dto.password, dto.deviceName, dto.platform);
+  @Post('company/resend-verification')
+  async resendVerification(@CurrentUser() ctx: RequestContext, @ClientIp() ip: string) {
+    await this.auth.requestEmailVerification(ctx.user.id, ip);
+    return { success: true };
+  }
+
+  @Post('company/verify-email')
+  async verifyEmail(@CurrentUser() ctx: RequestContext, @Body() dto: VerifyEmailDto) {
+    await this.auth.verifyEmail(ctx.user.id, dto.code);
+    return { success: true };
   }
 
   @Public()

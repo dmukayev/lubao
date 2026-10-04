@@ -36,20 +36,62 @@ class SessionController extends StateNotifier<Session?> {
     state = session;
   }
 
-  Future<void> requestEmailCode(String email) async {
-    await _ref.read(authRepositoryProvider).requestEmailCode(email: email);
-  }
-
-  Future<Session> verifyEmailCode(String email, String code) async {
-    final session = await _ref.read(authRepositoryProvider).verifyEmailCode(email: email, code: code);
+  Future<Session> loginCompany(String email, String password) async {
+    final session = await _ref.read(authRepositoryProvider).loginCompany(email: email, password: password);
     state = session;
     return session;
   }
 
-  Future<Session> loginCompanyPassword(String email, String password) async {
-    final session = await _ref.read(authRepositoryProvider).loginCompanyPassword(email: email, password: password);
+  Future<Session> registerCompany({
+    required String email,
+    required String password,
+    required String ownerName,
+    required String companyName,
+    String? companyNameRu,
+    required String countryId,
+  }) async {
+    final session = await _ref.read(authRepositoryProvider).registerCompany(
+          email: email,
+          password: password,
+          ownerName: ownerName,
+          companyName: companyName,
+          companyNameRu: companyNameRu,
+          countryId: countryId,
+        );
     state = session;
     return session;
+  }
+
+  Future<Session> acceptInvite(
+    String token, {
+    required String password,
+    required String name,
+    String? phone,
+    String? wechat,
+  }) async {
+    final session = await _ref
+        .read(authRepositoryProvider)
+        .acceptInvite(token, password: password, name: name, phone: phone, wechat: wechat);
+    state = session;
+    return session;
+  }
+
+  /// Подтверждение email не блокирует вход (задача 025) — только снимает
+  /// плашку-напоминание в кабинете после успешного кода.
+  Future<void> verifyEmail(String code) async {
+    await _ref.read(authRepositoryProvider).verifyEmail(code: code);
+    final current = state;
+    if (current == null) return;
+    state = current.copyWith(
+      user: AppUser(
+        id: current.user.id,
+        role: current.user.role,
+        phone: current.user.phone,
+        email: current.user.email,
+        locale: current.user.locale,
+        emailVerifiedAt: DateTime.now(),
+      ),
+    );
   }
 
   void updateDriver(Driver driver) {

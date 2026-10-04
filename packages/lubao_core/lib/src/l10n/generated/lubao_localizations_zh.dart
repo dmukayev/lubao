@@ -134,30 +134,144 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get companyRegisterSubmit => '创建公司';
 
   @override
+  String get companyRegisterEmailError => '请输入邮箱';
+
+  @override
+  String get companyRegisterPasswordError => '至少8个字符';
+
+  @override
+  String get companyRegisterEmailTaken => '该邮箱已注册。登录？';
+
+  @override
   String get companyLoginTitle => '公司登录';
 
   @override
   String get companyLoginEmailLabel => '邮箱';
 
   @override
-  String get companyLoginByCode => '验证码登录';
-
-  @override
-  String get companyLoginByPassword => '密码登录';
-
-  @override
-  String get companyLoginSendCode => '获取验证码';
-
-  @override
   String get companyLoginVerify => '登录';
 
   @override
-  String companyOtpSubtitle(String email) {
-    return '验证码已发送至 $email';
+  String get companyLoginLockedOut => '尝试次数过多，请15分钟后重试';
+
+  @override
+  String get companyLoginShowPassword => '显示密码';
+
+  @override
+  String get companyLoginHidePassword => '隐藏密码';
+
+  @override
+  String get companyLoginRegisterLink => '注册';
+
+  @override
+  String get companyLoginForgotPasswordLink => '忘记密码？';
+
+  @override
+  String get forgotPasswordTitle => '找回密码';
+
+  @override
+  String get forgotPasswordSendCode => '发送验证码';
+
+  @override
+  String get forgotPasswordCodeLabel => '邮箱验证码';
+
+  @override
+  String get forgotPasswordNewPasswordLabel => '新密码';
+
+  @override
+  String get forgotPasswordSubmit => '更改密码';
+
+  @override
+  String get forgotPasswordSuccess => '密码已更改，请用新密码登录';
+
+  @override
+  String get forgotPasswordResend => '重新发送验证码';
+
+  @override
+  String get forgotPasswordInvalidCode => '验证码错误或已过期';
+
+  @override
+  String get forgotPasswordNoEmailLink => '没收到邮件？';
+
+  @override
+  String get supportContactTitle => '联系客服';
+
+  @override
+  String get supportContactBody => '如果邮件没有送达，请通过以下方式联系我们';
+
+  @override
+  String get supportContactWhatsapp => 'WhatsApp';
+
+  @override
+  String get supportContactWechat => '微信';
+
+  @override
+  String get supportContactEmail => '邮箱';
+
+  @override
+  String get supportContactNone => '客服联系方式即将在此显示';
+
+  @override
+  String get acceptInviteTitle => '加入公司邀请';
+
+  @override
+  String acceptInviteSubtitle(String companyName, String role) {
+    return '您被邀请加入「$companyName」——角色：$role';
   }
 
   @override
-  String get companyOtpCodeLabel => '邮箱验证码';
+  String get acceptInviteNameLabel => '您的姓名';
+
+  @override
+  String get acceptInvitePhoneLabel => '电话（供司机联系）';
+
+  @override
+  String get acceptInviteWechatLabel => '微信（可选）';
+
+  @override
+  String get acceptInviteSubmit => '加入公司';
+
+  @override
+  String get acceptInviteInvalidToken => '邀请无效或已被使用';
+
+  @override
+  String get emailVerifyBannerText => '邮箱未验证';
+
+  @override
+  String get emailVerifyBannerAction => '验证';
+
+  @override
+  String get emailVerifyDialogTitle => '验证邮箱';
+
+  @override
+  String get emailVerifyDialogCodeLabel => '邮箱验证码';
+
+  @override
+  String get emailVerifyDialogSubmit => '验证';
+
+  @override
+  String get employeesInviteButton => '邀请员工';
+
+  @override
+  String get employeesInviteEmailLabel => '员工邮箱';
+
+  @override
+  String get employeesInviteRoleOwner => '所有者';
+
+  @override
+  String get employeesInviteRoleLogist => '物流员';
+
+  @override
+  String get employeesInviteSubmit => '生成邀请链接';
+
+  @override
+  String get employeesInviteLinkReady => '邀请链接7天内有效，复制后可通过微信/WhatsApp转发：';
+
+  @override
+  String get employeesInviteCopyLink => '复制';
+
+  @override
+  String get employeesInviteCopied => '链接已复制';
 
   @override
   String get driverSetupTitle => '设置个人资料';
@@ -720,7 +834,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get companySetPasswordTitle => '登录密码';
 
   @override
-  String get companySetPasswordHint => '可选——无需邮箱验证码即可登录';
+  String get companySetPasswordHint => '更改登录密码';
 
   @override
   String get companySetPasswordTooShort => '至少8个字符';

@@ -1,18 +1,27 @@
-import { Body, Controller, ForbiddenException, Get, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Param, Post } from '@nestjs/common';
 import { CurrentUser } from '../common/current-user.decorator';
+import { Public } from '../common/public.decorator';
 import { RequestContext } from '../common/request-context';
 import { CompaniesService } from './companies.service';
-import { RegisterCompanyDto } from './dto/register-company.dto';
+import { CreateInviteDto } from './dto/invite.dto';
 import { SetPasswordDto } from './dto/set-password.dto';
 
 @Controller('companies')
 export class CompaniesController {
   constructor(private readonly companies: CompaniesService) {}
 
-  @Post('register')
-  register(@CurrentUser() ctx: RequestContext, @Body() dto: RegisterCompanyDto) {
-    if (ctx.user.role !== 'COMPANY') throw new ForbiddenException('Not a company account');
-    return this.companies.registerOwnedCompany(ctx.user.id, dto);
+  @Post('me/invites')
+  createInvite(@CurrentUser() ctx: RequestContext, @Body() dto: CreateInviteDto) {
+    if (!ctx.companyMember || ctx.companyMember.role !== 'OWNER') {
+      throw new ForbiddenException('Only the owner can invite employees');
+    }
+    return this.companies.createInvite(ctx.companyMember.companyId, ctx.user.id, dto);
+  }
+
+  @Public()
+  @Get('invites/:token')
+  getInvite(@Param('token') token: string) {
+    return this.companies.getInvite(token);
   }
 
   @Post('me/password')

@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsOptional, IsString, Length } from 'class-validator';
 
 export class RequestCodeDto {
   @IsString()
@@ -21,17 +21,10 @@ export class VerifyCodeDto {
   platform?: string;
 }
 
-export class RequestEmailCodeDto {
-  @IsString()
-  email!: string;
-}
-
-/// Пароль — альтернатива коду на email для логиста (решение 2026-10-04,
-/// «Вход логиста — код ИЛИ пароль»): у кого задан пароль, может не ждать
-/// письмо каждый раз. У новых компаний пароля нет, пока не зададут сами
-/// (см. CompaniesService.setPassword) — тогда остаётся только код.
+/// Вход логиста — email и пароль (задача 025, заменяет код на email из
+/// 006/022). Защита — 5 неверных попыток → блокировка 15 минут.
 export class CompanyPasswordLoginDto {
-  @IsString()
+  @IsEmail()
   email!: string;
 
   @IsString()
@@ -46,20 +39,26 @@ export class CompanyPasswordLoginDto {
   platform?: string;
 }
 
-export class VerifyEmailCodeDto {
-  @IsString()
+export class RequestPasswordResetDto {
+  @IsEmail()
+  email!: string;
+}
+
+export class ResetPasswordDto {
+  @IsEmail()
   email!: string;
 
   @IsString()
   code!: string;
 
-  @IsOptional()
   @IsString()
-  deviceName?: string;
+  @Length(8, 100)
+  newPassword!: string;
+}
 
-  @IsOptional()
+export class VerifyEmailDto {
   @IsString()
-  platform?: string;
+  code!: string;
 }
 
 export class AdminLoginDto {

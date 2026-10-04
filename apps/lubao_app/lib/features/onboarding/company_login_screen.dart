@@ -4,23 +4,25 @@ import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/auth_provider.dart';
+import '../shared/status_helpers.dart';
 
-/// Вход логиста: код на email по умолчанию (задачи 006, 022), пароль —
-/// альтернатива для тех, кто его себе задал (решение 2026-10-04, «Вход
-/// логиста — код ИЛИ пароль»; настройка пароля — в профиле компании).
-/// Регистрация новой компании продолжается после кода — см.
-/// CompanyOtpScreen и роутер.
+/// Вход логиста — email и пароль по умолчанию (задача 025, заменяет вход
+/// по коду из 006/022). Внизу — «Регистрация» и «Забыли пароль?» в одну
+/// строку, без отдельной кнопки «У меня приглашение» (ссылка-приглашение
+/// сама открывает нужный экран).
 class CompanyLoginScreen extends ConsumerStatefulWidget {
-  const CompanyLoginScreen({super.key});
+  const CompanyLoginScreen({super.key, this.prefillEmail});
+
+  final String? prefillEmail;
 
   @override
   ConsumerState<CompanyLoginScreen> createState() => _CompanyLoginScreenState();
 }
 
 class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
-  final _emailController = TextEditingController();
+  late final _emailController = TextEditingController(text: widget.prefillEmail);
   final _passwordController = TextEditingController();
-  bool _usePassword = false;
+  bool _obscurePassword = true;
   bool _loading = false;
 
   @override
@@ -32,20 +34,14 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
 
   Future<void> _submit() async {
     final t = context.l10n;
-    final email = _emailController.text.trim();
-    if (email.isEmpty) return;
     setState(() => _loading = true);
     try {
-      if (_usePassword) {
-        await ref.read(sessionProvider.notifier).loginCompanyPassword(email, _passwordController.text);
-        // Дальше решает редирект роутера.
-      } else {
-        await ref.read(sessionProvider.notifier).requestEmailCode(email);
-        if (mounted) context.push('/login/company/otp', extra: email);
-      }
+      await ref.read(sessionProvider.notifier).loginCompany(_emailController.text.trim(), _passwordController.text);
+      // Дальше решает редирект роутера.
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.commonError)));
+        final message = isLockedOutError(e) ? t.companyLoginLockedOut : t.commonError;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -61,33 +57,40 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            SegmentedButton<bool>(
-              segments: [
-                ButtonSegment(value: false, label: Text(t.companyLoginByCode)),
-                ButtonSegment(value: true, label: Text(t.companyLoginByPassword)),
-              ],
-              selected: {_usePassword},
-              onSelectionChanged: (value) => setState(() => _usePassword = value.first),
-            ),
-            const SizedBox(height: 16),
             AppTextField(
               label: t.companyLoginEmailLabel,
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
             ),
-            if (_usePassword) ...[
-              const SizedBox(height: 12),
-              AppTextField(
-                label: t.adminLoginPasswordLabel,
-                controller: _passwordController,
-                obscureText: true,
+            const SizedBox(height: 12),
+            AppTextField(
+              label: t.adminLoginPasswordLabel,
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              onSubmitted: (_) => _submit(),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                child: Text(_obscurePassword ? t.companyLoginShowPassword : t.companyLoginHidePassword),
               ),
-            ],
+            ),
+            const SizedBox(height: 8),
+            PrimaryButton(label: t.companyLoginVerify, loading: _loading, onPressed: _submit),
             const SizedBox(height: 16),
-            PrimaryButton(
-              label: _usePassword ? t.companyLoginVerify : t.companyLoginSendCode,
-              loading: _loading,
-              onPressed: _submit,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () => context.push('/login/company/register'),
+                  child: Text(t.companyLoginRegisterLink),
+                ),
+                TextButton(
+                  onPressed: () => context.push('/login/company/forgot-password'),
+                  child: Text(t.companyLoginForgotPasswordLink),
+                ),
+              ],
             ),
           ],
         ),

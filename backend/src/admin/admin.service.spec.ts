@@ -21,7 +21,7 @@ describe('AdminService — city moderation (task 021)', () => {
       $transaction: jest.fn(async (cb: any) => cb(tx)),
       __tx: tx,
     };
-    service = new AdminService(prisma);
+    service = new AdminService(prisma, { revokeAllForUser: jest.fn() } as any);
   });
 
   it('pendingCities filters by PENDING status', async () => {

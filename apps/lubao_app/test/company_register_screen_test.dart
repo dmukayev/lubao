@@ -19,20 +19,27 @@ final _fixture = ReferenceData(
   points: const [],
 );
 
-class _FakeCompanyRepository extends CompanyRepository {
-  _FakeCompanyRepository() : super(ApiClient(baseUrl: 'http://localhost'));
+class _FakeAuthRepository extends AuthRepository {
+  _FakeAuthRepository() : super(ApiClient(baseUrl: 'http://localhost'));
 
+  String? lastEmail;
   String? lastOwnerName;
   String? lastCompanyName;
   String? lastCountryId;
 
   @override
-  Future<(Company, CompanyMember)> register({
+  Future<Session?> restore() async => null;
+
+  @override
+  Future<Session> registerCompany({
+    required String email,
+    required String password,
     required String ownerName,
     required String companyName,
     String? companyNameRu,
     required String countryId,
   }) async {
+    lastEmail = email;
     lastOwnerName = ownerName;
     lastCompanyName = companyName;
     lastCountryId = countryId;
@@ -46,18 +53,22 @@ class _FakeCompanyRepository extends CompanyRepository {
       ratingCount: 0,
     );
     final member = CompanyMember(id: 'member-1', companyId: 'company-1', userId: 'user-1', role: CompanyMemberRole.owner);
-    return (company, member);
+    return Session(
+      user: AppUser(id: 'user-1', role: UserRole.company, email: email, locale: 'ru'),
+      company: company,
+      companyMember: member,
+    );
   }
 }
 
 void main() {
-  testWidgets('owner fills name, company name and country, submits, and the session gets the new company',
+  testWidgets('owner fills email, password, name, company name and country, submits, and the session gets the new company',
       (tester) async {
-    final companyRepo = _FakeCompanyRepository();
+    final authRepo = _FakeAuthRepository();
     await tester.pumpWidget(ProviderScope(
       overrides: [
         referenceDataProvider.overrideWith((ref) async => _fixture),
-        companyRepositoryProvider.overrideWithValue(companyRepo),
+        authRepositoryProvider.overrideWithValue(authRepo),
       ],
       child: MaterialApp(
         locale: const Locale('ru'),
@@ -68,24 +79,29 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
+    await tester.enterText(find.widgetWithText(TextField, 'Email'), 'owner@example.com');
+    await tester.enterText(find.widgetWithText(TextField, 'Пароль'), 'password123');
     await tester.enterText(find.widgetWithText(TextField, 'Ваше имя'), 'Ли Вэй');
     await tester.enterText(find.widgetWithText(TextField, 'Название компании'), '新疆测试物流');
     await tester.tap(find.text('Китай'));
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.byType(PrimaryButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(PrimaryButton));
     await tester.pumpAndSettle();
 
-    expect(companyRepo.lastOwnerName, 'Ли Вэй');
-    expect(companyRepo.lastCompanyName, '新疆测试物流');
-    expect(companyRepo.lastCountryId, 'cn-1');
+    expect(authRepo.lastEmail, 'owner@example.com');
+    expect(authRepo.lastOwnerName, 'Ли Вэй');
+    expect(authRepo.lastCompanyName, '新疆测试物流');
+    expect(authRepo.lastCountryId, 'cn-1');
   });
 
   testWidgets('submitting without picking a country shows the inline error', (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
         referenceDataProvider.overrideWith((ref) async => _fixture),
-        companyRepositoryProvider.overrideWithValue(_FakeCompanyRepository()),
+        authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
       ],
       child: MaterialApp(
         locale: const Locale('ru'),
@@ -96,8 +112,12 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
+    await tester.enterText(find.widgetWithText(TextField, 'Email'), 'owner@example.com');
+    await tester.enterText(find.widgetWithText(TextField, 'Пароль'), 'password123');
     await tester.enterText(find.widgetWithText(TextField, 'Ваше имя'), 'Ли Вэй');
     await tester.enterText(find.widgetWithText(TextField, 'Название компании'), '新疆测试物流');
+    await tester.ensureVisible(find.byType(PrimaryButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(PrimaryButton));
     await tester.pumpAndSettle();
 

@@ -96,6 +96,16 @@ export class SessionService {
     });
   }
 
+  /// После смены пароля (задача 025, п. 9) — все сессии завершаются, без
+  /// исключения для текущей: пароль мог утечь, новый вход требует нового
+  /// пароля заново на всех устройствах.
+  async revokeAllForUser(userId: string): Promise<void> {
+    await this.prisma.session.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
   async listActiveSessions(userId: string, currentSessionId: string) {
     const sessions = await this.prisma.session.findMany({
       where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },

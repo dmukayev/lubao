@@ -270,17 +270,18 @@ model MessageTemplate {
 // ---------------------------------------------------------------------------
 
 model User {
-  id           String   @id @default(uuid())
-  role         UserRole
-  phone        String?  @unique
-  email        String?  @unique
-  passwordHash String?
-  name         String?
-  locale       Locale   @default(ru)
-  isActive     Boolean  @default(true)
-  isBlocked    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String    @id @default(uuid())
+  role            UserRole
+  phone           String?   @unique
+  email           String?   @unique
+  passwordHash    String?
+  name            String?
+  emailVerifiedAt DateTime?
+  locale          Locale    @default(ru)
+  isActive        Boolean   @default(true)
+  isBlocked       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   driver                 Driver?
   companyMember          CompanyMember?
@@ -296,6 +297,7 @@ model User {
   sessions               Session[]
   citiesSubmitted        City[]                  @relation("CitySubmittedBy")
   citiesReviewed         City[]                  @relation("CityReviewedBy")
+  companyInvitesSent     CompanyInvite[]
 
   @@map("users")
 }
@@ -413,6 +415,7 @@ model Company {
   chats                 Chat[]
   contactEvents         ContactEvent[]
   arrivalViews          ArrivalView[]
+  invites               CompanyInvite[]
   verificationDocuments VerificationDocument[] @relation("CompanyVerificationDocuments")
   subscriptions         Subscription[]
   payments              Payment[]
@@ -433,6 +436,27 @@ model CompanyMember {
 
   @@index([companyId])
   @@map("company_members")
+}
+
+/// Приглашение сотрудника по ссылке (задача 025, «Путь Б» из 022): владелец
+/// отправляет email+роль, получает одноразовый токен, действующий 7 дней.
+/// Переход по ссылке подтверждает email автоматически.
+model CompanyInvite {
+  id              String            @id @default(uuid())
+  companyId       String
+  company         Company           @relation(fields: [companyId], references: [id])
+  invitedByUserId String
+  invitedBy       User              @relation(fields: [invitedByUserId], references: [id])
+  email           String
+  role            CompanyMemberRole
+  token           String            @unique
+  expiresAt       DateTime
+  usedAt          DateTime?
+  createdAt       DateTime          @default(now())
+
+  @@index([companyId])
+  @@index([token])
+  @@map("company_invites")
 }
 
 // ---------------------------------------------------------------------------

@@ -1,7 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+
+import '../../providers/api_providers.dart';
 
 (String, Color) cargoStatusPresentation(LubaoLocalizations t, CargoStatus status) {
   switch (status) {
@@ -93,6 +97,69 @@ bool isTooManyAttemptsError(Object error) {
   if (error is! DioException) return false;
   final data = error.response?.data;
   return data is Map && data['message'] == 'Слишком много попыток, запросите новый код';
+}
+
+/// true, если вход заблокирован на 15 минут после 5 неверных паролей
+/// (задача 025, та же защита, что у админа — см. auth.service.ts).
+bool isLockedOutError(Object error) {
+  if (error is! DioException) return false;
+  final data = error.response?.data;
+  return data is Map && data['message'] == 'Слишком много неверных попыток, попробуйте через 15 минут';
+}
+
+/// true, если email при регистрации компании уже занят (см.
+/// AuthService.registerCompany, ConflictException) — предлагаем войти.
+bool isEmailTakenError(Object error) {
+  if (error is! DioException) return false;
+  final data = error.response?.data;
+  return data is Map && data['message'] == 'Email already registered';
+}
+
+/// Шторка контактов поддержки — запасной путь, если письмо с кодом
+/// (регистрация/сброс пароля) не дошло (задача 025, п. 9 — qq.com/163.com
+/// ненадёжны). Показывает только то, что админ заполнил в `app_settings`
+/// (см. ReferenceData.supportWhatsapp/supportWechat/supportEmail).
+Future<void> showSupportContactSheet(BuildContext context, WidgetRef ref) {
+  final t = context.l10n;
+  final refData = ref.read(referenceDataProvider).valueOrNull;
+  final rows = <Widget>[
+    if (refData?.supportWhatsapp != null)
+      ListTile(
+        leading: const Icon(LucideIcons.messageCircle),
+        title: Text(t.supportContactWhatsapp),
+        subtitle: Text(refData!.supportWhatsapp!),
+      ),
+    if (refData?.supportWechat != null)
+      ListTile(
+        leading: const Icon(LucideIcons.messageCircle),
+        title: Text(t.supportContactWechat),
+        subtitle: Text(refData!.supportWechat!),
+      ),
+    if (refData?.supportEmail != null)
+      ListTile(leading: const Icon(LucideIcons.mail), title: Text(t.supportContactEmail), subtitle: Text(refData!.supportEmail!)),
+  ];
+
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge))),
+    builder: (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.supportContactTitle, style: AppTextStyles.title),
+            const SizedBox(height: AppSpacing.sm),
+            Text(t.supportContactBody, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: AppSpacing.md),
+            if (rows.isEmpty) Text(t.supportContactNone) else ...rows,
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 /// Шторка «Чтобы откликнуться/подтвердить, подтвердите личность — 2 минуты»

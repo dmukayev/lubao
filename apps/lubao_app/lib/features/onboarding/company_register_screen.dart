@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/api_providers.dart';
 import '../../providers/auth_provider.dart';
+import '../shared/status_helpers.dart';
 
-/// Новая компания — один экран после входа по коду на email (задача 022,
-/// «Путь А»): имя владельца, название компании (+ русское, можно
-/// поправить), страна кнопками Китай/Казахстан/Другая. Город не спрашиваем
-/// (решение 2026-10-04) — по желанию позже в профиле компании.
+/// Регистрация компании — один экран, без предварительного входа (задача
+/// 025, заменяет пост-кодовый экран из 022): email, пароль, имя владельца,
+/// название компании (+ русское, можно поправить), страна кнопками
+/// Китай/Казахстан/Другая. Город не спрашиваем (решение 2026-10-04) — по
+/// желанию позже в профиле компании. Телефон для водителей — перед первой
+/// публикацией груза (задача 012), не здесь.
 class CompanyRegisterScreen extends ConsumerStatefulWidget {
   const CompanyRegisterScreen({super.key});
 
@@ -17,14 +21,19 @@ class CompanyRegisterScreen extends ConsumerStatefulWidget {
 }
 
 class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _ownerNameController = TextEditingController();
   final _companyNameController = TextEditingController();
   final _companyNameRuController = TextEditingController();
   String? _countryId;
   bool _showAllCountries = false;
   bool _companyNameRuTouched = false;
+  bool _obscurePassword = true;
   bool _saving = false;
 
+  String? _emailError;
+  String? _passwordError;
   String? _ownerNameError;
   String? _companyNameError;
   String? _countryError;
@@ -41,6 +50,8 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
 
   @override
   void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
     _ownerNameController.dispose();
     _companyNameController.dispose();
     _companyNameRuController.dispose();
@@ -56,29 +67,50 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
 
   Future<void> _submit() async {
     final t = context.l10n;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
     final ownerName = _ownerNameController.text.trim();
     final companyName = _companyNameController.text.trim();
     setState(() {
+      _emailError = email.contains('@') ? null : t.companyRegisterEmailError;
+      _passwordError = password.length >= 8 ? null : t.companyRegisterPasswordError;
       _ownerNameError = isValidPersonName(ownerName) ? null : t.driverSetupFullNameError;
       _companyNameError = companyName.length < 2 ? t.companyRegisterNameError : null;
       _countryError = _countryId == null ? t.companyRegisterCountryError : null;
     });
-    if (_ownerNameError != null || _companyNameError != null || _countryError != null) return;
+    if (_emailError != null ||
+        _passwordError != null ||
+        _ownerNameError != null ||
+        _companyNameError != null ||
+        _countryError != null) {
+      return;
+    }
 
     setState(() => _saving = true);
     try {
-      final (company, companyMember) = await ref.read(companyRepositoryProvider).register(
+      await ref.read(sessionProvider.notifier).registerCompany(
+            email: email,
+            password: password,
             ownerName: ownerName,
             companyName: companyName,
             companyNameRu: _companyNameRuController.text.trim().isEmpty ? null : _companyNameRuController.text.trim(),
             countryId: _countryId!,
           );
-      ref.read(sessionProvider.notifier).updateCompany(company, companyMember);
-      // Дальше решает редирект роутера — session.companyMember теперь не
-      // null, он уводит в кабинет (см. app_router.dart).
+      // Дальше решает редирект роутера — сессия с привязанной компанией
+      // уводит прямо в кабинет (см. app_router.dart).
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.commonError)));
+        if (isEmailTakenError(e)) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(t.companyRegisterEmailTaken),
+            action: SnackBarAction(
+              label: t.companyLoginTitle,
+              onPressed: () => context.push('/login/company', extra: email),
+            ),
+          ));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.commonError)));
+        }
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -104,6 +136,26 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.screen),
             children: [
+              AppTextField(
+                label: t.companyLoginEmailLabel,
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                errorText: _emailError,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppTextField(
+                label: t.adminLoginPasswordLabel,
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                errorText: _passwordError,
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  child: Text(_obscurePassword ? t.companyLoginShowPassword : t.companyLoginHidePassword),
+                ),
+              ),
               AppTextField(
                 label: t.companyRegisterOwnerName,
                 controller: _ownerNameController,

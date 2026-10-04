@@ -85,6 +85,12 @@ export class AdminController {
     return this.admin.setCompanyVerified(id, dto.isVerified);
   }
 
+  @Post('companies/:id/reset-password')
+  resetCompanyPassword(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.resetCompanyPassword(id);
+  }
+
   @Get('drivers')
   drivers(@CurrentUser() ctx: RequestContext) {
     assertAdmin(ctx);

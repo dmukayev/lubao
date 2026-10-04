@@ -1,4 +1,5 @@
 import '../api/api_client.dart';
+import '../models/common.dart';
 import '../models/user.dart';
 
 class CompanyRepository {
@@ -11,29 +12,8 @@ class CompanyRepository {
     return Company.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// Самостоятельная регистрация компании владельцем (задача 022, «Путь А»)
-  /// — сразу после входа по коду на email, когда company == null.
-  Future<(Company, CompanyMember)> register({
-    required String ownerName,
-    required String companyName,
-    String? companyNameRu,
-    required String countryId,
-  }) async {
-    final res = await _client.dio.post('/companies/register', data: {
-      'ownerName': ownerName,
-      'companyName': companyName,
-      if (companyNameRu != null) 'companyNameRu': companyNameRu,
-      'countryId': countryId,
-    });
-    final data = res.data as Map<String, dynamic>;
-    return (
-      Company.fromJson(data['company'] as Map<String, dynamic>),
-      CompanyMember.fromJson(data['companyMember'] as Map<String, dynamic>),
-    );
-  }
-
-  /// Задать/сменить пароль — альтернативный способ входа (решение
-  /// 2026-10-04), не обязателен: кто не задал, продолжает входить по коду.
+  /// Сменить пароль, уже находясь в аккаунте (отдельно от «Забыли пароль» —
+  /// AuthRepository.resetPassword, для разлогиненных).
   Future<void> setPassword(String password) async {
     await _client.dio.post('/companies/me/password', data: {'password': password});
   }
@@ -41,5 +21,16 @@ class CompanyRepository {
   Future<List<CompanyMember>> members() async {
     final res = await _client.dio.get('/companies/me/members');
     return (res.data as List<dynamic>).map((e) => CompanyMember.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// Пригласить сотрудника по ссылке (задача 025, «Путь Б» из 022) —
+  /// только владелец. Возвращает токен, чтобы показать ссылку с кнопками
+  /// «Скопировать» / «Поделиться» сразу, не дожидаясь письма.
+  Future<String> createInvite({required String email, required CompanyMemberRole role}) async {
+    final res = await _client.dio.post('/companies/me/invites', data: {
+      'email': email,
+      'role': role == CompanyMemberRole.owner ? 'OWNER' : 'LOGIST',
+    });
+    return (res.data as Map<String, dynamic>)['token'] as String;
   }
 }

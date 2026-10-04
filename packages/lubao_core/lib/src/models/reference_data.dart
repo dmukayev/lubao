@@ -140,6 +140,9 @@ class ReferenceData {
     required this.points,
     this.exchangeRates = const [],
     this.defaultPointCityId,
+    this.supportWhatsapp,
+    this.supportWechat,
+    this.supportEmail,
   });
 
   final List<Country> countries;
@@ -154,6 +157,13 @@ class ReferenceData {
   /// активна только одна точка, выбор города не показываем, но id уже
   /// пробрасываем для будущего (задача 008 — несколько терминалов).
   final String? defaultPointCityId;
+
+  /// Контакты поддержки (задача 025, `app_settings`) — запасной путь, если
+  /// письмо с кодом сброса пароля не дошло (qq.com/163.com ненадёжны).
+  /// `null`, пока админ не заполнил — экран поддержки тогда это не показывает.
+  final String? supportWhatsapp;
+  final String? supportWechat;
+  final String? supportEmail;
 
   Country countryById(String id) => countries.firstWhere((c) => c.id == id, orElse: () => countries.first);
   City? cityById(String? id) => id == null ? null : cities.where((c) => c.id == id).firstOrNull;

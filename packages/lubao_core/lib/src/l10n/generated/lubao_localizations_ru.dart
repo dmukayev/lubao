@@ -135,30 +135,149 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get companyRegisterSubmit => 'Создать компанию';
 
   @override
+  String get companyRegisterEmailError => 'Введите email';
+
+  @override
+  String get companyRegisterPasswordError => 'Минимум 8 символов';
+
+  @override
+  String get companyRegisterEmailTaken =>
+      'Этот email уже зарегистрирован. Войти?';
+
+  @override
   String get companyLoginTitle => 'Вход для компании';
 
   @override
   String get companyLoginEmailLabel => 'Email';
 
   @override
-  String get companyLoginByCode => 'По коду';
-
-  @override
-  String get companyLoginByPassword => 'По паролю';
-
-  @override
-  String get companyLoginSendCode => 'Получить код';
-
-  @override
   String get companyLoginVerify => 'Войти';
 
   @override
-  String companyOtpSubtitle(String email) {
-    return 'Код отправлен на $email';
+  String get companyLoginLockedOut =>
+      'Слишком много попыток. Попробуйте через 15 минут';
+
+  @override
+  String get companyLoginShowPassword => 'Показать пароль';
+
+  @override
+  String get companyLoginHidePassword => 'Скрыть пароль';
+
+  @override
+  String get companyLoginRegisterLink => 'Регистрация';
+
+  @override
+  String get companyLoginForgotPasswordLink => 'Забыли пароль?';
+
+  @override
+  String get forgotPasswordTitle => 'Восстановление пароля';
+
+  @override
+  String get forgotPasswordSendCode => 'Отправить код';
+
+  @override
+  String get forgotPasswordCodeLabel => 'Код из письма';
+
+  @override
+  String get forgotPasswordNewPasswordLabel => 'Новый пароль';
+
+  @override
+  String get forgotPasswordSubmit => 'Сменить пароль';
+
+  @override
+  String get forgotPasswordSuccess => 'Пароль изменён, войдите с новым паролем';
+
+  @override
+  String get forgotPasswordResend => 'Отправить код ещё раз';
+
+  @override
+  String get forgotPasswordInvalidCode => 'Неверный или истёкший код';
+
+  @override
+  String get forgotPasswordNoEmailLink => 'Письмо не приходит?';
+
+  @override
+  String get supportContactTitle => 'Связаться с поддержкой';
+
+  @override
+  String get supportContactBody =>
+      'Если письмо не приходит, напишите нам любым удобным способом';
+
+  @override
+  String get supportContactWhatsapp => 'WhatsApp';
+
+  @override
+  String get supportContactWechat => 'WeChat';
+
+  @override
+  String get supportContactEmail => 'Email';
+
+  @override
+  String get supportContactNone => 'Контакты поддержки скоро появятся здесь';
+
+  @override
+  String get acceptInviteTitle => 'Приглашение в компанию';
+
+  @override
+  String acceptInviteSubtitle(String companyName, String role) {
+    return 'Вас пригласили в «$companyName» — роль: $role';
   }
 
   @override
-  String get companyOtpCodeLabel => 'Код из письма';
+  String get acceptInviteNameLabel => 'Ваше имя';
+
+  @override
+  String get acceptInvitePhoneLabel => 'Телефон (для водителей)';
+
+  @override
+  String get acceptInviteWechatLabel => 'WeChat (необязательно)';
+
+  @override
+  String get acceptInviteSubmit => 'Войти в компанию';
+
+  @override
+  String get acceptInviteInvalidToken =>
+      'Приглашение недействительно или уже использовано';
+
+  @override
+  String get emailVerifyBannerText => 'Email не подтверждён';
+
+  @override
+  String get emailVerifyBannerAction => 'Подтвердить';
+
+  @override
+  String get emailVerifyDialogTitle => 'Подтверждение email';
+
+  @override
+  String get emailVerifyDialogCodeLabel => 'Код из письма';
+
+  @override
+  String get emailVerifyDialogSubmit => 'Подтвердить';
+
+  @override
+  String get employeesInviteButton => 'Пригласить сотрудника';
+
+  @override
+  String get employeesInviteEmailLabel => 'Email сотрудника';
+
+  @override
+  String get employeesInviteRoleOwner => 'Владелец';
+
+  @override
+  String get employeesInviteRoleLogist => 'Логист';
+
+  @override
+  String get employeesInviteSubmit => 'Создать ссылку';
+
+  @override
+  String get employeesInviteLinkReady =>
+      'Ссылка-приглашение действует 7 дней. Скопируйте и отправьте в WeChat/WhatsApp:';
+
+  @override
+  String get employeesInviteCopyLink => 'Скопировать';
+
+  @override
+  String get employeesInviteCopied => 'Ссылка скопирована';
 
   @override
   String get driverSetupTitle => 'Настройка профиля';
@@ -728,8 +847,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get companySetPasswordTitle => 'Пароль для входа';
 
   @override
-  String get companySetPasswordHint =>
-      'Необязательно — позволяет входить без кода на email';
+  String get companySetPasswordHint => 'Сменить пароль для входа';
 
   @override
   String get companySetPasswordTooShort => 'Минимум 8 символов';

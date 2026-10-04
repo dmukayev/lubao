@@ -101,82 +101,9 @@ describe('AuthService — admin lockout + audit log', () => {
   });
 });
 
-describe('AuthService — email code login/registration (задачи 006, 022)', () => {
+describe('AuthService.loginCompany (email + password, задача 025)', () => {
   let prisma: any;
-  let email: { requestCode: jest.Mock; verifyCode: jest.Mock };
-  let sessions: { createSession: jest.Mock };
-  let companies: { toCompanyDto: jest.Mock; toMemberDto: jest.Mock };
-  let service: AuthService;
-
-  beforeEach(() => {
-    prisma = {
-      user: { findUnique: jest.fn(), create: jest.fn() },
-      companyMember: { findUnique: jest.fn() },
-    };
-    email = {
-      requestCode: jest.fn().mockResolvedValue(undefined),
-      verifyCode: jest.fn().mockResolvedValue(true),
-    };
-    companies = {
-      toCompanyDto: jest.fn((c) => ({ id: c.id, name: c.name })),
-      toMemberDto: jest.fn((m) => ({ id: m.id, role: m.role })),
-    };
-    sessions = { createSession: jest.fn().mockResolvedValue({ accessToken: 'at', refreshToken: 'rt' }) };
-    service = new AuthService(prisma, {} as any, {} as any, companies as any, {} as any, email as any, sessions as any);
-  });
-
-  it('requestEmailCode rejects an email already used by a non-COMPANY role', async () => {
-    prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'DRIVER' });
-    await expect(service.requestEmailCode('driver@example.com', '1.1.1.1')).rejects.toThrow();
-    expect(email.requestCode).not.toHaveBeenCalled();
-  });
-
-  it('requestEmailCode delegates to EmailService for a new or COMPANY email', async () => {
-    prisma.user.findUnique.mockResolvedValue(null);
-    await service.requestEmailCode('new@example.com', '1.1.1.1');
-    expect(email.requestCode).toHaveBeenCalledWith('new@example.com', '1.1.1.1');
-  });
-
-  it('verifyEmailCode rejects a wrong/expired code without touching the database', async () => {
-    email.verifyCode.mockResolvedValue(false);
-    await expect(service.verifyEmailCode('new@example.com', '000000')).rejects.toThrow(BadRequestException);
-    expect(prisma.user.findUnique).not.toHaveBeenCalled();
-  });
-
-  it('verifyEmailCode creates a bare COMPANY user and returns company: null for a new email', async () => {
-    prisma.user.findUnique.mockResolvedValue(null);
-    prisma.user.create.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'new@example.com' });
-    prisma.companyMember.findUnique.mockResolvedValue(null);
-
-    const result = await service.verifyEmailCode('new@example.com', '123456');
-    expect(prisma.user.create).toHaveBeenCalledWith({ data: { role: 'COMPANY', email: 'new@example.com' } });
-    expect(result.company).toBeNull();
-    expect(result.companyMember).toBeNull();
-    expect(result).toEqual(expect.objectContaining({ accessToken: 'at', refreshToken: 'rt' }));
-  });
-
-  it('verifyEmailCode logs an existing company owner straight in with their company', async () => {
-    prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'owner@yidao-logistics.cn' });
-    prisma.companyMember.findUnique.mockResolvedValue({
-      id: 'm1',
-      role: 'OWNER',
-      company: { id: 'c1', name: 'Yidao' },
-    });
-
-    const result = await service.verifyEmailCode('owner@yidao-logistics.cn', '123456');
-    expect(prisma.user.create).not.toHaveBeenCalled();
-    expect(result.company).toEqual({ id: 'c1', name: 'Yidao' });
-    expect(result.companyMember).toEqual({ id: 'm1', role: 'OWNER' });
-  });
-
-  it('verifyEmailCode rejects an email already used by a non-COMPANY role', async () => {
-    prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'DRIVER', email: 'driver@example.com' });
-    await expect(service.verifyEmailCode('driver@example.com', '123456')).rejects.toThrow();
-  });
-});
-
-describe('AuthService.loginCompanyPassword (password as an alternative to the email code)', () => {
-  let prisma: any;
+  let redis: { client: FakeRedisClient };
   let companies: { toCompanyDto: jest.Mock; toMemberDto: jest.Mock };
   let sessions: { createSession: jest.Mock };
   let service: AuthService;
@@ -191,23 +118,28 @@ describe('AuthService.loginCompanyPassword (password as an alternative to the em
       user: { findUnique: jest.fn() },
       companyMember: { findUnique: jest.fn() },
     };
+    redis = { client: new FakeRedisClient() };
     companies = {
       toCompanyDto: jest.fn((c) => ({ id: c.id, name: c.name })),
       toMemberDto: jest.fn((m) => ({ id: m.id, role: m.role })),
     };
     sessions = { createSession: jest.fn().mockResolvedValue({ accessToken: 'at', refreshToken: 'rt' }) };
-    service = new AuthService(prisma, {} as any, {} as any, companies as any, {} as any, {} as any, sessions as any);
+    service = new AuthService(prisma, redis as any, {} as any, companies as any, {} as any, {} as any, sessions as any);
   });
 
-  it('rejects when the account has no password set (most new companies — only the email code works)', async () => {
+  it('rejects when the account has no password (role mismatch or never set)', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'new@example.com', passwordHash: null });
-    await expect(service.loginCompanyPassword('new@example.com', 'anything')).rejects.toThrow(UnauthorizedException);
+    await expect(service.loginCompany('new@example.com', 'anything', '1.1.1.1')).rejects.toThrow(UnauthorizedException);
   });
 
-  it('rejects a wrong password', async () => {
+  it('rejects a wrong password with the same generic message as an unknown email', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'owner@example.com', passwordHash });
-    await expect(service.loginCompanyPassword('owner@example.com', 'wrong-password')).rejects.toThrow(
-      UnauthorizedException,
+    await expect(service.loginCompany('owner@example.com', 'wrong-password', '1.1.1.1')).rejects.toThrow(
+      'Invalid email or password',
+    );
+    prisma.user.findUnique.mockResolvedValue(null);
+    await expect(service.loginCompany('nobody@example.com', 'whatever', '1.1.1.1')).rejects.toThrow(
+      'Invalid email or password',
     );
   });
 
@@ -215,8 +147,168 @@ describe('AuthService.loginCompanyPassword (password as an alternative to the em
     prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'owner@example.com', passwordHash });
     prisma.companyMember.findUnique.mockResolvedValue({ id: 'm1', role: 'OWNER', company: { id: 'c1', name: 'Yidao' } });
 
-    const result = await service.loginCompanyPassword('owner@example.com', 'correct-password');
+    const result = await service.loginCompany('owner@example.com', 'correct-password', '1.1.1.1');
     expect(result.company).toEqual({ id: 'c1', name: 'Yidao' });
     expect(result).toEqual(expect.objectContaining({ accessToken: 'at', refreshToken: 'rt' }));
+  });
+
+  it('locks out after 5 wrong passwords — the 6th attempt with the CORRECT password is still rejected', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'owner@example.com', passwordHash });
+    for (let i = 0; i < 5; i++) {
+      await expect(service.loginCompany('owner@example.com', 'wrong-password', '1.1.1.1')).rejects.toThrow();
+    }
+    await expect(service.loginCompany('owner@example.com', 'correct-password', '1.1.1.1')).rejects.toThrow(
+      'Слишком много неверных попыток, попробуйте через 15 минут',
+    );
+  });
+
+  it('admin and company lockouts use separate namespaces — failing company login does not lock the admin', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'same@example.com', passwordHash });
+    for (let i = 0; i < 5; i++) {
+      await expect(service.loginCompany('same@example.com', 'wrong-password', '1.1.1.1')).rejects.toThrow();
+    }
+    const adminUser = { id: 'admin-1', role: 'ADMIN', email: 'same@example.com', passwordHash };
+    prisma.user.findUnique.mockResolvedValue(adminUser);
+    prisma.auditLog = { create: jest.fn().mockResolvedValue(undefined) };
+    await expect(service.loginAdmin('same@example.com', 'wrong-password', '1.1.1.1')).rejects.toThrow(
+      'Invalid email or password',
+    );
+  });
+});
+
+describe('AuthService.registerCompany (задача 025 — email+пароль в один шаг)', () => {
+  let prisma: any;
+  let email: { requestCode: jest.Mock };
+  let companies: { registerOwnedCompany: jest.Mock };
+  let sessions: { createSession: jest.Mock };
+  let service: AuthService;
+
+  beforeEach(() => {
+    prisma = {
+      user: { findUnique: jest.fn(), create: jest.fn() },
+    };
+    email = { requestCode: jest.fn().mockResolvedValue(undefined) };
+    companies = {
+      registerOwnedCompany: jest.fn().mockResolvedValue({
+        company: { id: 'c1', name: 'Yidao' },
+        companyMember: { id: 'm1', role: 'OWNER' },
+      }),
+    };
+    sessions = { createSession: jest.fn().mockResolvedValue({ accessToken: 'at', refreshToken: 'rt' }) };
+    service = new AuthService(prisma, {} as any, {} as any, companies as any, {} as any, email as any, sessions as any);
+  });
+
+  it('rejects an already-registered email (any role) without leaking which role', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY' });
+    await expect(
+      service.registerCompany(
+        { email: 'owner@example.com', password: 'password1', ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1' },
+        '1.1.1.1',
+      ),
+    ).rejects.toThrow('Email already registered');
+    expect(prisma.user.create).not.toHaveBeenCalled();
+  });
+
+  it('creates the user, delegates Company creation, and returns tokens', async () => {
+    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.user.create.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'owner@example.com' });
+
+    const result = await service.registerCompany(
+      { email: 'Owner@Example.com', password: 'password1', ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1' },
+      '1.1.1.1',
+    );
+
+    expect(prisma.user.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ role: 'COMPANY', email: 'owner@example.com' }) }),
+    );
+    expect(companies.registerOwnedCompany).toHaveBeenCalledWith('u1', expect.objectContaining({ companyName: 'Yidao' }));
+    expect(result.company).toEqual({ id: 'c1', name: 'Yidao' });
+    expect(result).toEqual(expect.objectContaining({ accessToken: 'at', refreshToken: 'rt' }));
+  });
+
+  it('sends a verification code but does not fail registration if sending throws (п. 7 — не блокирует)', async () => {
+    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.user.create.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'owner@example.com' });
+    email.requestCode.mockRejectedValue(new Error('smtp down'));
+
+    await expect(
+      service.registerCompany(
+        { email: 'owner@example.com', password: 'password1', ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1' },
+        '1.1.1.1',
+      ),
+    ).resolves.toEqual(expect.objectContaining({ accessToken: 'at' }));
+  });
+});
+
+describe('AuthService password reset (задача 025, п. 9)', () => {
+  let prisma: any;
+  let email: { requestCode: jest.Mock; verifyCode: jest.Mock };
+  let sessions: { revokeAllForUser: jest.Mock };
+  let service: AuthService;
+
+  beforeEach(() => {
+    prisma = { user: { findUnique: jest.fn(), update: jest.fn() } };
+    email = { requestCode: jest.fn().mockResolvedValue(undefined), verifyCode: jest.fn() };
+    sessions = { revokeAllForUser: jest.fn().mockResolvedValue(undefined) };
+    service = new AuthService(prisma, {} as any, {} as any, {} as any, {} as any, email as any, sessions as any);
+  });
+
+  it('requestPasswordReset does not leak whether the email exists — no code sent for unknown email', async () => {
+    prisma.user.findUnique.mockResolvedValue(null);
+    await service.requestPasswordReset('nobody@example.com', '1.1.1.1');
+    expect(email.requestCode).not.toHaveBeenCalled();
+  });
+
+  it('requestPasswordReset sends a code for a known COMPANY email', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'owner@example.com' });
+    await service.requestPasswordReset('owner@example.com', '1.1.1.1');
+    expect(email.requestCode).toHaveBeenCalledWith('owner@example.com', '1.1.1.1');
+  });
+
+  it('resetPassword rejects a wrong/expired code', async () => {
+    email.verifyCode.mockResolvedValue(false);
+    await expect(service.resetPassword('owner@example.com', '000000', 'newpassword1')).rejects.toThrow(
+      BadRequestException,
+    );
+  });
+
+  it('resetPassword sets the new password and revokes every session', async () => {
+    email.verifyCode.mockResolvedValue(true);
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'owner@example.com' });
+
+    await service.resetPassword('owner@example.com', '123456', 'newpassword1');
+
+    expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'u1' } }));
+    expect(sessions.revokeAllForUser).toHaveBeenCalledWith('u1');
+  });
+});
+
+describe('AuthService email verification (задача 025, п. 7 — не блокирует вход)', () => {
+  let prisma: any;
+  let email: { verifyCode: jest.Mock };
+  let service: AuthService;
+
+  beforeEach(() => {
+    prisma = { user: { findUnique: jest.fn(), update: jest.fn() } };
+    email = { verifyCode: jest.fn() };
+    service = new AuthService(prisma, {} as any, {} as any, {} as any, {} as any, email as any, {} as any);
+  });
+
+  it('verifyEmail sets emailVerifiedAt on a correct code', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', email: 'owner@example.com' });
+    email.verifyCode.mockResolvedValue(true);
+
+    await service.verifyEmail('u1', '123456');
+    expect(prisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'u1' }, data: expect.objectContaining({ emailVerifiedAt: expect.any(Date) }) }),
+    );
+  });
+
+  it('verifyEmail rejects a wrong code without updating the user', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', email: 'owner@example.com' });
+    email.verifyCode.mockResolvedValue(false);
+
+    await expect(service.verifyEmail('u1', '000000')).rejects.toThrow(BadRequestException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
   });
 });

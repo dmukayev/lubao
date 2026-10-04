@@ -11,19 +11,45 @@ export class ReferenceDataService {
   ) {}
 
   async getAll() {
-    const [countries, regions, cities, bodyTypes, permits, points, exchangeRates, defaultPointCityId] =
-      await Promise.all([
-        this.prisma.country.findMany({ orderBy: { sortOrder: 'asc' } }),
-        this.prisma.region.findMany(),
-        this.prisma.city.findMany(),
-        this.prisma.bodyType.findMany({ orderBy: { sortOrder: 'asc' } }),
-        this.prisma.permit.findMany({ orderBy: { sortOrder: 'asc' } }),
-        this.prisma.point.findMany({ where: { isActive: true } }),
-        this.latestExchangeRates(),
-        this.appSettings.get('defaultPointCityId'),
-      ]);
+    const [
+      countries,
+      regions,
+      cities,
+      bodyTypes,
+      permits,
+      points,
+      exchangeRates,
+      defaultPointCityId,
+      supportWhatsapp,
+      supportWechat,
+      supportEmail,
+    ] = await Promise.all([
+      this.prisma.country.findMany({ orderBy: { sortOrder: 'asc' } }),
+      this.prisma.region.findMany(),
+      this.prisma.city.findMany(),
+      this.prisma.bodyType.findMany({ orderBy: { sortOrder: 'asc' } }),
+      this.prisma.permit.findMany({ orderBy: { sortOrder: 'asc' } }),
+      this.prisma.point.findMany({ where: { isActive: true } }),
+      this.latestExchangeRates(),
+      this.appSettings.get('defaultPointCityId'),
+      this.appSettings.get('supportWhatsapp'),
+      this.appSettings.get('supportWechat'),
+      this.appSettings.get('supportEmail'),
+    ]);
 
-    return { countries, regions, cities, bodyTypes, permits, points, exchangeRates, defaultPointCityId };
+    return {
+      countries,
+      regions,
+      cities,
+      bodyTypes,
+      permits,
+      points,
+      exchangeRates,
+      defaultPointCityId,
+      supportWhatsapp,
+      supportWechat,
+      supportEmail,
+    };
   }
 
   /// Водитель/логист не нашёл свой город в справочнике — создаём его сразу

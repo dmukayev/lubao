@@ -1,5 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import * as crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
+import { SessionService } from '../auth/session.service';
 import { REQUIRED_DRIVER_DOC_TYPES } from '../drivers/drivers.service';
 import {
   CreateBodyTypeDto,
@@ -11,7 +14,10 @@ import {
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sessions: SessionService,
+  ) {}
 
   async stats() {
     const [drivers, companies, cargosPublished, dealsActive, dealsDelivered, pendingDocs, openComplaints] =
@@ -164,6 +170,23 @@ export class AdminService {
   async setCompanyVerified(id: string, isVerified: boolean) {
     const company = await this.prisma.company.update({ where: { id }, data: { isVerified } });
     return { id: company.id, isVerified: company.isVerified };
+  }
+
+  /// «Сбросить пароль» (задача 025, п. 10) — для владельца, который не
+  /// получил письмо восстановления. Генерирует временный пароль, завершает
+  /// все его сессии. Упрощение: не форсируем смену пароля при следующем
+  /// входе (отдельное поле/флаг) — админ один раз сообщает временный
+  /// пароль лично, типичный сценарий на пилоте.
+  async resetCompanyPassword(companyId: string) {
+    const member = await this.prisma.companyMember.findFirst({ where: { companyId, role: 'OWNER' } });
+    if (!member) throw new NotFoundException('Company owner not found');
+
+    const tempPassword = crypto.randomBytes(6).toString('base64url');
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+    await this.prisma.user.update({ where: { id: member.userId }, data: { passwordHash } });
+    await this.sessions.revokeAllForUser(member.userId);
+
+    return { tempPassword };
   }
 
   async drivers() {

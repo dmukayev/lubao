@@ -7,4 +7,8 @@ export abstract class EmailProvider {
   abstract generateCode(): string;
 
   abstract sendCode(email: string, code: string): Promise<void>;
+
+  /// Произвольное письмо (задача 025: приглашение сотрудника — ссылка, а не
+  /// код). `bodyText` — простой текст, без вёрстки (решение 022, п. 14).
+  abstract sendMessage(email: string, subject: string, bodyText: string): Promise<void>;
 }

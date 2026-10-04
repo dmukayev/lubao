@@ -36,6 +36,7 @@ class FakeEmailProvider extends EmailProvider {
     return '123456';
   }
   sendCode = jest.fn().mockResolvedValue(undefined);
+  sendMessage = jest.fn().mockResolvedValue(undefined);
 }
 
 describe('EmailService', () => {

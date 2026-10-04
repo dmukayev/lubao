@@ -346,6 +346,24 @@ abstract class LubaoLocalizations {
   /// **'Создать компанию'**
   String get companyRegisterSubmit;
 
+  /// No description provided for @companyRegisterEmailError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите email'**
+  String get companyRegisterEmailError;
+
+  /// No description provided for @companyRegisterPasswordError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Минимум 8 символов'**
+  String get companyRegisterPasswordError;
+
+  /// No description provided for @companyRegisterEmailTaken.
+  ///
+  /// In ru, this message translates to:
+  /// **'Этот email уже зарегистрирован. Войти?'**
+  String get companyRegisterEmailTaken;
+
   /// No description provided for @companyLoginTitle.
   ///
   /// In ru, this message translates to:
@@ -358,41 +376,251 @@ abstract class LubaoLocalizations {
   /// **'Email'**
   String get companyLoginEmailLabel;
 
-  /// No description provided for @companyLoginByCode.
-  ///
-  /// In ru, this message translates to:
-  /// **'По коду'**
-  String get companyLoginByCode;
-
-  /// No description provided for @companyLoginByPassword.
-  ///
-  /// In ru, this message translates to:
-  /// **'По паролю'**
-  String get companyLoginByPassword;
-
-  /// No description provided for @companyLoginSendCode.
-  ///
-  /// In ru, this message translates to:
-  /// **'Получить код'**
-  String get companyLoginSendCode;
-
   /// No description provided for @companyLoginVerify.
   ///
   /// In ru, this message translates to:
   /// **'Войти'**
   String get companyLoginVerify;
 
-  /// No description provided for @companyOtpSubtitle.
+  /// No description provided for @companyLoginLockedOut.
   ///
   /// In ru, this message translates to:
-  /// **'Код отправлен на {email}'**
-  String companyOtpSubtitle(String email);
+  /// **'Слишком много попыток. Попробуйте через 15 минут'**
+  String get companyLoginLockedOut;
 
-  /// No description provided for @companyOtpCodeLabel.
+  /// No description provided for @companyLoginShowPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показать пароль'**
+  String get companyLoginShowPassword;
+
+  /// No description provided for @companyLoginHidePassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скрыть пароль'**
+  String get companyLoginHidePassword;
+
+  /// No description provided for @companyLoginRegisterLink.
+  ///
+  /// In ru, this message translates to:
+  /// **'Регистрация'**
+  String get companyLoginRegisterLink;
+
+  /// No description provided for @companyLoginForgotPasswordLink.
+  ///
+  /// In ru, this message translates to:
+  /// **'Забыли пароль?'**
+  String get companyLoginForgotPasswordLink;
+
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Восстановление пароля'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotPasswordSendCode.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отправить код'**
+  String get forgotPasswordSendCode;
+
+  /// No description provided for @forgotPasswordCodeLabel.
   ///
   /// In ru, this message translates to:
   /// **'Код из письма'**
-  String get companyOtpCodeLabel;
+  String get forgotPasswordCodeLabel;
+
+  /// No description provided for @forgotPasswordNewPasswordLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новый пароль'**
+  String get forgotPasswordNewPasswordLabel;
+
+  /// No description provided for @forgotPasswordSubmit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сменить пароль'**
+  String get forgotPasswordSubmit;
+
+  /// No description provided for @forgotPasswordSuccess.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пароль изменён, войдите с новым паролем'**
+  String get forgotPasswordSuccess;
+
+  /// No description provided for @forgotPasswordResend.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отправить код ещё раз'**
+  String get forgotPasswordResend;
+
+  /// No description provided for @forgotPasswordInvalidCode.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверный или истёкший код'**
+  String get forgotPasswordInvalidCode;
+
+  /// No description provided for @forgotPasswordNoEmailLink.
+  ///
+  /// In ru, this message translates to:
+  /// **'Письмо не приходит?'**
+  String get forgotPasswordNoEmailLink;
+
+  /// No description provided for @supportContactTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Связаться с поддержкой'**
+  String get supportContactTitle;
+
+  /// No description provided for @supportContactBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Если письмо не приходит, напишите нам любым удобным способом'**
+  String get supportContactBody;
+
+  /// No description provided for @supportContactWhatsapp.
+  ///
+  /// In ru, this message translates to:
+  /// **'WhatsApp'**
+  String get supportContactWhatsapp;
+
+  /// No description provided for @supportContactWechat.
+  ///
+  /// In ru, this message translates to:
+  /// **'WeChat'**
+  String get supportContactWechat;
+
+  /// No description provided for @supportContactEmail.
+  ///
+  /// In ru, this message translates to:
+  /// **'Email'**
+  String get supportContactEmail;
+
+  /// No description provided for @supportContactNone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Контакты поддержки скоро появятся здесь'**
+  String get supportContactNone;
+
+  /// No description provided for @acceptInviteTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приглашение в компанию'**
+  String get acceptInviteTitle;
+
+  /// No description provided for @acceptInviteSubtitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вас пригласили в «{companyName}» — роль: {role}'**
+  String acceptInviteSubtitle(String companyName, String role);
+
+  /// No description provided for @acceptInviteNameLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ваше имя'**
+  String get acceptInviteNameLabel;
+
+  /// No description provided for @acceptInvitePhoneLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Телефон (для водителей)'**
+  String get acceptInvitePhoneLabel;
+
+  /// No description provided for @acceptInviteWechatLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'WeChat (необязательно)'**
+  String get acceptInviteWechatLabel;
+
+  /// No description provided for @acceptInviteSubmit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Войти в компанию'**
+  String get acceptInviteSubmit;
+
+  /// No description provided for @acceptInviteInvalidToken.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приглашение недействительно или уже использовано'**
+  String get acceptInviteInvalidToken;
+
+  /// No description provided for @emailVerifyBannerText.
+  ///
+  /// In ru, this message translates to:
+  /// **'Email не подтверждён'**
+  String get emailVerifyBannerText;
+
+  /// No description provided for @emailVerifyBannerAction.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтвердить'**
+  String get emailVerifyBannerAction;
+
+  /// No description provided for @emailVerifyDialogTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтверждение email'**
+  String get emailVerifyDialogTitle;
+
+  /// No description provided for @emailVerifyDialogCodeLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Код из письма'**
+  String get emailVerifyDialogCodeLabel;
+
+  /// No description provided for @emailVerifyDialogSubmit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтвердить'**
+  String get emailVerifyDialogSubmit;
+
+  /// No description provided for @employeesInviteButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пригласить сотрудника'**
+  String get employeesInviteButton;
+
+  /// No description provided for @employeesInviteEmailLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Email сотрудника'**
+  String get employeesInviteEmailLabel;
+
+  /// No description provided for @employeesInviteRoleOwner.
+  ///
+  /// In ru, this message translates to:
+  /// **'Владелец'**
+  String get employeesInviteRoleOwner;
+
+  /// No description provided for @employeesInviteRoleLogist.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логист'**
+  String get employeesInviteRoleLogist;
+
+  /// No description provided for @employeesInviteSubmit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Создать ссылку'**
+  String get employeesInviteSubmit;
+
+  /// No description provided for @employeesInviteLinkReady.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылка-приглашение действует 7 дней. Скопируйте и отправьте в WeChat/WhatsApp:'**
+  String get employeesInviteLinkReady;
+
+  /// No description provided for @employeesInviteCopyLink.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скопировать'**
+  String get employeesInviteCopyLink;
+
+  /// No description provided for @employeesInviteCopied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылка скопирована'**
+  String get employeesInviteCopied;
 
   /// No description provided for @driverSetupTitle.
   ///
@@ -1477,7 +1705,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @companySetPasswordHint.
   ///
   /// In ru, this message translates to:
-  /// **'Необязательно — позволяет входить без кода на email'**
+  /// **'Сменить пароль для входа'**
   String get companySetPasswordHint;
 
   /// No description provided for @companySetPasswordTooShort.

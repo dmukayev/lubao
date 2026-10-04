@@ -1,6 +1,91 @@
 # 025 — Вход и регистрация логиста по email и паролю
 
-Статус: не начато · **решение владельца продукта 2026-10-04** (заменяет вход по коду на email из 006/022)
+Статус: готово (2026-10-04)
+
+## Что сделано (2026-10-04)
+- **Схема**: `User.emailVerifiedAt`, новая `CompanyInvite` (companyId,
+  invitedByUserId, email, role, token, expiresAt, usedAt) — ссылка-приглашение
+  живёт 7 дней, одноразовая.
+- **Вход/регистрация** (`AuthService.loginCompany`/`registerCompany`):
+  общая с админом (006) защита от перебора — выделена в три приватных
+  хелпера `isLockedOut`/`recordFailure`/`clearLockout` с неймспейсом по
+  `scope` (`admin`/`company`), чтобы блокировки не пересекались. 5 неверных
+  паролей → блокировка 15 минут, одинаковый текст ошибки для неверного
+  email и пароля. Регистрация — одна транзакция через переиспользованный
+  `CompaniesService.registerOwnedCompany` (022), письмо подтверждения
+  отправляется, но не блокирует (п. 7).
+- **Подтверждение email**: `requestEmailVerification`/`verifyEmail`, не
+  блокируют ничего — только плашка-напоминание в кабинете
+  (`_EmailVerifyBanner` в `company_profile_screen.dart`) с кнопкой
+  «Подтвердить» → повторная отправка кода + диалог ввода.
+- **Восстановление пароля**: email → код (`EmailService`, лимиты из 006) →
+  новый пароль → `SessionService.revokeAllForUser` разлогинивает все
+  остальные устройства. Экран `forgot_password_screen.dart`. «Письмо не
+  пришло» → шторка контактов поддержки (`showSupportContactSheet`),
+  источник — `app_settings` (`supportWhatsapp`/`supportWechat`/
+  `supportEmail`, новые поля `/reference-data`, пока не заполнены админом —
+  шторка честно показывает «скоро появится»). Админский сброс — `POST
+  /admin/companies/:id/reset-password` (временный пароль, отображается
+  один раз).
+- **Приглашение сотрудника** («Путь Б» из 022, впервые реализовано —
+  раньше было отложено, так как `company_invites` не существовало):
+  владелец → «Сотрудники» → «Пригласить сотрудника» → email + роль →
+  ссылка `lubao://invite/{token}` + письмо + «Скопировать» (буфер обмена,
+  без `share_plus` — см. ниже). Экран принятия — `accept_invite_screen.dart`
+  (email только показывается, пароль/имя/телефон/WeChat), переход по
+  ссылке подтверждает email автоматически.
+- **Убрано**: `company_otp_screen.dart`, роут `/login/company/otp`,
+  `/auth/email/request` и `/auth/email/verify` как вход; `EmailService`
+  остался — теперь только для подтверждения email, сброса пароля и писем
+  приглашения (`sendMessage`, новый метод рядом с `generateCode`/
+  `sendCode`/`verifyCode`). Роутер: сессия логиста теперь всегда приходит
+  с привязанной компанией (регистрация и приглашение атомарны), поэтому
+  промежуточный `needsCompanyRegistration`/`/company/register` убран целиком.
+- **Демо**: `seed-demo.ts` уже сидил `passwordHash` для компаний (из 006) —
+  обновил только `DEMO_CREDENTIALS.md`, который ещё описывал вход по коду.
+- Тесты: `auth.service.spec.ts` (login/lockout/namespace-изоляция от
+  админа, register, password reset, email verification),
+  `companies.service.spec.ts` (invites: create/get/accept, в т.ч. истёкшее/
+  использованное приглашение, дубль email). Backend-сьют 111/111. Flutter:
+  `company_register_screen_test.dart` переписан на новый
+  email+пароль+регистрация-до-входа поток (фейковый `AuthRepository`
+  вместо `CompanyRepository.register`, которого больше нет).
+  `flutter analyze`/`flutter test` чисто во всех трёх пакетах. Живой curl:
+  вход owner по email+паролю, создание приглашения → `GET
+  /companies/invites/:token` → принятие → новый логист сразу в правильной
+  компании с подтверждённым email; `/reference-data` отдаёт новые
+  `supportWhatsapp`/`supportWechat`/`supportEmail` (null, пока не заполнены).
+
+## Сознательно не делал (не выдумано, честно отложено)
+- **Реальная регистрация deep link на уровне ОС** (Android App Links /
+  iOS Universal Links / intent-filter) — `lubao://invite/{token}` — только
+  схема в письме и роут `/invite/:token` в `go_router`; чтобы ссылка из
+  письма открывала установленное приложение напрямую, нужна отдельная
+  платформенная настройка (assetlinks.json/apple-app-site-association на
+  реальном домене), вне рамок этой задачи без боевого домена.
+- **Кнопка «Поделиться» для ссылки-приглашения** — добавлена только
+  «Скопировать» через `Clipboard` (встроенный Flutter API, без новых
+  зависимостей); нативный `Share`-шит потребовал бы новой зависимости
+  (`share_plus`), не добавлял её ради одной кнопки в уже большой задаче —
+  владелец может вставить скопированную ссылку в любой мессенджер вручную.
+- **Обязательная смена временного пароля при следующем входе** (админский
+  сброс, п. 10 задачи) — `resetCompanyPassword` выдаёт временный пароль, но
+  флага «сменить при следующем входе» нет; требует отдельного поля на
+  `User` и проверки на каждом защищённом роуте — отложено до отдельного
+  запроса, временный пароль и так можно сменить вручную через «Пароль для
+  входа» в профиле.
+- **Продуктовый email-провайдер для qq.com/163.com** (Alibaba DirectMail
+  и т.п., SPF/DKIM/DMARC) — вне рамок и здесь, как и было указано в самой
+  задаче (п. 15, по аналогии с 022): `ConsoleEmailProvider` в деве логирует
+  письма, боевой провайдер не настраивался.
+- **Контакты поддержки в админке** — поля `supportWhatsapp`/`supportWechat`/
+  `supportEmail` читаются через уже существующий общий key-value
+  `AppSettingsService` (задача 015) и отдаются в `/reference-data`; отдельный
+  экран в `lubao_admin` для их редактирования не делал — админ может
+  выставить значения через существующий `PATCH /admin/settings/:key`
+  (общий для всех ключей), выделенный UI не является частью этой задачи.
+
+---
 
 Эталоны: `design/screens/13-auth-logist-login.png` (вход), `12-register-logist.png` (регистрация компании). Решение — `docs/decisions.md` (2026-10-04, «Логист: вход по email и паролю»).
 
