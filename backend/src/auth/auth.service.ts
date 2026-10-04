@@ -56,9 +56,9 @@ export class AuthService {
    * сразу (анкета водителя донаполняется следующим экраном — см.
    * DriversService.updateProfile, он же обрабатывает первое заполнение).
    */
-  async verifyDriverCode(phone: string, code: string, deviceName?: string, platform?: string) {
+  async verifyDriverCode(phone: string, code: string, ip?: string, deviceName?: string, platform?: string) {
     const normalized = normalizePhone(phone);
-    const ok = await this.sms.verifyCode(normalized, code);
+    const ok = await this.sms.verifyCode(normalized, code, ip);
     if (!ok) throw new BadRequestException('Неверный или истёкший код');
 
     let user = await this.prisma.user.findUnique({ where: { phone: normalized } });
@@ -159,11 +159,11 @@ export class AuthService {
     await this.email.requestCode(normalizeEmail(user.email), ip);
   }
 
-  async verifyEmail(userId: string, code: string) {
+  async verifyEmail(userId: string, code: string, ip?: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user?.email) throw new NotFoundException('User has no email');
 
-    const ok = await this.email.verifyCode(normalizeEmail(user.email), code);
+    const ok = await this.email.verifyCode(normalizeEmail(user.email), code, ip);
     if (!ok) throw new BadRequestException('Неверный или истёкший код');
 
     await this.prisma.user.update({ where: { id: userId }, data: { emailVerifiedAt: new Date() } });
@@ -179,9 +179,9 @@ export class AuthService {
     }
   }
 
-  async resetPassword(email: string, code: string, newPassword: string) {
+  async resetPassword(email: string, code: string, newPassword: string, ip?: string) {
     const normalizedEmail = normalizeEmail(email);
-    const ok = await this.email.verifyCode(normalizedEmail, code);
+    const ok = await this.email.verifyCode(normalizedEmail, code, ip);
     if (!ok) throw new BadRequestException('Неверный или истёкший код');
 
     const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });

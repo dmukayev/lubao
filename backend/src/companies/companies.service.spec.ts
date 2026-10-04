@@ -1,5 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import { Prisma } from '@prisma/client';
 import { CompaniesService } from './companies.service';
 
 describe('CompaniesService.registerOwnedCompany', () => {
@@ -72,6 +73,24 @@ describe('CompaniesService.registerOwnedCompany', () => {
 
     await service.registerOwnedCompany('user-1', { ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1' });
     expect(capturedData.nameRu).toBe('Yidao');
+  });
+
+  it('turns a P2002 unique-constraint race on CompanyMember.userId into 400, not 500 (024 п.7)', async () => {
+    // Два параллельных запроса оба проходят findUnique (ещё никого нет),
+    // но второй падает внутри транзакции на уникальном userId — это
+    // единственное место, где гонка реально проявляется.
+    prisma.companyMember.findUnique.mockResolvedValue(null);
+    prisma.country.findUnique.mockResolvedValue({ id: 'cn-1', code: 'CN' });
+    prisma.$transaction.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed on the fields: (`userId`)', {
+        code: 'P2002',
+        clientVersion: '5.22.0',
+      }),
+    );
+
+    await expect(
+      service.registerOwnedCompany('user-1', { ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1' }),
+    ).rejects.toThrow(BadRequestException);
   });
 });
 

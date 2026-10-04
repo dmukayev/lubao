@@ -9,6 +9,7 @@ const HOUR_WINDOW_SECONDS = 60 * 60;
 const MAX_PER_HOUR = 5;
 const MAX_PER_HOUR_PER_IP = 20;
 const MAX_WRONG_ATTEMPTS = 5;
+const MAX_VERIFY_PER_HOUR_PER_IP = 30;
 
 @Injectable()
 export class SmsService {
@@ -31,6 +32,9 @@ export class SmsService {
   }
   private ipHourKey(ip: string) {
     return `sms:ip:${ip}`;
+  }
+  private verifyIpHourKey(ip: string) {
+    return `sms:verify-ip:${ip}`;
   }
 
   /// Генерирует и отправляет код, предварительно проверив лимиты:
@@ -69,13 +73,35 @@ export class SmsService {
   /// Сверяет код и удаляет его (одноразовый). true — код верный и ещё
   /// не истёк (5 минут). Максимум 5 неверных попыток на код — на 6-й код
   /// сгорает и требуется новый (защита от перебора 4-значного кода).
-  async verifyCode(phone: string, code: string): Promise<boolean> {
+  ///
+  /// Счётчик попыток инкрементируется атомарно (`INCR`) ДО сравнения кода:
+  /// старая версия делала `get` → сравнить → `set` тремя отдельными
+  /// командами, и параллельный перебор (например 200 запросов разом) читал
+  /// attempts=0 во всех 200 — лимит в 5 попыток не работал вообще (ревью
+  /// 006, 024 п.2). `INCR` в Redis — один атомарный шаг, так что при гонке
+  /// только первые 5 параллельных запросов получают attempts ≤ 5 и доходят
+  /// до сравнения кода, остальные сразу отваливаются.
+  async verifyCode(phone: string, code: string, ip?: string): Promise<boolean> {
     const client = this.redis.client;
+
+    if (ip) {
+      const verifyIpCount = await client.incr(this.verifyIpHourKey(ip));
+      if (verifyIpCount === 1) await client.expire(this.verifyIpHourKey(ip), HOUR_WINDOW_SECONDS);
+      if (verifyIpCount > MAX_VERIFY_PER_HOUR_PER_IP) {
+        throw new HttpException('Превышен лимит проверок кода с вашего адреса, попробуйте позже', HttpStatus.TOO_MANY_REQUESTS);
+      }
+    }
+
     const stored = await client.get(this.codeKey(phone));
     if (!stored) return false;
 
-    const attempts = Number((await client.get(this.attemptsKey(phone))) ?? 0);
-    if (attempts >= MAX_WRONG_ATTEMPTS) {
+    const attemptsKey = this.attemptsKey(phone);
+    const attempts = await client.incr(attemptsKey);
+    if (attempts === 1) {
+      const ttl = await client.ttl(this.codeKey(phone));
+      await client.expire(attemptsKey, ttl > 0 ? ttl : CODE_TTL_SECONDS);
+    }
+    if (attempts > MAX_WRONG_ATTEMPTS) {
       await client.del(this.codeKey(phone));
       throw new BadRequestException('Слишком много попыток, запросите новый код');
     }
@@ -85,12 +111,10 @@ export class SmsService {
     const match = storedBuf.length === codeBuf.length && crypto.timingSafeEqual(storedBuf, codeBuf);
 
     if (!match) {
-      const ttl = await client.ttl(this.codeKey(phone));
-      await client.set(this.attemptsKey(phone), attempts + 1, 'EX', ttl > 0 ? ttl : CODE_TTL_SECONDS);
       return false;
     }
 
-    await Promise.all([client.del(this.codeKey(phone)), client.del(this.attemptsKey(phone))]);
+    await Promise.all([client.del(this.codeKey(phone)), client.del(attemptsKey)]);
     return true;
   }
 }

@@ -23,15 +23,31 @@ function makeTokensMock() {
   };
 }
 
+/// In-memory замена ioredis только под то, что использует SessionService —
+/// get/set с TTL (TTL здесь не моделируем, тесты сами не ждут 30с).
+function makeRedisMock() {
+  const store = new Map<string, string>();
+  return {
+    client: {
+      get: jest.fn(async (key: string) => store.get(key) ?? null),
+      set: jest.fn(async (key: string, value: string) => {
+        store.set(key, value);
+      }),
+    },
+  };
+}
+
 describe('SessionService', () => {
   let prisma: ReturnType<typeof makePrismaMock>;
   let tokens: ReturnType<typeof makeTokensMock>;
+  let redis: ReturnType<typeof makeRedisMock>;
   let service: SessionService;
 
   beforeEach(() => {
     prisma = makePrismaMock();
     tokens = makeTokensMock();
-    service = new SessionService(prisma as any, tokens as any);
+    redis = makeRedisMock();
+    service = new SessionService(prisma as any, tokens as any, redis as any);
   });
 
   it('createSession stores a hashed refresh token and signs an access token with the session id', async () => {
@@ -54,7 +70,7 @@ describe('SessionService', () => {
   });
 
   describe('rotateSession', () => {
-    it('rotates a valid, unexpired session and extends expiresAt using the role TTL', async () => {
+    it('rotates a valid, unexpired session (conditional updateMany, count 1) and extends expiresAt using the role TTL', async () => {
       const now = Date.now();
       prisma.session.findUnique.mockResolvedValueOnce({
         id: 'session-1',
@@ -63,12 +79,13 @@ describe('SessionService', () => {
         expiresAt: new Date(now + 1000),
         user: { role: 'COMPANY' },
       });
+      prisma.session.updateMany.mockResolvedValueOnce({ count: 1 });
 
       const result = await service.rotateSession('old-refresh');
 
-      expect(prisma.session.update).toHaveBeenCalledWith(
+      expect(prisma.session.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 'session-1' },
+          where: { id: 'session-1', refreshTokenHash: 'hash(old-refresh)' },
           data: expect.objectContaining({
             refreshTokenHash: 'hash(refresh-1)',
             previousTokenHash: 'hash(old-refresh)',
@@ -77,18 +94,27 @@ describe('SessionService', () => {
       );
       expect(tokens.refreshTtlMs).toHaveBeenCalledWith('COMPANY');
       expect(result).toEqual({ accessToken: 'signed-access-token', refreshToken: 'refresh-1' });
+      // победитель кладёт пару в Redis под старым hash — на случай, если
+      // параллельный запрос с тем же токеном придёт следом.
+      expect(redis.client.set).toHaveBeenCalledWith(
+        'session:rotated:hash(old-refresh)',
+        JSON.stringify(result),
+        'EX',
+        30,
+      );
     });
 
-    it('throws on an unknown refresh token', async () => {
+    it('throws on an unknown refresh token — no grace-cache retry delay for garbage tokens', async () => {
       prisma.session.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
 
       await expect(service.rotateSession('unknown')).rejects.toThrow(UnauthorizedException);
+      expect(redis.client.get).not.toHaveBeenCalled();
     });
 
-    it('throws and revokes the session when a previously-rotated token is reused', async () => {
+    it('throws and revokes the session when a previously-rotated token is reused well after the grace period', async () => {
       prisma.session.findUnique
         .mockResolvedValueOnce(null) // not the current refreshTokenHash
-        .mockResolvedValueOnce({ id: 'session-1' }); // matches previousTokenHash
+        .mockResolvedValueOnce({ id: 'session-1', lastUsedAt: new Date(Date.now() - 60_000) }); // rotated 60s ago — outside grace
 
       await expect(service.rotateSession('stolen-old-token')).rejects.toThrow('Refresh token reuse detected');
       expect(prisma.session.update).toHaveBeenCalledWith({
@@ -119,6 +145,51 @@ describe('SessionService', () => {
       prisma.session.findUnique.mockResolvedValueOnce(null);
 
       await expect(service.rotateSession('expired-token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    describe('grace period for a second parallel/near-parallel request with the same token (024 п.4)', () => {
+      const session = {
+        id: 'session-1',
+        userId: 'user-1',
+        revokedAt: null,
+        expiresAt: new Date(Date.now() + 100_000),
+        user: { role: 'COMPANY' },
+      };
+
+      it('two truly parallel refreshes of the same token both resolve to the identical pair, session stays alive', async () => {
+        // Оба запроса читают одну и ту же ещё не обновлённую сессию — как
+        // было бы при реальной гонке двух вкладок веб-кабинета.
+        prisma.session.findUnique.mockResolvedValue(session);
+        // Первый updateMany побеждает (count 1), второй — проигрывает (count 0),
+        // ровно как в реальной БД с условием в WHERE.
+        prisma.session.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+
+        const [first, second] = await Promise.all([
+          service.rotateSession('old-refresh'),
+          service.rotateSession('old-refresh'),
+        ]);
+
+        expect(first).toEqual(second);
+        expect(prisma.session.update).not.toHaveBeenCalled(); // сессия не отозвана как «кража»
+      });
+
+      it('a second request arriving just after rotation (previousTokenHash match, within grace) gets the same pair, not a revoke', async () => {
+        // Первый запрос ротирует как обычно.
+        prisma.session.findUnique.mockResolvedValueOnce(session);
+        prisma.session.updateMany.mockResolvedValueOnce({ count: 1 });
+        const first = await service.rotateSession('old-refresh');
+
+        // Второй запрос с тем же старым токеном приходит чуть позже — он уже
+        // не совпадает с текущим refreshTokenHash, только с previousTokenHash.
+        prisma.session.findUnique
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({ id: 'session-1', lastUsedAt: new Date() }); // ротация только что была
+
+        const second = await service.rotateSession('old-refresh');
+
+        expect(second).toEqual(first);
+        expect(prisma.session.update).not.toHaveBeenCalled();
+      });
     });
   });
 

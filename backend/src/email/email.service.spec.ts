@@ -29,6 +29,11 @@ class FakeRedisClient {
   async ttl(key: string): Promise<number> {
     return this.store.get(key)?.ttlSeconds ?? -1;
   }
+
+  async expire(key: string, ttlSeconds: number): Promise<void> {
+    const entry = this.store.get(key);
+    if (entry) this.store.set(key, { ...entry, ttlSeconds });
+  }
 }
 
 class FakeEmailProvider extends EmailProvider {

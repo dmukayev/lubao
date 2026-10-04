@@ -99,4 +99,35 @@ describe('JwtAuthGuard', () => {
     await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
     expect(prisma.user.findUnique).not.toHaveBeenCalled();
   });
+
+  // 024 п.6: /reference-data публичный, но «мои» PENDING-города видны
+  // только автору — для этого guard должен опционально распознать токен
+  // и на публичном роуте тоже, не отклоняя запрос при его отсутствии/невалидности.
+  it('on a @Public() route, a valid token still populates authContext', async () => {
+    reflector.getAllAndOverride.mockReturnValue(true);
+    const { context, request } = makeContext({ Authorization: 'Bearer good-token' });
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(request.authContext).toEqual({
+      user: activeUser,
+      driver: null,
+      companyMember: null,
+      sessionId: 'session-1',
+    });
+  });
+
+  it('on a @Public() route, an invalid/expired token is silently ignored (no throw, no authContext)', async () => {
+    reflector.getAllAndOverride.mockReturnValue(true);
+    tokens.verifyAccessToken.mockRejectedValue(new UnauthorizedException('Invalid or expired access token'));
+    const { context, request } = makeContext({ Authorization: 'Bearer bad-token' });
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(request.authContext).toBeUndefined();
+  });
+
+  it('on a @Public() route, a token for a now-blocked user is silently ignored', async () => {
+    reflector.getAllAndOverride.mockReturnValue(true);
+    prisma.user.findUnique.mockResolvedValue({ ...activeUser, isBlocked: true });
+    const { context, request } = makeContext({ Authorization: 'Bearer good-token' });
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(request.authContext).toBeUndefined();
+  });
 });

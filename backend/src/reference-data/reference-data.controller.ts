@@ -11,8 +11,8 @@ export class ReferenceDataController {
 
   @Public()
   @Get()
-  getAll() {
-    return this.referenceData.getAll();
+  getAll(@CurrentUser() ctx: RequestContext | undefined) {
+    return this.referenceData.getAll(ctx?.user.id);
   }
 
   @Post('cities')

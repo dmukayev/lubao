@@ -25,11 +25,35 @@ export class JwtAuthGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (isPublic) return true;
 
     const request = context.switchToHttp().getRequest<Request>();
     const header = request.header('Authorization');
     const token = header?.startsWith('Bearer ') ? header.slice('Bearer '.length) : null;
+
+    if (isPublic) {
+      // Публичный роут, но некоторые (например GET /reference-data, задача
+      // 024 п.6) хотят знать, кто спрашивает, если токен всё же пришёл —
+      // «мои» PENDING-города видны автору, не всем подряд. Токен
+      // необязателен и невалидный/просроченный тихо игнорируется — публичный
+      // роут не должен падать из-за протухшего токена.
+      if (token) {
+        try {
+          const payload = await this.tokens.verifyAccessToken(token);
+          const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+          if (user && user.isActive && !user.isBlocked && (await this.sessions.isSessionActive(payload.sid))) {
+            const [driver, companyMember] = await Promise.all([
+              this.prisma.driver.findUnique({ where: { userId: user.id } }),
+              this.prisma.companyMember.findUnique({ where: { userId: user.id }, include: { company: true } }),
+            ]);
+            request.authContext = { user, driver, companyMember, sessionId: payload.sid };
+          }
+        } catch {
+          // невалидный/просроченный токен на публичном роуте — не ошибка
+        }
+      }
+      return true;
+    }
+
     if (!token) {
       throw new UnauthorizedException('Missing bearer token');
     }

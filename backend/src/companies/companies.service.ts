@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { Company, CompanyMember } from '@prisma/client';
+import { Company, CompanyMember, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { RegisterCompanyDto } from './dto/register-company.dto';
@@ -50,16 +50,28 @@ export class CompaniesService {
     const country = await this.prisma.country.findUnique({ where: { id: dto.countryId } });
     if (!country) throw new NotFoundException('Country not found');
 
-    const { company, member } = await this.prisma.$transaction(async (tx) => {
-      const company = await tx.company.create({
-        data: { name: dto.companyName, nameRu: dto.companyNameRu ?? dto.companyName, countryId: dto.countryId },
-      });
-      const member = await tx.companyMember.create({
-        data: { companyId: company.id, userId, role: 'OWNER' },
-      });
-      await tx.user.update({ where: { id: userId }, data: { name: dto.ownerName } });
-      return { company, member };
-    });
+    let company: Company;
+    let member: CompanyMember;
+    try {
+      ({ company, member } = await this.prisma.$transaction(async (tx) => {
+        const company = await tx.company.create({
+          data: { name: dto.companyName, nameRu: dto.companyNameRu ?? dto.companyName, countryId: dto.countryId },
+        });
+        const member = await tx.companyMember.create({
+          data: { companyId: company.id, userId, role: 'OWNER' },
+        });
+        await tx.user.update({ where: { id: userId }, data: { name: dto.ownerName } });
+        return { company, member };
+      }));
+    } catch (e) {
+      // Параллельная регистрация той же учётки (двойной клик/повтор запроса) —
+      // первая проверка existingMember выше не ловит гонку, т.к. она не в
+      // транзакции; вторая попытка падает на уникальном CompanyMember.userId.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new BadRequestException('User is already a member of a company');
+      }
+      throw e;
+    }
 
     return { company: this.toCompanyDto(company), companyMember: this.toMemberDto(member) };
   }

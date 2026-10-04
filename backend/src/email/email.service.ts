@@ -9,6 +9,7 @@ const HOUR_WINDOW_SECONDS = 60 * 60;
 const MAX_PER_HOUR = 5;
 const MAX_PER_HOUR_PER_IP = 20;
 const MAX_WRONG_ATTEMPTS = 5;
+const MAX_VERIFY_PER_HOUR_PER_IP = 30;
 
 /// Код на email для входа/регистрации логиста без пароля (задачи 006, 022).
 /// Лимиты и защита — те же, что у SmsService (задача 006), только TTL кода
@@ -34,6 +35,9 @@ export class EmailService {
   }
   private ipHourKey(ip: string) {
     return `email:ip:${ip}`;
+  }
+  private verifyIpHourKey(ip: string) {
+    return `email:verify-ip:${ip}`;
   }
 
   async requestCode(email: string, ip: string): Promise<void> {
@@ -67,13 +71,30 @@ export class EmailService {
   }
 
   /// Максимум 5 неверных попыток на код — на 6-й код сгорает, как у SMS.
-  async verifyCode(email: string, code: string): Promise<boolean> {
+  /// Счётчик инкрементируется атомарно до сравнения кода — иначе
+  /// параллельный перебор обходит лимит (ревью 006, 024 п.2; то же
+  /// исправление, что и в SmsService.verifyCode — см. комментарий там).
+  async verifyCode(email: string, code: string, ip?: string): Promise<boolean> {
     const client = this.redis.client;
+
+    if (ip) {
+      const verifyIpCount = await client.incr(this.verifyIpHourKey(ip));
+      if (verifyIpCount === 1) await client.expire(this.verifyIpHourKey(ip), HOUR_WINDOW_SECONDS);
+      if (verifyIpCount > MAX_VERIFY_PER_HOUR_PER_IP) {
+        throw new HttpException('Превышен лимит проверок кода с вашего адреса, попробуйте позже', HttpStatus.TOO_MANY_REQUESTS);
+      }
+    }
+
     const stored = await client.get(this.codeKey(email));
     if (!stored) return false;
 
-    const attempts = Number((await client.get(this.attemptsKey(email))) ?? 0);
-    if (attempts >= MAX_WRONG_ATTEMPTS) {
+    const attemptsKey = this.attemptsKey(email);
+    const attempts = await client.incr(attemptsKey);
+    if (attempts === 1) {
+      const ttl = await client.ttl(this.codeKey(email));
+      await client.expire(attemptsKey, ttl > 0 ? ttl : CODE_TTL_SECONDS);
+    }
+    if (attempts > MAX_WRONG_ATTEMPTS) {
       await client.del(this.codeKey(email));
       throw new BadRequestException('Слишком много попыток, запросите новый код');
     }
@@ -83,12 +104,10 @@ export class EmailService {
     const match = storedBuf.length === codeBuf.length && crypto.timingSafeEqual(storedBuf, codeBuf);
 
     if (!match) {
-      const ttl = await client.ttl(this.codeKey(email));
-      await client.set(this.attemptsKey(email), attempts + 1, 'EX', ttl > 0 ? ttl : CODE_TTL_SECONDS);
       return false;
     }
 
-    await Promise.all([client.del(this.codeKey(email)), client.del(this.attemptsKey(email))]);
+    await Promise.all([client.del(this.codeKey(email)), client.del(attemptsKey)]);
     return true;
   }
 

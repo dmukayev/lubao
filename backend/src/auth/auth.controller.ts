@@ -35,8 +35,8 @@ export class AuthController {
 
   @Public()
   @Post('phone/verify')
-  verifyCode(@Body() dto: VerifyCodeDto) {
-    return this.auth.verifyDriverCode(dto.phone, dto.code, dto.deviceName, dto.platform);
+  verifyCode(@Body() dto: VerifyCodeDto, @ClientIp() ip: string) {
+    return this.auth.verifyDriverCode(dto.phone, dto.code, ip, dto.deviceName, dto.platform);
   }
 
   @Public()
@@ -66,8 +66,8 @@ export class AuthController {
 
   @Public()
   @Post('company/reset-password')
-  async resetPassword(@Body() dto: ResetPasswordDto) {
-    await this.auth.resetPassword(dto.email, dto.code, dto.newPassword);
+  async resetPassword(@Body() dto: ResetPasswordDto, @ClientIp() ip: string) {
+    await this.auth.resetPassword(dto.email, dto.code, dto.newPassword, ip);
     return { success: true };
   }
 
@@ -78,8 +78,8 @@ export class AuthController {
   }
 
   @Post('company/verify-email')
-  async verifyEmail(@CurrentUser() ctx: RequestContext, @Body() dto: VerifyEmailDto) {
-    await this.auth.verifyEmail(ctx.user.id, dto.code);
+  async verifyEmail(@CurrentUser() ctx: RequestContext, @Body() dto: VerifyEmailDto, @ClientIp() ip: string) {
+    await this.auth.verifyEmail(ctx.user.id, dto.code, ip);
     return { success: true };
   }
 

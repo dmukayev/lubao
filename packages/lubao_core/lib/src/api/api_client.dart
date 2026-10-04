@@ -3,9 +3,11 @@ import 'package:dio/dio.dart';
 import 'token_storage.dart';
 
 class ApiClient {
-  ApiClient({required String baseUrl, TokenStorage? tokenStorage})
+  /// [refreshDio] — только для тестов (024 п.1): подменить сетевой слой
+  /// только для /auth/refresh, не трогая основной [dio].
+  ApiClient({required String baseUrl, TokenStorage? tokenStorage, Dio? refreshDio})
       : dio = Dio(BaseOptions(baseUrl: baseUrl, connectTimeout: const Duration(seconds: 10))),
-        _refreshDio = Dio(BaseOptions(baseUrl: baseUrl, connectTimeout: const Duration(seconds: 10))),
+        _refreshDio = refreshDio ?? Dio(BaseOptions(baseUrl: baseUrl, connectTimeout: const Duration(seconds: 10))),
         tokenStorage = tokenStorage ?? TokenStorage() {
     dio.interceptors.add(InterceptorsWrapper(onRequest: _onRequest, onError: _onError));
   }
@@ -72,9 +74,17 @@ class ApiClient {
       final newRefreshToken = data['refreshToken'] as String;
       await tokenStorage.save(accessToken, newRefreshToken);
       return accessToken;
-    } catch (_) {
-      await tokenStorage.clear();
-      _sessionExpiredController.add(null);
+    } on DioException catch (e) {
+      // Разлогин — только если сервер явно ответил 401/403 (refresh-токен
+      // отозван/просрочен/обнаружено повторное использование). Любая другая
+      // ошибка — не долетело до сервера, таймаут, 5xx — не повод выкидывать
+      // водителя на границе без связи из приложения (024 п.1): токены
+      // остаются на месте, следующий запрос попробует refresh заново.
+      final status = e.response?.statusCode;
+      if (status == 401 || status == 403) {
+        await tokenStorage.clear();
+        _sessionExpiredController.add(null);
+      }
       return null;
     }
   }

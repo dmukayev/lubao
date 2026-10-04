@@ -1,11 +1,24 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { TokenService } from '../token/token.service';
 
 export interface TokenPair {
   accessToken: string;
   refreshToken: string;
+}
+
+const ROTATION_GRACE_SECONDS = 30;
+const GRACE_LOOKUP_RETRIES = 5;
+const GRACE_LOOKUP_DELAY_MS = 50;
+
+function rotationGraceKey(oldRefreshTokenHash: string): string {
+  return `session:rotated:${oldRefreshTokenHash}`;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function toDeviceDto(session: { id: string; deviceName: string | null; platform: string | null; createdAt: Date; lastUsedAt: Date }, currentSessionId: string) {
@@ -26,6 +39,7 @@ export class SessionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokens: TokenService,
+    private readonly redis: RedisService,
   ) {}
 
   async createSession(userId: string, role: UserRole, deviceName?: string, platform?: string): Promise<TokenPair> {
@@ -43,34 +57,72 @@ export class SessionService {
     return { accessToken, refreshToken };
   }
 
+  /// Ротация refresh-токена. Два нюанса из ревью 006 (024 п.4):
+  /// 1. Обновление — условное (`updateMany` с `refreshTokenHash: hash` в
+  ///    WHERE, не просто `update` по id): если два запроса с одним и тем же
+  ///    токеном стартуют параллельно (две вкладки веб-кабинета), оба читают
+  ///    один и тот же session, но запишет (count===1) только первый — у
+  ///    второго WHERE уже не совпадёт (count===0), т.к. refreshTokenHash
+  ///    успел смениться.
+  /// 2. Grace-период ~30 с: проигравший не считается «кражей» и не отзывает
+  ///    сессию — в Redis на короткое время сохраняется пара токенов
+  ///    победителя (по старому hash), и проигравший получает ту же пару
+  ///    вместо ошибки. Без этого у логиста с двумя открытыми вкладками
+  ///    после истечения access-токена вылетало разом обе.
   async rotateSession(presentedRefreshToken: string): Promise<TokenPair> {
     const hash = this.tokens.hashToken(presentedRefreshToken);
 
     const session = await this.prisma.session.findUnique({ where: { refreshTokenHash: hash }, include: { user: true } });
     if (session && !session.revokedAt && session.expiresAt > new Date()) {
       const newRefreshToken = this.tokens.generateRefreshToken();
-      await this.prisma.session.update({
-        where: { id: session.id },
+      const newHash = this.tokens.hashToken(newRefreshToken);
+      const { count } = await this.prisma.session.updateMany({
+        where: { id: session.id, refreshTokenHash: hash },
         data: {
-          refreshTokenHash: this.tokens.hashToken(newRefreshToken),
+          refreshTokenHash: newHash,
           previousTokenHash: hash,
           lastUsedAt: new Date(),
           expiresAt: new Date(Date.now() + this.tokens.refreshTtlMs(session.user.role)),
         },
       });
-      const accessToken = await this.tokens.signAccessToken({ sub: session.userId, role: session.user.role, sid: session.id });
-      return { accessToken, refreshToken: newRefreshToken };
+      if (count === 1) {
+        const accessToken = await this.tokens.signAccessToken({ sub: session.userId, role: session.user.role, sid: session.id });
+        const pair: TokenPair = { accessToken, refreshToken: newRefreshToken };
+        await this.redis.client.set(rotationGraceKey(hash), JSON.stringify(pair), 'EX', ROTATION_GRACE_SECONDS);
+        return pair;
+      }
+      // count === 0 — параллельный запрос обновил эту же сессию на долю
+      // секунды раньше; не кража, просто проигранная гонка за тот же hash.
+      const cached = await this.lookupGraceCache(hash);
+      if (cached) return cached;
     }
 
-    // Токен, который уже был заменён ротацией выше, но пришёл снова —
-    // похоже на кражу/повторное использование. Отзываем всю сессию.
+    // Токен, который уже был заменён ротацией выше, пришёл снова. В пределах
+    // grace-периода это, скорее всего, вторая вкладка — отдаём пару
+    // победителя. Позже grace-периода — похоже на кражу/повторное
+    // использование, отзываем всю сессию.
     const reused = await this.prisma.session.findUnique({ where: { previousTokenHash: hash } });
     if (reused) {
+      const rotatedRecently = Date.now() - reused.lastUsedAt.getTime() < ROTATION_GRACE_SECONDS * 1000;
+      if (rotatedRecently) {
+        const cached = await this.lookupGraceCache(hash);
+        if (cached) return cached;
+      }
       await this.prisma.session.update({ where: { id: reused.id }, data: { revokedAt: new Date() } });
       throw new UnauthorizedException('Refresh token reuse detected');
     }
 
     throw new UnauthorizedException('Invalid refresh token');
+  }
+
+  private async lookupGraceCache(oldRefreshTokenHash: string): Promise<TokenPair | null> {
+    const key = rotationGraceKey(oldRefreshTokenHash);
+    for (let attempt = 0; attempt < GRACE_LOOKUP_RETRIES; attempt++) {
+      const cached = await this.redis.client.get(key);
+      if (cached) return JSON.parse(cached) as TokenPair;
+      await sleep(GRACE_LOOKUP_DELAY_MS);
+    }
+    return null;
   }
 
   async revokeByRefreshToken(presentedRefreshToken: string): Promise<void> {
