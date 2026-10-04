@@ -32,7 +32,7 @@
   Push: FCM (KZ) + APNs + JPush (Android CN). Компаниям — также WeCom group bot webhook.
 - Вход: водитель — телефон + SMS (+7); компания — email + пароль.
 - Модуль уведомлений — абстракция каналов: push, wecom, email, sms (позже wechat, whatsapp).
-- Шрифт Onest вшит в assets.
+- Шрифт Onest вшит в assets. Flutter Web: CanvasKit и шрифты (включая Noto Sans SC) — только со своего сервера, никаких запросов к gstatic/googleapis (задача 020).
 
 ## Доменная модель
 users, drivers, vehicles, driver_directions, companies, company_members (owner/logist),
