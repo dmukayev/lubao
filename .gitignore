@@ -3,10 +3,10 @@
 .env.*
 !.env.example
 
-# node
+# node / pnpm
 node_modules/
 dist/
-<<<<<<< HEAD
+.pnpm-store/
 pnpm-lock.yaml.bak
 
 # prisma
@@ -22,29 +22,18 @@ backend/prisma/migrations/**/migration_lock.toml.bak
 **/ios/.symlinks/
 **/android/.gradle/
 **/*.g.dart.bak
+*.iml
+
+# claude code local state
+.claude/*.lock
 
 # ide
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 .idea/
-*.iml
 
 # os
 .DS_Store
 
-# docker volumes (bind-mounted data, if any land in repo)
+# docker volumes
 infra/**/data/
-=======
-
-# flutter / dart
-.dart_tool/
-build/
-.flutter-plugins
-.flutter-plugins-dependencies
-*.iml
-
-# os / ide
-.DS_Store
-.idea/
-.vscode/*
-!.vscode/extensions.json
->>>>>>> origin/main
