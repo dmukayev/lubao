@@ -321,8 +321,16 @@
   "navCargos": "Грузы",
   "navResponses": "Отклики",
   "navDrivers": "Водители",
-  "driversAtPointTitle": "Кто будет на Хоргосе",
+  "driversAtPointTitle": "Кто будет на {point}",
+  "@driversAtPointTitle": {
+    "placeholders": { "point": { "type": "String" } }
+  },
   "driversAtPointSubtitle": "Водители, которые заранее сообщили о прибытии",
+  "driversAtPointDispatchFrom": "Пункт отправки груза: {point}",
+  "@driversAtPointDispatchFrom": {
+    "placeholders": { "point": { "type": "String" } }
+  },
+  "driversAtPointPickDate": "Выбрать дату",
   "driversAtPointCountAtPlace": "Сейчас на месте: {count}",
   "@driversAtPointCountAtPlace": {
     "placeholders": { "count": { "type": "int" } }

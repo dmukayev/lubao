@@ -1813,14 +1813,26 @@ abstract class LubaoLocalizations {
   /// No description provided for @driversAtPointTitle.
   ///
   /// In ru, this message translates to:
-  /// **'Кто будет на Хоргосе'**
-  String get driversAtPointTitle;
+  /// **'Кто будет на {point}'**
+  String driversAtPointTitle(String point);
 
   /// No description provided for @driversAtPointSubtitle.
   ///
   /// In ru, this message translates to:
   /// **'Водители, которые заранее сообщили о прибытии'**
   String get driversAtPointSubtitle;
+
+  /// No description provided for @driversAtPointDispatchFrom.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пункт отправки груза: {point}'**
+  String driversAtPointDispatchFrom(String point);
+
+  /// No description provided for @driversAtPointPickDate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выбрать дату'**
+  String get driversAtPointPickDate;
 
   /// No description provided for @driversAtPointCountAtPlace.
   ///

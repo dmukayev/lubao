@@ -888,10 +888,20 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get navDrivers => '司机';
 
   @override
-  String get driversAtPointTitle => '谁将抵达霍尔果斯';
+  String driversAtPointTitle(String point) {
+    return '谁将抵达$point';
+  }
 
   @override
   String get driversAtPointSubtitle => '已提前通知到达的司机';
+
+  @override
+  String driversAtPointDispatchFrom(String point) {
+    return '发货点：$point';
+  }
+
+  @override
+  String get driversAtPointPickDate => '选择日期';
 
   @override
   String driversAtPointCountAtPlace(int count) {

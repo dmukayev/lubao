@@ -17,6 +17,10 @@ class DriversAtPointScreen extends ConsumerStatefulWidget {
 
 const _dayStripLength = 7;
 
+/// Диапазон для календаря — с запасом: водитель анонсирует прибытие максимум
+/// на +14 дней (задача 015), остальное в календаре честно покажет 0.
+const _calendarRangeDays = 90;
+
 class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   String? _countryId;
   String? _bodyTypeId;
@@ -50,6 +54,28 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   void _selectDay(int offset) {
     setState(() => _dayOffset = offset);
     _reload();
+  }
+
+  /// Календарь по кнопке в AppBar — любая дата, не только ближайшие 7 дней
+  /// из полосы (задача логиста, 2026-10-04). Переиспользует _selectDay —
+  /// выбор дня в полосе и в календаре ведут к одному и тому же состоянию.
+  Future<void> _openCalendar(BuildContext context) async {
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final summaryFuture = ref.read(arrivalRepositoryProvider).summary(days: _calendarRangeDays);
+    final picked = await showModalBottomSheet<DateTime>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge))),
+      builder: (sheetContext) => _ArrivalsCalendarSheet(
+        summaryFuture: summaryFuture,
+        firstSelectable: today,
+        lastSelectable: today.add(const Duration(days: _calendarRangeDays - 1)),
+      ),
+    );
+    if (picked != null) {
+      _selectDay(picked.difference(today).inDays);
+    }
   }
 
   Future<void> _call(String? phone) async {
@@ -118,9 +144,24 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final referenceData = ref.watch(referenceDataProvider);
+    // Точка загрузки — справочник (решение 2026-10-04, «Не привязывать
+    // продукт к Хоргосу в текстах»): название подставляется сюда, а не
+    // пишется текстом — когда появятся другие точки (008), здесь же будет
+    // их выбор.
+    final primaryPoint = referenceData.valueOrNull?.points.where((p) => p.isActive).firstOrNull;
+    final primaryPointName = primaryPoint?.name.forLanguageCode(locale) ?? '';
 
     return Scaffold(
-      appBar: AppBar(title: Text(t.driversAtPointTitle)),
+      appBar: AppBar(
+        title: Text(t.driversAtPointTitle(primaryPointName)),
+        actions: [
+          IconButton(
+            icon: const Icon(LucideIcons.calendar),
+            tooltip: t.driversAtPointPickDate,
+            onPressed: () => _openCalendar(context),
+          ),
+        ],
+      ),
       body: referenceData.when(
         loading: () => const LoadingView(),
         error: (e, st) => ErrorView(message: t.commonError),
@@ -128,7 +169,16 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 0),
-              child: Text(t.driversAtPointSubtitle, style: AppTextStyles.caption),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(t.driversAtPointSubtitle, style: AppTextStyles.caption),
+                  if (primaryPointName.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(t.driversAtPointDispatchFrom(primaryPointName), style: AppTextStyles.caption),
+                  ],
+                ],
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
             SizedBox(
@@ -435,4 +485,167 @@ class _DriverCard extends StatelessWidget {
     String two(int n) => n.toString().padLeft(2, '0');
     return '${two(local.day)}.${two(local.month)} ${two(local.hour)}:${two(local.minute)}';
   }
+}
+
+/// Шторка-календарь: месяц за месяцем, под каждым числом — сколько машин
+/// планируется на точке в этот день (из того же /arrivals/summary, что и
+/// полоса дней). Свой грид вместо showDatePicker — стандартный пикер не
+/// даёт подписать ячейки числом машин.
+class _ArrivalsCalendarSheet extends StatefulWidget {
+  const _ArrivalsCalendarSheet({required this.summaryFuture, required this.firstSelectable, required this.lastSelectable});
+
+  final Future<List<ArrivalSummaryDay>> summaryFuture;
+  final DateTime firstSelectable;
+  final DateTime lastSelectable;
+
+  @override
+  State<_ArrivalsCalendarSheet> createState() => _ArrivalsCalendarSheetState();
+}
+
+class _ArrivalsCalendarSheetState extends State<_ArrivalsCalendarSheet> {
+  late DateTime _visibleMonth = DateTime(widget.firstSelectable.year, widget.firstSelectable.month);
+
+  bool get _canGoPrevMonth {
+    final prev = DateTime(_visibleMonth.year, _visibleMonth.month - 1);
+    return !prev.isBefore(DateTime(widget.firstSelectable.year, widget.firstSelectable.month));
+  }
+
+  bool get _canGoNextMonth {
+    final next = DateTime(_visibleMonth.year, _visibleMonth.month + 1);
+    return !next.isAfter(DateTime(widget.lastSelectable.year, widget.lastSelectable.month));
+  }
+
+  bool _inRange(DateTime day) {
+    final d = DateTime(day.year, day.month, day.day);
+    return !d.isBefore(widget.firstSelectable) && !d.isAfter(widget.lastSelectable);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final weekdayNames = _weekdayShort[locale] ?? _weekdayShort['ru']!;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: FutureBuilder<List<ArrivalSummaryDay>>(
+          future: widget.summaryFuture,
+          builder: (context, snapshot) {
+            final counts = <DateTime, int>{};
+            for (final day in snapshot.data ?? const <ArrivalSummaryDay>[]) {
+              final local = day.date.toLocal();
+              counts[DateTime(local.year, local.month, local.day)] = day.count;
+            }
+
+            final firstOfMonth = DateTime(_visibleMonth.year, _visibleMonth.month);
+            final daysInMonth = DateTime(_visibleMonth.year, _visibleMonth.month + 1, 0).day;
+            final leadingBlanks = firstOfMonth.weekday - 1;
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(LucideIcons.chevronLeft),
+                      onPressed: _canGoPrevMonth
+                          ? () => setState(() => _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month - 1))
+                          : null,
+                    ),
+                    Text(_monthLabel(locale, _visibleMonth), style: AppTextStyles.title),
+                    IconButton(
+                      icon: const Icon(LucideIcons.chevronRight),
+                      onPressed: _canGoNextMonth
+                          ? () => setState(() => _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month + 1))
+                          : null,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    for (final name in weekdayNames)
+                      Expanded(
+                        child: Center(child: Text(name, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary))),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                if (snapshot.connectionState == ConnectionState.waiting)
+                  const Padding(padding: EdgeInsets.all(AppSpacing.xl), child: Center(child: CircularProgressIndicator()))
+                else
+                  GridView.count(
+                    crossAxisCount: 7,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      for (var i = 0; i < leadingBlanks; i++) const SizedBox.shrink(),
+                      for (var day = 1; day <= daysInMonth; day++)
+                        _buildDayCell(context, DateTime(_visibleMonth.year, _visibleMonth.month, day), counts),
+                    ],
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDayCell(BuildContext context, DateTime date, Map<DateTime, int> counts) {
+    final enabled = _inRange(date);
+    final today = DateTime.now();
+    final isToday = date.year == today.year && date.month == today.month && date.day == today.day;
+    final count = counts[date];
+
+    return InkWell(
+      onTap: enabled ? () => Navigator.of(context).pop(date) : null,
+      borderRadius: BorderRadius.circular(AppRadius.field),
+      child: Container(
+        margin: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.field),
+          border: isToday ? Border.all(color: AppColors.primary) : null,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '${date.day}',
+              style: AppTextStyles.bodyStrong.copyWith(color: enabled ? AppColors.text : AppColors.textSecondary),
+            ),
+            Text(
+              enabled ? (count?.toString() ?? '0') : '',
+              style: AppTextStyles.small.copyWith(
+                color: (count ?? 0) > 0 ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+const _monthNames = {
+  'ru': [
+    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
+  ],
+  'kk': [
+    'Қаңтар', 'Ақпан', 'Наурыз', 'Сәуір', 'Мамыр', 'Маусым',
+    'Шілде', 'Тамыз', 'Қыркүйек', 'Қазан', 'Қараша', 'Желтоқсан',
+  ],
+  'zh': ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+};
+
+String _monthLabel(String locale, DateTime month) {
+  final names = _monthNames[locale] ?? _monthNames['ru']!;
+  final name = names[month.month - 1];
+  return locale == 'zh' ? '${month.year}年$name' : '$name ${month.year}';
+}
+
+extension _FirstOrNull<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
 }

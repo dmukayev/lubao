@@ -903,11 +903,21 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get navDrivers => 'Водители';
 
   @override
-  String get driversAtPointTitle => 'Кто будет на Хоргосе';
+  String driversAtPointTitle(String point) {
+    return 'Кто будет на $point';
+  }
 
   @override
   String get driversAtPointSubtitle =>
       'Водители, которые заранее сообщили о прибытии';
+
+  @override
+  String driversAtPointDispatchFrom(String point) {
+    return 'Пункт отправки груза: $point';
+  }
+
+  @override
+  String get driversAtPointPickDate => 'Выбрать дату';
 
   @override
   String driversAtPointCountAtPlace(int count) {

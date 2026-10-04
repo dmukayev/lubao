@@ -907,11 +907,21 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get navDrivers => 'Жүргізушілер';
 
   @override
-  String get driversAtPointTitle => 'Хоргосқа кімдер келеді';
+  String driversAtPointTitle(String point) {
+    return '$point нүктесінде кімдер болады';
+  }
 
   @override
   String get driversAtPointSubtitle =>
       'Алдын ала келетінін хабарлаған жүргізушілер';
+
+  @override
+  String driversAtPointDispatchFrom(String point) {
+    return 'Жүк жөнелту пункті: $point';
+  }
+
+  @override
+  String get driversAtPointPickDate => 'Күнді таңдау';
 
   @override
   String driversAtPointCountAtPlace(int count) {
