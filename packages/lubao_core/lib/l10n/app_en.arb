@@ -476,5 +476,66 @@
   "adminDocTypeOther": "Other document",
   "adminRotate": "Rotate",
   "adminComplaintReporter": "Reporter",
-  "adminComplaintTarget": "Complaint target"
+  "adminComplaintTarget": "Complaint target",
+  "adminAttentionTitle": "Needs attention",
+  "adminAttentionEmpty": "All clear — nothing needs attention",
+  "adminAttentionPendingVerification": "Pending verification: {count} people",
+  "@adminAttentionPendingVerification": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionOpenComplaints": "Open complaints: {count}",
+  "@adminAttentionOpenComplaints": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionStaleDeals": "Deals stuck > 3 days: {count}",
+  "@adminAttentionStaleDeals": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionUnverifiedCompanies": "Unverified companies: {count}",
+  "@adminAttentionUnverifiedCompanies": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionPendingCities": "New cities: {count}",
+  "@adminAttentionPendingCities": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminRecentEventsTitle": "Recent events",
+  "adminAuditLogLink": "Log →",
+  "adminAuditLogTitle": "Action log",
+  "adminNoEvents": "No events",
+  "adminPeriodLabel": "Period:",
+  "adminPeriodToday": "Today",
+  "adminPeriod7d": "7 days",
+  "adminPeriod30d": "30 days",
+  "adminStatOnSiteToday": "On site today",
+  "adminStatOnSiteWeek": "This week: {count}",
+  "@adminStatOnSiteWeek": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminGlobalSearchHint": "Search: name, phone, email, plate, cargo/deal #",
+  "adminSearchNoResults": "No results",
+  "adminNavCargos": "Cargo",
+  "adminNavDeals": "Deals",
+  "adminNavSettings": "Settings",
+  "adminCargosTitle": "Cargo",
+  "adminCargosEmpty": "No cargo found",
+  "adminDealsTitle": "Deals",
+  "adminDealsEmpty": "No deals found",
+  "adminFilterActive": "Active",
+  "adminFilterStale": "Stuck > 3 days",
+  "adminFilterOnSite": "On site",
+  "adminColRoute": "Route",
+  "adminColBodyType": "Body type",
+  "adminColPrice": "Price",
+  "adminColCompany": "Company",
+  "adminColDriver": "Driver",
+  "adminColResponses": "Responses",
+  "adminColPublished": "Published",
+  "adminColCreated": "Created",
+  "adminColStale": "Stuck",
+  "adminStaleDays": "{days} d.",
+  "@adminStaleDays": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "adminSettingsEmpty": "No settings yet"
 }

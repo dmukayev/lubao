@@ -8,9 +8,91 @@ class AdminRepository {
 
   final ApiClient _client;
 
-  Future<AdminStats> stats() async {
-    final res = await _client.dio.get('/admin/stats');
+  Future<AdminStats> stats({String period = 'today'}) async {
+    final res = await _client.dio.get('/admin/stats', queryParameters: {'period': period});
     return AdminStats.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<AdminAttention> attention() async {
+    final res = await _client.dio.get('/admin/attention');
+    return AdminAttention.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<List<AdminEvent>> recentEvents({int limit = 10}) async {
+    final res = await _client.dio.get('/admin/events/recent', queryParameters: {'limit': limit});
+    return (res.data as List<dynamic>).map((e) => AdminEvent.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<AdminAuditLogEntry>> auditLog({String? actorUserId, String? entityType, DateTime? since, int limit = 100}) async {
+    final res = await _client.dio.get('/admin/audit', queryParameters: {
+      if (actorUserId != null) 'actorUserId': actorUserId,
+      if (entityType != null) 'entityType': entityType,
+      if (since != null) 'since': since.toUtc().toIso8601String(),
+      'limit': limit,
+    });
+    return (res.data as List<dynamic>).map((e) => AdminAuditLogEntry.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<Map<String, String>> settings() async {
+    final res = await _client.dio.get('/admin/settings');
+    return (res.data as Map<String, dynamic>).map((k, v) => MapEntry(k, v as String));
+  }
+
+  Future<void> setSetting(String key, String value) async {
+    await _client.dio.patch('/admin/settings/$key', data: {'value': value});
+  }
+
+  Future<AdminSearchResults> search(String q) async {
+    final res = await _client.dio.get('/admin/search', queryParameters: {'q': q});
+    return AdminSearchResults.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<AdminSearchPage<AdminCargoRow>> searchCargos({
+    String? q,
+    String? status,
+    String? companyId,
+    String? destinationCountryId,
+    int page = 1,
+    int pageSize = 50,
+  }) async {
+    final res = await _client.dio.get('/admin/cargos', queryParameters: {
+      if (q != null && q.isNotEmpty) 'q': q,
+      if (status != null) 'status': status,
+      if (companyId != null) 'companyId': companyId,
+      if (destinationCountryId != null) 'destinationCountryId': destinationCountryId,
+      'page': page,
+      'pageSize': pageSize,
+    });
+    final data = res.data as Map<String, dynamic>;
+    return AdminSearchPage(
+      items: (data['items'] as List<dynamic>).map((e) => AdminCargoRow.fromJson(e as Map<String, dynamic>)).toList(),
+      total: data['total'] as int,
+    );
+  }
+
+  Future<AdminSearchPage<AdminDealRow>> searchDeals({
+    String? q,
+    String? status,
+    bool? stale,
+    String? driverId,
+    String? companyId,
+    int page = 1,
+    int pageSize = 50,
+  }) async {
+    final res = await _client.dio.get('/admin/deals', queryParameters: {
+      if (q != null && q.isNotEmpty) 'q': q,
+      if (status != null) 'status': status,
+      if (stale != null) 'stale': stale,
+      if (driverId != null) 'driverId': driverId,
+      if (companyId != null) 'companyId': companyId,
+      'page': page,
+      'pageSize': pageSize,
+    });
+    final data = res.data as Map<String, dynamic>;
+    return AdminSearchPage(
+      items: (data['items'] as List<dynamic>).map((e) => AdminDealRow.fromJson(e as Map<String, dynamic>)).toList(),
+      total: data['total'] as int,
+    );
   }
 
   Future<List<AdminVerificationDocument>> verificationDocuments({String? status}) async {
@@ -80,11 +162,19 @@ class AdminRepository {
     await _client.dio.post('/admin/companies/$companyId/unblock', data: {'reason': reason});
   }
 
-  Future<AdminSearchPage<AdminDriverRow>> searchDrivers({String? q, bool? verified, bool? blocked, int page = 1, int pageSize = 50}) async {
+  Future<AdminSearchPage<AdminDriverRow>> searchDrivers({
+    String? q,
+    bool? verified,
+    bool? blocked,
+    String? onSite,
+    int page = 1,
+    int pageSize = 50,
+  }) async {
     final res = await _client.dio.get('/admin/drivers', queryParameters: {
       if (q != null && q.isNotEmpty) 'q': q,
       if (verified != null) 'verified': verified,
       if (blocked != null) 'blocked': blocked,
+      if (onSite != null) 'onSite': onSite,
       'page': page,
       'pageSize': pageSize,
     });

@@ -1321,4 +1321,139 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminComplaintTarget => 'Шағым нысаны';
+
+  @override
+  String get adminAttentionTitle => 'Назар аудару қажет';
+
+  @override
+  String get adminAttentionEmpty => 'Бәрі дұрыс — назар аудару қажет емес';
+
+  @override
+  String adminAttentionPendingVerification(int count) {
+    return 'Тексеруде: $count адам';
+  }
+
+  @override
+  String adminAttentionOpenComplaints(int count) {
+    return 'Ашық шағымдар: $count';
+  }
+
+  @override
+  String adminAttentionStaleDeals(int count) {
+    return '3 күннен артық қозғалыссыз мәмілелер: $count';
+  }
+
+  @override
+  String adminAttentionUnverifiedCompanies(int count) {
+    return 'Тексерілмеген компаниялар: $count';
+  }
+
+  @override
+  String adminAttentionPendingCities(int count) {
+    return 'Жаңа қалалар: $count';
+  }
+
+  @override
+  String get adminRecentEventsTitle => 'Соңғы оқиғалар';
+
+  @override
+  String get adminAuditLogLink => 'Журнал →';
+
+  @override
+  String get adminAuditLogTitle => 'Әрекеттер журналы';
+
+  @override
+  String get adminNoEvents => 'Оқиғалар жоқ';
+
+  @override
+  String get adminPeriodLabel => 'Кезең:';
+
+  @override
+  String get adminPeriodToday => 'Бүгін';
+
+  @override
+  String get adminPeriod7d => '7 күн';
+
+  @override
+  String get adminPeriod30d => '30 күн';
+
+  @override
+  String get adminStatOnSiteToday => 'Бүгін нүктеде';
+
+  @override
+  String adminStatOnSiteWeek(int count) {
+    return 'Аптада: $count';
+  }
+
+  @override
+  String get adminGlobalSearchHint =>
+      'Іздеу: аты, телефон, email, мем. нөмір, жүк/мәміле №';
+
+  @override
+  String get adminSearchNoResults => 'Ештеңе табылмады';
+
+  @override
+  String get adminNavCargos => 'Жүктер';
+
+  @override
+  String get adminNavDeals => 'Мәмілелер';
+
+  @override
+  String get adminNavSettings => 'Баптаулар';
+
+  @override
+  String get adminCargosTitle => 'Жүктер';
+
+  @override
+  String get adminCargosEmpty => 'Жүктер табылмады';
+
+  @override
+  String get adminDealsTitle => 'Мәмілелер';
+
+  @override
+  String get adminDealsEmpty => 'Мәмілелер табылмады';
+
+  @override
+  String get adminFilterActive => 'Жұмыста';
+
+  @override
+  String get adminFilterStale => '3 күннен артық қозғалыссыз';
+
+  @override
+  String get adminFilterOnSite => 'Нүктеде';
+
+  @override
+  String get adminColRoute => 'Бағыт';
+
+  @override
+  String get adminColBodyType => 'Кузов';
+
+  @override
+  String get adminColPrice => 'Баға';
+
+  @override
+  String get adminColCompany => 'Компания';
+
+  @override
+  String get adminColDriver => 'Жүргізуші';
+
+  @override
+  String get adminColResponses => 'Жауаптар';
+
+  @override
+  String get adminColPublished => 'Жарияланды';
+
+  @override
+  String get adminColCreated => 'Құрылды';
+
+  @override
+  String get adminColStale => 'Қозғалыссыз';
+
+  @override
+  String adminStaleDays(int days) {
+    return '$days күн';
+  }
+
+  @override
+  String get adminSettingsEmpty => 'Баптаулар әлі жоқ';
 }

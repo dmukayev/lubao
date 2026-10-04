@@ -12,8 +12,14 @@ const _pageSize = 50;
 
 enum _StatusFilter { all, pending, verified, blocked }
 
+/// Фильтры читаются из query-параметров адреса при открытии и пишутся туда
+/// же при каждом изменении (задача 028, п.3) — ссылка с плитки сводки
+/// (`/drivers?onSite=today`) открывает нужный список, адрес переживает
+/// перезагрузку страницы и годится для копирования.
 class AdminDriversScreen extends ConsumerStatefulWidget {
-  const AdminDriversScreen({super.key});
+  const AdminDriversScreen({super.key, this.queryParams = const {}});
+
+  final Map<String, String> queryParams;
 
   @override
   ConsumerState<AdminDriversScreen> createState() => _AdminDriversScreenState();
@@ -22,9 +28,55 @@ class AdminDriversScreen extends ConsumerStatefulWidget {
 class _AdminDriversScreenState extends ConsumerState<AdminDriversScreen> {
   final _searchController = TextEditingController();
   _StatusFilter _filter = _StatusFilter.all;
+  String? _onSite;
   int _page = 1;
   Timer? _debounce;
   String _q = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _applyParams(widget.queryParams);
+  }
+
+  @override
+  void didUpdateWidget(covariant AdminDriversScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_mapEquals(oldWidget.queryParams, widget.queryParams)) {
+      _applyParams(widget.queryParams);
+    }
+  }
+
+  bool _mapEquals(Map<String, String> a, Map<String, String> b) {
+    if (a.length != b.length) return false;
+    for (final key in a.keys) {
+      if (a[key] != b[key]) return false;
+    }
+    return true;
+  }
+
+  void _applyParams(Map<String, String> params) {
+    _q = params['q'] ?? '';
+    _searchController.text = _q;
+    _onSite = params['onSite'];
+    _page = int.tryParse(params['page'] ?? '') ?? 1;
+    _filter = switch (params['filter']) {
+      'pending' => _StatusFilter.pending,
+      'verified' => _StatusFilter.verified,
+      'blocked' => _StatusFilter.blocked,
+      _ => _StatusFilter.all,
+    };
+  }
+
+  void _pushUrl() {
+    final params = <String, String>{
+      if (_q.isNotEmpty) 'q': _q,
+      if (_filter != _StatusFilter.all) 'filter': _filter.name,
+      if (_onSite != null) 'onSite': _onSite!,
+      if (_page != 1) 'page': '$_page',
+    };
+    context.go(Uri(path: '/drivers', queryParameters: params.isEmpty ? null : params).toString());
+  }
 
   @override
   void dispose() {
@@ -40,6 +92,7 @@ class _AdminDriversScreenState extends ConsumerState<AdminDriversScreen> {
         _q = value;
         _page = 1;
       });
+      _pushUrl();
     });
   }
 
@@ -51,6 +104,7 @@ class _AdminDriversScreenState extends ConsumerState<AdminDriversScreen> {
           _ => null,
         },
         blocked: _filter == _StatusFilter.blocked ? true : null,
+        onSite: _onSite,
         page: _page,
       );
 
@@ -58,10 +112,31 @@ class _AdminDriversScreenState extends ConsumerState<AdminDriversScreen> {
   Widget build(BuildContext context) {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
-    final pageAsync = ref.watch(adminDriversSearchProvider(_query));
+    final providerArgs = (q: _query.q, verified: _query.verified, blocked: _query.blocked, onSite: _onSite, page: _query.page);
+    final pageAsync = ref.watch(adminDriversSearchProvider(providerArgs));
 
     return Scaffold(
-      appBar: AppBar(title: Text(t.adminDriversTitle)),
+      appBar: AppBar(
+        title: Text(t.adminDriversTitle),
+        bottom: _onSite == null
+            ? null
+            : PreferredSize(
+                preferredSize: const Size.fromHeight(36),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8, left: 16),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: InputChip(
+                      label: Text(t.adminFilterOnSite),
+                      onDeleted: () {
+                        setState(() => _onSite = null);
+                        _pushUrl();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -87,10 +162,13 @@ class _AdminDriversScreenState extends ConsumerState<AdminDriversScreen> {
                       _StatusFilter.blocked => t.adminFilterBlocked,
                     }),
                     selected: _filter == f,
-                    onSelected: (_) => setState(() {
-                      _filter = f;
-                      _page = 1;
-                    }),
+                    onSelected: (_) {
+                      setState(() {
+                        _filter = f;
+                        _page = 1;
+                      });
+                      _pushUrl();
+                    },
                   ),
                   const SizedBox(width: 8),
                 ],
@@ -102,7 +180,7 @@ class _AdminDriversScreenState extends ConsumerState<AdminDriversScreen> {
                 loading: () => const LoadingView(),
                 error: (e, st) {
                   debugPrint('AdminDriversScreen: $e');
-                  return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminDriversSearchProvider(_query)));
+                  return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminDriversSearchProvider(providerArgs)));
                 },
                 data: (page) {
                   if (page.items.isEmpty) return EmptyState(message: t.adminDriversEmpty, icon: LucideIcons.user);
@@ -144,7 +222,14 @@ class _AdminDriversScreenState extends ConsumerState<AdminDriversScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      _Pager(page: _page, total: page.total, onChanged: (p) => setState(() => _page = p)),
+                      _Pager(
+                        page: _page,
+                        total: page.total,
+                        onChanged: (p) {
+                          setState(() => _page = p);
+                          _pushUrl();
+                        },
+                      ),
                     ],
                   );
                 },

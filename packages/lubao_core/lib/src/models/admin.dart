@@ -1,5 +1,21 @@
 import 'common.dart';
 
+class AdminStatsGrowth {
+  const AdminStatsGrowth({required this.drivers, required this.companies, required this.cargos, required this.delivered});
+
+  final int drivers;
+  final int companies;
+  final int cargos;
+  final int delivered;
+
+  factory AdminStatsGrowth.fromJson(Map<String, dynamic> json) => AdminStatsGrowth(
+        drivers: json['drivers'] as int,
+        companies: json['companies'] as int,
+        cargos: json['cargos'] as int,
+        delivered: json['delivered'] as int,
+      );
+}
+
 class AdminStats {
   const AdminStats({
     required this.drivers,
@@ -9,6 +25,10 @@ class AdminStats {
     required this.dealsDelivered,
     required this.pendingDocs,
     required this.openComplaints,
+    required this.period,
+    required this.growth,
+    required this.onSiteToday,
+    required this.onSiteWeek,
   });
 
   final int drivers;
@@ -18,6 +38,10 @@ class AdminStats {
   final int dealsDelivered;
   final int pendingDocs;
   final int openComplaints;
+  final String period;
+  final AdminStatsGrowth growth;
+  final int onSiteToday;
+  final int onSiteWeek;
 
   factory AdminStats.fromJson(Map<String, dynamic> json) => AdminStats(
         drivers: json['drivers'] as int,
@@ -27,6 +51,12 @@ class AdminStats {
         dealsDelivered: json['dealsDelivered'] as int,
         pendingDocs: json['pendingDocs'] as int,
         openComplaints: json['openComplaints'] as int,
+        period: json['period'] as String? ?? 'today',
+        growth: json['growth'] == null
+            ? const AdminStatsGrowth(drivers: 0, companies: 0, cargos: 0, delivered: 0)
+            : AdminStatsGrowth.fromJson(json['growth'] as Map<String, dynamic>),
+        onSiteToday: json['onSiteToday'] as int? ?? 0,
+        onSiteWeek: json['onSiteWeek'] as int? ?? 0,
       );
 }
 
@@ -303,10 +333,20 @@ class AdminDriverVehicle {
 }
 
 class AdminAuditLogEntry {
-  const AdminAuditLogEntry({required this.id, required this.action, this.actorName, this.metadata, required this.createdAt});
+  const AdminAuditLogEntry({
+    required this.id,
+    required this.action,
+    this.entityType,
+    this.entityId,
+    this.actorName,
+    this.metadata,
+    required this.createdAt,
+  });
 
   final String id;
   final String action;
+  final String? entityType;
+  final String? entityId;
   final String? actorName;
   final Map<String, dynamic>? metadata;
   final DateTime createdAt;
@@ -314,6 +354,8 @@ class AdminAuditLogEntry {
   factory AdminAuditLogEntry.fromJson(Map<String, dynamic> json) => AdminAuditLogEntry(
         id: json['id'] as String,
         action: json['action'] as String,
+        entityType: json['entityType'] as String?,
+        entityId: json['entityId'] as String?,
         actorName: json['actorName'] as String?,
         metadata: json['metadata'] as Map<String, dynamic>?,
         createdAt: DateTime.parse(json['createdAt'] as String),
@@ -723,4 +765,179 @@ class AdminPendingCity {
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
+}
+
+/// Блок «Требует внимания» на сводке (задача 028, п.4).
+class AdminAttention {
+  const AdminAttention({
+    required this.pendingVerificationCount,
+    required this.pendingVerificationOldestAgeHours,
+    required this.openComplaints,
+    required this.staleDeals,
+    required this.unverifiedCompanies,
+    required this.pendingCities,
+  });
+
+  final int pendingVerificationCount;
+  final int pendingVerificationOldestAgeHours;
+  final int openComplaints;
+  final int staleDeals;
+  final int unverifiedCompanies;
+  final int pendingCities;
+
+  factory AdminAttention.fromJson(Map<String, dynamic> json) {
+    final pv = json['pendingVerification'] as Map<String, dynamic>;
+    return AdminAttention(
+      pendingVerificationCount: pv['count'] as int,
+      pendingVerificationOldestAgeHours: pv['oldestAgeHours'] as int,
+      openComplaints: json['openComplaints'] as int,
+      staleDeals: json['staleDeals'] as int,
+      unverifiedCompanies: json['unverifiedCompanies'] as int,
+      pendingCities: json['pendingCities'] as int,
+    );
+  }
+}
+
+/// Строка «Последних событий» (задача 028, п.5) — смешанная лента
+/// audit_log + регистраций + новых грузов + смен статуса сделок.
+class AdminEvent {
+  const AdminEvent({required this.type, required this.title, required this.entityId, required this.createdAt});
+
+  final String type;
+  final String title;
+  final String entityId;
+  final DateTime createdAt;
+
+  factory AdminEvent.fromJson(Map<String, dynamic> json) => AdminEvent(
+        type: json['type'] as String,
+        title: json['title'] as String,
+        entityId: json['entityId'] as String,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
+}
+
+class AdminSearchHit {
+  const AdminSearchHit({required this.id, required this.title});
+
+  final String id;
+  final String title;
+
+  factory AdminSearchHit.fromJson(Map<String, dynamic> json) => AdminSearchHit(
+        id: json['id'] as String,
+        title: json['title'] is String ? json['title'] as String : (json['title'] as Map<String, dynamic>).values.whereType<String>().firstWhere((s) => s.isNotEmpty, orElse: () => ''),
+      );
+}
+
+/// Глобальный поиск (задача 028, п.6) — результаты сгруппированы по типу.
+class AdminSearchResults {
+  const AdminSearchResults({required this.drivers, required this.companies, required this.cargos, required this.deals});
+
+  final List<AdminSearchHit> drivers;
+  final List<AdminSearchHit> companies;
+  final List<AdminSearchHit> cargos;
+  final List<AdminSearchHit> deals;
+
+  bool get isEmpty => drivers.isEmpty && companies.isEmpty && cargos.isEmpty && deals.isEmpty;
+
+  factory AdminSearchResults.fromJson(Map<String, dynamic> json) => AdminSearchResults(
+        drivers: (json['drivers'] as List<dynamic>).map((e) => AdminSearchHit.fromJson(e as Map<String, dynamic>)).toList(),
+        companies: (json['companies'] as List<dynamic>).map((e) => AdminSearchHit.fromJson(e as Map<String, dynamic>)).toList(),
+        cargos: (json['cargos'] as List<dynamic>).map((e) => AdminSearchHit.fromJson(e as Map<String, dynamic>)).toList(),
+        deals: (json['deals'] as List<dynamic>).map((e) => AdminSearchHit.fromJson(e as Map<String, dynamic>)).toList(),
+      );
+}
+
+/// Строка списка грузов в админке (задача 028, п.14).
+class AdminCargoRow {
+  const AdminCargoRow({
+    required this.id,
+    required this.pointName,
+    required this.destinationCountryName,
+    this.destinationCityName,
+    required this.bodyTypeName,
+    this.weightKg,
+    required this.price,
+    required this.currency,
+    required this.companyId,
+    required this.companyName,
+    required this.responseCount,
+    required this.status,
+    required this.publishedAt,
+  });
+
+  final String id;
+  final I18nText pointName;
+  final I18nText destinationCountryName;
+  final I18nText? destinationCityName;
+  final I18nText bodyTypeName;
+  final double? weightKg;
+  final double price;
+  final String currency;
+  final String companyId;
+  final String companyName;
+  final int responseCount;
+  final String status;
+  final DateTime publishedAt;
+
+  factory AdminCargoRow.fromJson(Map<String, dynamic> json) => AdminCargoRow(
+        id: json['id'] as String,
+        pointName: I18nText.fromJson(json['pointName'] as Map<String, dynamic>),
+        destinationCountryName: I18nText.fromJson(json['destinationCountryName'] as Map<String, dynamic>),
+        destinationCityName: json['destinationCityName'] == null ? null : I18nText.fromJson(json['destinationCityName'] as Map<String, dynamic>),
+        bodyTypeName: I18nText.fromJson(json['bodyTypeName'] as Map<String, dynamic>),
+        weightKg: json['weightKg'] == null ? null : (json['weightKg'] as num).toDouble(),
+        price: (json['price'] as num).toDouble(),
+        currency: json['currency'] as String,
+        companyId: json['companyId'] as String,
+        companyName: json['companyName'] as String,
+        responseCount: json['responseCount'] as int,
+        status: json['status'] as String,
+        publishedAt: DateTime.parse(json['publishedAt'] as String),
+      );
+}
+
+/// Строка списка сделок в админке (задача 028, п.16).
+class AdminDealRow {
+  const AdminDealRow({
+    required this.id,
+    required this.pointName,
+    required this.destinationCountryName,
+    required this.driverId,
+    required this.driverName,
+    required this.companyId,
+    required this.companyName,
+    required this.price,
+    required this.currency,
+    required this.status,
+    required this.staleDays,
+    required this.createdAt,
+  });
+
+  final String id;
+  final I18nText pointName;
+  final I18nText destinationCountryName;
+  final String driverId;
+  final String driverName;
+  final String companyId;
+  final String companyName;
+  final double price;
+  final String currency;
+  final String status;
+  final int staleDays;
+  final DateTime createdAt;
+
+  factory AdminDealRow.fromJson(Map<String, dynamic> json) => AdminDealRow(
+        id: json['id'] as String,
+        pointName: I18nText.fromJson(json['pointName'] as Map<String, dynamic>),
+        destinationCountryName: I18nText.fromJson(json['destinationCountryName'] as Map<String, dynamic>),
+        driverId: json['driverId'] as String,
+        driverName: json['driverName'] as String,
+        companyId: json['companyId'] as String,
+        companyName: json['companyName'] as String,
+        price: (json['price'] as num).toDouble(),
+        currency: json['currency'] as String,
+        status: json['status'] as String,
+        staleDays: json['staleDays'] as int,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
 }

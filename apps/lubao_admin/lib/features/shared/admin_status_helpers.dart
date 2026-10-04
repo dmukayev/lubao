@@ -18,6 +18,42 @@ import 'package:lubao_core/lubao_core.dart';
   }
 }
 
+/// Статус сделки по сырому коду с бэкенда (задача 028 — таблицы /deals,
+/// /cargos получают строковый enum, не типизированный `DealStatus`).
+String dealStatusLabel(LubaoLocalizations t, String status) {
+  switch (status) {
+    case 'SELECTED':
+      return t.dealStatusSelected;
+    case 'CONFIRMED_BY_DRIVER':
+      return t.dealStatusConfirmed;
+    case 'LOADED':
+      return t.dealStatusLoaded;
+    case 'IN_TRANSIT':
+      return t.dealStatusInTransit;
+    case 'DELIVERED':
+      return t.dealStatusDelivered;
+    case 'CANCELLED':
+      return t.dealStatusCancelled;
+    default:
+      return status;
+  }
+}
+
+String cargoStatusLabel(LubaoLocalizations t, String status) {
+  switch (status) {
+    case 'PUBLISHED':
+      return t.cargoStatusPublished;
+    case 'ARCHIVED':
+      return t.cargoStatusArchived;
+    case 'EXPIRED':
+      return t.cargoStatusExpired;
+    case 'CANCELLED':
+      return t.cargoStatusCancelled;
+    default:
+      return status;
+  }
+}
+
 /// Тип документа — человекочитаемое название (задача 026, п.3: очередь и
 /// карточка не должны показывать сырой код enum). Для 4 водительских типов
 /// переиспользуются существующие driverVerification*-ключи; для компании —

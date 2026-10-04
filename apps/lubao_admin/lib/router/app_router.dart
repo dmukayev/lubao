@@ -13,6 +13,10 @@ import '../features/companies/admin_companies_screen.dart';
 import '../features/companies/company_detail_screen.dart';
 import '../features/drivers/admin_drivers_screen.dart';
 import '../features/drivers/driver_detail_screen.dart';
+import '../features/cargos/admin_cargos_screen.dart';
+import '../features/deals/admin_deals_screen.dart';
+import '../features/audit/admin_audit_screen.dart';
+import '../features/settings/admin_settings_screen.dart';
 import '../features/reference/reference_screen.dart';
 
 class _RouterRefresh extends ChangeNotifier {
@@ -59,7 +63,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/complaints', builder: (context, state) => const ComplaintsScreen()),
           GoRoute(
             path: '/companies',
-            builder: (context, state) => const AdminCompaniesScreen(),
+            builder: (context, state) => AdminCompaniesScreen(queryParams: state.uri.queryParameters),
             routes: [
               GoRoute(
                 path: ':id',
@@ -69,7 +73,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/drivers',
-            builder: (context, state) => const AdminDriversScreen(),
+            builder: (context, state) => AdminDriversScreen(queryParams: state.uri.queryParameters),
             routes: [
               GoRoute(
                 path: ':id',
@@ -77,6 +81,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          GoRoute(
+            path: '/cargos',
+            builder: (context, state) => AdminCargosScreen(queryParams: state.uri.queryParameters),
+          ),
+          GoRoute(
+            path: '/deals',
+            builder: (context, state) => AdminDealsScreen(queryParams: state.uri.queryParameters),
+          ),
+          GoRoute(path: '/audit', builder: (context, state) => const AdminAuditScreen()),
+          GoRoute(path: '/settings', builder: (context, state) => const AdminSettingsScreen()),
           GoRoute(path: '/reference', builder: (context, state) => const ReferenceScreen()),
         ],
       ),

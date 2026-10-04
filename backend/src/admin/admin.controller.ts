@@ -5,9 +5,11 @@ import { AppSettingsService } from '../app-settings/app-settings.service';
 import { AdminService } from './admin.service';
 import {
   BlockUserDto,
+  CargoSearchQueryDto,
   CreateBodyTypeDto,
   CreatePermitDto,
   CreatePointDto,
+  DealSearchQueryDto,
   ModerateCityDto,
   ResolveComplaintDto,
   ReviewVerificationDocumentDto,
@@ -15,6 +17,7 @@ import {
   SetActiveDto,
   SetAppSettingDto,
   SetVerifiedDto,
+  StatsQueryDto,
 } from './dto/admin.dto';
 
 function assertAdmin(ctx: RequestContext) {
@@ -42,9 +45,56 @@ export class AdminController {
   }
 
   @Get('stats')
-  stats(@CurrentUser() ctx: RequestContext) {
+  stats(@CurrentUser() ctx: RequestContext, @Query() query: StatsQueryDto) {
     assertAdmin(ctx);
-    return this.admin.stats();
+    return this.admin.stats(query.period);
+  }
+
+  @Get('attention')
+  attention(@CurrentUser() ctx: RequestContext) {
+    assertAdmin(ctx);
+    return this.admin.attention();
+  }
+
+  @Get('events/recent')
+  recentEvents(@CurrentUser() ctx: RequestContext, @Query('limit') limit?: string) {
+    assertAdmin(ctx);
+    return this.admin.recentEvents(limit ? Number(limit) : undefined);
+  }
+
+  @Get('audit')
+  auditLog(
+    @CurrentUser() ctx: RequestContext,
+    @Query('actorUserId') actorUserId?: string,
+    @Query('entityType') entityType?: string,
+    @Query('since') since?: string,
+    @Query('limit') limit?: string,
+  ) {
+    assertAdmin(ctx);
+    return this.admin.auditLog({
+      actorUserId,
+      entityType,
+      since: since ? new Date(since) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
+  }
+
+  @Get('search')
+  search(@CurrentUser() ctx: RequestContext, @Query('q') q: string) {
+    assertAdmin(ctx);
+    return this.admin.search(q ?? '');
+  }
+
+  @Get('cargos')
+  searchCargos(@CurrentUser() ctx: RequestContext, @Query() query: CargoSearchQueryDto) {
+    assertAdmin(ctx);
+    return this.admin.searchCargos(query);
+  }
+
+  @Get('deals')
+  searchDeals(@CurrentUser() ctx: RequestContext, @Query() query: DealSearchQueryDto) {
+    assertAdmin(ctx);
+    return this.admin.searchDeals(query);
   }
 
   @Get('verification-documents')

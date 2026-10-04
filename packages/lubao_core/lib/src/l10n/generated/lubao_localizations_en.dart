@@ -1320,4 +1320,139 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminComplaintTarget => 'Complaint target';
+
+  @override
+  String get adminAttentionTitle => 'Needs attention';
+
+  @override
+  String get adminAttentionEmpty => 'All clear — nothing needs attention';
+
+  @override
+  String adminAttentionPendingVerification(int count) {
+    return 'Pending verification: $count people';
+  }
+
+  @override
+  String adminAttentionOpenComplaints(int count) {
+    return 'Open complaints: $count';
+  }
+
+  @override
+  String adminAttentionStaleDeals(int count) {
+    return 'Deals stuck > 3 days: $count';
+  }
+
+  @override
+  String adminAttentionUnverifiedCompanies(int count) {
+    return 'Unverified companies: $count';
+  }
+
+  @override
+  String adminAttentionPendingCities(int count) {
+    return 'New cities: $count';
+  }
+
+  @override
+  String get adminRecentEventsTitle => 'Recent events';
+
+  @override
+  String get adminAuditLogLink => 'Log →';
+
+  @override
+  String get adminAuditLogTitle => 'Action log';
+
+  @override
+  String get adminNoEvents => 'No events';
+
+  @override
+  String get adminPeriodLabel => 'Period:';
+
+  @override
+  String get adminPeriodToday => 'Today';
+
+  @override
+  String get adminPeriod7d => '7 days';
+
+  @override
+  String get adminPeriod30d => '30 days';
+
+  @override
+  String get adminStatOnSiteToday => 'On site today';
+
+  @override
+  String adminStatOnSiteWeek(int count) {
+    return 'This week: $count';
+  }
+
+  @override
+  String get adminGlobalSearchHint =>
+      'Search: name, phone, email, plate, cargo/deal #';
+
+  @override
+  String get adminSearchNoResults => 'No results';
+
+  @override
+  String get adminNavCargos => 'Cargo';
+
+  @override
+  String get adminNavDeals => 'Deals';
+
+  @override
+  String get adminNavSettings => 'Settings';
+
+  @override
+  String get adminCargosTitle => 'Cargo';
+
+  @override
+  String get adminCargosEmpty => 'No cargo found';
+
+  @override
+  String get adminDealsTitle => 'Deals';
+
+  @override
+  String get adminDealsEmpty => 'No deals found';
+
+  @override
+  String get adminFilterActive => 'Active';
+
+  @override
+  String get adminFilterStale => 'Stuck > 3 days';
+
+  @override
+  String get adminFilterOnSite => 'On site';
+
+  @override
+  String get adminColRoute => 'Route';
+
+  @override
+  String get adminColBodyType => 'Body type';
+
+  @override
+  String get adminColPrice => 'Price';
+
+  @override
+  String get adminColCompany => 'Company';
+
+  @override
+  String get adminColDriver => 'Driver';
+
+  @override
+  String get adminColResponses => 'Responses';
+
+  @override
+  String get adminColPublished => 'Published';
+
+  @override
+  String get adminColCreated => 'Created';
+
+  @override
+  String get adminColStale => 'Stuck';
+
+  @override
+  String adminStaleDays(int days) {
+    return '$days d.';
+  }
+
+  @override
+  String get adminSettingsEmpty => 'No settings yet';
 }

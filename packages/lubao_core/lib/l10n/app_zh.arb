@@ -425,5 +425,66 @@
   "adminDocTypeOther": "其他文件",
   "adminRotate": "旋转",
   "adminComplaintReporter": "投诉人",
-  "adminComplaintTarget": "投诉对象"
+  "adminComplaintTarget": "投诉对象",
+  "adminAttentionTitle": "需要关注",
+  "adminAttentionEmpty": "一切正常——无需关注",
+  "adminAttentionPendingVerification": "待审核：{count} 人",
+  "@adminAttentionPendingVerification": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionOpenComplaints": "待处理投诉：{count}",
+  "@adminAttentionOpenComplaints": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionStaleDeals": "超过3天无进展的交易：{count}",
+  "@adminAttentionStaleDeals": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionUnverifiedCompanies": "未验证公司：{count}",
+  "@adminAttentionUnverifiedCompanies": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionPendingCities": "新城市：{count}",
+  "@adminAttentionPendingCities": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminRecentEventsTitle": "最近事件",
+  "adminAuditLogLink": "日志 →",
+  "adminAuditLogTitle": "操作日志",
+  "adminNoEvents": "暂无事件",
+  "adminPeriodLabel": "周期：",
+  "adminPeriodToday": "今天",
+  "adminPeriod7d": "7天",
+  "adminPeriod30d": "30天",
+  "adminStatOnSiteToday": "今日在场",
+  "adminStatOnSiteWeek": "本周：{count}",
+  "@adminStatOnSiteWeek": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminGlobalSearchHint": "搜索：姓名、电话、邮箱、车牌号、货源/交易编号",
+  "adminSearchNoResults": "未找到结果",
+  "adminNavCargos": "货源",
+  "adminNavDeals": "交易",
+  "adminNavSettings": "设置",
+  "adminCargosTitle": "货源",
+  "adminCargosEmpty": "未找到货源",
+  "adminDealsTitle": "交易",
+  "adminDealsEmpty": "未找到交易",
+  "adminFilterActive": "进行中",
+  "adminFilterStale": "超过3天无进展",
+  "adminFilterOnSite": "在现场",
+  "adminColRoute": "路线",
+  "adminColBodyType": "车厢类型",
+  "adminColPrice": "价格",
+  "adminColCompany": "公司",
+  "adminColDriver": "司机",
+  "adminColResponses": "响应数",
+  "adminColPublished": "发布时间",
+  "adminColCreated": "创建时间",
+  "adminColStale": "无进展",
+  "adminStaleDays": "{days} 天",
+  "@adminStaleDays": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "adminSettingsEmpty": "暂无设置"
 }

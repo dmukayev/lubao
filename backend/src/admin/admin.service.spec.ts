@@ -418,3 +418,161 @@ describe('AdminService.complaints — select not include, and resolved target (�
     expect(result[0].target).toEqual({ type: 'DEAL', id: 'deal1', title: 'Ерлан', driverId: 'd1', companyId: 'c1' });
   });
 });
+
+describe('AdminService.stats — growth and on-site counters (задача 028, п.2)', () => {
+  it('counts growth within the requested period and defaults to today when no period is given', async () => {
+    const countMock = jest.fn().mockResolvedValue(0);
+    const prisma: any = {
+      driver: { count: countMock },
+      company: { count: countMock },
+      cargo: { count: countMock },
+      deal: { count: countMock },
+      verificationDocument: { count: countMock },
+      complaint: { count: countMock },
+      arrival: { count: countMock },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.stats();
+    expect(result.period).toBe('today');
+
+    const result7d = await service.stats('7d');
+    expect(result7d.period).toBe('7d');
+  });
+});
+
+describe('AdminService.attention (задача 028, п.4)', () => {
+  it('counts distinct people (not documents) waiting on verification, and the oldest pending age', async () => {
+    const oldest = new Date(Date.now() - 5 * 60 * 60 * 1000); // 5h ago
+    const prisma: any = {
+      verificationDocument: {
+        findMany: jest
+          .fn()
+          .mockResolvedValueOnce([{ driverId: 'd1' }, { driverId: 'd2' }]) // pending drivers
+          .mockResolvedValueOnce([{ companyId: 'c1' }]), // pending companies
+        findFirst: jest.fn().mockResolvedValue({ createdAt: oldest }),
+      },
+      complaint: { count: jest.fn().mockResolvedValue(2) },
+      deal: { count: jest.fn().mockResolvedValue(1) },
+      company: { count: jest.fn().mockResolvedValue(3) },
+      city: { count: jest.fn().mockResolvedValue(0) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.attention();
+
+    expect(result.pendingVerification.count).toBe(3);
+    expect(result.pendingVerification.oldestAgeHours).toBe(5);
+    expect(result.openComplaints).toBe(2);
+    expect(result.staleDeals).toBe(1);
+    expect(result.unverifiedCompanies).toBe(3);
+  });
+});
+
+describe('AdminService.search — grouped results (задача 028, п.6)', () => {
+  it('returns empty groups for a blank query without hitting the database', async () => {
+    const prisma: any = { driver: { findMany: jest.fn() } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.search('   ');
+
+    expect(result).toEqual({ drivers: [], companies: [], cargos: [], deals: [] });
+    expect(prisma.driver.findMany).not.toHaveBeenCalled();
+  });
+
+  it('searches drivers by name/phone/plate and companies by name/taxId/member email', async () => {
+    const prisma: any = {
+      driver: { findMany: jest.fn().mockResolvedValue([{ id: 'd1', fullName: 'Ерлан' }]) },
+      company: { findMany: jest.fn().mockResolvedValue([]) },
+      cargo: { findMany: jest.fn().mockResolvedValue([]) },
+      deal: { findMany: jest.fn().mockResolvedValue([]) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.search('Ерлан');
+
+    expect(result.drivers).toEqual([{ id: 'd1', title: 'Ерлан' }]);
+    const driverWhere = prisma.driver.findMany.mock.calls[0][0].where;
+    expect(driverWhere.OR).toHaveLength(3);
+  });
+});
+
+describe('AdminService.searchCargos / searchDeals (задача 028, п.14/16)', () => {
+  it('searchCargos filters by status/company/destination and paginates', async () => {
+    const prisma: any = {
+      cargo: {
+        count: jest.fn().mockResolvedValue(1),
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'cargo1',
+            point: { name: { ru: 'Хоргос' } },
+            destinationCountry: { name: { ru: 'Казахстан' } },
+            destinationCity: null,
+            bodyType: { name: { ru: 'Тент' } },
+            weightKg: 5000,
+            price: 1000,
+            currency: 'USD',
+            company: { id: 'c1', name: 'Acme' },
+            _count: { responses: 2 },
+            status: 'PUBLISHED',
+            publishedAt: new Date(),
+          },
+        ]),
+      },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.searchCargos({ status: 'PUBLISHED', companyId: 'c1' });
+
+    expect(prisma.cargo.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ status: 'PUBLISHED', companyId: 'c1' }) }),
+    );
+    expect(result.items[0]).toEqual(
+      expect.objectContaining({ id: 'cargo1', companyId: 'c1', responseCount: 2 }),
+    );
+  });
+
+  it('searchDeals: status=active maps to notIn DELIVERED/CANCELLED, and stale adds the updatedAt cutoff', async () => {
+    const prisma: any = {
+      deal: {
+        count: jest.fn().mockResolvedValue(0),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.searchDeals({ status: 'active' });
+    expect(prisma.deal.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ status: { notIn: ['DELIVERED', 'CANCELLED'] } }) }),
+    );
+
+    await service.searchDeals({ stale: true });
+    const staleWhere = prisma.deal.findMany.mock.calls[1][0].where;
+    expect(staleWhere.status).toEqual({ notIn: ['DELIVERED', 'CANCELLED'] });
+    expect(staleWhere.updatedAt.lt).toBeInstanceOf(Date);
+  });
+
+  it('searchDeals computes staleDays from updatedAt for active deals, and 0 for delivered/cancelled', async () => {
+    const fourDaysAgo = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
+    const prisma: any = {
+      deal: {
+        count: jest.fn().mockResolvedValue(1),
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'deal1',
+            cargo: { point: { name: {} }, destinationCountry: { name: {} }, price: 100, currency: 'USD' },
+            driver: { id: 'd1', fullName: 'Ерлан' },
+            company: { id: 'c1', name: 'Acme' },
+            status: 'LOADED',
+            updatedAt: fourDaysAgo,
+            createdAt: fourDaysAgo,
+          },
+        ]),
+      },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.searchDeals({});
+    expect(result.items[0].staleDays).toBe(4);
+  });
+});

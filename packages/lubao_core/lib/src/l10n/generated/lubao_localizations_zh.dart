@@ -1298,4 +1298,138 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminComplaintTarget => '投诉对象';
+
+  @override
+  String get adminAttentionTitle => '需要关注';
+
+  @override
+  String get adminAttentionEmpty => '一切正常——无需关注';
+
+  @override
+  String adminAttentionPendingVerification(int count) {
+    return '待审核：$count 人';
+  }
+
+  @override
+  String adminAttentionOpenComplaints(int count) {
+    return '待处理投诉：$count';
+  }
+
+  @override
+  String adminAttentionStaleDeals(int count) {
+    return '超过3天无进展的交易：$count';
+  }
+
+  @override
+  String adminAttentionUnverifiedCompanies(int count) {
+    return '未验证公司：$count';
+  }
+
+  @override
+  String adminAttentionPendingCities(int count) {
+    return '新城市：$count';
+  }
+
+  @override
+  String get adminRecentEventsTitle => '最近事件';
+
+  @override
+  String get adminAuditLogLink => '日志 →';
+
+  @override
+  String get adminAuditLogTitle => '操作日志';
+
+  @override
+  String get adminNoEvents => '暂无事件';
+
+  @override
+  String get adminPeriodLabel => '周期：';
+
+  @override
+  String get adminPeriodToday => '今天';
+
+  @override
+  String get adminPeriod7d => '7天';
+
+  @override
+  String get adminPeriod30d => '30天';
+
+  @override
+  String get adminStatOnSiteToday => '今日在场';
+
+  @override
+  String adminStatOnSiteWeek(int count) {
+    return '本周：$count';
+  }
+
+  @override
+  String get adminGlobalSearchHint => '搜索：姓名、电话、邮箱、车牌号、货源/交易编号';
+
+  @override
+  String get adminSearchNoResults => '未找到结果';
+
+  @override
+  String get adminNavCargos => '货源';
+
+  @override
+  String get adminNavDeals => '交易';
+
+  @override
+  String get adminNavSettings => '设置';
+
+  @override
+  String get adminCargosTitle => '货源';
+
+  @override
+  String get adminCargosEmpty => '未找到货源';
+
+  @override
+  String get adminDealsTitle => '交易';
+
+  @override
+  String get adminDealsEmpty => '未找到交易';
+
+  @override
+  String get adminFilterActive => '进行中';
+
+  @override
+  String get adminFilterStale => '超过3天无进展';
+
+  @override
+  String get adminFilterOnSite => '在现场';
+
+  @override
+  String get adminColRoute => '路线';
+
+  @override
+  String get adminColBodyType => '车厢类型';
+
+  @override
+  String get adminColPrice => '价格';
+
+  @override
+  String get adminColCompany => '公司';
+
+  @override
+  String get adminColDriver => '司机';
+
+  @override
+  String get adminColResponses => '响应数';
+
+  @override
+  String get adminColPublished => '发布时间';
+
+  @override
+  String get adminColCreated => '创建时间';
+
+  @override
+  String get adminColStale => '无进展';
+
+  @override
+  String adminStaleDays(int days) {
+    return '$days 天';
+  }
+
+  @override
+  String get adminSettingsEmpty => '暂无设置';
 }

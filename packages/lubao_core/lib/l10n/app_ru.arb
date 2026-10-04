@@ -476,5 +476,66 @@
   "adminDocTypeOther": "Другой документ",
   "adminRotate": "Повернуть",
   "adminComplaintReporter": "Заявитель",
-  "adminComplaintTarget": "Объект жалобы"
+  "adminComplaintTarget": "Объект жалобы",
+  "adminAttentionTitle": "Требует внимания",
+  "adminAttentionEmpty": "Всё в порядке — внимания не требуется",
+  "adminAttentionPendingVerification": "На проверке: {count} человек",
+  "@adminAttentionPendingVerification": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionOpenComplaints": "Открытых жалоб: {count}",
+  "@adminAttentionOpenComplaints": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionStaleDeals": "Сделок без движения > 3 дней: {count}",
+  "@adminAttentionStaleDeals": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionUnverifiedCompanies": "Непроверенных компаний: {count}",
+  "@adminAttentionUnverifiedCompanies": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionPendingCities": "Новых городов: {count}",
+  "@adminAttentionPendingCities": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminRecentEventsTitle": "Последние события",
+  "adminAuditLogLink": "Журнал →",
+  "adminAuditLogTitle": "Журнал действий",
+  "adminNoEvents": "Событий нет",
+  "adminPeriodLabel": "Период:",
+  "adminPeriodToday": "Сегодня",
+  "adminPeriod7d": "7 дней",
+  "adminPeriod30d": "30 дней",
+  "adminStatOnSiteToday": "На точке сегодня",
+  "adminStatOnSiteWeek": "На неделе: {count}",
+  "@adminStatOnSiteWeek": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminGlobalSearchHint": "Поиск: имя, телефон, email, госномер, № груза/сделки",
+  "adminSearchNoResults": "Ничего не найдено",
+  "adminNavCargos": "Грузы",
+  "adminNavDeals": "Сделки",
+  "adminNavSettings": "Настройки",
+  "adminCargosTitle": "Грузы",
+  "adminCargosEmpty": "Грузы не найдены",
+  "adminDealsTitle": "Сделки",
+  "adminDealsEmpty": "Сделки не найдены",
+  "adminFilterActive": "В работе",
+  "adminFilterStale": "Без движения > 3 дней",
+  "adminFilterOnSite": "На точке",
+  "adminColRoute": "Маршрут",
+  "adminColBodyType": "Кузов",
+  "adminColPrice": "Цена",
+  "adminColCompany": "Компания",
+  "adminColDriver": "Водитель",
+  "adminColResponses": "Откликов",
+  "adminColPublished": "Опубликован",
+  "adminColCreated": "Создана",
+  "adminColStale": "Без движения",
+  "adminStaleDays": "{days} дн.",
+  "@adminStaleDays": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "adminSettingsEmpty": "Настроек пока нет"
 }

@@ -7,23 +7,24 @@ import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/data_providers.dart';
+import '../shared/admin_status_helpers.dart';
 
 const _pageSize = 50;
 
-enum _StatusFilter { all, pending, verified, blocked }
-
-class AdminCompaniesScreen extends ConsumerStatefulWidget {
-  const AdminCompaniesScreen({super.key, this.queryParams = const {}});
+/// Таблица грузов (задача 028, п.14) — список и фильтры сейчас; карточка
+/// `/cargos/:id` с действиями («Снять с публикации», «Исправить») — этап C.
+class AdminCargosScreen extends ConsumerStatefulWidget {
+  const AdminCargosScreen({super.key, this.queryParams = const {}});
 
   final Map<String, String> queryParams;
 
   @override
-  ConsumerState<AdminCompaniesScreen> createState() => _AdminCompaniesScreenState();
+  ConsumerState<AdminCargosScreen> createState() => _AdminCargosScreenState();
 }
 
-class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
+class _AdminCargosScreenState extends ConsumerState<AdminCargosScreen> {
   final _searchController = TextEditingController();
-  _StatusFilter _filter = _StatusFilter.all;
+  String? _status;
   int _page = 1;
   Timer? _debounce;
   String _q = '';
@@ -35,11 +36,9 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
   }
 
   @override
-  void didUpdateWidget(covariant AdminCompaniesScreen oldWidget) {
+  void didUpdateWidget(covariant AdminCargosScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!_mapEquals(oldWidget.queryParams, widget.queryParams)) {
-      _applyParams(widget.queryParams);
-    }
+    if (!_mapEquals(oldWidget.queryParams, widget.queryParams)) _applyParams(widget.queryParams);
   }
 
   bool _mapEquals(Map<String, String> a, Map<String, String> b) {
@@ -53,22 +52,17 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
   void _applyParams(Map<String, String> params) {
     _q = params['q'] ?? '';
     _searchController.text = _q;
+    _status = params['status'];
     _page = int.tryParse(params['page'] ?? '') ?? 1;
-    _filter = switch (params['filter']) {
-      'pending' => _StatusFilter.pending,
-      'verified' => _StatusFilter.verified,
-      'blocked' => _StatusFilter.blocked,
-      _ => _StatusFilter.all,
-    };
   }
 
   void _pushUrl() {
     final params = <String, String>{
       if (_q.isNotEmpty) 'q': _q,
-      if (_filter != _StatusFilter.all) 'filter': _filter.name,
+      if (_status != null) 'status': _status!,
       if (_page != 1) 'page': '$_page',
     };
-    context.go(Uri(path: '/companies', queryParameters: params.isEmpty ? null : params).toString());
+    context.go(Uri(path: '/cargos', queryParameters: params.isEmpty ? null : params).toString());
   }
 
   @override
@@ -89,26 +83,17 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
     });
   }
 
-  AdminSearchQuery get _query => (
-        q: _q,
-        verified: switch (_filter) {
-          _StatusFilter.verified => true,
-          _StatusFilter.pending => false,
-          _ => null,
-        },
-        blocked: _filter == _StatusFilter.blocked ? true : null,
-        onSite: null,
-        page: _page,
-      );
+  static const _statuses = ['PUBLISHED', 'ARCHIVED', 'EXPIRED', 'CANCELLED'];
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    final providerArgs = _query;
-    final pageAsync = ref.watch(adminCompaniesSearchProvider(providerArgs));
+    final locale = Localizations.localeOf(context).languageCode;
+    final providerArgs = (q: _q, status: _status, companyId: null, destinationCountryId: null, page: _page);
+    final pageAsync = ref.watch(adminCargosSearchProvider(providerArgs));
 
     return Scaffold(
-      appBar: AppBar(title: Text(t.adminCompaniesTitle)),
+      appBar: AppBar(title: Text(t.adminCargosTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -116,27 +101,27 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
           children: [
             Row(
               children: [
-                Expanded(
-                  child: AppTextField(
-                    label: t.commonSearch,
-                    controller: _searchController,
-                    onChanged: _onSearchChanged,
-                    hintText: t.adminSearchCompanyHint,
-                  ),
-                ),
+                Expanded(child: AppTextField(label: t.commonSearch, controller: _searchController, onChanged: _onSearchChanged)),
                 const SizedBox(width: 16),
-                for (final f in _StatusFilter.values) ...[
+                ChoiceChip(
+                  label: Text(t.adminFilterAll),
+                  selected: _status == null,
+                  onSelected: (_) {
+                    setState(() {
+                      _status = null;
+                      _page = 1;
+                    });
+                    _pushUrl();
+                  },
+                ),
+                const SizedBox(width: 8),
+                for (final s in _statuses) ...[
                   ChoiceChip(
-                    label: Text(switch (f) {
-                      _StatusFilter.all => t.adminFilterAll,
-                      _StatusFilter.pending => t.adminFilterPending,
-                      _StatusFilter.verified => t.adminFilterVerified,
-                      _StatusFilter.blocked => t.adminFilterBlocked,
-                    }),
-                    selected: _filter == f,
+                    label: Text(cargoStatusLabel(t, s)),
+                    selected: _status == s,
                     onSelected: (_) {
                       setState(() {
-                        _filter = f;
+                        _status = s;
                         _page = 1;
                       });
                       _pushUrl();
@@ -151,11 +136,11 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
               child: pageAsync.when(
                 loading: () => const LoadingView(),
                 error: (e, st) {
-                  debugPrint('AdminCompaniesScreen: $e');
-                  return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminCompaniesSearchProvider(providerArgs)));
+                  debugPrint('AdminCargosScreen: $e');
+                  return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminCargosSearchProvider(providerArgs)));
                 },
                 data: (page) {
-                  if (page.items.isEmpty) return EmptyState(message: t.adminCompaniesEmpty, icon: LucideIcons.building2);
+                  if (page.items.isEmpty) return EmptyState(message: t.adminCargosEmpty, icon: LucideIcons.truck);
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -165,26 +150,26 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
                             scrollDirection: Axis.horizontal,
                             child: DataTable(
                               columns: [
-                                DataColumn(label: Text(t.adminColName)),
-                                DataColumn(label: Text(t.adminColOwner)),
-                                DataColumn(label: Text(t.adminColEmployees)),
-                                DataColumn(label: Text(t.adminColCargos)),
+                                DataColumn(label: Text(t.adminColRoute)),
+                                DataColumn(label: Text(t.adminColBodyType)),
+                                DataColumn(label: Text(t.adminColPrice)),
+                                DataColumn(label: Text(t.adminColCompany)),
+                                DataColumn(label: Text(t.adminColResponses)),
                                 DataColumn(label: Text(t.adminColStatus)),
-                                DataColumn(label: Text(t.adminColRating)),
-                                DataColumn(label: Text(t.adminColDeals)),
+                                DataColumn(label: Text(t.adminColPublished)),
                               ],
                               rows: page.items
                                   .map(
                                     (c) => DataRow(
-                                      onSelectChanged: (_) => context.push('/companies/${c.id}'),
+                                      onSelectChanged: (_) => context.push('/cargos/${c.id}'),
                                       cells: [
-                                        DataCell(Text(c.name)),
-                                        DataCell(Text(c.ownerEmail ?? c.ownerName ?? '—')),
-                                        DataCell(Text('${c.employeeCount}')),
-                                        DataCell(Text('${c.activeCargoCount}')),
-                                        DataCell(_StatusCell(isVerified: c.isVerified, isBlocked: c.isBlocked, pendingDocsCount: c.pendingDocsCount)),
-                                        DataCell(Text('★ ${c.ratingAvg.toStringAsFixed(1)} (${c.ratingCount})')),
-                                        DataCell(Text('${c.dealCount}')),
+                                        DataCell(Text('${c.pointName.forLanguageCode(locale)} → ${c.destinationCityName?.forLanguageCode(locale) ?? c.destinationCountryName.forLanguageCode(locale)}')),
+                                        DataCell(Text(c.bodyTypeName.forLanguageCode(locale))),
+                                        DataCell(Text(formatMoney(c.price, currencyFromJson(c.currency)))),
+                                        DataCell(InkWell(onTap: () => context.push('/companies/${c.companyId}'), child: Text(c.companyName, style: const TextStyle(decoration: TextDecoration.underline)))),
+                                        DataCell(Text('${c.responseCount}')),
+                                        DataCell(Text(cargoStatusLabel(t, c.status))),
+                                        DataCell(Text(formatAdminDate(c.publishedAt))),
                                       ],
                                     ),
                                   )
@@ -210,34 +195,6 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _StatusCell extends StatelessWidget {
-  const _StatusCell({required this.isVerified, required this.isBlocked, required this.pendingDocsCount});
-
-  final bool isVerified;
-  final bool isBlocked;
-  final int pendingDocsCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (isBlocked)
-          StatusBadge(label: t.adminBlockedBadge, color: StatusBadge.danger)
-        else if (isVerified)
-          StatusBadge(label: t.adminVerified, color: StatusBadge.success)
-        else
-          StatusBadge(label: t.adminNotVerified, color: StatusBadge.neutral),
-        if (pendingDocsCount > 0) ...[
-          const SizedBox(width: 6),
-          Text('($pendingDocsCount)', style: Theme.of(context).textTheme.bodySmall),
-        ],
-      ],
     );
   }
 }

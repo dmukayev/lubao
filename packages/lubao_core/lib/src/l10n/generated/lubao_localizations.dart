@@ -2603,6 +2603,246 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Объект жалобы'**
   String get adminComplaintTarget;
+
+  /// No description provided for @adminAttentionTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Требует внимания'**
+  String get adminAttentionTitle;
+
+  /// No description provided for @adminAttentionEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Всё в порядке — внимания не требуется'**
+  String get adminAttentionEmpty;
+
+  /// No description provided for @adminAttentionPendingVerification.
+  ///
+  /// In ru, this message translates to:
+  /// **'На проверке: {count} человек'**
+  String adminAttentionPendingVerification(int count);
+
+  /// No description provided for @adminAttentionOpenComplaints.
+  ///
+  /// In ru, this message translates to:
+  /// **'Открытых жалоб: {count}'**
+  String adminAttentionOpenComplaints(int count);
+
+  /// No description provided for @adminAttentionStaleDeals.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделок без движения > 3 дней: {count}'**
+  String adminAttentionStaleDeals(int count);
+
+  /// No description provided for @adminAttentionUnverifiedCompanies.
+  ///
+  /// In ru, this message translates to:
+  /// **'Непроверенных компаний: {count}'**
+  String adminAttentionUnverifiedCompanies(int count);
+
+  /// No description provided for @adminAttentionPendingCities.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новых городов: {count}'**
+  String adminAttentionPendingCities(int count);
+
+  /// No description provided for @adminRecentEventsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Последние события'**
+  String get adminRecentEventsTitle;
+
+  /// No description provided for @adminAuditLogLink.
+  ///
+  /// In ru, this message translates to:
+  /// **'Журнал →'**
+  String get adminAuditLogLink;
+
+  /// No description provided for @adminAuditLogTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Журнал действий'**
+  String get adminAuditLogTitle;
+
+  /// No description provided for @adminNoEvents.
+  ///
+  /// In ru, this message translates to:
+  /// **'Событий нет'**
+  String get adminNoEvents;
+
+  /// No description provided for @adminPeriodLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Период:'**
+  String get adminPeriodLabel;
+
+  /// No description provided for @adminPeriodToday.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сегодня'**
+  String get adminPeriodToday;
+
+  /// No description provided for @adminPeriod7d.
+  ///
+  /// In ru, this message translates to:
+  /// **'7 дней'**
+  String get adminPeriod7d;
+
+  /// No description provided for @adminPeriod30d.
+  ///
+  /// In ru, this message translates to:
+  /// **'30 дней'**
+  String get adminPeriod30d;
+
+  /// No description provided for @adminStatOnSiteToday.
+  ///
+  /// In ru, this message translates to:
+  /// **'На точке сегодня'**
+  String get adminStatOnSiteToday;
+
+  /// No description provided for @adminStatOnSiteWeek.
+  ///
+  /// In ru, this message translates to:
+  /// **'На неделе: {count}'**
+  String adminStatOnSiteWeek(int count);
+
+  /// No description provided for @adminGlobalSearchHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поиск: имя, телефон, email, госномер, № груза/сделки'**
+  String get adminGlobalSearchHint;
+
+  /// No description provided for @adminSearchNoResults.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ничего не найдено'**
+  String get adminSearchNoResults;
+
+  /// No description provided for @adminNavCargos.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грузы'**
+  String get adminNavCargos;
+
+  /// No description provided for @adminNavDeals.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделки'**
+  String get adminNavDeals;
+
+  /// No description provided for @adminNavSettings.
+  ///
+  /// In ru, this message translates to:
+  /// **'Настройки'**
+  String get adminNavSettings;
+
+  /// No description provided for @adminCargosTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грузы'**
+  String get adminCargosTitle;
+
+  /// No description provided for @adminCargosEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грузы не найдены'**
+  String get adminCargosEmpty;
+
+  /// No description provided for @adminDealsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделки'**
+  String get adminDealsTitle;
+
+  /// No description provided for @adminDealsEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделки не найдены'**
+  String get adminDealsEmpty;
+
+  /// No description provided for @adminFilterActive.
+  ///
+  /// In ru, this message translates to:
+  /// **'В работе'**
+  String get adminFilterActive;
+
+  /// No description provided for @adminFilterStale.
+  ///
+  /// In ru, this message translates to:
+  /// **'Без движения > 3 дней'**
+  String get adminFilterStale;
+
+  /// No description provided for @adminFilterOnSite.
+  ///
+  /// In ru, this message translates to:
+  /// **'На точке'**
+  String get adminFilterOnSite;
+
+  /// No description provided for @adminColRoute.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут'**
+  String get adminColRoute;
+
+  /// No description provided for @adminColBodyType.
+  ///
+  /// In ru, this message translates to:
+  /// **'Кузов'**
+  String get adminColBodyType;
+
+  /// No description provided for @adminColPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена'**
+  String get adminColPrice;
+
+  /// No description provided for @adminColCompany.
+  ///
+  /// In ru, this message translates to:
+  /// **'Компания'**
+  String get adminColCompany;
+
+  /// No description provided for @adminColDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель'**
+  String get adminColDriver;
+
+  /// No description provided for @adminColResponses.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откликов'**
+  String get adminColResponses;
+
+  /// No description provided for @adminColPublished.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опубликован'**
+  String get adminColPublished;
+
+  /// No description provided for @adminColCreated.
+  ///
+  /// In ru, this message translates to:
+  /// **'Создана'**
+  String get adminColCreated;
+
+  /// No description provided for @adminColStale.
+  ///
+  /// In ru, this message translates to:
+  /// **'Без движения'**
+  String get adminColStale;
+
+  /// No description provided for @adminStaleDays.
+  ///
+  /// In ru, this message translates to:
+  /// **'{days} дн.'**
+  String adminStaleDays(int days);
+
+  /// No description provided for @adminSettingsEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Настроек пока нет'**
+  String get adminSettingsEmpty;
 }
 
 class _LubaoLocalizationsDelegate

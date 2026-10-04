@@ -7,9 +7,11 @@ import { UploadsService } from '../uploads/uploads.service';
 import { REQUIRED_DRIVER_DOC_TYPES } from '../drivers/drivers.service';
 import {
   BlockUserDto,
+  CargoSearchQueryDto,
   CreateBodyTypeDto,
   CreatePermitDto,
   CreatePointDto,
+  DealSearchQueryDto,
   ModerateCityDto,
   ReviewVerificationDocumentDto,
   SearchQueryDto,
@@ -35,18 +37,337 @@ export class AdminService {
     await this.prisma.auditLog.create({ data: { actorUserId, action, entityType, entityId, metadata } });
   }
 
-  async stats() {
-    const [drivers, companies, cargosPublished, dealsActive, dealsDelivered, pendingDocs, openComplaints] =
+  private periodStart(period?: 'today' | '7d' | '30d'): Date {
+    const now = new Date();
+    if (period === '7d') return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    if (period === '30d') return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  /// Сводка — пульт, не витрина (задача 028, п.2): прирост за выбранный
+  /// период + «на точке» сегодня/на неделе, поверх прежних абсолютных цифр.
+  async stats(period?: 'today' | '7d' | '30d') {
+    const since = this.periodStart(period);
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+    const weekEnd = new Date(todayStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const [
+      drivers,
+      companies,
+      cargosPublished,
+      dealsActive,
+      dealsDelivered,
+      pendingDocs,
+      openComplaints,
+      newDrivers,
+      newCompanies,
+      newCargos,
+      deliveredInPeriod,
+      onSiteToday,
+      onSiteWeek,
+    ] = await Promise.all([
+      this.prisma.driver.count(),
+      this.prisma.company.count(),
+      this.prisma.cargo.count({ where: { status: 'PUBLISHED' } }),
+      this.prisma.deal.count({ where: { status: { notIn: ['DELIVERED', 'CANCELLED'] } } }),
+      this.prisma.deal.count({ where: { status: 'DELIVERED' } }),
+      this.prisma.verificationDocument.count({ where: { status: 'PENDING' } }),
+      this.prisma.complaint.count({ where: { status: 'OPEN' } }),
+      this.prisma.driver.count({ where: { createdAt: { gte: since } } }),
+      this.prisma.company.count({ where: { createdAt: { gte: since } } }),
+      this.prisma.cargo.count({ where: { createdAt: { gte: since } } }),
+      this.prisma.deal.count({ where: { status: 'DELIVERED', deliveredAt: { gte: since } } }),
+      this.prisma.arrival.count({
+        where: { OR: [{ status: 'ON_SITE' }, { status: 'PLANNED', plannedAt: { gte: todayStart, lt: todayEnd } }] },
+      }),
+      this.prisma.arrival.count({
+        where: { OR: [{ status: 'ON_SITE' }, { status: 'PLANNED', plannedAt: { gte: todayStart, lt: weekEnd } }] },
+      }),
+    ]);
+
+    return {
+      drivers,
+      companies,
+      cargosPublished,
+      dealsActive,
+      dealsDelivered,
+      pendingDocs,
+      openComplaints,
+      period: period ?? 'today',
+      growth: { drivers: newDrivers, companies: newCompanies, cargos: newCargos, delivered: deliveredInPeriod },
+      onSiteToday,
+      onSiteWeek,
+    };
+  }
+
+  /// Блок «Требует внимания» (задача 028, п.4) — с него админ начинает
+  /// день: документы на проверке (людей, не документов — считаем
+  /// distinct водителей/компаний с хотя бы одним PENDING), открытые
+  /// жалобы, сделки без движения > 3 дней, непроверенные компании, новые
+  /// города. `oldestAgeHours` — для красного счётчика, если старше 24 ч.
+  async attention() {
+    const staleBefore = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+
+    const [pendingDriverDocs, pendingCompanyDocs, oldestPendingDoc, openComplaints, staleDeals, unverifiedCompanies, pendingCities] =
       await Promise.all([
-        this.prisma.driver.count(),
-        this.prisma.company.count(),
-        this.prisma.cargo.count({ where: { status: 'PUBLISHED' } }),
-        this.prisma.deal.count({ where: { status: { notIn: ['DELIVERED', 'CANCELLED'] } } }),
-        this.prisma.deal.count({ where: { status: 'DELIVERED' } }),
-        this.prisma.verificationDocument.count({ where: { status: 'PENDING' } }),
+        this.prisma.verificationDocument.findMany({
+          where: { status: 'PENDING', driverId: { not: null } },
+          select: { driverId: true },
+          distinct: ['driverId'],
+        }),
+        this.prisma.verificationDocument.findMany({
+          where: { status: 'PENDING', companyId: { not: null } },
+          select: { companyId: true },
+          distinct: ['companyId'],
+        }),
+        this.prisma.verificationDocument.findFirst({
+          where: { status: 'PENDING' },
+          orderBy: { createdAt: 'asc' },
+          select: { createdAt: true },
+        }),
         this.prisma.complaint.count({ where: { status: 'OPEN' } }),
+        this.prisma.deal.count({ where: { status: { notIn: ['DELIVERED', 'CANCELLED'] }, updatedAt: { lt: staleBefore } } }),
+        this.prisma.company.count({ where: { isVerified: false } }),
+        this.prisma.city.count({ where: { cityStatus: 'PENDING' } }),
       ]);
-    return { drivers, companies, cargosPublished, dealsActive, dealsDelivered, pendingDocs, openComplaints };
+
+    const pendingPeopleCount = pendingDriverDocs.length + pendingCompanyDocs.length;
+    const oldestAgeHours = oldestPendingDoc ? Math.floor((Date.now() - oldestPendingDoc.createdAt.getTime()) / (60 * 60 * 1000)) : 0;
+
+    return {
+      pendingVerification: { count: pendingPeopleCount, oldestAgeHours },
+      openComplaints,
+      staleDeals,
+      unverifiedCompanies,
+      pendingCities,
+    };
+  }
+
+  /// Единая лента «Последние события» (задача 028, п.5) — audit_log
+  /// смешан с регистрациями/новыми грузами/сменами статуса сделок,
+  /// отсортирован по дате. Полный список — отдельный GET /admin/audit.
+  async recentEvents(limit = 10) {
+    const [auditEntries, newDrivers, newCompanies, newCargos, dealChanges] = await Promise.all([
+      this.prisma.auditLog.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        include: { actor: { select: { name: true, email: true } } },
+      }),
+      this.prisma.driver.findMany({ orderBy: { createdAt: 'desc' }, take: limit, select: { id: true, fullName: true, createdAt: true } }),
+      this.prisma.company.findMany({ orderBy: { createdAt: 'desc' }, take: limit, select: { id: true, name: true, createdAt: true } }),
+      this.prisma.cargo.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        select: { id: true, createdAt: true, point: { select: { name: true } } },
+      }),
+      this.prisma.deal.findMany({
+        orderBy: { updatedAt: 'desc' },
+        take: limit,
+        select: { id: true, status: true, updatedAt: true, driver: { select: { fullName: true } } },
+      }),
+    ]);
+
+    type Event = { type: string; title: string; entityId: string; createdAt: Date; metadata?: unknown };
+    const events: Event[] = [
+      ...auditEntries.map((a) => ({
+        type: 'audit',
+        title: `${a.action} · ${a.actor?.name ?? a.actor?.email ?? '—'}`,
+        entityId: a.entityId ?? '',
+        createdAt: a.createdAt,
+        metadata: { entityType: a.entityType, action: a.action },
+      })),
+      ...newDrivers.map((d) => ({ type: 'driver_registered', title: d.fullName, entityId: d.id, createdAt: d.createdAt })),
+      ...newCompanies.map((c) => ({ type: 'company_registered', title: c.name, entityId: c.id, createdAt: c.createdAt })),
+      ...newCargos.map((c) => ({ type: 'cargo_published', title: JSON.stringify(c.point.name), entityId: c.id, createdAt: c.createdAt })),
+      ...dealChanges.map((d) => ({
+        type: 'deal_status',
+        title: `${d.driver.fullName} · ${d.status}`,
+        entityId: d.id,
+        createdAt: d.updatedAt,
+      })),
+    ];
+
+    events.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return events.slice(0, limit);
+  }
+
+  /// Полный журнал (кнопка «Журнал →», п.5) — только audit_log, с
+  /// фильтрами; у «Последних событий» — смешанная лента, здесь — сырые
+  /// записи для разбора конкретного действия.
+  async auditLog(params: { actorUserId?: string; entityType?: string; since?: Date; limit?: number }) {
+    const entries = await this.prisma.auditLog.findMany({
+      where: {
+        ...(params.actorUserId ? { actorUserId: params.actorUserId } : {}),
+        ...(params.entityType ? { entityType: params.entityType } : {}),
+        ...(params.since ? { createdAt: { gte: params.since } } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: params.limit ?? 100,
+      include: { actor: { select: { name: true, email: true } } },
+    });
+    return entries.map((a) => ({
+      id: a.id,
+      action: a.action,
+      entityType: a.entityType,
+      entityId: a.entityId,
+      actorName: a.actor?.name ?? a.actor?.email ?? null,
+      metadata: a.metadata,
+      createdAt: a.createdAt,
+    }));
+  }
+
+  /// Глобальный поиск сверху (п.6) — сгруппированные результаты по типам,
+  /// до 5 на тип, только id+заголовок (переход — дело клиента).
+  async search(q: string) {
+    const query = q.trim();
+    if (!query) return { drivers: [], companies: [], cargos: [], deals: [] };
+
+    const [drivers, companies, cargos, deals] = await Promise.all([
+      this.prisma.driver.findMany({
+        where: {
+          OR: [
+            { fullName: { contains: query, mode: 'insensitive' } },
+            { user: { phone: { contains: query, mode: 'insensitive' } } },
+            { vehicles: { some: { plateNumber: { contains: query, mode: 'insensitive' } } } },
+          ],
+        },
+        take: 5,
+        select: { id: true, fullName: true },
+      }),
+      this.prisma.company.findMany({
+        where: {
+          OR: [
+            { name: { contains: query, mode: 'insensitive' } },
+            { nameRu: { contains: query, mode: 'insensitive' } },
+            { taxId: { contains: query, mode: 'insensitive' } },
+            { members: { some: { user: { email: { contains: query, mode: 'insensitive' } } } } },
+          ],
+        },
+        take: 5,
+        select: { id: true, name: true },
+      }),
+      this.prisma.cargo.findMany({
+        where: { id: { contains: query, mode: 'insensitive' } },
+        take: 5,
+        select: { id: true, point: { select: { name: true } } },
+      }),
+      this.prisma.deal.findMany({
+        where: { id: { contains: query, mode: 'insensitive' } },
+        take: 5,
+        select: { id: true, driver: { select: { fullName: true } } },
+      }),
+    ]);
+
+    return {
+      drivers: drivers.map((d) => ({ id: d.id, title: d.fullName })),
+      companies: companies.map((c) => ({ id: c.id, title: c.name })),
+      cargos: cargos.map((c) => ({ id: c.id, title: c.point.name })),
+      deals: deals.map((d) => ({ id: d.id, title: d.driver.fullName })),
+    };
+  }
+
+  // -- cargos / deals (задача 028, этап A/C) -------------------------------
+
+  async searchCargos(query: CargoSearchQueryDto) {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? DEFAULT_PAGE_SIZE;
+    const q = query.q?.trim();
+
+    const where: Record<string, unknown> = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.companyId ? { companyId: query.companyId } : {}),
+      ...(query.destinationCountryId ? { destinationCountryId: query.destinationCountryId } : {}),
+      ...(q ? { id: { contains: q, mode: 'insensitive' } } : {}),
+    };
+
+    const [total, cargos] = await Promise.all([
+      this.prisma.cargo.count({ where: where as never }),
+      this.prisma.cargo.findMany({
+        where: where as never,
+        include: {
+          point: { select: { name: true } },
+          destinationCountry: { select: { name: true } },
+          destinationCity: { select: { name: true } },
+          bodyType: { select: { name: true } },
+          company: { select: { id: true, name: true } },
+          _count: { select: { responses: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+
+    const items = cargos.map((c) => ({
+      id: c.id,
+      pointName: c.point.name,
+      destinationCountryName: c.destinationCountry.name,
+      destinationCityName: c.destinationCity?.name ?? null,
+      bodyTypeName: c.bodyType.name,
+      weightKg: c.weightKg ? Number(c.weightKg) : null,
+      price: Number(c.price),
+      currency: c.currency,
+      companyId: c.company.id,
+      companyName: c.company.name,
+      responseCount: c._count.responses,
+      status: c.status,
+      publishedAt: c.publishedAt,
+    }));
+
+    return { items, total };
+  }
+
+  async searchDeals(query: DealSearchQueryDto) {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? DEFAULT_PAGE_SIZE;
+    const q = query.q?.trim();
+    const staleBefore = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+
+    const statusFilter =
+      query.status === 'active' ? { notIn: ['DELIVERED', 'CANCELLED'] } : query.status ? query.status : undefined;
+
+    const where: Record<string, unknown> = {
+      ...(statusFilter ? { status: statusFilter } : {}),
+      ...(query.stale ? { status: statusFilter ?? { notIn: ['DELIVERED', 'CANCELLED'] }, updatedAt: { lt: staleBefore } } : {}),
+      ...(query.driverId ? { driverId: query.driverId } : {}),
+      ...(query.companyId ? { companyId: query.companyId } : {}),
+      ...(q ? { id: { contains: q, mode: 'insensitive' } } : {}),
+    };
+
+    const [total, deals] = await Promise.all([
+      this.prisma.deal.count({ where: where as never }),
+      this.prisma.deal.findMany({
+        where: where as never,
+        include: {
+          cargo: { select: { point: { select: { name: true } }, destinationCountry: { select: { name: true } }, price: true, currency: true } },
+          driver: { select: { id: true, fullName: true } },
+          company: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+
+    const now = Date.now();
+    const items = deals.map((d) => ({
+      id: d.id,
+      pointName: d.cargo.point.name,
+      destinationCountryName: d.cargo.destinationCountry.name,
+      driverId: d.driver.id,
+      driverName: d.driver.fullName,
+      companyId: d.company.id,
+      companyName: d.company.name,
+      price: Number(d.cargo.price),
+      currency: d.cargo.currency,
+      status: d.status,
+      staleDays: d.status === 'DELIVERED' || d.status === 'CANCELLED' ? 0 : Math.floor((now - d.updatedAt.getTime()) / (24 * 60 * 60 * 1000)),
+      createdAt: d.createdAt,
+    }));
+
+    return { items, total };
   }
 
   // -- verification documents ------------------------------------------------
@@ -298,6 +619,7 @@ export class AdminService {
     const where: Record<string, unknown> = {
       ...(query.verified !== undefined ? { isVerified: query.verified } : {}),
       ...(query.blocked !== undefined ? { user: { isBlocked: query.blocked } } : {}),
+      ...(query.onSite ? { arrivals: { some: { status: 'ON_SITE' } } } : {}),
       ...(q
         ? {
             OR: [

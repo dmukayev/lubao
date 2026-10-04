@@ -1316,4 +1316,139 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminComplaintTarget => 'Объект жалобы';
+
+  @override
+  String get adminAttentionTitle => 'Требует внимания';
+
+  @override
+  String get adminAttentionEmpty => 'Всё в порядке — внимания не требуется';
+
+  @override
+  String adminAttentionPendingVerification(int count) {
+    return 'На проверке: $count человек';
+  }
+
+  @override
+  String adminAttentionOpenComplaints(int count) {
+    return 'Открытых жалоб: $count';
+  }
+
+  @override
+  String adminAttentionStaleDeals(int count) {
+    return 'Сделок без движения > 3 дней: $count';
+  }
+
+  @override
+  String adminAttentionUnverifiedCompanies(int count) {
+    return 'Непроверенных компаний: $count';
+  }
+
+  @override
+  String adminAttentionPendingCities(int count) {
+    return 'Новых городов: $count';
+  }
+
+  @override
+  String get adminRecentEventsTitle => 'Последние события';
+
+  @override
+  String get adminAuditLogLink => 'Журнал →';
+
+  @override
+  String get adminAuditLogTitle => 'Журнал действий';
+
+  @override
+  String get adminNoEvents => 'Событий нет';
+
+  @override
+  String get adminPeriodLabel => 'Период:';
+
+  @override
+  String get adminPeriodToday => 'Сегодня';
+
+  @override
+  String get adminPeriod7d => '7 дней';
+
+  @override
+  String get adminPeriod30d => '30 дней';
+
+  @override
+  String get adminStatOnSiteToday => 'На точке сегодня';
+
+  @override
+  String adminStatOnSiteWeek(int count) {
+    return 'На неделе: $count';
+  }
+
+  @override
+  String get adminGlobalSearchHint =>
+      'Поиск: имя, телефон, email, госномер, № груза/сделки';
+
+  @override
+  String get adminSearchNoResults => 'Ничего не найдено';
+
+  @override
+  String get adminNavCargos => 'Грузы';
+
+  @override
+  String get adminNavDeals => 'Сделки';
+
+  @override
+  String get adminNavSettings => 'Настройки';
+
+  @override
+  String get adminCargosTitle => 'Грузы';
+
+  @override
+  String get adminCargosEmpty => 'Грузы не найдены';
+
+  @override
+  String get adminDealsTitle => 'Сделки';
+
+  @override
+  String get adminDealsEmpty => 'Сделки не найдены';
+
+  @override
+  String get adminFilterActive => 'В работе';
+
+  @override
+  String get adminFilterStale => 'Без движения > 3 дней';
+
+  @override
+  String get adminFilterOnSite => 'На точке';
+
+  @override
+  String get adminColRoute => 'Маршрут';
+
+  @override
+  String get adminColBodyType => 'Кузов';
+
+  @override
+  String get adminColPrice => 'Цена';
+
+  @override
+  String get adminColCompany => 'Компания';
+
+  @override
+  String get adminColDriver => 'Водитель';
+
+  @override
+  String get adminColResponses => 'Откликов';
+
+  @override
+  String get adminColPublished => 'Опубликован';
+
+  @override
+  String get adminColCreated => 'Создана';
+
+  @override
+  String get adminColStale => 'Без движения';
+
+  @override
+  String adminStaleDays(int days) {
+    return '$days дн.';
+  }
+
+  @override
+  String get adminSettingsEmpty => 'Настроек пока нет';
 }

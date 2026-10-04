@@ -425,5 +425,66 @@
   "adminDocTypeOther": "Басқа құжат",
   "adminRotate": "Бұру",
   "adminComplaintReporter": "Шағымданушы",
-  "adminComplaintTarget": "Шағым нысаны"
+  "adminComplaintTarget": "Шағым нысаны",
+  "adminAttentionTitle": "Назар аудару қажет",
+  "adminAttentionEmpty": "Бәрі дұрыс — назар аудару қажет емес",
+  "adminAttentionPendingVerification": "Тексеруде: {count} адам",
+  "@adminAttentionPendingVerification": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionOpenComplaints": "Ашық шағымдар: {count}",
+  "@adminAttentionOpenComplaints": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionStaleDeals": "3 күннен артық қозғалыссыз мәмілелер: {count}",
+  "@adminAttentionStaleDeals": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionUnverifiedCompanies": "Тексерілмеген компаниялар: {count}",
+  "@adminAttentionUnverifiedCompanies": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminAttentionPendingCities": "Жаңа қалалар: {count}",
+  "@adminAttentionPendingCities": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminRecentEventsTitle": "Соңғы оқиғалар",
+  "adminAuditLogLink": "Журнал →",
+  "adminAuditLogTitle": "Әрекеттер журналы",
+  "adminNoEvents": "Оқиғалар жоқ",
+  "adminPeriodLabel": "Кезең:",
+  "adminPeriodToday": "Бүгін",
+  "adminPeriod7d": "7 күн",
+  "adminPeriod30d": "30 күн",
+  "adminStatOnSiteToday": "Бүгін нүктеде",
+  "adminStatOnSiteWeek": "Аптада: {count}",
+  "@adminStatOnSiteWeek": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "adminGlobalSearchHint": "Іздеу: аты, телефон, email, мем. нөмір, жүк/мәміле №",
+  "adminSearchNoResults": "Ештеңе табылмады",
+  "adminNavCargos": "Жүктер",
+  "adminNavDeals": "Мәмілелер",
+  "adminNavSettings": "Баптаулар",
+  "adminCargosTitle": "Жүктер",
+  "adminCargosEmpty": "Жүктер табылмады",
+  "adminDealsTitle": "Мәмілелер",
+  "adminDealsEmpty": "Мәмілелер табылмады",
+  "adminFilterActive": "Жұмыста",
+  "adminFilterStale": "3 күннен артық қозғалыссыз",
+  "adminFilterOnSite": "Нүктеде",
+  "adminColRoute": "Бағыт",
+  "adminColBodyType": "Кузов",
+  "adminColPrice": "Баға",
+  "adminColCompany": "Компания",
+  "adminColDriver": "Жүргізуші",
+  "adminColResponses": "Жауаптар",
+  "adminColPublished": "Жарияланды",
+  "adminColCreated": "Құрылды",
+  "adminColStale": "Қозғалыссыз",
+  "adminStaleDays": "{days} күн",
+  "@adminStaleDays": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "adminSettingsEmpty": "Баптаулар әлі жоқ"
 }
