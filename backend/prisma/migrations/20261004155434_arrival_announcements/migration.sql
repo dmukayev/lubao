@@ -1,8 +1,13 @@
 -- AlterEnum
+-- Старая база (демо-сид) содержит анонсы со статусом ACTIVE, которого нет в
+-- новом enum — явно переводим его в ON_SITE вместо прямого text-каста
+-- (ревью 015, docs/tasks/024-auth-fixes.md п.8).
 BEGIN;
 CREATE TYPE "ArrivalStatus_new" AS ENUM ('PLANNED', 'ON_SITE', 'COMPLETED', 'CANCELLED');
 ALTER TABLE "arrivals" ALTER COLUMN "status" DROP DEFAULT;
-ALTER TABLE "arrivals" ALTER COLUMN "status" TYPE "ArrivalStatus_new" USING ("status"::text::"ArrivalStatus_new");
+ALTER TABLE "arrivals" ALTER COLUMN "status" TYPE "ArrivalStatus_new" USING (
+  (CASE "status"::text WHEN 'ACTIVE' THEN 'ON_SITE' ELSE "status"::text END)::"ArrivalStatus_new"
+);
 ALTER TYPE "ArrivalStatus" RENAME TO "ArrivalStatus_old";
 ALTER TYPE "ArrivalStatus_new" RENAME TO "ArrivalStatus";
 DROP TYPE "ArrivalStatus_old";
@@ -10,12 +15,18 @@ ALTER TABLE "arrivals" ALTER COLUMN "status" SET DEFAULT 'PLANNED';
 COMMIT;
 
 -- AlterTable
+-- plannedAt добавлен сначала как NULL и заполнен для существующих строк —
+-- NOT NULL сразу падает на непустой таблице (ревью 015, п.8).
 ALTER TABLE "arrivals" DROP COLUMN "expectedDepartureAt",
 ADD COLUMN     "anyCountry" BOOLEAN NOT NULL DEFAULT false,
-ADD COLUMN     "plannedAt" TIMESTAMP(3) NOT NULL,
+ADD COLUMN     "plannedAt" TIMESTAMP(3),
 ADD COLUMN     "waitDays" INTEGER NOT NULL DEFAULT 2,
 ALTER COLUMN "arrivedAt" DROP NOT NULL,
 ALTER COLUMN "status" SET DEFAULT 'PLANNED';
+
+UPDATE "arrivals" SET "plannedAt" = COALESCE("arrivedAt", "createdAt") WHERE "plannedAt" IS NULL;
+
+ALTER TABLE "arrivals" ALTER COLUMN "plannedAt" SET NOT NULL;
 
 -- CreateTable
 CREATE TABLE "arrival_directions" (
