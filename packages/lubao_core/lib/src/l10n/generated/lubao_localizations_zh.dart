@@ -140,6 +140,12 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get companyLoginEmailLabel => '邮箱';
 
   @override
+  String get companyLoginByCode => '验证码登录';
+
+  @override
+  String get companyLoginByPassword => '密码登录';
+
+  @override
   String get companyLoginSendCode => '获取验证码';
 
   @override
@@ -657,6 +663,15 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get profileMyDevices => '我的设备';
+
+  @override
+  String get companySetPasswordTitle => '登录密码';
+
+  @override
+  String get companySetPasswordHint => '可选——无需邮箱验证码即可登录';
+
+  @override
+  String get companySetPasswordTooShort => '至少8个字符';
 
   @override
   String get devicesTitle => '我的设备';

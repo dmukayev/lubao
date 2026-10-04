@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import { CompaniesService } from './companies.service';
 
 describe('CompaniesService.registerOwnedCompany', () => {
@@ -71,5 +72,20 @@ describe('CompaniesService.registerOwnedCompany', () => {
 
     await service.registerOwnedCompany('user-1', { ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1' });
     expect(capturedData.nameRu).toBe('Yidao');
+  });
+});
+
+describe('CompaniesService.setPassword', () => {
+  it('hashes the password and stores it on the user', async () => {
+    const prisma = { user: { update: jest.fn().mockResolvedValue(undefined) } };
+    const service = new CompaniesService(prisma as any);
+
+    await service.setPassword('user-1', 'super-secret-1');
+
+    expect(prisma.user.update).toHaveBeenCalledTimes(1);
+    const { where, data } = prisma.user.update.mock.calls[0][0];
+    expect(where).toEqual({ id: 'user-1' });
+    expect(data.passwordHash).not.toBe('super-secret-1');
+    await expect(bcrypt.compare('super-secret-1', data.passwordHash)).resolves.toBe(true);
   });
 });

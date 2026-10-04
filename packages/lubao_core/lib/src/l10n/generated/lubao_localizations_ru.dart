@@ -141,6 +141,12 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get companyLoginEmailLabel => 'Email';
 
   @override
+  String get companyLoginByCode => 'По коду';
+
+  @override
+  String get companyLoginByPassword => 'По паролю';
+
+  @override
   String get companyLoginSendCode => 'Получить код';
 
   @override
@@ -665,6 +671,16 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get profileMyDevices => 'Мои устройства';
+
+  @override
+  String get companySetPasswordTitle => 'Пароль для входа';
+
+  @override
+  String get companySetPasswordHint =>
+      'Необязательно — позволяет входить без кода на email';
+
+  @override
+  String get companySetPasswordTooShort => 'Минимум 8 символов';
 
   @override
   String get devicesTitle => 'Мои устройства';

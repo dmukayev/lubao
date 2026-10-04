@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import { Company, CompanyMember } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterCompanyDto } from './dto/register-company.dto';
@@ -54,5 +55,16 @@ export class CompaniesService {
     });
 
     return { company: this.toCompanyDto(company), companyMember: this.toMemberDto(member) };
+  }
+
+  /// Пароль — альтернатива коду на email (решение 2026-10-04): компания
+  /// сама заводит/меняет пароль себе в любой момент, вход по коду при этом
+  /// никуда не девается — это просто второй способ для тех, кому так
+  /// удобнее. Минимум 8 символов — короче, чем у админа (12), пароль здесь
+  /// необязателен, а не единственная защита аккаунта.
+  async setPassword(userId: string, password: string) {
+    const passwordHash = await bcrypt.hash(password, 10);
+    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+    return { success: true };
   }
 }

@@ -74,6 +74,36 @@ export class AuthService {
   }
 
   /**
+   * Пароль — альтернатива коду (решение 2026-10-04, «Вход логиста — код
+   * ИЛИ пароль»): у компании, которая задала пароль (CompaniesService.
+   * setPassword), можно войти сразу, не дожидаясь письма. У большинства
+   * новых компаний пароля нет — для них только verifyEmailCode.
+   */
+  async loginCompanyPassword(email: string, password: string, deviceName?: string, platform?: string) {
+    const user = await this.prisma.user.findUnique({ where: { email: normalizeEmail(email) } });
+    if (!user || user.role !== 'COMPANY' || !user.passwordHash) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    const passwordOk = await bcrypt.compare(password, user.passwordHash);
+    if (!passwordOk) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    const member = await this.prisma.companyMember.findUnique({
+      where: { userId: user.id },
+      include: { company: true },
+    });
+    const tokens = await this.sessions.createSession(user.id, user.role, deviceName, platform);
+    return {
+      user: toUserDto(user),
+      driver: null,
+      company: member ? this.companies.toCompanyDto(member.company) : null,
+      companyMember: member ? this.companies.toMemberDto(member) : null,
+      ...tokens,
+    };
+  }
+
+  /**
    * Вход и начало регистрации логиста в одном шаге — без пароля (задачи
    * 006, 022), по аналогии с verifyDriverCode: известный email — сразу
    * вход, новый — создаём пользователя роли COMPANY без компании

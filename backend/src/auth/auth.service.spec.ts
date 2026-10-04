@@ -174,3 +174,49 @@ describe('AuthService — email code login/registration (задачи 006, 022)'
     await expect(service.verifyEmailCode('driver@example.com', '123456')).rejects.toThrow();
   });
 });
+
+describe('AuthService.loginCompanyPassword (password as an alternative to the email code)', () => {
+  let prisma: any;
+  let companies: { toCompanyDto: jest.Mock; toMemberDto: jest.Mock };
+  let sessions: { createSession: jest.Mock };
+  let service: AuthService;
+  let passwordHash: string;
+
+  beforeAll(async () => {
+    passwordHash = await bcrypt.hash('correct-password', 4);
+  });
+
+  beforeEach(() => {
+    prisma = {
+      user: { findUnique: jest.fn() },
+      companyMember: { findUnique: jest.fn() },
+    };
+    companies = {
+      toCompanyDto: jest.fn((c) => ({ id: c.id, name: c.name })),
+      toMemberDto: jest.fn((m) => ({ id: m.id, role: m.role })),
+    };
+    sessions = { createSession: jest.fn().mockResolvedValue({ accessToken: 'at', refreshToken: 'rt' }) };
+    service = new AuthService(prisma, {} as any, {} as any, companies as any, {} as any, {} as any, sessions as any);
+  });
+
+  it('rejects when the account has no password set (most new companies — only the email code works)', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'new@example.com', passwordHash: null });
+    await expect(service.loginCompanyPassword('new@example.com', 'anything')).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('rejects a wrong password', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'owner@example.com', passwordHash });
+    await expect(service.loginCompanyPassword('owner@example.com', 'wrong-password')).rejects.toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  it('logs in with the correct password and returns the company', async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'owner@example.com', passwordHash });
+    prisma.companyMember.findUnique.mockResolvedValue({ id: 'm1', role: 'OWNER', company: { id: 'c1', name: 'Yidao' } });
+
+    const result = await service.loginCompanyPassword('owner@example.com', 'correct-password');
+    expect(result.company).toEqual({ id: 'c1', name: 'Yidao' });
+    expect(result).toEqual(expect.objectContaining({ accessToken: 'at', refreshToken: 'rt' }));
+  });
+});

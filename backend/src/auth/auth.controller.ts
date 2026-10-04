@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
 import {
   AdminLoginDto,
+  CompanyPasswordLoginDto,
   LogoutDto,
   RefreshDto,
   RequestCodeDto,
@@ -46,6 +47,12 @@ export class AuthController {
   @Post('email/verify')
   verifyEmailCode(@Body() dto: VerifyEmailCodeDto) {
     return this.auth.verifyEmailCode(dto.email, dto.code, dto.deviceName, dto.platform);
+  }
+
+  @Public()
+  @Post('email/login')
+  loginCompanyPassword(@Body() dto: CompanyPasswordLoginDto) {
+    return this.auth.loginCompanyPassword(dto.email, dto.password, dto.deviceName, dto.platform);
   }
 
   @Public()

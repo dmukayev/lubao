@@ -32,6 +32,12 @@ class CompanyRepository {
     );
   }
 
+  /// Задать/сменить пароль — альтернативный способ входа (решение
+  /// 2026-10-04), не обязателен: кто не задал, продолжает входить по коду.
+  Future<void> setPassword(String password) async {
+    await _client.dio.post('/companies/me/password', data: {'password': password});
+  }
+
   Future<List<CompanyMember>> members() async {
     final res = await _client.dio.get('/companies/me/members');
     return (res.data as List<dynamic>).map((e) => CompanyMember.fromJson(e as Map<String, dynamic>)).toList();

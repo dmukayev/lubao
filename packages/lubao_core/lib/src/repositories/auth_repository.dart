@@ -43,6 +43,19 @@ class AuthRepository {
     return _sessionFromTokenResponse(res.data as Map<String, dynamic>);
   }
 
+  /// Пароль — альтернатива коду (решение 2026-10-04): работает только у
+  /// компаний, которые сами его задали (`CompanyRepository.setPassword`).
+  Future<Session> loginCompanyPassword({required String email, required String password}) async {
+    final device = DeviceInfo.current();
+    final res = await _client.dio.post('/auth/email/login', data: {
+      'email': email,
+      'password': password,
+      'deviceName': device.name,
+      'platform': device.platform,
+    });
+    return _sessionFromTokenResponse(res.data as Map<String, dynamic>);
+  }
+
   Future<Session> loginAdmin({required String email, required String password}) async {
     final device = DeviceInfo.current();
     final res = await _client.dio.post('/auth/admin/login', data: {

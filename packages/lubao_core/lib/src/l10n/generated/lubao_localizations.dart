@@ -358,6 +358,18 @@ abstract class LubaoLocalizations {
   /// **'Email'**
   String get companyLoginEmailLabel;
 
+  /// No description provided for @companyLoginByCode.
+  ///
+  /// In ru, this message translates to:
+  /// **'По коду'**
+  String get companyLoginByCode;
+
+  /// No description provided for @companyLoginByPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'По паролю'**
+  String get companyLoginByPassword;
+
   /// No description provided for @companyLoginSendCode.
   ///
   /// In ru, this message translates to:
@@ -1359,6 +1371,24 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Мои устройства'**
   String get profileMyDevices;
+
+  /// No description provided for @companySetPasswordTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пароль для входа'**
+  String get companySetPasswordTitle;
+
+  /// No description provided for @companySetPasswordHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Необязательно — позволяет входить без кода на email'**
+  String get companySetPasswordHint;
+
+  /// No description provided for @companySetPasswordTooShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Минимум 8 символов'**
+  String get companySetPasswordTooShort;
 
   /// No description provided for @devicesTitle.
   ///

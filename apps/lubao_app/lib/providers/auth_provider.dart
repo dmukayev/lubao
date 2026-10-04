@@ -46,6 +46,12 @@ class SessionController extends StateNotifier<Session?> {
     return session;
   }
 
+  Future<Session> loginCompanyPassword(String email, String password) async {
+    final session = await _ref.read(authRepositoryProvider).loginCompanyPassword(email: email, password: password);
+    state = session;
+    return session;
+  }
+
   void updateDriver(Driver driver) {
     final current = state;
     if (current == null) return;

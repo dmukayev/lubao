@@ -3,10 +3,64 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 
+import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../../providers/locale_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+
+Future<void> _showSetPasswordDialog(BuildContext context, WidgetRef ref) async {
+  final t = context.l10n;
+  final controller = TextEditingController();
+  String? error;
+  bool saving = false;
+
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setState) => AlertDialog(
+        title: Text(t.companySetPasswordTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(t.companySetPasswordHint, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              label: t.adminLoginPasswordLabel,
+              controller: controller,
+              obscureText: true,
+              errorText: error,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(t.commonCancel)),
+          FilledButton(
+            onPressed: saving
+                ? null
+                : () async {
+                    if (controller.text.length < 8) {
+                      setState(() => error = t.companySetPasswordTooShort);
+                      return;
+                    }
+                    setState(() => saving = true);
+                    try {
+                      await ref.read(companyRepositoryProvider).setPassword(controller.text);
+                      if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                    } catch (_) {
+                      setState(() {
+                        saving = false;
+                        error = t.commonError;
+                      });
+                    }
+                  },
+            child: Text(t.commonSave),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
 class CompanyProfileScreen extends ConsumerWidget {
   const CompanyProfileScreen({super.key});
@@ -76,6 +130,12 @@ class CompanyProfileScreen extends ConsumerWidget {
             leading: const Icon(LucideIcons.smartphone),
             title: Text(t.profileMyDevices),
             onTap: () => context.push('/devices'),
+          ),
+          ListTile(
+            leading: const Icon(LucideIcons.keyRound),
+            title: Text(t.companySetPasswordTitle),
+            subtitle: Text(t.companySetPasswordHint),
+            onTap: () => _showSetPasswordDialog(context, ref),
           ),
           const SizedBox(height: 16),
           OutlinedButton(
