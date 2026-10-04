@@ -10,7 +10,9 @@ import '../features/dashboard/dashboard_screen.dart';
 import '../features/verification/verification_screen.dart';
 import '../features/complaints/complaints_screen.dart';
 import '../features/companies/admin_companies_screen.dart';
+import '../features/companies/company_detail_screen.dart';
 import '../features/drivers/admin_drivers_screen.dart';
+import '../features/drivers/driver_detail_screen.dart';
 import '../features/reference/reference_screen.dart';
 
 class _RouterRefresh extends ChangeNotifier {
@@ -55,8 +57,26 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/dashboard', builder: (context, state) => const DashboardScreen()),
           GoRoute(path: '/verification', builder: (context, state) => const VerificationScreen()),
           GoRoute(path: '/complaints', builder: (context, state) => const ComplaintsScreen()),
-          GoRoute(path: '/companies', builder: (context, state) => const AdminCompaniesScreen()),
-          GoRoute(path: '/drivers', builder: (context, state) => const AdminDriversScreen()),
+          GoRoute(
+            path: '/companies',
+            builder: (context, state) => const AdminCompaniesScreen(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (context, state) => CompanyDetailScreen(id: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/drivers',
+            builder: (context, state) => const AdminDriversScreen(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (context, state) => DriverDetailScreen(id: state.pathParameters['id']!),
+              ),
+            ],
+          ),
           GoRoute(path: '/reference', builder: (context, state) => const ReferenceScreen()),
         ],
       ),

@@ -1107,4 +1107,213 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminInactive => 'Неактивна';
+
+  @override
+  String get accountBlockedMessage =>
+      'Аккаунт заблокирован. Обратитесь в поддержку';
+
+  @override
+  String get adminSearchCompanyHint => 'Название, email, рег. номер';
+
+  @override
+  String get adminSearchDriverHint => 'Имя, телефон, гос. номер';
+
+  @override
+  String get adminFilterAll => 'Все';
+
+  @override
+  String get adminFilterPending => 'На проверке';
+
+  @override
+  String get adminFilterVerified => 'Проверенные';
+
+  @override
+  String get adminFilterBlocked => 'Блокированные';
+
+  @override
+  String get adminCompaniesEmpty => 'Компании не найдены';
+
+  @override
+  String get adminDriversEmpty => 'Водители не найдены';
+
+  @override
+  String get adminColName => 'Имя';
+
+  @override
+  String get adminColOwner => 'Владелец';
+
+  @override
+  String get adminColEmployees => 'Сотрудники';
+
+  @override
+  String get adminColCargos => 'Активные грузы';
+
+  @override
+  String get adminColStatus => 'Статус';
+
+  @override
+  String get adminColRating => 'Рейтинг';
+
+  @override
+  String get adminColDeals => 'Сделки';
+
+  @override
+  String get adminColPhone => 'Телефон';
+
+  @override
+  String get adminColCity => 'Город';
+
+  @override
+  String get adminColVehicle => 'Машина';
+
+  @override
+  String get adminBlockedBadge => 'Блокирован';
+
+  @override
+  String adminPageOf(int page, int total) {
+    return 'Страница $page из $total';
+  }
+
+  @override
+  String get adminBlockConfirmTitle => 'Блокировать водителя?';
+
+  @override
+  String get adminBlockCompanyConfirmTitle => 'Блокировать компанию?';
+
+  @override
+  String get adminBlock => 'Блокировать';
+
+  @override
+  String get adminBlockCompany => 'Блокировать компанию';
+
+  @override
+  String get adminUnblockConfirmTitle => 'Разблокировать?';
+
+  @override
+  String get adminUnblock => 'Разблокировать';
+
+  @override
+  String get adminVerifyMissingDocsError =>
+      'Не все обязательные документы одобрены — поставьте галочку «проверил лично» и повторите';
+
+  @override
+  String get adminResetPasswordConfirmTitle => 'Сбросить пароль владельца?';
+
+  @override
+  String get adminResetPasswordDialogTitle => 'Временный пароль';
+
+  @override
+  String get adminResetPassword => 'Сбросить пароль';
+
+  @override
+  String get adminCopied => 'Скопировано';
+
+  @override
+  String get adminToggleVerification => 'Изменить статус проверки';
+
+  @override
+  String get adminStatComplaints => 'Жалобы';
+
+  @override
+  String get adminStatCancellations => 'Отмены';
+
+  @override
+  String get adminStatCalls => 'Звонки';
+
+  @override
+  String get adminDocuments => 'Документы';
+
+  @override
+  String get adminNoDocuments => 'Документов нет';
+
+  @override
+  String get adminLegalDetails => 'Юридические данные';
+
+  @override
+  String get adminInvites => 'Приглашения';
+
+  @override
+  String get adminInviteUsed => 'Использовано';
+
+  @override
+  String get adminTabCargos => 'Грузы';
+
+  @override
+  String get adminTabDeals => 'Сделки';
+
+  @override
+  String get adminTabReviews => 'Отзывы';
+
+  @override
+  String get adminTabLog => 'Журнал';
+
+  @override
+  String get adminNoCargos => 'Грузов нет';
+
+  @override
+  String get adminNoDeals => 'Сделок нет';
+
+  @override
+  String get adminNoReviews => 'Отзывов нет';
+
+  @override
+  String get adminNoLog => 'Записей нет';
+
+  @override
+  String get adminEndSessionsConfirmTitle => 'Завершить все сессии?';
+
+  @override
+  String get adminEndSessions => 'Завершить сессии';
+
+  @override
+  String adminWithUsSince(String date) {
+    return 'С нами с $date';
+  }
+
+  @override
+  String adminLastLogin(String date) {
+    return 'Последний вход: $date';
+  }
+
+  @override
+  String get adminReasonLabel => 'Причина';
+
+  @override
+  String get adminVerifyDialogTitle => 'Поставить «Проверен»';
+
+  @override
+  String get adminUnverifyDialogTitle => 'Снять «Проверен»';
+
+  @override
+  String get adminForceVerifyCheckbox => 'Я проверил документы лично';
+
+  @override
+  String get adminRejectPresetUnreadable => 'Нечитаемое фото';
+
+  @override
+  String get adminRejectPresetExpired => 'Документ просрочен';
+
+  @override
+  String get adminRejectPresetMismatch => 'Имя не совпадает';
+
+  @override
+  String get adminRejectPresetOther => 'Другое / причина';
+
+  @override
+  String get adminDocTypeCompanyRegistration => 'Свидетельство о регистрации';
+
+  @override
+  String get adminDocTypeIdentity => 'Удостоверение личности';
+
+  @override
+  String get adminDocTypeOther => 'Другой документ';
+
+  @override
+  String get adminRotate => 'Повернуть';
+
+  @override
+  String get adminComplaintReporter => 'Заявитель';
+
+  @override
+  String get adminComplaintTarget => 'Объект жалобы';
 }

@@ -2201,6 +2201,408 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Неактивна'**
   String get adminInactive;
+
+  /// No description provided for @accountBlockedMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аккаунт заблокирован. Обратитесь в поддержку'**
+  String get accountBlockedMessage;
+
+  /// No description provided for @adminSearchCompanyHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название, email, рег. номер'**
+  String get adminSearchCompanyHint;
+
+  /// No description provided for @adminSearchDriverHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя, телефон, гос. номер'**
+  String get adminSearchDriverHint;
+
+  /// No description provided for @adminFilterAll.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все'**
+  String get adminFilterAll;
+
+  /// No description provided for @adminFilterPending.
+  ///
+  /// In ru, this message translates to:
+  /// **'На проверке'**
+  String get adminFilterPending;
+
+  /// No description provided for @adminFilterVerified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверенные'**
+  String get adminFilterVerified;
+
+  /// No description provided for @adminFilterBlocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Блокированные'**
+  String get adminFilterBlocked;
+
+  /// No description provided for @adminCompaniesEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Компании не найдены'**
+  String get adminCompaniesEmpty;
+
+  /// No description provided for @adminDriversEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водители не найдены'**
+  String get adminDriversEmpty;
+
+  /// No description provided for @adminColName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя'**
+  String get adminColName;
+
+  /// No description provided for @adminColOwner.
+  ///
+  /// In ru, this message translates to:
+  /// **'Владелец'**
+  String get adminColOwner;
+
+  /// No description provided for @adminColEmployees.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сотрудники'**
+  String get adminColEmployees;
+
+  /// No description provided for @adminColCargos.
+  ///
+  /// In ru, this message translates to:
+  /// **'Активные грузы'**
+  String get adminColCargos;
+
+  /// No description provided for @adminColStatus.
+  ///
+  /// In ru, this message translates to:
+  /// **'Статус'**
+  String get adminColStatus;
+
+  /// No description provided for @adminColRating.
+  ///
+  /// In ru, this message translates to:
+  /// **'Рейтинг'**
+  String get adminColRating;
+
+  /// No description provided for @adminColDeals.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделки'**
+  String get adminColDeals;
+
+  /// No description provided for @adminColPhone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Телефон'**
+  String get adminColPhone;
+
+  /// No description provided for @adminColCity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город'**
+  String get adminColCity;
+
+  /// No description provided for @adminColVehicle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Машина'**
+  String get adminColVehicle;
+
+  /// No description provided for @adminBlockedBadge.
+  ///
+  /// In ru, this message translates to:
+  /// **'Блокирован'**
+  String get adminBlockedBadge;
+
+  /// No description provided for @adminPageOf.
+  ///
+  /// In ru, this message translates to:
+  /// **'Страница {page} из {total}'**
+  String adminPageOf(int page, int total);
+
+  /// No description provided for @adminBlockConfirmTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Блокировать водителя?'**
+  String get adminBlockConfirmTitle;
+
+  /// No description provided for @adminBlockCompanyConfirmTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Блокировать компанию?'**
+  String get adminBlockCompanyConfirmTitle;
+
+  /// No description provided for @adminBlock.
+  ///
+  /// In ru, this message translates to:
+  /// **'Блокировать'**
+  String get adminBlock;
+
+  /// No description provided for @adminBlockCompany.
+  ///
+  /// In ru, this message translates to:
+  /// **'Блокировать компанию'**
+  String get adminBlockCompany;
+
+  /// No description provided for @adminUnblockConfirmTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Разблокировать?'**
+  String get adminUnblockConfirmTitle;
+
+  /// No description provided for @adminUnblock.
+  ///
+  /// In ru, this message translates to:
+  /// **'Разблокировать'**
+  String get adminUnblock;
+
+  /// No description provided for @adminVerifyMissingDocsError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не все обязательные документы одобрены — поставьте галочку «проверил лично» и повторите'**
+  String get adminVerifyMissingDocsError;
+
+  /// No description provided for @adminResetPasswordConfirmTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сбросить пароль владельца?'**
+  String get adminResetPasswordConfirmTitle;
+
+  /// No description provided for @adminResetPasswordDialogTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Временный пароль'**
+  String get adminResetPasswordDialogTitle;
+
+  /// No description provided for @adminResetPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сбросить пароль'**
+  String get adminResetPassword;
+
+  /// No description provided for @adminCopied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скопировано'**
+  String get adminCopied;
+
+  /// No description provided for @adminToggleVerification.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменить статус проверки'**
+  String get adminToggleVerification;
+
+  /// No description provided for @adminStatComplaints.
+  ///
+  /// In ru, this message translates to:
+  /// **'Жалобы'**
+  String get adminStatComplaints;
+
+  /// No description provided for @adminStatCancellations.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отмены'**
+  String get adminStatCancellations;
+
+  /// No description provided for @adminStatCalls.
+  ///
+  /// In ru, this message translates to:
+  /// **'Звонки'**
+  String get adminStatCalls;
+
+  /// No description provided for @adminDocuments.
+  ///
+  /// In ru, this message translates to:
+  /// **'Документы'**
+  String get adminDocuments;
+
+  /// No description provided for @adminNoDocuments.
+  ///
+  /// In ru, this message translates to:
+  /// **'Документов нет'**
+  String get adminNoDocuments;
+
+  /// No description provided for @adminLegalDetails.
+  ///
+  /// In ru, this message translates to:
+  /// **'Юридические данные'**
+  String get adminLegalDetails;
+
+  /// No description provided for @adminInvites.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приглашения'**
+  String get adminInvites;
+
+  /// No description provided for @adminInviteUsed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Использовано'**
+  String get adminInviteUsed;
+
+  /// No description provided for @adminTabCargos.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грузы'**
+  String get adminTabCargos;
+
+  /// No description provided for @adminTabDeals.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделки'**
+  String get adminTabDeals;
+
+  /// No description provided for @adminTabReviews.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отзывы'**
+  String get adminTabReviews;
+
+  /// No description provided for @adminTabLog.
+  ///
+  /// In ru, this message translates to:
+  /// **'Журнал'**
+  String get adminTabLog;
+
+  /// No description provided for @adminNoCargos.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грузов нет'**
+  String get adminNoCargos;
+
+  /// No description provided for @adminNoDeals.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделок нет'**
+  String get adminNoDeals;
+
+  /// No description provided for @adminNoReviews.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отзывов нет'**
+  String get adminNoReviews;
+
+  /// No description provided for @adminNoLog.
+  ///
+  /// In ru, this message translates to:
+  /// **'Записей нет'**
+  String get adminNoLog;
+
+  /// No description provided for @adminEndSessionsConfirmTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Завершить все сессии?'**
+  String get adminEndSessionsConfirmTitle;
+
+  /// No description provided for @adminEndSessions.
+  ///
+  /// In ru, this message translates to:
+  /// **'Завершить сессии'**
+  String get adminEndSessions;
+
+  /// No description provided for @adminWithUsSince.
+  ///
+  /// In ru, this message translates to:
+  /// **'С нами с {date}'**
+  String adminWithUsSince(String date);
+
+  /// No description provided for @adminLastLogin.
+  ///
+  /// In ru, this message translates to:
+  /// **'Последний вход: {date}'**
+  String adminLastLogin(String date);
+
+  /// No description provided for @adminReasonLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Причина'**
+  String get adminReasonLabel;
+
+  /// No description provided for @adminVerifyDialogTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поставить «Проверен»'**
+  String get adminVerifyDialogTitle;
+
+  /// No description provided for @adminUnverifyDialogTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Снять «Проверен»'**
+  String get adminUnverifyDialogTitle;
+
+  /// No description provided for @adminForceVerifyCheckbox.
+  ///
+  /// In ru, this message translates to:
+  /// **'Я проверил документы лично'**
+  String get adminForceVerifyCheckbox;
+
+  /// No description provided for @adminRejectPresetUnreadable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нечитаемое фото'**
+  String get adminRejectPresetUnreadable;
+
+  /// No description provided for @adminRejectPresetExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Документ просрочен'**
+  String get adminRejectPresetExpired;
+
+  /// No description provided for @adminRejectPresetMismatch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя не совпадает'**
+  String get adminRejectPresetMismatch;
+
+  /// No description provided for @adminRejectPresetOther.
+  ///
+  /// In ru, this message translates to:
+  /// **'Другое / причина'**
+  String get adminRejectPresetOther;
+
+  /// No description provided for @adminDocTypeCompanyRegistration.
+  ///
+  /// In ru, this message translates to:
+  /// **'Свидетельство о регистрации'**
+  String get adminDocTypeCompanyRegistration;
+
+  /// No description provided for @adminDocTypeIdentity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удостоверение личности'**
+  String get adminDocTypeIdentity;
+
+  /// No description provided for @adminDocTypeOther.
+  ///
+  /// In ru, this message translates to:
+  /// **'Другой документ'**
+  String get adminDocTypeOther;
+
+  /// No description provided for @adminRotate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повернуть'**
+  String get adminRotate;
+
+  /// No description provided for @adminComplaintReporter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заявитель'**
+  String get adminComplaintReporter;
+
+  /// No description provided for @adminComplaintTarget.
+  ///
+  /// In ru, this message translates to:
+  /// **'Объект жалобы'**
+  String get adminComplaintTarget;
 }
 
 class _LubaoLocalizationsDelegate

@@ -118,7 +118,11 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
       // регистрацию, иначе сразу в ленту (см. app_router.dart).
     } catch (e) {
       if (mounted) {
-        final message = isTooManyAttemptsError(e) ? t.driverOtpTooManyAttempts : t.driverOtpInvalidCode;
+        final message = isAccountBlockedError(e)
+            ? t.accountBlockedMessage
+            : isTooManyAttemptsError(e)
+                ? t.driverOtpTooManyAttempts
+                : t.driverOtpInvalidCode;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
         for (final c in _codeControllers) {
           c.clear();

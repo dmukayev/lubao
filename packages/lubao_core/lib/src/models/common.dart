@@ -5,9 +5,9 @@ class I18nText {
   final String ru;
   final String zh;
 
-  /// Английский — пока не отдельная локаль интерфейса (см. задачу 013),
-  /// только дополнительный вариант названия для мультиязычного поиска
-  /// (задача 021). `forLanguageCode('en')` по-прежнему падает в `ru`.
+  /// Английский — с задачи 013 полноценная локаль интерфейса.
+  /// `forLanguageCode('en')` отдаёт `en`, если он заполнен в справочнике,
+  /// иначе падает в `ru` (нет перевода → решение 2026-10-04, п. «Языки»).
   final String en;
 
   factory I18nText.fromJson(Map<String, dynamic> json) => I18nText(
@@ -25,6 +25,8 @@ class I18nText {
         return kk;
       case 'zh':
         return zh;
+      case 'en':
+        return en.isNotEmpty ? en : ru;
       case 'ru':
       default:
         return ru;

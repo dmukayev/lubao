@@ -1111,4 +1111,214 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminInactive => 'Белсенді емес';
+
+  @override
+  String get accountBlockedMessage =>
+      'Аккаунт бұғатталған. Қолдау қызметіне хабарласыңыз';
+
+  @override
+  String get adminSearchCompanyHint => 'Атауы, email, тіркеу нөмірі';
+
+  @override
+  String get adminSearchDriverHint => 'Аты, телефон, мем. нөмір';
+
+  @override
+  String get adminFilterAll => 'Барлығы';
+
+  @override
+  String get adminFilterPending => 'Тексеруде';
+
+  @override
+  String get adminFilterVerified => 'Тексерілген';
+
+  @override
+  String get adminFilterBlocked => 'Бұғатталған';
+
+  @override
+  String get adminCompaniesEmpty => 'Компаниялар табылмады';
+
+  @override
+  String get adminDriversEmpty => 'Жүргізушілер табылмады';
+
+  @override
+  String get adminColName => 'Аты';
+
+  @override
+  String get adminColOwner => 'Иесі';
+
+  @override
+  String get adminColEmployees => 'Қызметкерлер';
+
+  @override
+  String get adminColCargos => 'Белсенді жүктер';
+
+  @override
+  String get adminColStatus => 'Мәртебе';
+
+  @override
+  String get adminColRating => 'Рейтинг';
+
+  @override
+  String get adminColDeals => 'Мәмілелер';
+
+  @override
+  String get adminColPhone => 'Телефон';
+
+  @override
+  String get adminColCity => 'Қала';
+
+  @override
+  String get adminColVehicle => 'Көлік';
+
+  @override
+  String get adminBlockedBadge => 'Бұғатталған';
+
+  @override
+  String adminPageOf(int page, int total) {
+    return '$page / $total бет';
+  }
+
+  @override
+  String get adminBlockConfirmTitle => 'Жүргізушіні бұғаттау керек пе?';
+
+  @override
+  String get adminBlockCompanyConfirmTitle => 'Компанияны бұғаттау керек пе?';
+
+  @override
+  String get adminBlock => 'Бұғаттау';
+
+  @override
+  String get adminBlockCompany => 'Компанияны бұғаттау';
+
+  @override
+  String get adminUnblockConfirmTitle => 'Бұғаттан шығару керек пе?';
+
+  @override
+  String get adminUnblock => 'Бұғаттан шығару';
+
+  @override
+  String get adminVerifyMissingDocsError =>
+      'Барлық міндетті құжаттар мақұлданбаған — «өзім тексердім» белгісін қойып, қайталаңыз';
+
+  @override
+  String get adminResetPasswordConfirmTitle =>
+      'Иесінің құпия сөзін ысыру керек пе?';
+
+  @override
+  String get adminResetPasswordDialogTitle => 'Уақытша құпия сөз';
+
+  @override
+  String get adminResetPassword => 'Құпия сөзді ысыру';
+
+  @override
+  String get adminCopied => 'Көшірілді';
+
+  @override
+  String get adminToggleVerification => 'Тексеру мәртебесін өзгерту';
+
+  @override
+  String get adminStatComplaints => 'Шағымдар';
+
+  @override
+  String get adminStatCancellations => 'Бас тартулар';
+
+  @override
+  String get adminStatCalls => 'Қоңыраулар';
+
+  @override
+  String get adminDocuments => 'Құжаттар';
+
+  @override
+  String get adminNoDocuments => 'Құжаттар жоқ';
+
+  @override
+  String get adminLegalDetails => 'Заңды деректер';
+
+  @override
+  String get adminInvites => 'Шақырулар';
+
+  @override
+  String get adminInviteUsed => 'Қолданылды';
+
+  @override
+  String get adminTabCargos => 'Жүктер';
+
+  @override
+  String get adminTabDeals => 'Мәмілелер';
+
+  @override
+  String get adminTabReviews => 'Пікірлер';
+
+  @override
+  String get adminTabLog => 'Журнал';
+
+  @override
+  String get adminNoCargos => 'Жүктер жоқ';
+
+  @override
+  String get adminNoDeals => 'Мәмілелер жоқ';
+
+  @override
+  String get adminNoReviews => 'Пікірлер жоқ';
+
+  @override
+  String get adminNoLog => 'Жазбалар жоқ';
+
+  @override
+  String get adminEndSessionsConfirmTitle => 'Барлық сессияны аяқтау керек пе?';
+
+  @override
+  String get adminEndSessions => 'Сессияларды аяқтау';
+
+  @override
+  String adminWithUsSince(String date) {
+    return 'Бізбен бірге $date-ден';
+  }
+
+  @override
+  String adminLastLogin(String date) {
+    return 'Соңғы кіру: $date';
+  }
+
+  @override
+  String get adminReasonLabel => 'Себеп';
+
+  @override
+  String get adminVerifyDialogTitle => '«Тексерілген» деп белгілеу';
+
+  @override
+  String get adminUnverifyDialogTitle => '«Тексерілген» белгісін алып тастау';
+
+  @override
+  String get adminForceVerifyCheckbox => 'Құжаттарды өзім тексердім';
+
+  @override
+  String get adminRejectPresetUnreadable => 'Фото оқылмайды';
+
+  @override
+  String get adminRejectPresetExpired => 'Құжат мерзімі өтті';
+
+  @override
+  String get adminRejectPresetMismatch => 'Аты-жөні сәйкес келмейді';
+
+  @override
+  String get adminRejectPresetOther => 'Басқа / себеп';
+
+  @override
+  String get adminDocTypeCompanyRegistration => 'Тіркеу туралы куәлік';
+
+  @override
+  String get adminDocTypeIdentity => 'Жеке куәлік';
+
+  @override
+  String get adminDocTypeOther => 'Басқа құжат';
+
+  @override
+  String get adminRotate => 'Бұру';
+
+  @override
+  String get adminComplaintReporter => 'Шағымданушы';
+
+  @override
+  String get adminComplaintTarget => 'Шағым нысаны';
 }

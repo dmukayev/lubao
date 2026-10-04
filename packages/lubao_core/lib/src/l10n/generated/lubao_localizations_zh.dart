@@ -1091,4 +1091,211 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminInactive => '已停用';
+
+  @override
+  String get accountBlockedMessage => '账户已被封禁。请联系客服';
+
+  @override
+  String get adminSearchCompanyHint => '名称、邮箱、注册号';
+
+  @override
+  String get adminSearchDriverHint => '姓名、电话、车牌号';
+
+  @override
+  String get adminFilterAll => '全部';
+
+  @override
+  String get adminFilterPending => '待审核';
+
+  @override
+  String get adminFilterVerified => '已验证';
+
+  @override
+  String get adminFilterBlocked => '已封禁';
+
+  @override
+  String get adminCompaniesEmpty => '未找到公司';
+
+  @override
+  String get adminDriversEmpty => '未找到司机';
+
+  @override
+  String get adminColName => '姓名';
+
+  @override
+  String get adminColOwner => '负责人';
+
+  @override
+  String get adminColEmployees => '员工';
+
+  @override
+  String get adminColCargos => '在途货源';
+
+  @override
+  String get adminColStatus => '状态';
+
+  @override
+  String get adminColRating => '评分';
+
+  @override
+  String get adminColDeals => '交易';
+
+  @override
+  String get adminColPhone => '电话';
+
+  @override
+  String get adminColCity => '城市';
+
+  @override
+  String get adminColVehicle => '车辆';
+
+  @override
+  String get adminBlockedBadge => '已封禁';
+
+  @override
+  String adminPageOf(int page, int total) {
+    return '第 $page / $total 页';
+  }
+
+  @override
+  String get adminBlockConfirmTitle => '封禁该司机?';
+
+  @override
+  String get adminBlockCompanyConfirmTitle => '封禁该公司?';
+
+  @override
+  String get adminBlock => '封禁';
+
+  @override
+  String get adminBlockCompany => '封禁公司';
+
+  @override
+  String get adminUnblockConfirmTitle => '解除封禁?';
+
+  @override
+  String get adminUnblock => '解除封禁';
+
+  @override
+  String get adminVerifyMissingDocsError => '并非所有必需文件均已通过审核——勾选「亲自核实」后重试';
+
+  @override
+  String get adminResetPasswordConfirmTitle => '重置负责人密码?';
+
+  @override
+  String get adminResetPasswordDialogTitle => '临时密码';
+
+  @override
+  String get adminResetPassword => '重置密码';
+
+  @override
+  String get adminCopied => '已复制';
+
+  @override
+  String get adminToggleVerification => '更改验证状态';
+
+  @override
+  String get adminStatComplaints => '投诉';
+
+  @override
+  String get adminStatCancellations => '取消次数';
+
+  @override
+  String get adminStatCalls => '通话次数';
+
+  @override
+  String get adminDocuments => '文件';
+
+  @override
+  String get adminNoDocuments => '暂无文件';
+
+  @override
+  String get adminLegalDetails => '法律信息';
+
+  @override
+  String get adminInvites => '邀请';
+
+  @override
+  String get adminInviteUsed => '已使用';
+
+  @override
+  String get adminTabCargos => '货源';
+
+  @override
+  String get adminTabDeals => '交易';
+
+  @override
+  String get adminTabReviews => '评价';
+
+  @override
+  String get adminTabLog => '日志';
+
+  @override
+  String get adminNoCargos => '暂无货源';
+
+  @override
+  String get adminNoDeals => '暂无交易';
+
+  @override
+  String get adminNoReviews => '暂无评价';
+
+  @override
+  String get adminNoLog => '暂无记录';
+
+  @override
+  String get adminEndSessionsConfirmTitle => '结束所有会话?';
+
+  @override
+  String get adminEndSessions => '结束会话';
+
+  @override
+  String adminWithUsSince(String date) {
+    return '加入时间 $date';
+  }
+
+  @override
+  String adminLastLogin(String date) {
+    return '最后登录: $date';
+  }
+
+  @override
+  String get adminReasonLabel => '原因';
+
+  @override
+  String get adminVerifyDialogTitle => '标记为「已验证」';
+
+  @override
+  String get adminUnverifyDialogTitle => '取消「已验证」标记';
+
+  @override
+  String get adminForceVerifyCheckbox => '我已亲自核实文件';
+
+  @override
+  String get adminRejectPresetUnreadable => '照片无法辨认';
+
+  @override
+  String get adminRejectPresetExpired => '证件已过期';
+
+  @override
+  String get adminRejectPresetMismatch => '姓名不匹配';
+
+  @override
+  String get adminRejectPresetOther => '其他 / 原因';
+
+  @override
+  String get adminDocTypeCompanyRegistration => '营业执照';
+
+  @override
+  String get adminDocTypeIdentity => '身份证件';
+
+  @override
+  String get adminDocTypeOther => '其他文件';
+
+  @override
+  String get adminRotate => '旋转';
+
+  @override
+  String get adminComplaintReporter => '投诉人';
+
+  @override
+  String get adminComplaintTarget => '投诉对象';
 }

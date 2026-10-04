@@ -15,12 +15,39 @@ final complaintsProvider = FutureProvider.autoDispose<List<AdminComplaint>>((ref
   return ref.watch(adminRepositoryProvider).complaints(status: 'OPEN');
 });
 
-final adminCompaniesProvider = FutureProvider.autoDispose<List<AdminCompanySummary>>((ref) {
-  return ref.watch(adminRepositoryProvider).companies();
+/// Параметры поиска/фильтра/пагинации (задача 026) — record, не класс:
+/// Riverpod сравнивает family-параметры по равенству, а записи уже имеют
+/// value-equality из коробки.
+typedef AdminSearchQuery = ({String q, bool? verified, bool? blocked, int page});
+
+const defaultAdminSearchQuery = (q: '', verified: null, blocked: null, page: 1);
+
+final adminCompaniesSearchProvider =
+    FutureProvider.autoDispose.family<AdminSearchPage<AdminCompanyRow>, AdminSearchQuery>((ref, query) {
+  return ref.watch(adminRepositoryProvider).searchCompanies(
+        q: query.q,
+        verified: query.verified,
+        blocked: query.blocked,
+        page: query.page,
+      );
 });
 
-final adminDriversProvider = FutureProvider.autoDispose<List<AdminDriverSummary>>((ref) {
-  return ref.watch(adminRepositoryProvider).drivers();
+final adminDriversSearchProvider =
+    FutureProvider.autoDispose.family<AdminSearchPage<AdminDriverRow>, AdminSearchQuery>((ref, query) {
+  return ref.watch(adminRepositoryProvider).searchDrivers(
+        q: query.q,
+        verified: query.verified,
+        blocked: query.blocked,
+        page: query.page,
+      );
+});
+
+final adminDriverDetailProvider = FutureProvider.autoDispose.family<AdminDriverDetail, String>((ref, id) {
+  return ref.watch(adminRepositoryProvider).driverDetail(id);
+});
+
+final adminCompanyDetailProvider = FutureProvider.autoDispose.family<AdminCompanyDetail, String>((ref, id) {
+  return ref.watch(adminRepositoryProvider).companyDetail(id);
 });
 
 final pendingCitiesProvider = FutureProvider.autoDispose<List<AdminPendingCity>>((ref) {

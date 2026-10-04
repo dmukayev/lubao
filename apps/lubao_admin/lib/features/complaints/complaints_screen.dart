@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/api_providers.dart';
@@ -23,7 +24,10 @@ class ComplaintsScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(t.adminComplaintsTitle)),
       body: complaints.when(
         loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(complaintsProvider)),
+        error: (e, st) {
+          debugPrint('ComplaintsScreen: $e');
+          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(complaintsProvider));
+        },
         data: (list) {
           if (list.isEmpty) return EmptyState(message: t.adminComplaintsEmpty, icon: LucideIcons.flag);
 
@@ -34,14 +38,37 @@ class ComplaintsScreen extends ConsumerWidget {
               itemCount: list.length,
               itemBuilder: (context, index) {
                 final complaint = list[index];
+                final target = complaint.target;
+                final reporter = complaint.reporter;
                 return AppCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(complaint.reason, style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: 4),
-                      Text('${complaint.targetType} · ${complaint.reporterName}',
-                          style: Theme.of(context).textTheme.bodySmall),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 4,
+                        children: [
+                          Text('${t.adminComplaintReporter}:'),
+                          if (reporter != null && (reporter.driverId != null || reporter.companyId != null))
+                            InkWell(
+                              onTap: () => _openCard(context, driverId: reporter.driverId, companyId: reporter.companyId),
+                              child: Text(complaint.reporterName, style: const TextStyle(decoration: TextDecoration.underline)),
+                            )
+                          else
+                            Text(complaint.reporterName),
+                          const Text('·'),
+                          Text('${t.adminComplaintTarget}:'),
+                          if (target != null && (target.driverId != null || target.companyId != null))
+                            InkWell(
+                              onTap: () => _openCard(context, driverId: target.driverId, companyId: target.companyId),
+                              child: Text(target.title, style: const TextStyle(decoration: TextDecoration.underline)),
+                            )
+                          else
+                            Text(target?.title ?? complaint.targetType),
+                        ],
+                      ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -69,5 +96,15 @@ class ComplaintsScreen extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  /// Переход на карточку нарушителя/заявителя (задача 026, п.14) — оба
+  /// резолвятся на бэкенде через один и тот же complaintTarget('USER', ...).
+  void _openCard(BuildContext context, {String? driverId, String? companyId}) {
+    if (driverId != null) {
+      context.push('/drivers/$driverId');
+    } else if (companyId != null) {
+      context.push('/companies/$companyId');
+    }
   }
 }

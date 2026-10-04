@@ -8,7 +8,13 @@ void main() {
     expect(text.forLanguageCode('kk'), 'Қазақша');
     expect(text.forLanguageCode('zh'), '中文');
     expect(text.forLanguageCode('ru'), 'Русский');
+    // Нет en в справочнике -> фолбэк на ru (задача 013).
     expect(text.forLanguageCode('en'), 'Русский');
+  });
+
+  test('I18nText.forLanguageCode("en") returns en when the dictionary has it', () {
+    const text = I18nText(kk: 'Қазақстан', ru: 'Казахстан', zh: '哈萨克斯坦', en: 'Kazakhstan');
+    expect(text.forLanguageCode('en'), 'Kazakhstan');
   });
 
   test('cargo feed sorts home, then selected directions, then the rest', () {

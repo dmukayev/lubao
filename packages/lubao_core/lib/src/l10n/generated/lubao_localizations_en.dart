@@ -1111,4 +1111,213 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminInactive => 'Inactive';
+
+  @override
+  String get accountBlockedMessage =>
+      'Your account has been blocked. Contact support';
+
+  @override
+  String get adminSearchCompanyHint => 'Name, email, registration number';
+
+  @override
+  String get adminSearchDriverHint => 'Name, phone, license plate';
+
+  @override
+  String get adminFilterAll => 'All';
+
+  @override
+  String get adminFilterPending => 'Pending';
+
+  @override
+  String get adminFilterVerified => 'Verified';
+
+  @override
+  String get adminFilterBlocked => 'Blocked';
+
+  @override
+  String get adminCompaniesEmpty => 'No companies found';
+
+  @override
+  String get adminDriversEmpty => 'No drivers found';
+
+  @override
+  String get adminColName => 'Name';
+
+  @override
+  String get adminColOwner => 'Owner';
+
+  @override
+  String get adminColEmployees => 'Employees';
+
+  @override
+  String get adminColCargos => 'Active cargo';
+
+  @override
+  String get adminColStatus => 'Status';
+
+  @override
+  String get adminColRating => 'Rating';
+
+  @override
+  String get adminColDeals => 'Deals';
+
+  @override
+  String get adminColPhone => 'Phone';
+
+  @override
+  String get adminColCity => 'City';
+
+  @override
+  String get adminColVehicle => 'Vehicle';
+
+  @override
+  String get adminBlockedBadge => 'Blocked';
+
+  @override
+  String adminPageOf(int page, int total) {
+    return 'Page $page of $total';
+  }
+
+  @override
+  String get adminBlockConfirmTitle => 'Block this driver?';
+
+  @override
+  String get adminBlockCompanyConfirmTitle => 'Block this company?';
+
+  @override
+  String get adminBlock => 'Block';
+
+  @override
+  String get adminBlockCompany => 'Block company';
+
+  @override
+  String get adminUnblockConfirmTitle => 'Unblock?';
+
+  @override
+  String get adminUnblock => 'Unblock';
+
+  @override
+  String get adminVerifyMissingDocsError =>
+      'Not all required documents are approved — check \"verified personally\" and try again';
+
+  @override
+  String get adminResetPasswordConfirmTitle => 'Reset the owner\'s password?';
+
+  @override
+  String get adminResetPasswordDialogTitle => 'Temporary password';
+
+  @override
+  String get adminResetPassword => 'Reset password';
+
+  @override
+  String get adminCopied => 'Copied';
+
+  @override
+  String get adminToggleVerification => 'Change verification status';
+
+  @override
+  String get adminStatComplaints => 'Complaints';
+
+  @override
+  String get adminStatCancellations => 'Cancellations';
+
+  @override
+  String get adminStatCalls => 'Calls';
+
+  @override
+  String get adminDocuments => 'Documents';
+
+  @override
+  String get adminNoDocuments => 'No documents';
+
+  @override
+  String get adminLegalDetails => 'Legal details';
+
+  @override
+  String get adminInvites => 'Invites';
+
+  @override
+  String get adminInviteUsed => 'Used';
+
+  @override
+  String get adminTabCargos => 'Cargo';
+
+  @override
+  String get adminTabDeals => 'Deals';
+
+  @override
+  String get adminTabReviews => 'Reviews';
+
+  @override
+  String get adminTabLog => 'Log';
+
+  @override
+  String get adminNoCargos => 'No cargo';
+
+  @override
+  String get adminNoDeals => 'No deals';
+
+  @override
+  String get adminNoReviews => 'No reviews';
+
+  @override
+  String get adminNoLog => 'No entries';
+
+  @override
+  String get adminEndSessionsConfirmTitle => 'End all sessions?';
+
+  @override
+  String get adminEndSessions => 'End sessions';
+
+  @override
+  String adminWithUsSince(String date) {
+    return 'With us since $date';
+  }
+
+  @override
+  String adminLastLogin(String date) {
+    return 'Last login: $date';
+  }
+
+  @override
+  String get adminReasonLabel => 'Reason';
+
+  @override
+  String get adminVerifyDialogTitle => 'Mark as Verified';
+
+  @override
+  String get adminUnverifyDialogTitle => 'Remove Verified status';
+
+  @override
+  String get adminForceVerifyCheckbox => 'I verified the documents personally';
+
+  @override
+  String get adminRejectPresetUnreadable => 'Unreadable photo';
+
+  @override
+  String get adminRejectPresetExpired => 'Document expired';
+
+  @override
+  String get adminRejectPresetMismatch => 'Name mismatch';
+
+  @override
+  String get adminRejectPresetOther => 'Other / reason';
+
+  @override
+  String get adminDocTypeCompanyRegistration => 'Registration certificate';
+
+  @override
+  String get adminDocTypeIdentity => 'Identity document';
+
+  @override
+  String get adminDocTypeOther => 'Other document';
+
+  @override
+  String get adminRotate => 'Rotate';
+
+  @override
+  String get adminComplaintReporter => 'Reporter';
+
+  @override
+  String get adminComplaintTarget => 'Complaint target';
 }

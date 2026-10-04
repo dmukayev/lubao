@@ -107,6 +107,16 @@ bool isLockedOutError(Object error) {
   return data is Map && data['message'] == 'Слишком много неверных попыток, попробуйте через 15 минут';
 }
 
+/// true, если аккаунт заблокирован админом (задача 026, п.5) — сервер
+/// отвечает 403 с кодом ACCOUNT_BLOCKED на входе (SMS-код, email+пароль) и
+/// на /auth/refresh, а не выдаёт токены с последующим молчаливым 401 на
+/// первом же запросе.
+bool isAccountBlockedError(Object error) {
+  if (error is! DioException) return false;
+  final data = error.response?.data;
+  return data is Map && data['code'] == 'ACCOUNT_BLOCKED';
+}
+
 /// true, если email при регистрации компании уже занят (см.
 /// AuthService.registerCompany, ConflictException) — предлагаем войти.
 bool isEmailTakenError(Object error) {

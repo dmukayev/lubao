@@ -41,7 +41,11 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
       // Дальше решает редирект роутера.
     } catch (e) {
       if (mounted) {
-        final message = isLockedOutError(e) ? t.companyLoginLockedOut : t.commonError;
+        final message = isAccountBlockedError(e)
+            ? t.accountBlockedMessage
+            : isLockedOutError(e)
+                ? t.companyLoginLockedOut
+                : t.commonError;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       }
     } finally {

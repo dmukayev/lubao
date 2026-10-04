@@ -38,22 +38,82 @@ class AdminRepository {
     return AdminComplaint.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<List<AdminCompanySummary>> companies() async {
-    final res = await _client.dio.get('/admin/companies');
-    return (res.data as List<dynamic>).map((e) => AdminCompanySummary.fromJson(e as Map<String, dynamic>)).toList();
+  /// Поиск/фильтр/пагинация (задача 026, п.2/п.10) — таблица компаний в
+  /// админке, а не весь список целиком (на пилоте уже сотни строк).
+  Future<AdminSearchPage<AdminCompanyRow>> searchCompanies({String? q, bool? verified, bool? blocked, int page = 1, int pageSize = 50}) async {
+    final res = await _client.dio.get('/admin/companies', queryParameters: {
+      if (q != null && q.isNotEmpty) 'q': q,
+      if (verified != null) 'verified': verified,
+      if (blocked != null) 'blocked': blocked,
+      'page': page,
+      'pageSize': pageSize,
+    });
+    final data = res.data as Map<String, dynamic>;
+    return AdminSearchPage(
+      items: (data['items'] as List<dynamic>).map((e) => AdminCompanyRow.fromJson(e as Map<String, dynamic>)).toList(),
+      total: data['total'] as int,
+    );
   }
 
-  Future<void> setCompanyVerified(String id, bool isVerified) async {
-    await _client.dio.patch('/admin/companies/$id/verify', data: {'isVerified': isVerified});
+  Future<AdminCompanyDetail> companyDetail(String id) async {
+    final res = await _client.dio.get('/admin/companies/$id');
+    return AdminCompanyDetail.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<List<AdminDriverSummary>> drivers() async {
-    final res = await _client.dio.get('/admin/drivers');
-    return (res.data as List<dynamic>).map((e) => AdminDriverSummary.fromJson(e as Map<String, dynamic>)).toList();
+  /// `reason` обязателен на бэкенде (задача 026, п.5) — любое изменение
+  /// «Проверена» видно в логе карточки. `force` — поставить «Проверена» без
+  /// одобренных документов («проверил лично»).
+  Future<void> setCompanyVerified(String id, bool isVerified, {required String reason, bool force = false}) async {
+    await _client.dio.patch('/admin/companies/$id/verify', data: {'isVerified': isVerified, 'reason': reason, 'force': force});
   }
 
-  Future<void> setDriverVerified(String id, bool isVerified) async {
-    await _client.dio.patch('/admin/drivers/$id/verify', data: {'isVerified': isVerified});
+  Future<String> resetCompanyPassword(String companyId) async {
+    final res = await _client.dio.post('/admin/companies/$companyId/reset-password');
+    return (res.data as Map<String, dynamic>)['tempPassword'] as String;
+  }
+
+  Future<void> blockCompany(String companyId, {required String reason}) async {
+    await _client.dio.post('/admin/companies/$companyId/block', data: {'reason': reason});
+  }
+
+  Future<void> unblockCompany(String companyId, {required String reason}) async {
+    await _client.dio.post('/admin/companies/$companyId/unblock', data: {'reason': reason});
+  }
+
+  Future<AdminSearchPage<AdminDriverRow>> searchDrivers({String? q, bool? verified, bool? blocked, int page = 1, int pageSize = 50}) async {
+    final res = await _client.dio.get('/admin/drivers', queryParameters: {
+      if (q != null && q.isNotEmpty) 'q': q,
+      if (verified != null) 'verified': verified,
+      if (blocked != null) 'blocked': blocked,
+      'page': page,
+      'pageSize': pageSize,
+    });
+    final data = res.data as Map<String, dynamic>;
+    return AdminSearchPage(
+      items: (data['items'] as List<dynamic>).map((e) => AdminDriverRow.fromJson(e as Map<String, dynamic>)).toList(),
+      total: data['total'] as int,
+    );
+  }
+
+  Future<AdminDriverDetail> driverDetail(String id) async {
+    final res = await _client.dio.get('/admin/drivers/$id');
+    return AdminDriverDetail.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> setDriverVerified(String id, bool isVerified, {required String reason, bool force = false}) async {
+    await _client.dio.patch('/admin/drivers/$id/verify', data: {'isVerified': isVerified, 'reason': reason, 'force': force});
+  }
+
+  Future<void> blockUser(String userId, {required String reason}) async {
+    await _client.dio.post('/admin/users/$userId/block', data: {'reason': reason});
+  }
+
+  Future<void> unblockUser(String userId, {required String reason}) async {
+    await _client.dio.post('/admin/users/$userId/unblock', data: {'reason': reason});
+  }
+
+  Future<void> revokeSessions(String userId) async {
+    await _client.dio.post('/admin/users/$userId/revoke-sessions');
   }
 
   Future<BodyType> createBodyType(String code, I18nText name) async {
