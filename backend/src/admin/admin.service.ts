@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { REQUIRED_DRIVER_DOC_TYPES } from '../drivers/drivers.service';
 import {
   CreateBodyTypeDto,
   CreatePermitDto,
   CreatePointDto,
+  ModerateCityDto,
   ReviewVerificationDocumentDto,
 } from './dto/admin.dto';
 
@@ -204,5 +205,66 @@ export class AdminService {
   async setPointActive(id: string, isActive: boolean) {
     const point = await this.prisma.point.update({ where: { id }, data: { isActive } });
     return { id: point.id, isActive: point.isActive };
+  }
+
+  async pendingCities() {
+    return this.prisma.city.findMany({
+      where: { cityStatus: 'PENDING' },
+      include: {
+        region: true,
+        // select, не include: true — иначе в ответ утекает passwordHash.
+        submittedBy: { select: { id: true, phone: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /// Очередь модерации городов, предложенных водителями/логистами через
+  /// «Нет моего города» (задача 021): APPROVE — админ переводит название на
+  /// kk/ru/zh(/en) и подтверждает; MERGE — это дубликат уже существующего
+  /// города, все водители/грузы переподвешиваются на канонический id;
+  /// REJECT — город остаётся как есть (на него уже может ссылаться водитель),
+  /// просто больше не предлагается новым сабмитам и уходит из очереди.
+  async moderateCity(id: string, adminUserId: string, dto: ModerateCityDto) {
+    const city = await this.prisma.city.findUnique({ where: { id } });
+    if (!city) throw new NotFoundException('City not found');
+
+    if (dto.action === 'APPROVE') {
+      if (!dto.name) throw new BadRequestException('name is required for APPROVE');
+      return this.prisma.city.update({
+        where: { id },
+        data: {
+          name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, ...(dto.name.en ? { en: dto.name.en } : {}) },
+          cityStatus: 'APPROVED',
+          reviewedByUserId: adminUserId,
+          reviewedAt: new Date(),
+        },
+      });
+    }
+
+    if (dto.action === 'MERGE') {
+      if (!dto.mergeIntoCityId) throw new BadRequestException('mergeIntoCityId is required for MERGE');
+      const target = await this.prisma.city.findUnique({ where: { id: dto.mergeIntoCityId } });
+      if (!target) throw new NotFoundException('Target city not found');
+
+      return this.prisma.$transaction(async (tx) => {
+        await tx.driver.updateMany({ where: { homeCityId: id }, data: { homeCityId: target.id } });
+        await tx.cargo.updateMany({ where: { destinationCityId: id }, data: { destinationCityId: target.id } });
+        await tx.point.updateMany({ where: { cityId: id }, data: { cityId: target.id } });
+        await tx.city.delete({ where: { id } });
+        return target;
+      });
+    }
+
+    // REJECT
+    return this.prisma.city.update({
+      where: { id },
+      data: {
+        cityStatus: 'REJECTED',
+        rejectReason: dto.rejectReason,
+        reviewedByUserId: adminUserId,
+        reviewedAt: new Date(),
+      },
+    });
   }
 }

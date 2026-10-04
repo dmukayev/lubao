@@ -13,6 +13,10 @@ class ReferenceDataRepository {
       countries: (data['countries'] as List<dynamic>)
           .map((e) => Country.fromJson(e as Map<String, dynamic>))
           .toList(),
+      regions: (data['regions'] as List<dynamic>?)
+              ?.map((e) => Region.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       cities: (data['cities'] as List<dynamic>).map((e) => City.fromJson(e as Map<String, dynamic>)).toList(),
       bodyTypes:
           (data['bodyTypes'] as List<dynamic>).map((e) => BodyType.fromJson(e as Map<String, dynamic>)).toList(),
@@ -24,5 +28,13 @@ class ReferenceDataRepository {
               .toList() ??
           const [],
     );
+  }
+
+  /// Город не нашёлся в справочнике — отправляем свободный текст + область,
+  /// регистрация продолжается сразу с новым City (status=PENDING, см. 021).
+  Future<City> submitCity({required String settlementName, required String regionId}) async {
+    final res = await _client.dio
+        .post('/reference-data/cities', data: {'settlementName': settlementName, 'regionId': regionId});
+    return City.fromJson(res.data as Map<String, dynamic>);
   }
 }

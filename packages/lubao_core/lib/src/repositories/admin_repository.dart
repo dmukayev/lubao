@@ -74,4 +74,25 @@ class AdminRepository {
   Future<void> setPointActive(String id, bool isActive) async {
     await _client.dio.patch('/admin/reference/points/$id/active', data: {'isActive': isActive});
   }
+
+  Future<List<AdminPendingCity>> pendingCities() async {
+    final res = await _client.dio.get('/admin/cities/pending');
+    return (res.data as List<dynamic>).map((e) => AdminPendingCity.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> approveCity(String id, I18nText name) async {
+    await _client.dio.patch('/admin/cities/$id/moderate', data: {'action': 'APPROVE', 'name': name.toJson()});
+  }
+
+  Future<void> mergeCity(String id, String mergeIntoCityId) async {
+    await _client.dio
+        .patch('/admin/cities/$id/moderate', data: {'action': 'MERGE', 'mergeIntoCityId': mergeIntoCityId});
+  }
+
+  Future<void> rejectCity(String id, {String? rejectReason}) async {
+    await _client.dio.patch('/admin/cities/$id/moderate', data: {
+      'action': 'REJECT',
+      if (rejectReason != null) 'rejectReason': rejectReason,
+    });
+  }
 }

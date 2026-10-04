@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/api_providers.dart';
+import '../../providers/data_providers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 class ReferenceScreen extends ConsumerStatefulWidget {
@@ -18,7 +19,7 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -27,11 +28,16 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
     super.dispose();
   }
 
-  Future<Map<String, String>?> _showNameDialog(BuildContext context, {required String title, bool withCode = true}) {
+  Future<Map<String, String>?> _showNameDialog(
+    BuildContext context, {
+    required String title,
+    bool withCode = true,
+    String? initialRu,
+  }) {
     final t = context.l10n;
     final codeController = TextEditingController();
     final kkController = TextEditingController();
-    final ruController = TextEditingController();
+    final ruController = TextEditingController(text: initialRu ?? '');
     final zhController = TextEditingController();
 
     return showDialog<Map<String, String>>(
@@ -147,6 +153,68 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
     ref.invalidate(referenceDataProvider);
   }
 
+  /// Подтвердить город, предложенный пользователем (задача 021): диалог
+  /// переводов предзаполнен его `ru`-названием как отправная точка.
+  Future<void> _approvePendingCity(AdminPendingCity pending) async {
+    final t = context.l10n;
+    final result = await _showNameDialog(context, title: t.adminApprove, withCode: false, initialRu: pending.name);
+    if (result == null) return;
+    await ref.read(adminRepositoryProvider).approveCity(
+          pending.id,
+          I18nText(kk: result['kk']!, ru: result['ru']!, zh: result['zh']!),
+        );
+    ref.invalidate(pendingCitiesProvider);
+    ref.invalidate(referenceDataProvider);
+  }
+
+  Future<void> _mergePendingCity(AdminPendingCity pending, List<City> cities, String locale) async {
+    final t = context.l10n;
+    String? targetId;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(t.adminMergeCity),
+          content: DropdownButtonFormField<String>(
+            initialValue: targetId,
+            decoration: InputDecoration(labelText: t.adminMergeCityTarget, border: const OutlineInputBorder()),
+            items: cities
+                .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name.forLanguageCode(locale))))
+                .toList(),
+            onChanged: (value) => setDialogState(() => targetId = value),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.commonCancel)),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(t.adminMergeCity)),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || targetId == null) return;
+    await ref.read(adminRepositoryProvider).mergeCity(pending.id, targetId!);
+    ref.invalidate(pendingCitiesProvider);
+    ref.invalidate(referenceDataProvider);
+  }
+
+  Future<void> _rejectPendingCity(AdminPendingCity pending) async {
+    final t = context.l10n;
+    final controller = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.adminReject),
+        content: AppTextField(label: t.adminRejectReasonLabel, controller: controller, maxLines: 3),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.commonCancel)),
+          FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: Text(t.commonDone)),
+        ],
+      ),
+    );
+    if (reason == null) return;
+    await ref.read(adminRepositoryProvider).rejectCity(pending.id, rejectReason: reason.trim());
+    ref.invalidate(pendingCitiesProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
@@ -160,6 +228,7 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
           Tab(text: t.driverSetupVehicleBodyType),
           Tab(text: t.driverSetupPermits),
           Tab(text: t.navFeed),
+          Tab(text: t.adminPendingCitiesTab),
         ]),
       ),
       body: referenceData.when(
@@ -185,9 +254,73 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
               onToggle: _togglePoint,
               addLabel: t.adminAddPoint,
             ),
+            _PendingCitiesList(
+              onApprove: _approvePendingCity,
+              onMerge: (pending) => _mergePendingCity(pending, refData.cities, locale),
+              onReject: _rejectPendingCity,
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PendingCitiesList extends ConsumerWidget {
+  const _PendingCitiesList({required this.onApprove, required this.onMerge, required this.onReject});
+
+  final void Function(AdminPendingCity) onApprove;
+  final void Function(AdminPendingCity) onMerge;
+  final void Function(AdminPendingCity) onReject;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.l10n;
+    final pending = ref.watch(pendingCitiesProvider);
+
+    return pending.when(
+      loading: () => const LoadingView(),
+      error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(pendingCitiesProvider)),
+      data: (list) {
+        if (list.isEmpty) return EmptyState(message: t.adminPendingCitiesEmpty, icon: LucideIcons.mapPin);
+
+        return RefreshIndicator(
+          onRefresh: () async => ref.invalidate(pendingCitiesProvider),
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: list.length,
+            itemBuilder: (context, index) {
+              final city = list[index];
+              return AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(city.name, style: Theme.of(context).textTheme.titleMedium),
+                    if (city.regionName != null) Text('${t.adminCityRegion}: ${city.regionName}'),
+                    if (city.submittedByLabel != null) Text('${t.adminCitySubmittedBy}: ${city.submittedByLabel}'),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton(onPressed: () => onApprove(city), child: Text(t.adminApprove)),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton(onPressed: () => onMerge(city), child: Text(t.adminMergeCity)),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton(onPressed: () => onReject(city), child: Text(t.adminReject)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

@@ -164,6 +164,40 @@ class AdminCompanySummary {
       );
 }
 
+/// Город, предложенный водителем/логистом через «Нет моего города»
+/// (задача 021) и ждущий подтверждения/объединения/отклонения админом.
+class AdminPendingCity {
+  const AdminPendingCity({
+    required this.id,
+    required this.name,
+    this.regionName,
+    this.submittedByLabel,
+    required this.createdAt,
+  });
+
+  final String id;
+
+  /// Пока не подтверждён — заполнен только `ru` (как ввёл пользователь).
+  final String name;
+  final String? regionName;
+  final String? submittedByLabel;
+  final DateTime createdAt;
+
+  factory AdminPendingCity.fromJson(Map<String, dynamic> json) {
+    final name = json['name'] as Map<String, dynamic>;
+    final region = json['region'] as Map<String, dynamic>?;
+    final submittedBy = json['submittedBy'] as Map<String, dynamic>?;
+    final regionName = region == null ? null : (region['name'] as Map<String, dynamic>);
+    return AdminPendingCity(
+      id: json['id'] as String,
+      name: (name['ru'] as String?) ?? (name['kk'] as String?) ?? (name['zh'] as String?) ?? '',
+      regionName: regionName == null ? null : (regionName['ru'] as String? ?? ''),
+      submittedByLabel: submittedBy == null ? null : (submittedBy['phone'] as String? ?? submittedBy['email'] as String?),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
+  }
+}
+
 class AdminDriverSummary {
   const AdminDriverSummary({
     required this.id,

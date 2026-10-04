@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SubmitCityDto } from './dto/submit-city.dto';
 
 @Injectable()
 export class ReferenceDataService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAll() {
-    const [countries, cities, bodyTypes, permits, points, exchangeRates] = await Promise.all([
+    const [countries, regions, cities, bodyTypes, permits, points, exchangeRates] = await Promise.all([
       this.prisma.country.findMany({ orderBy: { sortOrder: 'asc' } }),
+      this.prisma.region.findMany(),
       this.prisma.city.findMany(),
       this.prisma.bodyType.findMany({ orderBy: { sortOrder: 'asc' } }),
       this.prisma.permit.findMany({ orderBy: { sortOrder: 'asc' } }),
@@ -15,7 +17,25 @@ export class ReferenceDataService {
       this.latestExchangeRates(),
     ]);
 
-    return { countries, cities, bodyTypes, permits, points, exchangeRates };
+    return { countries, regions, cities, bodyTypes, permits, points, exchangeRates };
+  }
+
+  /// Водитель/логист не нашёл свой город в справочнике — создаём его сразу
+  /// (cityStatus=PENDING), чтобы регистрация/заполнение профиля не
+  /// прерывались; админ позже подтверждает/объединяет/отклоняет (см. 021).
+  async submitCity(userId: string, dto: SubmitCityDto) {
+    const region = await this.prisma.region.findUnique({ where: { id: dto.regionId } });
+    if (!region) throw new NotFoundException('Region not found');
+
+    return this.prisma.city.create({
+      data: {
+        name: { ru: dto.settlementName },
+        countryId: region.countryId,
+        regionId: region.id,
+        cityStatus: 'PENDING',
+        submittedByUserId: userId,
+      },
+    });
   }
 
   /// Последний известный курс по каждой валюте (на дату effectiveDate).

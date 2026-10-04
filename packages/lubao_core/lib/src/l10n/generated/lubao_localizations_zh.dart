@@ -177,7 +177,39 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   }
 
   @override
+  String driverSetupStepOf(int step, int total) {
+    return '第 $step 步，共 $total 步';
+  }
+
+  @override
   String get driverSetupFullName => '姓名';
+
+  @override
+  String get driverSetupFullNameError => '请输入姓名：2-80个字母，不含数字';
+
+  @override
+  String get driverSetupHomeCityError => '请选择城市';
+
+  @override
+  String get driverSetupBodyTypeError => '请选择车厢类型';
+
+  @override
+  String get cityNotListed => '没有我的城市';
+
+  @override
+  String get addCitySettlementLabel => '居民点名称';
+
+  @override
+  String get addCitySettlementError => '请输入居民点名称';
+
+  @override
+  String get addCityRegionLabel => '州/地区';
+
+  @override
+  String get addCityRegionError => '请选择州/地区';
+
+  @override
+  String get addCitySubmit => '继续';
 
   @override
   String get driverSetupHomeCity => '常住城市';
@@ -785,6 +817,24 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminReferenceTitle => '基础数据';
+
+  @override
+  String get adminPendingCitiesTab => '新城市';
+
+  @override
+  String get adminPendingCitiesEmpty => '没有用户提交的新城市';
+
+  @override
+  String get adminMergeCity => '合并';
+
+  @override
+  String get adminMergeCityTarget => '合并到的城市';
+
+  @override
+  String get adminCitySubmittedBy => '提交人';
+
+  @override
+  String get adminCityRegion => '州/地区';
 
   @override
   String get adminAddBodyType => '添加车厢类型';

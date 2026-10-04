@@ -75,6 +75,9 @@ export class DriversService {
   /// Одновременно и завершение быстрой регистрации (если анкеты ещё нет —
   /// создаёт её), и редактирование профиля в дальнейшем (если уже есть).
   async updateProfile(userId: string, input: UpdateDriverDto) {
+    const city = await this.prisma.city.findUnique({ where: { id: input.homeCityId } });
+    if (!city) throw new NotFoundException('City not found');
+
     const existing = await this.prisma.driver.findUnique({ where: { userId } });
 
     const driverId = await this.prisma.$transaction(async (tx) => {

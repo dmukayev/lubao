@@ -17,20 +17,48 @@ class Country {
 }
 
 class City {
-  const City({required this.id, required this.countryId, this.regionId, required this.name, required this.isCapital});
+  const City({
+    required this.id,
+    required this.countryId,
+    this.regionId,
+    this.code,
+    required this.name,
+    required this.isCapital,
+    this.cityStatus = CityStatus.approved,
+  });
 
   final String id;
   final String countryId;
   final String? regionId;
+  final String? code;
   final I18nText name;
   final bool isCapital;
+  final CityStatus cityStatus;
 
   factory City.fromJson(Map<String, dynamic> json) => City(
         id: json['id'] as String,
         countryId: json['countryId'] as String,
         regionId: json['regionId'] as String?,
+        code: json['code'] as String?,
         name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
         isCapital: json['isCapital'] as bool? ?? false,
+        cityStatus: cityStatusFromJson(json['cityStatus'] as String? ?? 'APPROVED'),
+      );
+}
+
+class Region {
+  const Region({required this.id, required this.countryId, required this.name, this.code});
+
+  final String id;
+  final String countryId;
+  final I18nText name;
+  final String? code;
+
+  factory Region.fromJson(Map<String, dynamic> json) => Region(
+        id: json['id'] as String,
+        countryId: json['countryId'] as String,
+        name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
+        code: json['code'] as String?,
       );
 }
 
@@ -91,16 +119,21 @@ class ExchangeRate {
 /// Один пункт комбинированного автодополнения «страна + город».
 /// [cityId] == null означает выбор всей страны без конкретного города.
 class CountryCityOption {
-  const CountryCityOption({required this.label, required this.countryId, this.cityId});
+  const CountryCityOption({required this.label, required this.countryId, this.cityId, this.isAddCityAction = false});
 
   final String label;
   final String countryId;
   final String? cityId;
+
+  /// true — это не город, а синтетический пункт «Нет моего города»
+  /// (последний в списке автодополнения, см. задачу 021).
+  final bool isAddCityAction;
 }
 
 class ReferenceData {
   const ReferenceData({
     required this.countries,
+    this.regions = const [],
     required this.cities,
     required this.bodyTypes,
     required this.permits,
@@ -109,6 +142,7 @@ class ReferenceData {
   });
 
   final List<Country> countries;
+  final List<Region> regions;
   final List<City> cities;
   final List<BodyType> bodyTypes;
   final List<Permit> permits;
@@ -119,6 +153,7 @@ class ReferenceData {
   City? cityById(String? id) => id == null ? null : cities.where((c) => c.id == id).firstOrNull;
   BodyType bodyTypeById(String id) => bodyTypes.firstWhere((b) => b.id == id, orElse: () => bodyTypes.first);
   LoadingPoint pointById(String id) => points.firstWhere((p) => p.id == id, orElse: () => points.first);
+  List<Region> regionsOf(String countryId) => regions.where((r) => r.countryId == countryId).toList();
 
   /// Пересчёт суммы в тенге по последнему известному курсу. `null`, если
   /// курса для этой валюты ещё нет (тогда пересчёт просто не показываем).

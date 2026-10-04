@@ -6,7 +6,6 @@ import 'package:lubao_core/lubao_core.dart';
 import '../providers/auth_provider.dart';
 import '../features/onboarding/role_select_screen.dart';
 import '../features/onboarding/driver_login_screen.dart';
-import '../features/onboarding/driver_otp_screen.dart';
 import '../features/onboarding/company_login_screen.dart';
 import '../features/onboarding/company_otp_screen.dart';
 import '../features/driver/driver_shell.dart';
@@ -91,10 +90,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/devices', builder: (context, state) => const DevicesScreen()),
       GoRoute(path: '/role-select', builder: (context, state) => const RoleSelectScreen()),
       GoRoute(path: '/login/driver', builder: (context, state) => const DriverLoginScreen()),
-      GoRoute(
-        path: '/login/driver/otp',
-        builder: (context, state) => DriverOtpScreen(phone: state.extra as String),
-      ),
       GoRoute(path: '/login/company', builder: (context, state) => const CompanyLoginScreen()),
       GoRoute(
         path: '/login/company/otp',

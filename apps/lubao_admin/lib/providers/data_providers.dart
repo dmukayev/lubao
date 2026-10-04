@@ -22,3 +22,7 @@ final adminCompaniesProvider = FutureProvider.autoDispose<List<AdminCompanySumma
 final adminDriversProvider = FutureProvider.autoDispose<List<AdminDriverSummary>>((ref) {
   return ref.watch(adminRepositoryProvider).drivers();
 });
+
+final pendingCitiesProvider = FutureProvider.autoDispose<List<AdminPendingCity>>((ref) {
+  return ref.watch(adminRepositoryProvider).pendingCities();
+});

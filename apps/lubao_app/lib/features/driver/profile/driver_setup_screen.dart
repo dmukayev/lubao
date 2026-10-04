@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
+import 'add_city_sheet.dart';
 
 const _capacityPresets = [10.0, 15.0, 20.0, 25.0];
 
@@ -32,6 +33,17 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
   final _selectedPermits = <String>{};
   bool _initialized = false;
   bool _saving = false;
+  TextEditingController? _cityFieldController;
+
+  String? _fullNameError;
+  String? _homeCityError;
+  String? _bodyTypeError;
+
+  /// Регистрация — 3 шага с индикатором (задача 021): 0 — имя+город,
+  /// 1 — машина, 2 — страны. Редактирование профиля (isRegistration==false)
+  /// остаётся одной формой, как раньше — это не регистрация.
+  int _step = 0;
+  static const _stepCount = 3;
 
   void _initFromDriver(Driver driver) {
     if (_initialized) return;
@@ -53,12 +65,50 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
     super.dispose();
   }
 
+  bool _validateStep0() {
+    final t = context.l10n;
+    final fullName = _fullNameController.text.trim();
+    setState(() {
+      _fullNameError = isValidPersonName(fullName) ? null : t.driverSetupFullNameError;
+      _homeCityError = _homeCityId == null ? t.driverSetupHomeCityError : null;
+    });
+    return _fullNameError == null && _homeCityError == null;
+  }
+
+  bool _validateStep1() {
+    final t = context.l10n;
+    setState(() => _bodyTypeError = _bodyTypeId == null ? t.driverSetupBodyTypeError : null);
+    return _bodyTypeError == null;
+  }
+
+  void _goNext() {
+    final valid = _step == 0 ? _validateStep0() : _validateStep1();
+    if (!valid) return;
+    setState(() => _step += 1);
+  }
+
+  void _goBack() {
+    if (_step == 0) {
+      Navigator.of(context).maybePop();
+    } else {
+      setState(() => _step -= 1);
+    }
+  }
+
   Future<void> _submit() async {
-    if (_homeCityId == null || _bodyTypeId == null) return;
+    final t = context.l10n;
+    final fullName = _fullNameController.text.trim();
+    setState(() {
+      _fullNameError = isValidPersonName(fullName) ? null : t.driverSetupFullNameError;
+      _homeCityError = _homeCityId == null ? t.driverSetupHomeCityError : null;
+      _bodyTypeError = _bodyTypeId == null ? t.driverSetupBodyTypeError : null;
+    });
+    if (_fullNameError != null || _homeCityError != null || _bodyTypeError != null) return;
+
     setState(() => _saving = true);
     try {
       final updated = await ref.read(driverRepositoryProvider).updateProfile(DriverSetupInput(
-            fullName: _fullNameController.text.trim(),
+            fullName: fullName,
             homeCityId: _homeCityId!,
             anyCountry: _anyCountry,
             directionCountryIds: _anyCountry ? [] : _selectedCountries.toList(),
@@ -88,7 +138,12 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
     final driver = ref.watch(sessionProvider)?.driver;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.isRegistration ? t.driverRegisterTitle : t.driverSetupTitle)),
+      appBar: AppBar(
+        leading: widget.isRegistration
+            ? IconButton(icon: const Icon(LucideIcons.arrowLeft), onPressed: _goBack)
+            : null,
+        title: Text(widget.isRegistration ? t.driverRegisterTitle : t.driverSetupTitle),
+      ),
       body: referenceData.when(
         loading: () => const LoadingView(),
         error: (e, st) => ErrorView(message: t.commonError),
@@ -101,30 +156,66 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
               ? ''
               : homeCityOptions.firstWhere((o) => o.cityId == initialCity.id, orElse: () => homeCityOptions.first).label;
 
-          return ListView(
-            padding: const EdgeInsets.all(AppSpacing.screen),
-            children: [
-              AppTextField(label: t.driverSetupFullName, controller: _fullNameController),
+          final step0Fields = [
+              AppTextField(
+                label: t.driverSetupFullName,
+                controller: _fullNameController,
+                errorText: _fullNameError,
+              ),
               const SizedBox(height: AppSpacing.md),
               Autocomplete<CountryCityOption>(
                 initialValue: TextEditingValue(text: initialCityLabel),
                 displayStringForOption: (o) => o.label,
                 optionsBuilder: (value) {
-                  if (value.text.isEmpty) return homeCityOptions;
-                  final query = value.text.toLowerCase();
-                  return homeCityOptions.where((o) => o.label.toLowerCase().contains(query));
+                  final addCityOption = CountryCityOption(label: t.cityNotListed, countryId: '', isAddCityAction: true);
+                  if (value.text.trim().isEmpty) return [...homeCityOptions, addCityOption];
+                  final matches = searchCities(refData.cities, refData.countries, value.text);
+                  final matchedOptions = <CountryCityOption>[];
+                  for (final city in matches) {
+                    for (final option in homeCityOptions) {
+                      if (option.cityId == city.id) {
+                        matchedOptions.add(option);
+                        break;
+                      }
+                    }
+                  }
+                  return [...matchedOptions, addCityOption];
                 },
-                onSelected: (option) => setState(() => _homeCityId = option.cityId),
-                fieldViewBuilder: (context, controller, focusNode, onSubmitted) => AppTextField(
-                  label: t.driverSetupHomeCity,
-                  hintText: t.searchCityCountryHint,
-                  controller: controller,
-                  focusNode: focusNode,
-                  onSubmitted: (_) => onSubmitted(),
-                ),
+                onSelected: (option) async {
+                  if (option.isAddCityAction) {
+                    final city = await showAddCitySheet(context, ref, refData);
+                    if (city != null) {
+                      final countryName = refData.countryById(city.countryId).name.forLanguageCode(locale);
+                      _cityFieldController?.text = '${city.name.forLanguageCode(locale)}, $countryName';
+                      setState(() {
+                        _homeCityId = city.id;
+                        _homeCityError = null;
+                      });
+                    } else {
+                      _cityFieldController?.text = '';
+                    }
+                    return;
+                  }
+                  setState(() {
+                    _homeCityId = option.cityId;
+                    _homeCityError = null;
+                  });
+                },
+                fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
+                  _cityFieldController = controller;
+                  return AppTextField(
+                    label: t.driverSetupHomeCity,
+                    hintText: t.searchCityCountryHint,
+                    controller: controller,
+                    focusNode: focusNode,
+                    onSubmitted: (_) => onSubmitted(),
+                    errorText: _homeCityError,
+                  );
+                },
               ),
-              const SizedBox(height: AppSpacing.xxl),
+          ];
 
+          final step1Fields = [
               Text(t.driverSetupVehicleTitle, style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.xs),
               Text(t.driverSetupVehicleSubtitle, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
@@ -132,30 +223,40 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
               for (var i = 0; i < refData.bodyTypes.length; i += 2)
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        child: _VehicleTile(
-                          label: refData.bodyTypes[i].name.forLanguageCode(locale),
-                          selected: _bodyTypeId == refData.bodyTypes[i].id,
-                          onTap: () => setState(() => _bodyTypeId = refData.bodyTypes[i].id),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      if (i + 1 < refData.bodyTypes.length)
+                  // IntrinsicHeight — иначе Row(crossAxisAlignment: stretch) внутри
+                  // ListView (где высота родителя не ограничена) пытается растянуть
+                  // детей на "бесконечную" высоту и падает с BoxConstraints forces
+                  // an infinite height.
+                  child: IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                         Expanded(
                           child: _VehicleTile(
-                            label: refData.bodyTypes[i + 1].name.forLanguageCode(locale),
-                            selected: _bodyTypeId == refData.bodyTypes[i + 1].id,
-                            onTap: () => setState(() => _bodyTypeId = refData.bodyTypes[i + 1].id),
+                            label: refData.bodyTypes[i].name.forLanguageCode(locale),
+                            selected: _bodyTypeId == refData.bodyTypes[i].id,
+                            onTap: () => setState(() => _bodyTypeId = refData.bodyTypes[i].id),
                           ),
-                        )
-                      else
-                        const Expanded(child: SizedBox()),
-                    ],
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        if (i + 1 < refData.bodyTypes.length)
+                          Expanded(
+                            child: _VehicleTile(
+                              label: refData.bodyTypes[i + 1].name.forLanguageCode(locale),
+                              selected: _bodyTypeId == refData.bodyTypes[i + 1].id,
+                              onTap: () => setState(() => _bodyTypeId = refData.bodyTypes[i + 1].id),
+                            ),
+                          )
+                        else
+                          const Expanded(child: SizedBox()),
+                      ],
+                    ),
                   ),
                 ),
+              if (_bodyTypeError != null) ...[
+                Text(_bodyTypeError!, style: AppTextStyles.caption.copyWith(color: AppColors.error)),
+                const SizedBox(height: AppSpacing.sm),
+              ],
               const SizedBox(height: AppSpacing.md),
               Text(t.driverSetupCapacity, style: AppTextStyles.bodyStrong),
               const SizedBox(height: AppSpacing.sm),
@@ -197,8 +298,9 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                   }).toList(),
                 ),
               ],
-              const SizedBox(height: AppSpacing.xxl),
+          ];
 
+          final step2Fields = [
               Text(t.driverSetupDirectionsTitle, style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.xs),
               Text(t.driverSetupDirectionsSubtitle, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
@@ -241,13 +343,65 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: AppSpacing.xxl),
-              PrimaryButton(
-                label: _anyCountry || _selectedCountries.isEmpty
-                    ? t.driverSetupSubmit
-                    : t.driverSetupCountriesSelected(_selectedCountries.length),
-                loading: _saving,
-                onPressed: _submit,
+          ];
+
+          if (!widget.isRegistration) {
+            return ListView(
+              padding: const EdgeInsets.all(AppSpacing.screen),
+              children: [
+                ...step0Fields,
+                const SizedBox(height: AppSpacing.xxl),
+                ...step1Fields,
+                const SizedBox(height: AppSpacing.xxl),
+                ...step2Fields,
+                const SizedBox(height: AppSpacing.xxl),
+                PrimaryButton(
+                  label: _anyCountry || _selectedCountries.isEmpty
+                      ? t.driverSetupSubmit
+                      : t.driverSetupCountriesSelected(_selectedCountries.length),
+                  loading: _saving,
+                  onPressed: _submit,
+                ),
+              ],
+            );
+          }
+
+          final stepFields = [step0Fields, step1Fields, step2Fields][_step];
+          final isLastStep = _step == _stepCount - 1;
+
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    StepProgress(currentStep: _step + 1, totalSteps: _stepCount),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      t.driverSetupStepOf(_step + 1, _stepCount),
+                      style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                  children: stepFields,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.screen),
+                child: PrimaryButton(
+                  label: isLastStep
+                      ? (_anyCountry || _selectedCountries.isEmpty
+                          ? t.driverSetupSubmit
+                          : t.driverSetupCountriesSelected(_selectedCountries.length))
+                      : t.commonNext,
+                  loading: _saving,
+                  onPressed: isLastStep ? _submit : _goNext,
+                ),
               ),
             ],
           );

@@ -90,6 +90,12 @@ enum VerificationStatus {
   REJECTED
 }
 
+enum CityStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum NotificationChannel {
   PUSH
   WECOM
@@ -171,17 +177,25 @@ model Region {
 }
 
 model City {
-  id        String   @id @default(uuid())
-  countryId String
-  country   Country  @relation(fields: [countryId], references: [id])
-  regionId  String?
-  region    Region?  @relation(fields: [regionId], references: [id])
-  name      Json
-  isCapital Boolean  @default(false)
-  lat       Decimal? @db.Decimal(9, 6)
-  lng       Decimal? @db.Decimal(9, 6)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String     @id @default(uuid())
+  countryId         String
+  country           Country    @relation(fields: [countryId], references: [id])
+  regionId          String?
+  region            Region?    @relation(fields: [regionId], references: [id])
+  code              String?    @unique
+  name              Json
+  isCapital         Boolean    @default(false)
+  lat               Decimal?   @db.Decimal(9, 6)
+  lng               Decimal?   @db.Decimal(9, 6)
+  cityStatus        CityStatus @default(APPROVED)
+  submittedByUserId String?
+  submittedBy       User?      @relation("CitySubmittedBy", fields: [submittedByUserId], references: [id])
+  reviewedByUserId  String?
+  reviewedBy        User?      @relation("CityReviewedBy", fields: [reviewedByUserId], references: [id])
+  reviewedAt        DateTime?
+  rejectReason      String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
   points             Point[]
   driversHomeCity    Driver[]
@@ -189,6 +203,7 @@ model City {
 
   @@index([countryId])
   @@index([regionId])
+  @@index([cityStatus])
   @@map("cities")
 }
 
@@ -276,6 +291,8 @@ model User {
   auditLogs              AuditLog[]
   reviewedDocuments      VerificationDocument[] @relation("VerificationDocumentReviewer")
   sessions               Session[]
+  citiesSubmitted        City[]                  @relation("CitySubmittedBy")
+  citiesReviewed         City[]                  @relation("CityReviewedBy")
 
   @@map("users")
 }

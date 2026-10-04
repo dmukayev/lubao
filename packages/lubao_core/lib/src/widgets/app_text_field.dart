@@ -12,6 +12,8 @@ class AppTextField extends StatelessWidget {
     this.focusNode,
     this.onSubmitted,
     this.onChanged,
+    this.errorText,
+    this.enabled = true,
   });
 
   final String label;
@@ -23,6 +25,11 @@ class AppTextField extends StatelessWidget {
   final FocusNode? focusNode;
   final ValueChanged<String>? onSubmitted;
   final ValueChanged<String>? onChanged;
+  final bool enabled;
+
+  /// Текст ошибки под полем (красным) — для required-полей, которые не
+  /// заполнены при сабмите (задача 021: не молчать, а показать причину).
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -34,9 +41,11 @@ class AppTextField extends StatelessWidget {
       maxLines: maxLines,
       onSubmitted: onSubmitted,
       onChanged: onChanged,
+      enabled: enabled,
       decoration: InputDecoration(
         labelText: label,
         hintText: hintText,
+        errorText: errorText,
         border: const OutlineInputBorder(),
       ),
     );

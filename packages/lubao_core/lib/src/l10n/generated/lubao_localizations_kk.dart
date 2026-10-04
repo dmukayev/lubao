@@ -180,7 +180,40 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   }
 
   @override
+  String driverSetupStepOf(int step, int total) {
+    return '$total-ден $step-қадам';
+  }
+
+  @override
   String get driverSetupFullName => 'Т.А.Ә.';
+
+  @override
+  String get driverSetupFullNameError =>
+      'Атыңызды енгізіңіз: 2-80 әріп, сандарсыз';
+
+  @override
+  String get driverSetupHomeCityError => 'Қаланы таңдаңыз';
+
+  @override
+  String get driverSetupBodyTypeError => 'Кузов түрін таңдаңыз';
+
+  @override
+  String get cityNotListed => 'Менің қалам тізімде жоқ';
+
+  @override
+  String get addCitySettlementLabel => 'Елді мекен';
+
+  @override
+  String get addCitySettlementError => 'Елді мекен атауын енгізіңіз';
+
+  @override
+  String get addCityRegionLabel => 'Облыс/өңір';
+
+  @override
+  String get addCityRegionError => 'Облысты таңдаңыз';
+
+  @override
+  String get addCitySubmit => 'Жалғастыру';
 
   @override
   String get driverSetupHomeCity => 'Тұрғылықты қала';
@@ -796,6 +829,24 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminReferenceTitle => 'Анықтамалықтар';
+
+  @override
+  String get adminPendingCitiesTab => 'Жаңа қалалар';
+
+  @override
+  String get adminPendingCitiesEmpty => 'Пайдаланушылардан жаңа қалалар жоқ';
+
+  @override
+  String get adminMergeCity => 'Біріктіру';
+
+  @override
+  String get adminMergeCityTarget => 'Біріктіретін қала';
+
+  @override
+  String get adminCitySubmittedBy => 'Қосқан';
+
+  @override
+  String get adminCityRegion => 'Облыс';
 
   @override
   String get adminAddBodyType => 'Кузов түрін қосу';

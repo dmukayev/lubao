@@ -424,11 +424,71 @@ abstract class LubaoLocalizations {
   /// **'Профиль заполнен на {percent}% — проверенные водители получают в 3 раза больше приглашений'**
   String profileCompleteness(int percent);
 
+  /// No description provided for @driverSetupStepOf.
+  ///
+  /// In ru, this message translates to:
+  /// **'Шаг {step} из {total}'**
+  String driverSetupStepOf(int step, int total);
+
   /// No description provided for @driverSetupFullName.
   ///
   /// In ru, this message translates to:
   /// **'Ф.И.О.'**
   String get driverSetupFullName;
+
+  /// No description provided for @driverSetupFullNameError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите имя: 2-80 букв, без цифр'**
+  String get driverSetupFullNameError;
+
+  /// No description provided for @driverSetupHomeCityError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите город'**
+  String get driverSetupHomeCityError;
+
+  /// No description provided for @driverSetupBodyTypeError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите тип кузова'**
+  String get driverSetupBodyTypeError;
+
+  /// No description provided for @cityNotListed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет моего города'**
+  String get cityNotListed;
+
+  /// No description provided for @addCitySettlementLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Населённый пункт'**
+  String get addCitySettlementLabel;
+
+  /// No description provided for @addCitySettlementError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите название населённого пункта'**
+  String get addCitySettlementError;
+
+  /// No description provided for @addCityRegionLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Область/регион'**
+  String get addCityRegionLabel;
+
+  /// No description provided for @addCityRegionError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите область'**
+  String get addCityRegionError;
+
+  /// No description provided for @addCitySubmit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Продолжить'**
+  String get addCitySubmit;
 
   /// No description provided for @driverSetupHomeCity.
   ///
@@ -1611,6 +1671,42 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Справочники'**
   String get adminReferenceTitle;
+
+  /// No description provided for @adminPendingCitiesTab.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новые города'**
+  String get adminPendingCitiesTab;
+
+  /// No description provided for @adminPendingCitiesEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет новых городов от пользователей'**
+  String get adminPendingCitiesEmpty;
+
+  /// No description provided for @adminMergeCity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Объединить'**
+  String get adminMergeCity;
+
+  /// No description provided for @adminMergeCityTarget.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город для объединения'**
+  String get adminMergeCityTarget;
+
+  /// No description provided for @adminCitySubmittedBy.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавил'**
+  String get adminCitySubmittedBy;
+
+  /// No description provided for @adminCityRegion.
+  ///
+  /// In ru, this message translates to:
+  /// **'Область'**
+  String get adminCityRegion;
 
   /// No description provided for @adminAddBodyType.
   ///

@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-type I18n = { kk: string; ru: string; zh: string };
+type I18n = { kk: string; ru: string; zh: string; en?: string };
 
 const countries: {
   code: string;
@@ -49,38 +49,94 @@ const kzRegions: { code: string; name: I18n; adminCenter: I18n }[] = [
   { code: 'ULYTAU', name: { kk: 'Ұлытау облысы', ru: 'Улытауская область', zh: '乌雷套州' }, adminCenter: { kk: 'Жезқазған', ru: 'Жезказган', zh: '杰兹卡兹甘' } },
 ];
 
-const kzRepublicanCities: I18n[] = [
-  { kk: 'Астана', ru: 'Астана', zh: '阿斯塔纳' },
-  { kk: 'Алматы', ru: 'Алматы', zh: '阿拉木图' },
-  { kk: 'Шымкент', ru: 'Шымкент', zh: '奇姆肯特' },
+const kzRepublicanCities: { code: string; name: I18n; isCapital: boolean }[] = [
+  { code: 'KZ-ASTANA', name: { kk: 'Астана', ru: 'Астана', zh: '阿斯塔纳' }, isCapital: true },
+  { code: 'KZ-ALMATY', name: { kk: 'Алматы', ru: 'Алматы', zh: '阿拉木图' }, isCapital: false },
+  { code: 'KZ-SHYMKENT', name: { kk: 'Шымкент', ru: 'Шымкент', zh: '奇姆肯特' }, isCapital: false },
 ];
 
 // Хоргос — приграничный город/сухой порт в Жетісуской области, рядом с Жаркентом.
 const khorgosCity: I18n = { kk: 'Қорғас', ru: 'Хоргос', zh: '霍尔果斯' };
 const zharkentCity: I18n = { kk: 'Жаркент', ru: 'Жаркент', zh: '扎尔肯特' };
 
+// Дополнительные города/райцентры по областям — реальные, проверенные
+// названия (не выдумываем переводы: zh оставлен пустым там, где нет
+// уверенного перевода — по тексту задачи это ожидаемо и даёт фолбэк на ru).
+// Это не исчерпывающий список всех ~200 райцентров РК — честная, точная
+// выборка самых известных городов; остальные районные центры со временем
+// появятся через «Нет моего города» → модерация админом (задача 021).
+const kzDistrictCities: { code: string; regionCode: string; name: I18n }[] = [
+  { code: 'KZ-ABAI-AYAGOZ', regionCode: 'ABAI', name: { kk: 'Аягөз', ru: 'Аягоз', zh: '' } },
+  { code: 'KZ-ABAI-KURCHATOV', regionCode: 'ABAI', name: { kk: 'Курчатов', ru: 'Курчатов', zh: '' } },
+  { code: 'KZ-AKMOLA-STEPNOGORSK', regionCode: 'AKMOLA', name: { kk: 'Степногорск', ru: 'Степногорск', zh: '' } },
+  { code: 'KZ-AKMOLA-SHCHUCHINSK', regionCode: 'AKMOLA', name: { kk: 'Щучинск', ru: 'Щучинск', zh: '' } },
+  { code: 'KZ-AKMOLA-ATBASAR', regionCode: 'AKMOLA', name: { kk: 'Атбасар', ru: 'Атбасар', zh: '' } },
+  { code: 'KZ-AKTOBE-KHROMTAU', regionCode: 'AKTOBE', name: { kk: 'Хромтау', ru: 'Хромтау', zh: '' } },
+  { code: 'KZ-AKTOBE-SHALKAR', regionCode: 'AKTOBE', name: { kk: 'Шалқар', ru: 'Шалкар', zh: '' } },
+  { code: 'KZ-ALMATY_REGION-TALGAR', regionCode: 'ALMATY_REGION', name: { kk: 'Талғар', ru: 'Талгар', zh: '' } },
+  { code: 'KZ-ALMATY_REGION-KASKELEN', regionCode: 'ALMATY_REGION', name: { kk: 'Қаскелең', ru: 'Каскелен', zh: '' } },
+  { code: 'KZ-ALMATY_REGION-ESIK', regionCode: 'ALMATY_REGION', name: { kk: 'Есік', ru: 'Есик', zh: '' } },
+  { code: 'KZ-ATYRAU-KULSARY', regionCode: 'ATYRAU', name: { kk: 'Құлсары', ru: 'Кульсары', zh: '' } },
+  { code: 'KZ-EAST_KZ-RIDDER', regionCode: 'EAST_KZ', name: { kk: 'Риддер', ru: 'Риддер', zh: '' } },
+  { code: 'KZ-EAST_KZ-ZYRYANOVSK', regionCode: 'EAST_KZ', name: { kk: 'Зыряновск', ru: 'Зыряновск', zh: '' } },
+  { code: 'KZ-ZHAMBYL-SHU', regionCode: 'ZHAMBYL', name: { kk: 'Шу', ru: 'Шу', zh: '' } },
+  { code: 'KZ-ZHAMBYL-KARATAU', regionCode: 'ZHAMBYL', name: { kk: 'Қаратау', ru: 'Каратау', zh: '' } },
+  { code: 'KZ-ZHAMBYL-ZHANATAS', regionCode: 'ZHAMBYL', name: { kk: 'Жаңатас', ru: 'Жанатас', zh: '' } },
+  { code: 'KZ-ZHETYSU-USHARAL', regionCode: 'ZHETYSU', name: { kk: 'Үшарал', ru: 'Ушарал', zh: '' } },
+  { code: 'KZ-ZHETYSU-SARKAND', regionCode: 'ZHETYSU', name: { kk: 'Сарқанд', ru: 'Сарканд', zh: '' } },
+  { code: 'KZ-WEST_KZ-AKSAI', regionCode: 'WEST_KZ', name: { kk: 'Ақсай', ru: 'Аксай', zh: '' } },
+  { code: 'KZ-KARAGANDY-TEMIRTAU', regionCode: 'KARAGANDY', name: { kk: 'Теміртау', ru: 'Темиртау', zh: '' } },
+  { code: 'KZ-KARAGANDY-BALKHASH', regionCode: 'KARAGANDY', name: { kk: 'Балқаш', ru: 'Балхаш', zh: '' } },
+  { code: 'KZ-KARAGANDY-SARAN', regionCode: 'KARAGANDY', name: { kk: 'Сарань', ru: 'Сарань', zh: '' } },
+  { code: 'KZ-KOSTANAY-RUDNY', regionCode: 'KOSTANAY', name: { kk: 'Рудный', ru: 'Рудный', zh: '' } },
+  { code: 'KZ-KOSTANAY-LISAKOVSK', regionCode: 'KOSTANAY', name: { kk: 'Лисаковск', ru: 'Лисаковск', zh: '' } },
+  { code: 'KZ-KYZYLORDA-BAIKONUR', regionCode: 'KYZYLORDA', name: { kk: 'Байқоңыр', ru: 'Байконур', zh: '' } },
+  { code: 'KZ-KYZYLORDA-ARALSK', regionCode: 'KYZYLORDA', name: { kk: 'Арал', ru: 'Аральск', zh: '' } },
+  { code: 'KZ-MANGYSTAU-ZHANAOZEN', regionCode: 'MANGYSTAU', name: { kk: 'Жаңаөзен', ru: 'Жанаозен', zh: '' } },
+  { code: 'KZ-PAVLODAR-EKIBASTUZ', regionCode: 'PAVLODAR', name: { kk: 'Екібастұз', ru: 'Экибастуз', zh: '' } },
+  { code: 'KZ-PAVLODAR-AKSU', regionCode: 'PAVLODAR', name: { kk: 'Ақсу', ru: 'Аксу', zh: '' } },
+  { code: 'KZ-NORTH_KZ-TAIYNSHA', regionCode: 'NORTH_KZ', name: { kk: 'Тайынша', ru: 'Тайынша', zh: '' } },
+  { code: 'KZ-TURKISTAN-SARYAGASH', regionCode: 'TURKISTAN', name: { kk: 'Сарыағаш', ru: 'Сарыагаш', zh: '' } },
+  { code: 'KZ-TURKISTAN-ZHETYSAY', regionCode: 'TURKISTAN', name: { kk: 'Жетісай', ru: 'Жетысай', zh: '' } },
+  { code: 'KZ-TURKISTAN-ARYS', regionCode: 'TURKISTAN', name: { kk: 'Арыс', ru: 'Арыс', zh: '' } },
+  { code: 'KZ-TURKISTAN-KENTAU', regionCode: 'TURKISTAN', name: { kk: 'Кентау', ru: 'Кентау', zh: '' } },
+  { code: 'KZ-ULYTAU-SATBAYEV', regionCode: 'ULYTAU', name: { kk: 'Сәтбаев', ru: 'Сатпаев', zh: '' } },
+];
+
 // Крупные города/столицы соседних стран — для выбора «домашний город» водителя.
-const foreignCities: Record<string, { name: I18n; isCapital: boolean }[]> = {
+// Расширено по маршрутам из Хоргоса (задача 021): Синьцзян (CN), Узбекистан,
+// Киргизия, Таджикистан, Туркменистан, юг России.
+const foreignCities: Record<string, { code: string; name: I18n; isCapital: boolean }[]> = {
   CN: [
-    { name: { kk: 'Пекин', ru: 'Пекин', zh: '北京' }, isCapital: true },
-    { name: { kk: 'Үрімші', ru: 'Урумчи', zh: '乌鲁木齐' }, isCapital: false },
+    { code: 'CN-BEIJING', name: { kk: 'Пекин', ru: 'Пекин', zh: '北京' }, isCapital: true },
+    { code: 'CN-URUMQI', name: { kk: 'Үрімші', ru: 'Урумчи', zh: '乌鲁木齐' }, isCapital: false },
+    { code: 'CN-KASHGAR', name: { kk: 'Қашқар', ru: 'Кашгар', zh: '喀什' }, isCapital: false },
+    { code: 'CN-YINING', name: { kk: 'Құлжа', ru: 'Инин (Кульджа)', zh: '伊宁' }, isCapital: false },
+    { code: 'CN-KORLA', name: { kk: 'Корла', ru: 'Корла', zh: '库尔勒' }, isCapital: false },
   ],
   RU: [
-    { name: { kk: 'Мәскеу', ru: 'Москва', zh: '莫斯科' }, isCapital: true },
-    { name: { kk: 'Новосібір', ru: 'Новосибирск', zh: '新西伯利亚' }, isCapital: false },
+    { code: 'RU-MOSCOW', name: { kk: 'Мәскеу', ru: 'Москва', zh: '莫斯科' }, isCapital: true },
+    { code: 'RU-NOVOSIBIRSK', name: { kk: 'Новосібір', ru: 'Новосибирск', zh: '新西伯利亚' }, isCapital: false },
+    { code: 'RU-OMSK', name: { kk: 'Омбы', ru: 'Омск', zh: '' }, isCapital: false },
   ],
-  KG: [{ name: { kk: 'Бішкек', ru: 'Бишкек', zh: '比什凯克' }, isCapital: true }],
-  UZ: [{ name: { kk: 'Ташкент', ru: 'Ташкент', zh: '塔什干' }, isCapital: true }],
-  TJ: [{ name: { kk: 'Душанбе', ru: 'Душанбе', zh: '杜尚别' }, isCapital: true }],
-  TM: [{ name: { kk: 'Ашғабат', ru: 'Ашхабад', zh: '阿什哈巴德' }, isCapital: true }],
-  AZ: [{ name: { kk: 'Баку', ru: 'Баку', zh: '巴库' }, isCapital: true }],
-  AM: [{ name: { kk: 'Ереван', ru: 'Ереван', zh: '埃里温' }, isCapital: true }],
-  BY: [{ name: { kk: 'Минск', ru: 'Минск', zh: '明斯克' }, isCapital: true }],
-  MD: [{ name: { kk: 'Кишинев', ru: 'Кишинёв', zh: '基希讷乌' }, isCapital: true }],
-  UA: [{ name: { kk: 'Киев', ru: 'Киев', zh: '基辅' }, isCapital: true }],
-  GE: [{ name: { kk: 'Тбилиси', ru: 'Тбилиси', zh: '第比利斯' }, isCapital: true }],
-  MN: [{ name: { kk: 'Ұланбатыр', ru: 'Улан-Батор', zh: '乌兰巴托' }, isCapital: true }],
-  IR: [{ name: { kk: 'Тегеран', ru: 'Тегеран', zh: '德黑兰' }, isCapital: true }],
+  KG: [
+    { code: 'KG-BISHKEK', name: { kk: 'Бішкек', ru: 'Бишкек', zh: '比什凯克' }, isCapital: true },
+    { code: 'KG-OSH', name: { kk: 'Ош', ru: 'Ош', zh: '' }, isCapital: false },
+  ],
+  UZ: [
+    { code: 'UZ-TASHKENT', name: { kk: 'Ташкент', ru: 'Ташкент', zh: '塔什干' }, isCapital: true },
+    { code: 'UZ-SAMARKAND', name: { kk: 'Самарқанд', ru: 'Самарканд', zh: '撒马尔罕' }, isCapital: false },
+  ],
+  TJ: [{ code: 'TJ-DUSHANBE', name: { kk: 'Душанбе', ru: 'Душанбе', zh: '杜尚别' }, isCapital: true }],
+  TM: [{ code: 'TM-ASHGABAT', name: { kk: 'Ашғабат', ru: 'Ашхабад', zh: '阿什哈巴德' }, isCapital: true }],
+  AZ: [{ code: 'AZ-BAKU', name: { kk: 'Баку', ru: 'Баку', zh: '巴库' }, isCapital: true }],
+  AM: [{ code: 'AM-YEREVAN', name: { kk: 'Ереван', ru: 'Ереван', zh: '埃里温' }, isCapital: true }],
+  BY: [{ code: 'BY-MINSK', name: { kk: 'Минск', ru: 'Минск', zh: '明斯克' }, isCapital: true }],
+  MD: [{ code: 'MD-CHISINAU', name: { kk: 'Кишинев', ru: 'Кишинёв', zh: '基希讷乌' }, isCapital: true }],
+  UA: [{ code: 'UA-KYIV', name: { kk: 'Киев', ru: 'Киев', zh: '基辅' }, isCapital: true }],
+  GE: [{ code: 'GE-TBILISI', name: { kk: 'Тбилиси', ru: 'Тбилиси', zh: '第比利斯' }, isCapital: true }],
+  MN: [{ code: 'MN-ULAANBAATAR', name: { kk: 'Ұланбатыр', ru: 'Улан-Батор', zh: '乌兰巴托' }, isCapital: true }],
+  IR: [{ code: 'IR-TEHRAN', name: { kk: 'Тегеран', ru: 'Тегеран', zh: '德黑兰' }, isCapital: true }],
 };
 
 const bodyTypes: { code: string; name: I18n; sortOrder: number }[] = [
@@ -130,47 +186,33 @@ async function main() {
 
   const kzId = countryByCode.get('KZ')!;
 
+  const regionByCode = new Map<string, string>();
   for (const region of kzRegions) {
     const regionRow = await prisma.region.upsert({
       where: { countryId_code: { countryId: kzId, code: region.code } },
       update: { name: region.name },
       create: { code: region.code, name: region.name, countryId: kzId },
     });
+    regionByCode.set(region.code, regionRow.id);
 
-    const isZhetysu = region.code === 'ZHETYSU';
-
+    const adminCenterCode = `KZ-${region.code}-ADMIN`;
     await prisma.city.upsert({
-      where: {
-        id:
-          (await prisma.city.findFirst({
-            where: { regionId: regionRow.id, name: { path: ['ru'], equals: region.adminCenter.ru } },
-          }))?.id ?? '__none__',
-      },
+      where: { code: adminCenterCode },
       update: { name: region.adminCenter, countryId: kzId, regionId: regionRow.id },
-      create: { name: region.adminCenter, countryId: kzId, regionId: regionRow.id, isCapital: false },
+      create: { code: adminCenterCode, name: region.adminCenter, countryId: kzId, regionId: regionRow.id, isCapital: false },
     });
 
-    if (isZhetysu) {
+    if (region.code === 'ZHETYSU') {
       await prisma.city.upsert({
-        where: {
-          id:
-            (await prisma.city.findFirst({
-              where: { regionId: regionRow.id, name: { path: ['ru'], equals: zharkentCity.ru } },
-            }))?.id ?? '__none__',
-        },
+        where: { code: 'KZ-ZHETYSU-ZHARKENT' },
         update: { name: zharkentCity, countryId: kzId, regionId: regionRow.id },
-        create: { name: zharkentCity, countryId: kzId, regionId: regionRow.id, isCapital: false },
+        create: { code: 'KZ-ZHETYSU-ZHARKENT', name: zharkentCity, countryId: kzId, regionId: regionRow.id, isCapital: false },
       });
 
       const khorgosRow = await prisma.city.upsert({
-        where: {
-          id:
-            (await prisma.city.findFirst({
-              where: { regionId: regionRow.id, name: { path: ['ru'], equals: khorgosCity.ru } },
-            }))?.id ?? '__none__',
-        },
+        where: { code: 'KZ-ZHETYSU-KHORGOS' },
         update: { name: khorgosCity, countryId: kzId, regionId: regionRow.id },
-        create: { name: khorgosCity, countryId: kzId, regionId: regionRow.id, isCapital: false },
+        create: { code: 'KZ-ZHETYSU-KHORGOS', name: khorgosCity, countryId: kzId, regionId: regionRow.id, isCapital: false },
       });
 
       await prisma.point.upsert({
@@ -184,32 +226,32 @@ async function main() {
     }
   }
 
-  for (const cityName of kzRepublicanCities) {
+  for (const city of kzDistrictCities) {
+    const regionId = regionByCode.get(city.regionCode);
+    if (!regionId) continue;
     await prisma.city.upsert({
-      where: {
-        id:
-          (await prisma.city.findFirst({
-            where: { countryId: kzId, regionId: null, name: { path: ['ru'], equals: cityName.ru } },
-          }))?.id ?? '__none__',
-      },
-      update: { name: cityName, countryId: kzId },
-      create: { name: cityName, countryId: kzId, isCapital: cityName.ru === 'Астана' },
+      where: { code: city.code },
+      update: { name: city.name, countryId: kzId, regionId },
+      create: { code: city.code, name: city.name, countryId: kzId, regionId, isCapital: false },
     });
   }
 
-  for (const [code, cities] of Object.entries(foreignCities)) {
-    const countryId = countryByCode.get(code);
+  for (const city of kzRepublicanCities) {
+    await prisma.city.upsert({
+      where: { code: city.code },
+      update: { name: city.name, countryId: kzId },
+      create: { code: city.code, name: city.name, countryId: kzId, isCapital: city.isCapital },
+    });
+  }
+
+  for (const [countryCode, cities] of Object.entries(foreignCities)) {
+    const countryId = countryByCode.get(countryCode);
     if (!countryId) continue;
     for (const city of cities) {
       await prisma.city.upsert({
-        where: {
-          id:
-            (await prisma.city.findFirst({
-              where: { countryId, name: { path: ['ru'], equals: city.name.ru } },
-            }))?.id ?? '__none__',
-        },
+        where: { code: city.code },
         update: { name: city.name, countryId, isCapital: city.isCapital },
-        create: { name: city.name, countryId, isCapital: city.isCapital },
+        create: { code: city.code, name: city.name, countryId, isCapital: city.isCapital },
       });
     }
   }

@@ -1,17 +1,23 @@
 class I18nText {
-  const I18nText({required this.kk, required this.ru, required this.zh});
+  const I18nText({required this.kk, required this.ru, required this.zh, this.en = ''});
 
   final String kk;
   final String ru;
   final String zh;
 
+  /// Английский — пока не отдельная локаль интерфейса (см. задачу 013),
+  /// только дополнительный вариант названия для мультиязычного поиска
+  /// (задача 021). `forLanguageCode('en')` по-прежнему падает в `ru`.
+  final String en;
+
   factory I18nText.fromJson(Map<String, dynamic> json) => I18nText(
         kk: json['kk'] as String? ?? '',
         ru: json['ru'] as String? ?? '',
         zh: json['zh'] as String? ?? '',
+        en: json['en'] as String? ?? '',
       );
 
-  Map<String, dynamic> toJson() => {'kk': kk, 'ru': ru, 'zh': zh};
+  Map<String, dynamic> toJson() => {'kk': kk, 'ru': ru, 'zh': zh, if (en.isNotEmpty) 'en': en};
 
   String forLanguageCode(String languageCode) {
     switch (languageCode) {
@@ -24,6 +30,10 @@ class I18nText {
         return ru;
     }
   }
+
+  /// Все непустые варианты названия (kk/ru/zh/en) — для поиска без
+  /// привязки к языку интерфейса (задача 021).
+  Iterable<String> get allVariants => [kk, ru, zh, en].where((s) => s.isNotEmpty);
 }
 
 class DriverLocation {
@@ -156,6 +166,16 @@ String dealStatusToJson(DealStatus status) {
       return 'CANCELLED';
   }
 }
+
+/// PENDING — предложен водителем/логистом через «Нет моего города» и ждёт
+/// модерации админом; APPROVED — в справочнике официально; REJECTED —
+/// админ отклонил (но запись не удаляется, пока на неё кто-то ссылается).
+enum CityStatus { pending, approved, rejected }
+
+CityStatus cityStatusFromJson(String value) => CityStatus.values.firstWhere(
+      (e) => e.name.toUpperCase() == value.toUpperCase(),
+      orElse: () => CityStatus.approved,
+    );
 
 enum ContactEventType { call, whatsapp }
 

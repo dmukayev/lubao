@@ -28,6 +28,10 @@ export class UpsertI18nNameDto {
 
   @IsString()
   zh!: string;
+
+  @IsOptional()
+  @IsString()
+  en?: string;
 }
 
 export class CreateBodyTypeDto {
@@ -54,4 +58,20 @@ export class CreatePointDto {
 export class SetActiveDto {
   @IsBoolean()
   isActive!: boolean;
+}
+
+export class ModerateCityDto {
+  @IsIn(['APPROVE', 'MERGE', 'REJECT'])
+  action!: 'APPROVE' | 'MERGE' | 'REJECT';
+
+  @IsOptional()
+  name?: UpsertI18nNameDto;
+
+  @IsOptional()
+  @IsString()
+  mergeIntoCityId?: string;
+
+  @IsOptional()
+  @IsString()
+  rejectReason?: string;
 }

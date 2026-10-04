@@ -1,7 +1,8 @@
 import { ArrayUnique, IsArray, IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsPersonName } from '../../common/validators/person-name.validator';
 
 export class UpdateDriverDto {
-  @IsString()
+  @IsPersonName()
   fullName!: string;
 
   @IsString()

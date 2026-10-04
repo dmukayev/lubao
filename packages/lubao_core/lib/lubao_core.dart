@@ -29,6 +29,9 @@ export 'src/widgets/chat_bubble.dart';
 export 'src/widgets/quick_reply_chip.dart';
 export 'src/widgets/step_progress.dart';
 
+export 'src/utils/city_search.dart';
+export 'src/utils/person_name.dart';
+
 export 'src/api/api_client.dart';
 export 'src/repositories/auth_repository.dart';
 export 'src/repositories/reference_data_repository.dart';

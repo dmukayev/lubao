@@ -63,7 +63,20 @@
   "@profileCompleteness": {
     "placeholders": { "percent": { "type": "int" } }
   },
+  "driverSetupStepOf": "Шаг {step} из {total}",
+  "@driverSetupStepOf": {
+    "placeholders": { "step": { "type": "int" }, "total": { "type": "int" } }
+  },
   "driverSetupFullName": "Ф.И.О.",
+  "driverSetupFullNameError": "Введите имя: 2-80 букв, без цифр",
+  "driverSetupHomeCityError": "Выберите город",
+  "driverSetupBodyTypeError": "Выберите тип кузова",
+  "cityNotListed": "Нет моего города",
+  "addCitySettlementLabel": "Населённый пункт",
+  "addCitySettlementError": "Введите название населённого пункта",
+  "addCityRegionLabel": "Область/регион",
+  "addCityRegionError": "Выберите область",
+  "addCitySubmit": "Продолжить",
   "driverSetupHomeCity": "Домашний город",
   "driverSetupCountries": "Направления",
   "driverSetupAnyCountry": "Любая страна",
@@ -285,6 +298,12 @@
   "adminVerified": "Проверен",
   "adminNotVerified": "Не проверен",
   "adminReferenceTitle": "Справочники",
+  "adminPendingCitiesTab": "Новые города",
+  "adminPendingCitiesEmpty": "Нет новых городов от пользователей",
+  "adminMergeCity": "Объединить",
+  "adminMergeCityTarget": "Город для объединения",
+  "adminCitySubmittedBy": "Добавил",
+  "adminCityRegion": "Область",
   "adminAddBodyType": "Добавить тип кузова",
   "adminAddPermit": "Добавить допуск",
   "adminAddPoint": "Добавить точку загрузки",

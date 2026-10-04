@@ -6,6 +6,7 @@ import {
   CreateBodyTypeDto,
   CreatePermitDto,
   CreatePointDto,
+  ModerateCityDto,
   ResolveComplaintDto,
   ReviewVerificationDocumentDto,
   SetActiveDto,
@@ -100,5 +101,17 @@ export class AdminController {
   setPointActive(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: SetActiveDto) {
     assertAdmin(ctx);
     return this.admin.setPointActive(id, dto.isActive);
+  }
+
+  @Get('cities/pending')
+  pendingCities(@CurrentUser() ctx: RequestContext) {
+    assertAdmin(ctx);
+    return this.admin.pendingCities();
+  }
+
+  @Patch('cities/:id/moderate')
+  moderateCity(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: ModerateCityDto) {
+    assertAdmin(ctx);
+    return this.admin.moderateCity(id, ctx.user.id, dto);
   }
 }
