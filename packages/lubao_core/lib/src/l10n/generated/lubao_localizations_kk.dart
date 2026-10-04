@@ -506,7 +506,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get feedEmpty => 'Әзірге сәйкес жүктер жоқ';
 
   @override
-  String get feedSectionHome => 'Үйге';
+  String get feedSectionHome => 'Үйге жақын';
 
   @override
   String get feedSectionSelected => 'Сіздің бағыттарыңыз';

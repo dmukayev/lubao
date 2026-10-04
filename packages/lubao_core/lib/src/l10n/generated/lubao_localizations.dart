@@ -1027,7 +1027,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @feedSectionHome.
   ///
   /// In ru, this message translates to:
-  /// **'Домой'**
+  /// **'Близко к дому'**
   String get feedSectionHome;
 
   /// No description provided for @feedSectionSelected.

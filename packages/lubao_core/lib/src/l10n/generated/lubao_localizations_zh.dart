@@ -491,7 +491,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get feedEmpty => '暂无合适的货源';
 
   @override
-  String get feedSectionHome => '回程方向';
+  String get feedSectionHome => '离家近';
 
   @override
   String get feedSectionSelected => '您选择的方向';

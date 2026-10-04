@@ -184,7 +184,7 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "feedEmpty": "Пока нет подходящих грузов",
-  "feedSectionHome": "Домой",
+  "feedSectionHome": "Близко к дому",
   "feedSectionSelected": "Ваши направления",
   "feedSectionOther": "Остальные направления",
   "cargoPrice": "Цена",

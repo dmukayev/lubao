@@ -32,10 +32,10 @@ class CargoCard extends StatelessWidget {
   /// "Цена всегда в валюте груза + пересчёт мелким шрифтом").
   final String? secondaryPriceLabel;
 
-  /// Плашка слева сверху — "Домой" или код страны (CountryCode).
+  /// Плашка слева сверху — "Близко к дому" или код страны (CountryCode).
   final Widget? badge;
 
-  /// Рамка accent — карточка "Домой" в ленте.
+  /// Рамка accent — карточка "Близко к дому" в ленте.
   final bool accentBorder;
 
   @override

@@ -502,7 +502,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get feedEmpty => 'Пока нет подходящих грузов';
 
   @override
-  String get feedSectionHome => 'Домой';
+  String get feedSectionHome => 'Близко к дому';
 
   @override
   String get feedSectionSelected => 'Ваши направления';
