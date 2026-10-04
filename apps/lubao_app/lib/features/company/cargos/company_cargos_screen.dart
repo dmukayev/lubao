@@ -40,11 +40,17 @@ class CompanyCargosScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final cargo = list[index];
                 final country = refData?.countryById(cargo.destinationCountryId);
+                final city = refData?.cityById(cargo.destinationCityId);
+                final destinationLabel = country == null
+                    ? ''
+                    : [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)]
+                        .whereType<String>()
+                        .join(', ');
                 final bodyType = refData?.bodyTypeById(cargo.bodyTypeId);
                 final (statusLabel, statusColor) = cargoStatusPresentation(t, cargo.status);
 
                 return CargoCard(
-                  destinationLabel: country?.name.forLanguageCode(locale) ?? '',
+                  destinationLabel: destinationLabel,
                   bodyTypeLabel: bodyType?.name.forLanguageCode(locale) ?? '',
                   priceLabel: formatMoney(cargo.price, cargo.currency),
                   secondaryPriceLabel:

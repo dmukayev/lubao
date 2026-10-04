@@ -311,6 +311,9 @@ class _DealSummaryBar extends StatelessWidget {
     final locale = Localizations.localeOf(context).languageCode;
     final cargo = deal.cargo!;
     final country = refData.countryById(cargo.destinationCountryId);
+    final city = refData.cityById(cargo.destinationCityId);
+    final destinationLabel =
+        [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
     final point = refData.pointById(cargo.pointId);
     final (statusLabel, statusColor) = dealStatusPresentation(t, deal.status);
 
@@ -327,7 +330,7 @@ class _DealSummaryBar extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              '${point.name.forLanguageCode(locale)} → ${country.name.forLanguageCode(locale)} · ${formatMoney(cargo.price, cargo.currency)}',
+              '${point.name.forLanguageCode(locale)} → $destinationLabel · ${formatMoney(cargo.price, cargo.currency)}',
               style: AppTextStyles.caption.copyWith(color: AppColors.text),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

@@ -86,11 +86,14 @@ class CargoFeedScreen extends ConsumerWidget {
     final locale = Localizations.localeOf(context).languageCode;
     final cargo = item.cargo;
     final country = refData.countryById(cargo.destinationCountryId);
+    final city = refData.cityById(cargo.destinationCityId);
+    final destinationLabel =
+        [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
     final bodyType = refData.bodyTypeById(cargo.bodyTypeId);
     final (statusLabel, statusColor) = cargoStatusPresentation(t, cargo.status);
 
     return CargoCard(
-      destinationLabel: country.name.forLanguageCode(locale),
+      destinationLabel: destinationLabel,
       bodyTypeLabel: bodyType.name.forLanguageCode(locale),
       priceLabel: formatMoney(cargo.price, cargo.currency),
       secondaryPriceLabel: formatKztConversion(refData.convertToKzt(cargo.price, cargo.currency)),

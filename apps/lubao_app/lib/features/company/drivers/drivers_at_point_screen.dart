@@ -75,7 +75,12 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                   for (final cargo in publishedCargos)
                     ListTile(
                       title: Text(
-                        refData == null ? '' : refData.countryById(cargo.destinationCountryId).name.forLanguageCode(locale),
+                        refData == null
+                            ? ''
+                            : [
+                                refData.cityById(cargo.destinationCityId)?.name.forLanguageCode(locale),
+                                refData.countryById(cargo.destinationCountryId).name.forLanguageCode(locale),
+                              ].whereType<String>().join(', '),
                         style: AppTextStyles.bodyStrong,
                       ),
                       subtitle: Text(formatMoney(cargo.price, cargo.currency)),

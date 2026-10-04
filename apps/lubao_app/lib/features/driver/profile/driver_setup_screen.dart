@@ -233,6 +233,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                       children: [
                         Expanded(
                           child: _VehicleTile(
+                            icon: _bodyTypeIcon(refData.bodyTypes[i].code),
                             label: refData.bodyTypes[i].name.forLanguageCode(locale),
                             selected: _bodyTypeId == refData.bodyTypes[i].id,
                             onTap: () => setState(() => _bodyTypeId = refData.bodyTypes[i].id),
@@ -242,6 +243,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                         if (i + 1 < refData.bodyTypes.length)
                           Expanded(
                             child: _VehicleTile(
+                              icon: _bodyTypeIcon(refData.bodyTypes[i + 1].code),
                               label: refData.bodyTypes[i + 1].name.forLanguageCode(locale),
                               selected: _bodyTypeId == refData.bodyTypes[i + 1].id,
                               onTap: () => setState(() => _bodyTypeId = refData.bodyTypes[i + 1].id),
@@ -411,9 +413,40 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
   }
 }
 
-class _VehicleTile extends StatelessWidget {
-  const _VehicleTile({required this.label, required this.selected, required this.onTap});
+/// У `BodyType` нет поля под картинку/иконку (только `code`/`name`) — вместо
+/// добавления ассета на бэкенд сопоставляем по коду справочника локально;
+/// коду без пары — обычный грузовик, чтобы новый тип не остался без иконки.
+IconData _bodyTypeIcon(String code) {
+  switch (code) {
+    case 'TENT':
+      return LucideIcons.truck;
+    case 'REFRIGERATOR':
+      return LucideIcons.snowflake;
+    case 'ISOTHERM':
+      return LucideIcons.thermometerSnowflake;
+    case 'FLATBED':
+      return LucideIcons.layers;
+    case 'CONTAINER':
+      return LucideIcons.container;
+    case 'DUMP':
+      return LucideIcons.mountain;
+    case 'LOWLOADER':
+      return LucideIcons.package2;
+    case 'CARCARRIER':
+      return LucideIcons.car;
+    case 'GRAIN':
+      return LucideIcons.wheat;
+    case 'TANK':
+      return LucideIcons.fuel;
+    default:
+      return LucideIcons.truck;
+  }
+}
 
+class _VehicleTile extends StatelessWidget {
+  const _VehicleTile({required this.icon, required this.label, required this.selected, required this.onTap});
+
+  final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -435,7 +468,7 @@ class _VehicleTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(LucideIcons.truck, size: 32, color: selected ? AppColors.primary : AppColors.textSecondary),
+              Icon(icon, size: 32, color: selected ? AppColors.primary : AppColors.textSecondary),
               const SizedBox(height: AppSpacing.md),
               Text(
                 label,

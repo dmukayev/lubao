@@ -36,9 +36,15 @@ class DriverDealsScreen extends ConsumerWidget {
                 final (statusLabel, statusColor) = dealStatusPresentation(t, deal.status);
                 final country =
                     refData != null && deal.cargo != null ? refData.countryById(deal.cargo!.destinationCountryId) : null;
+                final city = refData != null && deal.cargo != null ? refData.cityById(deal.cargo!.destinationCityId) : null;
+                final destinationLabel = country == null
+                    ? deal.companyName
+                    : [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)]
+                        .whereType<String>()
+                        .join(', ');
 
                 return CargoCard(
-                  destinationLabel: country?.name.forLanguageCode(locale) ?? deal.companyName,
+                  destinationLabel: destinationLabel,
                   bodyTypeLabel: deal.companyName,
                   priceLabel: deal.cargo != null ? formatMoney(deal.cargo!.price, deal.cargo!.currency) : '',
                   secondaryPriceLabel: deal.cargo == null || refData == null
