@@ -19,7 +19,8 @@
    - `apps/lubao_app/lib/features/driver/profile/driver_profile_screen.dart`
    - `packages/lubao_core/lib/src/widgets/loading_view.dart`
    Плюс сообщения ошибок бэкенда (например, лимиты SMS) — отдавать код ошибки, текст переводить на клиенте.
-5. Удалить лишний `backend/prisma/migrations/20261004012125_driver_registration_docs/migration_lock.toml` (lock-файл должен быть один, в корне `migrations/`).
+5. **Выбор языка до входа** (решение 2026-10-04 «Смена языка»): сейчас на `role_select_screen.dart` и `company_login_screen.dart` языка нет. Добавить: при первом запуске — экран выбора Қазақша / Русский / 中文 (выбран язык телефона); на экранах выбора роли и входа — плашка языка в правом верхнем углу. После входа сохранить выбор в `users.language` на сервере; при входе на новом устройстве — брать язык с сервера.
+6. Удалить лишний `backend/prisma/migrations/20261004012125_driver_registration_docs/migration_lock.toml` (lock-файл должен быть один, в корне `migrations/`).
 
 ## Готово, когда
 - Неверифицированный водитель не может подтвердить сделку даже прямым запросом к API.
