@@ -41,8 +41,11 @@ export class CargosService {
   }
 
   async feed() {
+    // company.isBlocked (задача 026, п.5) — груз блокированной компании не
+    // трогаем (статус/история не меняются), просто скрываем из ленты
+    // водителя, пока компанию не разблокируют.
     const cargos = await this.prisma.cargo.findMany({
-      where: { status: 'PUBLISHED' },
+      where: { status: 'PUBLISHED', company: { isBlocked: false } },
       include: { company: true },
       orderBy: { readyDate: 'asc' },
     });

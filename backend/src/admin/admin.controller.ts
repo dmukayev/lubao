@@ -4,12 +4,14 @@ import { RequestContext } from '../common/request-context';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { AdminService } from './admin.service';
 import {
+  BlockUserDto,
   CreateBodyTypeDto,
   CreatePermitDto,
   CreatePointDto,
   ModerateCityDto,
   ResolveComplaintDto,
   ReviewVerificationDocumentDto,
+  SearchQueryDto,
   SetActiveDto,
   SetAppSettingDto,
   SetVerifiedDto,
@@ -74,33 +76,75 @@ export class AdminController {
   }
 
   @Get('companies')
-  companies(@CurrentUser() ctx: RequestContext) {
+  searchCompanies(@CurrentUser() ctx: RequestContext, @Query() query: SearchQueryDto) {
     assertAdmin(ctx);
-    return this.admin.companies();
+    return this.admin.searchCompanies(query);
+  }
+
+  @Get('companies/:id')
+  companyDetail(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.companyDetail(id);
   }
 
   @Patch('companies/:id/verify')
   setCompanyVerified(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: SetVerifiedDto) {
     assertAdmin(ctx);
-    return this.admin.setCompanyVerified(id, dto.isVerified);
+    return this.admin.setCompanyVerified(id, ctx.user.id, dto);
   }
 
   @Post('companies/:id/reset-password')
   resetCompanyPassword(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
     assertAdmin(ctx);
-    return this.admin.resetCompanyPassword(id);
+    return this.admin.resetCompanyPassword(id, ctx.user.id);
+  }
+
+  @Post('companies/:id/block')
+  blockCompany(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: BlockUserDto) {
+    assertAdmin(ctx);
+    return this.admin.blockCompany(id, ctx.user.id, dto);
+  }
+
+  @Post('companies/:id/unblock')
+  unblockCompany(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: BlockUserDto) {
+    assertAdmin(ctx);
+    return this.admin.unblockCompany(id, ctx.user.id, dto);
   }
 
   @Get('drivers')
-  drivers(@CurrentUser() ctx: RequestContext) {
+  searchDrivers(@CurrentUser() ctx: RequestContext, @Query() query: SearchQueryDto) {
     assertAdmin(ctx);
-    return this.admin.drivers();
+    return this.admin.searchDrivers(query);
+  }
+
+  @Get('drivers/:id')
+  driverDetail(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.driverDetail(id);
   }
 
   @Patch('drivers/:id/verify')
   setDriverVerified(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: SetVerifiedDto) {
     assertAdmin(ctx);
-    return this.admin.setDriverVerified(id, dto.isVerified);
+    return this.admin.setDriverVerified(id, ctx.user.id, dto);
+  }
+
+  @Post('users/:userId/block')
+  blockUser(@CurrentUser() ctx: RequestContext, @Param('userId') userId: string, @Body() dto: BlockUserDto) {
+    assertAdmin(ctx);
+    return this.admin.blockUser(userId, ctx.user.id, dto);
+  }
+
+  @Post('users/:userId/unblock')
+  unblockUser(@CurrentUser() ctx: RequestContext, @Param('userId') userId: string, @Body() dto: BlockUserDto) {
+    assertAdmin(ctx);
+    return this.admin.unblockUser(userId, ctx.user.id, dto);
+  }
+
+  @Post('users/:userId/revoke-sessions')
+  revokeSessions(@CurrentUser() ctx: RequestContext, @Param('userId') userId: string) {
+    assertAdmin(ctx);
+    return this.admin.revokeSessions(userId, ctx.user.id);
   }
 
   @Post('reference/body-types')
