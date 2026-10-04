@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'package:flutter/material.dart' show Locale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 import 'api_providers.dart';
+import 'locale_provider.dart';
 
 /// true, пока идёт попытка восстановить сессию из secure storage при
 /// старте приложения (см. SessionController._restore) — роутер показывает
@@ -21,9 +23,22 @@ class SessionController extends StateNotifier<Session?> {
 
   Future<void> _restore() async {
     try {
-      state = await _ref.read(authRepositoryProvider).restore();
+      final session = await _ref.read(authRepositoryProvider).restore();
+      state = session;
+      if (session != null) _applyUserLocale(session.user.locale);
     } finally {
       _ref.read(sessionRestoringProvider.notifier).state = false;
+    }
+  }
+
+  /// Язык хранится на сервере (задача 013, decisions.md «Смена языка») —
+  /// после входа/восстановления сессии локальный выбор языка подстраивается
+  /// под то, что сохранено для этого пользователя, а не под язык устройства,
+  /// чтобы выбор был одинаковым на всех устройствах.
+  void _applyUserLocale(String locale) {
+    final match = supportedLocales.where((l) => l.languageCode == locale);
+    if (match.isNotEmpty) {
+      _ref.read(localeProvider.notifier).state = match.first;
     }
   }
 
@@ -34,11 +49,13 @@ class SessionController extends StateNotifier<Session?> {
   Future<void> verifyDriverCode(String phone, String code) async {
     final session = await _ref.read(authRepositoryProvider).verifyDriverCode(phone: phone, code: code);
     state = session;
+    _applyUserLocale(session.user.locale);
   }
 
   Future<Session> loginCompany(String email, String password) async {
     final session = await _ref.read(authRepositoryProvider).loginCompany(email: email, password: password);
     state = session;
+    _applyUserLocale(session.user.locale);
     return session;
   }
 
@@ -59,6 +76,7 @@ class SessionController extends StateNotifier<Session?> {
           countryId: countryId,
         );
     state = session;
+    _applyUserLocale(session.user.locale);
     return session;
   }
 
@@ -73,7 +91,28 @@ class SessionController extends StateNotifier<Session?> {
         .read(authRepositoryProvider)
         .acceptInvite(token, password: password, name: name, phone: phone, wechat: wechat);
     state = session;
+    _applyUserLocale(session.user.locale);
     return session;
+  }
+
+  /// Вызывается переключателем языка в профиле (задача 013) — сохраняет на
+  /// сервере и применяет сразу, одним действием.
+  Future<void> setLocale(String locale) async {
+    await _ref.read(authRepositoryProvider).updateLocale(locale);
+    final current = state;
+    if (current != null) {
+      state = current.copyWith(
+        user: AppUser(
+          id: current.user.id,
+          role: current.user.role,
+          phone: current.user.phone,
+          email: current.user.email,
+          locale: locale,
+          emailVerifiedAt: current.user.emailVerifiedAt,
+        ),
+      );
+    }
+    _ref.read(localeProvider.notifier).state = Locale(locale);
   }
 
   /// Подтверждение email не блокирует вход (задача 025) — только снимает

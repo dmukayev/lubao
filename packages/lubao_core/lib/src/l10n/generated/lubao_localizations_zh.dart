@@ -813,7 +813,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get profileNotVerified => '未认证';
 
   @override
-  String get profileLanguage => '语言';
+  String get profileLanguage => 'Язык · Тіл · 语言 · Language';
 
   @override
   String get profilePhone => '电话';

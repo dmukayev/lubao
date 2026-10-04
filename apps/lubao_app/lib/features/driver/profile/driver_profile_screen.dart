@@ -54,12 +54,13 @@ class DriverProfileScreen extends ConsumerWidget {
             trailing: DropdownButton<Locale>(
               value: locale,
               items: const [
-                DropdownMenuItem(value: Locale('ru'), child: Text('Русский')),
                 DropdownMenuItem(value: Locale('kk'), child: Text('Қазақша')),
+                DropdownMenuItem(value: Locale('ru'), child: Text('Русский')),
                 DropdownMenuItem(value: Locale('zh'), child: Text('中文')),
+                DropdownMenuItem(value: Locale('en'), child: Text('English')),
               ],
               onChanged: (value) {
-                if (value != null) ref.read(localeProvider.notifier).state = value;
+                if (value != null) ref.read(sessionProvider.notifier).setLocale(value.languageCode);
               },
             ),
           ),

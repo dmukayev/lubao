@@ -138,6 +138,13 @@ class AuthRepository {
     await _client.logoutLocally();
   }
 
+  /// Смена языка (задача 013) — хранится на сервере (`users.locale`), не
+  /// только в состоянии клиента, чтобы push/WeCom/перевод чата и выбор
+  /// языка были одинаковыми на всех устройствах пользователя.
+  Future<void> updateLocale(String locale) async {
+    await _client.dio.patch('/auth/me/locale', data: {'locale': locale});
+  }
+
   Future<List<DeviceSession>> listSessions() async {
     final res = await _client.dio.get('/auth/sessions');
     return (res.data as List).map((e) => DeviceSession.fromJson(e as Map<String, dynamic>)).toList();

@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'lubao_localizations_en.dart';
 import 'lubao_localizations_kk.dart';
 import 'lubao_localizations_ru.dart';
 import 'lubao_localizations_zh.dart';
@@ -95,6 +96,7 @@ abstract class LubaoLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
+    Locale('en'),
     Locale('kk'),
     Locale('ru'),
     Locale('zh'),
@@ -1663,7 +1665,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @profileLanguage.
   ///
   /// In ru, this message translates to:
-  /// **'Язык'**
+  /// **'Язык · Тіл · 语言 · Language'**
   String get profileLanguage;
 
   /// No description provided for @profilePhone.
@@ -2214,7 +2216,7 @@ class _LubaoLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['kk', 'ru', 'zh'].contains(locale.languageCode);
+      <String>['en', 'kk', 'ru', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_LubaoLocalizationsDelegate old) => false;
@@ -2223,6 +2225,8 @@ class _LubaoLocalizationsDelegate
 LubaoLocalizations lookupLubaoLocalizations(Locale locale) {
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'en':
+      return LubaoLocalizationsEn();
     case 'kk':
       return LubaoLocalizationsKk();
     case 'ru':

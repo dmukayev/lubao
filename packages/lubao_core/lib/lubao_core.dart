@@ -28,6 +28,7 @@ export 'src/widgets/country_code.dart';
 export 'src/widgets/chat_bubble.dart';
 export 'src/widgets/quick_reply_chip.dart';
 export 'src/widgets/step_progress.dart';
+export 'src/widgets/language_picker_button.dart';
 
 export 'src/utils/city_search.dart';
 export 'src/utils/person_name.dart';

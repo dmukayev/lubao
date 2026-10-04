@@ -1,15 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-class RoleSelectScreen extends StatelessWidget {
+import '../../providers/locale_provider.dart';
+
+class RoleSelectScreen extends ConsumerWidget {
   const RoleSelectScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
+    final locale = ref.watch(localeProvider);
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          LanguagePickerButton(
+            languageCode: locale.languageCode,
+            onChanged: (code) => ref.read(localeProvider.notifier).state = Locale(code),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),

@@ -830,7 +830,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get profileNotVerified => 'Тексерілмеген';
 
   @override
-  String get profileLanguage => 'Тіл';
+  String get profileLanguage => 'Язык · Тіл · 语言 · Language';
 
   @override
   String get profilePhone => 'Телефон';

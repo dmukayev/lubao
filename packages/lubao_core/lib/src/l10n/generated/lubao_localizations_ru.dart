@@ -826,7 +826,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get profileNotVerified => 'Не проверен';
 
   @override
-  String get profileLanguage => 'Язык';
+  String get profileLanguage => 'Язык · Тіл · 语言 · Language';
 
   @override
   String get profilePhone => 'Телефон';

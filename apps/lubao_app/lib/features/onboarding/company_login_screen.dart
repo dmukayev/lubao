@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../providers/locale_provider.dart';
 import '../shared/status_helpers.dart';
 
 /// Вход логиста — email и пароль по умолчанию (задача 025, заменяет вход
@@ -51,8 +52,17 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    final appLocale = ref.watch(localeProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(t.companyLoginTitle)),
+      appBar: AppBar(
+        title: Text(t.companyLoginTitle),
+        actions: [
+          LanguagePickerButton(
+            languageCode: appLocale.languageCode,
+            onChanged: (code) => ref.read(localeProvider.notifier).state = Locale(code),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

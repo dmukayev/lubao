@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,6 +26,13 @@ void main() {
   });
 
   testWidgets('shows the role selection screen on first launch', (WidgetTester tester) async {
+    // Тестовое окружение Flutter по умолчанию отдаёт системную локаль
+    // en_US — после задачи 013 (en теперь поддерживается) это больше не
+    // падает в ru-фолбэк, и экран реально показался бы по-английски.
+    // Явно фиксируем ru, чтобы тест проверял экран, а не язык устройства.
+    tester.platformDispatcher.localeTestValue = const Locale('ru');
+    addTearDown(tester.platformDispatcher.clearLocaleTestValue);
+
     await tester.pumpWidget(const ProviderScope(child: LubaoApp()));
     // Сплэш ждёт асинхронного восстановления сессии (secure storage) перед
     // переходом на role-select — одного pump() теперь недостаточно.

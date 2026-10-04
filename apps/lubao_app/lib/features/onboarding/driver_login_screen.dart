@@ -6,6 +6,7 @@ import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/api_providers.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/locale_provider.dart';
 import '../shared/status_helpers.dart';
 
 const _codeLength = 4;
@@ -135,8 +136,18 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
     final locale = Localizations.localeOf(context).languageCode;
     final referenceData = ref.watch(referenceDataProvider);
 
+    final appLocale = ref.watch(localeProvider);
+
     return Scaffold(
-      appBar: AppBar(title: Text(t.driverLoginTitle)),
+      appBar: AppBar(
+        title: Text(t.driverLoginTitle),
+        actions: [
+          LanguagePickerButton(
+            languageCode: appLocale.languageCode,
+            onChanged: (code) => ref.read(localeProvider.notifier).state = Locale(code),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.screen),
         child: Column(
