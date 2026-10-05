@@ -157,3 +157,7 @@ final adminDealChatProvider = FutureProvider.autoDispose.family<List<AdminChatMe
 final adminSettingsProvider = FutureProvider.autoDispose<Map<String, String>>((ref) {
   return ref.watch(adminRepositoryProvider).settings();
 });
+
+final adminTranslationStatsProvider = FutureProvider.autoDispose<AdminTranslationStats>((ref) {
+  return ref.watch(adminRepositoryProvider).translationStats();
+});

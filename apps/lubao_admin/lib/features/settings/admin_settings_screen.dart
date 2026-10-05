@@ -78,10 +78,18 @@ class AdminSettingsScreen extends ConsumerWidget {
     await _saveDefaultCity(context, ref, selected);
   }
 
+  /// Переключатель «Перевод выкл.» (задача 010, п.8) — переиспользует
+  /// общий AppSetting-механизм, отдельного эндпоинта нет.
+  Future<void> _toggleTranslation(WidgetRef ref, bool enabled) async {
+    await ref.read(adminRepositoryProvider).setSetting('translationEnabled', enabled ? 'true' : 'false');
+    ref.invalidate(adminTranslationStatsProvider);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
     final settings = ref.watch(adminSettingsProvider);
+    final translationStats = ref.watch(adminTranslationStatsProvider);
     final refDataAsync = ref.watch(referenceDataProvider);
     final cities = refDataAsync.valueOrNull?.cities ?? const <City>[];
     final locale = Localizations.localeOf(context).languageCode;
@@ -135,6 +143,31 @@ class AdminSettingsScreen extends ConsumerWidget {
                 title: t.adminSettingCargoArchiveDays,
                 value: t.adminStaleDays(int.tryParse(cargoArchiveDays) ?? 3),
                 onEdit: () => _saveNumberSetting(context, ref, key: 'cargoArchiveDays', title: t.adminSettingCargoArchiveDays, currentValue: cargoArchiveDays),
+              ),
+              const SizedBox(height: 12),
+              translationStats.when(
+                loading: () => const AppCard(child: LoadingView()),
+                error: (e, st) {
+                  debugPrint('AdminSettingsScreen (translation): $e');
+                  return const SizedBox.shrink();
+                },
+                data: (stats) => AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: Text(t.adminTranslationSettingsTitle, style: Theme.of(context).textTheme.titleSmall)),
+                          Switch(value: stats.enabled, onChanged: (v) => _toggleTranslation(ref, v)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text('${t.adminTranslationProviderLabel}: ${stats.provider}${stats.model != null ? ' (${stats.model})' : ''}'),
+                      Text('${t.adminTranslationRequests7dLabel}: ${stats.requests7d} (${stats.successRequests7d} OK)'),
+                      Text('${t.adminTranslationTokens7dLabel}: ${stats.tokensUsed7d}'),
+                    ],
+                  ),
+                ),
               ),
             ],
           );

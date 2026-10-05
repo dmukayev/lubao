@@ -1835,4 +1835,28 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   @override
   String get companyWecomTestError =>
       'Жіберу мүмкін болмады — мекенжайды тексеріңіз';
+
+  @override
+  String get chatTranslationFailed => 'Аударма қолжетімсіз';
+
+  @override
+  String get chatTranslationRetry => 'қайталау';
+
+  @override
+  String get adminTranslationSettingsTitle => 'Чат аудармасы';
+
+  @override
+  String get adminTranslationEnabledLabel => 'Қосулы';
+
+  @override
+  String get adminTranslationProviderLabel => 'Провайдер';
+
+  @override
+  String get adminTranslationModelLabel => 'Модель';
+
+  @override
+  String get adminTranslationRequests7dLabel => '7 күндегі сұраулар';
+
+  @override
+  String get adminTranslationTokens7dLabel => '7 күндегі токендер';
 }

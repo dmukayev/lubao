@@ -44,4 +44,10 @@ class ChatRepository {
   Future<void> markRead(String chatId) async {
     await _client.dio.post('/chats/$chatId/read');
   }
+
+  /// «Перевод недоступен · повторить» (задача 010, п.7).
+  Future<ChatMessage> retryTranslation(String chatId, String messageId) async {
+    final res = await _client.dio.post('/chats/$chatId/messages/$messageId/retry-translation');
+    return ChatMessage.fromJson(res.data as Map<String, dynamic>);
+  }
 }

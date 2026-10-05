@@ -818,5 +818,13 @@
   "companyWecomUrlLabel": "Вебхук URL",
   "companyWecomTestButton": "Проверить",
   "companyWecomTestSuccess": "Тестовое сообщение отправлено",
-  "companyWecomTestError": "Не удалось отправить — проверьте адрес"
+  "companyWecomTestError": "Не удалось отправить — проверьте адрес",
+  "chatTranslationFailed": "Перевод недоступен",
+  "chatTranslationRetry": "повторить",
+  "adminTranslationSettingsTitle": "Перевод чата",
+  "adminTranslationEnabledLabel": "Включён",
+  "adminTranslationProviderLabel": "Провайдер",
+  "adminTranslationModelLabel": "Модель",
+  "adminTranslationRequests7dLabel": "Запросов за 7 дней",
+  "adminTranslationTokens7dLabel": "Токенов за 7 дней"
 }

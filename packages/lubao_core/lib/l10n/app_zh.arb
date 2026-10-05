@@ -693,5 +693,13 @@
   "companyWecomUrlLabel": "Webhook网址",
   "companyWecomTestButton": "测试",
   "companyWecomTestSuccess": "测试消息已发送",
-  "companyWecomTestError": "发送失败——请检查地址"
+  "companyWecomTestError": "发送失败——请检查地址",
+  "chatTranslationFailed": "翻译不可用",
+  "chatTranslationRetry": "重试",
+  "adminTranslationSettingsTitle": "聊天翻译",
+  "adminTranslationEnabledLabel": "已启用",
+  "adminTranslationProviderLabel": "提供商",
+  "adminTranslationModelLabel": "模型",
+  "adminTranslationRequests7dLabel": "7天内请求数",
+  "adminTranslationTokens7dLabel": "7天内令牌数"
 }

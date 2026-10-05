@@ -53,6 +53,20 @@ class MyChatEntry {
       );
 }
 
+/// Зеркало backend-enum `TranslationStatus` (задача 010).
+enum ChatMessageTranslationStatus { skipped, done, failed }
+
+ChatMessageTranslationStatus _translationStatusFromJson(String? value) {
+  switch (value) {
+    case 'DONE':
+      return ChatMessageTranslationStatus.done;
+    case 'FAILED':
+      return ChatMessageTranslationStatus.failed;
+    default:
+      return ChatMessageTranslationStatus.skipped;
+  }
+}
+
 class ChatMessage {
   const ChatMessage({
     required this.id,
@@ -62,6 +76,7 @@ class ChatMessage {
     required this.originalText,
     required this.originalLang,
     this.translations,
+    this.translationStatus = ChatMessageTranslationStatus.skipped,
     required this.isRead,
     required this.createdAt,
   });
@@ -73,6 +88,7 @@ class ChatMessage {
   final String originalText;
   final String originalLang;
   final I18nText? translations;
+  final ChatMessageTranslationStatus translationStatus;
   final bool isRead;
   final DateTime createdAt;
 
@@ -84,6 +100,7 @@ class ChatMessage {
         originalText: json['originalText'] as String,
         originalLang: json['originalLang'] as String,
         translations: json['translations'] == null ? null : I18nText.fromJson(json['translations'] as Map<String, dynamic>),
+        translationStatus: _translationStatusFromJson(json['translationStatus'] as String?),
         isRead: json['isRead'] as bool? ?? false,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
@@ -98,6 +115,7 @@ class ChatMessage {
         originalText: json['originalText'] as String,
         originalLang: json['originalLang'] as String,
         translations: json['translations'] == null ? null : I18nText.fromJson(json['translations'] as Map<String, dynamic>),
+        translationStatus: _translationStatusFromJson(json['translationStatus'] as String?),
         isRead: json['isRead'] as bool? ?? false,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );

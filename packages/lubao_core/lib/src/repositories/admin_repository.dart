@@ -42,6 +42,12 @@ class AdminRepository {
     await _client.dio.patch('/admin/settings/$key', data: {'value': value, if (reason != null) 'reason': reason});
   }
 
+  /// «Настройки → Перевод» (задача 010, п.8).
+  Future<AdminTranslationStats> translationStats() async {
+    final res = await _client.dio.get('/admin/translation-stats');
+    return AdminTranslationStats.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<AdminSearchResults> search(String q) async {
     final res = await _client.dio.get('/admin/search', queryParameters: {'q': q});
     return AdminSearchResults.fromJson(res.data as Map<String, dynamic>);

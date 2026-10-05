@@ -693,5 +693,13 @@
   "companyWecomUrlLabel": "Вебхук URL",
   "companyWecomTestButton": "Тексеру",
   "companyWecomTestSuccess": "Сынақ хабарламасы жіберілді",
-  "companyWecomTestError": "Жіберу мүмкін болмады — мекенжайды тексеріңіз"
+  "companyWecomTestError": "Жіберу мүмкін болмады — мекенжайды тексеріңіз",
+  "chatTranslationFailed": "Аударма қолжетімсіз",
+  "chatTranslationRetry": "қайталау",
+  "adminTranslationSettingsTitle": "Чат аудармасы",
+  "adminTranslationEnabledLabel": "Қосулы",
+  "adminTranslationProviderLabel": "Провайдер",
+  "adminTranslationModelLabel": "Модель",
+  "adminTranslationRequests7dLabel": "7 күндегі сұраулар",
+  "adminTranslationTokens7dLabel": "7 күндегі токендер"
 }

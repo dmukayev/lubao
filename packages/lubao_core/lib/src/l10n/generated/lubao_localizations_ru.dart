@@ -1826,4 +1826,28 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get companyWecomTestError => 'Не удалось отправить — проверьте адрес';
+
+  @override
+  String get chatTranslationFailed => 'Перевод недоступен';
+
+  @override
+  String get chatTranslationRetry => 'повторить';
+
+  @override
+  String get adminTranslationSettingsTitle => 'Перевод чата';
+
+  @override
+  String get adminTranslationEnabledLabel => 'Включён';
+
+  @override
+  String get adminTranslationProviderLabel => 'Провайдер';
+
+  @override
+  String get adminTranslationModelLabel => 'Модель';
+
+  @override
+  String get adminTranslationRequests7dLabel => 'Запросов за 7 дней';
+
+  @override
+  String get adminTranslationTokens7dLabel => 'Токенов за 7 дней';
 }

@@ -818,5 +818,13 @@
   "companyWecomUrlLabel": "Webhook URL",
   "companyWecomTestButton": "Test",
   "companyWecomTestSuccess": "Test message sent",
-  "companyWecomTestError": "Failed to send — check the URL"
+  "companyWecomTestError": "Failed to send — check the URL",
+  "chatTranslationFailed": "Translation unavailable",
+  "chatTranslationRetry": "retry",
+  "adminTranslationSettingsTitle": "Chat translation",
+  "adminTranslationEnabledLabel": "Enabled",
+  "adminTranslationProviderLabel": "Provider",
+  "adminTranslationModelLabel": "Model",
+  "adminTranslationRequests7dLabel": "Requests in 7 days",
+  "adminTranslationTokens7dLabel": "Tokens in 7 days"
 }

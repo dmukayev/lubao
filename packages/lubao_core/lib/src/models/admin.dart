@@ -1411,3 +1411,31 @@ class AdminChatMessage {
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 }
+
+/// «Настройки → Перевод» (задача 010, п.8).
+class AdminTranslationStats {
+  const AdminTranslationStats({
+    required this.enabled,
+    required this.provider,
+    this.model,
+    required this.requests7d,
+    required this.successRequests7d,
+    required this.tokensUsed7d,
+  });
+
+  final bool enabled;
+  final String provider;
+  final String? model;
+  final int requests7d;
+  final int successRequests7d;
+  final int tokensUsed7d;
+
+  factory AdminTranslationStats.fromJson(Map<String, dynamic> json) => AdminTranslationStats(
+        enabled: json['enabled'] as bool,
+        provider: json['provider'] as String,
+        model: json['model'] as String?,
+        requests7d: json['requests7d'] as int,
+        successRequests7d: json['successRequests7d'] as int,
+        tokensUsed7d: json['tokensUsed7d'] as int,
+      );
+}

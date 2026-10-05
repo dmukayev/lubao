@@ -1833,4 +1833,28 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get companyWecomTestError => 'Failed to send — check the URL';
+
+  @override
+  String get chatTranslationFailed => 'Translation unavailable';
+
+  @override
+  String get chatTranslationRetry => 'retry';
+
+  @override
+  String get adminTranslationSettingsTitle => 'Chat translation';
+
+  @override
+  String get adminTranslationEnabledLabel => 'Enabled';
+
+  @override
+  String get adminTranslationProviderLabel => 'Provider';
+
+  @override
+  String get adminTranslationModelLabel => 'Model';
+
+  @override
+  String get adminTranslationRequests7dLabel => 'Requests in 7 days';
+
+  @override
+  String get adminTranslationTokens7dLabel => 'Tokens in 7 days';
 }

@@ -86,6 +86,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  /// «Перевод недоступен · повторить» (задача 010, п.7).
+  Future<void> _retryTranslation(ChatMessage message) async {
+    try {
+      await ref.read(chatRepositoryProvider).retryTranslation(widget.chatId, message.id);
+      ref.invalidate(chatMessagesProvider(widget.chatId));
+    } catch (_) {
+      // остаётся FAILED — пользователь может попробовать снова
+    }
+  }
+
   Future<void> _attachLocation() async {
     final t = context.l10n;
     setState(() => _sharingLocation = true);
@@ -237,6 +247,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         isMine: message.isMine,
                         isTranslated: message.translations != null && message.originalLang != locale,
                         originalText: message.originalText,
+                        isTranslationFailed: !message.isMine &&
+                            message.originalLang != locale &&
+                            message.translationStatus == ChatMessageTranslationStatus.failed,
+                        onRetryTranslation: () => _retryTranslation(message),
                       ),
                       Row(
                         mainAxisSize: MainAxisSize.min,

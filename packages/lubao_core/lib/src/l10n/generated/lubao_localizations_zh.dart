@@ -1801,4 +1801,28 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get companyWecomTestError => '发送失败——请检查地址';
+
+  @override
+  String get chatTranslationFailed => '翻译不可用';
+
+  @override
+  String get chatTranslationRetry => '重试';
+
+  @override
+  String get adminTranslationSettingsTitle => '聊天翻译';
+
+  @override
+  String get adminTranslationEnabledLabel => '已启用';
+
+  @override
+  String get adminTranslationProviderLabel => '提供商';
+
+  @override
+  String get adminTranslationModelLabel => '模型';
+
+  @override
+  String get adminTranslationRequests7dLabel => '7天内请求数';
+
+  @override
+  String get adminTranslationTokens7dLabel => '7天内令牌数';
 }

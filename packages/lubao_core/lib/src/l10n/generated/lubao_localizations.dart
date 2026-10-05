@@ -3557,6 +3557,54 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Не удалось отправить — проверьте адрес'**
   String get companyWecomTestError;
+
+  /// No description provided for @chatTranslationFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перевод недоступен'**
+  String get chatTranslationFailed;
+
+  /// No description provided for @chatTranslationRetry.
+  ///
+  /// In ru, this message translates to:
+  /// **'повторить'**
+  String get chatTranslationRetry;
+
+  /// No description provided for @adminTranslationSettingsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перевод чата'**
+  String get adminTranslationSettingsTitle;
+
+  /// No description provided for @adminTranslationEnabledLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Включён'**
+  String get adminTranslationEnabledLabel;
+
+  /// No description provided for @adminTranslationProviderLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Провайдер'**
+  String get adminTranslationProviderLabel;
+
+  /// No description provided for @adminTranslationModelLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Модель'**
+  String get adminTranslationModelLabel;
+
+  /// No description provided for @adminTranslationRequests7dLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Запросов за 7 дней'**
+  String get adminTranslationRequests7dLabel;
+
+  /// No description provided for @adminTranslationTokens7dLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Токенов за 7 дней'**
+  String get adminTranslationTokens7dLabel;
 }
 
 class _LubaoLocalizationsDelegate

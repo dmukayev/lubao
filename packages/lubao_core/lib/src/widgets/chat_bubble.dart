@@ -13,12 +13,18 @@ class ChatBubble extends StatefulWidget {
     required this.isMine,
     this.isTranslated = false,
     this.originalText,
+    this.isTranslationFailed = false,
+    this.onRetryTranslation,
   });
 
   final String text;
   final bool isMine;
   final bool isTranslated;
   final String? originalText;
+  /// Перевод не удался (задача 010, п.7) — показываем оригинал и
+  /// «Перевод недоступен · повторить» вместо значка «Переведено».
+  final bool isTranslationFailed;
+  final VoidCallback? onRetryTranslation;
 
   @override
   State<ChatBubble> createState() => _ChatBubbleState();
@@ -53,7 +59,18 @@ class _ChatBubbleState extends State<ChatBubble> {
               style: AppTextStyles.body.copyWith(color: fg),
             ),
           ),
-          if (widget.isTranslated && widget.originalText != null)
+          if (widget.isTranslationFailed)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: GestureDetector(
+                onTap: widget.onRetryTranslation,
+                child: Text(
+                  '${t.chatTranslationFailed} · ${t.chatTranslationRetry}',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.error),
+                ),
+              ),
+            )
+          else if (widget.isTranslated && widget.originalText != null)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: GestureDetector(
