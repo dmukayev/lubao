@@ -1582,4 +1582,76 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get roleAdmin => '管理员';
+
+  @override
+  String get adminEdit => '编辑';
+
+  @override
+  String get adminTransferOwnershipTitle => '转让所有权';
+
+  @override
+  String get adminDemoteToLogistTitle => '降级为物流专员';
+
+  @override
+  String get adminLastOwnerError => '无法操作——这是公司最后一位所有者';
+
+  @override
+  String get adminRemoveMemberTitle => '移除员工';
+
+  @override
+  String get adminRemoveMember => '移除';
+
+  @override
+  String get adminChangeMemberEmailTitle => '更改员工邮箱';
+
+  @override
+  String get adminEmailTakenError => '该邮箱已被使用';
+
+  @override
+  String get adminCompanyCity => '城市';
+
+  @override
+  String get adminLegalAddress => '法定地址';
+
+  @override
+  String get adminTaxId => '注册号';
+
+  @override
+  String get adminPhoneChangeWarning => '保存后司机的所有登录会话将被终止';
+
+  @override
+  String get adminVehicleBrand => '品牌';
+
+  @override
+  String get adminVehicleLengthM => '长度(米)';
+
+  @override
+  String get adminNameEn => '名称 (en)';
+
+  @override
+  String get adminSortOrder => '排序';
+
+  @override
+  String get adminLat => '纬度';
+
+  @override
+  String get adminLng => '经度';
+
+  @override
+  String get adminCitiesTab => '城市';
+
+  @override
+  String get adminSettingDefaultCity => '默认地点';
+
+  @override
+  String get adminSettingNotSet => '未设置';
+
+  @override
+  String get adminSettingHomeRadius => '「离家近」半径（公里）';
+
+  @override
+  String get adminUnitKm => '公里';
+
+  @override
+  String get adminSettingCargoArchiveDays => '无响应货物的归档期限';
 }

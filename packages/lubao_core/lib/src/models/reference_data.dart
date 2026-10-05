@@ -25,6 +25,8 @@ class City {
     required this.name,
     required this.isCapital,
     this.cityStatus = CityStatus.approved,
+    this.lat,
+    this.lng,
   });
 
   final String id;
@@ -34,6 +36,8 @@ class City {
   final I18nText name;
   final bool isCapital;
   final CityStatus cityStatus;
+  final double? lat;
+  final double? lng;
 
   factory City.fromJson(Map<String, dynamic> json) => City(
         id: json['id'] as String,
@@ -43,6 +47,8 @@ class City {
         name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
         isCapital: json['isCapital'] as bool? ?? false,
         cityStatus: cityStatusFromJson(json['cityStatus'] as String? ?? 'APPROVED'),
+        lat: (json['lat'] as num?)?.toDouble(),
+        lng: (json['lng'] as num?)?.toDouble(),
       );
 }
 
@@ -63,44 +69,58 @@ class Region {
 }
 
 class BodyType {
-  const BodyType({required this.id, required this.code, required this.name});
+  const BodyType({required this.id, required this.code, required this.name, this.isActive = true, this.sortOrder = 0});
 
   final String id;
   final String code;
   final I18nText name;
+  final bool isActive;
+  final int sortOrder;
 
   factory BodyType.fromJson(Map<String, dynamic> json) => BodyType(
         id: json['id'] as String,
         code: json['code'] as String,
         name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
+        isActive: json['isActive'] as bool? ?? true,
+        sortOrder: json['sortOrder'] as int? ?? 0,
       );
 }
 
 class Permit {
-  const Permit({required this.id, required this.code, required this.name});
+  const Permit({required this.id, required this.code, required this.name, this.isActive = true, this.sortOrder = 0});
 
   final String id;
   final String code;
   final I18nText name;
+  final bool isActive;
+  final int sortOrder;
 
   factory Permit.fromJson(Map<String, dynamic> json) => Permit(
         id: json['id'] as String,
         code: json['code'] as String,
         name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
+        isActive: json['isActive'] as bool? ?? true,
+        sortOrder: json['sortOrder'] as int? ?? 0,
       );
 }
 
 class LoadingPoint {
-  const LoadingPoint({required this.id, required this.name, required this.isActive});
+  const LoadingPoint({required this.id, required this.cityId, required this.name, required this.isActive, this.lat, this.lng});
 
   final String id;
+  final String cityId;
   final I18nText name;
   final bool isActive;
+  final double? lat;
+  final double? lng;
 
   factory LoadingPoint.fromJson(Map<String, dynamic> json) => LoadingPoint(
         id: json['id'] as String,
+        cityId: json['cityId'] as String,
         name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
         isActive: json['isActive'] as bool? ?? true,
+        lat: (json['lat'] as num?)?.toDouble(),
+        lng: (json['lng'] as num?)?.toDouble(),
       );
 }
 

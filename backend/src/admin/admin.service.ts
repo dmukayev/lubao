@@ -1,13 +1,21 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionService } from '../auth/session.service';
 import { UploadsService } from '../uploads/uploads.service';
+import { AppSettingsService } from '../app-settings/app-settings.service';
 import { REQUIRED_DRIVER_DOC_TYPES } from '../drivers/drivers.service';
 import {
+  AdminChangeMemberEmailDto,
   AdminDealStatusDto,
+  AdminSetMemberRoleDto,
   AdminUpdateCargoDto,
+  AdminUpdateCityDto,
+  AdminUpdateCompanyDto,
+  AdminUpdateDriverDto,
+  AdminUpdatePointDto,
+  AdminUpdateReferenceItemDto,
   BlockUserDto,
   CargoSearchQueryDto,
   CreateBodyTypeDto,
@@ -34,10 +42,21 @@ export class AdminService {
     private readonly prisma: PrismaService,
     private readonly sessions: SessionService,
     private readonly uploads: UploadsService,
+    private readonly appSettings?: AppSettingsService,
   ) {}
 
   private async logAudit(actorUserId: string, action: string, entityType: string, entityId: string, metadata?: object) {
     await this.prisma.auditLog.create({ data: { actorUserId, action, entityType, entityId, metadata } });
+  }
+
+  /// Настройки (п.22) — каждое изменение в audit_log со старым/новым
+  /// значением, даже без причины (settings — не карточка конкретного
+  /// человека/компании, где причина обязательна по общему паттерну, п.18).
+  async setAppSetting(adminUserId: string, key: string, value: string, reason?: string) {
+    const oldValue = await this.appSettings!.get(key);
+    await this.appSettings!.set(key, value);
+    await this.logAudit(adminUserId, 'SETTING_CHANGED', 'AppSetting', key, { reason, old: oldValue, new: value });
+    return { success: true };
   }
 
   private periodStart(period?: 'today' | '7d' | '30d'): Date {
@@ -1297,12 +1316,14 @@ export class AdminService {
         isBlocked: driver.user.isBlocked,
         lastLoginAt: lastSession?.lastUsedAt ?? driver.user.createdAt,
       },
+      homeCityId: driver.homeCityId,
       homeCityName: driver.homeCity.name,
       anyCountry: driver.anyCountry,
       directions: driver.directions.map((d) => ({ countryId: d.countryId, name: d.country.name })),
       permits: driver.permits.map((p) => ({ permitId: p.permitId, name: p.permit.name })),
       vehicles: driver.vehicles.map((v) => ({
         id: v.id,
+        bodyTypeId: v.bodyTypeId,
         bodyTypeName: v.bodyType.name,
         capacityTons: v.capacityTons ? Number(v.capacityTons) : null,
         lengthM: v.lengthM ? Number(v.lengthM) : null,
@@ -1391,6 +1412,7 @@ export class AdminService {
       id: company.id,
       name: company.name,
       nameRu: company.nameRu,
+      countryId: company.countryId,
       countryName: company.country.name,
       city: company.city,
       legalAddress: company.legalAddress,
@@ -1550,6 +1572,83 @@ export class AdminService {
     return { tempPassword };
   }
 
+  /// Общая панель редактирования компании (п.18/20).
+  async updateCompany(id: string, adminUserId: string, dto: AdminUpdateCompanyDto) {
+    const company = await this.prisma.company.findUnique({ where: { id } });
+    if (!company) throw new NotFoundException('Company not found');
+
+    const fields: Array<[string, unknown, unknown]> = [
+      ['name', company.name, dto.name],
+      ['nameRu', company.nameRu, dto.nameRu],
+      ['countryId', company.countryId, dto.countryId],
+      ['city', company.city, dto.city],
+      ['legalAddress', company.legalAddress, dto.legalAddress],
+      ['taxId', company.taxId, dto.taxId],
+    ];
+    const changes = Object.fromEntries(
+      fields.filter(([, oldValue, newValue]) => newValue !== undefined && oldValue !== newValue).map(([key, oldValue, newValue]) => [key, { old: oldValue, new: newValue }]),
+    );
+
+    await this.prisma.company.update({
+      where: { id },
+      data: { name: dto.name, nameRu: dto.nameRu, countryId: dto.countryId, city: dto.city, legalAddress: dto.legalAddress, taxId: dto.taxId },
+    });
+    await this.logAudit(adminUserId, 'COMPANY_UPDATED', 'Company', id, { reason: dto.reason, changes });
+
+    return { id };
+  }
+
+  /// Сменить роль сотрудника (п.20) — «передать владение» делается этим же
+  /// методом: назначить LOGIST → OWNER, старого OWNER вызывающая сторона
+  /// отдельным вызовом переводит в LOGIST (на пилоте почти всегда один
+  /// владелец, две роли — проще двух разных эндпоинтов «transfer»/«demote»).
+  async setMemberRole(companyId: string, userId: string, adminUserId: string, dto: AdminSetMemberRoleDto) {
+    const member = await this.prisma.companyMember.findFirst({ where: { companyId, userId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    if (member.role === 'OWNER' && dto.role === 'LOGIST') {
+      const owners = await this.prisma.companyMember.count({ where: { companyId, role: 'OWNER' } });
+      if (owners <= 1) throw new BadRequestException('Cannot demote the last owner — assign another owner first');
+    }
+
+    await this.prisma.companyMember.update({ where: { id: member.id }, data: { role: dto.role } });
+    await this.logAudit(adminUserId, 'COMPANY_MEMBER_ROLE_CHANGED', 'Company', companyId, { reason: dto.reason, userId, from: member.role, to: dto.role });
+
+    return { userId, role: dto.role };
+  }
+
+  /// Удалить сотрудника из компании (п.20) — не последнего владельца.
+  async removeMember(companyId: string, userId: string, adminUserId: string, reason: string) {
+    const member = await this.prisma.companyMember.findFirst({ where: { companyId, userId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    if (member.role === 'OWNER') {
+      const owners = await this.prisma.companyMember.count({ where: { companyId, role: 'OWNER' } });
+      if (owners <= 1) throw new BadRequestException('Cannot remove the last owner');
+    }
+
+    await this.prisma.companyMember.delete({ where: { id: member.id } });
+    await this.logAudit(adminUserId, 'COMPANY_MEMBER_REMOVED', 'Company', companyId, { reason, userId });
+
+    return { userId };
+  }
+
+  /// Email сотрудника — с отзывом сессий (п.20): логин идёт по email+пароль
+  /// у компании (задача 025), смена email должна выгнать со старых сессий.
+  async changeMemberEmail(companyId: string, userId: string, adminUserId: string, dto: AdminChangeMemberEmailDto) {
+    const member = await this.prisma.companyMember.findFirst({ where: { companyId, userId }, include: { user: true } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const taken = await this.prisma.user.findFirst({ where: { email: dto.email, id: { not: userId } } });
+    if (taken) throw new ConflictException('Email is already in use');
+
+    await this.prisma.user.update({ where: { id: userId }, data: { email: dto.email } });
+    await this.sessions.revokeAllForUser(userId);
+    await this.logAudit(adminUserId, 'COMPANY_MEMBER_EMAIL_CHANGED', 'Company', companyId, { reason: dto.reason, userId, old: member.user.email, new: dto.email });
+
+    return { userId, email: dto.email };
+  }
+
   /// Аналог setCompanyVerified для водителя — та же логика force/reason,
   /// те же 4 обязательных документа, что и в reviewVerificationDocument.
   async setDriverVerified(id: string, adminUserId: string, dto: SetVerifiedDto) {
@@ -1576,29 +1675,242 @@ export class AdminService {
     return { id: updated.id, isVerified: updated.isVerified };
   }
 
+  /// Общая панель редактирования водителя (п.18/19) — одна причина, один
+  /// audit_log с old/new по каждому изменённому полю. Правит только
+  /// `vehicles[0]` — на пилоте у водителя одна машина, хотя схема допускает
+  /// несколько; та же осознанная упрощение, что у сверки в задаче 028, п.9.
+  async updateDriver(id: string, adminUserId: string, dto: AdminUpdateDriverDto) {
+    const driver = await this.prisma.driver.findUnique({
+      where: { id },
+      include: { user: true, vehicles: { orderBy: { createdAt: 'asc' } }, directions: true, permits: true },
+    });
+    if (!driver) throw new NotFoundException('Driver not found');
+
+    const changes: Record<string, { old: unknown; new: unknown }> = {};
+    let phoneChanged = false;
+
+    if (dto.fullName !== undefined && dto.fullName !== driver.fullName) {
+      changes.fullName = { old: driver.fullName, new: dto.fullName };
+    }
+    if (dto.phone !== undefined && dto.phone !== driver.user.phone) {
+      const taken = await this.prisma.user.findFirst({ where: { phone: dto.phone, id: { not: driver.userId } } });
+      if (taken) throw new ConflictException('Phone number is already in use');
+      changes.phone = { old: driver.user.phone, new: dto.phone };
+      phoneChanged = true;
+    }
+    if (dto.homeCityId !== undefined && dto.homeCityId !== driver.homeCityId) {
+      const city = await this.prisma.city.findUnique({ where: { id: dto.homeCityId } });
+      if (!city) throw new NotFoundException('City not found');
+      changes.homeCityId = { old: driver.homeCityId, new: dto.homeCityId };
+    }
+    if (dto.anyCountry !== undefined && dto.anyCountry !== driver.anyCountry) {
+      changes.anyCountry = { old: driver.anyCountry, new: dto.anyCountry };
+    }
+    if (dto.countryIds !== undefined) {
+      const old = driver.directions.map((d) => d.countryId).sort();
+      const next = [...dto.countryIds].sort();
+      if (JSON.stringify(old) !== JSON.stringify(next)) changes.countryIds = { old, new: next };
+    }
+    if (dto.permitIds !== undefined) {
+      const old = driver.permits.map((p) => p.permitId).sort();
+      const next = [...dto.permitIds].sort();
+      if (JSON.stringify(old) !== JSON.stringify(next)) changes.permitIds = { old, new: next };
+    }
+
+    const vehicle = driver.vehicles[0];
+    let vehicleIdentityChanged = false;
+    if (dto.vehicle && vehicle) {
+      const v = dto.vehicle;
+      const vehicleChanges: Record<string, { old: unknown; new: unknown }> = {};
+      if (v.bodyTypeId !== undefined && v.bodyTypeId !== vehicle.bodyTypeId) {
+        vehicleChanges.bodyTypeId = { old: vehicle.bodyTypeId, new: v.bodyTypeId };
+        vehicleIdentityChanged = true;
+      }
+      if (v.plateNumber !== undefined && v.plateNumber !== vehicle.plateNumber) {
+        vehicleChanges.plateNumber = { old: vehicle.plateNumber, new: v.plateNumber };
+        vehicleIdentityChanged = true;
+      }
+      if (v.capacityTons !== undefined && v.capacityTons !== (vehicle.capacityTons ? Number(vehicle.capacityTons) : null)) {
+        vehicleChanges.capacityTons = { old: vehicle.capacityTons ? Number(vehicle.capacityTons) : null, new: v.capacityTons };
+      }
+      if (v.lengthM !== undefined && v.lengthM !== (vehicle.lengthM ? Number(vehicle.lengthM) : null)) {
+        vehicleChanges.lengthM = { old: vehicle.lengthM ? Number(vehicle.lengthM) : null, new: v.lengthM };
+      }
+      if (v.brand !== undefined && v.brand !== vehicle.brand) {
+        vehicleChanges.brand = { old: vehicle.brand, new: v.brand };
+      }
+      if (Object.keys(vehicleChanges).length > 0) changes.vehicle = { old: null, new: vehicleChanges };
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.driver.update({
+        where: { id },
+        data: {
+          fullName: dto.fullName,
+          homeCityId: dto.homeCityId,
+          anyCountry: dto.anyCountry,
+          ...(vehicleIdentityChanged ? { isVerified: false } : {}),
+        },
+      });
+      if (dto.phone !== undefined) {
+        await tx.user.update({ where: { id: driver.userId }, data: { phone: dto.phone } });
+      }
+      if (dto.countryIds !== undefined) {
+        await tx.driverDirection.deleteMany({ where: { driverId: id } });
+        if (dto.countryIds.length > 0) {
+          await tx.driverDirection.createMany({ data: dto.countryIds.map((countryId) => ({ driverId: id, countryId })) });
+        }
+      }
+      if (dto.permitIds !== undefined) {
+        await tx.driverPermit.deleteMany({ where: { driverId: id } });
+        if (dto.permitIds.length > 0) {
+          await tx.driverPermit.createMany({ data: dto.permitIds.map((permitId) => ({ driverId: id, permitId })) });
+        }
+      }
+      if (dto.vehicle && vehicle) {
+        await tx.vehicle.update({
+          where: { id: vehicle.id },
+          data: {
+            bodyTypeId: dto.vehicle.bodyTypeId,
+            capacityTons: dto.vehicle.capacityTons,
+            lengthM: dto.vehicle.lengthM,
+            plateNumber: dto.vehicle.plateNumber,
+            brand: dto.vehicle.brand,
+          },
+        });
+      }
+      if (vehicleIdentityChanged) {
+        // Смена кузова/госномера тягача — техпаспорта нужно переснять и
+        // проверить заново; селфи и права не трогаем (решение 2026-10-04).
+        await tx.verificationDocument.updateMany({
+          where: { driverId: id, type: { in: ['VEHICLE_PASSPORT', 'TRAILER_PASSPORT'] }, status: 'APPROVED' },
+          data: { status: 'PENDING', reviewedByUserId: null, reviewedAt: null, rejectReason: null },
+        });
+      }
+    });
+
+    if (phoneChanged) await this.sessions.revokeAllForUser(driver.userId);
+    await this.logAudit(adminUserId, 'DRIVER_UPDATED', 'Driver', id, { reason: dto.reason, changes, phoneChanged, vehicleIdentityChanged });
+
+    return { id, phoneChanged, vehicleIdentityChanged };
+  }
+
   // -- reference data management ------------------------------------------------
 
   async createBodyType(dto: CreateBodyTypeDto) {
     return this.prisma.bodyType.create({
-      data: { code: dto.code, name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh } },
+      data: { code: dto.code, name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en } },
     });
   }
 
   async createPermit(dto: CreatePermitDto) {
     return this.prisma.permit.create({
-      data: { code: dto.code, name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh } },
+      data: { code: dto.code, name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en } },
     });
   }
 
   async createPoint(dto: CreatePointDto) {
     return this.prisma.point.create({
-      data: { cityId: dto.cityId, name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh }, isActive: true },
+      data: { cityId: dto.cityId, name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en }, isActive: true },
     });
   }
 
-  async setPointActive(id: string, isActive: boolean) {
-    const point = await this.prisma.point.update({ where: { id }, data: { isActive } });
-    return { id: point.id, isActive: point.isActive };
+  /// Правка уже созданного body-type/permit (п.21) — названия на 4 языках,
+  /// включить/выключить, порядок. Удалять нельзя — только выключать, если
+  /// запись используется (здесь просто не даём удалить вовсе: ни у одной
+  /// из них сегодня нет DELETE-эндпоинта).
+  async updateBodyType(id: string, adminUserId: string, dto: AdminUpdateReferenceItemDto) {
+    return this.updateReferenceItem('bodyType', 'BodyType', id, adminUserId, dto);
+  }
+
+  async updatePermit(id: string, adminUserId: string, dto: AdminUpdateReferenceItemDto) {
+    return this.updateReferenceItem('permit', 'Permit', id, adminUserId, dto);
+  }
+
+  private async updateReferenceItem(
+    model: 'bodyType' | 'permit',
+    entityType: 'BodyType' | 'Permit',
+    id: string,
+    adminUserId: string,
+    dto: AdminUpdateReferenceItemDto,
+  ) {
+    const delegate = this.prisma[model] as { findUnique: (args: unknown) => Promise<{ name: unknown; isActive: boolean; sortOrder: number } | null>; update: (args: unknown) => Promise<unknown> };
+    const existing = await delegate.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException(`${entityType} not found`);
+
+    const changes: Record<string, { old: unknown; new: unknown }> = {};
+    if (dto.name !== undefined) changes.name = { old: existing.name, new: dto.name };
+    if (dto.isActive !== undefined && dto.isActive !== existing.isActive) changes.isActive = { old: existing.isActive, new: dto.isActive };
+    if (dto.sortOrder !== undefined && dto.sortOrder !== existing.sortOrder) changes.sortOrder = { old: existing.sortOrder, new: dto.sortOrder };
+
+    await delegate.update({
+      where: { id },
+      data: {
+        name: dto.name ? { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en } : undefined,
+        isActive: dto.isActive,
+        sortOrder: dto.sortOrder,
+      },
+    });
+    await this.logAudit(adminUserId, `${entityType.toUpperCase()}_UPDATED`, entityType, id, { reason: dto.reason, changes });
+
+    return { id };
+  }
+
+  /// Правка точки (п.21) — названия на 4 языках, город, координаты,
+  /// включить/выключить; замена узкого `setPointActive` — теперь то же
+  /// общее «Редактировать» с обязательной причиной (п.18), а не голый
+  /// переключатель без следа в журнале.
+  async updatePoint(id: string, adminUserId: string, dto: AdminUpdatePointDto) {
+    const existing = await this.prisma.point.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Point not found');
+
+    const changes: Record<string, { old: unknown; new: unknown }> = {};
+    if (dto.name !== undefined) changes.name = { old: existing.name, new: dto.name };
+    if (dto.cityId !== undefined && dto.cityId !== existing.cityId) changes.cityId = { old: existing.cityId, new: dto.cityId };
+    if (dto.isActive !== undefined && dto.isActive !== existing.isActive) changes.isActive = { old: existing.isActive, new: dto.isActive };
+    if (dto.lat !== undefined) changes.lat = { old: existing.lat ? Number(existing.lat) : null, new: dto.lat };
+    if (dto.lng !== undefined) changes.lng = { old: existing.lng ? Number(existing.lng) : null, new: dto.lng };
+
+    await this.prisma.point.update({
+      where: { id },
+      data: {
+        name: dto.name ? { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en } : undefined,
+        cityId: dto.cityId,
+        lat: dto.lat,
+        lng: dto.lng,
+        isActive: dto.isActive,
+      },
+    });
+    await this.logAudit(adminUserId, 'POINT_UPDATED', 'Point', id, { reason: dto.reason, changes });
+
+    return { id };
+  }
+
+  /// Правка уже APPROVED города (п.21) — область и координаты нужны для
+  /// «Близко к дому» (задача 016). Отдельно от `moderateCity`, который
+  /// только для очереди PENDING.
+  async updateCity(id: string, adminUserId: string, dto: AdminUpdateCityDto) {
+    const existing = await this.prisma.city.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('City not found');
+
+    const changes: Record<string, { old: unknown; new: unknown }> = {};
+    if (dto.name !== undefined) changes.name = { old: existing.name, new: dto.name };
+    if (dto.regionId !== undefined && dto.regionId !== existing.regionId) changes.regionId = { old: existing.regionId, new: dto.regionId };
+    if (dto.lat !== undefined) changes.lat = { old: existing.lat ? Number(existing.lat) : null, new: dto.lat };
+    if (dto.lng !== undefined) changes.lng = { old: existing.lng ? Number(existing.lng) : null, new: dto.lng };
+
+    await this.prisma.city.update({
+      where: { id },
+      data: {
+        name: dto.name ? { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en } : undefined,
+        regionId: dto.regionId,
+        lat: dto.lat,
+        lng: dto.lng,
+      },
+    });
+    await this.logAudit(adminUserId, 'CITY_UPDATED', 'City', id, { reason: dto.reason, changes });
+
+    return { id };
   }
 
   async pendingCities() {

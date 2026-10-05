@@ -9,7 +9,7 @@ import 'package:lubao_app/providers/locale_provider.dart';
 
 const _kz = Country(id: 'kz-1', code: 'KZ', name: I18nText(kk: 'Қазақстан', ru: 'Казахстан', zh: '哈萨克斯坦'), isCisMember: true);
 const _uz = Country(id: 'uz-1', code: 'UZ', name: I18nText(kk: 'Өзбекстан', ru: 'Узбекистан', zh: '乌兹别克斯坦'), isCisMember: true);
-const _point = LoadingPoint(id: 'point-1', name: I18nText(kk: 'Қорғас', ru: 'Хоргос', zh: '霍尔果斯'), isActive: true);
+const _point = LoadingPoint(id: 'point-1', cityId: 'city-1', name: I18nText(kk: 'Қорғас', ru: 'Хоргос', zh: '霍尔果斯'), isActive: true);
 
 final _fixture = ReferenceData(
   countries: const [_kz, _uz],

@@ -1,5 +1,6 @@
-import { IsArray, IsBoolean, IsIn, IsInt, IsISO8601, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsPersonName } from '../../common/validators/person-name.validator';
 
 export class ReviewVerificationDocumentDto {
   @IsIn(['APPROVED', 'REJECTED'])
@@ -104,14 +105,13 @@ export class CreatePointDto {
   name!: UpsertI18nNameDto;
 }
 
-export class SetActiveDto {
-  @IsBoolean()
-  isActive!: boolean;
-}
-
 export class SetAppSettingDto {
   @IsString()
   value!: string;
+
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }
 
 export class StatsQueryDto {
@@ -273,6 +273,180 @@ export class AdminReasonDto {
 export class AdminDealStatusDto {
   @IsIn(['SELECTED', 'CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED'])
   status!: 'SELECTED' | 'CONFIRMED_BY_DRIVER' | 'LOADED' | 'IN_TRANSIT' | 'DELIVERED';
+
+  @IsString()
+  reason!: string;
+}
+
+/// Правки машины водителя внутри общей панели редактирования (п.19) — одна
+/// вложенная DTO, не отдельный эндпоинт, т.к. правится как часть одной
+/// причины/одной записи в audit_log.
+export class AdminDriverVehicleUpdateDto {
+  @IsOptional()
+  @IsString()
+  bodyTypeId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  capacityTons?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  lengthM?: number;
+
+  @IsOptional()
+  @IsString()
+  plateNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  brand?: string;
+}
+
+export class AdminUpdateDriverDto {
+  @IsOptional()
+  @IsPersonName()
+  fullName?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  homeCityId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  anyCountry?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  countryIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  permitIds?: string[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AdminDriverVehicleUpdateDto)
+  vehicle?: AdminDriverVehicleUpdateDto;
+
+  @IsString()
+  reason!: string;
+}
+
+export class AdminUpdateCompanyDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  nameRu?: string;
+
+  @IsOptional()
+  @IsString()
+  countryId?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  legalAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  taxId?: string;
+
+  @IsString()
+  reason!: string;
+}
+
+export class AdminSetMemberRoleDto {
+  @IsIn(['OWNER', 'LOGIST'])
+  role!: 'OWNER' | 'LOGIST';
+
+  @IsString()
+  reason!: string;
+}
+
+export class AdminChangeMemberEmailDto {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  reason!: string;
+}
+
+/// Правка уже существующего справочного элемента (не создание — оно уже
+/// есть в Create*Dto выше). `UpsertI18nNameDto.en` опционален, как и везде
+/// в справочниках.
+export class AdminUpdateReferenceItemDto {
+  @IsOptional()
+  name?: UpsertI18nNameDto;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  sortOrder?: number;
+
+  @IsString()
+  reason!: string;
+}
+
+export class AdminUpdatePointDto {
+  @IsOptional()
+  name?: UpsertI18nNameDto;
+
+  @IsOptional()
+  @IsString()
+  cityId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  lat?: number;
+
+  @IsOptional()
+  @IsNumber()
+  lng?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsString()
+  reason!: string;
+}
+
+/// Правка уже APPROVED города (область/координаты нужны «Близко к дому»,
+/// задача 016) — отдельно от `ModerateCityDto`, который только для очереди
+/// PENDING-городов.
+export class AdminUpdateCityDto {
+  @IsOptional()
+  name?: UpsertI18nNameDto;
+
+  @IsOptional()
+  @IsString()
+  regionId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  lat?: number;
+
+  @IsOptional()
+  @IsNumber()
+  lng?: number;
 
   @IsString()
   reason!: string;

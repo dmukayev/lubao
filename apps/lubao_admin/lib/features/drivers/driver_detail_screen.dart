@@ -9,6 +9,7 @@ import '../../providers/data_providers.dart';
 import '../shared/admin_dialogs.dart';
 import '../shared/admin_status_helpers.dart';
 import '../shared/document_viewer.dart';
+import 'driver_edit_panel.dart';
 
 class DriverDetailScreen extends ConsumerWidget {
   const DriverDetailScreen({super.key, required this.id});
@@ -64,6 +65,29 @@ class DriverDetailScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _edit(BuildContext context, WidgetRef ref, AdminDriverDetail driver) async {
+    final refData = await ref.read(referenceDataProvider.future);
+    if (!context.mounted) return;
+    final result = await showDriverEditPanel(context, driver: driver, refData: refData);
+    if (result == null) return;
+    await ref.read(adminRepositoryProvider).updateDriver(
+          id,
+          fullName: result.fullName,
+          phone: result.phone,
+          homeCityId: result.homeCityId,
+          anyCountry: result.anyCountry,
+          countryIds: result.countryIds,
+          permitIds: result.permitIds,
+          vehicleBodyTypeId: result.vehicleBodyTypeId,
+          vehicleCapacityTons: result.vehicleCapacityTons,
+          vehicleLengthM: result.vehicleLengthM,
+          vehiclePlateNumber: result.vehiclePlateNumber,
+          vehicleBrand: result.vehicleBrand,
+          reason: result.reason,
+        );
+    await _reload(ref);
+  }
+
   Future<void> _reviewDocument(BuildContext context, WidgetRef ref, AdminCardDocument doc, {required bool approve}) async {
     final t = context.l10n;
     String? reason;
@@ -99,6 +123,7 @@ class DriverDetailScreen extends ConsumerWidget {
             children: [
               _Header(
                 driver: driver,
+                onEdit: () => _edit(context, ref, driver),
                 onBlock: () => _block(context, ref, driver),
                 onUnblock: () => _unblock(context, ref, driver),
                 onEndSessions: () => _endSessions(context, ref, driver),
@@ -142,6 +167,7 @@ class DriverDetailScreen extends ConsumerWidget {
 class _Header extends StatelessWidget {
   const _Header({
     required this.driver,
+    required this.onEdit,
     required this.onBlock,
     required this.onUnblock,
     required this.onEndSessions,
@@ -149,6 +175,7 @@ class _Header extends StatelessWidget {
   });
 
   final AdminDriverDetail driver;
+  final VoidCallback onEdit;
   final VoidCallback onBlock;
   final VoidCallback onUnblock;
   final VoidCallback onEndSessions;
@@ -203,6 +230,8 @@ class _Header extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
+          OutlinedButton(onPressed: onEdit, child: Text(t.adminEdit)),
+          const SizedBox(width: 8),
           if (driver.isBlocked)
             OutlinedButton(onPressed: onUnblock, child: Text(t.adminUnblock))
           else

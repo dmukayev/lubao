@@ -1603,4 +1603,77 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get roleAdmin => 'Админ';
+
+  @override
+  String get adminEdit => 'Редактировать';
+
+  @override
+  String get adminTransferOwnershipTitle => 'Передать владение';
+
+  @override
+  String get adminDemoteToLogistTitle => 'Понизить до логиста';
+
+  @override
+  String get adminLastOwnerError => 'Нельзя — это последний владелец компании';
+
+  @override
+  String get adminRemoveMemberTitle => 'Удалить сотрудника';
+
+  @override
+  String get adminRemoveMember => 'Удалить';
+
+  @override
+  String get adminChangeMemberEmailTitle => 'Сменить email сотрудника';
+
+  @override
+  String get adminEmailTakenError => 'Этот email уже используется';
+
+  @override
+  String get adminCompanyCity => 'Город';
+
+  @override
+  String get adminLegalAddress => 'Юридический адрес';
+
+  @override
+  String get adminTaxId => 'Рег. номер (БИН)';
+
+  @override
+  String get adminPhoneChangeWarning =>
+      'При сохранении все сессии водителя будут завершены';
+
+  @override
+  String get adminVehicleBrand => 'Марка';
+
+  @override
+  String get adminVehicleLengthM => 'Длина, м';
+
+  @override
+  String get adminNameEn => 'Название (en)';
+
+  @override
+  String get adminSortOrder => 'Порядок';
+
+  @override
+  String get adminLat => 'Широта';
+
+  @override
+  String get adminLng => 'Долгота';
+
+  @override
+  String get adminCitiesTab => 'Города';
+
+  @override
+  String get adminSettingDefaultCity => 'Точка по умолчанию';
+
+  @override
+  String get adminSettingNotSet => 'Не задано';
+
+  @override
+  String get adminSettingHomeRadius => 'Радиус «Близко к дому», км';
+
+  @override
+  String get adminUnitKm => 'км';
+
+  @override
+  String get adminSettingCargoArchiveDays => 'Срок архива груза без откликов';
 }

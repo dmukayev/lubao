@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 
 function fakeUploads() {
@@ -1042,5 +1042,262 @@ describe('AdminService.dealDetail / dealChat / advanceDealStatusByAdmin / cancel
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     await expect(service.cancelDealByAdmin('deal1', 'admin-1', 'x')).rejects.toThrow(BadRequestException);
+  });
+});
+
+describe('AdminService.updateDriver — общая панель редактирования (задача 028, п.18/19)', () => {
+  function baseDriver(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      id: 'd1',
+      userId: 'u1',
+      fullName: 'Ерлан',
+      homeCityId: 'city1',
+      anyCountry: false,
+      user: { phone: '+77001112233' },
+      vehicles: [{ id: 'v1', bodyTypeId: 'bt1', plateNumber: 'A1', capacityTons: null, lengthM: null, brand: null, createdAt: new Date() }],
+      directions: [],
+      permits: [],
+      ...overrides,
+    };
+  }
+
+  function txMock() {
+    return {
+      driver: { update: jest.fn() },
+      user: { update: jest.fn() },
+      driverDirection: { deleteMany: jest.fn(), createMany: jest.fn() },
+      driverPermit: { deleteMany: jest.fn(), createMany: jest.fn() },
+      vehicle: { update: jest.fn() },
+      verificationDocument: { updateMany: jest.fn() },
+    };
+  }
+
+  it('throws NotFoundException for an unknown driver', async () => {
+    const prisma: any = { driver: { findUnique: jest.fn().mockResolvedValue(null) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    await expect(service.updateDriver('missing', 'admin-1', { reason: 'x' } as any)).rejects.toThrow(NotFoundException);
+  });
+
+  it('changing phone checks uniqueness, revokes sessions, and logs phoneChanged', async () => {
+    const tx = txMock();
+    const sessions = { revokeAllForUser: jest.fn() };
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue(baseDriver()) },
+      user: { findFirst: jest.fn().mockResolvedValue(null) },
+      city: { findUnique: jest.fn() },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, sessions as any, fakeUploads() as any);
+
+    const result = await service.updateDriver('d1', 'admin-1', { phone: '+77009998877', reason: 'Сменил номер' } as any);
+
+    expect(result.phoneChanged).toBe(true);
+    expect(tx.user.update).toHaveBeenCalledWith({ where: { id: 'u1' }, data: { phone: '+77009998877' } });
+    expect(sessions.revokeAllForUser).toHaveBeenCalledWith('u1');
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ metadata: expect.objectContaining({ phoneChanged: true }) }) }),
+    );
+  });
+
+  it('refuses a phone already used by another user', async () => {
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue(baseDriver()) },
+      user: { findFirst: jest.fn().mockResolvedValue({ id: 'other-user' }) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await expect(service.updateDriver('d1', 'admin-1', { phone: '+77009998877', reason: 'x' } as any)).rejects.toThrow(ConflictException);
+  });
+
+  it('changing the tractor plate resubmits VEHICLE_PASSPORT/TRAILER_PASSPORT and unverifies the driver', async () => {
+    const tx = txMock();
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue(baseDriver()) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.updateDriver('d1', 'admin-1', { vehicle: { plateNumber: 'NEW999' }, reason: 'Сменил номер машины' } as any);
+
+    expect(result.vehicleIdentityChanged).toBe(true);
+    expect(tx.driver.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ isVerified: false }) }));
+    expect(tx.verificationDocument.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ driverId: 'd1', type: { in: ['VEHICLE_PASSPORT', 'TRAILER_PASSPORT'] } }) }),
+    );
+  });
+
+  it('changing only capacityTons does not trigger document resubmission', async () => {
+    const tx = txMock();
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue(baseDriver()) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.updateDriver('d1', 'admin-1', { vehicle: { capacityTons: 25 }, reason: 'Уточнили тоннаж' } as any);
+
+    expect(result.vehicleIdentityChanged).toBe(false);
+    expect(tx.verificationDocument.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unknown homeCityId', async () => {
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue(baseDriver()) },
+      city: { findUnique: jest.fn().mockResolvedValue(null) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await expect(service.updateDriver('d1', 'admin-1', { homeCityId: 'missing', reason: 'x' } as any)).rejects.toThrow(NotFoundException);
+  });
+});
+
+describe('AdminService.updateCompany / member management (задача 028, п.18/20)', () => {
+  it('updateCompany logs only changed fields', async () => {
+    const prisma: any = {
+      company: { findUnique: jest.fn().mockResolvedValue({ id: 'c1', name: 'Acme', nameRu: null, countryId: 'kz', city: null, legalAddress: null, taxId: null }), update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.updateCompany('c1', 'admin-1', { taxId: '123456', reason: 'Уточнили БИН' } as any);
+
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ metadata: expect.objectContaining({ changes: { taxId: { old: null, new: '123456' } } }) }) }),
+    );
+  });
+
+  it('setMemberRole refuses to demote the last owner', async () => {
+    const prisma: any = {
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ id: 'm1', role: 'OWNER' }), count: jest.fn().mockResolvedValue(1) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await expect(service.setMemberRole('c1', 'u1', 'admin-1', { role: 'LOGIST', reason: 'x' } as any)).rejects.toThrow(BadRequestException);
+  });
+
+  it('setMemberRole allows promoting a logist to owner (transfer of ownership)', async () => {
+    const prisma: any = {
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ id: 'm1', role: 'LOGIST' }), update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.setMemberRole('c1', 'u1', 'admin-1', { role: 'OWNER', reason: 'Передача владения' } as any);
+    expect(prisma.companyMember.update).toHaveBeenCalledWith({ where: { id: 'm1' }, data: { role: 'OWNER' } });
+  });
+
+  it('removeMember refuses to remove the last owner', async () => {
+    const prisma: any = {
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ id: 'm1', role: 'OWNER' }), count: jest.fn().mockResolvedValue(1) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await expect(service.removeMember('c1', 'u1', 'admin-1', 'x')).rejects.toThrow(BadRequestException);
+  });
+
+  it('removeMember deletes a non-owner member', async () => {
+    const prisma: any = {
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ id: 'm1', role: 'LOGIST' }), delete: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.removeMember('c1', 'u1', 'admin-1', 'Больше не работает');
+    expect(prisma.companyMember.delete).toHaveBeenCalledWith({ where: { id: 'm1' } });
+  });
+
+  it('changeMemberEmail checks uniqueness and revokes sessions', async () => {
+    const sessions = { revokeAllForUser: jest.fn() };
+    const prisma: any = {
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ id: 'm1', user: { email: 'old@example.com' } }) },
+      user: { findFirst: jest.fn().mockResolvedValue(null), update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, sessions as any, fakeUploads() as any);
+
+    await service.changeMemberEmail('c1', 'u1', 'admin-1', { email: 'new@example.com', reason: 'Сменил почту' } as any);
+
+    expect(prisma.user.update).toHaveBeenCalledWith({ where: { id: 'u1' }, data: { email: 'new@example.com' } });
+    expect(sessions.revokeAllForUser).toHaveBeenCalledWith('u1');
+  });
+
+  it('changeMemberEmail refuses an email already in use', async () => {
+    const prisma: any = {
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ id: 'm1', user: { email: 'old@example.com' } }) },
+      user: { findFirst: jest.fn().mockResolvedValue({ id: 'other' }) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await expect(
+      service.changeMemberEmail('c1', 'u1', 'admin-1', { email: 'taken@example.com', reason: 'x' } as any),
+    ).rejects.toThrow(ConflictException);
+  });
+});
+
+describe('AdminService reference-data edits (задача 028, п.21)', () => {
+  it('updateBodyType logs isActive/sortOrder changes and writes 4-language name', async () => {
+    const prisma: any = {
+      bodyType: {
+        findUnique: jest.fn().mockResolvedValue({ name: { ru: 'Тент' }, isActive: true, sortOrder: 0 }),
+        update: jest.fn(),
+      },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.updateBodyType('bt1', 'admin-1', { isActive: false, reason: 'Больше не используется' } as any);
+
+    expect(prisma.bodyType.update).toHaveBeenCalledWith({ where: { id: 'bt1' }, data: { name: undefined, isActive: false, sortOrder: undefined } });
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ action: 'BODYTYPE_UPDATED', metadata: expect.objectContaining({ changes: { isActive: { old: true, new: false } } }) }) }),
+    );
+  });
+
+  it('updateBodyType throws NotFoundException for an unknown id', async () => {
+    const prisma: any = { bodyType: { findUnique: jest.fn().mockResolvedValue(null) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    await expect(service.updateBodyType('missing', 'admin-1', { reason: 'x' } as any)).rejects.toThrow(NotFoundException);
+  });
+
+  it('updatePoint writes coordinates and city change', async () => {
+    const prisma: any = {
+      point: { findUnique: jest.fn().mockResolvedValue({ name: {}, cityId: 'city1', isActive: true, lat: null, lng: null }), update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.updatePoint('p1', 'admin-1', { lat: 44.2, lng: 80.4, reason: 'Уточнили координаты' } as any);
+
+    expect(prisma.point.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ lat: 44.2, lng: 80.4 }) }));
+  });
+
+  it('updateCity writes region/coordinates for an already-approved city (not the PENDING queue)', async () => {
+    const prisma: any = {
+      city: { findUnique: jest.fn().mockResolvedValue({ name: {}, regionId: null, lat: null, lng: null }), update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.updateCity('city1', 'admin-1', { regionId: 'region1', reason: 'Для «Близко к дому»' } as any);
+
+    expect(prisma.city.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ regionId: 'region1' }) }));
+  });
+});
+
+describe('AdminService.setAppSetting (задача 028, п.22)', () => {
+  it('reads the old value, writes the new one, and logs both', async () => {
+    const appSettings = { get: jest.fn().mockResolvedValue('200'), set: jest.fn() };
+    const prisma: any = { auditLog: { create: jest.fn() } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, appSettings as any);
+
+    await service.setAppSetting('admin-1', 'homeRadiusKm', '250', 'Расширили радиус');
+
+    expect(appSettings.set).toHaveBeenCalledWith('homeRadiusKm', '250');
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ action: 'SETTING_CHANGED', metadata: expect.objectContaining({ old: '200', new: '250' }) }) }),
+    );
   });
 });

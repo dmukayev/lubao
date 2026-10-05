@@ -308,6 +308,7 @@ class AdminSearchPage<T> {
 class AdminDriverVehicle {
   const AdminDriverVehicle({
     required this.id,
+    this.bodyTypeId,
     required this.bodyTypeName,
     this.capacityTons,
     this.lengthM,
@@ -316,6 +317,7 @@ class AdminDriverVehicle {
   });
 
   final String id;
+  final String? bodyTypeId;
   final I18nText bodyTypeName;
   final double? capacityTons;
   final double? lengthM;
@@ -324,6 +326,7 @@ class AdminDriverVehicle {
 
   factory AdminDriverVehicle.fromJson(Map<String, dynamic> json) => AdminDriverVehicle(
         id: json['id'] as String,
+        bodyTypeId: json['bodyTypeId'] as String?,
         bodyTypeName: I18nText.fromJson(json['bodyTypeName'] as Map<String, dynamic>),
         capacityTons: json['capacityTons'] == null ? null : (json['capacityTons'] as num).toDouble(),
         lengthM: json['lengthM'] == null ? null : (json['lengthM'] as num).toDouble(),
@@ -463,10 +466,13 @@ class AdminDriverDetail {
     required this.registeredAt,
     required this.isBlocked,
     required this.lastLoginAt,
+    required this.homeCityId,
     required this.homeCityName,
     required this.anyCountry,
     required this.directionNames,
+    required this.directionCountryIds,
     required this.permitNames,
+    required this.permitIds,
     required this.vehicles,
     required this.documents,
     required this.stats,
@@ -484,10 +490,13 @@ class AdminDriverDetail {
   final DateTime registeredAt;
   final bool isBlocked;
   final DateTime lastLoginAt;
+  final String homeCityId;
   final I18nText homeCityName;
   final bool anyCountry;
   final List<I18nText> directionNames;
+  final List<String> directionCountryIds;
   final List<I18nText> permitNames;
+  final List<String> permitIds;
   final List<AdminDriverVehicle> vehicles;
   final List<AdminCardDocument> documents;
   final AdminDriverStats stats;
@@ -507,14 +516,17 @@ class AdminDriverDetail {
       registeredAt: DateTime.parse(user['createdAt'] as String),
       isBlocked: user['isBlocked'] as bool,
       lastLoginAt: DateTime.parse(user['lastLoginAt'] as String),
+      homeCityId: json['homeCityId'] as String,
       homeCityName: I18nText.fromJson(json['homeCityName'] as Map<String, dynamic>),
       anyCountry: json['anyCountry'] as bool,
       directionNames: (json['directions'] as List<dynamic>)
           .map((e) => I18nText.fromJson((e as Map<String, dynamic>)['name'] as Map<String, dynamic>))
           .toList(),
+      directionCountryIds: (json['directions'] as List<dynamic>).map((e) => (e as Map<String, dynamic>)['countryId'] as String).toList(),
       permitNames: (json['permits'] as List<dynamic>)
           .map((e) => I18nText.fromJson((e as Map<String, dynamic>)['name'] as Map<String, dynamic>))
           .toList(),
+      permitIds: (json['permits'] as List<dynamic>).map((e) => (e as Map<String, dynamic>)['permitId'] as String).toList(),
       vehicles: (json['vehicles'] as List<dynamic>).map((e) => AdminDriverVehicle.fromJson(e as Map<String, dynamic>)).toList(),
       documents: (json['documents'] as List<dynamic>).map((e) => AdminCardDocument.fromJson(e as Map<String, dynamic>)).toList(),
       stats: AdminDriverStats.fromJson(json['stats'] as Map<String, dynamic>),
@@ -672,6 +684,7 @@ class AdminCompanyDetail {
     required this.id,
     required this.name,
     this.nameRu,
+    required this.countryId,
     required this.countryName,
     this.city,
     this.legalAddress,
@@ -693,6 +706,7 @@ class AdminCompanyDetail {
   final String id;
   final String name;
   final String? nameRu;
+  final String countryId;
   final I18nText countryName;
   final String? city;
   final String? legalAddress;
@@ -714,6 +728,7 @@ class AdminCompanyDetail {
         id: json['id'] as String,
         name: json['name'] as String,
         nameRu: json['nameRu'] as String?,
+        countryId: json['countryId'] as String,
         countryName: I18nText.fromJson(json['countryName'] as Map<String, dynamic>),
         city: json['city'] as String?,
         legalAddress: json['legalAddress'] as String?,

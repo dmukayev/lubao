@@ -1607,4 +1607,79 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get roleAdmin => 'Admin';
+
+  @override
+  String get adminEdit => 'Edit';
+
+  @override
+  String get adminTransferOwnershipTitle => 'Transfer ownership';
+
+  @override
+  String get adminDemoteToLogistTitle => 'Demote to logist';
+
+  @override
+  String get adminLastOwnerError =>
+      'Can\'t — this is the company\'s last owner';
+
+  @override
+  String get adminRemoveMemberTitle => 'Remove employee';
+
+  @override
+  String get adminRemoveMember => 'Remove';
+
+  @override
+  String get adminChangeMemberEmailTitle => 'Change employee email';
+
+  @override
+  String get adminEmailTakenError => 'This email is already in use';
+
+  @override
+  String get adminCompanyCity => 'City';
+
+  @override
+  String get adminLegalAddress => 'Legal address';
+
+  @override
+  String get adminTaxId => 'Registration No.';
+
+  @override
+  String get adminPhoneChangeWarning =>
+      'Saving will end all of the driver\'s sessions';
+
+  @override
+  String get adminVehicleBrand => 'Brand';
+
+  @override
+  String get adminVehicleLengthM => 'Length, m';
+
+  @override
+  String get adminNameEn => 'Name (en)';
+
+  @override
+  String get adminSortOrder => 'Sort order';
+
+  @override
+  String get adminLat => 'Latitude';
+
+  @override
+  String get adminLng => 'Longitude';
+
+  @override
+  String get adminCitiesTab => 'Cities';
+
+  @override
+  String get adminSettingDefaultCity => 'Default location';
+
+  @override
+  String get adminSettingNotSet => 'Not set';
+
+  @override
+  String get adminSettingHomeRadius => '\"Near home\" radius, km';
+
+  @override
+  String get adminUnitKm => 'km';
+
+  @override
+  String get adminSettingCargoArchiveDays =>
+      'Cargo archive period without responses';
 }

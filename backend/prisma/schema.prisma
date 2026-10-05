@@ -237,6 +237,7 @@ model BodyType {
   code      String   @unique
   name      Json
   sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -251,6 +252,7 @@ model Permit {
   code      String   @unique
   name      Json
   sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -1,13 +1,20 @@
-import { Body, Controller, ForbiddenException, Get, Param, Patch, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { AdminService } from './admin.service';
 import {
+  AdminChangeMemberEmailDto,
   AdminDealStatusDto,
   AdminReasonDto,
+  AdminSetMemberRoleDto,
   AdminUpdateCargoDto,
+  AdminUpdateCityDto,
+  AdminUpdateCompanyDto,
+  AdminUpdateDriverDto,
+  AdminUpdatePointDto,
+  AdminUpdateReferenceItemDto,
   BlockUserDto,
   CargoSearchQueryDto,
   CreateBodyTypeDto,
@@ -19,7 +26,6 @@ import {
   ReturnForReworkDto,
   ReviewVerificationDocumentDto,
   SearchQueryDto,
-  SetActiveDto,
   SetAppSettingDto,
   SetVerifiedDto,
   StatsQueryDto,
@@ -45,7 +51,7 @@ export class AdminController {
   @Patch('settings/:key')
   async setSetting(@CurrentUser() ctx: RequestContext, @Param('key') key: string, @Body() dto: SetAppSettingDto) {
     assertAdmin(ctx);
-    await this.appSettings.set(key, dto.value);
+    await this.admin.setAppSetting(ctx.user.id, key, dto.value, dto.reason);
     return { success: true };
   }
 
@@ -226,6 +232,45 @@ export class AdminController {
     return this.admin.setCompanyVerified(id, ctx.user.id, dto);
   }
 
+  @Patch('companies/:id')
+  updateCompany(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminUpdateCompanyDto) {
+    assertAdmin(ctx);
+    return this.admin.updateCompany(id, ctx.user.id, dto);
+  }
+
+  @Patch('companies/:companyId/members/:userId/role')
+  setMemberRole(
+    @CurrentUser() ctx: RequestContext,
+    @Param('companyId') companyId: string,
+    @Param('userId') userId: string,
+    @Body() dto: AdminSetMemberRoleDto,
+  ) {
+    assertAdmin(ctx);
+    return this.admin.setMemberRole(companyId, userId, ctx.user.id, dto);
+  }
+
+  @Delete('companies/:companyId/members/:userId')
+  removeMember(
+    @CurrentUser() ctx: RequestContext,
+    @Param('companyId') companyId: string,
+    @Param('userId') userId: string,
+    @Body() dto: AdminReasonDto,
+  ) {
+    assertAdmin(ctx);
+    return this.admin.removeMember(companyId, userId, ctx.user.id, dto.reason);
+  }
+
+  @Patch('companies/:companyId/members/:userId/email')
+  changeMemberEmail(
+    @CurrentUser() ctx: RequestContext,
+    @Param('companyId') companyId: string,
+    @Param('userId') userId: string,
+    @Body() dto: AdminChangeMemberEmailDto,
+  ) {
+    assertAdmin(ctx);
+    return this.admin.changeMemberEmail(companyId, userId, ctx.user.id, dto);
+  }
+
   @Post('companies/:id/reset-password')
   resetCompanyPassword(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
     assertAdmin(ctx);
@@ -262,6 +307,12 @@ export class AdminController {
     return this.admin.setDriverVerified(id, ctx.user.id, dto);
   }
 
+  @Patch('drivers/:id')
+  updateDriver(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminUpdateDriverDto) {
+    assertAdmin(ctx);
+    return this.admin.updateDriver(id, ctx.user.id, dto);
+  }
+
   @Post('users/:userId/block')
   blockUser(@CurrentUser() ctx: RequestContext, @Param('userId') userId: string, @Body() dto: BlockUserDto) {
     assertAdmin(ctx);
@@ -286,10 +337,22 @@ export class AdminController {
     return this.admin.createBodyType(dto);
   }
 
+  @Patch('reference/body-types/:id')
+  updateBodyType(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminUpdateReferenceItemDto) {
+    assertAdmin(ctx);
+    return this.admin.updateBodyType(id, ctx.user.id, dto);
+  }
+
   @Post('reference/permits')
   createPermit(@CurrentUser() ctx: RequestContext, @Body() dto: CreatePermitDto) {
     assertAdmin(ctx);
     return this.admin.createPermit(dto);
+  }
+
+  @Patch('reference/permits/:id')
+  updatePermit(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminUpdateReferenceItemDto) {
+    assertAdmin(ctx);
+    return this.admin.updatePermit(id, ctx.user.id, dto);
   }
 
   @Post('reference/points')
@@ -298,10 +361,10 @@ export class AdminController {
     return this.admin.createPoint(dto);
   }
 
-  @Patch('reference/points/:id/active')
-  setPointActive(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: SetActiveDto) {
+  @Patch('reference/points/:id')
+  updatePoint(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminUpdatePointDto) {
     assertAdmin(ctx);
-    return this.admin.setPointActive(id, dto.isActive);
+    return this.admin.updatePoint(id, ctx.user.id, dto);
   }
 
   @Get('cities/pending')
@@ -314,5 +377,11 @@ export class AdminController {
   moderateCity(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: ModerateCityDto) {
     assertAdmin(ctx);
     return this.admin.moderateCity(id, ctx.user.id, dto);
+  }
+
+  @Patch('cities/:id')
+  updateCity(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminUpdateCityDto) {
+    assertAdmin(ctx);
+    return this.admin.updateCity(id, ctx.user.id, dto);
   }
 }

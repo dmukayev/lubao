@@ -9,6 +9,7 @@ import '../../providers/data_providers.dart';
 import '../shared/admin_dialogs.dart';
 import '../shared/admin_status_helpers.dart';
 import '../shared/document_viewer.dart';
+import 'company_edit_panel.dart';
 
 class CompanyDetailScreen extends ConsumerWidget {
   const CompanyDetailScreen({super.key, required this.id});
@@ -90,6 +91,92 @@ class CompanyDetailScreen extends ConsumerWidget {
     await _reload(ref);
   }
 
+  Future<void> _edit(BuildContext context, WidgetRef ref, AdminCompanyDetail company) async {
+    final refData = await ref.read(referenceDataProvider.future);
+    if (!context.mounted) return;
+    final result = await showCompanyEditPanel(context, company: company, refData: refData);
+    if (result == null) return;
+    await ref.read(adminRepositoryProvider).updateCompany(
+          id,
+          name: result.name,
+          nameRu: result.nameRu,
+          countryId: result.countryId,
+          city: result.city,
+          legalAddress: result.legalAddress,
+          taxId: result.taxId,
+          reason: result.reason,
+        );
+    await _reload(ref);
+  }
+
+  Future<void> _changeMemberRole(BuildContext context, WidgetRef ref, AdminEmployeeEntry member) async {
+    final t = context.l10n;
+    final newRole = member.role == 'OWNER' ? 'LOGIST' : 'OWNER';
+    final title = newRole == 'OWNER' ? t.adminTransferOwnershipTitle : t.adminDemoteToLogistTitle;
+    final reason = await showReasonDialog(context, title: title, confirmLabel: t.commonDone);
+    if (reason == null) return;
+    try {
+      await ref.read(adminRepositoryProvider).setMemberRole(id, member.userId, newRole, reason: reason);
+      await _reload(ref);
+    } on Exception catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.adminLastOwnerError)));
+    }
+  }
+
+  Future<void> _removeMember(BuildContext context, WidgetRef ref, AdminEmployeeEntry member) async {
+    final t = context.l10n;
+    final reason = await showReasonDialog(context, title: t.adminRemoveMemberTitle, confirmLabel: t.adminRemoveMember, danger: true);
+    if (reason == null) return;
+    try {
+      await ref.read(adminRepositoryProvider).removeMember(id, member.userId, reason: reason);
+      await _reload(ref);
+    } on Exception catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.adminLastOwnerError)));
+    }
+  }
+
+  Future<void> _changeMemberEmail(BuildContext context, WidgetRef ref, AdminEmployeeEntry member) async {
+    final t = context.l10n;
+    final emailController = TextEditingController(text: member.email ?? '');
+    final reasonController = TextEditingController();
+    final result = await showDialog<(String, String)>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) {
+          final canConfirm = emailController.text.trim().isNotEmpty && reasonController.text.trim().isNotEmpty;
+          return AlertDialog(
+            title: Text(t.adminChangeMemberEmailTitle),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppTextField(label: t.companyLoginEmailLabel, controller: emailController, onChanged: (_) => setState(() {})),
+                const SizedBox(height: 12),
+                AppTextField(label: t.adminReasonLabel, controller: reasonController, maxLines: 2, onChanged: (_) => setState(() {})),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
+              FilledButton(
+                onPressed: canConfirm ? () => Navigator.pop(dialogContext, (emailController.text.trim(), reasonController.text.trim())) : null,
+                child: Text(t.commonSave),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (result == null) return;
+    try {
+      await ref.read(adminRepositoryProvider).changeMemberEmail(id, member.userId, result.$1, reason: result.$2);
+      await _reload(ref);
+    } on Exception catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.adminEmailTakenError)));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
@@ -111,6 +198,7 @@ class CompanyDetailScreen extends ConsumerWidget {
             children: [
               _Header(
                 company: company,
+                onEdit: () => _edit(context, ref, company),
                 onBlock: () => _block(context, ref),
                 onUnblock: () => _unblock(context, ref),
                 onResetPassword: () => _resetPassword(context, ref),
@@ -135,7 +223,12 @@ class CompanyDetailScreen extends ConsumerWidget {
                         const SizedBox(height: 16),
                         _LegalCard(company: company, locale: locale),
                         const SizedBox(height: 16),
-                        _EmployeesCard(company: company),
+                        _EmployeesCard(
+                          company: company,
+                          onChangeRole: (m) => _changeMemberRole(context, ref, m),
+                          onRemove: (m) => _removeMember(context, ref, m),
+                          onChangeEmail: (m) => _changeMemberEmail(context, ref, m),
+                        ),
                       ],
                     ),
                   ),
@@ -152,9 +245,10 @@ class CompanyDetailScreen extends ConsumerWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.company, required this.onBlock, required this.onUnblock, required this.onResetPassword, required this.onToggleVerified});
+  const _Header({required this.company, required this.onEdit, required this.onBlock, required this.onUnblock, required this.onResetPassword, required this.onToggleVerified});
 
   final AdminCompanyDetail company;
+  final VoidCallback onEdit;
   final VoidCallback onBlock;
   final VoidCallback onUnblock;
   final VoidCallback onResetPassword;
@@ -192,6 +286,8 @@ class _Header extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
+          OutlinedButton(onPressed: onEdit, child: Text(t.adminEdit)),
+          const SizedBox(width: 8),
           if (company.isBlocked)
             OutlinedButton(onPressed: onUnblock, child: Text(t.adminUnblock))
           else
@@ -337,9 +433,12 @@ class _LegalCard extends StatelessWidget {
 }
 
 class _EmployeesCard extends StatelessWidget {
-  const _EmployeesCard({required this.company});
+  const _EmployeesCard({required this.company, required this.onChangeRole, required this.onRemove, required this.onChangeEmail});
 
   final AdminCompanyDetail company;
+  final void Function(AdminEmployeeEntry) onChangeRole;
+  final void Function(AdminEmployeeEntry) onRemove;
+  final void Function(AdminEmployeeEntry) onChangeEmail;
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +454,24 @@ class _EmployeesCard extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               title: Text(e.name ?? e.email ?? e.userId),
               subtitle: Text(e.role),
-              trailing: e.isBlocked ? StatusBadge(label: t.adminBlockedBadge, color: StatusBadge.danger) : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (e.isBlocked) StatusBadge(label: t.adminBlockedBadge, color: StatusBadge.danger),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'role') onChangeRole(e);
+                      if (value == 'remove') onRemove(e);
+                      if (value == 'email') onChangeEmail(e);
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(value: 'role', child: Text(e.role == 'OWNER' ? t.adminDemoteToLogistTitle : t.adminTransferOwnershipTitle)),
+                      PopupMenuItem(value: 'email', child: Text(t.adminChangeMemberEmailTitle)),
+                      PopupMenuItem(value: 'remove', child: Text(t.adminRemoveMember)),
+                    ],
+                  ),
+                ],
+              ),
             ),
           if (company.invites.isNotEmpty) ...[
             const Divider(),

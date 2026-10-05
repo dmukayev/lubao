@@ -3131,6 +3131,150 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Админ'**
   String get roleAdmin;
+
+  /// No description provided for @adminEdit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Редактировать'**
+  String get adminEdit;
+
+  /// No description provided for @adminTransferOwnershipTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Передать владение'**
+  String get adminTransferOwnershipTitle;
+
+  /// No description provided for @adminDemoteToLogistTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Понизить до логиста'**
+  String get adminDemoteToLogistTitle;
+
+  /// No description provided for @adminLastOwnerError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нельзя — это последний владелец компании'**
+  String get adminLastOwnerError;
+
+  /// No description provided for @adminRemoveMemberTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить сотрудника'**
+  String get adminRemoveMemberTitle;
+
+  /// No description provided for @adminRemoveMember.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить'**
+  String get adminRemoveMember;
+
+  /// No description provided for @adminChangeMemberEmailTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сменить email сотрудника'**
+  String get adminChangeMemberEmailTitle;
+
+  /// No description provided for @adminEmailTakenError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Этот email уже используется'**
+  String get adminEmailTakenError;
+
+  /// No description provided for @adminCompanyCity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город'**
+  String get adminCompanyCity;
+
+  /// No description provided for @adminLegalAddress.
+  ///
+  /// In ru, this message translates to:
+  /// **'Юридический адрес'**
+  String get adminLegalAddress;
+
+  /// No description provided for @adminTaxId.
+  ///
+  /// In ru, this message translates to:
+  /// **'Рег. номер (БИН)'**
+  String get adminTaxId;
+
+  /// No description provided for @adminPhoneChangeWarning.
+  ///
+  /// In ru, this message translates to:
+  /// **'При сохранении все сессии водителя будут завершены'**
+  String get adminPhoneChangeWarning;
+
+  /// No description provided for @adminVehicleBrand.
+  ///
+  /// In ru, this message translates to:
+  /// **'Марка'**
+  String get adminVehicleBrand;
+
+  /// No description provided for @adminVehicleLengthM.
+  ///
+  /// In ru, this message translates to:
+  /// **'Длина, м'**
+  String get adminVehicleLengthM;
+
+  /// No description provided for @adminNameEn.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название (en)'**
+  String get adminNameEn;
+
+  /// No description provided for @adminSortOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Порядок'**
+  String get adminSortOrder;
+
+  /// No description provided for @adminLat.
+  ///
+  /// In ru, this message translates to:
+  /// **'Широта'**
+  String get adminLat;
+
+  /// No description provided for @adminLng.
+  ///
+  /// In ru, this message translates to:
+  /// **'Долгота'**
+  String get adminLng;
+
+  /// No description provided for @adminCitiesTab.
+  ///
+  /// In ru, this message translates to:
+  /// **'Города'**
+  String get adminCitiesTab;
+
+  /// No description provided for @adminSettingDefaultCity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Точка по умолчанию'**
+  String get adminSettingDefaultCity;
+
+  /// No description provided for @adminSettingNotSet.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не задано'**
+  String get adminSettingNotSet;
+
+  /// No description provided for @adminSettingHomeRadius.
+  ///
+  /// In ru, this message translates to:
+  /// **'Радиус «Близко к дому», км'**
+  String get adminSettingHomeRadius;
+
+  /// No description provided for @adminUnitKm.
+  ///
+  /// In ru, this message translates to:
+  /// **'км'**
+  String get adminUnitKm;
+
+  /// No description provided for @adminSettingCargoArchiveDays.
+  ///
+  /// In ru, this message translates to:
+  /// **'Срок архива груза без откликов'**
+  String get adminSettingCargoArchiveDays;
 }
 
 class _LubaoLocalizationsDelegate

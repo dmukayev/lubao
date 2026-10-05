@@ -1609,4 +1609,77 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get roleAdmin => 'Әкімші';
+
+  @override
+  String get adminEdit => 'Өзгерту';
+
+  @override
+  String get adminTransferOwnershipTitle => 'Иелікті беру';
+
+  @override
+  String get adminDemoteToLogistTitle => 'Логистке дейін төмендету';
+
+  @override
+  String get adminLastOwnerError => 'Болмайды — бұл компанияның соңғы иесі';
+
+  @override
+  String get adminRemoveMemberTitle => 'Қызметкерді жою';
+
+  @override
+  String get adminRemoveMember => 'Жою';
+
+  @override
+  String get adminChangeMemberEmailTitle => 'Қызметкердің email-ін өзгерту';
+
+  @override
+  String get adminEmailTakenError => 'Бұл email қолданыста';
+
+  @override
+  String get adminCompanyCity => 'Қала';
+
+  @override
+  String get adminLegalAddress => 'Заңды мекенжай';
+
+  @override
+  String get adminTaxId => 'Тіркеу нөмірі (БСН)';
+
+  @override
+  String get adminPhoneChangeWarning =>
+      'Сақтағанда жүргізушінің барлық сеансы аяқталады';
+
+  @override
+  String get adminVehicleBrand => 'Маркасы';
+
+  @override
+  String get adminVehicleLengthM => 'Ұзындығы, м';
+
+  @override
+  String get adminNameEn => 'Атауы (en)';
+
+  @override
+  String get adminSortOrder => 'Реті';
+
+  @override
+  String get adminLat => 'Ендік';
+
+  @override
+  String get adminLng => 'Бойлық';
+
+  @override
+  String get adminCitiesTab => 'Қалалар';
+
+  @override
+  String get adminSettingDefaultCity => 'Әдепкі нүкте';
+
+  @override
+  String get adminSettingNotSet => 'Орнатылмаған';
+
+  @override
+  String get adminSettingHomeRadius => '«Үйге жақын» радиусы, км';
+
+  @override
+  String get adminUnitKm => 'км';
+
+  @override
+  String get adminSettingCargoArchiveDays => 'Жауапсыз жүк мұрағатталу мерзімі';
 }

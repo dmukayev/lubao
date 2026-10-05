@@ -4,7 +4,72 @@ import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
+import '../shared/edit_side_panel.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+
+/// Правка названия на 4 языках + включить/выключить + порядок (задача 028,
+/// п.21) — общий для body-type/permit, у которых одинаковый набор полей.
+class ReferenceItemEditResult {
+  const ReferenceItemEditResult({required this.name, required this.isActive, required this.sortOrder, required this.reason});
+
+  final I18nText name;
+  final bool isActive;
+  final int sortOrder;
+  final String reason;
+}
+
+Future<ReferenceItemEditResult?> _showReferenceItemEditPanel(
+  BuildContext context, {
+  required String title,
+  required I18nText initialName,
+  required bool initialActive,
+  required int initialSortOrder,
+}) async {
+  final kkController = TextEditingController(text: initialName.kk);
+  final ruController = TextEditingController(text: initialName.ru);
+  final zhController = TextEditingController(text: initialName.zh);
+  final enController = TextEditingController(text: initialName.en);
+  final sortOrderController = TextEditingController(text: '$initialSortOrder');
+  bool isActive = initialActive;
+
+  final reason = await showEditSidePanel(
+    context: context,
+    title: title,
+    canSave: () => ruController.text.trim().isNotEmpty,
+    fieldsBuilder: (context, setState) {
+      final t = context.l10n;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppTextField(label: t.adminNameKk, controller: kkController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameRu, controller: ruController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameZh, controller: zhController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameEn, controller: enController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 12),
+          AppTextField(label: t.adminSortOrder, controller: sortOrderController, keyboardType: TextInputType.number, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: isActive,
+            title: Text(isActive ? t.adminActive : t.adminInactive),
+            onChanged: (v) => setState(() => isActive = v),
+          ),
+        ],
+      );
+    },
+  );
+  if (reason == null) return null;
+
+  return ReferenceItemEditResult(
+    name: I18nText(kk: kkController.text.trim(), ru: ruController.text.trim(), zh: zhController.text.trim(), en: enController.text.trim()),
+    isActive: isActive,
+    sortOrder: int.tryParse(sortOrderController.text.trim()) ?? initialSortOrder,
+    reason: reason,
+  );
+}
 
 class ReferenceScreen extends ConsumerStatefulWidget {
   const ReferenceScreen({super.key});
@@ -19,7 +84,7 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -148,8 +213,131 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
     ref.invalidate(referenceDataProvider);
   }
 
-  Future<void> _togglePoint(String id, bool isActive) async {
-    await ref.read(adminRepositoryProvider).setPointActive(id, isActive);
+  Future<void> _editBodyType(BodyType item) async {
+    final result = await _showReferenceItemEditPanel(context, title: item.name.forLanguageCode(Localizations.localeOf(context).languageCode), initialName: item.name, initialActive: item.isActive, initialSortOrder: item.sortOrder);
+    if (result == null) return;
+    await ref.read(adminRepositoryProvider).updateBodyType(item.id, name: result.name, isActive: result.isActive, sortOrder: result.sortOrder, reason: result.reason);
+    ref.invalidate(referenceDataProvider);
+  }
+
+  Future<void> _editPermit(Permit item) async {
+    final result = await _showReferenceItemEditPanel(context, title: item.name.forLanguageCode(Localizations.localeOf(context).languageCode), initialName: item.name, initialActive: item.isActive, initialSortOrder: item.sortOrder);
+    if (result == null) return;
+    await ref.read(adminRepositoryProvider).updatePermit(item.id, name: result.name, isActive: result.isActive, sortOrder: result.sortOrder, reason: result.reason);
+    ref.invalidate(referenceDataProvider);
+  }
+
+  Future<void> _editPoint(LoadingPoint point, List<City> cities, String locale) async {
+    final kkController = TextEditingController(text: point.name.kk);
+    final ruController = TextEditingController(text: point.name.ru);
+    final zhController = TextEditingController(text: point.name.zh);
+    final enController = TextEditingController(text: point.name.en);
+    final latController = TextEditingController(text: point.lat?.toString() ?? '');
+    final lngController = TextEditingController(text: point.lng?.toString() ?? '');
+    String cityId = point.cityId;
+    bool isActive = point.isActive;
+    final t = context.l10n;
+
+    final reason = await showEditSidePanel(
+      context: context,
+      title: point.name.forLanguageCode(locale),
+      canSave: () => ruController.text.trim().isNotEmpty,
+      fieldsBuilder: (context, setState) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DropdownButtonFormField<String>(
+            initialValue: cityId,
+            decoration: InputDecoration(labelText: t.adminPointCity),
+            items: cities.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name.forLanguageCode(locale)))).toList(),
+            onChanged: (v) => setState(() => cityId = v!),
+          ),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameKk, controller: kkController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameRu, controller: ruController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameZh, controller: zhController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameEn, controller: enController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 12),
+          AppTextField(label: t.adminLat, controller: latController, keyboardType: TextInputType.number, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminLng, controller: lngController, keyboardType: TextInputType.number, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: isActive,
+            title: Text(isActive ? t.adminActive : t.adminInactive),
+            onChanged: (v) => setState(() => isActive = v),
+          ),
+        ],
+      ),
+    );
+    if (reason == null) return;
+
+    await ref.read(adminRepositoryProvider).updatePoint(
+          point.id,
+          name: I18nText(kk: kkController.text.trim(), ru: ruController.text.trim(), zh: zhController.text.trim(), en: enController.text.trim()),
+          cityId: cityId,
+          lat: double.tryParse(latController.text.trim()),
+          lng: double.tryParse(lngController.text.trim()),
+          isActive: isActive,
+          reason: reason,
+        );
+    ref.invalidate(referenceDataProvider);
+  }
+
+  /// Правка уже APPROVED города — область и координаты (нужны «Близко к
+  /// дому», задача 016); отдельно от очереди PENDING-городов выше.
+  Future<void> _editCity(City city, List<Region> regions, String locale) async {
+    final kkController = TextEditingController(text: city.name.kk);
+    final ruController = TextEditingController(text: city.name.ru);
+    final zhController = TextEditingController(text: city.name.zh);
+    final enController = TextEditingController(text: city.name.en);
+    final latController = TextEditingController(text: city.lat?.toString() ?? '');
+    final lngController = TextEditingController(text: city.lng?.toString() ?? '');
+    String? regionId = city.regionId;
+    final t = context.l10n;
+    final countryRegions = regions.where((r) => r.countryId == city.countryId).toList();
+
+    final reason = await showEditSidePanel(
+      context: context,
+      title: city.name.forLanguageCode(locale),
+      canSave: () => ruController.text.trim().isNotEmpty,
+      fieldsBuilder: (context, setState) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DropdownButtonFormField<String>(
+            initialValue: regionId,
+            decoration: InputDecoration(labelText: t.adminCityRegion),
+            items: countryRegions.map((r) => DropdownMenuItem(value: r.id, child: Text(r.name.forLanguageCode(locale)))).toList(),
+            onChanged: (v) => setState(() => regionId = v),
+          ),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameKk, controller: kkController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameRu, controller: ruController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameZh, controller: zhController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameEn, controller: enController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 12),
+          AppTextField(label: t.adminLat, controller: latController, keyboardType: TextInputType.number, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminLng, controller: lngController, keyboardType: TextInputType.number, onChanged: (_) => setState(() {})),
+        ],
+      ),
+    );
+    if (reason == null) return;
+
+    await ref.read(adminRepositoryProvider).updateCity(
+          city.id,
+          name: I18nText(kk: kkController.text.trim(), ru: ruController.text.trim(), zh: zhController.text.trim(), en: enController.text.trim()),
+          regionId: regionId,
+          lat: double.tryParse(latController.text.trim()),
+          lng: double.tryParse(lngController.text.trim()),
+          reason: reason,
+        );
     ref.invalidate(referenceDataProvider);
   }
 
@@ -224,10 +412,11 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
     return Scaffold(
       appBar: AppBar(
         title: Text(t.adminReferenceTitle),
-        bottom: TabBar(controller: _tabController, tabs: [
+        bottom: TabBar(controller: _tabController, isScrollable: true, tabs: [
           Tab(text: t.driverSetupVehicleBodyType),
           Tab(text: t.driverSetupPermits),
           Tab(text: t.navFeed),
+          Tab(text: t.adminCitiesTab),
           Tab(text: t.adminPendingCitiesTab),
         ]),
       ),
@@ -238,12 +427,12 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
           controller: _tabController,
           children: [
             _SimpleList(
-              items: refData.bodyTypes.map((b) => (b.code, b.name.forLanguageCode(locale))).toList(),
+              items: refData.bodyTypes.map((b) => (b.id, b.name.forLanguageCode(locale), b.isActive, () => _editBodyType(b))).toList(),
               onAdd: _addBodyType,
               addLabel: t.adminAddBodyType,
             ),
             _SimpleList(
-              items: refData.permits.map((p) => (p.code, p.name.forLanguageCode(locale))).toList(),
+              items: refData.permits.map((p) => (p.id, p.name.forLanguageCode(locale), p.isActive, () => _editPermit(p))).toList(),
               onAdd: _addPermit,
               addLabel: t.adminAddPermit,
             ),
@@ -251,8 +440,13 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
               points: refData.points,
               locale: locale,
               onAdd: () => _addPoint(refData.cities),
-              onToggle: _togglePoint,
+              onEdit: (p) => _editPoint(p, refData.cities, locale),
               addLabel: t.adminAddPoint,
+            ),
+            _CitiesList(
+              cities: refData.cities.where((c) => c.cityStatus == CityStatus.approved).toList(),
+              locale: locale,
+              onEdit: (c) => _editCity(c, refData.regions, locale),
             ),
             _PendingCitiesList(
               onApprove: _approvePendingCity,
@@ -328,20 +522,25 @@ class _PendingCitiesList extends ConsumerWidget {
 class _SimpleList extends StatelessWidget {
   const _SimpleList({required this.items, required this.onAdd, required this.addLabel});
 
-  final List<(String, String)> items;
+  final List<(String, String, bool, VoidCallback)> items;
   final VoidCallback onAdd;
   final String addLabel;
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Stack(
       children: [
         ListView.builder(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
           itemCount: items.length,
           itemBuilder: (context, index) {
-            final (code, name) = items[index];
-            return ListTile(title: Text(name), subtitle: Text(code));
+            final (id, name, isActive, onEdit) = items[index];
+            return ListTile(
+              title: Text(name),
+              subtitle: Text(isActive ? t.adminActive : t.adminInactive),
+              trailing: IconButton(icon: const Icon(LucideIcons.pencil), onPressed: onEdit),
+            );
           },
         ),
         Positioned(
@@ -355,12 +554,12 @@ class _SimpleList extends StatelessWidget {
 }
 
 class _PointsList extends StatelessWidget {
-  const _PointsList({required this.points, required this.locale, required this.onAdd, required this.onToggle, required this.addLabel});
+  const _PointsList({required this.points, required this.locale, required this.onAdd, required this.onEdit, required this.addLabel});
 
   final List<LoadingPoint> points;
   final String locale;
   final VoidCallback onAdd;
-  final void Function(String id, bool isActive) onToggle;
+  final void Function(LoadingPoint) onEdit;
   final String addLabel;
 
   @override
@@ -376,7 +575,7 @@ class _PointsList extends StatelessWidget {
             return ListTile(
               title: Text(point.name.forLanguageCode(locale)),
               subtitle: Text(point.isActive ? t.adminActive : t.adminInactive),
-              trailing: Switch(value: point.isActive, onChanged: (value) => onToggle(point.id, value)),
+              trailing: IconButton(icon: const Icon(LucideIcons.pencil), onPressed: () => onEdit(point)),
             );
           },
         ),
@@ -386,6 +585,29 @@ class _PointsList extends StatelessWidget {
           child: FloatingActionButton.extended(onPressed: onAdd, icon: const Icon(LucideIcons.plus), label: Text(addLabel)),
         ),
       ],
+    );
+  }
+}
+
+class _CitiesList extends StatelessWidget {
+  const _CitiesList({required this.cities, required this.locale, required this.onEdit});
+
+  final List<City> cities;
+  final String locale;
+  final void Function(City) onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: cities.length,
+      itemBuilder: (context, index) {
+        final city = cities[index];
+        return ListTile(
+          title: Text(city.name.forLanguageCode(locale)),
+          trailing: IconButton(icon: const Icon(LucideIcons.pencil), onPressed: () => onEdit(city)),
+        );
+      },
     );
   }
 }

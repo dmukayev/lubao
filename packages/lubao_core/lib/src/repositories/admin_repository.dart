@@ -38,8 +38,8 @@ class AdminRepository {
     return (res.data as Map<String, dynamic>).map((k, v) => MapEntry(k, v as String));
   }
 
-  Future<void> setSetting(String key, String value) async {
-    await _client.dio.patch('/admin/settings/$key', data: {'value': value});
+  Future<void> setSetting(String key, String value, {String? reason}) async {
+    await _client.dio.patch('/admin/settings/$key', data: {'value': value, if (reason != null) 'reason': reason});
   }
 
   Future<AdminSearchResults> search(String q) async {
@@ -227,6 +227,41 @@ class AdminRepository {
     await _client.dio.patch('/admin/companies/$id/verify', data: {'isVerified': isVerified, 'reason': reason, 'force': force});
   }
 
+  /// Общая панель редактирования (задача 028, п.18/20).
+  Future<void> updateCompany(
+    String id, {
+    String? name,
+    String? nameRu,
+    String? countryId,
+    String? city,
+    String? legalAddress,
+    String? taxId,
+    required String reason,
+  }) async {
+    await _client.dio.patch('/admin/companies/$id', data: {
+      if (name != null) 'name': name,
+      if (nameRu != null) 'nameRu': nameRu,
+      if (countryId != null) 'countryId': countryId,
+      if (city != null) 'city': city,
+      if (legalAddress != null) 'legalAddress': legalAddress,
+      if (taxId != null) 'taxId': taxId,
+      'reason': reason,
+    });
+  }
+
+  /// «Передать владение» (п.20) — тот же вызов, роль нового владельца OWNER.
+  Future<void> setMemberRole(String companyId, String userId, String role, {required String reason}) async {
+    await _client.dio.patch('/admin/companies/$companyId/members/$userId/role', data: {'role': role, 'reason': reason});
+  }
+
+  Future<void> removeMember(String companyId, String userId, {required String reason}) async {
+    await _client.dio.delete('/admin/companies/$companyId/members/$userId', data: {'reason': reason});
+  }
+
+  Future<void> changeMemberEmail(String companyId, String userId, String email, {required String reason}) async {
+    await _client.dio.patch('/admin/companies/$companyId/members/$userId/email', data: {'email': email, 'reason': reason});
+  }
+
   Future<String> resetCompanyPassword(String companyId) async {
     final res = await _client.dio.post('/admin/companies/$companyId/reset-password');
     return (res.data as Map<String, dynamic>)['tempPassword'] as String;
@@ -272,6 +307,42 @@ class AdminRepository {
     await _client.dio.patch('/admin/drivers/$id/verify', data: {'isVerified': isVerified, 'reason': reason, 'force': force});
   }
 
+  /// Общая панель редактирования (задача 028, п.18/19).
+  Future<void> updateDriver(
+    String id, {
+    String? fullName,
+    String? phone,
+    String? homeCityId,
+    bool? anyCountry,
+    List<String>? countryIds,
+    List<String>? permitIds,
+    String? vehicleBodyTypeId,
+    double? vehicleCapacityTons,
+    double? vehicleLengthM,
+    String? vehiclePlateNumber,
+    String? vehicleBrand,
+    required String reason,
+  }) async {
+    final hasVehicleChange = vehicleBodyTypeId != null || vehicleCapacityTons != null || vehicleLengthM != null || vehiclePlateNumber != null || vehicleBrand != null;
+    await _client.dio.patch('/admin/drivers/$id', data: {
+      if (fullName != null) 'fullName': fullName,
+      if (phone != null) 'phone': phone,
+      if (homeCityId != null) 'homeCityId': homeCityId,
+      if (anyCountry != null) 'anyCountry': anyCountry,
+      if (countryIds != null) 'countryIds': countryIds,
+      if (permitIds != null) 'permitIds': permitIds,
+      if (hasVehicleChange)
+        'vehicle': {
+          if (vehicleBodyTypeId != null) 'bodyTypeId': vehicleBodyTypeId,
+          if (vehicleCapacityTons != null) 'capacityTons': vehicleCapacityTons,
+          if (vehicleLengthM != null) 'lengthM': vehicleLengthM,
+          if (vehiclePlateNumber != null) 'plateNumber': vehiclePlateNumber,
+          if (vehicleBrand != null) 'brand': vehicleBrand,
+        },
+      'reason': reason,
+    });
+  }
+
   Future<void> blockUser(String userId, {required String reason}) async {
     await _client.dio.post('/admin/users/$userId/block', data: {'reason': reason});
   }
@@ -299,8 +370,48 @@ class AdminRepository {
     return LoadingPoint.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<void> setPointActive(String id, bool isActive) async {
-    await _client.dio.patch('/admin/reference/points/$id/active', data: {'isActive': isActive});
+  Future<void> updateBodyType(String id, {I18nText? name, bool? isActive, int? sortOrder, required String reason}) async {
+    await _client.dio.patch('/admin/reference/body-types/$id', data: {
+      if (name != null) 'name': name.toJson(),
+      if (isActive != null) 'isActive': isActive,
+      if (sortOrder != null) 'sortOrder': sortOrder,
+      'reason': reason,
+    });
+  }
+
+  Future<void> updatePermit(String id, {I18nText? name, bool? isActive, int? sortOrder, required String reason}) async {
+    await _client.dio.patch('/admin/reference/permits/$id', data: {
+      if (name != null) 'name': name.toJson(),
+      if (isActive != null) 'isActive': isActive,
+      if (sortOrder != null) 'sortOrder': sortOrder,
+      'reason': reason,
+    });
+  }
+
+  /// Общая правка точки — названия, город, координаты, включить/выключить
+  /// (задача 028, п.21); заменяет узкий `setPointActive` без следа в журнале.
+  Future<void> updatePoint(String id, {I18nText? name, String? cityId, double? lat, double? lng, bool? isActive, required String reason}) async {
+    await _client.dio.patch('/admin/reference/points/$id', data: {
+      if (name != null) 'name': name.toJson(),
+      if (cityId != null) 'cityId': cityId,
+      if (lat != null) 'lat': lat,
+      if (lng != null) 'lng': lng,
+      if (isActive != null) 'isActive': isActive,
+      'reason': reason,
+    });
+  }
+
+  /// Правка уже APPROVED города — область и координаты (нужны «Близко к
+  /// дому», задача 016); отдельно от `moderateCity`, который только для
+  /// очереди PENDING.
+  Future<void> updateCity(String id, {I18nText? name, String? regionId, double? lat, double? lng, required String reason}) async {
+    await _client.dio.patch('/admin/cities/$id', data: {
+      if (name != null) 'name': name.toJson(),
+      if (regionId != null) 'regionId': regionId,
+      if (lat != null) 'lat': lat,
+      if (lng != null) 'lng': lng,
+      'reason': reason,
+    });
   }
 
   Future<List<AdminPendingCity>> pendingCities() async {
