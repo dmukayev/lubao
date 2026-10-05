@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
+import 'cargo_close_dialog.dart';
 
 class CargoResponsesScreen extends ConsumerWidget {
   const CargoResponsesScreen({super.key, required this.cargoId});
@@ -22,27 +23,24 @@ class CargoResponsesScreen extends ConsumerWidget {
     await context.push('/company/cargos/new', extra: cargo);
   }
 
-  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+  /// Груз нельзя закрыть без выбора исхода (задача 017, п.6) — заменяет
+  /// старое «удалить» без причины.
+  Future<void> _close(BuildContext context, WidgetRef ref) async {
     final t = context.l10n;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.cargoDeleteConfirmTitle),
-        content: Text(t.cargoDeleteConfirmMessage),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(t.commonCancel)),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(t.cargoDelete)),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
+    final result = await showCargoCloseDialog(context, ref, cargoId);
+    if (result == null) return;
 
-    await ref.read(cargoRepositoryProvider).delete(cargoId);
+    await ref.read(cargoRepositoryProvider).close(cargoId, outcome: result.outcome, driverId: result.driverId);
     ref.invalidate(myCargosProvider);
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.cargoDeleted)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.cargoClosed)));
       context.pop();
     }
+  }
+
+  Future<void> _chat(BuildContext context, WidgetRef ref, CargoResponse response) async {
+    final thread = await ref.read(chatRepositoryProvider).findOrCreate(driverId: response.driverId, cargoId: response.cargoId);
+    if (context.mounted) context.push('/chat/${thread.id}');
   }
 
   @override
@@ -66,9 +64,9 @@ class CargoResponsesScreen extends ConsumerWidget {
                   onPressed: () => _edit(context, cargo),
                 ),
                 IconButton(
-                  tooltip: t.cargoDelete,
-                  icon: const Icon(LucideIcons.trash2),
-                  onPressed: () => _delete(context, ref),
+                  tooltip: t.cargoClose,
+                  icon: const Icon(LucideIcons.xCircle),
+                  onPressed: () => _close(context, ref),
                 ),
               ],
       ),
@@ -94,7 +92,11 @@ class CargoResponsesScreen extends ConsumerWidget {
                   )
                 else
                   for (final response in list) ...[
-                    _ResponseCard(response: response, onUpdateStatus: (status) => _updateStatus(ref, response.id, status)),
+                    _ResponseCard(
+                      response: response,
+                      onUpdateStatus: (status) => _updateStatus(ref, response.id, status),
+                      onChat: () => _chat(context, ref, response),
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                   ],
               ],
@@ -143,10 +145,11 @@ class _CargoSummaryCard extends StatelessWidget {
 }
 
 class _ResponseCard extends StatelessWidget {
-  const _ResponseCard({required this.response, required this.onUpdateStatus});
+  const _ResponseCard({required this.response, required this.onUpdateStatus, required this.onChat});
 
   final CargoResponse response;
   final ValueChanged<String> onUpdateStatus;
+  final VoidCallback onChat;
 
   @override
   Widget build(BuildContext context) {
@@ -160,8 +163,9 @@ class _ResponseCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(response.driverName, style: AppTextStyles.bodyStrong),
+              Expanded(child: Text(response.driverName, style: AppTextStyles.bodyStrong)),
               StatusBadge(label: statusLabel, color: statusColor),
+              IconSquareButton(icon: LucideIcons.messageSquare, onPressed: onChat),
             ],
           ),
           if (response.message != null) ...[

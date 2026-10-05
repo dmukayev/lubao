@@ -777,5 +777,29 @@
   "adminComplaintResolutionDismissed": "Not confirmed",
   "adminComplaintResolutionWarned": "Warn",
   "adminComplaintResolutionCargoUnpublished": "Unpublish cargo",
-  "adminComplaintResolutionBlocked": "Block"
+  "adminComplaintResolutionBlocked": "Block",
+  "adminStatClosedOutside": "Found outside Lubao",
+  "adminStatClosedOutsideHint": "{outside} of {total} closed",
+  "@adminStatClosedOutsideHint": {
+    "placeholders": {
+      "outside": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "cargoCloseDialogTitle": "Close cargo",
+  "cargoCloseFoundInApp": "Found a driver in Lubao",
+  "cargoCloseNoCandidates": "No drivers with a response, call or chat yet",
+  "cargoCloseDriverLabel": "Driver",
+  "cargoCloseFoundOutside": "Found outside Lubao",
+  "cargoCloseCancelled": "Cargo cancelled",
+  "cargoCloseConfirm": "Close",
+  "cargoClosed": "Cargo closed",
+  "cargoClose": "Close cargo",
+  "navChats": "Chats",
+  "chatsTabTitle": "Chats",
+  "chatsEmpty": "No chats yet"
 }

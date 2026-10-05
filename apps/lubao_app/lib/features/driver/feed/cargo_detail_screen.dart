@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
@@ -40,15 +44,39 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
     }
   }
 
-  Future<void> _logContact(Cargo cargo, String type) async {
+  /// Звонок/WhatsApp не должны ждать запись события (задача 017, п.5г) —
+  /// сначала открываем звонилку/WhatsApp, `contact_event` пишем без
+  /// ожидания.
+  void _logContact(Cargo cargo, String type) {
     final driverId = ref.read(sessionProvider)?.driver?.id;
     if (driverId == null) return;
-    await ref.read(cargoRepositoryProvider).logContactEvent(
+    unawaited(ref.read(cargoRepositoryProvider).logContactEvent(
           driverId: driverId,
           companyId: cargo.companyId,
           cargoId: cargo.id,
           type: type,
-        );
+        ));
+  }
+
+  Future<void> _call(Cargo cargo) async {
+    final phone = cargo.contactPhone;
+    if (phone == null) return;
+    _logContact(cargo, 'CALL');
+    await launchUrl(Uri(scheme: 'tel', path: phone));
+  }
+
+  Future<void> _whatsapp(Cargo cargo) async {
+    final phone = cargo.contactPhone;
+    if (phone == null) return;
+    _logContact(cargo, 'WHATSAPP');
+    final digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    final uri = Uri.parse('https://wa.me/$digits');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _chat(Cargo cargo) async {
+    final thread = await ref.read(chatRepositoryProvider).findOrCreate(cargoId: cargo.id);
+    if (mounted) context.push('/chat/${thread.id}');
   }
 
   @override
@@ -84,15 +112,23 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
                     IconSquareButton(
                       icon: LucideIcons.phone,
                       size: AppSizes.buttonHeight,
-                      onPressed: () => _logContact(cargoAsync.value!, 'CALL'),
+                      onPressed: cargoAsync.value!.contactPhone == null ? null : () => _call(cargoAsync.value!),
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     IconSquareButton(
-                      icon: LucideIcons.messageCircle,
+                      icon: LucideIcons.messageSquare,
                       size: AppSizes.buttonHeight,
-                      onPressed: () => _logContact(cargoAsync.value!, 'WHATSAPP'),
+                      onPressed: () => _chat(cargoAsync.value!),
                     ),
                     const SizedBox(width: AppSpacing.sm),
+                    if (!cargoAsync.value!.isWhatsappBlocked) ...[
+                      IconSquareButton(
+                        icon: LucideIcons.messageCircle,
+                        size: AppSizes.buttonHeight,
+                        onPressed: cargoAsync.value!.contactPhone == null ? null : () => _whatsapp(cargoAsync.value!),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                    ],
                     Expanded(
                       child: PrimaryButton(
                         label: _responded ? t.cargoAlreadyResponded : t.cargoRespond,

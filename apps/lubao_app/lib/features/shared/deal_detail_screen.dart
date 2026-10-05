@@ -22,6 +22,18 @@ class DealDetailScreen extends ConsumerStatefulWidget {
 class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
   bool _busy = false;
 
+  /// Чат теперь по `chatId`, не по `dealId` (задача 017, п.1) — находим
+  /// существующий чат пары водитель+компания по грузу этой сделки (он уже
+  /// привязан к сделке на бэкенде) и переходим в него.
+  Future<void> _openChat(Deal deal) async {
+    final session = ref.read(sessionProvider);
+    final thread = await ref.read(chatRepositoryProvider).findOrCreate(
+          driverId: session?.driver != null ? null : deal.driverId,
+          cargoId: deal.cargoId,
+        );
+    if (mounted) context.push('/chat/${thread.id}');
+  }
+
   Future<void> _advance(DealStatus next) async {
     setState(() => _busy = true);
     try {
@@ -111,14 +123,16 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
     final session = ref.watch(sessionProvider);
     final isDriver = session?.user.role == UserRole.driver;
 
+    final deal = dealAsync.valueOrNull;
     return Scaffold(
       appBar: AppBar(
         title: Text(t.dealDetailTitle),
         actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.messageCircle),
-            onPressed: () => context.push('/deal/${widget.dealId}/chat'),
-          ),
+          if (deal != null)
+            IconButton(
+              icon: const Icon(LucideIcons.messageCircle),
+              onPressed: () => _openChat(deal),
+            ),
         ],
       ),
       body: dealAsync.when(

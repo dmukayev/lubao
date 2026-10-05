@@ -1735,4 +1735,49 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminComplaintResolutionBlocked => 'Block';
+
+  @override
+  String get adminStatClosedOutside => 'Found outside Lubao';
+
+  @override
+  String adminStatClosedOutsideHint(int outside, int total) {
+    return '$outside of $total closed';
+  }
+
+  @override
+  String get cargoCloseDialogTitle => 'Close cargo';
+
+  @override
+  String get cargoCloseFoundInApp => 'Found a driver in Lubao';
+
+  @override
+  String get cargoCloseNoCandidates =>
+      'No drivers with a response, call or chat yet';
+
+  @override
+  String get cargoCloseDriverLabel => 'Driver';
+
+  @override
+  String get cargoCloseFoundOutside => 'Found outside Lubao';
+
+  @override
+  String get cargoCloseCancelled => 'Cargo cancelled';
+
+  @override
+  String get cargoCloseConfirm => 'Close';
+
+  @override
+  String get cargoClosed => 'Cargo closed';
+
+  @override
+  String get cargoClose => 'Close cargo';
+
+  @override
+  String get navChats => 'Chats';
+
+  @override
+  String get chatsTabTitle => 'Chats';
+
+  @override
+  String get chatsEmpty => 'No chats yet';
 }

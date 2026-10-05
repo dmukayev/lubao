@@ -652,5 +652,29 @@
   "adminComplaintResolutionDismissed": "Расталмады",
   "adminComplaintResolutionWarned": "Ескерту жасау",
   "adminComplaintResolutionCargoUnpublished": "Жүкті жариялаудан алу",
-  "adminComplaintResolutionBlocked": "Бұғаттау"
+  "adminComplaintResolutionBlocked": "Бұғаттау",
+  "adminStatClosedOutside": "Lubao-дан тыс тапты",
+  "adminStatClosedOutsideHint": "{total} жабылғаннан {outside}",
+  "@adminStatClosedOutsideHint": {
+    "placeholders": {
+      "outside": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "cargoCloseDialogTitle": "Жүкті жабу",
+  "cargoCloseFoundInApp": "Жүргізушіні Lubao-дан тапты",
+  "cargoCloseNoCandidates": "Әзірге жауап, қоңырау немесе хат алмасу болған жүргізуші жоқ",
+  "cargoCloseDriverLabel": "Жүргізуші",
+  "cargoCloseFoundOutside": "Lubao-дан тыс тапты",
+  "cargoCloseCancelled": "Жүк болдырылмады",
+  "cargoCloseConfirm": "Жабу",
+  "cargoClosed": "Жүк жабылды",
+  "cargoClose": "Жүкті жабу",
+  "navChats": "Чаттар",
+  "chatsTabTitle": "Чаттар",
+  "chatsEmpty": "Әзірге чат жоқ"
 }

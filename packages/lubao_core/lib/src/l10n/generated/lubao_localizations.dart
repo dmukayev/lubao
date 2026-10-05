@@ -3371,6 +3371,90 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Заблокировать'**
   String get adminComplaintResolutionBlocked;
+
+  /// No description provided for @adminStatClosedOutside.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нашли вне Lubao'**
+  String get adminStatClosedOutside;
+
+  /// No description provided for @adminStatClosedOutsideHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'{outside} из {total} закрытых'**
+  String adminStatClosedOutsideHint(int outside, int total);
+
+  /// No description provided for @cargoCloseDialogTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закрыть груз'**
+  String get cargoCloseDialogTitle;
+
+  /// No description provided for @cargoCloseFoundInApp.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нашёл водителя в Lubao'**
+  String get cargoCloseFoundInApp;
+
+  /// No description provided for @cargoCloseNoCandidates.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пока нет водителей, с кем были отклик, звонок или переписка'**
+  String get cargoCloseNoCandidates;
+
+  /// No description provided for @cargoCloseDriverLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель'**
+  String get cargoCloseDriverLabel;
+
+  /// No description provided for @cargoCloseFoundOutside.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нашёл вне Lubao'**
+  String get cargoCloseFoundOutside;
+
+  /// No description provided for @cargoCloseCancelled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз отменён'**
+  String get cargoCloseCancelled;
+
+  /// No description provided for @cargoCloseConfirm.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закрыть'**
+  String get cargoCloseConfirm;
+
+  /// No description provided for @cargoClosed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз закрыт'**
+  String get cargoClosed;
+
+  /// No description provided for @cargoClose.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закрыть груз'**
+  String get cargoClose;
+
+  /// No description provided for @navChats.
+  ///
+  /// In ru, this message translates to:
+  /// **'Чаты'**
+  String get navChats;
+
+  /// No description provided for @chatsTabTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Чаты'**
+  String get chatsTabTitle;
+
+  /// No description provided for @chatsEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пока нет чатов'**
+  String get chatsEmpty;
 }
 
 class _LubaoLocalizationsDelegate

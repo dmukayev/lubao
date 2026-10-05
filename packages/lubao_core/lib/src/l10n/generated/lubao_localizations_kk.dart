@@ -1736,4 +1736,49 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminComplaintResolutionBlocked => 'Бұғаттау';
+
+  @override
+  String get adminStatClosedOutside => 'Lubao-дан тыс тапты';
+
+  @override
+  String adminStatClosedOutsideHint(int outside, int total) {
+    return '$total жабылғаннан $outside';
+  }
+
+  @override
+  String get cargoCloseDialogTitle => 'Жүкті жабу';
+
+  @override
+  String get cargoCloseFoundInApp => 'Жүргізушіні Lubao-дан тапты';
+
+  @override
+  String get cargoCloseNoCandidates =>
+      'Әзірге жауап, қоңырау немесе хат алмасу болған жүргізуші жоқ';
+
+  @override
+  String get cargoCloseDriverLabel => 'Жүргізуші';
+
+  @override
+  String get cargoCloseFoundOutside => 'Lubao-дан тыс тапты';
+
+  @override
+  String get cargoCloseCancelled => 'Жүк болдырылмады';
+
+  @override
+  String get cargoCloseConfirm => 'Жабу';
+
+  @override
+  String get cargoClosed => 'Жүк жабылды';
+
+  @override
+  String get cargoClose => 'Жүкті жабу';
+
+  @override
+  String get navChats => 'Чаттар';
+
+  @override
+  String get chatsTabTitle => 'Чаттар';
+
+  @override
+  String get chatsEmpty => 'Әзірге чат жоқ';
 }

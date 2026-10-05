@@ -29,6 +29,9 @@ class AdminStats {
     required this.growth,
     required this.onSiteToday,
     required this.onSiteWeek,
+    this.cargosClosedTotal = 0,
+    this.cargosClosedOutside = 0,
+    this.cargosClosedOutsideSharePct,
   });
 
   final int drivers;
@@ -42,6 +45,12 @@ class AdminStats {
   final AdminStatsGrowth growth;
   final int onSiteToday;
   final int onSiteWeek;
+
+  /// Метрика утечки сделок мимо приложения (задача 017, п.7), рядом с
+  /// аналогичной метрикой анонсов из 014.
+  final int cargosClosedTotal;
+  final int cargosClosedOutside;
+  final int? cargosClosedOutsideSharePct;
 
   factory AdminStats.fromJson(Map<String, dynamic> json) => AdminStats(
         drivers: json['drivers'] as int,
@@ -57,6 +66,9 @@ class AdminStats {
             : AdminStatsGrowth.fromJson(json['growth'] as Map<String, dynamic>),
         onSiteToday: json['onSiteToday'] as int? ?? 0,
         onSiteWeek: json['onSiteWeek'] as int? ?? 0,
+        cargosClosedTotal: json['cargosClosedTotal'] as int? ?? 0,
+        cargosClosedOutside: json['cargosClosedOutside'] as int? ?? 0,
+        cargosClosedOutsideSharePct: json['cargosClosedOutsideSharePct'] as int?,
       );
 }
 

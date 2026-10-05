@@ -23,6 +23,12 @@ class Cargo {
     required this.status,
     required this.publishedAt,
     required this.expiresAt,
+    this.contactUserId,
+    this.contactName,
+    this.contactPhone,
+    this.isWhatsappBlocked = false,
+    this.closeOutcome,
+    this.closedAt,
   });
 
   final String id;
@@ -47,6 +53,19 @@ class Cargo {
   final DateTime publishedAt;
   final DateTime expiresAt;
 
+  /// Конкретный логист, опубликовавший груз (decisions.md «Компания:
+  /// проверка, роли, контакты», задача 012) — водитель звонит/пишет ему,
+  /// не «компании».
+  final String? contactUserId;
+  final String? contactName;
+  final String? contactPhone;
+
+  /// WhatsApp заблокирован в Китае — показываем чат Lubao вместо кнопки,
+  /// которая всё равно не дойдёт (задача 017, п.5в).
+  final bool isWhatsappBlocked;
+  final String? closeOutcome;
+  final DateTime? closedAt;
+
   factory Cargo.fromJson(Map<String, dynamic> json) => Cargo(
         id: json['id'] as String,
         companyId: json['companyId'] as String,
@@ -69,8 +88,24 @@ class Cargo {
         status: cargoStatusFromJson(json['status'] as String),
         publishedAt: DateTime.parse(json['publishedAt'] as String),
         expiresAt: DateTime.parse(json['expiresAt'] as String),
+        contactUserId: json['contactUserId'] as String?,
+        contactName: json['contactName'] as String?,
+        contactPhone: json['contactPhone'] as String?,
+        isWhatsappBlocked: json['isWhatsappBlocked'] as bool? ?? false,
+        closeOutcome: json['closeOutcome'] as String?,
+        closedAt: json['closedAt'] == null ? null : DateTime.parse(json['closedAt'] as String),
       );
+}
 
+/// Кандидат на «Нашёл в Lubao» при закрытии груза (задача 017, п.6).
+class CargoCloseCandidate {
+  const CargoCloseCandidate({required this.driverId, required this.driverName});
+
+  final String driverId;
+  final String driverName;
+
+  factory CargoCloseCandidate.fromJson(Map<String, dynamic> json) =>
+      CargoCloseCandidate(driverId: json['driverId'] as String, driverName: json['driverName'] as String);
 }
 
 class CreateCargoInput {

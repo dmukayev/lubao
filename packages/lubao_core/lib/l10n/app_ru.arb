@@ -777,5 +777,29 @@
   "adminComplaintResolutionDismissed": "Не подтвердилась",
   "adminComplaintResolutionWarned": "Предупредить",
   "adminComplaintResolutionCargoUnpublished": "Снять груз",
-  "adminComplaintResolutionBlocked": "Заблокировать"
+  "adminComplaintResolutionBlocked": "Заблокировать",
+  "adminStatClosedOutside": "Нашли вне Lubao",
+  "adminStatClosedOutsideHint": "{outside} из {total} закрытых",
+  "@adminStatClosedOutsideHint": {
+    "placeholders": {
+      "outside": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "cargoCloseDialogTitle": "Закрыть груз",
+  "cargoCloseFoundInApp": "Нашёл водителя в Lubao",
+  "cargoCloseNoCandidates": "Пока нет водителей, с кем были отклик, звонок или переписка",
+  "cargoCloseDriverLabel": "Водитель",
+  "cargoCloseFoundOutside": "Нашёл вне Lubao",
+  "cargoCloseCancelled": "Груз отменён",
+  "cargoCloseConfirm": "Закрыть",
+  "cargoClosed": "Груз закрыт",
+  "cargoClose": "Закрыть груз",
+  "navChats": "Чаты",
+  "chatsTabTitle": "Чаты",
+  "chatsEmpty": "Пока нет чатов"
 }

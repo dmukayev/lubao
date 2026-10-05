@@ -26,6 +26,7 @@ import '../features/company/drivers/drivers_at_point_screen.dart';
 import '../features/company/profile/company_profile_screen.dart';
 import '../features/shared/deal_detail_screen.dart';
 import '../features/shared/chat_screen.dart';
+import '../features/shared/my_chats_screen.dart';
 import '../features/shared/devices_screen.dart';
 import '../features/shared/splash_screen.dart';
 
@@ -116,6 +117,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state, child) => DriverShell(child: child),
         routes: [
           GoRoute(path: '/driver/feed', builder: (context, state) => const CargoFeedScreen()),
+          GoRoute(path: '/driver/chats', builder: (context, state) => const MyChatsScreen()),
           GoRoute(path: '/driver/deals', builder: (context, state) => const DriverDealsScreen()),
           GoRoute(path: '/driver/profile', builder: (context, state) => const DriverProfileScreen()),
         ],
@@ -141,6 +143,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: '/company/cargos', builder: (context, state) => const CompanyCargosScreen()),
           GoRoute(path: '/company/drivers', builder: (context, state) => const DriversAtPointScreen()),
+          GoRoute(path: '/company/chats', builder: (context, state) => const MyChatsScreen()),
           GoRoute(path: '/company/deals', builder: (context, state) => const CompanyDealsScreen()),
           GoRoute(path: '/company/profile', builder: (context, state) => const CompanyProfileScreen()),
         ],
@@ -158,8 +161,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => DealDetailScreen(dealId: state.pathParameters['id']!),
       ),
       GoRoute(
-        path: '/deal/:id/chat',
-        builder: (context, state) => ChatScreen(dealId: state.pathParameters['id']!),
+        path: '/chat/:id',
+        builder: (context, state) => ChatScreen(chatId: state.pathParameters['id']!),
       ),
     ],
   );

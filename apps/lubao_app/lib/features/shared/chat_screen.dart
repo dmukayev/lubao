@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../providers/api_providers.dart';
 import '../../providers/auth_provider.dart';
@@ -12,10 +15,13 @@ import 'status_helpers.dart';
 
 const _languageNames = {'ru': 'русском', 'kk': 'қазақском', 'zh': 'китайском'};
 
+/// Чат — пара водитель+компания(+груз), не только сделка (задача 017,
+/// п.1): экран открывается по `chatId`, а не по `dealId` — сделка (если
+/// есть) подгружается отдельно через `thread.dealId`.
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key, required this.dealId});
+  const ChatScreen({super.key, required this.chatId});
 
-  final String dealId;
+  final String chatId;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -32,9 +38,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (message.isEmpty) return;
     setState(() => _sending = true);
     try {
-      await ref.read(chatRepositoryProvider).send(widget.dealId, message);
+      await ref.read(chatRepositoryProvider).send(widget.chatId, message);
       _controller.clear();
-      ref.invalidate(chatMessagesProvider(widget.dealId));
+      ref.invalidate(chatMessagesProvider(widget.chatId));
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -69,22 +75,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  Future<void> _call(Deal deal) async {
-    final driverId = ref.read(sessionProvider)?.driver?.id;
-    if (driverId == null) return;
-    await ref.read(cargoRepositoryProvider).logContactEvent(
-          driverId: driverId,
-          companyId: deal.companyId,
-          cargoId: deal.cargoId,
+  /// Звонок не должен ждать запись события (задача 017, п.5г) — сначала
+  /// открываем звонилку, `contact_event` пишем без ожидания.
+  Future<void> _call(ChatThread thread) async {
+    final phone = thread.counterpartPhone;
+    if (phone == null) return;
+    unawaited(launchUrl(Uri(scheme: 'tel', path: phone)));
+    unawaited(ref.read(cargoRepositoryProvider).logContactEvent(
+          driverId: thread.driverId,
+          companyId: thread.companyId,
+          cargoId: thread.cargoId,
+          dealId: thread.dealId,
           type: 'CALL',
-        );
+        ));
   }
 
   Future<void> _confirm(DealStatus status) async {
+    final dealId = ref.read(chatThreadProvider(widget.chatId)).valueOrNull?.dealId;
+    if (dealId == null) return;
     setState(() => _confirming = true);
     try {
-      await ref.read(dealRepositoryProvider).advanceStatus(widget.dealId, status);
-      ref.invalidate(dealByIdProvider(widget.dealId));
+      await ref.read(dealRepositoryProvider).advanceStatus(dealId, status);
+      ref.invalidate(dealByIdProvider(dealId));
     } on DioException catch (e) {
       if (isDriverNotVerifiedError(e)) {
         if (mounted) await showVerificationRequiredSheet(context);
@@ -106,14 +118,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
-    final threadAsync = ref.watch(chatThreadProvider(widget.dealId));
-    final messagesAsync = ref.watch(chatMessagesProvider(widget.dealId));
-    final dealAsync = ref.watch(dealByIdProvider(widget.dealId));
+    final threadAsync = ref.watch(chatThreadProvider(widget.chatId));
+    final messagesAsync = ref.watch(chatMessagesProvider(widget.chatId));
     final isDriver = ref.watch(sessionProvider)?.driver != null;
     final referenceData = ref.watch(referenceDataProvider).valueOrNull;
 
     final thread = threadAsync.valueOrNull;
-    final deal = dealAsync.valueOrNull;
+    final dealAsync = thread?.dealId != null ? ref.watch(dealByIdProvider(thread!.dealId!)) : null;
+    final deal = dealAsync?.valueOrNull;
 
     return Scaffold(
       appBar: AppBar(
@@ -151,10 +163,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ],
         ),
         actions: [
-          if (deal != null)
+          if (thread?.counterpartPhone != null)
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.md),
-              child: IconSquareButton(icon: LucideIcons.phone, onPressed: () => _call(deal)),
+              child: IconSquareButton(icon: LucideIcons.phone, onPressed: () => _call(thread!)),
             ),
         ],
       ),

@@ -8,7 +8,7 @@ class CompanyShell extends StatelessWidget {
 
   final Widget child;
 
-  static const _tabs = ['/company/cargos', '/company/drivers', '/company/deals', '/company/profile'];
+  static const _tabs = ['/company/cargos', '/company/drivers', '/company/chats', '/company/deals', '/company/profile'];
 
   int _indexForLocation(String location) {
     final index = _tabs.indexWhere((tab) => location.startsWith(tab));
@@ -29,6 +29,7 @@ class CompanyShell extends StatelessWidget {
         destinations: [
           NavigationDestination(icon: const Icon(LucideIcons.package), label: t.navCargos),
           NavigationDestination(icon: const Icon(LucideIcons.users), label: t.navDrivers),
+          NavigationDestination(icon: const Icon(LucideIcons.messageCircle), label: t.navChats),
           NavigationDestination(icon: const Icon(LucideIcons.fileCheck2), label: t.navDeals),
           NavigationDestination(icon: const Icon(LucideIcons.user), label: t.profileTitle),
         ],

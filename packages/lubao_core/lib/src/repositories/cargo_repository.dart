@@ -32,8 +32,17 @@ class CargoRepository {
     return Cargo.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<void> delete(String cargoId) async {
-    await _client.dio.delete('/cargos/$cargoId');
+  /// Кандидаты на «Нашёл в Lubao» (задача 017, п.6) — водители, с кем уже
+  /// был отклик/звонок/переписка по этому грузу.
+  Future<List<CargoCloseCandidate>> closeCandidates(String cargoId) async {
+    final res = await _client.dio.get('/cargos/$cargoId/close-candidates');
+    return (res.data as List<dynamic>).map((e) => CargoCloseCandidate.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// Груз нельзя закрыть без выбора исхода (задача 017, п.6) — заменяет
+  /// старое «удалить» без причины.
+  Future<void> close(String cargoId, {required String outcome, String? driverId}) async {
+    await _client.dio.post('/cargos/$cargoId/close', data: {'outcome': outcome, if (driverId != null) 'driverId': driverId});
   }
 
   Future<List<CargoResponse>> responsesFor(String cargoId) async {
@@ -58,13 +67,15 @@ class CargoRepository {
   Future<void> logContactEvent({
     required String driverId,
     required String companyId,
-    required String cargoId,
+    String? cargoId,
+    String? dealId,
     required String type,
   }) async {
     await _client.dio.post('/contact-events', data: {
       'driverId': driverId,
       'companyId': companyId,
-      'cargoId': cargoId,
+      if (cargoId != null) 'cargoId': cargoId,
+      if (dealId != null) 'dealId': dealId,
       'type': type,
     });
   }

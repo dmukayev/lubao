@@ -1728,4 +1728,49 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminComplaintResolutionBlocked => 'Заблокировать';
+
+  @override
+  String get adminStatClosedOutside => 'Нашли вне Lubao';
+
+  @override
+  String adminStatClosedOutsideHint(int outside, int total) {
+    return '$outside из $total закрытых';
+  }
+
+  @override
+  String get cargoCloseDialogTitle => 'Закрыть груз';
+
+  @override
+  String get cargoCloseFoundInApp => 'Нашёл водителя в Lubao';
+
+  @override
+  String get cargoCloseNoCandidates =>
+      'Пока нет водителей, с кем были отклик, звонок или переписка';
+
+  @override
+  String get cargoCloseDriverLabel => 'Водитель';
+
+  @override
+  String get cargoCloseFoundOutside => 'Нашёл вне Lubao';
+
+  @override
+  String get cargoCloseCancelled => 'Груз отменён';
+
+  @override
+  String get cargoCloseConfirm => 'Закрыть';
+
+  @override
+  String get cargoClosed => 'Груз закрыт';
+
+  @override
+  String get cargoClose => 'Закрыть груз';
+
+  @override
+  String get navChats => 'Чаты';
+
+  @override
+  String get chatsTabTitle => 'Чаты';
+
+  @override
+  String get chatsEmpty => 'Пока нет чатов';
 }

@@ -442,6 +442,42 @@ describe('AdminService.stats — growth and on-site counters (задача 028, 
     const result7d = await service.stats('7d');
     expect(result7d.period).toBe('7d');
   });
+
+  it('computes the share of cargos closed outside the app (задача 017, п.7)', async () => {
+    const prisma: any = {
+      driver: { count: jest.fn().mockResolvedValue(0) },
+      company: { count: jest.fn().mockResolvedValue(0) },
+      cargo: { count: jest.fn().mockResolvedValueOnce(0).mockResolvedValueOnce(0).mockResolvedValueOnce(10).mockResolvedValueOnce(4) },
+      deal: { count: jest.fn().mockResolvedValue(0) },
+      verificationDocument: { count: jest.fn().mockResolvedValue(0) },
+      complaint: { count: jest.fn().mockResolvedValue(0) },
+      arrival: { count: jest.fn().mockResolvedValue(0) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.stats();
+
+    expect(result.cargosClosedTotal).toBe(10);
+    expect(result.cargosClosedOutside).toBe(4);
+    expect(result.cargosClosedOutsideSharePct).toBe(40);
+  });
+
+  it('returns null share (not NaN/Infinity) when nothing was closed yet', async () => {
+    const countZero = jest.fn().mockResolvedValue(0);
+    const prisma: any = {
+      driver: { count: countZero },
+      company: { count: countZero },
+      cargo: { count: countZero },
+      deal: { count: countZero },
+      verificationDocument: { count: countZero },
+      complaint: { count: countZero },
+      arrival: { count: countZero },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.stats();
+    expect(result.cargosClosedOutsideSharePct).toBeNull();
+  });
 });
 
 describe('AdminService.attention (задача 028, п.4)', () => {

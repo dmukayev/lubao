@@ -652,5 +652,29 @@
   "adminComplaintResolutionDismissed": "未成立",
   "adminComplaintResolutionWarned": "警告",
   "adminComplaintResolutionCargoUnpublished": "下架货物",
-  "adminComplaintResolutionBlocked": "封禁"
+  "adminComplaintResolutionBlocked": "封禁",
+  "adminStatClosedOutside": "App外成交占比",
+  "adminStatClosedOutsideHint": "{total}个已关闭中{outside}个",
+  "@adminStatClosedOutsideHint": {
+    "placeholders": {
+      "outside": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "cargoCloseDialogTitle": "关闭货物",
+  "cargoCloseFoundInApp": "在Lubao找到司机",
+  "cargoCloseNoCandidates": "暂无响应、通话或聊天记录的司机",
+  "cargoCloseDriverLabel": "司机",
+  "cargoCloseFoundOutside": "在Lubao外找到",
+  "cargoCloseCancelled": "货物已取消",
+  "cargoCloseConfirm": "关闭",
+  "cargoClosed": "货物已关闭",
+  "cargoClose": "关闭货物",
+  "navChats": "聊天",
+  "chatsTabTitle": "聊天",
+  "chatsEmpty": "暂无聊天记录"
 }

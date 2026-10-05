@@ -90,6 +90,8 @@ export class AdminService {
       deliveredInPeriod,
       onSiteToday,
       onSiteWeek,
+      cargosClosedTotal,
+      cargosClosedOutside,
     ] = await Promise.all([
       this.prisma.driver.count(),
       this.prisma.company.count(),
@@ -108,6 +110,10 @@ export class AdminService {
       this.prisma.arrival.count({
         where: { OR: [{ status: 'ON_SITE' }, { status: 'PLANNED', plannedAt: { gte: todayStart, lt: weekEnd } }] },
       }),
+      // Метрика утечки сделок мимо приложения (задача 017, п.7 — рядом с
+      // аналогичной метрикой анонсов из 014).
+      this.prisma.cargo.count({ where: { closedAt: { gte: since }, closeOutcome: { not: null } } }),
+      this.prisma.cargo.count({ where: { closedAt: { gte: since }, closeOutcome: 'FOUND_OUTSIDE' } }),
     ]);
 
     return {
@@ -122,6 +128,9 @@ export class AdminService {
       growth: { drivers: newDrivers, companies: newCompanies, cargos: newCargos, delivered: deliveredInPeriod },
       onSiteToday,
       onSiteWeek,
+      cargosClosedTotal,
+      cargosClosedOutside,
+      cargosClosedOutsideSharePct: cargosClosedTotal === 0 ? null : Math.round((cargosClosedOutside / cargosClosedTotal) * 100),
     };
   }
 

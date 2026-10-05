@@ -9,6 +9,7 @@ class ChatThread {
     required this.companyId,
     required this.counterpartName,
     this.counterpartLocale,
+    this.counterpartPhone,
   });
 
   final String id;
@@ -18,6 +19,7 @@ class ChatThread {
   final String companyId;
   final String counterpartName;
   final String? counterpartLocale;
+  final String? counterpartPhone;
 
   factory ChatThread.fromJson(Map<String, dynamic> json) => ChatThread(
         id: json['id'] as String,
@@ -27,6 +29,27 @@ class ChatThread {
         companyId: json['companyId'] as String,
         counterpartName: json['counterpartName'] as String? ?? '',
         counterpartLocale: json['counterpartLocale'] as String?,
+        counterpartPhone: json['counterpartPhone'] as String?,
+      );
+}
+
+/// Строка списка «Мои чаты» (задача 017, п.1) — `ChatThread` + превью
+/// последнего сообщения и счётчик непрочитанных.
+class MyChatEntry {
+  const MyChatEntry({required this.thread, this.cargoPointName, this.lastMessageText, required this.lastMessageAt, required this.unreadCount});
+
+  final ChatThread thread;
+  final I18nText? cargoPointName;
+  final String? lastMessageText;
+  final DateTime lastMessageAt;
+  final int unreadCount;
+
+  factory MyChatEntry.fromJson(Map<String, dynamic> json) => MyChatEntry(
+        thread: ChatThread.fromJson(json),
+        cargoPointName: json['cargoPointName'] == null ? null : I18nText.fromJson(json['cargoPointName'] as Map<String, dynamic>),
+        lastMessageText: json['lastMessageText'] as String?,
+        lastMessageAt: DateTime.parse(json['lastMessageAt'] as String),
+        unreadCount: json['unreadCount'] as int? ?? 0,
       );
 }
 

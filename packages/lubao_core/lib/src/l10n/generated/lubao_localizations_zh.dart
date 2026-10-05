@@ -1706,4 +1706,48 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminComplaintResolutionBlocked => '封禁';
+
+  @override
+  String get adminStatClosedOutside => 'App外成交占比';
+
+  @override
+  String adminStatClosedOutsideHint(int outside, int total) {
+    return '$total个已关闭中$outside个';
+  }
+
+  @override
+  String get cargoCloseDialogTitle => '关闭货物';
+
+  @override
+  String get cargoCloseFoundInApp => '在Lubao找到司机';
+
+  @override
+  String get cargoCloseNoCandidates => '暂无响应、通话或聊天记录的司机';
+
+  @override
+  String get cargoCloseDriverLabel => '司机';
+
+  @override
+  String get cargoCloseFoundOutside => '在Lubao外找到';
+
+  @override
+  String get cargoCloseCancelled => '货物已取消';
+
+  @override
+  String get cargoCloseConfirm => '关闭';
+
+  @override
+  String get cargoClosed => '货物已关闭';
+
+  @override
+  String get cargoClose => '关闭货物';
+
+  @override
+  String get navChats => '聊天';
+
+  @override
+  String get chatsTabTitle => '聊天';
+
+  @override
+  String get chatsEmpty => '暂无聊天记录';
 }

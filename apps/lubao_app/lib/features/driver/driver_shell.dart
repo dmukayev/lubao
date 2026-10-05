@@ -8,7 +8,7 @@ class DriverShell extends StatelessWidget {
 
   final Widget child;
 
-  static const _tabs = ['/driver/feed', '/driver/deals', '/driver/profile'];
+  static const _tabs = ['/driver/feed', '/driver/chats', '/driver/deals', '/driver/profile'];
 
   int _indexForLocation(String location) {
     final index = _tabs.indexWhere((tab) => location.startsWith(tab));
@@ -28,6 +28,7 @@ class DriverShell extends StatelessWidget {
         onDestinationSelected: (index) => context.go(_tabs[index]),
         destinations: [
           NavigationDestination(icon: const Icon(LucideIcons.truck), label: t.navFeed),
+          NavigationDestination(icon: const Icon(LucideIcons.messageCircle), label: t.navChats),
           NavigationDestination(icon: const Icon(LucideIcons.fileCheck2), label: t.navDeals),
           NavigationDestination(icon: const Icon(LucideIcons.user), label: t.profileTitle),
         ],

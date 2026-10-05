@@ -115,6 +115,15 @@ class _StatsGrid extends StatelessWidget {
       (t.adminStatDealsDelivered, '${stats.dealsDelivered}', '+${stats.growth.delivered}', LucideIcons.checkCircle, StatusBadge.success, '/deals?status=DELIVERED'),
       (t.adminStatPendingDocs, '${stats.pendingDocs}', null, LucideIcons.clock, StatusBadge.warning, '/verification'),
       (t.adminStatOpenComplaints, '${stats.openComplaints}', null, LucideIcons.flag, StatusBadge.danger, '/complaints'),
+      if (stats.cargosClosedTotal > 0)
+        (
+          t.adminStatClosedOutside,
+          '${stats.cargosClosedOutsideSharePct}%',
+          t.adminStatClosedOutsideHint(stats.cargosClosedOutside, stats.cargosClosedTotal),
+          LucideIcons.logOut,
+          StatusBadge.warning,
+          '/cargos?status=CANCELLED',
+        ),
     ];
 
     return GridView.builder(

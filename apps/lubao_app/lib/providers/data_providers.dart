@@ -31,12 +31,22 @@ final reviewsForDealProvider = FutureProvider.autoDispose.family<List<Review>, S
   return ref.watch(reviewRepositoryProvider).forDeal(dealId);
 });
 
-final chatMessagesProvider = FutureProvider.autoDispose.family<List<ChatMessage>, String>((ref, dealId) {
-  return ref.watch(chatRepositoryProvider).messages(dealId);
+final chatMessagesProvider = FutureProvider.autoDispose.family<List<ChatMessage>, String>((ref, chatId) {
+  return ref.watch(chatRepositoryProvider).messages(chatId);
 });
 
-final chatThreadProvider = FutureProvider.autoDispose.family<ChatThread, String>((ref, dealId) {
-  return ref.watch(chatRepositoryProvider).threadForDeal(dealId);
+final chatThreadProvider = FutureProvider.autoDispose.family<ChatThread, String>((ref, chatId) {
+  return ref.watch(chatRepositoryProvider).thread(chatId);
+});
+
+/// Мои чаты (задача 017, п.1) — вкладка «Чаты» у водителя и логиста.
+final myChatsProvider = FutureProvider.autoDispose<List<MyChatEntry>>((ref) {
+  return ref.watch(chatRepositoryProvider).myChats();
+});
+
+/// Кандидаты на «Нашёл в Lubao» при закрытии груза (п.6).
+final cargoCloseCandidatesProvider = FutureProvider.autoDispose.family<List<CargoCloseCandidate>, String>((ref, cargoId) {
+  return ref.watch(cargoRepositoryProvider).closeCandidates(cargoId);
 });
 
 final companyMembersProvider = FutureProvider.autoDispose<List<CompanyMember>>((ref) {

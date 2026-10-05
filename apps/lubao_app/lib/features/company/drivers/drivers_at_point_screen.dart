@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../providers/api_providers.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
 
@@ -78,9 +82,29 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     }
   }
 
-  Future<void> _call(String? phone) async {
-    if (phone == null) return;
-    await launchUrl(Uri(scheme: 'tel', path: phone));
+  /// Звонок/WhatsApp не должны ждать запись события (задача 017, п.5г).
+  void _logContact(String driverId, String type) {
+    final companyId = ref.read(sessionProvider)?.companyMember?.companyId;
+    if (companyId == null) return;
+    unawaited(ref.read(cargoRepositoryProvider).logContactEvent(driverId: driverId, companyId: companyId, type: type));
+  }
+
+  Future<void> _call(ArrivalListing driver) async {
+    if (driver.phone == null) return;
+    _logContact(driver.driverId, 'CALL');
+    await launchUrl(Uri(scheme: 'tel', path: driver.phone!));
+  }
+
+  Future<void> _whatsapp(ArrivalListing driver) async {
+    if (driver.phone == null) return;
+    _logContact(driver.driverId, 'WHATSAPP');
+    final digits = driver.phone!.replaceAll(RegExp(r'[^0-9]'), '');
+    await launchUrl(Uri.parse('https://wa.me/$digits'), mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _chat(ArrivalListing driver) async {
+    final thread = await ref.read(chatRepositoryProvider).findOrCreate(driverId: driver.driverId);
+    if (mounted) context.push('/chat/${thread.id}');
   }
 
   Future<void> _invite(ArrivalListing driver) async {
@@ -150,6 +174,10 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     // их выбор.
     final primaryPoint = referenceData.valueOrNull?.points.where((p) => p.isActive).firstOrNull;
     final primaryPointName = primaryPoint?.name.forLanguageCode(locale) ?? '';
+    // WhatsApp заблокирован в Китае — логисту оттуда вместо него только чат
+    // Lubao (decisions.md «Звонки — обычные, через телефон», задача 017).
+    final companyCountryId = ref.watch(sessionProvider)?.company?.countryId;
+    final isChinaCompany = referenceData.valueOrNull?.countries.where((c) => c.id == companyCountryId).firstOrNull?.code == 'CN';
 
     return Scaffold(
       appBar: AppBar(
@@ -279,7 +307,16 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                           child: Text(t.driversAtPointCountAtPlace(list.length), style: AppTextStyles.bodyStrong),
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        for (final driver in list) _DriverCard(driver: driver, refData: refData, onCall: _call, onInvite: _invite),
+                        for (final driver in list)
+                          _DriverCard(
+                            driver: driver,
+                            refData: refData,
+                            isChinaCompany: isChinaCompany,
+                            onCall: _call,
+                            onWhatsapp: _whatsapp,
+                            onChat: _chat,
+                            onInvite: _invite,
+                          ),
                       ],
                     ),
                   );
@@ -375,11 +412,22 @@ class _FilterDropdown<T> extends StatelessWidget {
 }
 
 class _DriverCard extends StatelessWidget {
-  const _DriverCard({required this.driver, required this.refData, required this.onCall, required this.onInvite});
+  const _DriverCard({
+    required this.driver,
+    required this.refData,
+    required this.isChinaCompany,
+    required this.onCall,
+    required this.onWhatsapp,
+    required this.onChat,
+    required this.onInvite,
+  });
 
   final ArrivalListing driver;
   final ReferenceData refData;
-  final ValueChanged<String?> onCall;
+  final bool isChinaCompany;
+  final ValueChanged<ArrivalListing> onCall;
+  final ValueChanged<ArrivalListing> onWhatsapp;
+  final ValueChanged<ArrivalListing> onChat;
   final ValueChanged<ArrivalListing> onInvite;
 
   @override
@@ -437,7 +485,18 @@ class _DriverCard extends StatelessWidget {
                   ],
                 ),
               ),
-              IconSquareButton(icon: LucideIcons.phone, onPressed: () => onCall(driver.phone)),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              IconSquareButton(icon: LucideIcons.phone, onPressed: driver.phone == null ? null : () => onCall(driver)),
+              const SizedBox(width: AppSpacing.sm),
+              IconSquareButton(icon: LucideIcons.messageSquare, onPressed: () => onChat(driver)),
+              if (!isChinaCompany) ...[
+                const SizedBox(width: AppSpacing.sm),
+                IconSquareButton(icon: LucideIcons.messageCircle, onPressed: driver.phone == null ? null : () => onWhatsapp(driver)),
+              ],
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
