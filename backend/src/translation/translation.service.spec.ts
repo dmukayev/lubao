@@ -142,4 +142,25 @@ describe('TranslationService.enqueueTranslation (задача 029, п.6 — пе
       expect.objectContaining({ attempts: 3 }),
     );
   });
+
+  it('resolves instead of hanging forever when queue.add never settles — задача 029, п.6/8 (Redis outage must not block send())', async () => {
+    jest.useFakeTimers();
+    const queue = { add: jest.fn().mockReturnValue(new Promise(() => {})) };
+    const service = new TranslationService({} as any, {} as any, {} as any, queue as any);
+
+    const promise = service.enqueueTranslation({ messageId: 'm1', chatId: 'c1', text: 'hi', from: 'ru', to: 'zh', senderUserId: 'u1' });
+    await jest.advanceTimersByTimeAsync(3000);
+    await expect(promise).resolves.toBeUndefined();
+
+    jest.useRealTimers();
+  });
+
+  it('resolves instead of rejecting when queue.add rejects outright', async () => {
+    const queue = { add: jest.fn().mockRejectedValue(new Error('ECONNREFUSED')) };
+    const service = new TranslationService({} as any, {} as any, {} as any, queue as any);
+
+    await expect(
+      service.enqueueTranslation({ messageId: 'm1', chatId: 'c1', text: 'hi', from: 'ru', to: 'zh', senderUserId: 'u1' }),
+    ).resolves.toBeUndefined();
+  });
 });

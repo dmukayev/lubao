@@ -139,3 +139,55 @@ describe('NotificationsService settings', () => {
     expect(result).toEqual({ eventGroup: 'CHAT_MESSAGE', enabled: false });
   });
 });
+
+describe('NotificationsService — не подвешивает и не роняет вызывающего при сбое Redis (задача 029, п.8)', () => {
+  function fixture() {
+    return {
+      prisma: {
+        notificationEventSetting: { findUnique: jest.fn().mockResolvedValue(null) },
+        notificationSetting: { findUnique: jest.fn().mockResolvedValue(null) },
+        deviceToken: { findMany: jest.fn().mockResolvedValue([{ token: 'tok-1', platform: 'FCM' }]) },
+        user: { findUnique: jest.fn().mockResolvedValue({ locale: 'ru' }) },
+        company: { findUnique: jest.fn().mockResolvedValue({ wecomWebhookUrl: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=x' }) },
+        companyMember: { findFirst: jest.fn().mockResolvedValue({ user: { locale: 'ru' } }) },
+      },
+      redis: { client: { set: jest.fn().mockResolvedValue('OK') } },
+    };
+  }
+
+  it('resolves instead of hanging forever when queue.add never settles (simulated Redis outage)', async () => {
+    jest.useFakeTimers();
+    const { prisma, redis } = fixture();
+    const queue = { add: jest.fn().mockReturnValue(new Promise(() => {})) }; // никогда не резолвится
+    const service = new NotificationsService(prisma as any, redis as any, queue as any);
+
+    const notifyPromise = service.notify({ userIds: ['driver-1'] }, 'CARGO_INVITE', { cargoId: 'c1', companyName: 'Acme' });
+    await jest.advanceTimersByTimeAsync(3000);
+    await expect(notifyPromise).resolves.toBeUndefined();
+
+    jest.useRealTimers();
+  });
+
+  it('resolves instead of rejecting when queue.add rejects outright', async () => {
+    const { prisma, redis } = fixture();
+    const queue = { add: jest.fn().mockRejectedValue(new Error('ECONNREFUSED')) };
+    const service = new NotificationsService(prisma as any, redis as any, queue as any);
+
+    await expect(service.notify({ userIds: ['driver-1'] }, 'CARGO_INVITE', { cargoId: 'c1', companyName: 'Acme' })).resolves.toBeUndefined();
+  });
+
+  it('sends anyway (fails open) when the throttle check itself times out', async () => {
+    jest.useFakeTimers();
+    const { prisma } = fixture();
+    const redis = { client: { set: jest.fn().mockReturnValue(new Promise(() => {})) } };
+    const queue = { add: jest.fn().mockResolvedValue(undefined) };
+    const service = new NotificationsService(prisma as any, redis as any, queue as any);
+
+    const notifyPromise = service.notify({ userIds: ['driver-1'] }, 'CHAT_MESSAGE', { chatId: 'c1', senderName: 'A', preview: 'hi' });
+    await jest.advanceTimersByTimeAsync(3000);
+    await notifyPromise;
+
+    expect(queue.add).toHaveBeenCalled();
+    jest.useRealTimers();
+  });
+});

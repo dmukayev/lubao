@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { Locale, TranslationStatus } from '@prisma/client';
+import { withTimeout } from '../common/with-timeout';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { maskNumerics, unmaskNumerics, verifyLabelsIntact } from './masking';
@@ -97,7 +98,19 @@ export class TranslationService {
   /// `send()` не ждёт перевод (задача 029, п.6) — кладёт задание и сразу
   /// отвечает; фактический перевод и обновление сообщения — в
   /// TranslationProcessor.
+  /// Недоступный Redis не должен подвешивать `ChatsService.send()` —
+  /// именно это и было задачей 029, п.6 (а не только таймаут DeepSeek);
+  /// по умолчанию BullMQ держит `maxRetriesPerRequest: null`, так что
+  /// `queue.add()` без этой обёртки мог бы висеть бесконечно.
   async enqueueTranslation(job: TranslationJob): Promise<void> {
-    await this.queue.add('translate', job, { attempts: 3, backoff: { type: 'exponential', delay: 3000 } });
+    try {
+      await withTimeout(
+        this.queue.add('translate', job, { attempts: 3, backoff: { type: 'exponential', delay: 3000 } }),
+        3000,
+        'translation queue.add timed out',
+      );
+    } catch (e) {
+      this.logger.error(`Failed to enqueue translation for message ${job.messageId}: ${(e as Error).message}`);
+    }
   }
 }

@@ -6,6 +6,8 @@ import { SessionService } from '../auth/session.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { REQUIRED_DRIVER_DOC_TYPES } from '../drivers/drivers.service';
+import { resolveCargoContactUserId } from '../cargos/resolve-contact';
+import { DEAL_STATUS_LABEL_RU } from '../notifications/notification-events';
 import { NotificationsService } from '../notifications/notifications.service';
 import {
   AdminChangeMemberEmailDto,
@@ -557,8 +559,10 @@ export class AdminService {
 
     await this.prisma.cargo.update({ where: { id }, data: { status: 'ARCHIVED', archivedAt: new Date() } });
     await this.logAudit(adminUserId, 'CARGO_UNPUBLISHED', 'Cargo', id, { reason });
-    // TODO(задача 011): уведомление логисту через модуль уведомлений — пока его нет, фиксируем намерение в логе.
-    await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Cargo', id, { channel: 'push', template: 'CARGO_UNPUBLISHED', companyId: cargo.companyId });
+    const contactUserId = await resolveCargoContactUserId(this.prisma, cargo);
+    if (contactUserId) {
+      await this.notifications?.notify({ userIds: [contactUserId] }, 'CARGO_UNPUBLISHED', { cargoId: id, reason });
+    }
 
     return { id, status: 'ARCHIVED' };
   }
@@ -683,9 +687,27 @@ export class AdminService {
 
     await this.prisma.deal.update({ where: { id }, data });
     await this.logAudit(adminUserId, 'DEAL_STATUS_FIXED', 'Deal', id, { reason: dto.reason, from: deal.status, to: dto.status });
-    await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Deal', id, { channel: 'push', template: 'DEAL_STATUS_FIXED', driverId: deal.driverId, companyId: deal.companyId });
+    await this.notifyDealStatusChange(deal, dto.status);
 
     return { id, status: dto.status };
+  }
+
+  /// Push/WeCom обеим сторонам при смене статуса сделки админом (задача
+  /// 029, п.7 — заменяет старую NOTIFICATION_QUEUED-заглушку) — тот же
+  /// канал/событие DEAL_STATUS, что и у обычной смены статуса (011), не
+  /// отдельный шаблон: с точки зрения получателя разницы нет.
+  private async notifyDealStatusChange(deal: { id: string; driverId: string; companyId: string; cargoId: string }, status: string) {
+    const [driver, cargo] = await Promise.all([
+      this.prisma.driver.findUnique({ where: { id: deal.driverId }, select: { userId: true } }),
+      this.prisma.cargo.findUnique({ where: { id: deal.cargoId }, select: { companyId: true, publishedByUserId: true } }),
+    ]);
+    if (!driver) return;
+    const contactUserId = cargo ? await resolveCargoContactUserId(this.prisma, cargo) : null;
+    await this.notifications?.notify(
+      { userIds: [driver.userId, ...(contactUserId ? [contactUserId] : [])], companyId: deal.companyId },
+      'DEAL_STATUS',
+      { dealId: deal.id, statusLabelRu: DEAL_STATUS_LABEL_RU[status] ?? status },
+    );
   }
 
   /// «Отменить сделку» админом (п.17) — причина обязательна,
@@ -704,7 +726,7 @@ export class AdminService {
       data: { status: 'CANCELLED', cancelReason: reason, cancelledByRole: 'ADMIN' },
     });
     await this.logAudit(adminUserId, 'DEAL_CANCELLED_BY_ADMIN', 'Deal', id, { reason });
-    await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Deal', id, { channel: 'push', template: 'DEAL_CANCELLED', driverId: deal.driverId, companyId: deal.companyId });
+    await this.notifyDealStatusChange(deal, 'CANCELLED');
 
     return { id, status: 'CANCELLED' };
   }
@@ -1303,12 +1325,14 @@ export class AdminService {
       select: this.complaintSelect,
     });
     await this.logAudit(adminUserId, 'COMPLAINT_RESOLVED', 'Complaint', id, { resolution: dto.resolution, resolutionNote: dto.resolutionNote });
-    // TODO(задача 011): автору — уведомление на его языке со статусом и
-    // ответом («Мои жалобы» в профиле — экран пока не существует, подавать
-    // жалобы в приложении тоже нельзя, см. статус задачи 028).
-    await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Complaint', id, { channel: 'push', template: 'COMPLAINT_RESOLVED', reporterUserId: complaint.reporterUserId });
+    // Экрана «Мои жалобы» в профиле пока нет (028) — push всё равно
+    // долетит, просто deep link пока открывает профиль, не карточку жалобы.
+    await this.notifications?.notify({ userIds: [complaint.reporterUserId] }, 'COMPLAINT_RESOLVED', {
+      complaintId: id,
+      resolutionNote: dto.resolutionNote,
+    });
     if (dto.resolution === 'WARNED' && actionTargets.userId) {
-      await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Complaint', id, { channel: 'push', template: 'COMPLAINT_WARNING', userId: actionTargets.userId, reason: complaint.reason });
+      await this.notifications?.notify({ userIds: [actionTargets.userId] }, 'COMPLAINT_WARNED', { reason: complaint.reason });
     }
 
     return this.complaintToDto(updated);

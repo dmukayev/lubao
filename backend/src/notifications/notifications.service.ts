@@ -1,10 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { DevicePlatform, Locale } from '@prisma/client';
+import { withTimeout } from '../common/with-timeout';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { NOTIFICATION_EVENTS, NotificationEvent, NotificationPayload, pickLocaleText } from './notification-events';
 import { NOTIFICATIONS_QUEUE, NotificationJob } from './notifications.queue';
+
+const QUEUE_ADD_TIMEOUT_MS = 3000;
 
 export { pickLocaleText };
 
@@ -28,6 +31,11 @@ export class NotificationsService {
     private readonly queue: Queue<NotificationJob>,
   ) {}
 
+  /// Сбой очереди (недоступный Redis) не должен ронять или подвешивать
+  /// вызывающий запрос (задача 029, п.8) — отправка сообщения, отклик на
+  /// груз и т.п. не должны ждать/падать из-за уведомлений. notify()
+  /// поэтому сам никогда не бросает — ошибки и зависания ловятся и
+  /// логируются внутри pushToUser/wecomToCompany.
   async notify(target: NotifyTarget, event: NotificationEvent, payload: NotificationPayload): Promise<void> {
     const def = NOTIFICATION_EVENTS[event];
 
@@ -52,8 +60,13 @@ export class NotificationsService {
 
     if (def.throttleSeconds && def.throttleKey) {
       const key = `notif:throttle:${def.throttleKey({ ...payload, recipientUserId: userId })}`;
-      const set = await this.redis.client.set(key, '1', 'EX', def.throttleSeconds, 'NX');
-      if (set === null) return;
+      try {
+        const set = await withTimeout(this.redis.client.set(key, '1', 'EX', def.throttleSeconds, 'NX'), QUEUE_ADD_TIMEOUT_MS, 'throttle check timed out');
+        if (set === null) return;
+      } catch (e) {
+        // Redis недоступен — лучше продублировать push, чем молчать (задача 029, п.8).
+        this.logger.error(`Throttle check failed, sending anyway: ${(e as Error).message}`);
+      }
     }
 
     const tokens = await this.prisma.deviceToken.findMany({ where: { userId } });
@@ -65,20 +78,28 @@ export class NotificationsService {
     const deepLink = def.deepLink(payload);
 
     await Promise.all(
-      tokens.map((t) =>
-        this.queue.add(
-          'deliver',
-          {
-            channel: 'PUSH' as const,
-            token: t.token,
-            platform: t.platform as DevicePlatform,
-            title: rendered.title,
-            body: rendered.body,
-            data: { deepLink, event },
-          },
-          { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
-        ),
-      ),
+      tokens.map(async (t) => {
+        try {
+          await withTimeout(
+            this.queue.add(
+              'deliver',
+              {
+                channel: 'PUSH' as const,
+                token: t.token,
+                platform: t.platform as DevicePlatform,
+                title: rendered.title,
+                body: rendered.body,
+                data: { deepLink, event },
+              },
+              { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
+            ),
+            QUEUE_ADD_TIMEOUT_MS,
+            'notifications queue.add timed out',
+          );
+        } catch (e) {
+          this.logger.error(`Failed to enqueue push for user ${userId}: ${(e as Error).message}`);
+        }
+      }),
     );
   }
 
@@ -94,11 +115,19 @@ export class NotificationsService {
     const locale: Locale = owner?.user.locale ?? 'ru';
     const rendered = def.render(locale, payload);
 
-    await this.queue.add(
-      'deliver',
-      { channel: 'WECOM' as const, webhookUrl: company.wecomWebhookUrl, text: `${rendered.title}\n${rendered.body}` },
-      { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
-    );
+    try {
+      await withTimeout(
+        this.queue.add(
+          'deliver',
+          { channel: 'WECOM' as const, webhookUrl: company.wecomWebhookUrl, text: `${rendered.title}\n${rendered.body}` },
+          { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
+        ),
+        QUEUE_ADD_TIMEOUT_MS,
+        'notifications queue.add timed out',
+      );
+    } catch (e) {
+      this.logger.error(`Failed to enqueue WeCom message for company ${companyId}: ${(e as Error).message}`);
+    }
   }
 
   async registerDeviceToken(userId: string, token: string, platform: DevicePlatform): Promise<void> {

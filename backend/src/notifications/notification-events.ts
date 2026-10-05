@@ -10,6 +10,31 @@ export function pickLocaleText(name: I18nName, locale: Locale): string {
   return name[locale] || name.ru || Object.values(name).find((v) => !!v) || '';
 }
 
+/// Названия типов документов (задача 029, п.7 — «Вернуть на доработку»
+/// должен присылать список документов и причин, не общую фразу).
+const DOC_TYPE_LABEL: Record<string, Record<Locale, string>> = {
+  DRIVER_LICENSE: { ru: 'водительское удостоверение', kk: 'жүргізуші куәлігі', zh: '驾驶证', en: "driver's license" },
+  VEHICLE_PASSPORT: { ru: 'техпаспорт тягача', kk: 'тартқыштың техпаспорты', zh: '牵引车行驶证', en: 'tractor unit registration' },
+  TRAILER_PASSPORT: { ru: 'техпаспорт прицепа', kk: 'тіркеменің техпаспорты', zh: '挂车行驶证', en: 'trailer registration' },
+  SELFIE: { ru: 'селфи', kk: 'селфи', zh: '自拍照', en: 'selfie' },
+  COMPANY_REGISTRATION: { ru: 'свидетельство о регистрации', kk: 'тіркеу туралы куәлік', zh: '注册证书', en: 'registration certificate' },
+  IDENTITY: { ru: 'документ, удостоверяющий личность', kk: 'жеке куәландыратын құжат', zh: '身份证件', en: 'identity document' },
+  OTHER: { ru: 'документ', kk: 'құжат', zh: '文件', en: 'document' },
+};
+
+export interface RejectedDocument {
+  type: string;
+  reason: string;
+}
+
+function formatVerificationReturnedBody(p: NotificationPayload, locale: Locale, fallback: string): string {
+  const documents: RejectedDocument[] | undefined = p.documents;
+  const documentsText = documents?.length
+    ? documents.map((d) => `${DOC_TYPE_LABEL[d.type]?.[locale] ?? d.type}: ${d.reason}`).join('; ')
+    : null;
+  return [documentsText, p.note].filter((part): part is string => !!part).join(' — ') || fallback;
+}
+
 /// DEAL_STATUS шлётся всегда на русском тексте статуса (упрощение — полный
 /// 4-язычный набор статусов сделки не входит в объём 011; `render`
 /// всё равно оборачивает его в заголовок на языке получателя).
@@ -33,7 +58,10 @@ export type NotificationEvent =
   | 'DEAL_STATUS'
   | 'VERIFICATION_RETURNED'
   | 'VERIFICATION_APPROVED'
-  | 'AGREED_CHECK';
+  | 'AGREED_CHECK'
+  | 'CARGO_UNPUBLISHED'
+  | 'COMPLAINT_RESOLVED'
+  | 'COMPLAINT_WARNED';
 
 export interface RenderedNotification {
   title: string;
@@ -92,10 +120,10 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
     en: (p) => ({ title: 'Deal status changed', body: p.statusLabelRu }),
   },
   VERIFICATION_RETURNED: {
-    ru: (p) => ({ title: 'Документы нужно доработать', body: p.note || 'Проверьте профиль' }),
-    kk: (p) => ({ title: 'Құжаттарды түзету қажет', body: p.note || 'Профильді тексеріңіз' }),
-    zh: (p) => ({ title: '需要修改文件', body: p.note || '请检查您的资料' }),
-    en: (p) => ({ title: 'Documents need rework', body: p.note || 'Check your profile' }),
+    ru: (p) => ({ title: 'Документы нужно доработать', body: formatVerificationReturnedBody(p, 'ru', 'Проверьте профиль') }),
+    kk: (p) => ({ title: 'Құжаттарды түзету қажет', body: formatVerificationReturnedBody(p, 'kk', 'Профильді тексеріңіз') }),
+    zh: (p) => ({ title: '需要修改文件', body: formatVerificationReturnedBody(p, 'zh', '请检查您的资料') }),
+    en: (p) => ({ title: 'Documents need rework', body: formatVerificationReturnedBody(p, 'en', 'Check your profile') }),
   },
   VERIFICATION_APPROVED: {
     ru: () => ({ title: 'Вы проверены', body: 'Все документы одобрены' }),
@@ -108,6 +136,24 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
     kk: (p) => ({ title: 'Келістіңіз бе?', body: `${p.counterpartName}-мен жүк бойынша?` }),
     zh: (p) => ({ title: '谈妥了吗？', body: `与 ${p.counterpartName} 关于货物？` }),
     en: (p) => ({ title: 'Agreed?', body: `With ${p.counterpartName} about the cargo?` }),
+  },
+  CARGO_UNPUBLISHED: {
+    ru: (p) => ({ title: 'Груз снят с публикации', body: p.reason || 'Администратор снял груз с витрины' }),
+    kk: (p) => ({ title: 'Жүк жарияланымнан алынды', body: p.reason || 'Әкімші жүкті витринадан алып тастады' }),
+    zh: (p) => ({ title: '货物已下架', body: p.reason || '管理员已将货物从展示中移除' }),
+    en: (p) => ({ title: 'Cargo unpublished', body: p.reason || 'An admin removed the cargo from listings' }),
+  },
+  COMPLAINT_RESOLVED: {
+    ru: (p) => ({ title: 'Ответ по вашей жалобе', body: p.resolutionNote }),
+    kk: (p) => ({ title: 'Шағымыңыз бойынша жауап', body: p.resolutionNote }),
+    zh: (p) => ({ title: '您的投诉回复', body: p.resolutionNote }),
+    en: (p) => ({ title: 'Reply to your complaint', body: p.resolutionNote }),
+  },
+  COMPLAINT_WARNED: {
+    ru: (p) => ({ title: 'Предупреждение', body: p.reason || 'Нарушение правил платформы' }),
+    kk: (p) => ({ title: 'Ескерту', body: p.reason || 'Платформа ережелерін бұзу' }),
+    zh: (p) => ({ title: '警告', body: p.reason || '违反平台规则' }),
+    en: (p) => ({ title: 'Warning', body: p.reason || 'Platform rules violation' }),
   },
 };
 
@@ -167,5 +213,23 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
     channels: ['PUSH'],
     render: (locale, p) => T.AGREED_CHECK[locale](p),
     deepLink: (p) => `lubao://chat/${p.chatId}`,
+  },
+  CARGO_UNPUBLISHED: {
+    eventGroup: 'ADMIN_ACTION',
+    channels: ['PUSH'],
+    render: (locale, p) => T.CARGO_UNPUBLISHED[locale](p),
+    deepLink: (p) => `lubao://cargo/${p.cargoId}`,
+  },
+  COMPLAINT_RESOLVED: {
+    eventGroup: 'ADMIN_ACTION',
+    channels: ['PUSH'],
+    render: (locale, p) => T.COMPLAINT_RESOLVED[locale](p),
+    deepLink: (p) => `lubao://complaint/${p.complaintId}`,
+  },
+  COMPLAINT_WARNED: {
+    eventGroup: 'ADMIN_ACTION',
+    channels: ['PUSH'],
+    render: (locale, p) => T.COMPLAINT_WARNED[locale](p),
+    deepLink: () => 'lubao://profile',
   },
 };

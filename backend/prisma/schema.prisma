@@ -802,6 +802,9 @@ enum NotificationEventGroup {
   DEAL_STATUS
   VERIFICATION
   AGREED_CHECK
+  /// Снятие груза/решение по жалобе админом (задача 029, п.7) — раньше
+  /// только NOTIFICATION_QUEUED в audit_log без реальной отправки.
+  ADMIN_ACTION
 }
 
 model NotificationEventSetting {

@@ -976,17 +976,20 @@ describe('AdminService.cargoDetail / updateCargo / unpublishCargo (задача 
     );
   });
 
-  it('unpublishCargo sets ARCHIVED with archivedAt, and logs one decision + one notification entry', async () => {
+  it('unpublishCargo sets ARCHIVED with archivedAt, logs one decision entry, and notifies the publisher (задача 029, п.7)', async () => {
     const prisma: any = {
       cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo()), update: jest.fn() },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ userId: 'owner-1' }) },
       auditLog: { create: jest.fn() },
     };
-    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    const notifications = { notify: jest.fn() };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, notifications as any);
 
     await service.unpublishCargo('cargo1', 'admin-1', 'Груз больше не актуален');
 
     expect(prisma.cargo.update).toHaveBeenCalledWith({ where: { id: 'cargo1' }, data: { status: 'ARCHIVED', archivedAt: expect.any(Date) } });
-    expect(prisma.auditLog.create).toHaveBeenCalledTimes(2);
+    expect(prisma.auditLog.create).toHaveBeenCalledTimes(1);
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['owner-1'] }, 'CARGO_UNPUBLISHED', { cargoId: 'cargo1', reason: 'Груз больше не актуален' });
   });
 
   it('unpublishCargo throws NotFoundException for an unknown cargo', async () => {
@@ -1067,22 +1070,37 @@ describe('AdminService.dealDetail / dealChat / advanceDealStatusByAdmin / cancel
     expect(await service.dealChat('deal1', 'admin-1')).toEqual([]);
   });
 
-  it('advanceDealStatusByAdmin allows moving one step forward and sets the new timestamp', async () => {
+  function dealNotificationMocks() {
+    return {
+      driver: { findUnique: jest.fn().mockResolvedValue({ userId: 'u-driver' }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', publishedByUserId: 'logist-1' }) },
+    };
+  }
+
+  it('advanceDealStatusByAdmin allows moving one step forward, sets the new timestamp, and notifies both sides (задача 029, п.7)', async () => {
     const prisma: any = {
       deal: { findUnique: jest.fn().mockResolvedValue(baseDeal({ status: 'CONFIRMED_BY_DRIVER' })), update: jest.fn() },
       auditLog: { create: jest.fn() },
+      ...dealNotificationMocks(),
     };
-    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    const notifications = { notify: jest.fn() };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, notifications as any);
 
     await service.advanceDealStatusByAdmin('deal1', 'admin-1', { status: 'LOADED', reason: 'Водитель уже погрузился' } as any);
 
     expect(prisma.deal.update).toHaveBeenCalledWith({ where: { id: 'deal1' }, data: { status: 'LOADED', loadedAt: expect.any(Date) } });
+    expect(notifications.notify).toHaveBeenCalledWith(
+      { userIds: ['u-driver', 'logist-1'], companyId: 'c1' },
+      'DEAL_STATUS',
+      expect.objectContaining({ dealId: 'deal1', statusLabelRu: 'Груз загружен' }),
+    );
   });
 
   it('advanceDealStatusByAdmin allows moving one step backward and clears the timestamp being undone', async () => {
     const prisma: any = {
       deal: { findUnique: jest.fn().mockResolvedValue(baseDeal({ status: 'LOADED' })), update: jest.fn() },
       auditLog: { create: jest.fn() },
+      ...dealNotificationMocks(),
     };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
@@ -1104,6 +1122,7 @@ describe('AdminService.dealDetail / dealChat / advanceDealStatusByAdmin / cancel
     const prisma: any = {
       deal: { findUnique: jest.fn().mockResolvedValue(baseDeal({ status: 'LOADED' })), update: jest.fn() },
       auditLog: { create: jest.fn() },
+      ...dealNotificationMocks(),
     };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
@@ -1556,6 +1575,7 @@ describe('AdminService.resolveComplaint — 4 resolutions, required note (зад
       complaint: { findUnique: jest.fn().mockResolvedValue(baseComplaint({ targetType: 'CARGO', targetId: 'cargo1' })), update: jest.fn().mockResolvedValue({ id: 'cp1', reporter: {} }) },
       cargo: { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', id: 'cargo1' }), update: jest.fn() },
       user: { findUnique: jest.fn().mockResolvedValue({ id: 'u1' }) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ userId: 'owner-1' }) },
       auditLog: { create: jest.fn() },
     };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
@@ -1576,20 +1596,24 @@ describe('AdminService.resolveComplaint — 4 resolutions, required note (зад
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('WARNED logs a NOTIFICATION_QUEUED entry for the violator in addition to the reporter notification', async () => {
+  it('WARNED notifies both the reporter and the violator (задача 029, п.7 — заменяет NOTIFICATION_QUEUED)', async () => {
     const prisma: any = {
       complaint: { findUnique: jest.fn().mockResolvedValue(baseComplaint()), update: jest.fn().mockResolvedValue({ id: 'cp1', reporter: {} }) },
       user: { findUnique: jest.fn().mockResolvedValue({ id: 'violator-1' }) },
       auditLog: { create: jest.fn() },
     };
-    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    const notifications = { notify: jest.fn() };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, notifications as any);
 
     await service.resolveComplaint('cp1', 'admin-1', { resolution: 'WARNED', resolutionNote: 'Предупреждён' } as any);
 
-    expect(prisma.auditLog.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ action: 'NOTIFICATION_QUEUED', metadata: expect.objectContaining({ template: 'COMPLAINT_WARNING', userId: 'violator-1' }) }) }),
+    expect(notifications.notify).toHaveBeenCalledWith(
+      { userIds: [baseComplaint().reporterUserId] },
+      'COMPLAINT_RESOLVED',
+      { complaintId: 'cp1', resolutionNote: 'Предупреждён' },
     );
-    expect(prisma.auditLog.create).toHaveBeenCalledTimes(3); // resolved + reporter notification + violator warning
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['violator-1'] }, 'COMPLAINT_WARNED', expect.objectContaining({ reason: expect.any(String) }));
+    expect(prisma.auditLog.create).toHaveBeenCalledTimes(1); // только COMPLAINT_RESOLVED — уведомления больше не заглушка в audit_log
   });
 });
 
