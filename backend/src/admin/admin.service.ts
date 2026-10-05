@@ -1276,7 +1276,14 @@ export class AdminService {
   /// Кого реально затрагивает решение «Снять груз»/«Заблокировать» —
   /// отдельно от `complaintTarget` (который строит только текст карточки):
   /// здесь нужны именно action-ready id для вызова существующих методов.
-  private async resolveComplaintActionTargets(targetType: string, targetId: string): Promise<{ userId?: string; companyId?: string; cargoId?: string }> {
+  /// На DEAL всегда 2 стороны (задача 029, п.17: раньше блокировка по
+  /// жалобе на сделку ВСЕГДА била компанию — даже если логист жаловался
+  /// на водителя). Сторону, НА которую жалоба, определяем от обратного
+  /// по reporterUserId: если жаловался сам водитель этой сделки — жалоба
+  /// на компанию (как раньше); если жаловался кто-то другой (сотрудник
+  /// компании) — жалоба на водителя. Другого способа различить нет —
+  /// Complaint не хранит отдельно «на кого» для DEAL/CARGO.
+  private async resolveComplaintActionTargets(targetType: string, targetId: string, reporterUserId: string): Promise<{ userId?: string; companyId?: string; cargoId?: string }> {
     switch (targetType) {
       case 'USER':
         return { userId: targetId };
@@ -1287,8 +1294,15 @@ export class AdminService {
         return cargo ? { companyId: cargo.companyId, cargoId: targetId } : {};
       }
       case 'DEAL': {
-        const deal = await this.prisma.deal.findUnique({ where: { id: targetId }, select: { companyId: true, cargoId: true } });
-        return deal ? { companyId: deal.companyId, cargoId: deal.cargoId } : {};
+        const deal = await this.prisma.deal.findUnique({
+          where: { id: targetId },
+          select: { companyId: true, cargoId: true, driver: { select: { userId: true } } },
+        });
+        if (!deal) return {};
+        if (reporterUserId === deal.driver.userId) {
+          return { companyId: deal.companyId, cargoId: deal.cargoId };
+        }
+        return { userId: deal.driver.userId, cargoId: deal.cargoId };
       }
       case 'CHAT_MESSAGE': {
         const message = await this.prisma.message.findUnique({ where: { id: targetId }, select: { senderUserId: true } });
@@ -1306,7 +1320,7 @@ export class AdminService {
     const complaint = await this.prisma.complaint.findUnique({ where: { id } });
     if (!complaint) throw new NotFoundException('Complaint not found');
 
-    const actionTargets = await this.resolveComplaintActionTargets(complaint.targetType, complaint.targetId);
+    const actionTargets = await this.resolveComplaintActionTargets(complaint.targetType, complaint.targetId, complaint.reporterUserId);
 
     if (dto.resolution === 'CARGO_UNPUBLISHED') {
       if (!actionTargets.cargoId) throw new BadRequestException('This complaint has no cargo to unpublish');

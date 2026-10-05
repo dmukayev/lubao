@@ -1570,6 +1570,44 @@ describe('AdminService.resolveComplaint — 4 resolutions, required note (зад
     expect(prisma.company.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'c1' }, data: { isBlocked: true } }));
   });
 
+  it('BLOCKED on a DEAL target blocks the DRIVER when the reporter is a company member — not always the company (задача 029, п.17)', async () => {
+    const prisma: any = {
+      complaint: { findUnique: jest.fn().mockResolvedValue(baseComplaint({ targetType: 'DEAL', targetId: 'deal1', reporterUserId: 'u-logist' })), update: jest.fn().mockResolvedValue({ id: 'cp1', reporter: {} }) },
+      deal: { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', cargoId: 'cargo1', driver: { userId: 'u-driver' } }) },
+      user: { findUnique: jest.fn().mockResolvedValue({ id: 'u-driver' }), update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const sessions = { revokeAllForUser: jest.fn() };
+    const service = new AdminService(prisma, sessions as any, fakeUploads() as any);
+
+    // Жалобу подал логист (u-logist) на водителя этой сделки — раньше
+    // BLOCKED всегда бил company (deal.companyId), даже когда жалоба была
+    // именно на водителя, а не на компанию.
+    await service.resolveComplaint('cp1', 'admin-1', { resolution: 'BLOCKED', resolutionNote: 'Водитель заблокирован' } as any);
+
+    expect(prisma.user.update).toHaveBeenCalledWith({ where: { id: 'u-driver' }, data: { isBlocked: true } });
+    expect(sessions.revokeAllForUser).toHaveBeenCalledWith('u-driver');
+  });
+
+  it('BLOCKED on a DEAL target blocks the COMPANY when the reporter is the deal\'s own driver (unchanged behavior)', async () => {
+    const prisma: any = {
+      complaint: { findUnique: jest.fn().mockResolvedValue(baseComplaint({ targetType: 'DEAL', targetId: 'deal1', reporterUserId: 'u-driver' })), update: jest.fn().mockResolvedValue({ id: 'cp1', reporter: {} }) },
+      deal: { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', cargoId: 'cargo1', driver: { userId: 'u-driver' } }) },
+      company: { findUnique: jest.fn().mockResolvedValue({ id: 'c1', members: [{ userId: 'owner-1' }] }), update: jest.fn() },
+      user: { updateMany: jest.fn(), findUnique: jest.fn().mockResolvedValue({ id: 'u1' }) },
+      auditLog: { create: jest.fn() },
+      $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
+    };
+    const sessions = { revokeAllForUser: jest.fn() };
+    const service = new AdminService(prisma, sessions as any, fakeUploads() as any);
+
+    // Жалобу подал сам водитель этой сделки (u-driver) — значит, жаловался
+    // на компанию, и блокировать нужно именно её, как и раньше.
+    await service.resolveComplaint('cp1', 'admin-1', { resolution: 'BLOCKED', resolutionNote: 'Компания заблокирована' } as any);
+
+    expect(prisma.company.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'c1' }, data: { isBlocked: true } }));
+  });
+
   it('CARGO_UNPUBLISHED on a CARGO target unpublishes that cargo (reusing unpublishCargo)', async () => {
     const prisma: any = {
       complaint: { findUnique: jest.fn().mockResolvedValue(baseComplaint({ targetType: 'CARGO', targetId: 'cargo1' })), update: jest.fn().mockResolvedValue({ id: 'cp1', reporter: {} }) },
