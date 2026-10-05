@@ -36,23 +36,32 @@ class DashboardScreen extends ConsumerWidget {
           children: [
             const AdminSearchBar(),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Text(t.adminPeriodLabel, style: Theme.of(context).textTheme.titleSmall),
-                const SizedBox(width: 12),
-                for (final p in const ['today', '7d', '30d']) ...[
-                  ChoiceChip(
-                    label: Text(switch (p) {
-                      'today' => t.adminPeriodToday,
-                      '7d' => t.adminPeriod7d,
-                      _ => t.adminPeriod30d,
-                    }),
-                    selected: period == p,
-                    onSelected: (_) => ref.read(adminStatsPeriodProvider.notifier).state = p,
-                  ),
-                  const SizedBox(width: 8),
+            // Задача 030 — на узком экране Text+3 чипа в один Row не
+            // помещались (RenderFlex overflow, обнаружено живой проверкой
+            // в браузере, не flutter analyze): подпись сверху, чипы в
+            // горизонтальной прокрутке, тот же паттерн, что в списках
+            // водителей/компаний/грузов/сделок.
+            Text(t.adminPeriodLabel, style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final p in const ['today', '7d', '30d'])
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(switch (p) {
+                          'today' => t.adminPeriodToday,
+                          '7d' => t.adminPeriod7d,
+                          _ => t.adminPeriod30d,
+                        }),
+                        selected: period == p,
+                        onSelected: (_) => ref.read(adminStatsPeriodProvider.notifier).state = p,
+                      ),
+                    ),
                 ],
-              ],
+              ),
             ),
             const SizedBox(height: 16),
             stats.when(
@@ -153,7 +162,11 @@ class _StatsGrid extends StatelessWidget {
                     children: [
                       Text(value, style: Theme.of(context).textTheme.headlineSmall),
                       Text(label, style: Theme.of(context).textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-                      if (hint != null) Text(hint, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color)),
+                      // Задача 030 — без maxLines «На неделе: N» переносилось
+                      // на вторую строку на узких плитках (2 колонки на
+                      // телефоне) и вылезало за фиксированную высоту ячейки
+                      // (RenderFlex overflow, поймано живой проверкой).
+                      if (hint != null) Text(hint, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),

@@ -180,16 +180,38 @@ class _Detail extends ConsumerWidget {
               const SizedBox(height: 16),
               if (!isClosed)
                 AppCard(
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (c.assignedToUserId == null)
-                        FilledButton(onPressed: () => _assign(ref), child: Text(t.adminComplaintTakeOver))
-                      else ...[
-                        Expanded(child: Text(t.adminComplaintAssignedTo(c.assignedToName ?? ''))),
-                        OutlinedButton(onPressed: () => _unassign(ref), child: Text(t.adminComplaintReturnToNew)),
+                      if (c.assignedToUserId != null) ...[
+                        Row(
+                          children: [
+                            Expanded(child: Text(t.adminComplaintAssignedTo(c.assignedToName ?? ''))),
+                            const SizedBox(width: 12),
+                            OutlinedButton(onPressed: () => _unassign(ref), child: Text(t.adminComplaintReturnToNew)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
                       ],
-                      const Spacer(),
-                      FilledButton(onPressed: () => _resolve(context, ref, c.targetType), child: Text(t.adminComplaintResolveButton)),
+                      // Задача 030 — Row(..., Spacer(), ...) с обычным
+                      // (не-Expanded) FilledButton падал с «BoxConstraints
+                      // forces an infinite width» при открытии карточки
+                      // жалобы (поймано живой проверкой в браузере, баг
+                      // из задачи 028, не зависел от ширины экрана). У
+                      // FilledButton/OutlinedButton в теме minimumSize на
+                      // всю ширину (Size.fromHeight) — тот же паттерн
+                      // Expanded-кнопок 50/50, что в _ActionBar проверки,
+                      // безопасен и для Row с неопределённой шириной.
+                      Row(
+                        children: [
+                          if (c.assignedToUserId == null) ...[
+                            Expanded(child: FilledButton(onPressed: () => _assign(ref), child: Text(t.adminComplaintTakeOver))),
+                            const SizedBox(width: 12),
+                          ],
+                          Expanded(child: FilledButton(onPressed: () => _resolve(context, ref, c.targetType), child: Text(t.adminComplaintResolveButton))),
+                        ],
+                      ),
                     ],
                   ),
                 )
