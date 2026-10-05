@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { Prisma, VerificationDocType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { UploadsService } from '../uploads/uploads.service';
 import { extractFields } from './extract-fields';
 import { recognizeDocument } from './ocr-client';
 import { RECOGNITION_QUEUE, RecognitionJob } from './recognition.queue';
@@ -33,6 +34,7 @@ export class RecognitionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly queue: Queue<RecognitionJob>,
+    private readonly uploads: UploadsService,
   ) {}
 
   /// Вызывается после создания VerificationDocument (drivers.service.ts/
@@ -64,7 +66,16 @@ export class RecognitionService {
     }
 
     try {
-      const lineSets = await Promise.all(langs.map((lang) => recognizeDocument(document.fileUrl, lang)));
+      // Задача 032, п.1 — бэкенд сам читает байты (из приватного бакета по
+      // ключу, или по уже готовому https-URL легаси/сид-документов — его
+      // когда-то задал только наш же сид-скрипт, не клиент) и шлёт их в
+      // OCR мультипартом; сам OCR-контейнер URL больше не видит и не ходит
+      // за ним в сеть (устранение SSRF).
+      const { buffer, contentType } = /^https?:\/\//.test(document.fileUrl)
+        ? await fetch(document.fileUrl).then(async (r) => ({ buffer: Buffer.from(await r.arrayBuffer()), contentType: r.headers.get('content-type') || 'image/jpeg' }))
+        : await this.uploads.getDocumentBuffer(document.fileUrl);
+
+      const lineSets = await Promise.all(langs.map((lang) => recognizeDocument(buffer, contentType, lang)));
       const reachable = lineSets.filter((r): r is { lines: string[] } => r !== null);
       if (reachable.length === 0) {
         // OCR_SERVICE_URL не задан или сервис недоступен — честно

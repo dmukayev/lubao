@@ -6,6 +6,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { CurrentUser } from '../common/current-user.decorator';
+import { RequestContext } from '../common/request-context';
 import { UploadsService } from './uploads.service';
 
 const MAX_SIZE_BYTES = 8 * 1024 * 1024;
@@ -30,12 +32,12 @@ export class UploadsController {
   /// публичный URL; его и кладут в `VerificationDocument.fileUrl`.
   @Post('document')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_SIZE_BYTES } }))
-  async uploadDocument(@UploadedFile() file?: Express.Multer.File) {
+  async uploadDocument(@CurrentUser() ctx: RequestContext, @UploadedFile() file?: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
     if (!file.mimetype.startsWith('image/')) {
       throw new BadRequestException('Only image files are allowed');
     }
-    const key = await this.uploads.uploadDocument(file.buffer, file.originalname, file.mimetype);
+    const key = await this.uploads.uploadDocument(file.buffer, file.originalname, file.mimetype, ctx.user.id);
     return { key };
   }
 }

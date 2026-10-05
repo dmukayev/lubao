@@ -86,13 +86,45 @@ export class UploadsService implements OnModuleInit {
   /// Для документов верификации возвращает не URL, а ключ объекта в
   /// приватном бакете (`fileUrl` в БД хранит именно его) — реальная ссылка
   /// выдаётся только админу через [presignDocumentUrl] на 10 минут.
-  async uploadDocument(buffer: Buffer, originalName: string, mimetype: string): Promise<string> {
+  /// `uploaderUserId` записывается в метаданные объекта (задача 032, п.1) —
+  /// единственный способ позже проверить, что ключ, который клиент
+  /// присылает в `POST .../verification-documents`, действительно
+  /// загружен этим же пользователем, а не угадан/скопирован у другого.
+  async uploadDocument(buffer: Buffer, originalName: string, mimetype: string, uploaderUserId: string): Promise<string> {
     const ext = originalName.includes('.') ? originalName.split('.').pop() : 'jpg';
     const objectName = `${randomUUID()}.${ext}`;
     await this.client.putObject(this.documentsBucket, objectName, buffer, buffer.length, {
       'Content-Type': mimetype,
+      'X-Amz-Meta-Uploader': uploaderUserId,
     });
     return objectName;
+  }
+
+  /// Задача 032, п.1 — `fileUrl` в `CreateVerificationDocumentDto` раньше
+  /// принимался как произвольная строка и шёл прямиком в OCR как URL
+  /// (`ocr-client.ts` делал `fetch(fileUrl)`) — SSRF во внутреннюю сеть
+  /// докера. Теперь это строго ключ объекта из НАШЕГО `POST /uploads/document`:
+  /// формат (UUID.расширение, никаких `://` и `..`), объект существует в
+  /// приватном бакете и загружен именно этим пользователем.
+  async verifyDocumentOwnership(fileKey: string, uploaderUserId: string): Promise<boolean> {
+    if (!/^[0-9a-f-]{36}\.[A-Za-z0-9]{1,10}$/.test(fileKey)) return false;
+    try {
+      const stat = await this.client.statObject(this.documentsBucket, fileKey);
+      return stat.metaData?.['uploader'] === uploaderUserId;
+    } catch {
+      return false;
+    }
+  }
+
+  /// Задача 032, п.1/8 — байты документа для пересылки в OCR мультипартом
+  /// (вместо того чтобы отдавать OCR-контейнеру URL и давать ему самому
+  /// решать, что скачивать). Бэкенд — единственный, кто ходит в MinIO.
+  async getDocumentBuffer(fileKey: string): Promise<{ buffer: Buffer; contentType: string }> {
+    const stat = await this.client.statObject(this.documentsBucket, fileKey);
+    const stream = await this.client.getObject(this.documentsBucket, fileKey);
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(chunk as Buffer);
+    return { buffer: Buffer.concat(chunks), contentType: (stat.metaData?.['content-type'] as string) || 'application/octet-stream' };
   }
 
   /// `fileKey` может быть либо ключом объекта в приватном бакете (новые

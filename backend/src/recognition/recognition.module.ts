@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
+import { UploadsModule } from '../uploads/uploads.module';
 import { RecognitionService } from './recognition.service';
 import { RecognitionProcessor } from './recognition.processor';
 import { RECOGNITION_QUEUE, RecognitionJob } from './recognition.queue';
@@ -9,6 +10,7 @@ import { RECOGNITION_QUEUE, RecognitionJob } from './recognition.queue';
 /// только там, где создаются VerificationDocument (drivers/companies),
 /// а не повсеместно.
 @Module({
+  imports: [UploadsModule],
   providers: [
     {
       provide: Queue,

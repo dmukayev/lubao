@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { WeComService } from '../notifications/wecom.service';
 import { RecognitionService } from '../recognition/recognition.service';
+import { UploadsService } from '../uploads/uploads.service';
 import { RegisterCompanyDto } from './dto/register-company.dto';
 import { CreateInviteDto, AcceptInviteDto } from './dto/invite.dto';
 import { UpdateCompanyProfileDto } from './dto/update-company-profile.dto';
@@ -22,6 +23,7 @@ export class CompaniesService {
     private readonly email: EmailService,
     private readonly wecom: WeComService,
     private readonly recognition?: RecognitionService,
+    private readonly uploads?: UploadsService,
   ) {}
 
   toCompanyDto(company: Company) {
@@ -87,6 +89,12 @@ export class CompaniesService {
   /// проверки его как раз и не хватает, чтобы админу было что проверять
   /// (ревью задачи 012 — главный найденный пробел).
   async submitVerificationDocument(userId: string, companyId: string, dto: CreateCompanyVerificationDocumentDto) {
+    // Задача 032, п.1 — то же, что у drivers.service.ts: fileUrl только
+    // ключ из нашего же POST /uploads/document, загруженный этим пользователем.
+    if (this.uploads && !(await this.uploads.verifyDocumentOwnership(dto.fileUrl, userId))) {
+      throw new BadRequestException('fileUrl must be a key returned by POST /uploads/document for this user');
+    }
+
     const doc = await this.prisma.verificationDocument.create({
       data: { userId, companyId, type: dto.type, fileUrl: dto.fileUrl, status: 'PENDING' },
     });

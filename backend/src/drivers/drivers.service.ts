@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Driver } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { IdentifiersService } from '../identifiers/identifiers.service';
 import { RecognitionService } from '../recognition/recognition.service';
+import { UploadsService } from '../uploads/uploads.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { CreateVerificationDocumentDto } from './dto/create-verification-document.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
@@ -26,6 +27,7 @@ export class DriversService {
     private readonly prisma: PrismaService,
     private readonly identifiers?: IdentifiersService,
     private readonly recognition?: RecognitionService,
+    private readonly uploads?: UploadsService,
   ) {}
 
   private async verificationStatus(userId: string, isVerified: boolean): Promise<'NONE' | 'PENDING' | 'APPROVED'> {
@@ -179,6 +181,14 @@ export class DriversService {
   }
 
   async submitVerificationDocument(userId: string, driverId: string, dto: CreateVerificationDocumentDto) {
+    // Задача 032, п.1 — fileUrl раньше принимался как произвольная строка
+    // и шёл в OCR как URL (SSRF во внутреннюю сеть докера). Теперь это
+    // строго ключ из нашего же POST /uploads/document, загруженный этим
+    // же пользователем.
+    if (this.uploads && !(await this.uploads.verifyDocumentOwnership(dto.fileUrl, userId))) {
+      throw new BadRequestException('fileUrl must be a key returned by POST /uploads/document for this user');
+    }
+
     let vehicleId = dto.vehicleId ?? null;
     if (!vehicleId && (dto.type === 'VEHICLE_PASSPORT' || dto.type === 'TRAILER_PASSPORT')) {
       const vehicle = await this.prisma.vehicle.findFirst({
