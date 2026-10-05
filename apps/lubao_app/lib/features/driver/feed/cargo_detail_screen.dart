@@ -130,6 +130,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     IconSquareButton(
+                      key: const Key('cargoDetailChatButton'),
                       icon: LucideIcons.messageSquare,
                       size: AppSizes.buttonHeight,
                       loading: _openingChat,

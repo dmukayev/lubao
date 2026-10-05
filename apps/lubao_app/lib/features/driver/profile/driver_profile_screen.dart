@@ -107,6 +107,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
           ),
           const SizedBox(height: 24),
           OutlinedButton(
+            key: const Key('driverProfileLogoutButton'),
             onPressed: () => ref.read(sessionProvider.notifier).logout(),
             child: Text(t.profileLogout),
           ),
@@ -136,7 +137,7 @@ class _CompletenessBanner extends ConsumerWidget {
     // по захардкоженной константе 60/80 — та не менялась независимо от
     // реального прогресса проверки (причина жалобы «висит 60% после
     // верификации в админке»).
-    final docs = ref.watch(driverVerificationDocumentsProvider).value ?? const [];
+    final docs = ref.watch(driverVerificationDocumentsProvider).valueOrNull ?? const [];
     final approvedCount =
         docs.where((d) => _requiredDriverDocTypes.contains(d.type) && d.status == VerificationDocStatus.approved).length;
     final percent = (approvedCount / _requiredDriverDocTypes.length * 100).round();

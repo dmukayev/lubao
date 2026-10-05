@@ -38,6 +38,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   StreamSubscription<Map<String, dynamic>>? _messageTranslatedSub;
   StreamSubscription<void>? _reconnectedSub;
   Timer? _pollTimer;
+  // `ref` недоступен в dispose() у ConsumerStatefulElement (риверпод
+  // помечает его disposed до вызова State.dispose) — сохраняем сервис из
+  // initState, чтобы отписаться от комнаты без обращения к ref.
+  late final RealtimeService _realtime;
 
   /// Сокет — основной канал (задача 011, п.6); если за 10с после открытия
   /// он не поднялся (прокси блокирует WS — см. задачу 020 про Китай),
@@ -48,7 +52,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    final realtime = ref.read(realtimeServiceProvider);
+    _realtime = ref.read(realtimeServiceProvider);
+    final realtime = _realtime;
     realtime.joinChat(widget.chatId);
     _messageNewSub = realtime.onMessageNew.listen((data) {
       if (data['chatId'] == widget.chatId) {
@@ -80,7 +85,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
-    ref.read(realtimeServiceProvider).leaveChat(widget.chatId);
+    _realtime.leaveChat(widget.chatId);
     _messageNewSub?.cancel();
     _messageReadSub?.cancel();
     _messageTranslatedSub?.cancel();
@@ -386,9 +391,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
-                  Expanded(child: AppTextField(label: '', hintText: t.chatInputHint, controller: _controller)),
+                  Expanded(
+                    child: AppTextField(
+                      key: const Key('chatMessageInput'),
+                      label: '',
+                      hintText: t.chatInputHint,
+                      controller: _controller,
+                    ),
+                  ),
                   const SizedBox(width: AppSpacing.sm),
                   IconSquareButton(
+                    key: const Key('chatSendButton'),
                     icon: LucideIcons.send,
                     onPressed: _sending ? null : () => _send(),
                   ),

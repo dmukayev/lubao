@@ -75,6 +75,7 @@ class _MyChatsScreenState extends ConsumerState<MyChatsScreen> {
                 final entry = list[index];
                 final name = entry.thread.counterpartName;
                 return ListTile(
+                  key: Key('chatListEntry-${entry.thread.id}'),
                   leading: CircleAvatar(
                     backgroundColor: AppColors.accentSoft,
                     child: Text(name.isEmpty ? '' : name.substring(0, 1).toUpperCase(), style: AppTextStyles.bodyStrong.copyWith(color: AppColors.accentText)),

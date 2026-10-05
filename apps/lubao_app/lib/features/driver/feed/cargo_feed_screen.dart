@@ -100,6 +100,7 @@ class CargoFeedScreen extends ConsumerWidget {
     final (statusLabel, statusColor) = cargoStatusPresentation(t, cargo.status);
 
     return CargoCard(
+      key: Key('feedCargoCard-${cargo.id}'),
       destinationLabel: destinationLabel,
       bodyTypeLabel: bodyType.name.forLanguageCode(locale),
       priceLabel: formatMoney(cargo.price, cargo.currency),
@@ -230,6 +231,7 @@ class _AnonsCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 AccentButton(
+                  key: const Key('driverAnnounceArrivalButton'),
                   label: t.driverHomeAnnounceButton,
                   icon: LucideIcons.calendarPlus,
                   onPressed: () => _openSheet(context, ref),
@@ -294,7 +296,12 @@ class _AnonsCard extends ConsumerWidget {
               ],
               const SizedBox(height: AppSpacing.lg),
               if (!isOnSite) ...[
-                AccentButton(label: t.driverHomeCheckInButton, icon: LucideIcons.mapPin, onPressed: checkIn),
+                AccentButton(
+                  key: const Key('driverCheckInButton'),
+                  label: t.driverHomeCheckInButton,
+                  icon: LucideIcons.mapPin,
+                  onPressed: checkIn,
+                ),
                 const SizedBox(height: AppSpacing.sm),
               ],
               Row(

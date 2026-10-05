@@ -202,6 +202,7 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: AppTextField(
+                    key: const Key('driverLoginPhoneField'),
                     label: t.driverLoginPhoneLabel,
                     hintText: '701 123 45 01',
                     controller: _phoneController,
@@ -213,7 +214,12 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
             ),
             if (!_codeRequested) ...[
               const SizedBox(height: AppSpacing.lg),
-              PrimaryButton(label: t.driverLoginSendCode, loading: _sendingCode, onPressed: _requestCode),
+              PrimaryButton(
+                key: const Key('driverLoginSendCodeButton'),
+                label: t.driverLoginSendCode,
+                loading: _sendingCode,
+                onPressed: _requestCode,
+              ),
             ] else ...[
               const SizedBox(height: AppSpacing.lg),
               Text(t.driverOtpSubtitle(_fullPhone), style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
@@ -227,6 +233,7 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
                       width: 48,
                       height: 56,
                       child: TextField(
+                        key: Key('driverLoginCodeDigit$i'),
                         controller: _codeControllers[i],
                         focusNode: _codeFocusNodes[i],
                         textAlign: TextAlign.center,

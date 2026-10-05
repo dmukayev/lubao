@@ -341,7 +341,12 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
               ),
               const SizedBox(height: AppSpacing.xxl),
 
-              PrimaryButton(label: t.announceArrivalSubmit, loading: _saving, onPressed: _submit),
+              PrimaryButton(
+                key: const Key('announceArrivalSubmitButton'),
+                label: t.announceArrivalSubmit,
+                loading: _saving,
+                onPressed: _submit,
+              ),
             ],
           ),
         ),

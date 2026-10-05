@@ -37,6 +37,7 @@ class RoleSelectScreen extends ConsumerWidget {
               Text(t.roleSelectSubtitle, textAlign: TextAlign.center),
               const SizedBox(height: 32),
               PrimaryButton(
+                key: const Key('roleSelectDriverButton'),
                 label: t.roleDriver,
                 icon: LucideIcons.truck,
                 onPressed: () => context.push('/login/driver'),
