@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestContext } from '../common/request-context';
 import { NotificationsService } from '../notifications/notifications.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 const CHAT_PREVIEW_LENGTH = 80;
 
@@ -10,6 +11,7 @@ export class ChatsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly realtime: RealtimeGateway,
   ) {}
 
   private assertParty(chat: { driverId: string; companyId: string }, ctx: RequestContext) {
@@ -184,6 +186,20 @@ export class ChatsService {
       });
     }
 
+    // Мгновенная доставка собеседнику, пока открыт экран (задача 011, п.6);
+    // isMine не передаём — у получателя он другой, чем у отправителя,
+    // клиент сам сравнивает senderUserId со своим id.
+    this.realtime.emitMessageNew(chat.id, {
+      id: message.id,
+      chatId: message.chatId,
+      senderUserId: message.senderUserId,
+      originalText: message.originalText,
+      originalLang: message.originalLang,
+      translations: message.translations,
+      isRead: message.isRead,
+      createdAt: message.createdAt,
+    });
+
     return {
       id: message.id,
       chatId: message.chatId,
@@ -195,5 +211,20 @@ export class ChatsService {
       isRead: message.isRead,
       createdAt: message.createdAt,
     };
+  }
+
+  /// Проставляет «прочитано» на чужих сообщениях в чате и шлёт
+  /// message:read собеседнику (закрывает пробел из задачи 017, п.9:
+  /// `Message.isRead` раньше никто не выставлял).
+  async markRead(chatId: string, ctx: RequestContext): Promise<{ success: true }> {
+    await this.loadChat(chatId, ctx);
+    const { count } = await this.prisma.message.updateMany({
+      where: { chatId, senderUserId: { not: ctx.user.id }, isRead: false },
+      data: { isRead: true },
+    });
+    if (count > 0) {
+      this.realtime.emitMessageRead(chatId, ctx.user.id);
+    }
+    return { success: true };
   }
 }

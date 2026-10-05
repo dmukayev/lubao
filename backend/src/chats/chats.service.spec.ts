@@ -12,7 +12,7 @@ function companyCtx(companyId = 'c1') {
 describe('ChatsService.findOrCreate — чат по паре водитель+компания(+груз) (задача 017, п.1)', () => {
   it('driver without cargoId is rejected — pre-deal chat always starts from a cargo card', async () => {
     const prisma: any = {};
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
     await expect(service.findOrCreate(driverCtx(), {})).rejects.toThrow(BadRequestException);
   });
 
@@ -23,7 +23,7 @@ describe('ChatsService.findOrCreate — чат по паре водитель+к
       driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'ru', phone: null } }) },
     };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
 
     const result = await service.findOrCreate(driverCtx(), { cargoId: 'cargo1' });
 
@@ -34,7 +34,7 @@ describe('ChatsService.findOrCreate — чат по паре водитель+к
 
   it('company without driverId is rejected', async () => {
     const prisma: any = {};
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
     await expect(service.findOrCreate(companyCtx(), {})).rejects.toThrow(BadRequestException);
   });
 
@@ -45,7 +45,7 @@ describe('ChatsService.findOrCreate — чат по паре водитель+к
       driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'ru', phone: null } }) },
     };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
 
     await service.findOrCreate(companyCtx(), { driverId: 'd1' });
 
@@ -60,7 +60,7 @@ describe('ChatsService.findOrCreate — чат по паре водитель+к
       driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
     };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
 
     await service.findOrCreate(driverCtx(), { cargoId: 'cargo1' });
 
@@ -75,7 +75,7 @@ describe('ChatsService — counterpart resolution (decisions.md «Компани
       cargo: { findUnique: jest.fn().mockResolvedValue({ publishedByUserId: 'logist-1' }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'zh', phone: '+86123' } }) },
     };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
 
     const result = await (service as any).toThreadDto({ id: 'chat1', cargoId: 'cargo1', dealId: null, driverId: 'd1', companyId: 'c1' }, driverCtx());
 
@@ -89,7 +89,7 @@ describe('ChatsService — counterpart resolution (decisions.md «Компани
       cargo: { findUnique: jest.fn().mockResolvedValue({ publishedByUserId: null }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'ru', phone: '+77000000000' } }) },
     };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
 
     await (service as any).toThreadDto({ id: 'chat1', cargoId: 'cargo1', dealId: null, driverId: 'd1', companyId: 'c1' }, driverCtx());
 
@@ -104,7 +104,7 @@ describe('ChatsService.myChats — логист видит чаты всей к�
     const prisma: any = {
       chat: { findMany: jest.fn().mockResolvedValue([]) },
     };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
 
     await service.myChats(companyCtx('c1'));
 
@@ -113,7 +113,7 @@ describe('ChatsService.myChats — логист видит чаты всей к�
 
   it('queries by driverId for a driver context', async () => {
     const prisma: any = { chat: { findMany: jest.fn().mockResolvedValue([]) } };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
 
     await service.myChats(driverCtx('d1'));
 
@@ -124,13 +124,13 @@ describe('ChatsService.myChats — логист видит чаты всей к�
 describe('ChatsService.thread/messages/send — ForbiddenException for a non-party (задача 017, п.1)', () => {
   it('thread() rejects a driver who is not a party to the chat', async () => {
     const prisma: any = { chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'other-driver', companyId: 'c1' }) } };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
     await expect(service.thread('chat1', driverCtx('d1'))).rejects.toThrow(ForbiddenException);
   });
 
   it('throws NotFoundException for an unknown chat', async () => {
     const prisma: any = { chat: { findUnique: jest.fn().mockResolvedValue(null) } };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
     await expect(service.messages('missing', driverCtx())).rejects.toThrow(NotFoundException);
   });
 
@@ -142,7 +142,8 @@ describe('ChatsService.thread/messages/send — ForbiddenException for a non-par
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { id: 'u-company', name: null, locale: 'zh', phone: null } }) },
     };
     const notifications = { notify: jest.fn() };
-    const service = new ChatsService(prisma, notifications as any);
+    const realtime = { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() };
+    const service = new ChatsService(prisma, notifications as any, realtime as any);
 
     await service.send('chat1', driverCtx(), 'hi');
 
@@ -152,6 +153,7 @@ describe('ChatsService.thread/messages/send — ForbiddenException for a non-par
       'CHAT_MESSAGE',
       expect.objectContaining({ chatId: 'chat1', senderName: 'Ерлан', preview: 'hi' }),
     );
+    expect(realtime.emitMessageNew).toHaveBeenCalledWith('chat1', expect.objectContaining({ id: 'm1', senderUserId: 'u-driver', originalText: 'hi' }));
   });
 
   it('send() truncates a long message to an 80-char preview for the push notification', async () => {
@@ -163,7 +165,7 @@ describe('ChatsService.thread/messages/send — ForbiddenException for a non-par
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { id: 'u-company', name: null, locale: 'zh', phone: null } }) },
     };
     const notifications = { notify: jest.fn() };
-    const service = new ChatsService(prisma, notifications as any);
+    const service = new ChatsService(prisma, notifications as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
 
     await service.send('chat1', driverCtx(), longText);
 
@@ -172,5 +174,44 @@ describe('ChatsService.thread/messages/send — ForbiddenException for a non-par
       'CHAT_MESSAGE',
       expect.objectContaining({ preview: `${'a'.repeat(80)}…` }),
     );
+  });
+});
+
+describe('ChatsService.markRead — закрывает пробел Message.isRead (задача 017 п.9, задача 011)', () => {
+  it('marks the counterpart\'s unread messages as read and emits message:read', async () => {
+    const prisma: any = {
+      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1' }) },
+      message: { updateMany: jest.fn().mockResolvedValue({ count: 2 }) },
+    };
+    const realtime = { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, realtime as any);
+
+    await service.markRead('chat1', driverCtx('d1'));
+
+    expect(prisma.message.updateMany).toHaveBeenCalledWith({
+      where: { chatId: 'chat1', senderUserId: { not: 'u-driver' }, isRead: false },
+      data: { isRead: true },
+    });
+    expect(realtime.emitMessageRead).toHaveBeenCalledWith('chat1', 'u-driver');
+  });
+
+  it('does not emit message:read when there was nothing to mark', async () => {
+    const prisma: any = {
+      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1' }) },
+      message: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
+    };
+    const realtime = { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, realtime as any);
+
+    await service.markRead('chat1', driverCtx('d1'));
+
+    expect(realtime.emitMessageRead).not.toHaveBeenCalled();
+  });
+
+  it('rejects a non-party', async () => {
+    const prisma: any = { chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'other', companyId: 'c1' }) } };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+
+    await expect(service.markRead('chat1', driverCtx('d1'))).rejects.toThrow(ForbiddenException);
   });
 });

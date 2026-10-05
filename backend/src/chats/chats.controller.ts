@@ -33,4 +33,9 @@ export class ChatsController {
   send(@CurrentUser() ctx: RequestContext, @Param('chatId') chatId: string, @Body() dto: SendMessageDto) {
     return this.chats.send(chatId, ctx, dto.text);
   }
+
+  @Post(':chatId/read')
+  markRead(@CurrentUser() ctx: RequestContext, @Param('chatId') chatId: string) {
+    return this.chats.markRead(chatId, ctx);
+  }
 }
