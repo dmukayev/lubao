@@ -22,6 +22,11 @@ class PostCargoScreen extends ConsumerStatefulWidget {
 class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   final _volumeController = TextEditingController();
   final _weightController = TextEditingController();
+  final _palletController = TextEditingController();
+  // «Подходит N водителям на точке» (задача 033, п.10) — пересчитывается
+  // по кнопке-подсказке, не на каждый символ.
+  int? _fitCount;
+  bool _fitCountLoading = false;
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
   String? _countryId;
@@ -48,6 +53,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       _photoUrls.addAll(cargo.photoUrls);
       if (cargo.volumeM3 != null) _volumeController.text = _trimNum(cargo.volumeM3!);
       if (cargo.weightKg != null) _weightController.text = _trimNum(cargo.weightKg!);
+      if (cargo.palletCount != null) _palletController.text = cargo.palletCount.toString();
       _priceController.text = _trimNum(cargo.price);
       _descriptionController.text = cargo.description ?? '';
     }
@@ -60,6 +66,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   void dispose() {
     _volumeController.dispose();
     _weightController.dispose();
+    _palletController.dispose();
     _priceController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -84,6 +91,26 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
 
   void _removePhoto(String url) => setState(() => _photoUrls.remove(url));
 
+  Future<void> _refreshFitCount() async {
+    final weightKg = double.tryParse(_weightController.text);
+    final volumeM3 = double.tryParse(_volumeController.text);
+    final palletCount = int.tryParse(_palletController.text);
+    if (volumeM3 == null && palletCount == null) {
+      setState(() => _fitCount = null);
+      return;
+    }
+    setState(() => _fitCountLoading = true);
+    try {
+      final count = await ref.read(cargoRepositoryProvider).fitCount(weightKg: weightKg, volumeM3: volumeM3, palletCount: palletCount);
+      if (mounted) setState(() => _fitCount = count);
+    } catch (_) {
+      // Подсказка best-effort — молча не показываем при сбое.
+      if (mounted) setState(() => _fitCount = null);
+    } finally {
+      if (mounted) setState(() => _fitCountLoading = false);
+    }
+  }
+
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -105,6 +132,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         bodyTypeId: _bodyTypeId!,
         weightKg: double.tryParse(_weightController.text),
         volumeM3: double.tryParse(_volumeController.text),
+        palletCount: int.tryParse(_palletController.text),
         photoUrls: _photoUrls,
         price: double.parse(_priceController.text),
         currency: _currency,
@@ -208,6 +236,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                       label: t.postCargoVolume,
                       controller: _volumeController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) => _refreshFitCount(),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -220,6 +249,17 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              AppTextField(
+                label: t.postCargoPallets,
+                controller: _palletController,
+                keyboardType: TextInputType.number,
+                onChanged: (_) => _refreshFitCount(),
+              ),
+              if (_fitCount != null && !_fitCountLoading) ...[
+                const SizedBox(height: 4),
+                Text(t.postCargoFitCount(_fitCount!), style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
+              ],
               const SizedBox(height: 12),
               Row(
                 children: [

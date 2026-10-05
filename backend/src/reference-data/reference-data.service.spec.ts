@@ -60,6 +60,7 @@ describe('ReferenceDataService#getAll (видимость городов, 024 п
       region: { findMany: jest.fn().mockResolvedValue([]) },
       city: { findMany: jest.fn().mockResolvedValue([]) },
       bodyType: { findMany: jest.fn().mockResolvedValue([]) },
+      bodySizePreset: { findMany: jest.fn().mockResolvedValue([]) },
       permit: { findMany: jest.fn().mockResolvedValue([]) },
       point: { findMany: jest.fn().mockResolvedValue([]) },
       exchangeRate: { findMany: jest.fn().mockResolvedValue([]) },

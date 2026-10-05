@@ -536,6 +536,8 @@ class AdminDriverVehicle {
     this.bodyTypeName,
     this.capacityTons,
     this.lengthM,
+    this.volumeM3,
+    this.palletsEuro,
     this.plateNumber,
     this.brand,
     this.identifiers = const [],
@@ -553,6 +555,9 @@ class AdminDriverVehicle {
   final I18nText? bodyTypeName;
   final double? capacityTons;
   final double? lengthM;
+  /// Размер кузова (задача 033, п.11) — объём и паллеты связки.
+  final double? volumeM3;
+  final int? palletsEuro;
   final String? plateNumber;
   final String? brand;
   final List<AdminIdentifierEntry> identifiers;
@@ -565,6 +570,8 @@ class AdminDriverVehicle {
         bodyTypeName: json['bodyTypeName'] == null ? null : I18nText.fromJson(json['bodyTypeName'] as Map<String, dynamic>),
         capacityTons: json['capacityTons'] == null ? null : (json['capacityTons'] as num).toDouble(),
         lengthM: json['lengthM'] == null ? null : (json['lengthM'] as num).toDouble(),
+        volumeM3: (json['volumeM3'] as num?)?.toDouble(),
+        palletsEuro: json['palletsEuro'] as int?,
         plateNumber: json['plateNumber'] as String?,
         brand: json['brand'] as String?,
         identifiers: json['identifiers'] == null

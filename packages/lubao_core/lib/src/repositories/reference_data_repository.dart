@@ -20,6 +20,10 @@ class ReferenceDataRepository {
       cities: (data['cities'] as List<dynamic>).map((e) => City.fromJson(e as Map<String, dynamic>)).toList(),
       bodyTypes:
           (data['bodyTypes'] as List<dynamic>).map((e) => BodyType.fromJson(e as Map<String, dynamic>)).toList(),
+      bodySizePresets: (data['bodySizePresets'] as List<dynamic>?)
+              ?.map((e) => BodySizePreset.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       permits: (data['permits'] as List<dynamic>).map((e) => Permit.fromJson(e as Map<String, dynamic>)).toList(),
       points:
           (data['points'] as List<dynamic>).map((e) => LoadingPoint.fromJson(e as Map<String, dynamic>)).toList(),

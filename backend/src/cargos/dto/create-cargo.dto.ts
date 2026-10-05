@@ -21,6 +21,12 @@ export class CreateCargoDto {
   @Min(0)
   volumeM3?: number;
 
+  /// Паллеты (задача 033, п.4) — вместо/вместе с объёмом.
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  palletCount?: number;
+
   @IsOptional()
   @IsArray()
   @IsString({ each: true })

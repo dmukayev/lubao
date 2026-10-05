@@ -513,6 +513,60 @@ class AdminRepository {
     return LoadingPoint.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// Шаблоны размеров кузова (задача 033, п.11) — правятся без релиза.
+  Future<void> createBodySizePreset({
+    required String code,
+    required I18nText name,
+    List<String>? bodyTypeIds,
+    double? innerLengthM,
+    double? innerWidthM,
+    double? innerHeightM,
+    double? volumeM3,
+    int? palletsEuro,
+    int? palletsStandard,
+  }) async {
+    await _client.dio.post('/admin/reference/body-size-presets', data: {
+      'code': code,
+      'name': name.toJson(),
+      if (bodyTypeIds != null) 'bodyTypeIds': bodyTypeIds,
+      if (innerLengthM != null) 'innerLengthM': innerLengthM,
+      if (innerWidthM != null) 'innerWidthM': innerWidthM,
+      if (innerHeightM != null) 'innerHeightM': innerHeightM,
+      if (volumeM3 != null) 'volumeM3': volumeM3,
+      if (palletsEuro != null) 'palletsEuro': palletsEuro,
+      if (palletsStandard != null) 'palletsStandard': palletsStandard,
+    });
+  }
+
+  Future<void> updateBodySizePreset(
+    String id, {
+    I18nText? name,
+    List<String>? bodyTypeIds,
+    double? innerLengthM,
+    double? innerWidthM,
+    double? innerHeightM,
+    double? volumeM3,
+    int? palletsEuro,
+    int? palletsStandard,
+    bool? isActive,
+    int? sortOrder,
+    required String reason,
+  }) async {
+    await _client.dio.patch('/admin/reference/body-size-presets/$id', data: {
+      if (name != null) 'name': name.toJson(),
+      if (bodyTypeIds != null) 'bodyTypeIds': bodyTypeIds,
+      if (innerLengthM != null) 'innerLengthM': innerLengthM,
+      if (innerWidthM != null) 'innerWidthM': innerWidthM,
+      if (innerHeightM != null) 'innerHeightM': innerHeightM,
+      if (volumeM3 != null) 'volumeM3': volumeM3,
+      if (palletsEuro != null) 'palletsEuro': palletsEuro,
+      if (palletsStandard != null) 'palletsStandard': palletsStandard,
+      if (isActive != null) 'isActive': isActive,
+      if (sortOrder != null) 'sortOrder': sortOrder,
+      'reason': reason,
+    });
+  }
+
   Future<void> updateBodyType(String id, {I18nText? name, bool? isActive, int? sortOrder, required String reason}) async {
     await _client.dio.patch('/admin/reference/body-types/$id', data: {
       if (name != null) 'name': name.toJson(),

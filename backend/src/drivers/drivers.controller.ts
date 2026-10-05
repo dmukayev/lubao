@@ -1,7 +1,7 @@
 import { Body, Controller, ForbiddenException, Get, Param, Patch, Post } from '@nestjs/common';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
-import { CreateVehicleDto } from './dto/create-vehicle.dto';
+import { CreateVehicleDto, SetVehicleSizeDto } from './dto/create-vehicle.dto';
 import { CreateVerificationDocumentDto } from './dto/create-verification-document.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
@@ -65,5 +65,11 @@ export class DriversController {
   archiveVehicle(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');
     return this.drivers.archiveVehicle(ctx.driver.id, id);
+  }
+
+  @Patch('me/vehicles/:id/size')
+  setVehicleSize(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: SetVehicleSizeDto) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.drivers.setVehicleSize(ctx.driver.id, id, dto);
   }
 }

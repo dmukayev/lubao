@@ -152,6 +152,53 @@ const bodyTypes: { code: string; name: I18n; sortOrder: number }[] = [
   { code: 'TANK', name: { kk: 'Цистерна', ru: 'Цистерна', zh: '罐车', en: 'Tanker' }, sortOrder: 9 },
 ];
 
+/// Шаблоны размеров кузова (задача 033) — значения ОРИЕНТИРОВОЧНЫЕ
+/// (уточнить с Болатом и водителями), админ правит без релиза.
+/// `bodyTypeCodes` резолвится в bodyTypeIds при сиде.
+const bodySizePresets: {
+  code: string;
+  name: I18n;
+  bodyTypeCodes: string[];
+  innerLengthM: number | null;
+  innerWidthM: number | null;
+  innerHeightM: number | null;
+  volumeM3: number | null;
+  palletsEuro: number | null;
+  palletsStandard: number | null;
+  sortOrder: number;
+}[] = [
+  {
+    code: 'STANDARD',
+    name: { kk: 'Стандарт (тент/изотерм)', ru: 'Стандарт (тент/изотерм)', zh: '标准（帆布篷/保温）', en: 'Standard (curtainsider/insulated)' },
+    bodyTypeCodes: ['TENT', 'ISOTHERM'],
+    innerLengthM: 13.6, innerWidthM: 2.45, innerHeightM: 2.7, volumeM3: 90, palletsEuro: 33, palletsStandard: 26, sortOrder: 0,
+  },
+  {
+    code: 'MEGA',
+    name: { kk: 'Мега', ru: 'Мега', zh: '加高型', en: 'Mega' },
+    bodyTypeCodes: ['TENT'],
+    innerLengthM: 13.6, innerWidthM: 2.45, innerHeightM: 3.0, volumeM3: 100, palletsEuro: 33, palletsStandard: 26, sortOrder: 1,
+  },
+  {
+    code: 'JUMBO',
+    name: { kk: 'Джамбо/тіркеспе', ru: 'Джамбо/сцепка', zh: '大容积挂车组', en: 'Jumbo / road train' },
+    bodyTypeCodes: ['TENT'],
+    innerLengthM: 15.4, innerWidthM: 2.45, innerHeightM: 3.0, volumeM3: 115, palletsEuro: 38, palletsStandard: 30, sortOrder: 2,
+  },
+  {
+    code: 'REEFER',
+    name: { kk: 'Реф', ru: 'Реф', zh: '冷藏', en: 'Reefer' },
+    bodyTypeCodes: ['REFRIGERATOR'],
+    innerLengthM: 13.4, innerWidthM: 2.46, innerHeightM: 2.6, volumeM3: 85, palletsEuro: 33, palletsStandard: 26, sortOrder: 3,
+  },
+  {
+    code: 'RIGID_7M',
+    name: { kk: 'Жалғыз 7 м', ru: 'Одиночка 7 м', zh: '单车7米', en: 'Rigid 7 m' },
+    bodyTypeCodes: ['TENT', 'ISOTHERM', 'FLATBED'],
+    innerLengthM: 7.2, innerWidthM: 2.45, innerHeightM: 2.4, volumeM3: 42, palletsEuro: 18, palletsStandard: 14, sortOrder: 4,
+  },
+];
+
 const permits: { code: string; name: I18n; sortOrder: number }[] = [
   { code: 'TIR', name: { kk: 'TIR кітапшасы', ru: 'Книжка МДП (TIR)', zh: 'TIR单证', en: 'TIR carnet' }, sortOrder: 0 },
   { code: 'CMR', name: { kk: 'CMR жүкқұжаты', ru: 'CMR-накладная', zh: 'CMR运单', en: 'CMR waybill' }, sortOrder: 1 },
@@ -261,6 +308,17 @@ async function main() {
       where: { code: bt.code },
       update: { name: bt.name, sortOrder: bt.sortOrder },
       create: bt,
+    });
+  }
+
+  for (const preset of bodySizePresets) {
+    const { bodyTypeCodes, ...rest } = preset;
+    const matchingBodyTypes = await prisma.bodyType.findMany({ where: { code: { in: bodyTypeCodes } }, select: { id: true } });
+    const bodyTypeIds = matchingBodyTypes.map((bt) => bt.id);
+    await prisma.bodySizePreset.upsert({
+      where: { code: preset.code },
+      update: { ...rest, bodyTypeIds },
+      create: { ...rest, bodyTypeIds },
     });
   }
 

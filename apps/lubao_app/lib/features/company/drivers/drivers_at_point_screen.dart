@@ -498,6 +498,15 @@ class _DriverCard extends StatelessWidget {
                           const Text(' · ', style: AppTextStyles.caption),
                           Text('${driver.capacityTons!.toStringAsFixed(0)} ${t.unitTon}', style: AppTextStyles.caption),
                         ],
+                        // Задача 033, п.9 — «тент · 20 т · 90 м³ · 33 пал.».
+                        if (driver.volumeM3 != null) ...[
+                          const Text(' · ', style: AppTextStyles.caption),
+                          Text('${driver.volumeM3!.toStringAsFixed(0)} ${t.unitM3}', style: AppTextStyles.caption),
+                        ],
+                        if (driver.palletsEuro != null) ...[
+                          const Text(' · ', style: AppTextStyles.caption),
+                          Text('${driver.palletsEuro} ${t.unitPallets}', style: AppTextStyles.caption),
+                        ],
                       ],
                     ),
                   ],

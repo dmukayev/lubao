@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { IsString } from 'class-validator';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
@@ -22,14 +22,30 @@ export class CargosController {
   ) {}
 
   @Get()
-  feed() {
-    return this.cargos.feed();
+  feed(@CurrentUser() ctx: RequestContext) {
+    return this.cargos.feed(ctx.driver?.id);
   }
 
   @Get('mine')
   mine(@CurrentUser() ctx: RequestContext) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
     return this.cargos.mine(ctx.companyMember.companyId);
+  }
+
+  /// Задача 033, п.10 — «подходит N водителям на точке» при публикации.
+  @Get('fit-count')
+  fitCount(
+    @CurrentUser() ctx: RequestContext,
+    @Query('weightKg') weightKg?: string,
+    @Query('volumeM3') volumeM3?: string,
+    @Query('palletCount') palletCount?: string,
+  ) {
+    if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
+    return this.cargos.fitCount({
+      weightKg: weightKg ? Number(weightKg) : undefined,
+      volumeM3: volumeM3 ? Number(volumeM3) : undefined,
+      palletCount: palletCount ? Number(palletCount) : undefined,
+    });
   }
 
   @Get(':id')

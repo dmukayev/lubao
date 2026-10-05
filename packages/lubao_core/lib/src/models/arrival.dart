@@ -34,6 +34,8 @@ class ArrivalListing {
     this.arrivedAt,
     this.bodyTypeId,
     this.capacityTons,
+    this.volumeM3,
+    this.palletsEuro,
     required this.anyCountry,
     required this.directionCountryIds,
   });
@@ -51,6 +53,10 @@ class ArrivalListing {
   final DateTime? arrivedAt;
   final String? bodyTypeId;
   final double? capacityTons;
+
+  /// Размер кузова связки (задача 033, п.9) — «тент · 20 т · 90 м³ · 33 пал.».
+  final double? volumeM3;
+  final int? palletsEuro;
   final bool anyCountry;
   final List<String> directionCountryIds;
 
@@ -68,6 +74,8 @@ class ArrivalListing {
         arrivedAt: json['arrivedAt'] == null ? null : DateTime.parse(json['arrivedAt'] as String),
         bodyTypeId: json['bodyTypeId'] as String?,
         capacityTons: (json['capacityTons'] as num?)?.toDouble(),
+        volumeM3: (json['volumeM3'] as num?)?.toDouble(),
+        palletsEuro: json['palletsEuro'] as int?,
         anyCountry: json['anyCountry'] as bool? ?? false,
         directionCountryIds:
             (json['directionCountryIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],

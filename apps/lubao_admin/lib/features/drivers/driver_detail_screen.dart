@@ -440,6 +440,9 @@ class _VehicleCard extends StatelessWidget {
                   // 031, этап A) bodyTypeName всегда null, показываем марку.
                   if (v.bodyTypeName != null) v.bodyTypeName!.forLanguageCode(locale) else if (v.brand != null) v.brand!,
                   if (v.capacityTons != null) '${v.capacityTons} ${t.unitTon}',
+                  // Задача 033, п.11 — размер кузова в карточке машины.
+                  if (v.volumeM3 != null) '${v.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+                  if (v.palletsEuro != null) '${v.palletsEuro} ${t.unitPallets}',
                   if (v.plateNumber != null) v.plateNumber!,
                 ].join(' · '),
               ),

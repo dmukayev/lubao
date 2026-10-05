@@ -98,6 +98,10 @@ class DriverRepository {
     String? brand,
     double? capacityTons,
     double? lengthM,
+    String? sizePresetId,
+    double? innerLengthM,
+    double? innerWidthM,
+    double? innerHeightM,
   }) async {
     final res = await _client.dio.post('/drivers/me/vehicles', data: {
       'kind': vehicleKindToJson(kind),
@@ -107,6 +111,28 @@ class DriverRepository {
       if (brand != null) 'brand': brand,
       if (capacityTons != null) 'capacityTons': capacityTons,
       if (lengthM != null) 'lengthM': lengthM,
+      if (sizePresetId != null) 'sizePresetId': sizePresetId,
+      if (innerLengthM != null) 'innerLengthM': innerLengthM,
+      if (innerWidthM != null) 'innerWidthM': innerWidthM,
+      if (innerHeightM != null) 'innerHeightM': innerHeightM,
+    });
+    return GarageVehicle.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// Размер кузова существующей машины (задача 033, п.5) — шаблон ИЛИ
+  /// «свой размер» (все три габарита); сервер копирует/считает сам.
+  Future<GarageVehicle> setVehicleSize(
+    String id, {
+    String? sizePresetId,
+    double? innerLengthM,
+    double? innerWidthM,
+    double? innerHeightM,
+  }) async {
+    final res = await _client.dio.patch('/drivers/me/vehicles/$id/size', data: {
+      if (sizePresetId != null) 'sizePresetId': sizePresetId,
+      if (innerLengthM != null) 'innerLengthM': innerLengthM,
+      if (innerWidthM != null) 'innerWidthM': innerWidthM,
+      if (innerHeightM != null) 'innerHeightM': innerHeightM,
     });
     return GarageVehicle.fromJson(res.data as Map<String, dynamic>);
   }

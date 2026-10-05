@@ -19,6 +19,7 @@ import {
   AdminDealStatusDto,
   AdminSetMemberRoleDto,
   AdminUpdateCargoDto,
+  AdminUpdateBodySizePresetDto,
   AdminUpdateCityDto,
   AdminUpdateCompanyDto,
   AdminUpdateDriverDto,
@@ -26,6 +27,7 @@ import {
   AdminUpdateReferenceItemDto,
   BlockUserDto,
   CargoSearchQueryDto,
+  CreateBodySizePresetDto,
   CreateBodyTypeDto,
   CreatePermitDto,
   CreatePointDto,
@@ -1883,6 +1885,9 @@ export class AdminService {
         bodyTypeName: v.bodyType?.name ?? null,
         capacityTons: v.capacityTons ? Number(v.capacityTons) : null,
         lengthM: v.lengthM ? Number(v.lengthM) : null,
+        // Задача 033, п.11 — размер кузова в карточке машины.
+        volumeM3: v.volumeM3 != null ? Number(v.volumeM3) : null,
+        palletsEuro: v.palletsEuro ?? null,
         plateNumber: v.plateNumber,
         vin: v.vin,
         brand: v.brand,
@@ -2460,6 +2465,56 @@ export class AdminService {
     return this.prisma.permit.create({
       data: { code: dto.code, name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en } },
     });
+  }
+
+  /// Шаблоны размеров кузова (задача 033, п.11) — CRUD без релиза;
+  /// значения шаблона КОПИРУЮТСЯ в машину при выборе, так что правка
+  /// шаблона прошлые машины не трогает (это зафиксировано в задаче).
+  async createBodySizePreset(dto: CreateBodySizePresetDto) {
+    return this.prisma.bodySizePreset.create({
+      data: {
+        code: dto.code,
+        name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en },
+        bodyTypeIds: dto.bodyTypeIds ?? [],
+        innerLengthM: dto.innerLengthM,
+        innerWidthM: dto.innerWidthM,
+        innerHeightM: dto.innerHeightM,
+        volumeM3: dto.volumeM3,
+        palletsEuro: dto.palletsEuro,
+        palletsStandard: dto.palletsStandard,
+        sortOrder: dto.sortOrder ?? 0,
+      },
+    });
+  }
+
+  async updateBodySizePreset(id: string, adminUserId: string, dto: AdminUpdateBodySizePresetDto) {
+    const existing = await this.prisma.bodySizePreset.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Body size preset not found');
+
+    const changes: Record<string, { old: unknown; new: unknown }> = {};
+    for (const key of ['bodyTypeIds', 'innerLengthM', 'innerWidthM', 'innerHeightM', 'volumeM3', 'palletsEuro', 'palletsStandard', 'sortOrder', 'isActive'] as const) {
+      const next = dto[key];
+      if (next !== undefined) changes[key] = { old: (existing as Record<string, unknown>)[key], new: next };
+    }
+    if (dto.name !== undefined) changes.name = { old: existing.name, new: dto.name };
+
+    await this.prisma.bodySizePreset.update({
+      where: { id },
+      data: {
+        name: dto.name ? { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en } : undefined,
+        bodyTypeIds: dto.bodyTypeIds,
+        innerLengthM: dto.innerLengthM,
+        innerWidthM: dto.innerWidthM,
+        innerHeightM: dto.innerHeightM,
+        volumeM3: dto.volumeM3,
+        palletsEuro: dto.palletsEuro,
+        palletsStandard: dto.palletsStandard,
+        sortOrder: dto.sortOrder,
+        isActive: dto.isActive,
+      },
+    });
+    await this.logAudit(adminUserId, 'BODY_SIZE_PRESET_UPDATED', 'BodySizePreset', id, { reason: dto.reason, changes });
+    return { id };
   }
 
   async createPoint(dto: CreatePointDto) {

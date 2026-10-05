@@ -21,6 +21,7 @@ export class ReferenceDataService {
       regions,
       cities,
       bodyTypes,
+      bodySizePresets,
       permits,
       points,
       exchangeRates,
@@ -33,6 +34,9 @@ export class ReferenceDataService {
       this.prisma.region.findMany(),
       this.visibleCities(requestingUserId),
       this.prisma.bodyType.findMany({ orderBy: { sortOrder: 'asc' } }),
+      // Без фильтра isActive — как bodyTypes: админке нужны и выключенные,
+      // клиенты показывают водителю только активные.
+      this.prisma.bodySizePreset.findMany({ orderBy: { sortOrder: 'asc' } }),
       this.prisma.permit.findMany({ orderBy: { sortOrder: 'asc' } }),
       this.prisma.point.findMany({ where: { isActive: true } }),
       this.latestExchangeRates(),
@@ -47,6 +51,14 @@ export class ReferenceDataService {
       regions,
       cities,
       bodyTypes,
+      // Prisma Decimal сериализуется строкой — клиенту нужны числа.
+      bodySizePresets: bodySizePresets.map((p) => ({
+        ...p,
+        innerLengthM: p.innerLengthM != null ? Number(p.innerLengthM) : null,
+        innerWidthM: p.innerWidthM != null ? Number(p.innerWidthM) : null,
+        innerHeightM: p.innerHeightM != null ? Number(p.innerHeightM) : null,
+        volumeM3: p.volumeM3 != null ? Number(p.volumeM3) : null,
+      })),
       permits,
       points,
       exchangeRates,

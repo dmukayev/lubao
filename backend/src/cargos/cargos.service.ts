@@ -81,6 +81,7 @@ export class CargosService {
       bodyTypeId: cargo.bodyTypeId,
       weightKg: cargo.weightKg ? Number(cargo.weightKg) : null,
       volumeM3: cargo.volumeM3 ? Number(cargo.volumeM3) : null,
+      palletCount: cargo.palletCount ?? null,
       photoUrls: cargo.photoUrls,
       price: Number(cargo.price),
       currency: cargo.currency,
@@ -98,7 +99,44 @@ export class CargosService {
     return { company: { include: { country: { select: { code: true } } } }, publishedBy: { select: { id: true, name: true, phone: true } } } as const;
   }
 
-  async feed() {
+  /// Кузов связки водителя для отсева грузов (задача 033, п.8) — прицеп
+  /// (или одиночка-RIGID) активного анонса; без анонса — первый из гаража.
+  private async driverCargoBody(driverId: string): Promise<{ capacityTons: number | null; volumeM3: number | null; palletsEuro: number | null } | null> {
+    const arrival = await this.prisma.arrival.findFirst({
+      where: { driverId, status: { in: ['PLANNED', 'ON_SITE'] } },
+      orderBy: { createdAt: 'desc' },
+      include: { trailer: true, tractor: true },
+    });
+    const fromArrival = arrival?.trailer ?? (arrival?.tractor?.kind === 'RIGID' ? arrival.tractor : null);
+    const vehicle =
+      fromArrival ??
+      (await this.prisma.vehicle.findFirst({
+        where: { driverId, kind: { in: ['TRAILER', 'RIGID'] }, isArchived: false },
+        // TRAILER раньше RIGID («kind: desc» — 'TRAILER' > 'RIGID' по алфавиту).
+        orderBy: [{ kind: 'desc' }, { createdAt: 'asc' }],
+      }));
+    if (!vehicle) return null;
+    return {
+      capacityTons: vehicle.capacityTons != null ? Number(vehicle.capacityTons) : null,
+      volumeM3: vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null,
+      palletsEuro: vehicle.palletsEuro ?? null,
+    };
+  }
+
+  /// Задача 033, п.8 — груз скрывается, только когда известно И ТО И
+  /// ДРУГОЕ (параметр груза и параметр машины) и груз больше машины; у
+  /// машины без размера отсекаем только по весу.
+  static cargoFitsVehicle(
+    cargo: { weightKg: unknown; volumeM3: unknown; palletCount: number | null },
+    body: { capacityTons: number | null; volumeM3: number | null; palletsEuro: number | null },
+  ): boolean {
+    if (cargo.weightKg != null && body.capacityTons != null && Number(cargo.weightKg) > body.capacityTons * 1000) return false;
+    if (cargo.volumeM3 != null && body.volumeM3 != null && Number(cargo.volumeM3) > body.volumeM3) return false;
+    if (cargo.palletCount != null && body.palletsEuro != null && cargo.palletCount > body.palletsEuro) return false;
+    return true;
+  }
+
+  async feed(driverId?: string) {
     // company.isBlocked (задача 026, п.5) — груз блокированной компании не
     // трогаем (статус/история не меняются), просто скрываем из ленты
     // водителя, пока компанию не разблокируют.
@@ -107,7 +145,9 @@ export class CargosService {
       include: this.includeForDto,
       orderBy: { readyDate: 'asc' },
     });
-    return Promise.all(cargos.map((c) => this.toDto(c)));
+    const body = driverId ? await this.driverCargoBody(driverId) : null;
+    const visible = body ? cargos.filter((c) => CargosService.cargoFitsVehicle(c, body)) : cargos;
+    return Promise.all(visible.map((c) => this.toDto(c)));
   }
 
   async mine(companyId: string) {
@@ -117,6 +157,32 @@ export class CargosService {
       orderBy: { createdAt: 'desc' },
     });
     return Promise.all(cargos.map((c) => this.toDto(c)));
+  }
+
+  /// Задача 033, п.10 — подсказка при публикации: «подходит N водителям на
+  /// точке». Простой счётчик по активным анонсам, те же правила отсева,
+  /// что у ленты (cargoFitsVehicle).
+  async fitCount(params: { weightKg?: number; volumeM3?: number; palletCount?: number }) {
+    const arrivals = await this.prisma.arrival.findMany({
+      where: { status: { in: ['PLANNED', 'ON_SITE'] } },
+      include: { trailer: true, tractor: true },
+    });
+    const cargoLike = {
+      weightKg: params.weightKg ?? null,
+      volumeM3: params.volumeM3 ?? null,
+      palletCount: params.palletCount ?? null,
+    };
+    const fittingDrivers = new Set<string>();
+    for (const arrival of arrivals) {
+      const vehicle = arrival.trailer ?? (arrival.tractor?.kind === 'RIGID' ? arrival.tractor : null);
+      const body = {
+        capacityTons: vehicle?.capacityTons != null ? Number(vehicle.capacityTons) : null,
+        volumeM3: vehicle?.volumeM3 != null ? Number(vehicle.volumeM3) : null,
+        palletsEuro: vehicle?.palletsEuro ?? null,
+      };
+      if (CargosService.cargoFitsVehicle(cargoLike, body)) fittingDrivers.add(arrival.driverId);
+    }
+    return { count: fittingDrivers.size };
   }
 
   async byId(id: string) {
@@ -151,6 +217,7 @@ export class CargosService {
         bodyTypeId: dto.bodyTypeId,
         weightKg: dto.weightKg,
         volumeM3: dto.volumeM3,
+        palletCount: dto.palletCount,
         photoUrls: dto.photoUrls ?? [],
         price: dto.price,
         currency: dto.currency,
@@ -199,6 +266,7 @@ export class CargosService {
         bodyTypeId: dto.bodyTypeId,
         weightKg: dto.weightKg,
         volumeM3: dto.volumeM3,
+        palletCount: dto.palletCount,
         photoUrls: dto.photoUrls,
         price: dto.price,
         currency: dto.currency,

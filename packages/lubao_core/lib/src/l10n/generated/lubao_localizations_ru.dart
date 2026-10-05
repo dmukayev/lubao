@@ -539,6 +539,36 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get unitTon => 'т';
 
   @override
+  String get unitPallets => 'пал.';
+
+  @override
+  String get garageSizeTitle => 'Размер кузова';
+
+  @override
+  String get garageSizeCustom => 'Свой размер';
+
+  @override
+  String get garageSizeLength => 'Длина внутри, м';
+
+  @override
+  String get garageSizeWidth => 'Ширина внутри, м';
+
+  @override
+  String get garageSizeHeight => 'Высота внутри, м';
+
+  @override
+  String get garageSizePrompt =>
+      'Укажите размер кузова — грузы подберутся точнее';
+
+  @override
+  String get postCargoPallets => 'Паллеты (шт.)';
+
+  @override
+  String postCargoFitCount(int count) {
+    return 'Подходит $count водителям на точке';
+  }
+
+  @override
   String get cargoReadyDate => 'Дата готовности';
 
   @override
@@ -1126,6 +1156,12 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminAddBodyType => 'Добавить тип кузова';
+
+  @override
+  String get adminBodySizePresetsTab => 'Размеры кузова';
+
+  @override
+  String get adminAddBodySizePreset => 'Добавить шаблон размера';
 
   @override
   String get adminAddPermit => 'Добавить допуск';

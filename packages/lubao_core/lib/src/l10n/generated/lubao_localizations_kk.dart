@@ -543,6 +543,36 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get unitTon => 'т';
 
   @override
+  String get unitPallets => 'пал.';
+
+  @override
+  String get garageSizeTitle => 'Шанақ өлшемі';
+
+  @override
+  String get garageSizeCustom => 'Өз өлшемім';
+
+  @override
+  String get garageSizeLength => 'Іші ұзындығы, м';
+
+  @override
+  String get garageSizeWidth => 'Іші ені, м';
+
+  @override
+  String get garageSizeHeight => 'Іші биіктігі, м';
+
+  @override
+  String get garageSizePrompt =>
+      'Шанақ өлшемін көрсетіңіз — жүктер дәлірек іріктеледі';
+
+  @override
+  String get postCargoPallets => 'Паллеттер (дана)';
+
+  @override
+  String postCargoFitCount(int count) {
+    return 'Нүктедегі $count жүргізушіге сай келеді';
+  }
+
+  @override
   String get cargoReadyDate => 'Дайын болу күні';
 
   @override
@@ -1130,6 +1160,12 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminAddBodyType => 'Кузов түрін қосу';
+
+  @override
+  String get adminBodySizePresetsTab => 'Шанақ өлшемдері';
+
+  @override
+  String get adminAddBodySizePreset => 'Өлшем шаблонын қосу';
 
   @override
   String get adminAddPermit => 'Рұқсат қосу';

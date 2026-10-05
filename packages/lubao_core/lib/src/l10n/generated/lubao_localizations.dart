@@ -1098,6 +1098,60 @@ abstract class LubaoLocalizations {
   /// **'т'**
   String get unitTon;
 
+  /// No description provided for @unitPallets.
+  ///
+  /// In ru, this message translates to:
+  /// **'пал.'**
+  String get unitPallets;
+
+  /// No description provided for @garageSizeTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Размер кузова'**
+  String get garageSizeTitle;
+
+  /// No description provided for @garageSizeCustom.
+  ///
+  /// In ru, this message translates to:
+  /// **'Свой размер'**
+  String get garageSizeCustom;
+
+  /// No description provided for @garageSizeLength.
+  ///
+  /// In ru, this message translates to:
+  /// **'Длина внутри, м'**
+  String get garageSizeLength;
+
+  /// No description provided for @garageSizeWidth.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ширина внутри, м'**
+  String get garageSizeWidth;
+
+  /// No description provided for @garageSizeHeight.
+  ///
+  /// In ru, this message translates to:
+  /// **'Высота внутри, м'**
+  String get garageSizeHeight;
+
+  /// No description provided for @garageSizePrompt.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите размер кузова — грузы подберутся точнее'**
+  String get garageSizePrompt;
+
+  /// No description provided for @postCargoPallets.
+  ///
+  /// In ru, this message translates to:
+  /// **'Паллеты (шт.)'**
+  String get postCargoPallets;
+
+  /// No description provided for @postCargoFitCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подходит {count} водителям на точке'**
+  String postCargoFitCount(int count);
+
   /// No description provided for @cargoReadyDate.
   ///
   /// In ru, this message translates to:
@@ -2231,6 +2285,18 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Добавить тип кузова'**
   String get adminAddBodyType;
+
+  /// No description provided for @adminBodySizePresetsTab.
+  ///
+  /// In ru, this message translates to:
+  /// **'Размеры кузова'**
+  String get adminBodySizePresetsTab;
+
+  /// No description provided for @adminAddBodySizePreset.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить шаблон размера'**
+  String get adminAddBodySizePreset;
 
   /// No description provided for @adminAddPermit.
   ///

@@ -4,7 +4,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { IdentifiersService } from '../identifiers/identifiers.service';
 import { RecognitionService } from '../recognition/recognition.service';
 import { UploadsService } from '../uploads/uploads.service';
-import { CreateVehicleDto } from './dto/create-vehicle.dto';
+import { calculatePalletsEuro, calculateVolumeM3 } from './body-size';
+import { CreateVehicleDto, SetVehicleSizeDto } from './dto/create-vehicle.dto';
 import { CreateVerificationDocumentDto } from './dto/create-verification-document.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 
@@ -267,6 +268,12 @@ export class DriversService {
     brand: string | null;
     capacityTons: unknown;
     lengthM: unknown;
+    sizePresetId?: string | null;
+    innerLengthM?: unknown;
+    innerWidthM?: unknown;
+    innerHeightM?: unknown;
+    volumeM3?: unknown;
+    palletsEuro?: number | null;
     isOwner: boolean;
     isVerified: boolean;
     isArchived: boolean;
@@ -281,11 +288,46 @@ export class DriversService {
       brand: v.brand,
       capacityTons: v.capacityTons != null ? Number(v.capacityTons) : null,
       lengthM: v.lengthM != null ? Number(v.lengthM) : null,
+      sizePresetId: v.sizePresetId ?? null,
+      innerLengthM: v.innerLengthM != null ? Number(v.innerLengthM) : null,
+      innerWidthM: v.innerWidthM != null ? Number(v.innerWidthM) : null,
+      innerHeightM: v.innerHeightM != null ? Number(v.innerHeightM) : null,
+      volumeM3: v.volumeM3 != null ? Number(v.volumeM3) : null,
+      palletsEuro: v.palletsEuro ?? null,
       isOwner: v.isOwner,
       isVerified: v.isVerified,
       isArchived: v.isArchived,
       createdAt: v.createdAt,
     };
+  }
+
+  /// Задача 033, п.3 — поля размера для записи в Vehicle: шаблон КОПИРУЕТСЯ
+  /// (правка шаблона в админке не меняет задним числом чужие машины), «свой
+  /// размер» — объём и паллеты считаются из Д/Ш/В.
+  private async resolveSizeFields(dto: { sizePresetId?: string; innerLengthM?: number; innerWidthM?: number; innerHeightM?: number }) {
+    if (dto.sizePresetId) {
+      const preset = await this.prisma.bodySizePreset.findUnique({ where: { id: dto.sizePresetId } });
+      if (!preset || !preset.isActive) throw new NotFoundException('Size preset not found');
+      return {
+        sizePresetId: preset.id,
+        innerLengthM: preset.innerLengthM,
+        innerWidthM: preset.innerWidthM,
+        innerHeightM: preset.innerHeightM,
+        volumeM3: preset.volumeM3,
+        palletsEuro: preset.palletsEuro,
+      };
+    }
+    if (dto.innerLengthM != null && dto.innerWidthM != null && dto.innerHeightM != null) {
+      return {
+        sizePresetId: null,
+        innerLengthM: dto.innerLengthM,
+        innerWidthM: dto.innerWidthM,
+        innerHeightM: dto.innerHeightM,
+        volumeM3: calculateVolumeM3(dto.innerLengthM, dto.innerWidthM, dto.innerHeightM),
+        palletsEuro: calculatePalletsEuro(dto.innerLengthM, dto.innerWidthM),
+      };
+    }
+    return {};
   }
 
   async listVehicles(driverId: string) {
@@ -297,6 +339,7 @@ export class DriversService {
   }
 
   async createVehicle(driverId: string, dto: CreateVehicleDto) {
+    const sizeFields = dto.kind === 'TRACTOR' ? {} : await this.resolveSizeFields(dto);
     const vehicle = await this.prisma.vehicle.create({
       data: {
         driverId,
@@ -307,9 +350,25 @@ export class DriversService {
         brand: dto.brand,
         capacityTons: dto.kind === 'TRACTOR' ? null : dto.capacityTons,
         lengthM: dto.kind === 'TRACTOR' ? null : dto.lengthM,
+        ...sizeFields,
       },
     });
     return this.vehicleToDto(vehicle);
+  }
+
+  /// Задача 033, п.5/6 — размер кузова существующей машины (у машин,
+  /// созданных до 033, его нет — водитель выбирает при следующем открытии
+  /// гаража). Только TRAILER/RIGID.
+  async setVehicleSize(driverId: string, vehicleId: string, dto: SetVehicleSizeDto) {
+    const vehicle = await this.prisma.vehicle.findUnique({ where: { id: vehicleId } });
+    if (!vehicle || vehicle.driverId !== driverId) throw new NotFoundException('Vehicle not found');
+    if (vehicle.kind === 'TRACTOR') throw new BadRequestException('A tractor unit has no cargo body size');
+
+    const sizeFields = await this.resolveSizeFields(dto);
+    if (Object.keys(sizeFields).length === 0) throw new BadRequestException('Either sizePresetId or all of innerLengthM/innerWidthM/innerHeightM are required');
+
+    const updated = await this.prisma.vehicle.update({ where: { id: vehicleId }, data: sizeFields });
+    return this.vehicleToDto(updated);
   }
 
   /// В архив, не удалить (п.10) — история сделок, где машина уже

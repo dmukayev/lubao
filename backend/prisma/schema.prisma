@@ -263,6 +263,31 @@ model BodyType {
   @@map("body_types")
 }
 
+/// Шаблоны размеров кузова (задача 033) — внутренние размеры/объём/паллеты
+/// стандартных полуприцепов; водитель выбирает одним касанием вместо
+/// рулетки. Значения ориентировочные, правятся в админке без релиза.
+model BodySizePreset {
+  id              String   @id @default(uuid())
+  code            String   @unique
+  name            Json
+  /// К каким типам кузова подходит шаблон (пустой массив = ко всем).
+  bodyTypeIds     String[] @default([])
+  innerLengthM    Decimal? @db.Decimal(5, 2)
+  innerWidthM     Decimal? @db.Decimal(4, 2)
+  innerHeightM    Decimal? @db.Decimal(4, 2)
+  volumeM3        Decimal? @db.Decimal(6, 1)
+  palletsEuro     Int?
+  palletsStandard Int?
+  sortOrder       Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  vehicles Vehicle[]
+
+  @@map("body_size_presets")
+}
+
 model Permit {
   id        String   @id @default(uuid())
   code      String   @unique
@@ -419,6 +444,16 @@ model Vehicle {
   brand         String?
   capacityTons  Decimal?    @db.Decimal(6, 2)
   lengthM       Decimal?    @db.Decimal(5, 2)
+  /// Размер кузова (задача 033) — только TRAILER/RIGID. При выборе шаблона
+  /// значения КОПИРУЮТСЯ из него (правка шаблона не меняет задним числом
+  /// чужие машины); «Свой размер» — ввод Д/Ш/В, объём и паллеты считаются.
+  sizePresetId  String?
+  sizePreset    BodySizePreset? @relation(fields: [sizePresetId], references: [id])
+  innerLengthM  Decimal?    @db.Decimal(5, 2)
+  innerWidthM   Decimal?    @db.Decimal(4, 2)
+  innerHeightM  Decimal?    @db.Decimal(4, 2)
+  volumeM3      Decimal?    @db.Decimal(6, 1)
+  palletsEuro   Int?
   /// Водитель — собственник или работает на чужой машине.
   isOwner       Boolean     @default(true)
   /// Техпаспорт одобрен (ставится при approve соответствующего документа,
@@ -720,6 +755,8 @@ model Cargo {
   bodyType              BodyType    @relation(fields: [bodyTypeId], references: [id])
   weightKg              Decimal?    @db.Decimal(10, 2)
   volumeM3              Decimal?    @db.Decimal(7, 2)
+  /// Паллеты (задача 033) — логист может указать вместо/вместе с объёмом.
+  palletCount           Int?
   photoUrls             String[]    @default([])
   price                 Decimal     @db.Decimal(12, 2)
   currency              Currency

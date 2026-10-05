@@ -35,6 +35,13 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   final _brandController = TextEditingController();
   final _capacityController = TextEditingController();
   final _lengthController = TextEditingController();
+  // Размер кузова (задача 033, п.6) — шаблон одним касанием или «свой
+  // размер» с ручным вводом Д/Ш/В (объём и паллеты считает сервер).
+  String? _sizePresetId;
+  bool _customSize = false;
+  final _innerLengthController = TextEditingController();
+  final _innerWidthController = TextEditingController();
+  final _innerHeightController = TextEditingController();
   XFile? _photo;
   bool _submitting = false;
   String? _photoError;
@@ -46,6 +53,9 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
     _brandController.dispose();
     _capacityController.dispose();
     _lengthController.dispose();
+    _innerLengthController.dispose();
+    _innerWidthController.dispose();
+    _innerHeightController.dispose();
     super.dispose();
   }
 
@@ -63,14 +73,19 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
 
     setState(() => _submitting = true);
     try {
+      final isTractor = _kind == VehicleKind.tractor;
       final vehicle = await ref.read(driverRepositoryProvider).addVehicle(
             kind: _kind,
-            bodyTypeId: _kind == VehicleKind.tractor ? null : _bodyTypeId,
+            bodyTypeId: isTractor ? null : _bodyTypeId,
             plateNumber: _plateController.text.trim().isEmpty ? null : _plateController.text.trim(),
             vin: _vinController.text.trim().isEmpty ? null : _vinController.text.trim(),
             brand: _brandController.text.trim().isEmpty ? null : _brandController.text.trim(),
-            capacityTons: _kind == VehicleKind.tractor ? null : double.tryParse(_capacityController.text.trim()),
-            lengthM: _kind == VehicleKind.tractor ? null : double.tryParse(_lengthController.text.trim()),
+            capacityTons: isTractor ? null : double.tryParse(_capacityController.text.trim()),
+            lengthM: isTractor ? null : double.tryParse(_lengthController.text.trim()),
+            sizePresetId: isTractor || _customSize ? null : _sizePresetId,
+            innerLengthM: isTractor || !_customSize ? null : double.tryParse(_innerLengthController.text.trim()),
+            innerWidthM: isTractor || !_customSize ? null : double.tryParse(_innerWidthController.text.trim()),
+            innerHeightM: isTractor || !_customSize ? null : double.tryParse(_innerHeightController.text.trim()),
           );
 
       final bytes = await _photo!.readAsBytes();
@@ -143,6 +158,39 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                 AppTextField(label: t.driverSetupCapacity, controller: _capacityController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(label: t.garageLength, controller: _lengthController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                const SizedBox(height: AppSpacing.md),
+                Text(t.garageSizeTitle, style: AppTextStyles.bodyStrong),
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    for (final preset in refData.sizePresetsForBodyType(_bodyTypeId))
+                      SelectableTile(
+                        label: preset.volumeM3 != null && preset.palletsEuro != null
+                            ? '${preset.name.forLanguageCode(locale)}\n≈ ${preset.volumeM3!.toStringAsFixed(0)} ${t.unitM3} · ${preset.palletsEuro} ${t.unitPallets}'
+                            : preset.name.forLanguageCode(locale),
+                        selected: !_customSize && _sizePresetId == preset.id,
+                        onTap: () => setState(() {
+                          _sizePresetId = preset.id;
+                          _customSize = false;
+                        }),
+                      ),
+                    SelectableTile(
+                      label: t.garageSizeCustom,
+                      selected: _customSize,
+                      onTap: () => setState(() => _customSize = true),
+                    ),
+                  ],
+                ),
+                if (_customSize) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextField(label: t.garageSizeLength, controller: _innerLengthController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextField(label: t.garageSizeWidth, controller: _innerWidthController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextField(label: t.garageSizeHeight, controller: _innerHeightController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                ],
                 const SizedBox(height: AppSpacing.md),
               ] else ...[
                 AppTextField(label: t.driverSetupVehicleTitle, controller: _brandController),

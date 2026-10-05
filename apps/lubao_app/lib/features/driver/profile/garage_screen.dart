@@ -17,6 +17,56 @@ class GarageScreen extends ConsumerWidget {
     if (added) ref.invalidate(garageVehiclesProvider);
   }
 
+  /// Мягкая подсказка (задача 033, п.5) — прицепам/одиночкам, созданным до
+  /// шаблонов, размер проставляется здесь, одним касанием чипа.
+  Future<void> _setSize(BuildContext context, WidgetRef ref, GarageVehicle vehicle) async {
+    final t = context.l10n;
+    final locale = Localizations.localeOf(context).languageCode;
+    final refData = ref.read(referenceDataProvider).valueOrNull;
+    if (refData == null) return;
+    final presets = refData.sizePresetsForBodyType(vehicle.bodyTypeId);
+    final chosen = await showModalBottomSheet<BodySizePreset>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.garageSizeTitle, style: AppTextStyles.bodyStrong),
+              const SizedBox(height: AppSpacing.md),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (final preset in presets)
+                    SelectableTile(
+                      label: preset.volumeM3 != null && preset.palletsEuro != null
+                          ? '${preset.name.forLanguageCode(locale)}\n≈ ${preset.volumeM3!.toStringAsFixed(0)} ${t.unitM3} · ${preset.palletsEuro} ${t.unitPallets}'
+                          : preset.name.forLanguageCode(locale),
+                      selected: vehicle.sizePresetId == preset.id,
+                      onTap: () => Navigator.pop(sheetContext, preset),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (chosen == null) return;
+    try {
+      await ref.read(driverRepositoryProvider).setVehicleSize(vehicle.id, sizePresetId: chosen.id);
+      ref.invalidate(garageVehiclesProvider);
+    } catch (e) {
+      debugPrint('GarageScreen: failed to set vehicle size: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.commonError)));
+      }
+    }
+  }
+
   Future<void> _archive(BuildContext context, WidgetRef ref, GarageVehicle vehicle) async {
     final t = context.l10n;
     try {
@@ -69,7 +119,11 @@ class GarageScreen extends ConsumerWidget {
                 _EmptyRow(t.garageEmptyTrailers)
               else
                 for (final v in trailers) ...[
-                  _VehicleCard(vehicle: v, onArchive: () => _archive(context, ref, v)),
+                  _VehicleCard(
+                    vehicle: v,
+                    onArchive: () => _archive(context, ref, v),
+                    onSetSize: v.volumeM3 == null ? () => _setSize(context, ref, v) : null,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                 ],
               const SizedBox(height: AppSpacing.md),
@@ -121,10 +175,14 @@ class _EmptyRow extends StatelessWidget {
 }
 
 class _VehicleCard extends StatelessWidget {
-  const _VehicleCard({required this.vehicle, required this.onArchive});
+  const _VehicleCard({required this.vehicle, required this.onArchive, this.onSetSize});
 
   final GarageVehicle vehicle;
   final VoidCallback onArchive;
+
+  /// Не-null только у прицепа/одиночки без размера (задача 033, п.5) —
+  /// мягкая подсказка, тап открывает выбор шаблона.
+  final VoidCallback? onSetSize;
 
   String _title(BuildContext context) {
     final t = context.l10n;
@@ -133,6 +191,9 @@ class _VehicleCard extends StatelessWidget {
         if (vehicle.brand != null) vehicle.brand!,
         if (vehicle.capacityTons != null) '${vehicle.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
         if (vehicle.lengthM != null) '${vehicle.lengthM!.toStringAsFixed(1)} м',
+        // Задача 033, п.7 — «Тент · 20 т · 90 м³ · 33 пал.».
+        if (vehicle.volumeM3 != null) '${vehicle.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+        if (vehicle.palletsEuro != null) '${vehicle.palletsEuro} ${t.unitPallets}',
       ];
       return parts.isEmpty ? t.garageKindTrailer : parts.join(' · ');
     }
@@ -180,6 +241,16 @@ class _VehicleCard extends StatelessWidget {
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
                   Text(subtitle, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                ],
+                if (onSetSize != null) ...[
+                  const SizedBox(height: 2),
+                  GestureDetector(
+                    onTap: onSetSize,
+                    child: Text(
+                      context.l10n.garageSizePrompt,
+                      style: AppTextStyles.caption.copyWith(color: AppColors.primary),
+                    ),
+                  ),
                 ],
               ],
             ),

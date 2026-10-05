@@ -124,6 +124,53 @@ class LoadingPoint {
       );
 }
 
+/// Шаблон размера кузова (задача 033) — выбирается одним касанием при
+/// добавлении прицепа/одиночки вместо измерения рулеткой.
+class BodySizePreset {
+  const BodySizePreset({
+    required this.id,
+    required this.code,
+    required this.name,
+    this.bodyTypeIds = const [],
+    this.innerLengthM,
+    this.innerWidthM,
+    this.innerHeightM,
+    this.volumeM3,
+    this.palletsEuro,
+    this.palletsStandard,
+    this.sortOrder = 0,
+    this.isActive = true,
+  });
+
+  final String id;
+  final String code;
+  final I18nText name;
+  final List<String> bodyTypeIds;
+  final double? innerLengthM;
+  final double? innerWidthM;
+  final double? innerHeightM;
+  final double? volumeM3;
+  final int? palletsEuro;
+  final int? palletsStandard;
+  final int sortOrder;
+  final bool isActive;
+
+  factory BodySizePreset.fromJson(Map<String, dynamic> json) => BodySizePreset(
+        id: json['id'] as String,
+        code: json['code'] as String,
+        name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
+        bodyTypeIds: (json['bodyTypeIds'] as List<dynamic>? ?? []).cast<String>(),
+        innerLengthM: (json['innerLengthM'] as num?)?.toDouble(),
+        innerWidthM: (json['innerWidthM'] as num?)?.toDouble(),
+        innerHeightM: (json['innerHeightM'] as num?)?.toDouble(),
+        volumeM3: (json['volumeM3'] as num?)?.toDouble(),
+        palletsEuro: json['palletsEuro'] as int?,
+        palletsStandard: json['palletsStandard'] as int?,
+        sortOrder: json['sortOrder'] as int? ?? 0,
+        isActive: json['isActive'] as bool? ?? true,
+      );
+}
+
 class ExchangeRate {
   const ExchangeRate({required this.currency, required this.rateToKzt});
 
@@ -156,6 +203,7 @@ class ReferenceData {
     this.regions = const [],
     required this.cities,
     required this.bodyTypes,
+    this.bodySizePresets = const [],
     required this.permits,
     required this.points,
     this.exchangeRates = const [],
@@ -169,6 +217,7 @@ class ReferenceData {
   final List<Region> regions;
   final List<City> cities;
   final List<BodyType> bodyTypes;
+  final List<BodySizePreset> bodySizePresets;
   final List<Permit> permits;
   final List<LoadingPoint> points;
   final List<ExchangeRate> exchangeRates;
@@ -190,6 +239,14 @@ class ReferenceData {
   BodyType bodyTypeById(String id) => bodyTypes.firstWhere((b) => b.id == id, orElse: () => bodyTypes.first);
   LoadingPoint pointById(String id) => points.firstWhere((p) => p.id == id, orElse: () => points.first);
   List<Region> regionsOf(String countryId) => regions.where((r) => r.countryId == countryId).toList();
+
+  /// Активные шаблоны размера для типа кузова (задача 033) — шаблон с
+  /// пустым bodyTypeIds подходит к любому типу.
+  List<BodySizePreset> sizePresetsForBodyType(String? bodyTypeId) => bodySizePresets
+      .where((p) => p.isActive && (p.bodyTypeIds.isEmpty || (bodyTypeId != null && p.bodyTypeIds.contains(bodyTypeId))))
+      .toList();
+
+  BodySizePreset? sizePresetById(String? id) => id == null ? null : bodySizePresets.where((p) => p.id == id).firstOrNull;
 
   /// Пересчёт суммы в тенге по последнему известному курсу. `null`, если
   /// курса для этой валюты ещё нет (тогда пересчёт просто не показываем).

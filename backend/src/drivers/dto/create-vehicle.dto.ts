@@ -34,4 +34,48 @@ export class CreateVehicleDto {
   @IsNumber()
   @Min(0)
   lengthM?: number;
+
+  /// Размер кузова (задача 033) — шаблон ИЛИ свой размер (Д/Ш/В).
+  @IsOptional()
+  @IsString()
+  sizePresetId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  innerLengthM?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  innerWidthM?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  innerHeightM?: number;
+}
+
+/// «Размер кузова» отдельно от создания (задача 033, п.5) — существующим
+/// машинам размер не проставляется автоматически, водитель выбирает при
+/// следующем открытии гаража.
+export class SetVehicleSizeDto {
+  @IsOptional()
+  @IsString()
+  sizePresetId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  innerLengthM?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  innerWidthM?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  innerHeightM?: number;
 }

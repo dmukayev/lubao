@@ -10,6 +10,7 @@ import {
   AdminReasonDto,
   AdminSetMemberRoleDto,
   AdminUpdateCargoDto,
+  AdminUpdateBodySizePresetDto,
   AdminUpdateCityDto,
   AdminUpdateCompanyDto,
   AdminUpdateDriverDto,
@@ -17,6 +18,7 @@ import {
   AdminUpdateReferenceItemDto,
   BlockUserDto,
   CargoSearchQueryDto,
+  CreateBodySizePresetDto,
   CreateBodyTypeDto,
   CreatePermitDto,
   CreatePointDto,
@@ -395,6 +397,18 @@ export class AdminController {
   updateBodyType(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminUpdateReferenceItemDto) {
     assertAdmin(ctx);
     return this.admin.updateBodyType(id, ctx.user.id, dto);
+  }
+
+  @Post('reference/body-size-presets')
+  createBodySizePreset(@CurrentUser() ctx: RequestContext, @Body() dto: CreateBodySizePresetDto) {
+    assertAdmin(ctx);
+    return this.admin.createBodySizePreset(dto);
+  }
+
+  @Patch('reference/body-size-presets/:id')
+  updateBodySizePreset(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminUpdateBodySizePresetDto) {
+    assertAdmin(ctx);
+    return this.admin.updateBodySizePreset(id, ctx.user.id, dto);
   }
 
   @Post('reference/permits')

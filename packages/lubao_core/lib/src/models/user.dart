@@ -82,6 +82,12 @@ class GarageVehicle {
     this.brand,
     this.capacityTons,
     this.lengthM,
+    this.sizePresetId,
+    this.innerLengthM,
+    this.innerWidthM,
+    this.innerHeightM,
+    this.volumeM3,
+    this.palletsEuro,
     required this.isOwner,
     required this.isVerified,
     required this.isArchived,
@@ -96,6 +102,13 @@ class GarageVehicle {
   final String? brand;
   final double? capacityTons;
   final double? lengthM;
+  /// Размер кузова (задача 033) — шаблон или «свой размер».
+  final String? sizePresetId;
+  final double? innerLengthM;
+  final double? innerWidthM;
+  final double? innerHeightM;
+  final double? volumeM3;
+  final int? palletsEuro;
   final bool isOwner;
   final bool isVerified;
   final bool isArchived;
@@ -110,6 +123,12 @@ class GarageVehicle {
         brand: json['brand'] as String?,
         capacityTons: (json['capacityTons'] as num?)?.toDouble(),
         lengthM: (json['lengthM'] as num?)?.toDouble(),
+        sizePresetId: json['sizePresetId'] as String?,
+        innerLengthM: (json['innerLengthM'] as num?)?.toDouble(),
+        innerWidthM: (json['innerWidthM'] as num?)?.toDouble(),
+        innerHeightM: (json['innerHeightM'] as num?)?.toDouble(),
+        volumeM3: (json['volumeM3'] as num?)?.toDouble(),
+        palletsEuro: json['palletsEuro'] as int?,
         isOwner: json['isOwner'] as bool? ?? true,
         isVerified: json['isVerified'] as bool? ?? false,
         isArchived: json['isArchived'] as bool? ?? false,

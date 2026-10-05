@@ -528,6 +528,35 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get unitTon => '吨';
 
   @override
+  String get unitPallets => '托';
+
+  @override
+  String get garageSizeTitle => '车厢尺寸';
+
+  @override
+  String get garageSizeCustom => '自定义尺寸';
+
+  @override
+  String get garageSizeLength => '内部长度（米）';
+
+  @override
+  String get garageSizeWidth => '内部宽度（米）';
+
+  @override
+  String get garageSizeHeight => '内部高度（米）';
+
+  @override
+  String get garageSizePrompt => '填写车厢尺寸 — 货源匹配更精准';
+
+  @override
+  String get postCargoPallets => '托盘数（个）';
+
+  @override
+  String postCargoFitCount(int count) {
+    return '适合点上 $count 位司机';
+  }
+
+  @override
   String get cargoReadyDate => '备货日期';
 
   @override
@@ -1109,6 +1138,12 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminAddBodyType => '添加车厢类型';
+
+  @override
+  String get adminBodySizePresetsTab => '车厢尺寸';
+
+  @override
+  String get adminAddBodySizePreset => '添加尺寸模板';
 
   @override
   String get adminAddPermit => '添加资质';

@@ -355,6 +355,9 @@ export class ArrivalsService {
       arrivedAt: r.arrival.arrivedAt,
       bodyTypeId: r.vehicle?.bodyTypeId ?? null,
       capacityTons: r.vehicle?.capacityTons ? Number(r.vehicle.capacityTons) : null,
+      // Задача 033, п.9 — «тент · 20 т · 90 м³ · 33 пал.» в «Кто будет».
+      volumeM3: r.vehicle?.volumeM3 != null ? Number(r.vehicle.volumeM3) : null,
+      palletsEuro: r.vehicle?.palletsEuro ?? null,
       anyCountry: r.arrival.anyCountry,
       directionCountryIds: r.arrival.directions.map((d) => d.countryId),
     }));

@@ -15,6 +15,7 @@ class Cargo {
     required this.bodyTypeId,
     this.weightKg,
     this.volumeM3,
+    this.palletCount,
     this.photoUrls = const [],
     required this.price,
     required this.currency,
@@ -45,6 +46,9 @@ class Cargo {
   final String bodyTypeId;
   final double? weightKg;
   final double? volumeM3;
+
+  /// Паллеты (задача 033) — вместо/вместе с объёмом.
+  final int? palletCount;
   final List<String> photoUrls;
   final double price;
   final Currency currency;
@@ -82,6 +86,7 @@ class Cargo {
         bodyTypeId: json['bodyTypeId'] as String,
         weightKg: (json['weightKg'] as num?)?.toDouble(),
         volumeM3: (json['volumeM3'] as num?)?.toDouble(),
+        palletCount: json['palletCount'] as int?,
         photoUrls: (json['photoUrls'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
         price: (json['price'] as num).toDouble(),
         currency: currencyFromJson(json['currency'] as String),
@@ -118,6 +123,7 @@ class CreateCargoInput {
     required this.bodyTypeId,
     this.weightKg,
     this.volumeM3,
+    this.palletCount,
     this.photoUrls = const [],
     required this.price,
     required this.currency,
@@ -130,6 +136,7 @@ class CreateCargoInput {
   final String bodyTypeId;
   final double? weightKg;
   final double? volumeM3;
+  final int? palletCount;
   final List<String> photoUrls;
   final double price;
   final Currency currency;
@@ -142,6 +149,7 @@ class CreateCargoInput {
         'bodyTypeId': bodyTypeId,
         if (weightKg != null) 'weightKg': weightKg,
         if (volumeM3 != null) 'volumeM3': volumeM3,
+        if (palletCount != null) 'palletCount': palletCount,
         if (photoUrls.isNotEmpty) 'photoUrls': photoUrls,
         'price': price,
         'currency': currencyToJson(currency),

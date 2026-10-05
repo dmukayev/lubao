@@ -50,6 +50,16 @@ class CargoRepository {
     await _client.dio.post('/cargos/$cargoId/close', data: {'outcome': outcome, if (driverId != null) 'driverId': driverId});
   }
 
+  /// «Подходит N водителям на точке» при публикации (задача 033, п.10).
+  Future<int> fitCount({double? weightKg, double? volumeM3, int? palletCount}) async {
+    final res = await _client.dio.get('/cargos/fit-count', queryParameters: {
+      if (weightKg != null) 'weightKg': weightKg,
+      if (volumeM3 != null) 'volumeM3': volumeM3,
+      if (palletCount != null) 'palletCount': palletCount,
+    });
+    return (res.data as Map<String, dynamic>)['count'] as int;
+  }
+
   Future<List<CargoResponse>> responsesFor(String cargoId) async {
     final res = await _client.dio.get('/cargos/$cargoId/responses');
     return (res.data as List<dynamic>).map((e) => CargoResponse.fromJson(e as Map<String, dynamic>)).toList();

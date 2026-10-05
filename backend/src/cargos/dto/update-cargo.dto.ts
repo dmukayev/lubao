@@ -24,6 +24,11 @@ export class UpdateCargoDto {
   volumeM3?: number;
 
   @IsOptional()
+  @IsNumber()
+  @Min(0)
+  palletCount?: number;
+
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   photoUrls?: string[];

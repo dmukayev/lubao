@@ -186,6 +186,69 @@ describe('CargosService.feed — hides blocked companies\' cargo (задача 0
   });
 });
 
+describe('CargosService — отсев грузов по размеру машины (задача 033, п.8/13)', () => {
+  const body = { capacityTons: 20, volumeM3: 90, palletsEuro: 33 };
+
+  it('отсекает по весу: 25 т груза против 20 т машины', () => {
+    expect(CargosService.cargoFitsVehicle({ weightKg: 25000, volumeM3: null, palletCount: null }, body)).toBe(false);
+  });
+
+  it('отсекает по объёму: 100 м³ против «Стандарта» 90 м³', () => {
+    expect(CargosService.cargoFitsVehicle({ weightKg: null, volumeM3: 100, palletCount: null }, body)).toBe(false);
+  });
+
+  it('пропускает 100 м³ для «Меги» 100 м³ (граница включительно)', () => {
+    expect(CargosService.cargoFitsVehicle({ weightKg: null, volumeM3: 100, palletCount: null }, { ...body, volumeM3: 100 })).toBe(true);
+  });
+
+  it('отсекает по паллетам: 38 против 33', () => {
+    expect(CargosService.cargoFitsVehicle({ weightKg: null, volumeM3: null, palletCount: 38 }, body)).toBe(false);
+  });
+
+  it('машина без размера НЕ отсекается по объёму/паллетам — только по весу', () => {
+    const noSize = { capacityTons: 20, volumeM3: null, palletsEuro: null };
+    expect(CargosService.cargoFitsVehicle({ weightKg: null, volumeM3: 150, palletCount: 50 }, noSize)).toBe(true);
+    expect(CargosService.cargoFitsVehicle({ weightKg: 25000, volumeM3: 150, palletCount: 50 }, noSize)).toBe(false);
+  });
+
+  it('груз без параметров всегда проходит', () => {
+    expect(CargosService.cargoFitsVehicle({ weightKg: null, volumeM3: null, palletCount: null }, body)).toBe(true);
+  });
+
+  it('feed() без driverId (аноним/не водитель) не фильтрует вовсе', async () => {
+    const prisma: any = {
+      cargo: { findMany: jest.fn().mockResolvedValue([]) },
+      deal: { count: jest.fn() },
+    };
+    const service = new CargosService(prisma, {} as any);
+    await service.feed();
+    // нет ни arrival.findFirst, ни vehicle.findFirst — мок не падает,
+    // значит driverCargoBody не вызывался.
+    expect(prisma.cargo.findMany).toHaveBeenCalled();
+  });
+
+  it('feed(driverId) берёт кузов из активного анонса и скрывает слишком большой груз', async () => {
+    const bigCargo = baseCargo({ id: 'big', volumeM3: 100 });
+    const smallCargo = baseCargo({ id: 'small', volumeM3: 80 });
+    const prisma: any = {
+      cargo: { findMany: jest.fn().mockResolvedValue([bigCargo, smallCargo]) },
+      deal: { count: jest.fn().mockResolvedValue(0) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+      arrival: {
+        findFirst: jest.fn().mockResolvedValue({
+          trailer: { capacityTons: 20, volumeM3: 90, palletsEuro: 33, kind: 'TRAILER' },
+          tractor: null,
+        }),
+      },
+    };
+    const service = new CargosService(prisma, {} as any);
+
+    const result = await service.feed('d1');
+
+    expect(result.map((c: any) => c.id)).toEqual(['small']);
+  });
+});
+
 describe('CargosService.create — непроверенная компания не публикует грузы (задача 012, п.4)', () => {
   it('throws COMPANY_NOT_VERIFIED when the company is not verified, without touching the database', async () => {
     const prisma: any = { point: { findFirstOrThrow: jest.fn() }, cargo: { create: jest.fn() } };

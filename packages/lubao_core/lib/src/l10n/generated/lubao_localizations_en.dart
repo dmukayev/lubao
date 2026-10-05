@@ -543,6 +543,36 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get unitTon => 't';
 
   @override
+  String get unitPallets => 'pal.';
+
+  @override
+  String get garageSizeTitle => 'Body size';
+
+  @override
+  String get garageSizeCustom => 'Custom size';
+
+  @override
+  String get garageSizeLength => 'Inner length, m';
+
+  @override
+  String get garageSizeWidth => 'Inner width, m';
+
+  @override
+  String get garageSizeHeight => 'Inner height, m';
+
+  @override
+  String get garageSizePrompt =>
+      'Set the body size — cargo matching gets more accurate';
+
+  @override
+  String get postCargoPallets => 'Pallets (pcs)';
+
+  @override
+  String postCargoFitCount(int count) {
+    return 'Fits $count drivers at the point';
+  }
+
+  @override
   String get cargoReadyDate => 'Ready date';
 
   @override
@@ -1131,6 +1161,12 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminAddBodyType => 'Add body type';
+
+  @override
+  String get adminBodySizePresetsTab => 'Body sizes';
+
+  @override
+  String get adminAddBodySizePreset => 'Add size preset';
 
   @override
   String get adminAddPermit => 'Add permit';

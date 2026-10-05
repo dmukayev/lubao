@@ -84,7 +84,7 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -224,6 +224,83 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
     final result = await _showReferenceItemEditPanel(context, title: item.name.forLanguageCode(Localizations.localeOf(context).languageCode), initialName: item.name, initialActive: item.isActive, initialSortOrder: item.sortOrder);
     if (result == null) return;
     await ref.read(adminRepositoryProvider).updatePermit(item.id, name: result.name, isActive: result.isActive, sortOrder: result.sortOrder, reason: result.reason);
+    ref.invalidate(referenceDataProvider);
+  }
+
+  /// Шаблоны размеров кузова (задача 033, п.11) — значения ориентировочные,
+  /// правятся здесь без релиза; машинам, выбравшим шаблон раньше, правка
+  /// задним числом ничего не меняет (значения копируются при выборе).
+  Future<void> _addBodySizePreset() async {
+    final t = context.l10n;
+    final result = await _showNameDialog(context, title: t.adminAddBodySizePreset);
+    if (result == null) return;
+    await ref.read(adminRepositoryProvider).createBodySizePreset(
+          code: result['code']!,
+          name: I18nText(kk: result['kk']!, ru: result['ru']!, zh: result['zh']!),
+        );
+    ref.invalidate(referenceDataProvider);
+  }
+
+  Future<void> _editBodySizePreset(BodySizePreset preset, String locale) async {
+    final t = context.l10n;
+    final kkController = TextEditingController(text: preset.name.kk);
+    final ruController = TextEditingController(text: preset.name.ru);
+    final zhController = TextEditingController(text: preset.name.zh);
+    final enController = TextEditingController(text: preset.name.en);
+    final lengthController = TextEditingController(text: preset.innerLengthM?.toString() ?? '');
+    final widthController = TextEditingController(text: preset.innerWidthM?.toString() ?? '');
+    final heightController = TextEditingController(text: preset.innerHeightM?.toString() ?? '');
+    final volumeController = TextEditingController(text: preset.volumeM3?.toString() ?? '');
+    final palletsController = TextEditingController(text: preset.palletsEuro?.toString() ?? '');
+    bool isActive = preset.isActive;
+
+    final reason = await showEditSidePanel(
+      context: context,
+      title: preset.name.forLanguageCode(locale),
+      canSave: () => ruController.text.trim().isNotEmpty,
+      fieldsBuilder: (context, setState) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppTextField(label: t.adminNameKk, controller: kkController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameRu, controller: ruController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameZh, controller: zhController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.adminNameEn, controller: enController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 12),
+          AppTextField(label: t.garageSizeLength, controller: lengthController, keyboardType: TextInputType.number, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.garageSizeWidth, controller: widthController, keyboardType: TextInputType.number, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.garageSizeHeight, controller: heightController, keyboardType: TextInputType.number, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: '${t.postCargoVolume} (${t.unitM3})', controller: volumeController, keyboardType: TextInputType.number, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          AppTextField(label: t.postCargoPallets, controller: palletsController, keyboardType: TextInputType.number, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: isActive,
+            title: Text(isActive ? t.adminActive : t.adminInactive),
+            onChanged: (v) => setState(() => isActive = v),
+          ),
+        ],
+      ),
+    );
+    if (reason == null) return;
+
+    await ref.read(adminRepositoryProvider).updateBodySizePreset(
+          preset.id,
+          name: I18nText(kk: kkController.text.trim(), ru: ruController.text.trim(), zh: zhController.text.trim(), en: enController.text.trim()),
+          innerLengthM: double.tryParse(lengthController.text.trim()),
+          innerWidthM: double.tryParse(widthController.text.trim()),
+          innerHeightM: double.tryParse(heightController.text.trim()),
+          volumeM3: double.tryParse(volumeController.text.trim()),
+          palletsEuro: int.tryParse(palletsController.text.trim()),
+          isActive: isActive,
+          reason: reason,
+        );
     ref.invalidate(referenceDataProvider);
   }
 
@@ -414,6 +491,7 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
         title: Text(t.adminReferenceTitle),
         bottom: TabBar(controller: _tabController, isScrollable: true, tabs: [
           Tab(text: t.driverSetupVehicleBodyType),
+          Tab(text: t.adminBodySizePresetsTab),
           Tab(text: t.driverSetupPermits),
           Tab(text: t.navFeed),
           Tab(text: t.adminCitiesTab),
@@ -430,6 +508,22 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
               items: refData.bodyTypes.map((b) => (b.id, b.name.forLanguageCode(locale), b.isActive, () => _editBodyType(b))).toList(),
               onAdd: _addBodyType,
               addLabel: t.adminAddBodyType,
+            ),
+            _SimpleList(
+              items: refData.bodySizePresets
+                  .map((p) => (
+                        p.id,
+                        [
+                          p.name.forLanguageCode(locale),
+                          if (p.volumeM3 != null) '${p.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+                          if (p.palletsEuro != null) '${p.palletsEuro} ${t.unitPallets}',
+                        ].join(' · '),
+                        p.isActive,
+                        () => _editBodySizePreset(p, locale)
+                      ))
+                  .toList(),
+              onAdd: _addBodySizePreset,
+              addLabel: t.adminAddBodySizePreset,
             ),
             _SimpleList(
               items: refData.permits.map((p) => (p.id, p.name.forLanguageCode(locale), p.isActive, () => _editPermit(p))).toList(),

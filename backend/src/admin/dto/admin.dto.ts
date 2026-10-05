@@ -128,6 +128,94 @@ export class CreatePermitDto {
   name!: UpsertI18nNameDto;
 }
 
+/// Шаблон размера кузова (задача 033, п.11) — CRUD в админке, без релиза.
+export class CreateBodySizePresetDto {
+  @IsString()
+  code!: string;
+
+  name!: UpsertI18nNameDto;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  bodyTypeIds?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  innerLengthM?: number;
+
+  @IsOptional()
+  @IsNumber()
+  innerWidthM?: number;
+
+  @IsOptional()
+  @IsNumber()
+  innerHeightM?: number;
+
+  @IsOptional()
+  @IsNumber()
+  volumeM3?: number;
+
+  @IsOptional()
+  @IsInt()
+  palletsEuro?: number;
+
+  @IsOptional()
+  @IsInt()
+  palletsStandard?: number;
+
+  @IsOptional()
+  @IsInt()
+  sortOrder?: number;
+}
+
+export class AdminUpdateBodySizePresetDto {
+  @IsOptional()
+  name?: UpsertI18nNameDto;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  bodyTypeIds?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  innerLengthM?: number;
+
+  @IsOptional()
+  @IsNumber()
+  innerWidthM?: number;
+
+  @IsOptional()
+  @IsNumber()
+  innerHeightM?: number;
+
+  @IsOptional()
+  @IsNumber()
+  volumeM3?: number;
+
+  @IsOptional()
+  @IsInt()
+  palletsEuro?: number;
+
+  @IsOptional()
+  @IsInt()
+  palletsStandard?: number;
+
+  @IsOptional()
+  @IsInt()
+  sortOrder?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsNotEmpty()
+  @MaxLength(1000)
+  @IsString()
+  reason!: string;
+}
+
 export class CreatePointDto {
   @IsString()
   cityId!: string;
