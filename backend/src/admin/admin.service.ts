@@ -62,6 +62,28 @@ export class AdminService {
     return { success: true };
   }
 
+  /// Настройки → Перевод (задача 010, п.8): включён/выключен (общий
+  /// AppSetting 'translationEnabled', переключается через уже
+  /// существующий PATCH /admin/settings/:key), провайдер/модель из .env,
+  /// расход за 7 дней из TranslationLog.
+  async translationStats() {
+    const enabled = (await this.appSettings!.get('translationEnabled')) !== 'false';
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const logs = await this.prisma.translationLog.findMany({ where: { createdAt: { gte: since } } });
+    const requests7d = logs.length;
+    const successRequests7d = logs.filter((l) => l.success).length;
+    const tokensUsed7d = logs.reduce((sum, l) => sum + (l.tokensUsed ?? 0), 0);
+
+    return {
+      enabled,
+      provider: process.env.TRANSLATION_PROVIDER ?? 'noop',
+      model: process.env.DEEPSEEK_MODEL ?? null,
+      requests7d,
+      successRequests7d,
+      tokensUsed7d,
+    };
+  }
+
   private periodStart(period?: 'today' | '7d' | '30d'): Date {
     const now = new Date();
     if (period === '7d') return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

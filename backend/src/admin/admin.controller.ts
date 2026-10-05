@@ -55,6 +55,12 @@ export class AdminController {
     return { success: true };
   }
 
+  @Get('translation-stats')
+  async translationStats(@CurrentUser() ctx: RequestContext) {
+    assertAdmin(ctx);
+    return this.admin.translationStats();
+  }
+
   @Get('stats')
   stats(@CurrentUser() ctx: RequestContext, @Query() query: StatsQueryDto) {
     assertAdmin(ctx);

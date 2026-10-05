@@ -1,13 +1,8 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import { Injectable, Logger } from '@nestjs/common';
 import OpenAI from 'openai';
 import { Locale } from '@prisma/client';
+import { GLOSSARY } from './glossary';
 import { TranslationProvider, TranslationResult } from './translation-provider';
-
-const GLOSSARY: Array<Record<Locale, string>> = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'glossary.json'), 'utf-8'),
-);
 
 const LOCALE_NAMES: Record<Locale, string> = { kk: 'kk', ru: 'ru', zh: 'zh', en: 'en' };
 

@@ -1592,3 +1592,49 @@ describe('AdminService.resolveComplaint — 4 resolutions, required note (зад
     expect(prisma.auditLog.create).toHaveBeenCalledTimes(3); // resolved + reporter notification + violator warning
   });
 });
+
+describe('AdminService.translationStats — «Настройки → Перевод» (задача 010, п.8)', () => {
+  it('reports enabled=true when the AppSetting row is absent (default on)', async () => {
+    const appSettings = { get: jest.fn().mockResolvedValue(null) };
+    const prisma: any = { translationLog: { findMany: jest.fn().mockResolvedValue([]) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, appSettings as any);
+
+    const result = await service.translationStats();
+
+    expect(result.enabled).toBe(true);
+    expect(result.requests7d).toBe(0);
+  });
+
+  it('reports enabled=false when the AppSetting row is explicitly "false"', async () => {
+    const appSettings = { get: jest.fn().mockResolvedValue('false') };
+    const prisma: any = { translationLog: { findMany: jest.fn().mockResolvedValue([]) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, appSettings as any);
+
+    const result = await service.translationStats();
+
+    expect(result.enabled).toBe(false);
+  });
+
+  it('sums tokens and counts successes over the last 7 days only (findMany already filtered by the query)', async () => {
+    const appSettings = { get: jest.fn().mockResolvedValue(null) };
+    const prisma: any = {
+      translationLog: {
+        findMany: jest.fn().mockResolvedValue([
+          { success: true, tokensUsed: 100 },
+          { success: true, tokensUsed: 50 },
+          { success: false, tokensUsed: null },
+        ]),
+      },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, appSettings as any);
+
+    const result = await service.translationStats();
+
+    expect(result).toEqual(
+      expect.objectContaining({ requests7d: 3, successRequests7d: 2, tokensUsed7d: 150 }),
+    );
+    expect(prisma.translationLog.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { createdAt: { gte: expect.any(Date) } } }),
+    );
+  });
+});

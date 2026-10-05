@@ -1,6 +1,14 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ChatsService } from './chats.service';
 
+// Дефолты для тестов, которым перевод не важен: «выключен» (appSettings
+// возвращает null → !== 'false' → true... нет, для простоты большинства
+// существующих тестов перевод должен быть вне игры — appSettings.get
+// возвращает 'false', чтобы send() не дёргал translation вовсе, если тест
+// явно не проверяет эту логику).
+const FAKE_TRANSLATION = { translateMessage: jest.fn().mockResolvedValue({ translations: {}, status: 'SKIPPED' }) };
+const FAKE_APP_SETTINGS = { get: jest.fn().mockResolvedValue('false') };
+
 function driverCtx(driverId = 'd1') {
   return { user: { id: 'u-driver', locale: 'ru' }, driver: { id: driverId }, companyMember: null } as any;
 }
@@ -12,7 +20,7 @@ function companyCtx(companyId = 'c1') {
 describe('ChatsService.findOrCreate — чат по паре водитель+компания(+груз) (задача 017, п.1)', () => {
   it('driver without cargoId is rejected — pre-deal chat always starts from a cargo card', async () => {
     const prisma: any = {};
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
     await expect(service.findOrCreate(driverCtx(), {})).rejects.toThrow(BadRequestException);
   });
 
@@ -23,7 +31,7 @@ describe('ChatsService.findOrCreate — чат по паре водитель+к
       driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'ru', phone: null } }) },
     };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
     const result = await service.findOrCreate(driverCtx(), { cargoId: 'cargo1' });
 
@@ -34,7 +42,7 @@ describe('ChatsService.findOrCreate — чат по паре водитель+к
 
   it('company without driverId is rejected', async () => {
     const prisma: any = {};
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
     await expect(service.findOrCreate(companyCtx(), {})).rejects.toThrow(BadRequestException);
   });
 
@@ -45,7 +53,7 @@ describe('ChatsService.findOrCreate — чат по паре водитель+к
       driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'ru', phone: null } }) },
     };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
     await service.findOrCreate(companyCtx(), { driverId: 'd1' });
 
@@ -60,7 +68,7 @@ describe('ChatsService.findOrCreate — чат по паре водитель+к
       driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
     };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
     await service.findOrCreate(driverCtx(), { cargoId: 'cargo1' });
 
@@ -75,7 +83,7 @@ describe('ChatsService — counterpart resolution (decisions.md «Компани
       cargo: { findUnique: jest.fn().mockResolvedValue({ publishedByUserId: 'logist-1' }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'zh', phone: '+86123' } }) },
     };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
     const result = await (service as any).toThreadDto({ id: 'chat1', cargoId: 'cargo1', dealId: null, driverId: 'd1', companyId: 'c1' }, driverCtx());
 
@@ -89,7 +97,7 @@ describe('ChatsService — counterpart resolution (decisions.md «Компани
       cargo: { findUnique: jest.fn().mockResolvedValue({ publishedByUserId: null }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'ru', phone: '+77000000000' } }) },
     };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
     await (service as any).toThreadDto({ id: 'chat1', cargoId: 'cargo1', dealId: null, driverId: 'd1', companyId: 'c1' }, driverCtx());
 
@@ -104,7 +112,7 @@ describe('ChatsService.myChats — логист видит чаты всей к�
     const prisma: any = {
       chat: { findMany: jest.fn().mockResolvedValue([]) },
     };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
     await service.myChats(companyCtx('c1'));
 
@@ -113,7 +121,7 @@ describe('ChatsService.myChats — логист видит чаты всей к�
 
   it('queries by driverId for a driver context', async () => {
     const prisma: any = { chat: { findMany: jest.fn().mockResolvedValue([]) } };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
     await service.myChats(driverCtx('d1'));
 
@@ -124,13 +132,13 @@ describe('ChatsService.myChats — логист видит чаты всей к�
 describe('ChatsService.thread/messages/send — ForbiddenException for a non-party (задача 017, п.1)', () => {
   it('thread() rejects a driver who is not a party to the chat', async () => {
     const prisma: any = { chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'other-driver', companyId: 'c1' }) } };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
     await expect(service.thread('chat1', driverCtx('d1'))).rejects.toThrow(ForbiddenException);
   });
 
   it('throws NotFoundException for an unknown chat', async () => {
     const prisma: any = { chat: { findUnique: jest.fn().mockResolvedValue(null) } };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
     await expect(service.messages('missing', driverCtx())).rejects.toThrow(NotFoundException);
   });
 
@@ -143,7 +151,7 @@ describe('ChatsService.thread/messages/send — ForbiddenException for a non-par
     };
     const notifications = { notify: jest.fn() };
     const realtime = { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() };
-    const service = new ChatsService(prisma, notifications as any, realtime as any);
+    const service = new ChatsService(prisma, notifications as any, realtime as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
     await service.send('chat1', driverCtx(), 'hi');
 
@@ -165,7 +173,7 @@ describe('ChatsService.thread/messages/send — ForbiddenException for a non-par
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { id: 'u-company', name: null, locale: 'zh', phone: null } }) },
     };
     const notifications = { notify: jest.fn() };
-    const service = new ChatsService(prisma, notifications as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+    const service = new ChatsService(prisma, notifications as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
     await service.send('chat1', driverCtx(), longText);
 
@@ -184,7 +192,7 @@ describe('ChatsService.markRead — закрывает пробел Message.isRe
       message: { updateMany: jest.fn().mockResolvedValue({ count: 2 }) },
     };
     const realtime = { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, realtime as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, realtime as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
     await service.markRead('chat1', driverCtx('d1'));
 
@@ -201,7 +209,7 @@ describe('ChatsService.markRead — закрывает пробел Message.isRe
       message: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
     };
     const realtime = { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, realtime as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, realtime as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
     await service.markRead('chat1', driverCtx('d1'));
 
@@ -210,8 +218,95 @@ describe('ChatsService.markRead — закрывает пробел Message.isRe
 
   it('rejects a non-party', async () => {
     const prisma: any = { chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'other', companyId: 'c1' }) } };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any);
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
     await expect(service.markRead('chat1', driverCtx('d1'))).rejects.toThrow(ForbiddenException);
+  });
+});
+
+describe('ChatsService.send — автоперевод (задача 010)', () => {
+  function fixture() {
+    return {
+      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1', cargoId: null }), update: jest.fn() },
+      message: { create: jest.fn((args: any) => ({ id: 'm1', ...args.data })) },
+      driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { id: 'u-driver', locale: 'ru', phone: '+7700' } }) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { id: 'u-company', name: null, locale: 'zh', phone: null } }) },
+    };
+  }
+
+  it('does not call the translator when the setting is off, and stores SKIPPED', async () => {
+    const prisma: any = fixture();
+    const translation = { translateMessage: jest.fn() };
+    const appSettings = { get: jest.fn().mockResolvedValue('false') };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, translation as any, appSettings as any);
+
+    await service.send('chat1', driverCtx(), 'привет');
+
+    expect(translation.translateMessage).not.toHaveBeenCalled();
+    expect(prisma.message.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ translationStatus: 'SKIPPED' }) }));
+  });
+
+  it('translates to the recipient locale when the setting is on (default, no AppSetting row)', async () => {
+    const prisma: any = fixture();
+    const translation = { translateMessage: jest.fn().mockResolvedValue({ translations: { zh: '你好' }, status: 'DONE' }) };
+    const appSettings = { get: jest.fn().mockResolvedValue(null) };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, translation as any, appSettings as any);
+
+    await service.send('chat1', driverCtx(), 'привет');
+
+    expect(translation.translateMessage).toHaveBeenCalledWith('u-driver', 'привет', 'ru', 'zh');
+    expect(prisma.message.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ translations: { zh: '你好' }, translationStatus: 'DONE' }) }),
+    );
+  });
+
+  it('stores no translations object (undefined) when the provider returns nothing', async () => {
+    const prisma: any = fixture();
+    const translation = { translateMessage: jest.fn().mockResolvedValue({ translations: {}, status: 'FAILED' }) };
+    const appSettings = { get: jest.fn().mockResolvedValue(null) };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, translation as any, appSettings as any);
+
+    await service.send('chat1', driverCtx(), 'привет');
+
+    expect(prisma.message.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ translations: undefined, translationStatus: 'FAILED' }) }),
+    );
+  });
+});
+
+describe('ChatsService.retryTranslation (задача 010, п.7)', () => {
+  it('re-translates and broadcasts message:new on success', async () => {
+    const prisma: any = {
+      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1' }) },
+      message: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'm1', chatId: 'chat1', senderUserId: 'u-driver', originalText: 'привет', originalLang: 'ru', translations: null, translationStatus: 'FAILED', isRead: false, createdAt: new Date() }),
+        update: jest.fn((args: any) => ({ id: 'm1', chatId: 'chat1', senderUserId: 'u-driver', originalText: 'привет', originalLang: 'ru', isRead: false, createdAt: new Date(), ...args.data })),
+      },
+      driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { id: 'u-driver', locale: 'ru' } }) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { id: 'u-company', locale: 'zh' } }) },
+    };
+    const translation = { translateMessage: jest.fn().mockResolvedValue({ translations: { zh: '你好' }, status: 'DONE' }) };
+    const realtime = { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, realtime as any, translation as any, { get: jest.fn() } as any);
+
+    const result = await service.retryTranslation('chat1', 'm1', driverCtx());
+
+    expect(translation.translateMessage).toHaveBeenCalledWith('u-driver', 'привет', 'ru', 'zh');
+    expect(prisma.message.update).toHaveBeenCalledWith({
+      where: { id: 'm1' },
+      data: { translations: { zh: '你好' }, translationStatus: 'DONE' },
+    });
+    expect(realtime.emitMessageNew).toHaveBeenCalled();
+    expect(result.translationStatus).toBe('DONE');
+  });
+
+  it('throws NotFoundException for a message that does not belong to this chat', async () => {
+    const prisma: any = {
+      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1' }) },
+      message: { findUnique: jest.fn().mockResolvedValue({ id: 'm1', chatId: 'other-chat' }) },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn() } as any, { translateMessage: jest.fn() } as any, { get: jest.fn() } as any);
+
+    await expect(service.retryTranslation('chat1', 'm1', driverCtx())).rejects.toThrow(NotFoundException);
   });
 });

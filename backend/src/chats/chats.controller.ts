@@ -38,4 +38,13 @@ export class ChatsController {
   markRead(@CurrentUser() ctx: RequestContext, @Param('chatId') chatId: string) {
     return this.chats.markRead(chatId, ctx);
   }
+
+  @Post(':chatId/messages/:messageId/retry-translation')
+  retryTranslation(
+    @CurrentUser() ctx: RequestContext,
+    @Param('chatId') chatId: string,
+    @Param('messageId') messageId: string,
+  ) {
+    return this.chats.retryTranslation(chatId, messageId, ctx);
+  }
 }

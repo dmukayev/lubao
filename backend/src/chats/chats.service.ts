@@ -1,8 +1,10 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestContext } from '../common/request-context';
+import { AppSettingsService } from '../app-settings/app-settings.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { TranslationService } from '../translation/translation.service';
 
 const CHAT_PREVIEW_LENGTH = 80;
 
@@ -12,6 +14,8 @@ export class ChatsService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly realtime: RealtimeGateway,
+    private readonly translation: TranslationService,
+    private readonly appSettings: AppSettingsService,
   ) {}
 
   private assertParty(chat: { driverId: string; companyId: string }, ctx: RequestContext) {
@@ -157,6 +161,7 @@ export class ChatsService {
       originalText: m.originalText,
       originalLang: m.originalLang,
       translations: m.translations,
+      translationStatus: m.translationStatus,
       isRead: m.isRead,
       createdAt: m.createdAt,
     }));
@@ -164,8 +169,31 @@ export class ChatsService {
 
   async send(chatId: string, ctx: RequestContext, text: string) {
     const chat = await this.loadChat(chatId, ctx);
+
+    // Автоперевод (задача 010) — только на язык собеседника, до записи
+    // сообщения: переводы и статус сохраняются в той же строке, второй
+    // UPDATE не нужен. Выключатель в админке (п. «Перевод выкл.») —
+    // AppSetting 'translationEnabled', дефолт включено, если строки нет.
+    const { driver, companyMember } = await this.resolveParties(chat);
+    const recipientUserId = ctx.driver ? companyMember?.user.id : driver.user.id;
+    const recipientLocale = ctx.driver ? companyMember?.user.locale : driver.user.locale;
+    const senderName = ctx.driver ? driver.fullName : companyMember?.user.name || companyMember?.company.name || '';
+
+    const translationEnabled = (await this.appSettings.get('translationEnabled')) !== 'false';
+    const { translations, status } =
+      translationEnabled && recipientLocale
+        ? await this.translation.translateMessage(ctx.user.id, text, ctx.user.locale, recipientLocale)
+        : { translations: {}, status: 'SKIPPED' as const };
+
     const message = await this.prisma.message.create({
-      data: { chatId: chat.id, senderUserId: ctx.user.id, originalText: text, originalLang: ctx.user.locale },
+      data: {
+        chatId: chat.id,
+        senderUserId: ctx.user.id,
+        originalText: text,
+        originalLang: ctx.user.locale,
+        translations: Object.keys(translations).length > 0 ? translations : undefined,
+        translationStatus: status,
+      },
     });
     // Message не трогает Chat.updatedAt сам по себе — обновляем явно, иначе
     // список «Мои чаты» (order by updatedAt) не поднимет диалог наверх.
@@ -175,9 +203,6 @@ export class ChatsService {
     // чат, см. throttle в NOTIFICATION_EVENTS; доставка «пока открыт экран»
     // идёт мгновенно через Socket.IO (realtime.gateway), push — запасной
     // канал на случай закрытого приложения.
-    const { driver, companyMember } = await this.resolveParties(chat);
-    const recipientUserId = ctx.driver ? companyMember?.user.id : driver.user.id;
-    const senderName = ctx.driver ? driver.fullName : companyMember?.user.name || companyMember?.company.name || '';
     if (recipientUserId) {
       await this.notifications.notify({ userIds: [recipientUserId] }, 'CHAT_MESSAGE', {
         chatId: chat.id,
@@ -196,6 +221,7 @@ export class ChatsService {
       originalText: message.originalText,
       originalLang: message.originalLang,
       translations: message.translations,
+      translationStatus: message.translationStatus,
       isRead: message.isRead,
       createdAt: message.createdAt,
     });
@@ -208,6 +234,57 @@ export class ChatsService {
       originalText: message.originalText,
       originalLang: message.originalLang,
       translations: message.translations,
+      translationStatus: message.translationStatus,
+      isRead: message.isRead,
+      createdAt: message.createdAt,
+    };
+  }
+
+  /// Повторная попытка перевода (задача 010, п.7 — «Перевод недоступен ·
+  /// повторить») — то же, что и при отправке, но для уже существующего
+  /// сообщения; должен звать либо отправитель, либо получатель (оба —
+  /// участники чата).
+  async retryTranslation(chatId: string, messageId: string, ctx: RequestContext) {
+    const chat = await this.loadChat(chatId, ctx);
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message || message.chatId !== chat.id) throw new NotFoundException('Message not found');
+
+    const { driver, companyMember } = await this.resolveParties(chat);
+    const isSenderDriver = message.senderUserId === driver.user.id;
+    const recipientLocale = isSenderDriver ? companyMember?.user.locale : driver.user.locale;
+    if (!recipientLocale) return this.toMessageDto(message, ctx.user.id);
+
+    const { translations, status } = await this.translation.translateMessage(
+      message.senderUserId,
+      message.originalText,
+      message.originalLang,
+      recipientLocale,
+    );
+
+    const updated = await this.prisma.message.update({
+      where: { id: messageId },
+      data: {
+        translations: Object.keys(translations).length > 0 ? { ...(message.translations as object | null), ...translations } : undefined,
+        translationStatus: status,
+      },
+    });
+
+    if (status === 'DONE') {
+      this.realtime.emitMessageNew(chat.id, { ...this.toMessageDto(updated, null), retried: true });
+    }
+    return this.toMessageDto(updated, ctx.user.id);
+  }
+
+  private toMessageDto(message: { id: string; chatId: string; senderUserId: string; originalText: string; originalLang: string; translations: unknown; translationStatus: string; isRead: boolean; createdAt: Date }, viewerUserId: string | null) {
+    return {
+      id: message.id,
+      chatId: message.chatId,
+      senderUserId: message.senderUserId,
+      isMine: viewerUserId != null && message.senderUserId === viewerUserId,
+      originalText: message.originalText,
+      originalLang: message.originalLang,
+      translations: message.translations,
+      translationStatus: message.translationStatus,
       isRead: message.isRead,
       createdAt: message.createdAt,
     };
