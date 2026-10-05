@@ -37,3 +37,6 @@ backend/prisma/migrations/**/migration_lock.toml.bak
 
 # docker volumes
 infra/**/data/
+
+# real documents for local OCR checks — never commit
+test-data/private/
