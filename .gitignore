@@ -40,3 +40,6 @@ infra/**/data/
 
 # real documents for local OCR checks — never commit
 test-data/private/
+
+# e2e screenshots and reports
+test-results/
