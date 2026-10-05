@@ -298,6 +298,10 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
       'Жүктерге жауап беру және мәмілелерді растау үшін жеке басыңызды растаңыз — бұл шамамен 2 минут алады';
 
   @override
+  String get driverVerificationConsent =>
+      'Құжаттар Lubao серверлерінде, Қазақстанда танылады. ЖСН шифрланған түрде сақталады және тек жеке басты тексеру және бұғатталған пайдаланушылардың қайта тіркелуінен қорғау үшін қолданылады.';
+
+  @override
   String get driverVerificationSelfie => 'Селфи';
 
   @override

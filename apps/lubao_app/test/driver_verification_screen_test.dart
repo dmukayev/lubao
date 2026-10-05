@@ -28,6 +28,14 @@ AdminDocumentRecognition _recognition() => const AdminDocumentRecognition(
 
 void main() {
   testWidgets('shows the recognition block with a needs-review field without a layout exception', (tester) async {
+    // 4 карточки документов + интро + текст согласия не влезают в дефолтный
+    // вьюпорт 800x600 — часть контента ListView не строится за пределами
+    // cacheExtent слайвера. Высокое окно гарантирует, что всё строится.
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(ProviderScope(
       overrides: [
         driverVerificationDocumentsProvider.overrideWith((ref) async => [_doc()]),

@@ -109,6 +109,7 @@
   "driverRegisterTitle": "Registration",
   "driverVerificationTitle": "Verification",
   "driverVerificationIntro": "To respond to cargo and confirm deals, verify your identity — it takes about 2 minutes",
+  "driverVerificationConsent": "Documents are recognized on Lubao's servers in Kazakhstan. Your ID number is stored encrypted and used only to verify your identity and prevent blocked users from re-registering.",
   "driverVerificationSelfie": "Selfie",
   "driverVerificationVehiclePassport": "Truck registration certificate",
   "driverVerificationTrailerPassport": "Trailer registration certificate",

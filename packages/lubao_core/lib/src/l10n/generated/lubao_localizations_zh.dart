@@ -289,6 +289,10 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get driverVerificationIntro => '为了响应货源和确认交易，请完成身份认证——大约需要2分钟';
 
   @override
+  String get driverVerificationConsent =>
+      '文件在哈萨克斯坦境内的Lubao服务器上进行识别。身份证号以加密方式存储，仅用于身份核实和防止被封禁用户重新注册。';
+
+  @override
   String get driverVerificationSelfie => '自拍照';
 
   @override

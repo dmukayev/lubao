@@ -92,6 +92,7 @@
   "driverRegisterTitle": "注册",
   "driverVerificationTitle": "身份认证",
   "driverVerificationIntro": "为了响应货源和确认交易，请完成身份认证——大约需要2分钟",
+  "driverVerificationConsent": "文件在哈萨克斯坦境内的Lubao服务器上进行识别。身份证号以加密方式存储，仅用于身份核实和防止被封禁用户重新注册。",
   "driverVerificationSelfie": "自拍照",
   "driverVerificationVehiclePassport": "牵引车行驶证",
   "driverVerificationTrailerPassport": "挂车行驶证",

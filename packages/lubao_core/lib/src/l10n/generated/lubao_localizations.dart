@@ -654,6 +654,12 @@ abstract class LubaoLocalizations {
   /// **'Чтобы откликаться на грузы и подтверждать сделки, подтвердите личность — это займёт около 2 минут'**
   String get driverVerificationIntro;
 
+  /// No description provided for @driverVerificationConsent.
+  ///
+  /// In ru, this message translates to:
+  /// **'Документы распознаются на серверах Lubao в Казахстане. ИИН хранится в зашифрованном виде и используется только для проверки личности и защиты от повторной регистрации заблокированных пользователей.'**
+  String get driverVerificationConsent;
+
   /// No description provided for @driverVerificationSelfie.
   ///
   /// In ru, this message translates to:

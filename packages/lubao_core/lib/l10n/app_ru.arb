@@ -109,6 +109,7 @@
   "driverRegisterTitle": "Регистрация",
   "driverVerificationTitle": "Верификация",
   "driverVerificationIntro": "Чтобы откликаться на грузы и подтверждать сделки, подтвердите личность — это займёт около 2 минут",
+  "driverVerificationConsent": "Документы распознаются на серверах Lubao в Казахстане. ИИН хранится в зашифрованном виде и используется только для проверки личности и защиты от повторной регистрации заблокированных пользователей.",
   "driverVerificationSelfie": "Селфи",
   "driverVerificationVehiclePassport": "Техпаспорт тягача",
   "driverVerificationTrailerPassport": "Техпаспорт прицепа",

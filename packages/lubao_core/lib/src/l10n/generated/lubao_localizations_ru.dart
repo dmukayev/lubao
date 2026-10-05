@@ -296,6 +296,10 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
       'Чтобы откликаться на грузы и подтверждать сделки, подтвердите личность — это займёт около 2 минут';
 
   @override
+  String get driverVerificationConsent =>
+      'Документы распознаются на серверах Lubao в Казахстане. ИИН хранится в зашифрованном виде и используется только для проверки личности и защиты от повторной регистрации заблокированных пользователей.';
+
+  @override
   String get driverVerificationSelfie => 'Селфи';
 
   @override

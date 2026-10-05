@@ -297,6 +297,10 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
       'To respond to cargo and confirm deals, verify your identity — it takes about 2 minutes';
 
   @override
+  String get driverVerificationConsent =>
+      'Documents are recognized on Lubao\'s servers in Kazakhstan. Your ID number is stored encrypted and used only to verify your identity and prevent blocked users from re-registering.';
+
+  @override
   String get driverVerificationSelfie => 'Selfie';
 
   @override

@@ -49,6 +49,10 @@ class DriverVerificationScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(AppSpacing.screen),
             children: [
               Text(t.driverVerificationIntro, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+              const SizedBox(height: AppSpacing.sm),
+              // Задача 031, этап F, п.26 — текст согласия: где документы
+              // распознаются и как хранится/используется ИИН.
+              Text(t.driverVerificationConsent, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: AppSpacing.xl),
               for (final type in _requiredDocs) ...[
                 _DocSlot(type: type, label: _label(context, type), doc: byType[type]),

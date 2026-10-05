@@ -92,6 +92,7 @@
   "driverRegisterTitle": "Тіркелу",
   "driverVerificationTitle": "Верификация",
   "driverVerificationIntro": "Жүктерге жауап беру және мәмілелерді растау үшін жеке басыңызды растаңыз — бұл шамамен 2 минут алады",
+  "driverVerificationConsent": "Құжаттар Lubao серверлерінде, Қазақстанда танылады. ЖСН шифрланған түрде сақталады және тек жеке басты тексеру және бұғатталған пайдаланушылардың қайта тіркелуінен қорғау үшін қолданылады.",
   "driverVerificationSelfie": "Селфи",
   "driverVerificationVehiclePassport": "Тартқыштың техпаспорты",
   "driverVerificationTrailerPassport": "Тіркеменің техпаспорты",
