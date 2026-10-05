@@ -39,6 +39,8 @@ export 'src/repositories/auth_repository.dart';
 export 'src/repositories/reference_data_repository.dart';
 export 'src/repositories/driver_repository.dart';
 export 'src/repositories/company_repository.dart';
+export 'src/offline/contact_event_queue.dart';
+export 'src/offline/pending_contact_event.dart';
 export 'src/repositories/cargo_repository.dart';
 export 'src/repositories/deal_repository.dart';
 export 'src/repositories/chat_repository.dart';

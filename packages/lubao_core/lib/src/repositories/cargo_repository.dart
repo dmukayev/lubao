@@ -1,11 +1,16 @@
+import 'package:dio/dio.dart';
+
 import '../api/api_client.dart';
 import '../models/cargo.dart';
 import '../models/response.dart';
+import '../offline/contact_event_queue.dart';
+import '../offline/pending_contact_event.dart';
 
 class CargoRepository {
-  CargoRepository(this._client);
+  CargoRepository(this._client, {ContactEventQueue? contactEventQueue}) : _contactEventQueue = contactEventQueue ?? ContactEventQueue();
 
   final ApiClient _client;
+  final ContactEventQueue _contactEventQueue;
 
   Future<List<Cargo>> feed() async {
     final res = await _client.dio.get('/cargos');
@@ -64,6 +69,12 @@ class CargoRepository {
     await _client.dio.post('/cargos/$cargoId/invite', data: {'driverId': driverId});
   }
 
+  /// Задача 029, п.14 — звонок/WhatsApp часто случаются там, где сети уже
+  /// нет (граница). Раньше запись contact_event была «выстрелил и
+  /// забыл» без обработки ошибки — событие просто пропадало. Теперь при
+  /// сбое, похожем на отсутствие сети (таймаут/нет соединения — не
+  /// настоящий ответ сервера), событие уходит в локальную очередь и
+  /// досылается при восстановлении связи ([flushPendingContactEvents]).
   Future<void> logContactEvent({
     required String driverId,
     required String companyId,
@@ -71,12 +82,28 @@ class CargoRepository {
     String? dealId,
     required String type,
   }) async {
-    await _client.dio.post('/contact-events', data: {
-      'driverId': driverId,
-      'companyId': companyId,
-      if (cargoId != null) 'cargoId': cargoId,
-      if (dealId != null) 'dealId': dealId,
-      'type': type,
-    });
+    final event = PendingContactEvent(driverId: driverId, companyId: companyId, cargoId: cargoId, dealId: dealId, type: type);
+    try {
+      await _sendContactEvent(event);
+    } on DioException catch (e) {
+      if (_isConnectivityIssue(e)) {
+        await _contactEventQueue.enqueue(event);
+      } else {
+        rethrow;
+      }
+    }
   }
+
+  Future<void> _sendContactEvent(PendingContactEvent event) {
+    return _client.dio.post('/contact-events', data: event.toJson());
+  }
+
+  /// Сервер ответил (даже с ошибкой 4xx/5xx) — не сетевая проблема,
+  /// повторная отправка той же пары id/type не исправит дело молча.
+  bool _isConnectivityIssue(DioException e) => e.type != DioExceptionType.badResponse && e.type != DioExceptionType.cancel;
+
+  /// Вызывается при восстановлении realtime-соединения (см.
+  /// RealtimeConnector) — тот же сигнал «сеть снова есть», что уже
+  /// используется для догоняющего рефетча чата.
+  Future<void> flushPendingContactEvents() => _contactEventQueue.flush(_sendContactEvent);
 }
