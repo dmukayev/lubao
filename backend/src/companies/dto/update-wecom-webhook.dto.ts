@@ -1,7 +1,8 @@
-import { IsOptional, IsUrl } from 'class-validator';
+import { IsOptional } from 'class-validator';
+import { IsWeComWebhookUrl } from '../../common/validators/wecom-webhook-url.validator';
 
 export class UpdateWeComWebhookDto {
   @IsOptional()
-  @IsUrl({ require_tld: false })
+  @IsWeComWebhookUrl()
   wecomWebhookUrl?: string | null;
 }

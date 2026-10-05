@@ -12,7 +12,7 @@ describe('NotificationsService.notify', () => {
       notificationSetting: { findUnique: jest.fn().mockResolvedValue(null) },
       deviceToken: { findMany: jest.fn().mockResolvedValue([{ token: 'tok-1', platform: 'FCM' }]) },
       user: { findUnique: jest.fn().mockResolvedValue({ locale: 'ru' }) },
-      company: { findUnique: jest.fn().mockResolvedValue({ wecomWebhookUrl: 'https://wecom.example/hook' }) },
+      company: { findUnique: jest.fn().mockResolvedValue({ wecomWebhookUrl: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=test-key-123' }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ user: { locale: 'zh' } }) },
     };
     redis = { client: { set: jest.fn().mockResolvedValue('OK') } };
@@ -85,7 +85,7 @@ describe('NotificationsService.notify', () => {
 
     expect(queue.add).toHaveBeenCalledWith(
       'deliver',
-      expect.objectContaining({ channel: 'WECOM', webhookUrl: 'https://wecom.example/hook', text: expect.stringContaining('Ерлан') }),
+      expect.objectContaining({ channel: 'WECOM', webhookUrl: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=test-key-123', text: expect.stringContaining('Ерлан') }),
       expect.anything(),
     );
   });

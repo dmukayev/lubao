@@ -298,14 +298,14 @@ describe('CompaniesService WeCom webhook (задача 011, п.2)', () => {
 
   it('testWeComWebhook sends a test message through WeComService', async () => {
     const prisma = {
-      company: { findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'company-1', name: 'Yidao', wecomWebhookUrl: 'https://wecom.example/hook' }) },
+      company: { findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'company-1', name: 'Yidao', wecomWebhookUrl: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=test-key-123' }) },
     };
     const wecom = { send: jest.fn().mockResolvedValue(undefined) };
     const service = new CompaniesService(prisma as any, { sendMessage: jest.fn() } as any, wecom as any);
 
     const result = await service.testWeComWebhook('company-1');
 
-    expect(wecom.send).toHaveBeenCalledWith('https://wecom.example/hook', expect.stringContaining('Yidao'));
+    expect(wecom.send).toHaveBeenCalledWith('https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=test-key-123', expect.stringContaining('Yidao'));
     expect(result).toEqual({ success: true });
   });
 });
