@@ -120,6 +120,151 @@ String cancelledByRoleLabel(LubaoLocalizations t, String role) {
   }
 }
 
+/// Код действия audit_log → читаемый текст (задача 029, п.19 — карточки
+/// показывали сырой код типа `DRIVER_RETURNED_FOR_REWORK`).
+String auditActionLabel(LubaoLocalizations t, String action) {
+  switch (action) {
+    case 'ADMIN_VIEWED_CHAT':
+      return t.adminAuditActionAdminViewedChat;
+    case 'CARGO_UNPUBLISHED':
+      return t.adminAuditActionCargoUnpublished;
+    case 'CARGO_UPDATED':
+      return t.adminAuditActionCargoUpdated;
+    case 'CITY_UPDATED':
+      return t.adminAuditActionCityUpdated;
+    case 'COMPANY_BLOCKED':
+      return t.adminAuditActionCompanyBlocked;
+    case 'COMPANY_MEMBER_EMAIL_CHANGED':
+      return t.adminAuditActionCompanyMemberEmailChanged;
+    case 'COMPANY_MEMBER_REMOVED':
+      return t.adminAuditActionCompanyMemberRemoved;
+    case 'COMPANY_MEMBER_ROLE_CHANGED':
+      return t.adminAuditActionCompanyMemberRoleChanged;
+    case 'COMPANY_PASSWORD_RESET':
+      return t.adminAuditActionCompanyPasswordReset;
+    case 'COMPANY_RETURNED_FOR_REWORK':
+      return t.adminAuditActionCompanyReturnedForRework;
+    case 'COMPANY_UNBLOCKED':
+      return t.adminAuditActionCompanyUnblocked;
+    case 'COMPANY_UNVERIFIED':
+      return t.adminAuditActionCompanyUnverified;
+    case 'COMPANY_UPDATED':
+      return t.adminAuditActionCompanyUpdated;
+    case 'COMPANY_VERIFIED':
+      return t.adminAuditActionCompanyVerified;
+    case 'COMPLAINT_ASSIGNED':
+      return t.adminAuditActionComplaintAssigned;
+    case 'COMPLAINT_RESOLVED':
+      return t.adminAuditActionComplaintResolved;
+    case 'COMPLAINT_UNASSIGNED':
+      return t.adminAuditActionComplaintUnassigned;
+    case 'DEAL_CANCELLED_BY_ADMIN':
+      return t.adminAuditActionDealCancelledByAdmin;
+    case 'DEAL_STATUS_FIXED':
+      return t.adminAuditActionDealStatusFixed;
+    case 'DRIVER_RETURNED_FOR_REWORK':
+      return t.adminAuditActionDriverReturnedForRework;
+    case 'DRIVER_UNVERIFIED':
+      return t.adminAuditActionDriverUnverified;
+    case 'DRIVER_UPDATED':
+      return t.adminAuditActionDriverUpdated;
+    case 'DRIVER_VERIFIED':
+      return t.adminAuditActionDriverVerified;
+    case 'POINT_UPDATED':
+      return t.adminAuditActionPointUpdated;
+    case 'SESSIONS_REVOKED':
+      return t.adminAuditActionSessionsRevoked;
+    case 'SETTING_CHANGED':
+      return t.adminAuditActionSettingChanged;
+    case 'USER_BLOCKED':
+      return t.adminAuditActionUserBlocked;
+    case 'USER_UNBLOCKED':
+      return t.adminAuditActionUserUnblocked;
+    case 'BODYTYPE_UPDATED':
+      return t.adminAuditActionBodyTypeUpdated;
+    case 'PERMIT_UPDATED':
+      return t.adminAuditActionPermitUpdated;
+    default:
+      return action;
+  }
+}
+
+/// Имя изменённого поля в `metadata.changes` → читаемый текст (та же
+/// задача). Непредусмотренный ключ — показываем как есть, не прячем.
+String auditFieldLabel(LubaoLocalizations t, String field) {
+  switch (field) {
+    case 'destinationCountryId':
+      return t.adminAuditFieldDestinationCountry;
+    case 'destinationCityId':
+      return t.adminAuditFieldDestinationCity;
+    case 'bodyTypeId':
+      return t.adminAuditFieldBodyType;
+    case 'weightKg':
+      return t.adminAuditFieldWeight;
+    case 'volumeM3':
+      return t.adminAuditFieldVolume;
+    case 'photoUrls':
+      return t.adminAuditFieldPhotos;
+    case 'price':
+      return t.adminAuditFieldPrice;
+    case 'currency':
+      return t.adminAuditFieldCurrency;
+    case 'readyDate':
+      return t.adminAuditFieldReadyDate;
+    case 'description':
+      return t.adminAuditFieldDescription;
+    case 'name':
+      return t.adminAuditFieldName;
+    case 'nameRu':
+      return t.adminAuditFieldNameRu;
+    case 'countryId':
+      return t.adminAuditFieldCountry;
+    case 'city':
+      return t.adminAuditFieldCity;
+    case 'legalAddress':
+      return t.adminAuditFieldLegalAddress;
+    case 'taxId':
+      return t.adminAuditFieldTaxId;
+    case 'fullName':
+      return t.adminAuditFieldFullName;
+    case 'phone':
+      return t.adminAuditFieldPhone;
+    case 'homeCityId':
+      return t.adminAuditFieldHomeCity;
+    case 'anyCountry':
+      return t.adminAuditFieldAnyCountry;
+    case 'countryIds':
+      return t.adminAuditFieldCountries;
+    case 'permitIds':
+      return t.adminAuditFieldPermits;
+    case 'vehicle':
+      return t.adminAuditFieldVehicle;
+    case 'plateNumber':
+      return t.adminAuditFieldPlateNumber;
+    case 'capacityTons':
+      return t.adminAuditFieldCapacity;
+    case 'lengthM':
+      return t.adminAuditFieldLength;
+    case 'brand':
+      return t.adminAuditFieldBrand;
+    case 'isActive':
+      return t.adminAuditFieldIsActive;
+    case 'sortOrder':
+      return t.adminAuditFieldSortOrder;
+    default:
+      return field;
+  }
+}
+
+/// Значение в «было → стало» — `null`/список/bool в читаемом виде, не
+/// Dart-представление объекта.
+String formatAuditValue(LubaoLocalizations t, dynamic value) {
+  if (value == null) return '—';
+  if (value is bool) return value ? t.commonYes : t.commonNo;
+  if (value is List) return value.isEmpty ? '—' : value.join(', ');
+  return value.toString();
+}
+
 String contactEventTypeLabel(LubaoLocalizations t, String type) {
   switch (type) {
     case 'CALL':

@@ -7,6 +7,7 @@ import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
 import '../shared/admin_dialogs.dart';
 import '../shared/admin_status_helpers.dart';
+import '../shared/audit_log_tab.dart';
 
 const _progression = ['SELECTED', 'CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED'];
 
@@ -227,7 +228,7 @@ class _DealTabsState extends State<_DealTabs> with SingleTickerProviderStateMixi
               children: [
                 _ChatTab(dealId: widget.dealId),
                 _CallsTab(calls: widget.deal.calls),
-                _LogTab(entries: widget.deal.auditLog),
+                AuditLogTab(entries: widget.deal.auditLog),
               ],
             ),
           ),
@@ -296,31 +297,6 @@ class _CallsTab extends StatelessWidget {
       itemBuilder: (context, i) {
         final c = calls[i];
         return ListTile(title: Text(contactEventTypeLabel(t, c.type)), trailing: Text(formatAdminDateTime(c.createdAt)));
-      },
-    );
-  }
-}
-
-class _LogTab extends StatelessWidget {
-  const _LogTab({required this.entries});
-
-  final List<AdminAuditLogEntry> entries;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    if (entries.isEmpty) return Center(child: Text(t.adminNoLog));
-    return ListView.separated(
-      itemCount: entries.length,
-      separatorBuilder: (_, _) => const Divider(),
-      itemBuilder: (context, i) {
-        final e = entries[i];
-        final reason = e.metadata?['reason'] as String?;
-        return ListTile(
-          title: Text(e.action),
-          subtitle: Text([if (e.actorName != null) e.actorName!, if (reason != null) reason].join(' · ')),
-          trailing: Text(formatAdminDateTime(e.createdAt)),
-        );
       },
     );
   }

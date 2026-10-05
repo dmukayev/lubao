@@ -3605,6 +3605,366 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Токенов за 7 дней'**
   String get adminTranslationTokens7dLabel;
+
+  /// No description provided for @adminAuditActionAdminViewedChat.
+  ///
+  /// In ru, this message translates to:
+  /// **'Админ открыл чат'**
+  String get adminAuditActionAdminViewedChat;
+
+  /// No description provided for @adminAuditActionCargoUnpublished.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз снят с публикации'**
+  String get adminAuditActionCargoUnpublished;
+
+  /// No description provided for @adminAuditActionCargoUpdated.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз изменён'**
+  String get adminAuditActionCargoUpdated;
+
+  /// No description provided for @adminAuditActionCityUpdated.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город изменён'**
+  String get adminAuditActionCityUpdated;
+
+  /// No description provided for @adminAuditActionCompanyBlocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Компания заблокирована'**
+  String get adminAuditActionCompanyBlocked;
+
+  /// No description provided for @adminAuditActionCompanyMemberEmailChanged.
+  ///
+  /// In ru, this message translates to:
+  /// **'Email сотрудника изменён'**
+  String get adminAuditActionCompanyMemberEmailChanged;
+
+  /// No description provided for @adminAuditActionCompanyMemberRemoved.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сотрудник удалён из компании'**
+  String get adminAuditActionCompanyMemberRemoved;
+
+  /// No description provided for @adminAuditActionCompanyMemberRoleChanged.
+  ///
+  /// In ru, this message translates to:
+  /// **'Роль сотрудника изменена'**
+  String get adminAuditActionCompanyMemberRoleChanged;
+
+  /// No description provided for @adminAuditActionCompanyPasswordReset.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пароль компании сброшен'**
+  String get adminAuditActionCompanyPasswordReset;
+
+  /// No description provided for @adminAuditActionCompanyReturnedForRework.
+  ///
+  /// In ru, this message translates to:
+  /// **'Документы компании вернули на доработку'**
+  String get adminAuditActionCompanyReturnedForRework;
+
+  /// No description provided for @adminAuditActionCompanyUnblocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Компания разблокирована'**
+  String get adminAuditActionCompanyUnblocked;
+
+  /// No description provided for @adminAuditActionCompanyUnverified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Компания снята с проверки'**
+  String get adminAuditActionCompanyUnverified;
+
+  /// No description provided for @adminAuditActionCompanyUpdated.
+  ///
+  /// In ru, this message translates to:
+  /// **'Данные компании изменены'**
+  String get adminAuditActionCompanyUpdated;
+
+  /// No description provided for @adminAuditActionCompanyVerified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Компания подтверждена'**
+  String get adminAuditActionCompanyVerified;
+
+  /// No description provided for @adminAuditActionComplaintAssigned.
+  ///
+  /// In ru, this message translates to:
+  /// **'Жалоба взята в работу'**
+  String get adminAuditActionComplaintAssigned;
+
+  /// No description provided for @adminAuditActionComplaintResolved.
+  ///
+  /// In ru, this message translates to:
+  /// **'Жалоба решена'**
+  String get adminAuditActionComplaintResolved;
+
+  /// No description provided for @adminAuditActionComplaintUnassigned.
+  ///
+  /// In ru, this message translates to:
+  /// **'Жалоба возвращена в очередь'**
+  String get adminAuditActionComplaintUnassigned;
+
+  /// No description provided for @adminAuditActionDealCancelledByAdmin.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделка отменена админом'**
+  String get adminAuditActionDealCancelledByAdmin;
+
+  /// No description provided for @adminAuditActionDealStatusFixed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Статус сделки исправлен'**
+  String get adminAuditActionDealStatusFixed;
+
+  /// No description provided for @adminAuditActionDriverReturnedForRework.
+  ///
+  /// In ru, this message translates to:
+  /// **'Документы водителя вернули на доработку'**
+  String get adminAuditActionDriverReturnedForRework;
+
+  /// No description provided for @adminAuditActionDriverUnverified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель снят с проверки'**
+  String get adminAuditActionDriverUnverified;
+
+  /// No description provided for @adminAuditActionDriverUpdated.
+  ///
+  /// In ru, this message translates to:
+  /// **'Данные водителя изменены'**
+  String get adminAuditActionDriverUpdated;
+
+  /// No description provided for @adminAuditActionDriverVerified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель подтверждён'**
+  String get adminAuditActionDriverVerified;
+
+  /// No description provided for @adminAuditActionPointUpdated.
+  ///
+  /// In ru, this message translates to:
+  /// **'Точка изменена'**
+  String get adminAuditActionPointUpdated;
+
+  /// No description provided for @adminAuditActionSessionsRevoked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сессии завершены'**
+  String get adminAuditActionSessionsRevoked;
+
+  /// No description provided for @adminAuditActionSettingChanged.
+  ///
+  /// In ru, this message translates to:
+  /// **'Настройка изменена'**
+  String get adminAuditActionSettingChanged;
+
+  /// No description provided for @adminAuditActionUserBlocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пользователь заблокирован'**
+  String get adminAuditActionUserBlocked;
+
+  /// No description provided for @adminAuditActionUserUnblocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пользователь разблокирован'**
+  String get adminAuditActionUserUnblocked;
+
+  /// No description provided for @adminAuditActionBodyTypeUpdated.
+  ///
+  /// In ru, this message translates to:
+  /// **'Тип кузова изменён'**
+  String get adminAuditActionBodyTypeUpdated;
+
+  /// No description provided for @adminAuditActionPermitUpdated.
+  ///
+  /// In ru, this message translates to:
+  /// **'Допуск изменён'**
+  String get adminAuditActionPermitUpdated;
+
+  /// No description provided for @adminAuditFieldDestinationCountry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Страна назначения'**
+  String get adminAuditFieldDestinationCountry;
+
+  /// No description provided for @adminAuditFieldDestinationCity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город назначения'**
+  String get adminAuditFieldDestinationCity;
+
+  /// No description provided for @adminAuditFieldBodyType.
+  ///
+  /// In ru, this message translates to:
+  /// **'Тип кузова'**
+  String get adminAuditFieldBodyType;
+
+  /// No description provided for @adminAuditFieldWeight.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вес, кг'**
+  String get adminAuditFieldWeight;
+
+  /// No description provided for @adminAuditFieldVolume.
+  ///
+  /// In ru, this message translates to:
+  /// **'Объём, м³'**
+  String get adminAuditFieldVolume;
+
+  /// No description provided for @adminAuditFieldPhotos.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фото'**
+  String get adminAuditFieldPhotos;
+
+  /// No description provided for @adminAuditFieldPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена'**
+  String get adminAuditFieldPrice;
+
+  /// No description provided for @adminAuditFieldCurrency.
+  ///
+  /// In ru, this message translates to:
+  /// **'Валюта'**
+  String get adminAuditFieldCurrency;
+
+  /// No description provided for @adminAuditFieldReadyDate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дата готовности'**
+  String get adminAuditFieldReadyDate;
+
+  /// No description provided for @adminAuditFieldDescription.
+  ///
+  /// In ru, this message translates to:
+  /// **'Описание'**
+  String get adminAuditFieldDescription;
+
+  /// No description provided for @adminAuditFieldName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название'**
+  String get adminAuditFieldName;
+
+  /// No description provided for @adminAuditFieldNameRu.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название (рус.)'**
+  String get adminAuditFieldNameRu;
+
+  /// No description provided for @adminAuditFieldCountry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Страна'**
+  String get adminAuditFieldCountry;
+
+  /// No description provided for @adminAuditFieldCity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город'**
+  String get adminAuditFieldCity;
+
+  /// No description provided for @adminAuditFieldLegalAddress.
+  ///
+  /// In ru, this message translates to:
+  /// **'Юридический адрес'**
+  String get adminAuditFieldLegalAddress;
+
+  /// No description provided for @adminAuditFieldTaxId.
+  ///
+  /// In ru, this message translates to:
+  /// **'ИНН/БИН'**
+  String get adminAuditFieldTaxId;
+
+  /// No description provided for @adminAuditFieldFullName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя'**
+  String get adminAuditFieldFullName;
+
+  /// No description provided for @adminAuditFieldPhone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Телефон'**
+  String get adminAuditFieldPhone;
+
+  /// No description provided for @adminAuditFieldHomeCity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Домашний город'**
+  String get adminAuditFieldHomeCity;
+
+  /// No description provided for @adminAuditFieldAnyCountry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Любая страна'**
+  String get adminAuditFieldAnyCountry;
+
+  /// No description provided for @adminAuditFieldCountries.
+  ///
+  /// In ru, this message translates to:
+  /// **'Страны'**
+  String get adminAuditFieldCountries;
+
+  /// No description provided for @adminAuditFieldPermits.
+  ///
+  /// In ru, this message translates to:
+  /// **'Допуски'**
+  String get adminAuditFieldPermits;
+
+  /// No description provided for @adminAuditFieldVehicle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Транспорт'**
+  String get adminAuditFieldVehicle;
+
+  /// No description provided for @adminAuditFieldPlateNumber.
+  ///
+  /// In ru, this message translates to:
+  /// **'Госномер'**
+  String get adminAuditFieldPlateNumber;
+
+  /// No description provided for @adminAuditFieldCapacity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грузоподъёмность, т'**
+  String get adminAuditFieldCapacity;
+
+  /// No description provided for @adminAuditFieldLength.
+  ///
+  /// In ru, this message translates to:
+  /// **'Длина, м'**
+  String get adminAuditFieldLength;
+
+  /// No description provided for @adminAuditFieldBrand.
+  ///
+  /// In ru, this message translates to:
+  /// **'Марка'**
+  String get adminAuditFieldBrand;
+
+  /// No description provided for @adminAuditFieldIsActive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Активен'**
+  String get adminAuditFieldIsActive;
+
+  /// No description provided for @adminAuditFieldSortOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Порядок'**
+  String get adminAuditFieldSortOrder;
+
+  /// No description provided for @adminAuditFieldStatus.
+  ///
+  /// In ru, this message translates to:
+  /// **'Статус'**
+  String get adminAuditFieldStatus;
 }
 
 class _LubaoLocalizationsDelegate

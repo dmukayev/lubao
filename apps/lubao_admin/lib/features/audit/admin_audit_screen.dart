@@ -4,7 +4,7 @@ import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/data_providers.dart';
-import '../shared/admin_status_helpers.dart';
+import '../shared/audit_log_tab.dart';
 
 /// Полный журнал (задача 028, п.5, «Журнал →» со сводки) — в отличие от
 /// «Последних событий» это сырые записи audit_log без смешивания с
@@ -31,17 +31,7 @@ class AdminAuditScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             itemCount: list.length,
             separatorBuilder: (_, _) => const Divider(),
-            itemBuilder: (context, i) {
-              final e = list[i];
-              final reason = e.metadata?['reason'] as String?;
-              return ListTile(
-                title: Text(e.action),
-                subtitle: Text(
-                  [e.entityType, if (e.actorName != null) e.actorName!, if (reason != null) reason].join(' · '),
-                ),
-                trailing: Text(formatAdminDateTime(e.createdAt)),
-              );
-            },
+            itemBuilder: (context, i) => AuditLogEntryTile(entry: list[i], showEntityType: true),
           );
         },
       ),

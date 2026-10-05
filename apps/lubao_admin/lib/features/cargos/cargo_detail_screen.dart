@@ -7,6 +7,7 @@ import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
 import '../shared/admin_dialogs.dart';
 import '../shared/admin_status_helpers.dart';
+import '../shared/audit_log_tab.dart';
 import 'cargo_edit_dialog.dart';
 
 /// Карточка груза (задача 028, п.15): все поля, отклики, сделка, журнал;
@@ -236,7 +237,7 @@ class _CargoTabsState extends State<_CargoTabs> with SingleTickerProviderStateMi
               controller: _controller,
               children: [
                 _ResponsesTab(responses: cargo.responses, deal: cargo.deal),
-                _LogTab(entries: cargo.auditLog),
+                AuditLogTab(entries: cargo.auditLog),
               ],
             ),
           ),
@@ -272,27 +273,3 @@ class _ResponsesTab extends StatelessWidget {
   }
 }
 
-class _LogTab extends StatelessWidget {
-  const _LogTab({required this.entries});
-
-  final List<AdminAuditLogEntry> entries;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    if (entries.isEmpty) return Center(child: Text(t.adminNoLog));
-    return ListView.separated(
-      itemCount: entries.length,
-      separatorBuilder: (_, _) => const Divider(),
-      itemBuilder: (context, i) {
-        final e = entries[i];
-        final reason = e.metadata?['reason'] as String?;
-        return ListTile(
-          title: Text(e.action),
-          subtitle: Text([if (e.actorName != null) e.actorName!, if (reason != null) reason].join(' · ')),
-          trailing: Text(formatAdminDateTime(e.createdAt)),
-        );
-      },
-    );
-  }
-}

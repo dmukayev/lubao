@@ -1857,4 +1857,190 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminTranslationTokens7dLabel => 'Tokens in 7 days';
+
+  @override
+  String get adminAuditActionAdminViewedChat => 'Admin opened the chat';
+
+  @override
+  String get adminAuditActionCargoUnpublished => 'Cargo unpublished';
+
+  @override
+  String get adminAuditActionCargoUpdated => 'Cargo updated';
+
+  @override
+  String get adminAuditActionCityUpdated => 'City updated';
+
+  @override
+  String get adminAuditActionCompanyBlocked => 'Company blocked';
+
+  @override
+  String get adminAuditActionCompanyMemberEmailChanged =>
+      'Employee email changed';
+
+  @override
+  String get adminAuditActionCompanyMemberRemoved =>
+      'Employee removed from company';
+
+  @override
+  String get adminAuditActionCompanyMemberRoleChanged =>
+      'Employee role changed';
+
+  @override
+  String get adminAuditActionCompanyPasswordReset => 'Company password reset';
+
+  @override
+  String get adminAuditActionCompanyReturnedForRework =>
+      'Company documents returned for rework';
+
+  @override
+  String get adminAuditActionCompanyUnblocked => 'Company unblocked';
+
+  @override
+  String get adminAuditActionCompanyUnverified => 'Company unverified';
+
+  @override
+  String get adminAuditActionCompanyUpdated => 'Company details updated';
+
+  @override
+  String get adminAuditActionCompanyVerified => 'Company verified';
+
+  @override
+  String get adminAuditActionComplaintAssigned => 'Complaint taken into work';
+
+  @override
+  String get adminAuditActionComplaintResolved => 'Complaint resolved';
+
+  @override
+  String get adminAuditActionComplaintUnassigned =>
+      'Complaint returned to the queue';
+
+  @override
+  String get adminAuditActionDealCancelledByAdmin => 'Deal cancelled by admin';
+
+  @override
+  String get adminAuditActionDealStatusFixed => 'Deal status fixed';
+
+  @override
+  String get adminAuditActionDriverReturnedForRework =>
+      'Driver documents returned for rework';
+
+  @override
+  String get adminAuditActionDriverUnverified => 'Driver unverified';
+
+  @override
+  String get adminAuditActionDriverUpdated => 'Driver details updated';
+
+  @override
+  String get adminAuditActionDriverVerified => 'Driver verified';
+
+  @override
+  String get adminAuditActionPointUpdated => 'Point updated';
+
+  @override
+  String get adminAuditActionSessionsRevoked => 'Sessions revoked';
+
+  @override
+  String get adminAuditActionSettingChanged => 'Setting changed';
+
+  @override
+  String get adminAuditActionUserBlocked => 'User blocked';
+
+  @override
+  String get adminAuditActionUserUnblocked => 'User unblocked';
+
+  @override
+  String get adminAuditActionBodyTypeUpdated => 'Body type updated';
+
+  @override
+  String get adminAuditActionPermitUpdated => 'Permit updated';
+
+  @override
+  String get adminAuditFieldDestinationCountry => 'Destination country';
+
+  @override
+  String get adminAuditFieldDestinationCity => 'Destination city';
+
+  @override
+  String get adminAuditFieldBodyType => 'Body type';
+
+  @override
+  String get adminAuditFieldWeight => 'Weight, kg';
+
+  @override
+  String get adminAuditFieldVolume => 'Volume, m³';
+
+  @override
+  String get adminAuditFieldPhotos => 'Photos';
+
+  @override
+  String get adminAuditFieldPrice => 'Price';
+
+  @override
+  String get adminAuditFieldCurrency => 'Currency';
+
+  @override
+  String get adminAuditFieldReadyDate => 'Ready date';
+
+  @override
+  String get adminAuditFieldDescription => 'Description';
+
+  @override
+  String get adminAuditFieldName => 'Name';
+
+  @override
+  String get adminAuditFieldNameRu => 'Name (Russian)';
+
+  @override
+  String get adminAuditFieldCountry => 'Country';
+
+  @override
+  String get adminAuditFieldCity => 'City';
+
+  @override
+  String get adminAuditFieldLegalAddress => 'Legal address';
+
+  @override
+  String get adminAuditFieldTaxId => 'Tax ID';
+
+  @override
+  String get adminAuditFieldFullName => 'Full name';
+
+  @override
+  String get adminAuditFieldPhone => 'Phone';
+
+  @override
+  String get adminAuditFieldHomeCity => 'Home city';
+
+  @override
+  String get adminAuditFieldAnyCountry => 'Any country';
+
+  @override
+  String get adminAuditFieldCountries => 'Countries';
+
+  @override
+  String get adminAuditFieldPermits => 'Permits';
+
+  @override
+  String get adminAuditFieldVehicle => 'Vehicle';
+
+  @override
+  String get adminAuditFieldPlateNumber => 'Plate number';
+
+  @override
+  String get adminAuditFieldCapacity => 'Capacity, t';
+
+  @override
+  String get adminAuditFieldLength => 'Length, m';
+
+  @override
+  String get adminAuditFieldBrand => 'Brand';
+
+  @override
+  String get adminAuditFieldIsActive => 'Active';
+
+  @override
+  String get adminAuditFieldSortOrder => 'Sort order';
+
+  @override
+  String get adminAuditFieldStatus => 'Status';
 }

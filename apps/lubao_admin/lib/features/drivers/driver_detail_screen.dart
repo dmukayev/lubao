@@ -9,6 +9,7 @@ import '../../providers/data_providers.dart';
 import '../shared/admin_dialogs.dart';
 import '../shared/admin_document_image.dart';
 import '../shared/admin_status_helpers.dart';
+import '../shared/audit_log_tab.dart';
 import '../shared/document_viewer.dart';
 import 'driver_edit_panel.dart';
 
@@ -465,7 +466,7 @@ class _DriverTabsState extends State<_DriverTabs> with SingleTickerProviderState
               children: [
                 _DealsTab(deals: driver.deals),
                 _ReviewsTab(reviews: driver.stats.reviews),
-                _LogTab(entries: driver.auditLog),
+                AuditLogTab(entries: driver.auditLog),
               ],
             ),
           ),
@@ -524,27 +525,3 @@ class _ReviewsTab extends StatelessWidget {
   }
 }
 
-class _LogTab extends StatelessWidget {
-  const _LogTab({required this.entries});
-
-  final List<AdminAuditLogEntry> entries;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    if (entries.isEmpty) return Center(child: Text(t.adminNoLog));
-    return ListView.separated(
-      itemCount: entries.length,
-      separatorBuilder: (_, _) => const Divider(),
-      itemBuilder: (context, i) {
-        final e = entries[i];
-        final reason = e.metadata?['reason'] as String?;
-        return ListTile(
-          title: Text(e.action),
-          subtitle: Text([if (e.actorName != null) e.actorName!, if (reason != null) reason].join(' · ')),
-          trailing: Text(formatAdminDateTime(e.createdAt)),
-        );
-      },
-    );
-  }
-}

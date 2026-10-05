@@ -1850,4 +1850,190 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminTranslationTokens7dLabel => 'Токенов за 7 дней';
+
+  @override
+  String get adminAuditActionAdminViewedChat => 'Админ открыл чат';
+
+  @override
+  String get adminAuditActionCargoUnpublished => 'Груз снят с публикации';
+
+  @override
+  String get adminAuditActionCargoUpdated => 'Груз изменён';
+
+  @override
+  String get adminAuditActionCityUpdated => 'Город изменён';
+
+  @override
+  String get adminAuditActionCompanyBlocked => 'Компания заблокирована';
+
+  @override
+  String get adminAuditActionCompanyMemberEmailChanged =>
+      'Email сотрудника изменён';
+
+  @override
+  String get adminAuditActionCompanyMemberRemoved =>
+      'Сотрудник удалён из компании';
+
+  @override
+  String get adminAuditActionCompanyMemberRoleChanged =>
+      'Роль сотрудника изменена';
+
+  @override
+  String get adminAuditActionCompanyPasswordReset => 'Пароль компании сброшен';
+
+  @override
+  String get adminAuditActionCompanyReturnedForRework =>
+      'Документы компании вернули на доработку';
+
+  @override
+  String get adminAuditActionCompanyUnblocked => 'Компания разблокирована';
+
+  @override
+  String get adminAuditActionCompanyUnverified => 'Компания снята с проверки';
+
+  @override
+  String get adminAuditActionCompanyUpdated => 'Данные компании изменены';
+
+  @override
+  String get adminAuditActionCompanyVerified => 'Компания подтверждена';
+
+  @override
+  String get adminAuditActionComplaintAssigned => 'Жалоба взята в работу';
+
+  @override
+  String get adminAuditActionComplaintResolved => 'Жалоба решена';
+
+  @override
+  String get adminAuditActionComplaintUnassigned =>
+      'Жалоба возвращена в очередь';
+
+  @override
+  String get adminAuditActionDealCancelledByAdmin => 'Сделка отменена админом';
+
+  @override
+  String get adminAuditActionDealStatusFixed => 'Статус сделки исправлен';
+
+  @override
+  String get adminAuditActionDriverReturnedForRework =>
+      'Документы водителя вернули на доработку';
+
+  @override
+  String get adminAuditActionDriverUnverified => 'Водитель снят с проверки';
+
+  @override
+  String get adminAuditActionDriverUpdated => 'Данные водителя изменены';
+
+  @override
+  String get adminAuditActionDriverVerified => 'Водитель подтверждён';
+
+  @override
+  String get adminAuditActionPointUpdated => 'Точка изменена';
+
+  @override
+  String get adminAuditActionSessionsRevoked => 'Сессии завершены';
+
+  @override
+  String get adminAuditActionSettingChanged => 'Настройка изменена';
+
+  @override
+  String get adminAuditActionUserBlocked => 'Пользователь заблокирован';
+
+  @override
+  String get adminAuditActionUserUnblocked => 'Пользователь разблокирован';
+
+  @override
+  String get adminAuditActionBodyTypeUpdated => 'Тип кузова изменён';
+
+  @override
+  String get adminAuditActionPermitUpdated => 'Допуск изменён';
+
+  @override
+  String get adminAuditFieldDestinationCountry => 'Страна назначения';
+
+  @override
+  String get adminAuditFieldDestinationCity => 'Город назначения';
+
+  @override
+  String get adminAuditFieldBodyType => 'Тип кузова';
+
+  @override
+  String get adminAuditFieldWeight => 'Вес, кг';
+
+  @override
+  String get adminAuditFieldVolume => 'Объём, м³';
+
+  @override
+  String get adminAuditFieldPhotos => 'Фото';
+
+  @override
+  String get adminAuditFieldPrice => 'Цена';
+
+  @override
+  String get adminAuditFieldCurrency => 'Валюта';
+
+  @override
+  String get adminAuditFieldReadyDate => 'Дата готовности';
+
+  @override
+  String get adminAuditFieldDescription => 'Описание';
+
+  @override
+  String get adminAuditFieldName => 'Название';
+
+  @override
+  String get adminAuditFieldNameRu => 'Название (рус.)';
+
+  @override
+  String get adminAuditFieldCountry => 'Страна';
+
+  @override
+  String get adminAuditFieldCity => 'Город';
+
+  @override
+  String get adminAuditFieldLegalAddress => 'Юридический адрес';
+
+  @override
+  String get adminAuditFieldTaxId => 'ИНН/БИН';
+
+  @override
+  String get adminAuditFieldFullName => 'Имя';
+
+  @override
+  String get adminAuditFieldPhone => 'Телефон';
+
+  @override
+  String get adminAuditFieldHomeCity => 'Домашний город';
+
+  @override
+  String get adminAuditFieldAnyCountry => 'Любая страна';
+
+  @override
+  String get adminAuditFieldCountries => 'Страны';
+
+  @override
+  String get adminAuditFieldPermits => 'Допуски';
+
+  @override
+  String get adminAuditFieldVehicle => 'Транспорт';
+
+  @override
+  String get adminAuditFieldPlateNumber => 'Госномер';
+
+  @override
+  String get adminAuditFieldCapacity => 'Грузоподъёмность, т';
+
+  @override
+  String get adminAuditFieldLength => 'Длина, м';
+
+  @override
+  String get adminAuditFieldBrand => 'Марка';
+
+  @override
+  String get adminAuditFieldIsActive => 'Активен';
+
+  @override
+  String get adminAuditFieldSortOrder => 'Порядок';
+
+  @override
+  String get adminAuditFieldStatus => 'Статус';
 }

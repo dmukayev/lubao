@@ -1825,4 +1825,184 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminTranslationTokens7dLabel => '7天内令牌数';
+
+  @override
+  String get adminAuditActionAdminViewedChat => '管理员打开了聊天';
+
+  @override
+  String get adminAuditActionCargoUnpublished => '货物已下架';
+
+  @override
+  String get adminAuditActionCargoUpdated => '货物已修改';
+
+  @override
+  String get adminAuditActionCityUpdated => '城市已修改';
+
+  @override
+  String get adminAuditActionCompanyBlocked => '公司已封禁';
+
+  @override
+  String get adminAuditActionCompanyMemberEmailChanged => '员工邮箱已修改';
+
+  @override
+  String get adminAuditActionCompanyMemberRemoved => '员工已从公司移除';
+
+  @override
+  String get adminAuditActionCompanyMemberRoleChanged => '员工角色已变更';
+
+  @override
+  String get adminAuditActionCompanyPasswordReset => '公司密码已重置';
+
+  @override
+  String get adminAuditActionCompanyReturnedForRework => '公司文件已退回修改';
+
+  @override
+  String get adminAuditActionCompanyUnblocked => '公司已解封';
+
+  @override
+  String get adminAuditActionCompanyUnverified => '公司已取消验证';
+
+  @override
+  String get adminAuditActionCompanyUpdated => '公司信息已修改';
+
+  @override
+  String get adminAuditActionCompanyVerified => '公司已验证';
+
+  @override
+  String get adminAuditActionComplaintAssigned => '投诉已受理';
+
+  @override
+  String get adminAuditActionComplaintResolved => '投诉已处理';
+
+  @override
+  String get adminAuditActionComplaintUnassigned => '投诉已退回队列';
+
+  @override
+  String get adminAuditActionDealCancelledByAdmin => '交易已被管理员取消';
+
+  @override
+  String get adminAuditActionDealStatusFixed => '交易状态已更正';
+
+  @override
+  String get adminAuditActionDriverReturnedForRework => '司机文件已退回修改';
+
+  @override
+  String get adminAuditActionDriverUnverified => '司机已取消验证';
+
+  @override
+  String get adminAuditActionDriverUpdated => '司机信息已修改';
+
+  @override
+  String get adminAuditActionDriverVerified => '司机已验证';
+
+  @override
+  String get adminAuditActionPointUpdated => '地点已修改';
+
+  @override
+  String get adminAuditActionSessionsRevoked => '会话已终止';
+
+  @override
+  String get adminAuditActionSettingChanged => '设置已修改';
+
+  @override
+  String get adminAuditActionUserBlocked => '用户已封禁';
+
+  @override
+  String get adminAuditActionUserUnblocked => '用户已解封';
+
+  @override
+  String get adminAuditActionBodyTypeUpdated => '车身类型已修改';
+
+  @override
+  String get adminAuditActionPermitUpdated => '通行证已修改';
+
+  @override
+  String get adminAuditFieldDestinationCountry => '目的地国家';
+
+  @override
+  String get adminAuditFieldDestinationCity => '目的地城市';
+
+  @override
+  String get adminAuditFieldBodyType => '车身类型';
+
+  @override
+  String get adminAuditFieldWeight => '重量（公斤）';
+
+  @override
+  String get adminAuditFieldVolume => '体积（立方米）';
+
+  @override
+  String get adminAuditFieldPhotos => '照片';
+
+  @override
+  String get adminAuditFieldPrice => '价格';
+
+  @override
+  String get adminAuditFieldCurrency => '货币';
+
+  @override
+  String get adminAuditFieldReadyDate => '可发货日期';
+
+  @override
+  String get adminAuditFieldDescription => '描述';
+
+  @override
+  String get adminAuditFieldName => '名称';
+
+  @override
+  String get adminAuditFieldNameRu => '名称（俄语）';
+
+  @override
+  String get adminAuditFieldCountry => '国家';
+
+  @override
+  String get adminAuditFieldCity => '城市';
+
+  @override
+  String get adminAuditFieldLegalAddress => '法定地址';
+
+  @override
+  String get adminAuditFieldTaxId => '税号';
+
+  @override
+  String get adminAuditFieldFullName => '姓名';
+
+  @override
+  String get adminAuditFieldPhone => '电话';
+
+  @override
+  String get adminAuditFieldHomeCity => '常驻城市';
+
+  @override
+  String get adminAuditFieldAnyCountry => '任意国家';
+
+  @override
+  String get adminAuditFieldCountries => '国家';
+
+  @override
+  String get adminAuditFieldPermits => '通行证';
+
+  @override
+  String get adminAuditFieldVehicle => '车辆';
+
+  @override
+  String get adminAuditFieldPlateNumber => '车牌号';
+
+  @override
+  String get adminAuditFieldCapacity => '载重量（吨）';
+
+  @override
+  String get adminAuditFieldLength => '长度（米）';
+
+  @override
+  String get adminAuditFieldBrand => '品牌';
+
+  @override
+  String get adminAuditFieldIsActive => '启用';
+
+  @override
+  String get adminAuditFieldSortOrder => '排序';
+
+  @override
+  String get adminAuditFieldStatus => '状态';
 }
