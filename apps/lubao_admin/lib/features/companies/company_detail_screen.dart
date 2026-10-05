@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
 import '../shared/admin_dialogs.dart';
+import '../shared/admin_document_image.dart';
 import '../shared/admin_status_helpers.dart';
 import '../shared/document_viewer.dart';
 import 'company_edit_panel.dart';
@@ -378,7 +379,7 @@ class _DocumentsCard extends StatelessWidget {
                   onTap: () => openDocumentViewer(context, doc.fileUrl),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.network(doc.fileUrl, width: 56, height: 56, fit: BoxFit.cover, errorBuilder: (_, _, _) => const Icon(LucideIcons.fileWarning)),
+                    child: SizedBox(width: 56, height: 56, child: AdminDocumentImage(url: doc.fileUrl)),
                   ),
                 ),
                 const SizedBox(width: 12),

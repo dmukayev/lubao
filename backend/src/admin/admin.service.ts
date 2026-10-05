@@ -1554,18 +1554,19 @@ export class AdminService {
         plateNumber: v.plateNumber,
         brand: v.brand,
       })),
-      documents: await Promise.all(
-        documents.map(async (d) => ({
-          id: d.id,
-          type: d.type,
-          fileUrl: await this.uploads.presignDocumentUrl(d.fileUrl),
-          status: d.status,
-          rejectReason: d.rejectReason,
-          reviewedByName: d.reviewedBy?.name ?? d.reviewedBy?.email ?? null,
-          reviewedAt: d.reviewedAt,
-          createdAt: d.createdAt,
-        })),
-      ),
+      // Задача 029, п.15 — карточка (не только экран проверки) тоже должна
+      // грузить документы через прокси /admin/documents/:id/file, а не
+      // presigned MinIO URL напрямую (CORS/сеть MinIO не видна клиенту).
+      documents: documents.map((d) => ({
+        id: d.id,
+        type: d.type,
+        fileUrl: `/admin/documents/${d.id}/file`,
+        status: d.status,
+        rejectReason: d.rejectReason,
+        reviewedByName: d.reviewedBy?.name ?? d.reviewedBy?.email ?? null,
+        reviewedAt: d.reviewedAt,
+        createdAt: d.createdAt,
+      })),
       stats: {
         dealsByStatus: Object.fromEntries(dealsByStatus.map((g) => [g.status, g._count])),
         cancellations,
@@ -1645,18 +1646,19 @@ export class AdminService {
       isBlocked: company.isBlocked,
       ratingAvg: Number(company.ratingAvg),
       ratingCount: company.ratingCount,
-      documents: await Promise.all(
-        documents.map(async (d) => ({
-          id: d.id,
-          type: d.type,
-          fileUrl: await this.uploads.presignDocumentUrl(d.fileUrl),
-          status: d.status,
-          rejectReason: d.rejectReason,
-          reviewedByName: d.reviewedBy?.name ?? d.reviewedBy?.email ?? null,
-          reviewedAt: d.reviewedAt,
-          createdAt: d.createdAt,
-        })),
-      ),
+      // Задача 029, п.15 — карточка (не только экран проверки) тоже должна
+      // грузить документы через прокси /admin/documents/:id/file, а не
+      // presigned MinIO URL напрямую (CORS/сеть MinIO не видна клиенту).
+      documents: documents.map((d) => ({
+        id: d.id,
+        type: d.type,
+        fileUrl: `/admin/documents/${d.id}/file`,
+        status: d.status,
+        rejectReason: d.rejectReason,
+        reviewedByName: d.reviewedBy?.name ?? d.reviewedBy?.email ?? null,
+        reviewedAt: d.reviewedAt,
+        createdAt: d.createdAt,
+      })),
       employees: members.map((m) => ({
         userId: m.userId,
         name: m.user.name,

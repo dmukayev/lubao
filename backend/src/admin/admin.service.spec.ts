@@ -172,14 +172,14 @@ describe('AdminService.searchDrivers (задача 026, п.1)', () => {
   });
 });
 
-describe('AdminService.driverDetail / companyDetail — presigned document links (задача 026, п.6)', () => {
+describe('AdminService.driverDetail / companyDetail — document links go through the CORS proxy (задача 029, п.15)', () => {
   it('driverDetail throws NotFoundException for an unknown id', async () => {
     const prisma: any = { driver: { findUnique: jest.fn().mockResolvedValue(null) } };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
     await expect(service.driverDetail('missing')).rejects.toThrow(NotFoundException);
   });
 
-  it('driverDetail presigns every document fileUrl instead of returning the raw object key', async () => {
+  it('driverDetail returns the backend proxy path for every document, never a presigned MinIO URL directly', async () => {
     const driver = {
       id: 'd1',
       userId: 'u1',
@@ -213,14 +213,56 @@ describe('AdminService.driverDetail / companyDetail — presigned document links
 
     const result = await service.driverDetail('d1');
 
-    expect(uploads.presignDocumentUrl).toHaveBeenCalledWith('raw-object-key.jpg');
-    expect(result.documents[0].fileUrl).toBe('https://signed.example/raw-object-key.jpg');
+    // Задача 029, п.15 — карточка водителя грузила presigned MinIO URL
+    // напрямую (CORS), а не через /admin/documents/:id/file, как уже было
+    // исправлено на экране проверки.
+    expect(uploads.presignDocumentUrl).not.toHaveBeenCalled();
+    expect(result.documents[0].fileUrl).toBe('/admin/documents/doc1/file');
   });
 
   it('companyDetail throws NotFoundException for an unknown id', async () => {
     const prisma: any = { company: { findUnique: jest.fn().mockResolvedValue(null) } };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
     await expect(service.companyDetail('missing')).rejects.toThrow(NotFoundException);
+  });
+
+  it('companyDetail returns the backend proxy path for every document too (задача 029, п.15)', async () => {
+    const company = {
+      id: 'c1',
+      name: { ru: 'Acme' },
+      nameRu: 'Acme',
+      countryId: 'kz',
+      country: { name: { ru: 'Казахстан' } },
+      city: 'Алматы',
+      legalAddress: null,
+      taxId: '123',
+      isVerified: false,
+      isBlocked: false,
+      ratingAvg: 0,
+      ratingCount: 0,
+    };
+    const prisma: any = {
+      company: { findUnique: jest.fn().mockResolvedValue(company) },
+      verificationDocument: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'doc1', type: 'COMPANY_REGISTRATION', fileUrl: 'raw-object-key.jpg', status: 'PENDING', rejectReason: null, reviewedBy: null, reviewedAt: null, createdAt: new Date() },
+        ]),
+      },
+      companyMember: { findMany: jest.fn().mockResolvedValue([]) },
+      companyInvite: { findMany: jest.fn().mockResolvedValue([]) },
+      cargo: { findMany: jest.fn().mockResolvedValue([]) },
+      deal: { findMany: jest.fn().mockResolvedValue([]) },
+      review: { findMany: jest.fn().mockResolvedValue([]) },
+      complaint: { count: jest.fn().mockResolvedValue(0) },
+      auditLog: { findMany: jest.fn().mockResolvedValue([]) },
+    };
+    const uploads = fakeUploads();
+    const service = new AdminService(prisma, {} as any, uploads as any);
+
+    const result = await service.companyDetail('c1');
+
+    expect(uploads.presignDocumentUrl).not.toHaveBeenCalled();
+    expect(result.documents[0].fileUrl).toBe('/admin/documents/doc1/file');
   });
 });
 
