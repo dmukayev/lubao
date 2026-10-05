@@ -70,6 +70,11 @@ final driverVerificationDocumentsProvider = FutureProvider.autoDispose<List<Veri
   return ref.watch(driverRepositoryProvider).verificationDocuments();
 });
 
+/// Блок «Распознано» под документом (задача 031, п.25).
+final driverDocumentRecognitionProvider = FutureProvider.autoDispose.family<AdminDocumentRecognition, String>((ref, documentId) {
+  return ref.watch(driverRepositoryProvider).documentRecognition(documentId);
+});
+
 /// Гараж (задача 031, этап B) — тягачи и прицепы водителя.
 final garageVehiclesProvider = FutureProvider.autoDispose<List<GarageVehicle>>((ref) {
   return ref.watch(driverRepositoryProvider).vehicles();

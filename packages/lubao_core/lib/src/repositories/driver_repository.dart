@@ -1,4 +1,5 @@
 import '../api/api_client.dart';
+import '../models/admin.dart';
 import '../models/common.dart';
 import '../models/user.dart';
 
@@ -70,6 +71,16 @@ class DriverRepository {
       if (vehicleId != null) 'vehicleId': vehicleId,
     });
     return VerificationDocument.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// Блок «Распознано» под документом на проверке (задача 031, п.25,
+  /// макет 22) — только значения/уверенность, без сверки с чёрным списком
+  /// (это знание админа о других владельцах, не для самопроверки).
+  /// Переиспользует модель админки — поля match/engineVersion/durationMs
+  /// просто остаются null, бэкенд их для этого эндпоинта не присылает.
+  Future<AdminDocumentRecognition> documentRecognition(String documentId) async {
+    final res = await _client.dio.get('/drivers/me/verification-documents/$documentId/recognition');
+    return AdminDocumentRecognition.fromJson(res.data as Map<String, dynamic>);
   }
 
   // -- Гараж (задача 031, этап B, макет 26) --------------------------------

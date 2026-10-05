@@ -1510,6 +1510,87 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get adminVerificationCompareWithSelfie => '与自拍对比';
 
   @override
+  String get adminRecognitionTitle => '已识别';
+
+  @override
+  String get adminRecognitionSkipped => 'OCR 不可用 — 请手动检查';
+
+  @override
+  String get adminRecognitionPending => '识别排队中…';
+
+  @override
+  String get adminRecognitionFailed => '识别失败';
+
+  @override
+  String get adminRecognitionMatchOk => '已核实';
+
+  @override
+  String get adminRecognitionNeedsReview => '请核查';
+
+  @override
+  String get adminRecognitionDuplicate => '与其他持有者重复';
+
+  @override
+  String get adminRecognitionBlacklisted => '在黑名单中';
+
+  @override
+  String get adminRecognitionBlacklistBanner => '与黑名单匹配 — 未经明确决定不能确认';
+
+  @override
+  String get adminRecognitionChecksumHint => '校验位正确';
+
+  @override
+  String get adminRecognitionEditValue => '修改数值';
+
+  @override
+  String get adminRecognitionFieldFullName => '姓名';
+
+  @override
+  String get adminRecognitionFieldIin => '身份证号';
+
+  @override
+  String get adminRecognitionFieldLicenseNumber => '驾照号码';
+
+  @override
+  String get adminRecognitionFieldExpiryDate => '有效期';
+
+  @override
+  String get adminRecognitionFieldPlateNumber => '车牌号';
+
+  @override
+  String get adminRecognitionFieldVin => '车架号(VIN)';
+
+  @override
+  String get adminRecognitionFieldBrand => '品牌';
+
+  @override
+  String get adminRecognitionFieldCapacityTons => '载重量（吨）';
+
+  @override
+  String get adminRecognitionFieldCompanyName => '公司名称';
+
+  @override
+  String get adminRecognitionFieldBin => 'BIN（哈萨克斯坦工商识别号）';
+
+  @override
+  String get adminRecognitionFieldUscc => '统一社会信用代码';
+
+  @override
+  String get adminIdentifiersCardTitle => '身份标识';
+
+  @override
+  String get adminIdentifierBlockHistoryTitle => '封锁历史';
+
+  @override
+  String get adminIdentifierLifted => '已解除';
+
+  @override
+  String get adminIdentifierActive => '生效中';
+
+  @override
+  String get adminIdentifierReveal => '显示';
+
+  @override
   String get adminRejectPresetPlateMismatch => '车牌号不匹配';
 
   @override

@@ -2988,6 +2988,168 @@ abstract class LubaoLocalizations {
   /// **'Рядом с селфи'**
   String get adminVerificationCompareWithSelfie;
 
+  /// No description provided for @adminRecognitionTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Распознано'**
+  String get adminRecognitionTitle;
+
+  /// No description provided for @adminRecognitionSkipped.
+  ///
+  /// In ru, this message translates to:
+  /// **'OCR недоступен — проверьте вручную'**
+  String get adminRecognitionSkipped;
+
+  /// No description provided for @adminRecognitionPending.
+  ///
+  /// In ru, this message translates to:
+  /// **'Распознавание в очереди…'**
+  String get adminRecognitionPending;
+
+  /// No description provided for @adminRecognitionFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось распознать'**
+  String get adminRecognitionFailed;
+
+  /// No description provided for @adminRecognitionMatchOk.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверено'**
+  String get adminRecognitionMatchOk;
+
+  /// No description provided for @adminRecognitionNeedsReview.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверьте'**
+  String get adminRecognitionNeedsReview;
+
+  /// No description provided for @adminRecognitionDuplicate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дубль у другого владельца'**
+  String get adminRecognitionDuplicate;
+
+  /// No description provided for @adminRecognitionBlacklisted.
+  ///
+  /// In ru, this message translates to:
+  /// **'В чёрном списке'**
+  String get adminRecognitionBlacklisted;
+
+  /// No description provided for @adminRecognitionBlacklistBanner.
+  ///
+  /// In ru, this message translates to:
+  /// **'Совпадение с чёрным списком — подтвердить без явного решения нельзя'**
+  String get adminRecognitionBlacklistBanner;
+
+  /// No description provided for @adminRecognitionChecksumHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'контрольная цифра верна'**
+  String get adminRecognitionChecksumHint;
+
+  /// No description provided for @adminRecognitionEditValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменить значение'**
+  String get adminRecognitionEditValue;
+
+  /// No description provided for @adminRecognitionFieldFullName.
+  ///
+  /// In ru, this message translates to:
+  /// **'ФИО'**
+  String get adminRecognitionFieldFullName;
+
+  /// No description provided for @adminRecognitionFieldIin.
+  ///
+  /// In ru, this message translates to:
+  /// **'ИИН'**
+  String get adminRecognitionFieldIin;
+
+  /// No description provided for @adminRecognitionFieldLicenseNumber.
+  ///
+  /// In ru, this message translates to:
+  /// **'Номер прав'**
+  String get adminRecognitionFieldLicenseNumber;
+
+  /// No description provided for @adminRecognitionFieldExpiryDate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Срок действия'**
+  String get adminRecognitionFieldExpiryDate;
+
+  /// No description provided for @adminRecognitionFieldPlateNumber.
+  ///
+  /// In ru, this message translates to:
+  /// **'Госномер'**
+  String get adminRecognitionFieldPlateNumber;
+
+  /// No description provided for @adminRecognitionFieldVin.
+  ///
+  /// In ru, this message translates to:
+  /// **'VIN'**
+  String get adminRecognitionFieldVin;
+
+  /// No description provided for @adminRecognitionFieldBrand.
+  ///
+  /// In ru, this message translates to:
+  /// **'Марка'**
+  String get adminRecognitionFieldBrand;
+
+  /// No description provided for @adminRecognitionFieldCapacityTons.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грузоподъёмность, т'**
+  String get adminRecognitionFieldCapacityTons;
+
+  /// No description provided for @adminRecognitionFieldCompanyName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название компании'**
+  String get adminRecognitionFieldCompanyName;
+
+  /// No description provided for @adminRecognitionFieldBin.
+  ///
+  /// In ru, this message translates to:
+  /// **'БИН'**
+  String get adminRecognitionFieldBin;
+
+  /// No description provided for @adminRecognitionFieldUscc.
+  ///
+  /// In ru, this message translates to:
+  /// **'统一社会信用代码'**
+  String get adminRecognitionFieldUscc;
+
+  /// No description provided for @adminIdentifiersCardTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Идентификаторы'**
+  String get adminIdentifiersCardTitle;
+
+  /// No description provided for @adminIdentifierBlockHistoryTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'История блокировок'**
+  String get adminIdentifierBlockHistoryTitle;
+
+  /// No description provided for @adminIdentifierLifted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Снята'**
+  String get adminIdentifierLifted;
+
+  /// No description provided for @adminIdentifierActive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Активна'**
+  String get adminIdentifierActive;
+
+  /// No description provided for @adminIdentifierReveal.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показать'**
+  String get adminIdentifierReveal;
+
   /// No description provided for @adminRejectPresetPlateMismatch.
   ///
   /// In ru, this message translates to:

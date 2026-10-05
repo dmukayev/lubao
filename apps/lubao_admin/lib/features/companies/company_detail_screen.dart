@@ -11,6 +11,7 @@ import '../shared/admin_document_image.dart';
 import '../shared/admin_status_helpers.dart';
 import '../shared/audit_log_tab.dart';
 import '../shared/document_viewer.dart';
+import '../shared/identifiers_card.dart';
 import 'company_edit_panel.dart';
 
 class CompanyDetailScreen extends ConsumerWidget {
@@ -224,6 +225,8 @@ class CompanyDetailScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 16),
                         _LegalCard(company: company, locale: locale),
+                        const SizedBox(height: 16),
+                        IdentifiersCard(identifiers: company.identifiers, blockHistory: company.identifierBlockHistory),
                         const SizedBox(height: 16),
                         _EmployeesCard(
                           company: company,

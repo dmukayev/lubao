@@ -149,6 +149,10 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
   final _DocDecisions _decisions = {};
   final Map<String, String> _reasons = {};
   final Map<String, bool?> _crossChecks = {};
+  /// Правки админа к распознанным ИИН/номеру прав (задача 031, п.23) —
+  /// уходят только вместе с одобрением DRIVER_LICENSE/IDENTITY, не на
+  /// каждый документ, иначе задвоится audit_log «распознано → исправлено».
+  final Map<String, String> _confirmedFields = {};
   String? _selectedDocId;
   bool _submitting = false;
 
@@ -202,7 +206,7 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
                             .join(', '),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  if (selectedDoc != null)
+                  if (selectedDoc != null) ...[
                     _BigViewer(
                       doc: selectedDoc,
                       compareUrl: selfie != null && selfie.id != selectedDoc.id ? selfie.fileUrl : null,
@@ -217,6 +221,13 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
                         });
                       },
                     ),
+                    _RecognitionPanel(
+                      key: ValueKey('recognition:${selectedDoc.id}'),
+                      documentId: selectedDoc.id,
+                      confirmedValues: _confirmedFields,
+                      onFieldEdited: (field, value) => setState(() => _confirmedFields[field] = value),
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.md),
                   _ThumbnailStrip(
                     documents: driver.documents,
@@ -249,7 +260,11 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
     try {
       final repo = ref.read(adminRepositoryProvider);
       final toApprove = driver.documents.where((d) => _decisions[d.id] == true && d.status != VerificationStatus.approved);
-      await Future.wait(toApprove.map((d) => repo.reviewDocument(d.id, approve: true)));
+      await Future.wait(toApprove.map((d) => repo.reviewDocument(
+            d.id,
+            approve: true,
+            confirmedFields: (d.type == 'DRIVER_LICENSE' || d.type == 'IDENTITY') ? _confirmedFields : null,
+          )));
       await repo.setDriverVerified(driver.id, true, reason: reason, crossChecks: _crossChecks);
       ref.invalidate(adminVerificationQueueProvider('driver'));
       ref.invalidate(adminVerificationDriverProfileProvider(driver.id));
@@ -432,12 +447,15 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    // Длинное ФИО + бейдж «Проверен» не влезали в узкую панель деталей
+    // (master-detail — сама панель узкая по дизайну) без Flexible на
+    // заголовке — тот же класс переполнения, что и в других карточках.
     return Row(
       children: [
         Expanded(
           child: Row(
             children: [
-              Text(title, style: Theme.of(context).textTheme.headlineSmall),
+              Flexible(child: Text(title, style: Theme.of(context).textTheme.headlineSmall, overflow: TextOverflow.ellipsis)),
               const SizedBox(width: 12),
               if (isVerified) StatusBadge(label: t.adminVerified, color: StatusBadge.success),
             ],
@@ -470,15 +488,21 @@ class _CrossCheckCard extends StatelessWidget {
           for (final row in rows)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
+              // Row(Expanded(Text) + 2 голых ChoiceChip) не влезает на узком
+              // экране (та же причина переполнения, что уже чинили в других
+              // карточках, задача 030/031) — Wrap сам переносит чипы на
+              // новую строку вместо падения в overflow.
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
                 children: [
-                  Expanded(child: Text(row.label)),
+                  Text(row.label),
                   ChoiceChip(
                     label: Text(t.adminCrossCheckMatch),
                     selected: values[row.key] == true,
                     onSelected: (_) => onChanged(row.key, true),
                   ),
-                  const SizedBox(width: 8),
                   ChoiceChip(
                     label: Text(t.adminCrossCheckMismatch),
                     selected: values[row.key] == false,
@@ -562,6 +586,177 @@ class _BigViewer extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Поля без своей колонки в БД (задача 031, п.23) — только они допускают
+/// правку прямо в блоке «Распознано», значение уходит в
+/// `reviewDocument(..., confirmedFields: ...)`. Госномер/VIN/БИН по-прежнему
+/// правятся через обычную форму редактирования машины/компании.
+const _editableRecognitionFields = {'iin', 'licenseNumber'};
+
+String _recognitionFieldLabel(LubaoLocalizations t, String key) => switch (key) {
+      'fullName' => t.adminRecognitionFieldFullName,
+      'iin' => t.adminRecognitionFieldIin,
+      'licenseNumber' => t.adminRecognitionFieldLicenseNumber,
+      'expiryDate' => t.adminRecognitionFieldExpiryDate,
+      'plateNumber' => t.adminRecognitionFieldPlateNumber,
+      'vin' => t.adminRecognitionFieldVin,
+      'brand' => t.adminRecognitionFieldBrand,
+      'capacityTons' => t.adminRecognitionFieldCapacityTons,
+      'companyName' => t.adminRecognitionFieldCompanyName,
+      'bin' => t.adminRecognitionFieldBin,
+      'uscc' => t.adminRecognitionFieldUscc,
+      _ => key,
+    };
+
+/// Блок «Распознано» (задача 031, п.22, макет 25) — поля, извлечённые OCR
+/// из текущего документа, со статусом по каждому и итогом по чёрному
+/// списку внизу. Подгружается отдельным запросом на документ (не часть
+/// общего профиля — см. комментарий у [AdminRepository.documentRecognition]).
+class _RecognitionPanel extends ConsumerWidget {
+  const _RecognitionPanel({super.key, required this.documentId, required this.confirmedValues, required this.onFieldEdited});
+
+  final String documentId;
+  final Map<String, String> confirmedValues;
+  final void Function(String field, String value) onFieldEdited;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.l10n;
+    final recognition = ref.watch(adminDocumentRecognitionProvider(documentId));
+
+    return recognition.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (r) {
+        if (r.status != 'DONE' || r.fields.isEmpty) {
+          final label = switch (r.status) {
+            'SKIPPED' => t.adminRecognitionSkipped,
+            'FAILED' => t.adminRecognitionFailed,
+            _ => null,
+          };
+          if (label == null) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.md),
+            child: Row(
+              children: [
+                Icon(LucideIcons.scanLine, size: 16, color: Theme.of(context).colorScheme.outline),
+                const SizedBox(width: 6),
+                Text(label, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          );
+        }
+
+        final anyBlacklisted = r.fields.values.any((f) => f.match == 'blacklisted');
+
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.md),
+          child: AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(t.adminRecognitionTitle, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                for (final entry in r.fields.entries)
+                  _RecognitionFieldRow(
+                    label: _recognitionFieldLabel(t, entry.key),
+                    field: entry.value,
+                    overrideValue: confirmedValues[entry.key],
+                    editable: _editableRecognitionFields.contains(entry.key),
+                    onEdit: (value) => onFieldEdited(entry.key, value),
+                  ),
+                if (anyBlacklisted) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: StatusBadge.danger.withAlpha(20), borderRadius: BorderRadius.circular(8)),
+                    child: Row(
+                      children: [
+                        const Icon(LucideIcons.shieldAlert, color: StatusBadge.danger, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(t.adminRecognitionBlacklistBanner, style: const TextStyle(color: StatusBadge.danger))),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RecognitionFieldRow extends StatelessWidget {
+  const _RecognitionFieldRow({required this.label, required this.field, required this.overrideValue, required this.editable, required this.onEdit});
+
+  final String label;
+  final AdminRecognizedField field;
+  final String? overrideValue;
+  final bool editable;
+  final void Function(String value) onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final displayValue = overrideValue ?? field.value;
+    final (badgeLabel, badgeColor) = switch (field.match) {
+      'blacklisted' => (t.adminRecognitionBlacklisted, StatusBadge.danger),
+      'duplicate' => (t.adminRecognitionDuplicate, StatusBadge.warning),
+      _ when field.needsReview => (t.adminRecognitionNeedsReview, StatusBadge.warning),
+      _ => (t.adminRecognitionMatchOk, StatusBadge.success),
+    };
+
+    // Длинные варианты бейджа («Дубль у другого владельца») не помещаются
+    // рядом с колонкой-подписью фиксированной ширины на узком экране — та
+    // же причина переполнения, что уже чинили в других карточках (задача
+    // 030/031): подпись+бейдж на одной строке (подпись — Expanded, чтобы
+    // сжималась/эллипсис первой), значение — отдельной строкой под ними.
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(label, style: Theme.of(context).textTheme.bodySmall, overflow: TextOverflow.ellipsis)),
+              const SizedBox(width: 8),
+              StatusBadge(label: badgeLabel, color: badgeColor),
+            ],
+          ),
+          const SizedBox(height: 2),
+          GestureDetector(
+            onTap: editable ? () => _editValue(context) : null,
+            child: Row(
+              children: [
+                Flexible(child: Text(displayValue, overflow: TextOverflow.ellipsis)),
+                if (editable) const Padding(padding: EdgeInsets.only(left: 4), child: Icon(LucideIcons.pencil, size: 14)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _editValue(BuildContext context) async {
+    final t = context.l10n;
+    final controller = TextEditingController(text: overrideValue ?? field.value);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(t.adminRecognitionEditValue),
+        content: TextField(controller: controller, autofocus: true),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(t.commonCancel)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: Text(t.commonDone)),
+        ],
+      ),
+    );
+    if (result != null && result.isNotEmpty) onEdit(result);
   }
 }
 

@@ -166,6 +166,18 @@ export class AdminController {
     return this.admin.reviewVerificationDocument(id, ctx.user.id, dto);
   }
 
+  @Get('verification-documents/:id/recognition')
+  documentRecognition(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.documentRecognition(id);
+  }
+
+  @Post('identifiers/:id/reveal')
+  revealIdentifier(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.revealIdentifier(id, ctx.user.id);
+  }
+
   @Get('documents/:id/file')
   async documentFile(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Res() res: Response) {
     assertAdmin(ctx);

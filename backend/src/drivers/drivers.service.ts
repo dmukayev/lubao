@@ -203,6 +203,20 @@ export class DriversService {
     return docs.map((d) => this.docToDto(d));
   }
 
+  /// Блок «Распознано» на мобильной проверке (задача 031, п.25) — только
+  /// значения/уверенность, БЕЗ сверки с чёрным списком/дублями (это знание
+  /// админа о других владельцах, не для самопроверки водителем).
+  async documentRecognition(driverId: string, documentId: string) {
+    const doc = await this.prisma.verificationDocument.findUnique({
+      where: { id: documentId },
+      include: { recognition: true },
+    });
+    if (!doc || doc.driverId !== driverId) throw new NotFoundException('Document not found');
+    if (!doc.recognition) return { status: 'PENDING' as const, fields: {} };
+
+    return { status: doc.recognition.status, fields: doc.recognition.fields ?? {} };
+  }
+
   private docToDto(doc: {
     id: string;
     type: string;

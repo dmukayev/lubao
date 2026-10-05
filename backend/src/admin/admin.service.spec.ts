@@ -218,6 +218,50 @@ describe('AdminService.driverDetail / companyDetail — document links go throug
     // исправлено на экране проверки.
     expect(uploads.presignDocumentUrl).not.toHaveBeenCalled();
     expect(result.documents[0].fileUrl).toBe('/admin/documents/doc1/file');
+    // Без IdentifiersService (не передан в конструктор) — пустые, не исключение.
+    expect(result.identifiers).toEqual([]);
+    expect(result.identifierBlockHistory).toEqual([]);
+  });
+
+  it('driverDetail carries the driver and per-vehicle identifiers cards (задача 031, этап E, п.24)', async () => {
+    const driver = {
+      id: 'd1',
+      userId: 'u1',
+      fullName: 'Ерлан',
+      anyCountry: false,
+      ratingAvg: 4.2,
+      ratingCount: 5,
+      user: { phone: '+7700', locale: 'ru', createdAt: new Date(), isBlocked: false },
+      homeCity: { name: { ru: 'Алматы' } },
+      directions: [],
+      permits: [],
+      vehicles: [{ id: 'v1', kind: 'TRACTOR', isVerified: true, isArchived: false, bodyTypeId: null, bodyType: null, capacityTons: null, lengthM: null, plateNumber: 'A1', vin: null, brand: null }],
+    };
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue(driver) },
+      verificationDocument: { findMany: jest.fn().mockResolvedValue([]) },
+      session: { findFirst: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
+      deal: { groupBy: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
+      review: { findMany: jest.fn().mockResolvedValue([]) },
+      contactEvent: { count: jest.fn().mockResolvedValue(0) },
+      complaint: { count: jest.fn().mockResolvedValue(0) },
+      arrival: { findMany: jest.fn().mockResolvedValue([]) },
+      auditLog: { findMany: jest.fn().mockResolvedValue([]) },
+    };
+    const identifiers = {
+      listForOwner: jest.fn().mockImplementation((ownerType: string, ownerId: string) =>
+        Promise.resolve(ownerType === 'DRIVER' ? [{ id: 'i1', type: 'PHONE', valueMasked: '+7700', createdAt: new Date() }] : [{ id: 'i2', type: 'PLATE', valueMasked: 'A1', createdAt: new Date() }]),
+      ),
+      listBlockHistory: jest.fn().mockResolvedValue([]),
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, identifiers as any);
+
+    const result = await service.driverDetail('d1');
+
+    expect(identifiers.listForOwner).toHaveBeenCalledWith('DRIVER', 'd1');
+    expect(identifiers.listForOwner).toHaveBeenCalledWith('VEHICLE', 'v1');
+    expect(result.identifiers).toEqual([{ id: 'i1', type: 'PHONE', valueMasked: '+7700', confirmedAt: expect.any(Date) }]);
+    expect((result.vehicles[0] as any).identifiers).toEqual([{ id: 'i2', type: 'PLATE', valueMasked: 'A1', confirmedAt: expect.any(Date) }]);
   });
 
   it('companyDetail throws NotFoundException for an unknown id', async () => {
@@ -1406,6 +1450,113 @@ describe('AdminService.reviewVerificationDocument — водитель и маш
 
     expect(prisma.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { isVerified: true } });
     expect(prisma.vehicle.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('AdminService.documentRecognition — блок «Распознано» (задача 031, этап E, п.22)', () => {
+  it('returns PENDING with empty fields when no DocumentRecognition row exists yet', async () => {
+    const prisma: any = {
+      verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1', recognition: null }) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.documentRecognition('doc1');
+
+    expect(result).toEqual({ status: 'PENDING', engineVersion: null, durationMs: null, fields: {} });
+  });
+
+  it('computes a live blacklist/duplicate match for identifier-typed fields', async () => {
+    const prisma: any = {
+      verificationDocument: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'doc1',
+          driverId: 'd1',
+          vehicleId: null,
+          companyId: null,
+          recognition: {
+            status: 'DONE',
+            engineVersion: 'rules-v1',
+            durationMs: 42,
+            fields: {
+              iin: { value: '850712345611', confidence: 0.95, checksumOk: true, needsReview: false },
+              fullName: { value: 'Ерлан Тохтаров', confidence: 0.9, checksumOk: true, needsReview: false },
+            },
+          },
+        }),
+      },
+    };
+    const identifiers = {
+      checkMatches: jest.fn().mockResolvedValue({ blocked: { reason: 'test', blockedAt: new Date() }, duplicateOwner: null }),
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, identifiers as any);
+
+    const result = await service.documentRecognition('doc1');
+
+    expect(identifiers.checkMatches).toHaveBeenCalledWith('IIN', '850712345611', { ownerType: 'DRIVER', ownerId: 'd1' });
+    expect((result.fields as any).iin.match).toBe('blacklisted');
+    // ФИО не идентификатор чёрного списка — match всегда null.
+    expect((result.fields as any).fullName.match).toBeNull();
+  });
+});
+
+describe('AdminService.reviewVerificationDocument — правка полей без своей колонки (задача 031, этап E, п.23)', () => {
+  it('confirms an admin-provided IIN and logs the correction when it differs from the recognized value', async () => {
+    const prisma: any = {
+      verificationDocument: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'doc1', driverId: 'd1', vehicleId: null, type: 'DRIVER_LICENSE' }),
+        update: jest.fn().mockResolvedValue({
+          id: 'doc1',
+          driverId: 'd1',
+          vehicleId: null,
+          companyId: null,
+          type: 'DRIVER_LICENSE',
+          driver: { id: 'd1', user: { phone: '+77011234567' } },
+          vehicle: null,
+          recognition: { fields: { iin: { value: '850712345600' } } },
+        }),
+        findMany: jest.fn().mockResolvedValue([{ type: 'DRIVER_LICENSE' }]),
+      },
+      driver: { update: jest.fn() },
+      vehicle: { update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const identifiers = {
+      checkMatches: jest.fn().mockResolvedValue({ blocked: null, duplicateOwner: null }),
+      confirmIdentifier: jest.fn(),
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, identifiers as any);
+
+    await service.reviewVerificationDocument('doc1', 'admin-1', {
+      status: 'APPROVED',
+      confirmedFields: { iin: '850712345611' },
+    } as any);
+
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: 'DOCUMENT_FIELD_CORRECTED',
+        metadata: { field: 'iin', recognized: '850712345600', corrected: '850712345611' },
+      }),
+    });
+    expect(identifiers.confirmIdentifier).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'IIN', rawValue: '850712345611', ownerType: 'DRIVER', ownerId: 'd1' }),
+    );
+  });
+});
+
+describe('AdminService.revealIdentifier — п.16/24', () => {
+  it('delegates to IdentifiersService.revealIdentifier', async () => {
+    const identifiers = { revealIdentifier: jest.fn().mockResolvedValue('850712345611') };
+    const service = new AdminService({} as any, {} as any, fakeUploads() as any, undefined, undefined, identifiers as any);
+
+    const result = await service.revealIdentifier('ident-1', 'admin-1');
+
+    expect(identifiers.revealIdentifier).toHaveBeenCalledWith('ident-1', 'admin-1');
+    expect(result).toEqual({ value: '850712345611' });
+  });
+
+  it('returns null without IdentifiersService configured', async () => {
+    const service = new AdminService({} as any, {} as any, fakeUploads() as any);
+    expect(await service.revealIdentifier('ident-1', 'admin-1')).toEqual({ value: null });
   });
 });
 

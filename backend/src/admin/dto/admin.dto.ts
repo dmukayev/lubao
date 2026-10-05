@@ -10,6 +10,14 @@ export class ReviewVerificationDocumentDto {
   @IsOptional()
   @IsString()
   rejectReason?: string;
+
+  /// Задача 031, п.22-23 — поля, принятые/исправленные админом в блоке
+  /// «Распознано» (сейчас используются `iin`/`licenseNumber` — у них нет
+  /// своей колонки в БД, госномер/VIN/БИН по-прежнему идут через Vehicle/
+  /// Company). Отличие от распознанного значения пишется в audit_log.
+  @IsOptional()
+  @IsObject()
+  confirmedFields?: Record<string, string>;
 }
 
 export class ResolveComplaintDto {

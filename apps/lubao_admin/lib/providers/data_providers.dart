@@ -22,6 +22,12 @@ final adminVerificationCompanyProfileProvider = FutureProvider.autoDispose.famil
   return ref.watch(adminRepositoryProvider).verificationCompanyProfile(id);
 });
 
+/// Блок «Распознано» (задача 031, п.22) — отдельно от профиля, подгружается
+/// только для открытого в данный момент документа.
+final adminDocumentRecognitionProvider = FutureProvider.autoDispose.family<AdminDocumentRecognition, String>((ref, documentId) {
+  return ref.watch(adminRepositoryProvider).documentRecognition(documentId);
+});
+
 /// Вкладка очереди жалоб — NEW/IN_REVIEW/CLOSED (задача 028, п.24a).
 final adminComplaintsTabProvider = StateProvider.autoDispose<String>((ref) => 'NEW');
 

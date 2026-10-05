@@ -1535,6 +1535,88 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get adminVerificationCompareWithSelfie => 'Compare with selfie';
 
   @override
+  String get adminRecognitionTitle => 'Recognized';
+
+  @override
+  String get adminRecognitionSkipped => 'OCR unavailable — review manually';
+
+  @override
+  String get adminRecognitionPending => 'Recognition queued…';
+
+  @override
+  String get adminRecognitionFailed => 'Recognition failed';
+
+  @override
+  String get adminRecognitionMatchOk => 'Verified';
+
+  @override
+  String get adminRecognitionNeedsReview => 'Needs review';
+
+  @override
+  String get adminRecognitionDuplicate => 'Duplicate with another owner';
+
+  @override
+  String get adminRecognitionBlacklisted => 'Blacklisted';
+
+  @override
+  String get adminRecognitionBlacklistBanner =>
+      'Matches the blacklist — cannot be verified without an explicit decision';
+
+  @override
+  String get adminRecognitionChecksumHint => 'check digit is valid';
+
+  @override
+  String get adminRecognitionEditValue => 'Edit value';
+
+  @override
+  String get adminRecognitionFieldFullName => 'Full name';
+
+  @override
+  String get adminRecognitionFieldIin => 'ID number';
+
+  @override
+  String get adminRecognitionFieldLicenseNumber => 'License number';
+
+  @override
+  String get adminRecognitionFieldExpiryDate => 'Expiry date';
+
+  @override
+  String get adminRecognitionFieldPlateNumber => 'Plate number';
+
+  @override
+  String get adminRecognitionFieldVin => 'VIN';
+
+  @override
+  String get adminRecognitionFieldBrand => 'Brand';
+
+  @override
+  String get adminRecognitionFieldCapacityTons => 'Capacity, t';
+
+  @override
+  String get adminRecognitionFieldCompanyName => 'Company name';
+
+  @override
+  String get adminRecognitionFieldBin => 'Business ID (BIN)';
+
+  @override
+  String get adminRecognitionFieldUscc => 'Unified Social Credit Code (USCC)';
+
+  @override
+  String get adminIdentifiersCardTitle => 'Identifiers';
+
+  @override
+  String get adminIdentifierBlockHistoryTitle => 'Block history';
+
+  @override
+  String get adminIdentifierLifted => 'Lifted';
+
+  @override
+  String get adminIdentifierActive => 'Active';
+
+  @override
+  String get adminIdentifierReveal => 'Show';
+
+  @override
   String get adminRejectPresetPlateMismatch => 'Plate number mismatch';
 
   @override

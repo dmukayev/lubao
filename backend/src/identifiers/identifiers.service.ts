@@ -96,6 +96,20 @@ export class IdentifiersService {
     return this.prisma.identifier.findMany({ where: { ownerType, ownerId }, orderBy: { type: 'asc' } });
   }
 
+  /// История блокировок этого владельца (задача 031, п.24 — карточка
+  /// «Идентификаторы») — только блоки, завязанные НА НЕГО (sourceOwnerType/
+  /// sourceOwnerId), не все блоки с совпадающим значением у кого угодно.
+  async listBlockHistory(ownerType: OwnerType, ownerId: string) {
+    return this.prisma.blockedIdentifier.findMany({
+      where: { sourceOwnerType: ownerType, sourceOwnerId: ownerId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        blockedBy: { select: { name: true, email: true } },
+        liftedBy: { select: { name: true, email: true } },
+      },
+    });
+  }
+
   /// Полное значение — только по явной кнопке, с записью в журнал
   /// (задача 031, п.16). Не-чувствительные типы не шифруются — для них
   /// нормализованное значение совпадает с маской, раскрывать нечего.

@@ -1537,6 +1537,89 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get adminVerificationCompareWithSelfie => 'Селфимен қатар';
 
   @override
+  String get adminRecognitionTitle => 'Танылды';
+
+  @override
+  String get adminRecognitionSkipped => 'OCR қолжетімсіз — қолмен тексеріңіз';
+
+  @override
+  String get adminRecognitionPending => 'Тану кезекте…';
+
+  @override
+  String get adminRecognitionFailed => 'Тану мүмкін болмады';
+
+  @override
+  String get adminRecognitionMatchOk => 'Тексерілді';
+
+  @override
+  String get adminRecognitionNeedsReview => 'Тексеріңіз';
+
+  @override
+  String get adminRecognitionDuplicate => 'Басқа иесінде қайталанады';
+
+  @override
+  String get adminRecognitionBlacklisted => 'Қара тізімде';
+
+  @override
+  String get adminRecognitionBlacklistBanner =>
+      'Қара тізіммен сәйкестік — анық шешімсіз растау мүмкін емес';
+
+  @override
+  String get adminRecognitionChecksumHint => 'тексеру цифры дұрыс';
+
+  @override
+  String get adminRecognitionEditValue => 'Мәнді өзгерту';
+
+  @override
+  String get adminRecognitionFieldFullName => 'Аты-жөні';
+
+  @override
+  String get adminRecognitionFieldIin => 'ЖСН';
+
+  @override
+  String get adminRecognitionFieldLicenseNumber =>
+      'Жүргізуші куәлігінің нөмірі';
+
+  @override
+  String get adminRecognitionFieldExpiryDate => 'Жарамдылық мерзімі';
+
+  @override
+  String get adminRecognitionFieldPlateNumber => 'Мемлекеттік нөмір';
+
+  @override
+  String get adminRecognitionFieldVin => 'VIN';
+
+  @override
+  String get adminRecognitionFieldBrand => 'Маркасы';
+
+  @override
+  String get adminRecognitionFieldCapacityTons => 'Жүк көтергіштігі, т';
+
+  @override
+  String get adminRecognitionFieldCompanyName => 'Компания атауы';
+
+  @override
+  String get adminRecognitionFieldBin => 'БСН';
+
+  @override
+  String get adminRecognitionFieldUscc => '统一社会信用代码';
+
+  @override
+  String get adminIdentifiersCardTitle => 'Идентификаторлар';
+
+  @override
+  String get adminIdentifierBlockHistoryTitle => 'Бұғаттау тарихы';
+
+  @override
+  String get adminIdentifierLifted => 'Алынды';
+
+  @override
+  String get adminIdentifierActive => 'Белсенді';
+
+  @override
+  String get adminIdentifierReveal => 'Көрсету';
+
+  @override
   String get adminRejectPresetPlateMismatch => 'Мемнөмір сәйкес келмейді';
 
   @override

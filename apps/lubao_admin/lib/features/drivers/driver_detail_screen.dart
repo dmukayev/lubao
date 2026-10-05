@@ -11,6 +11,7 @@ import '../shared/admin_document_image.dart';
 import '../shared/admin_status_helpers.dart';
 import '../shared/audit_log_tab.dart';
 import '../shared/document_viewer.dart';
+import '../shared/identifiers_card.dart';
 import '../shared/responsive.dart';
 import 'driver_edit_panel.dart';
 
@@ -146,6 +147,11 @@ class DriverDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     _VehicleCard(vehicles: driver.vehicles, locale: locale),
+                    const SizedBox(height: 16),
+                    IdentifiersCard(
+                      identifiers: [...driver.identifiers, ...driver.vehicles.expand((v) => v.identifiers)],
+                      blockHistory: [...driver.identifierBlockHistory, ...driver.vehicles.expand((v) => v.identifierBlockHistory)],
+                    ),
                     const SizedBox(height: 16),
                     _DirectionsCard(driver: driver, locale: locale),
                   ],

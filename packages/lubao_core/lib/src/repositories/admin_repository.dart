@@ -142,12 +142,33 @@ class AdminRepository {
     });
   }
 
-  Future<AdminVerificationDocument> reviewDocument(String id, {required bool approve, String? rejectReason}) async {
+  Future<AdminVerificationDocument> reviewDocument(
+    String id, {
+    required bool approve,
+    String? rejectReason,
+    Map<String, String>? confirmedFields,
+  }) async {
     final res = await _client.dio.patch('/admin/verification-documents/$id', data: {
       'status': approve ? 'APPROVED' : 'REJECTED',
       if (!approve && rejectReason != null) 'rejectReason': rejectReason,
+      if (confirmedFields != null && confirmedFields.isNotEmpty) 'confirmedFields': confirmedFields,
     });
     return AdminVerificationDocument.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// Блок «Распознано» (задача 031, п.22) — отдельный запрос при открытии
+  /// документа на проверке, не часть общего профиля (checkMatches бьёт в
+  /// базу на каждое поле — считать его для всей истории документов не нужно).
+  Future<AdminDocumentRecognition> documentRecognition(String documentId) async {
+    final res = await _client.dio.get('/admin/verification-documents/$documentId/recognition');
+    return AdminDocumentRecognition.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// Полное значение идентификатора по кнопке «Показать» (п.16/24) —
+  /// каждый вызов пишется в audit_log на бэкенде.
+  Future<String?> revealIdentifier(String identifierId) async {
+    final res = await _client.dio.post('/admin/identifiers/$identifierId/reveal');
+    return (res.data as Map<String, dynamic>)['value'] as String?;
   }
 
   Future<AdminCargoDetail> cargoDetail(String id) async {

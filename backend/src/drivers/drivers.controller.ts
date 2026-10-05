@@ -43,6 +43,12 @@ export class DriversController {
     return this.drivers.submitVerificationDocument(ctx.user.id, ctx.driver.id, dto);
   }
 
+  @Get('me/verification-documents/:id/recognition')
+  documentRecognition(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.drivers.documentRecognition(ctx.driver.id, id);
+  }
+
   @Get('me/vehicles')
   vehicles(@CurrentUser() ctx: RequestContext) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');

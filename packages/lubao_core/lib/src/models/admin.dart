@@ -406,6 +406,111 @@ class AdminSearchPage<T> {
   final int total;
 }
 
+/// Подтверждённый идентификатор владельца, в маске (задача 031, п.24) —
+/// полное значение только по кнопке «Показать» ([AdminRepository.revealIdentifier]).
+class AdminIdentifierEntry {
+  const AdminIdentifierEntry({required this.id, required this.type, required this.valueMasked, required this.confirmedAt});
+
+  final String id;
+  final String type;
+  final String valueMasked;
+  final DateTime confirmedAt;
+
+  factory AdminIdentifierEntry.fromJson(Map<String, dynamic> json) => AdminIdentifierEntry(
+        id: json['id'] as String,
+        type: json['type'] as String,
+        valueMasked: json['valueMasked'] as String,
+        confirmedAt: DateTime.parse(json['confirmedAt'] as String),
+      );
+}
+
+/// Запись истории блокировок (задача 031, п.24) — одна блокировка одного
+/// значения, активная (liftedAt == null) или уже снятая.
+class AdminIdentifierBlockEntry {
+  const AdminIdentifierBlockEntry({
+    required this.id,
+    required this.type,
+    required this.valueMasked,
+    required this.reason,
+    required this.blockedByName,
+    required this.createdAt,
+    this.liftedAt,
+    this.liftedByName,
+    this.liftReason,
+  });
+
+  final String id;
+  final String type;
+  final String valueMasked;
+  final String reason;
+  final String? blockedByName;
+  final DateTime createdAt;
+  final DateTime? liftedAt;
+  final String? liftedByName;
+  final String? liftReason;
+
+  factory AdminIdentifierBlockEntry.fromJson(Map<String, dynamic> json) => AdminIdentifierBlockEntry(
+        id: json['id'] as String,
+        type: json['type'] as String,
+        valueMasked: json['valueMasked'] as String,
+        reason: json['reason'] as String,
+        blockedByName: json['blockedByName'] as String?,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        liftedAt: json['liftedAt'] == null ? null : DateTime.parse(json['liftedAt'] as String),
+        liftedByName: json['liftedByName'] as String?,
+        liftReason: json['liftReason'] as String?,
+      );
+}
+
+/// Одно распознанное поле документа (задача 031, п.22) — `match` сверяется
+/// с чёрным списком/дублями только для полей с типом идентификатора
+/// (ИИН/БИН/统一社会信用代码/VIN/госномер/номер прав); для остальных (ФИО,
+/// срок действия, марка...) всегда `null`.
+class AdminRecognizedField {
+  const AdminRecognizedField({
+    required this.value,
+    required this.confidence,
+    this.checksumOk,
+    required this.needsReview,
+    this.match,
+  });
+
+  final String value;
+  final double confidence;
+  final bool? checksumOk;
+  final bool needsReview;
+
+  /// 'ok' | 'duplicate' | 'blacklisted' | null (поле не идентификатор).
+  final String? match;
+
+  factory AdminRecognizedField.fromJson(Map<String, dynamic> json) => AdminRecognizedField(
+        value: json['value'] as String,
+        confidence: (json['confidence'] as num).toDouble(),
+        checksumOk: json['checksumOk'] as bool?,
+        needsReview: json['needsReview'] as bool,
+        match: json['match'] as String?,
+      );
+}
+
+/// Блок «Распознано» экрана проверки (задача 031, п.22) — результат одного
+/// документа, подгружается отдельным запросом при открытии документа.
+class AdminDocumentRecognition {
+  const AdminDocumentRecognition({required this.status, this.engineVersion, this.durationMs, required this.fields});
+
+  /// 'PENDING' | 'DONE' | 'FAILED' | 'SKIPPED'.
+  final String status;
+  final String? engineVersion;
+  final int? durationMs;
+  final Map<String, AdminRecognizedField> fields;
+
+  factory AdminDocumentRecognition.fromJson(Map<String, dynamic> json) => AdminDocumentRecognition(
+        status: json['status'] as String,
+        engineVersion: json['engineVersion'] as String?,
+        durationMs: json['durationMs'] as int?,
+        fields: (json['fields'] as Map<String, dynamic>).map((k, v) => MapEntry(k, AdminRecognizedField.fromJson(v as Map<String, dynamic>))),
+      );
+}
+
 class AdminDriverVehicle {
   const AdminDriverVehicle({
     required this.id,
@@ -415,6 +520,8 @@ class AdminDriverVehicle {
     this.lengthM,
     this.plateNumber,
     this.brand,
+    this.identifiers = const [],
+    this.identifierBlockHistory = const [],
   });
 
   final String id;
@@ -424,6 +531,8 @@ class AdminDriverVehicle {
   final double? lengthM;
   final String? plateNumber;
   final String? brand;
+  final List<AdminIdentifierEntry> identifiers;
+  final List<AdminIdentifierBlockEntry> identifierBlockHistory;
 
   factory AdminDriverVehicle.fromJson(Map<String, dynamic> json) => AdminDriverVehicle(
         id: json['id'] as String,
@@ -433,6 +542,12 @@ class AdminDriverVehicle {
         lengthM: json['lengthM'] == null ? null : (json['lengthM'] as num).toDouble(),
         plateNumber: json['plateNumber'] as String?,
         brand: json['brand'] as String?,
+        identifiers: json['identifiers'] == null
+            ? const []
+            : (json['identifiers'] as List<dynamic>).map((e) => AdminIdentifierEntry.fromJson(e as Map<String, dynamic>)).toList(),
+        identifierBlockHistory: json['identifierBlockHistory'] == null
+            ? const []
+            : (json['identifierBlockHistory'] as List<dynamic>).map((e) => AdminIdentifierBlockEntry.fromJson(e as Map<String, dynamic>)).toList(),
       );
 }
 
@@ -580,6 +695,8 @@ class AdminDriverDetail {
     required this.deals,
     required this.sessions,
     required this.auditLog,
+    this.identifiers = const [],
+    this.identifierBlockHistory = const [],
   });
 
   final String id;
@@ -604,6 +721,8 @@ class AdminDriverDetail {
   final List<AdminDriverDealEntry> deals;
   final List<AdminSessionEntry> sessions;
   final List<AdminAuditLogEntry> auditLog;
+  final List<AdminIdentifierEntry> identifiers;
+  final List<AdminIdentifierBlockEntry> identifierBlockHistory;
 
   factory AdminDriverDetail.fromJson(Map<String, dynamic> json) {
     final user = json['user'] as Map<String, dynamic>;
@@ -634,6 +753,12 @@ class AdminDriverDetail {
       deals: (json['deals'] as List<dynamic>).map((e) => AdminDriverDealEntry.fromJson(e as Map<String, dynamic>)).toList(),
       sessions: (json['sessions'] as List<dynamic>).map((e) => AdminSessionEntry.fromJson(e as Map<String, dynamic>)).toList(),
       auditLog: (json['auditLog'] as List<dynamic>).map((e) => AdminAuditLogEntry.fromJson(e as Map<String, dynamic>)).toList(),
+      identifiers: json['identifiers'] == null
+          ? const []
+          : (json['identifiers'] as List<dynamic>).map((e) => AdminIdentifierEntry.fromJson(e as Map<String, dynamic>)).toList(),
+      identifierBlockHistory: json['identifierBlockHistory'] == null
+          ? const []
+          : (json['identifierBlockHistory'] as List<dynamic>).map((e) => AdminIdentifierBlockEntry.fromJson(e as Map<String, dynamic>)).toList(),
     );
   }
 }
@@ -802,6 +927,8 @@ class AdminCompanyDetail {
     required this.reviews,
     required this.complaintsAgainst,
     required this.auditLog,
+    this.identifiers = const [],
+    this.identifierBlockHistory = const [],
   });
 
   final String id;
@@ -824,6 +951,8 @@ class AdminCompanyDetail {
   final List<AdminReviewEntry> reviews;
   final int complaintsAgainst;
   final List<AdminAuditLogEntry> auditLog;
+  final List<AdminIdentifierEntry> identifiers;
+  final List<AdminIdentifierBlockEntry> identifierBlockHistory;
 
   factory AdminCompanyDetail.fromJson(Map<String, dynamic> json) => AdminCompanyDetail(
         id: json['id'] as String,
@@ -846,6 +975,12 @@ class AdminCompanyDetail {
         reviews: (json['reviews'] as List<dynamic>).map((e) => AdminReviewEntry.fromJson(e as Map<String, dynamic>)).toList(),
         complaintsAgainst: json['complaintsAgainst'] as int,
         auditLog: (json['auditLog'] as List<dynamic>).map((e) => AdminAuditLogEntry.fromJson(e as Map<String, dynamic>)).toList(),
+        identifiers: json['identifiers'] == null
+            ? const []
+            : (json['identifiers'] as List<dynamic>).map((e) => AdminIdentifierEntry.fromJson(e as Map<String, dynamic>)).toList(),
+        identifierBlockHistory: json['identifierBlockHistory'] == null
+            ? const []
+            : (json['identifierBlockHistory'] as List<dynamic>).map((e) => AdminIdentifierBlockEntry.fromJson(e as Map<String, dynamic>)).toList(),
       );
 }
 

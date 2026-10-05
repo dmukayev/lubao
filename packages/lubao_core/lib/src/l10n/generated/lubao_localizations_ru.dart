@@ -1531,6 +1531,88 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get adminVerificationCompareWithSelfie => 'Рядом с селфи';
 
   @override
+  String get adminRecognitionTitle => 'Распознано';
+
+  @override
+  String get adminRecognitionSkipped => 'OCR недоступен — проверьте вручную';
+
+  @override
+  String get adminRecognitionPending => 'Распознавание в очереди…';
+
+  @override
+  String get adminRecognitionFailed => 'Не удалось распознать';
+
+  @override
+  String get adminRecognitionMatchOk => 'Проверено';
+
+  @override
+  String get adminRecognitionNeedsReview => 'Проверьте';
+
+  @override
+  String get adminRecognitionDuplicate => 'Дубль у другого владельца';
+
+  @override
+  String get adminRecognitionBlacklisted => 'В чёрном списке';
+
+  @override
+  String get adminRecognitionBlacklistBanner =>
+      'Совпадение с чёрным списком — подтвердить без явного решения нельзя';
+
+  @override
+  String get adminRecognitionChecksumHint => 'контрольная цифра верна';
+
+  @override
+  String get adminRecognitionEditValue => 'Изменить значение';
+
+  @override
+  String get adminRecognitionFieldFullName => 'ФИО';
+
+  @override
+  String get adminRecognitionFieldIin => 'ИИН';
+
+  @override
+  String get adminRecognitionFieldLicenseNumber => 'Номер прав';
+
+  @override
+  String get adminRecognitionFieldExpiryDate => 'Срок действия';
+
+  @override
+  String get adminRecognitionFieldPlateNumber => 'Госномер';
+
+  @override
+  String get adminRecognitionFieldVin => 'VIN';
+
+  @override
+  String get adminRecognitionFieldBrand => 'Марка';
+
+  @override
+  String get adminRecognitionFieldCapacityTons => 'Грузоподъёмность, т';
+
+  @override
+  String get adminRecognitionFieldCompanyName => 'Название компании';
+
+  @override
+  String get adminRecognitionFieldBin => 'БИН';
+
+  @override
+  String get adminRecognitionFieldUscc => '统一社会信用代码';
+
+  @override
+  String get adminIdentifiersCardTitle => 'Идентификаторы';
+
+  @override
+  String get adminIdentifierBlockHistoryTitle => 'История блокировок';
+
+  @override
+  String get adminIdentifierLifted => 'Снята';
+
+  @override
+  String get adminIdentifierActive => 'Активна';
+
+  @override
+  String get adminIdentifierReveal => 'Показать';
+
+  @override
   String get adminRejectPresetPlateMismatch => 'Госномер не совпадает';
 
   @override

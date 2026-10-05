@@ -9,6 +9,7 @@ import { REQUIRED_DRIVER_DOC_TYPES } from '../drivers/drivers.service';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IdentifiersService } from '../identifiers/identifiers.service';
+import type { IdentifierTypeValue } from '../identifiers/normalize';
 import {
   AdminChangeMemberEmailDto,
   AdminDealStatusDto,
@@ -766,6 +767,59 @@ export class AdminService {
     };
   }
 
+  /// Поля распознавания, у которых есть соответствующий тип в чёрном
+  /// списке (задача 031, п.22) — остальные (ФИО, срок действия, марка,
+  /// грузоподъёмность, название компании) нечем сверять с chёрным списком.
+  private static readonly RECOGNIZED_FIELD_IDENTIFIER_TYPE: Partial<Record<string, IdentifierTypeValue>> = {
+    iin: 'IIN',
+    bin: 'BIN',
+    uscc: 'USCC',
+    vin: 'VIN',
+    plateNumber: 'PLATE',
+    licenseNumber: 'DRIVER_LICENSE_NO',
+  };
+
+  /// Блок «Распознано» экрана проверки (макет 25, п.22) — распознанные
+  /// поля + живая проверка по чёрному списку/дублям для полей, у которых
+  /// есть тип идентификатора. Считается только для одного документа за
+  /// раз (вызывается при открытии карточки на проверке), не для списков —
+  /// checkMatches бьёт в базу на каждое поле.
+  async documentRecognition(documentId: string) {
+    const doc = await this.prisma.verificationDocument.findUnique({
+      where: { id: documentId },
+      include: { recognition: true },
+    });
+    if (!doc) throw new NotFoundException('Document not found');
+    if (!doc.recognition) return { status: 'PENDING' as const, engineVersion: null, durationMs: null, fields: {} };
+
+    const owner = doc.vehicleId
+      ? ({ ownerType: 'VEHICLE', ownerId: doc.vehicleId } as const)
+      : doc.driverId
+        ? ({ ownerType: 'DRIVER', ownerId: doc.driverId } as const)
+        : doc.companyId
+          ? ({ ownerType: 'COMPANY', ownerId: doc.companyId } as const)
+          : null;
+
+    const rawFields = (doc.recognition.fields ?? {}) as Record<string, { value: string; confidence: number; checksumOk: boolean | null; needsReview: boolean }>;
+    const fields: Record<string, unknown> = {};
+    for (const [key, field] of Object.entries(rawFields)) {
+      const identifierType = AdminService.RECOGNIZED_FIELD_IDENTIFIER_TYPE[key];
+      let match: 'blacklisted' | 'duplicate' | 'ok' | null = null;
+      if (identifierType && this.identifiers) {
+        const result = await this.identifiers.checkMatches(identifierType, field.value, owner ?? undefined);
+        match = result.blocked ? 'blacklisted' : result.duplicateOwner ? 'duplicate' : 'ok';
+      }
+      fields[key] = { ...field, match };
+    }
+
+    return {
+      status: doc.recognition.status,
+      engineVersion: doc.recognition.engineVersion,
+      durationMs: doc.recognition.durationMs,
+      fields,
+    };
+  }
+
   async reviewVerificationDocument(id: string, adminUserId: string, dto: ReviewVerificationDocumentDto) {
     const doc = await this.prisma.verificationDocument.findUnique({ where: { id } });
     if (!doc) throw new NotFoundException('Document not found');
@@ -782,19 +836,38 @@ export class AdminService {
         driver: { include: { user: true } },
         company: true,
         vehicle: true,
+        recognition: true,
         reviewedBy: { select: { id: true, name: true, email: true } },
       },
     });
+
+    // Задача 031, п.23 — правка админа (поле без своей колонки в БД — ИИН,
+    // номер прав) по сравнению с тем, что распознал OCR, идёт в audit_log
+    // отдельной записью «распознано X → исправлено Y», до записи самого
+    // подтверждённого значения.
+    const recognizedFields = (updated.recognition?.fields ?? {}) as Record<string, { value: string } | undefined>;
+    for (const [field, confirmedValue] of Object.entries(dto.confirmedFields ?? {})) {
+      const recognizedValue = recognizedFields[field]?.value;
+      if (recognizedValue && recognizedValue !== confirmedValue) {
+        await this.logAudit(adminUserId, 'DOCUMENT_FIELD_CORRECTED', 'VerificationDocument', id, {
+          field,
+          recognized: recognizedValue,
+          corrected: confirmedValue,
+        });
+      }
+    }
 
     await this.logAudit(adminUserId, dto.status === 'APPROVED' ? 'DOCUMENT_APPROVED' : 'DOCUMENT_REJECTED', 'VerificationDocument', id, {
       rejectReason: dto.rejectReason,
     });
 
     // Задача 031, этап C, п.15 — совпадение с чёрным списком останавливает
-    // автоматическое подтверждение (⛔ требует явного решения админа,
-    // которого в этом эндпоинте пока нет — Stage E добавит кнопку
-    // «подтвердить несмотря на ⛔»); дубль у другого активного владельца —
-    // только предупреждение, подтверждению не мешает.
+    // автоматическое подтверждение: ниже `isVerified` выставляется только
+    // когда `!blacklistHit`, явного решения админа это не требует — сам
+    // документ может быть одобрен (это оценка его подлинности), а вот
+    // субъект (водитель/машина/компания) ⛔ не верифицируется молча.
+    // Дубль у другого активного владельца — только предупреждение,
+    // подтверждению не мешает.
     let blacklistHit: { reason: string } | null = null;
 
     if (dto.status === 'APPROVED') {
@@ -806,6 +879,24 @@ export class AdminService {
           await this.identifiers.confirmIdentifier({
             type: 'PHONE',
             rawValue: phone,
+            ownerType: 'DRIVER',
+            ownerId: updated.driverId,
+            sourceDocumentId: id,
+            confirmedByUserId: adminUserId,
+          });
+        }
+
+        // ИИН/номер прав (задача 031, п.23) — без своей колонки на Driver,
+        // живут только в identifiers; подтверждаются значением, которое
+        // админ принял (dto.confirmedFields) — распознанным или его правкой.
+        for (const [field, type] of [['iin', 'IIN'], ['licenseNumber', 'DRIVER_LICENSE_NO']] as const) {
+          const value = dto.confirmedFields?.[field];
+          if (!value || !this.identifiers) continue;
+          const match = await this.identifiers.checkMatches(type, value, { ownerType: 'DRIVER', ownerId: updated.driverId });
+          if (match.blocked) blacklistHit = match.blocked;
+          await this.identifiers.confirmIdentifier({
+            type,
+            rawValue: value,
             ownerType: 'DRIVER',
             ownerId: updated.driverId,
             sourceDocumentId: id,
@@ -894,6 +985,37 @@ export class AdminService {
     if (!doc) throw new NotFoundException('Document not found');
     if (/^https?:\/\//.test(doc.fileUrl)) return { redirectUrl: doc.fileUrl };
     return this.uploads.getDocumentStream(doc.fileUrl);
+  }
+
+  /// Полное значение идентификатора по кнопке «Показать» (п.16/24) — через
+  /// IdentifiersService, который и пишет запись в audit_log.
+  async revealIdentifier(identifierId: string, adminUserId: string): Promise<{ value: string | null }> {
+    if (!this.identifiers) return { value: null };
+    return { value: await this.identifiers.revealIdentifier(identifierId, adminUserId) };
+  }
+
+  /// Карточка «Идентификаторы» (п.24) — подтверждённые значения (маски) и
+  /// история блокировок конкретного владельца.
+  private async identifiersCard(ownerType: 'DRIVER' | 'COMPANY' | 'VEHICLE', ownerId: string) {
+    if (!this.identifiers) return { identifiers: [], blockHistory: [] };
+    const [identifiers, blockHistory] = await Promise.all([
+      this.identifiers.listForOwner(ownerType, ownerId),
+      this.identifiers.listBlockHistory(ownerType, ownerId),
+    ]);
+    return {
+      identifiers: identifiers.map((i) => ({ id: i.id, type: i.type, valueMasked: i.valueMasked, confirmedAt: i.createdAt })),
+      blockHistory: blockHistory.map((b) => ({
+        id: b.id,
+        type: b.type,
+        valueMasked: b.valueMasked,
+        reason: b.reason,
+        blockedByName: b.blockedBy.name ?? b.blockedBy.email,
+        createdAt: b.createdAt,
+        liftedAt: b.liftedAt,
+        liftedByName: b.liftedBy?.name ?? b.liftedBy?.email ?? null,
+        liftReason: b.liftReason,
+      })),
+    };
   }
 
   // -- verification queue by subject (задача 028, этап B) ----------------------
@@ -1570,7 +1692,7 @@ export class AdminService {
     });
     if (!driver) throw new NotFoundException('Driver not found');
 
-    const [documents, lastSession, dealsByStatus, cancellations, reviews, calls, whatsapp, complaintsAgainst, complaintsBy, arrivals, deals, sessions, auditLog] =
+    const [documents, lastSession, dealsByStatus, cancellations, reviews, calls, whatsapp, complaintsAgainst, complaintsBy, arrivals, deals, sessions, auditLog, driverIdentifiers, vehicleIdentifiers] =
       await Promise.all([
         this.prisma.verificationDocument.findMany({
           where: { driverId: id },
@@ -1604,12 +1726,16 @@ export class AdminService {
           take: 30,
           include: { actor: { select: { name: true, email: true } } },
         }),
+        this.identifiersCard('DRIVER', id),
+        Promise.all(driver.vehicles.map((v) => this.identifiersCard('VEHICLE', v.id))),
       ]);
 
     return {
       id: driver.id,
       fullName: driver.fullName,
       isVerified: driver.isVerified,
+      identifiers: driverIdentifiers.identifiers,
+      identifierBlockHistory: driverIdentifiers.blockHistory,
       user: {
         id: driver.userId,
         phone: driver.user.phone,
@@ -1623,7 +1749,7 @@ export class AdminService {
       anyCountry: driver.anyCountry,
       directions: driver.directions.map((d) => ({ countryId: d.countryId, name: d.country.name })),
       permits: driver.permits.map((p) => ({ permitId: p.permitId, name: p.permit.name })),
-      vehicles: driver.vehicles.map((v) => ({
+      vehicles: driver.vehicles.map((v, i) => ({
         id: v.id,
         kind: v.kind,
         isVerified: v.isVerified,
@@ -1635,6 +1761,8 @@ export class AdminService {
         plateNumber: v.plateNumber,
         vin: v.vin,
         brand: v.brand,
+        identifiers: vehicleIdentifiers[i].identifiers,
+        identifierBlockHistory: vehicleIdentifiers[i].blockHistory,
       })),
       // Задача 029, п.15 — карточка (не только экран проверки) тоже должна
       // грузить документы через прокси /admin/documents/:id/file, а не
@@ -1677,7 +1805,7 @@ export class AdminService {
     const company = await this.prisma.company.findUnique({ where: { id }, include: { country: { select: { name: true } } } });
     if (!company) throw new NotFoundException('Company not found');
 
-    const [documents, members, invites, cargos, deals, reviews, complaints, auditLog] = await Promise.all([
+    const [documents, members, invites, cargos, deals, reviews, complaints, auditLog, companyIdentifiers] = await Promise.all([
       this.prisma.verificationDocument.findMany({
         where: { companyId: id },
         include: { reviewedBy: { select: { id: true, name: true, email: true } } },
@@ -1713,6 +1841,7 @@ export class AdminService {
         take: 30,
         include: { actor: { select: { name: true, email: true } } },
       }),
+      this.identifiersCard('COMPANY', id),
     ]);
 
     return {
@@ -1728,6 +1857,8 @@ export class AdminService {
       isBlocked: company.isBlocked,
       ratingAvg: Number(company.ratingAvg),
       ratingCount: company.ratingCount,
+      identifiers: companyIdentifiers.identifiers,
+      identifierBlockHistory: companyIdentifiers.blockHistory,
       // Задача 029, п.15 — карточка (не только экран проверки) тоже должна
       // грузить документы через прокси /admin/documents/:id/file, а не
       // presigned MinIO URL напрямую (CORS/сеть MinIO не видна клиенту).

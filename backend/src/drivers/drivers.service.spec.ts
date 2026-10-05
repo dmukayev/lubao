@@ -150,3 +150,40 @@ describe('DriversService#updateProfile — подтверждение телеф
     expect(prisma.user.findUnique).not.toHaveBeenCalled();
   });
 });
+
+describe('DriversService#documentRecognition — блок «Распознано» на мобильной проверке (задача 031, п.25)', () => {
+  it('returns fields without any blacklist/duplicate info — that belongs only to the admin view', async () => {
+    const prisma: any = {
+      verificationDocument: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'doc1',
+          driverId: 'd1',
+          recognition: { status: 'DONE', fields: { iin: { value: '850712345611', confidence: 0.95, checksumOk: true, needsReview: false } } },
+        }),
+      },
+    };
+    const service = new DriversService(prisma);
+
+    const result = await service.documentRecognition('d1', 'doc1');
+
+    expect(result).toEqual({ status: 'DONE', fields: { iin: { value: '850712345611', confidence: 0.95, checksumOk: true, needsReview: false } } });
+  });
+
+  it('returns PENDING with empty fields when no DocumentRecognition row exists yet', async () => {
+    const prisma: any = {
+      verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1', driverId: 'd1', recognition: null }) },
+    };
+    const service = new DriversService(prisma);
+
+    expect(await service.documentRecognition('d1', 'doc1')).toEqual({ status: 'PENDING', fields: {} });
+  });
+
+  it('refuses to return another driver\'s document recognition', async () => {
+    const prisma: any = {
+      verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1', driverId: 'someone-else', recognition: null }) },
+    };
+    const service = new DriversService(prisma);
+
+    await expect(service.documentRecognition('d1', 'doc1')).rejects.toThrow('Document not found');
+  });
+});

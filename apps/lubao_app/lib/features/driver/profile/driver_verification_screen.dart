@@ -119,19 +119,33 @@ class _DocSlotState extends ConsumerState<_DocSlot> {
               if (doc != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(AppRadius.field),
-                  child: Image.network(doc.fileUrl, width: 48, height: 48, fit: BoxFit.cover),
+                  child: Image.network(
+                    doc.fileUrl,
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                    // Без errorBuilder сетевая ошибка загрузки превью
+                    // (как при простое соединения на точке) рушила layout
+                    // этой строки — найдено тестом на узком экране.
+                    errorBuilder: (context, error, stackTrace) => const SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: Icon(LucideIcons.fileWarning, size: 20),
+                    ),
+                  ),
                 ),
               if (doc != null) const SizedBox(width: AppSpacing.md),
               Expanded(child: Text(widget.label, style: AppTextStyles.bodyStrong)),
               Icon(statusIcon, size: 16, color: statusColor),
               const SizedBox(width: AppSpacing.xs),
-              Text(statusLabel, style: AppTextStyles.caption.copyWith(color: statusColor)),
+              Flexible(child: Text(statusLabel, style: AppTextStyles.caption.copyWith(color: statusColor), overflow: TextOverflow.ellipsis)),
             ],
           ),
           if (doc?.status == VerificationDocStatus.rejected && doc?.rejectReason != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(doc!.rejectReason!, style: AppTextStyles.caption.copyWith(color: AppColors.error)),
           ],
+          if (doc != null) _RecognitionBlock(documentId: doc.id),
           if (!_locked) ...[
             const SizedBox(height: AppSpacing.md),
             Row(
@@ -156,6 +170,75 @@ class _DocSlotState extends ConsumerState<_DocSlot> {
           ],
         ],
       ),
+    );
+  }
+}
+
+String _recognitionFieldLabel(LubaoLocalizations t, String key) => switch (key) {
+      'fullName' => t.adminRecognitionFieldFullName,
+      'iin' => t.adminRecognitionFieldIin,
+      'licenseNumber' => t.adminRecognitionFieldLicenseNumber,
+      'expiryDate' => t.adminRecognitionFieldExpiryDate,
+      'plateNumber' => t.adminRecognitionFieldPlateNumber,
+      'vin' => t.adminRecognitionFieldVin,
+      'brand' => t.adminRecognitionFieldBrand,
+      'capacityTons' => t.adminRecognitionFieldCapacityTons,
+      'companyName' => t.adminRecognitionFieldCompanyName,
+      'bin' => t.adminRecognitionFieldBin,
+      'uscc' => t.adminRecognitionFieldUscc,
+      _ => key,
+    };
+
+/// Блок «Распознано» под документом (задача 031, п.25, макет 22) —
+/// только для чтения: значения и, если OCR не уверен, пометка «проверьте»
+/// (стоит переснять почётче). Без сверки с чёрным списком/дублями — это
+/// знание админа о других владельцах, не для самопроверки водителем.
+class _RecognitionBlock extends ConsumerWidget {
+  const _RecognitionBlock({required this.documentId});
+
+  final String documentId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.l10n;
+    final recognition = ref.watch(driverDocumentRecognitionProvider(documentId));
+
+    return recognition.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (r) {
+        if (r.status != 'DONE' || r.fields.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.sm),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            decoration: BoxDecoration(color: AppColors.divider, borderRadius: BorderRadius.circular(AppRadius.field)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(t.adminRecognitionTitle, style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                for (final entry in r.fields.entries)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(_recognitionFieldLabel(t, entry.key), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary))),
+                        Flexible(
+                          child: Text(
+                            entry.value.value,
+                            style: AppTextStyles.caption.copyWith(color: entry.value.needsReview ? AppColors.error : AppColors.text),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
