@@ -1387,14 +1387,43 @@ describe('AdminService.updateCompany / member management (задача 028, п.1
     await expect(service.removeMember('c1', 'u1', 'admin-1', 'x')).rejects.toThrow(BadRequestException);
   });
 
-  it('removeMember deletes a non-owner member', async () => {
+  it('removeMember deletes a non-owner member and reassigns their cargos to the oldest owner (задача 012, п.7)', async () => {
     const prisma: any = {
-      companyMember: { findFirst: jest.fn().mockResolvedValue({ id: 'm1', role: 'LOGIST' }), delete: jest.fn() },
+      companyMember: {
+        findFirst: jest.fn().mockResolvedValueOnce({ id: 'm1', role: 'LOGIST' }).mockResolvedValueOnce({ userId: 'owner-1' }),
+      },
+      cargo: { updateMany: jest.fn() },
       auditLog: { create: jest.fn() },
     };
+    prisma.$transaction = jest.fn(async (fn: any) => fn(prisma));
+    prisma.companyMember.delete = jest.fn();
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     await service.removeMember('c1', 'u1', 'admin-1', 'Больше не работает');
+
+    expect(prisma.cargo.updateMany).toHaveBeenCalledWith({
+      where: { companyId: 'c1', publishedByUserId: 'u1' },
+      data: { publishedByUserId: 'owner-1' },
+    });
+    expect(prisma.companyMember.delete).toHaveBeenCalledWith({ where: { id: 'm1' } });
+  });
+
+  it('removeMember does not touch cargos when removing an OWNER (one of several)', async () => {
+    const prisma: any = {
+      companyMember: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'm1', role: 'OWNER' }),
+        count: jest.fn().mockResolvedValue(2),
+      },
+      cargo: { updateMany: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    prisma.$transaction = jest.fn(async (fn: any) => fn(prisma));
+    prisma.companyMember.delete = jest.fn();
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.removeMember('c1', 'u1', 'admin-1', 'Передал дело');
+
+    expect(prisma.cargo.updateMany).not.toHaveBeenCalled();
     expect(prisma.companyMember.delete).toHaveBeenCalledWith({ where: { id: 'm1' } });
   });
 

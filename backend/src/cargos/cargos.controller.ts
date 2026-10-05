@@ -40,13 +40,13 @@ export class CargosController {
   @Post()
   create(@CurrentUser() ctx: RequestContext, @Body() dto: CreateCargoDto) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
-    return this.cargos.create(ctx.companyMember.companyId, ctx.user.id, dto);
+    return this.cargos.create(ctx.companyMember.companyId, ctx.user.id, ctx.companyMember.company.isVerified, dto);
   }
 
   @Patch(':id')
   update(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: UpdateCargoDto) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
-    return this.cargos.update(ctx.companyMember.companyId, id, dto);
+    return this.cargos.update(ctx.companyMember.companyId, ctx.user.id, ctx.companyMember.role, id, dto);
   }
 
   @Get(':id/close-candidates')
@@ -58,7 +58,7 @@ export class CargosController {
   @Post(':id/close')
   async close(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: CloseCargoDto) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
-    await this.cargos.closeCargo(ctx.companyMember.companyId, id, dto);
+    await this.cargos.closeCargo(ctx.companyMember.companyId, ctx.user.id, ctx.companyMember.role, id, dto);
     return { success: true };
   }
 
@@ -79,7 +79,7 @@ export class CargosController {
   @Post(':id/invite')
   async invite(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: InviteDriverDto) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
-    await this.cargos.assertOwnedBy(id, ctx.companyMember.companyId);
+    await this.cargos.assertCanEdit(id, ctx.companyMember.companyId, ctx.user.id, ctx.companyMember.role);
     return this.responses.inviteDriver(id, dto.driverId, ctx.companyMember.companyId);
   }
 }

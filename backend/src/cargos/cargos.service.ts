@@ -106,7 +106,12 @@ export class CargosService {
     return cargo;
   }
 
-  async create(companyId: string, userId: string, dto: CreateCargoDto) {
+  async create(companyId: string, userId: string, companyIsVerified: boolean, dto: CreateCargoDto) {
+    // Задача 012, п.4 — непроверенная компания может смотреть водителей на
+    // точке и писать им, но не публиковать грузы (decisions.md «Компания:
+    // проверка, роли, контакты»).
+    if (!companyIsVerified) throw new ForbiddenException('COMPANY_NOT_VERIFIED');
+
     const point = await this.prisma.point.findFirstOrThrow({ where: { isActive: true } });
     const readyDate = new Date(dto.readyDate);
     const expiresAt = new Date(readyDate.getTime() + 48 * 60 * 60 * 1000);
@@ -143,8 +148,19 @@ export class CargosService {
     return cargo;
   }
 
-  async update(companyId: string, id: string, dto: UpdateCargoDto) {
-    const existing = await this.assertOwnedBy(id, companyId);
+  /// Задача 012, п.6 — логист видит все грузы компании (чтобы подменить
+  /// коллегу), но редактирует/закрывает только свои; владелец — любые.
+  /// decisions.md «Компания: проверка, роли, контакты».
+  async assertCanEdit(cargoId: string, companyId: string, userId: string, role: string) {
+    const cargo = await this.assertOwnedBy(cargoId, companyId);
+    if (role !== 'OWNER' && cargo.publishedByUserId !== userId) {
+      throw new ForbiddenException('Only the owner or the logist who published this cargo can edit it');
+    }
+    return cargo;
+  }
+
+  async update(companyId: string, userId: string, role: string, id: string, dto: UpdateCargoDto) {
+    const existing = await this.assertCanEdit(id, companyId, userId, role);
 
     const readyDate = dto.readyDate ? new Date(dto.readyDate) : existing.readyDate;
     const expiresAt =
@@ -193,8 +209,8 @@ export class CargosService {
   /// старое «удаление» без причины. «Нашёл в Lubao» выбирает водителя и
   /// создаёт сделку тем же путём, что и приглашение/выбор отклика
   /// (`ResponsesService`) — не дублируем логику транзакции.
-  async closeCargo(companyId: string, id: string, dto: CloseCargoDto) {
-    const cargo = await this.assertOwnedBy(id, companyId);
+  async closeCargo(companyId: string, userId: string, role: string, id: string, dto: CloseCargoDto) {
+    const cargo = await this.assertCanEdit(id, companyId, userId, role);
     if (cargo.status !== 'PUBLISHED') throw new BadRequestException('This cargo is already closed');
 
     if (dto.outcome === 'FOUND_IN_APP') {

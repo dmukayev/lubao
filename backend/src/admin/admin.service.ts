@@ -1858,7 +1858,19 @@ export class AdminService {
       if (owners <= 1) throw new BadRequestException('Cannot remove the last owner');
     }
 
-    await this.prisma.companyMember.delete({ where: { id: member.id } });
+    await this.prisma.$transaction(async (tx) => {
+      // Задача 012, п.7 — удалённый логист не оставляет свои грузы без
+      // хозяина: переходят владельцу (decisions.md «Компания: проверка,
+      // роли, контакты»). Для OWNER это не нужно — его грузы остаются при
+      // компании, и выше уже гарантирован хотя бы один оставшийся OWNER.
+      if (member.role === 'LOGIST') {
+        const owner = await tx.companyMember.findFirst({ where: { companyId, role: 'OWNER' }, orderBy: { createdAt: 'asc' } });
+        if (owner) {
+          await tx.cargo.updateMany({ where: { companyId, publishedByUserId: userId }, data: { publishedByUserId: owner.userId } });
+        }
+      }
+      await tx.companyMember.delete({ where: { id: member.id } });
+    });
     await this.logAudit(adminUserId, 'COMPANY_MEMBER_REMOVED', 'Company', companyId, { reason, userId });
 
     return { userId };

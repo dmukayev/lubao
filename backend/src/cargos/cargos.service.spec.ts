@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { CargosService } from './cargos.service';
 
 function baseCargo(overrides: Partial<Record<string, unknown>> = {}) {
@@ -79,14 +79,14 @@ describe('CargosService.closeCargo — закрытие только с исхо
     const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ status: 'CANCELLED' })) } };
     const service = new CargosService(prisma, {} as any);
 
-    await expect(service.closeCargo('c1', 'cargo1', { outcome: 'FOUND_OUTSIDE' } as any)).rejects.toThrow(BadRequestException);
+    await expect(service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_OUTSIDE' } as any)).rejects.toThrow(BadRequestException);
   });
 
   it('FOUND_IN_APP without driverId throws', async () => {
     const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo()) } };
     const service = new CargosService(prisma, {} as any);
 
-    await expect(service.closeCargo('c1', 'cargo1', { outcome: 'FOUND_IN_APP' } as any)).rejects.toThrow(BadRequestException);
+    await expect(service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_IN_APP' } as any)).rejects.toThrow(BadRequestException);
   });
 
   it('FOUND_IN_APP invites the driver (creating the deal) and marks the cargo CANCELLED with the outcome', async () => {
@@ -97,7 +97,7 @@ describe('CargosService.closeCargo — закрытие только с исхо
     const responses = { inviteDriver: jest.fn() };
     const service = new CargosService(prisma, responses as any);
 
-    await service.closeCargo('c1', 'cargo1', { outcome: 'FOUND_IN_APP', driverId: 'd1' } as any);
+    await service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_IN_APP', driverId: 'd1' } as any);
 
     expect(responses.inviteDriver).toHaveBeenCalledWith('cargo1', 'd1', 'c1');
     expect(prisma.cargo.update).toHaveBeenCalledWith({
@@ -114,7 +114,7 @@ describe('CargosService.closeCargo — закрытие только с исхо
     const responses = { inviteDriver: jest.fn() };
     const service = new CargosService(prisma, responses as any);
 
-    await service.closeCargo('c1', 'cargo1', { outcome: 'FOUND_IN_APP', driverId: 'd1' } as any);
+    await service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_IN_APP', driverId: 'd1' } as any);
 
     expect(responses.inviteDriver).not.toHaveBeenCalled();
     expect(prisma.cargo.update).toHaveBeenCalled();
@@ -125,7 +125,7 @@ describe('CargosService.closeCargo — закрытие только с исхо
     const responses = { inviteDriver: jest.fn() };
     const service = new CargosService(prisma, responses as any);
 
-    await service.closeCargo('c1', 'cargo1', { outcome: 'FOUND_OUTSIDE' } as any);
+    await service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_OUTSIDE' } as any);
 
     expect(responses.inviteDriver).not.toHaveBeenCalled();
     expect(prisma.cargo.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ closeOutcome: 'FOUND_OUTSIDE' }) }));
@@ -161,5 +161,53 @@ describe('CargosService.feed — hides blocked companies\' cargo (задача 0
     expect(prisma.cargo.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { status: 'PUBLISHED', company: { isBlocked: false } } }),
     );
+  });
+});
+
+describe('CargosService.create — непроверенная компания не публикует грузы (задача 012, п.4)', () => {
+  it('throws COMPANY_NOT_VERIFIED when the company is not verified, without touching the database', async () => {
+    const prisma: any = { point: { findFirstOrThrow: jest.fn() }, cargo: { create: jest.fn() } };
+    const service = new CargosService(prisma, {} as any);
+
+    await expect(service.create('c1', 'u1', false, { readyDate: '2026-01-01' } as any)).rejects.toThrow(ForbiddenException);
+    expect(prisma.point.findFirstOrThrow).not.toHaveBeenCalled();
+    expect(prisma.cargo.create).not.toHaveBeenCalled();
+  });
+
+  it('a verified company publishes normally', async () => {
+    const prisma: any = {
+      point: { findFirstOrThrow: jest.fn().mockResolvedValue({ id: 'p1' }) },
+      cargo: { create: jest.fn().mockResolvedValue(baseCargo()) },
+      deal: { count: jest.fn().mockResolvedValue(0) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+    };
+    const service = new CargosService(prisma, {} as any);
+
+    await service.create('c1', 'u1', true, { readyDate: '2026-01-01', destinationCountryId: 'kz', bodyTypeId: 'bt1', price: 100, currency: 'USD' } as any);
+
+    expect(prisma.cargo.create).toHaveBeenCalled();
+  });
+});
+
+describe('CargosService.assertCanEdit — логист редактирует только свой груз, владелец — любой (задача 012, п.6)', () => {
+  it('the OWNER can edit a cargo published by a colleague', async () => {
+    const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedByUserId: 'logist-1' })) } };
+    const service = new CargosService(prisma, {} as any);
+
+    await expect(service.assertCanEdit('cargo1', 'c1', 'owner-1', 'OWNER')).resolves.toBeDefined();
+  });
+
+  it('a LOGIST cannot edit a colleague\'s cargo', async () => {
+    const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedByUserId: 'logist-1' })) } };
+    const service = new CargosService(prisma, {} as any);
+
+    await expect(service.assertCanEdit('cargo1', 'c1', 'logist-2', 'LOGIST')).rejects.toThrow(ForbiddenException);
+  });
+
+  it('a LOGIST can edit their own cargo', async () => {
+    const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedByUserId: 'logist-1' })) } };
+    const service = new CargosService(prisma, {} as any);
+
+    await expect(service.assertCanEdit('cargo1', 'c1', 'logist-1', 'LOGIST')).resolves.toBeDefined();
   });
 });

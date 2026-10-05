@@ -456,6 +456,14 @@ model CompanyMember {
   userId    String            @unique
   user      User              @relation(fields: [userId], references: [id])
   role      CompanyMemberRole
+  /// Контакты конкретного сотрудника (задача 012) — водитель звонит/пишет
+  /// логисту, опубликовавшему груз, а не «компании» (decisions.md
+  /// «Компания: проверка, роли, контакты»). null у сотрудников, которые
+  /// ещё не заполнили «Мой профиль» — тогда показываем company.name/
+  /// User.phone как раньше (см. резолв контакта в cargos/chats).
+  fullName    String?
+  contactPhone String?
+  wechatId    String?
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 
