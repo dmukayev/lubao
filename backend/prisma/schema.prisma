@@ -304,6 +304,8 @@ model User {
   reviewsAuthored        Review[]
   verificationDocuments  VerificationDocument[]
   notificationSettings   NotificationSetting[]
+  notificationEventSettings NotificationEventSetting[]
+  deviceTokens           DeviceToken[]
   complaintsFiled        Complaint[]         @relation("ComplaintReporter")
   complaintsResolved     Complaint[]         @relation("ComplaintResolver")
   complaintsAssigned     Complaint[]         @relation("ComplaintAssignee")
@@ -419,6 +421,9 @@ model Company {
   city          String?
   legalAddress  String?
   taxId         String?
+  /// Вебхук группового бота WeCom (задача 011, п.2) — владелец вставляет
+  /// адрес в профиле компании; «Проверить» шлёт туда тестовое сообщение.
+  wecomWebhookUrl String?
   isVerified    Boolean  @default(false)
   /// Блокировка компании целиком (задача 026, п.5) — отдельно от
   /// User.isBlocked у каждого сотрудника: блокировка компании блокирует
@@ -752,6 +757,56 @@ model NotificationSetting {
 
   @@unique([userId, channel])
   @@map("notification_settings")
+}
+
+/// Группа событий (задача 011, п.4) — отдельная ось от NotificationSetting:
+/// там "включён ли канал вообще" (push/wecom/email/sms), здесь "хочу ли я
+/// именно эти уведомления". notify() шлёт, только если ОБЕ оси включены
+/// (или для оси, по которой строки ещё нет — дефолт true у обеих).
+enum NotificationEventGroup {
+  NEW_CARGO_MATCH
+  CARGO_INVITE
+  CHAT_MESSAGE
+  NEW_RESPONSE
+  NEW_DRIVER_DIGEST
+  DEAL_STATUS
+  VERIFICATION
+  AGREED_CHECK
+}
+
+model NotificationEventSetting {
+  id         String                 @id @default(uuid())
+  userId     String
+  user       User                   @relation(fields: [userId], references: [id])
+  eventGroup NotificationEventGroup
+  enabled    Boolean                @default(true)
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+
+  @@unique([userId, eventGroup])
+  @@map("notification_event_settings")
+}
+
+enum DevicePlatform {
+  FCM
+  APNS
+  JPUSH
+}
+
+/// Токен устройства для push (задача 011, п.2) — привязан к пользователю,
+/// не к Session из 006: сессия живёт 15 мин/до логаута, токен устройства
+/// переживает много сессий, обновляется при каждом запуске приложения.
+model DeviceToken {
+  id         String         @id @default(uuid())
+  userId     String
+  user       User           @relation(fields: [userId], references: [id])
+  token      String         @unique
+  platform   DevicePlatform
+  createdAt  DateTime       @default(now())
+  lastSeenAt DateTime       @default(now())
+
+  @@index([userId])
+  @@map("device_tokens")
 }
 
 model Complaint {
