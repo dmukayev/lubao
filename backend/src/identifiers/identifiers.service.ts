@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { assertIdentifierCryptoConfigured, decryptIdentifier, encryptIdentifier, hashIdentifier, isSensitiveIdentifierType, maskIdentifier } from './crypto';
 import { IdentifierTypeValue, normalizeIdentifier } from './normalize';
@@ -139,15 +140,29 @@ export class IdentifiersService {
     const row = await this.prisma.identifier.findUnique({ where: { id: identifierId } });
     if (!row || !row.valueEncrypted) return null;
 
-    const value = decryptIdentifier(row.valueEncrypted);
+    return this.decryptAndAudit(row.valueEncrypted, adminUserId, 'IDENTIFIER_REVEALED', 'Identifier', identifierId, {
+      type: row.type,
+      ownerType: row.ownerType,
+      ownerId: row.ownerId,
+    });
+  }
+
+  /// Та же пара «расшифровать + записать в журнал», что и у
+  /// [revealIdentifier], но для значения, которое ещё не подтверждено как
+  /// identifiers-строка — распознанное, но не одобренное поле документа
+  /// (задача 032, п.4). `entityType`/`entityId`/`metadata` описывают, ЧТО
+  /// именно раскрыли, чтобы audit_log было по чему искать.
+  async decryptAndAudit(
+    valueEncrypted: string,
+    adminUserId: string,
+    action: string,
+    entityType: string,
+    entityId: string,
+    metadata: Prisma.InputJsonValue,
+  ): Promise<string> {
+    const value = decryptIdentifier(valueEncrypted);
     await this.prisma.auditLog.create({
-      data: {
-        actorUserId: adminUserId,
-        action: 'IDENTIFIER_REVEALED',
-        entityType: 'Identifier',
-        entityId: identifierId,
-        metadata: { type: row.type, ownerType: row.ownerType, ownerId: row.ownerId },
-      },
+      data: { actorUserId: adminUserId, action, entityType, entityId, metadata },
     });
     return value;
   }

@@ -3,11 +3,40 @@ import { Queue } from 'bullmq';
 import { Prisma, VerificationDocType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
-import { extractFields } from './extract-fields';
+import { RECOGNIZED_FIELD_IDENTIFIER_TYPE, RecognizedFields, extractFields } from './extract-fields';
+import { encryptIdentifier, isSensitiveIdentifierType, maskIdentifier } from '../identifiers/crypto';
+import { normalizeIdentifier } from '../identifiers/normalize';
 import { recognizeDocument } from './ocr-client';
 import { RECOGNITION_QUEUE, RecognitionJob } from './recognition.queue';
 
 const ENGINE_VERSION = 'rules-v1';
+
+/// Задача 032, п.4 — ИИН/номер прав не хранятся в document_recognitions
+/// открытым текстом: значение уходит в БД только зашифрованным (тот же
+/// IDENTIFIER_KEY, что и у подтверждённых identifiers) + маской для
+/// отображения без расшифровки; `value` для этих полей не пишется вовсе.
+/// Остальные поля (ФИО, госномер, VIN, БИН/统一社会信用代码...) не настолько
+/// чувствительны — то же решение, что уже принято для identifiers
+/// (`isSensitiveIdentifierType`), не отдельное правило здесь.
+function maskSensitiveFields(fields: RecognizedFields): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, recognized] of Object.entries(fields)) {
+    const type = RECOGNIZED_FIELD_IDENTIFIER_TYPE[key];
+    if (type && isSensitiveIdentifierType(type)) {
+      const normalized = normalizeIdentifier(type, recognized.value);
+      result[key] = {
+        valueMasked: maskIdentifier(type, normalized),
+        valueEncrypted: encryptIdentifier(normalized),
+        confidence: recognized.confidence,
+        checksumOk: recognized.checksumOk,
+        needsReview: recognized.needsReview,
+      };
+    } else {
+      result[key] = recognized;
+    }
+  }
+  return result;
+}
 
 /// Какими языковыми моделями гонять OCR для типа документа (задача 031,
 /// п.17/20) — SELFIE/OTHER не содержат текста для распознавания вовсе.
@@ -89,7 +118,7 @@ export class RecognitionService {
       const fields = extractFields(document.type, lines, { profileFullName: document.driver?.fullName });
       await this.writeResult(documentId, {
         status: 'DONE',
-        fields: fields as unknown as Record<string, unknown>,
+        fields: maskSensitiveFields(fields),
         durationMs: Date.now() - startedAt,
       });
     } catch (err) {

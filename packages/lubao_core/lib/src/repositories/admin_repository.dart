@@ -184,6 +184,16 @@ class AdminRepository {
     return (res.data as Map<String, dynamic>)['value'] as String?;
   }
 
+  /// Та же пара «расшифровать + журнал», что у [revealIdentifier], но для
+  /// распознанного ИИН/номера прав ДО одобрения документа (задача 032,
+  /// п.4) — в блоке «Распознано» показана маска, полное значение только
+  /// по этому запросу (вызывается перед правкой поля, чтобы не
+  /// подставлять маску в поле редактирования).
+  Future<String?> revealRecognizedField(String documentId, String field) async {
+    final res = await _client.dio.post('/admin/verification-documents/$documentId/recognition/$field/reveal');
+    return (res.data as Map<String, dynamic>)['value'] as String?;
+  }
+
   Future<AdminCargoDetail> cargoDetail(String id) async {
     final res = await _client.dio.get('/admin/cargos/$id');
     return AdminCargoDetail.fromJson(res.data as Map<String, dynamic>);

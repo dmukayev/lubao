@@ -10,7 +10,9 @@ import { REQUIRED_DRIVER_DOC_TYPES } from '../drivers/drivers.service';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IdentifiersService } from '../identifiers/identifiers.service';
-import type { IdentifierTypeValue } from '../identifiers/normalize';
+import { decryptIdentifier, maskIdentifier } from '../identifiers/crypto';
+import { normalizeIdentifier, type IdentifierTypeValue } from '../identifiers/normalize';
+import { RECOGNIZED_FIELD_IDENTIFIER_TYPE } from '../recognition/extract-fields';
 import {
   AdminChangeMemberEmailDto,
   AdminDealStatusDto,
@@ -769,22 +771,24 @@ export class AdminService {
   }
 
   /// Поля распознавания, у которых есть соответствующий тип в чёрном
-  /// списке (задача 031, п.22) — остальные (ФИО, срок действия, марка,
-  /// грузоподъёмность, название компании) нечем сверять с chёрным списком.
-  private static readonly RECOGNIZED_FIELD_IDENTIFIER_TYPE: Partial<Record<string, IdentifierTypeValue>> = {
-    iin: 'IIN',
-    bin: 'BIN',
-    uscc: 'USCC',
-    vin: 'VIN',
-    plateNumber: 'PLATE',
-    licenseNumber: 'DRIVER_LICENSE_NO',
-  };
-
   /// Блок «Распознано» экрана проверки (макет 25, п.22) — распознанные
   /// поля + живая проверка по чёрному списку/дублям для полей, у которых
   /// есть тип идентификатора. Считается только для одного документа за
   /// раз (вызывается при открытии карточки на проверке), не для списков —
   /// checkMatches бьёт в базу на каждое поле.
+  /// Задача 032, п.4 — ИИН/номер прав в document_recognitions.fields
+  /// хранятся только маской+шифром (см. recognition.service.ts), `value`
+  /// у таких полей нет. Везде, где раньше читали `field.value` для
+  /// сопоставления с чёрным списком, нужно сперва расшифровать;
+  /// не-чувствительные поля (ФИО, госномер, VIN...) остались как есть —
+  /// там `value` и есть открытый текст, его читаем напрямую.
+  private resolveRecognizedValue(field: { value?: string; valueEncrypted?: string } | undefined): string | null {
+    if (!field) return null;
+    if (typeof field.value === 'string') return field.value;
+    if (typeof field.valueEncrypted === 'string') return decryptIdentifier(field.valueEncrypted);
+    return null;
+  }
+
   async documentRecognition(documentId: string) {
     const doc = await this.prisma.verificationDocument.findUnique({
       where: { id: documentId },
@@ -801,16 +805,24 @@ export class AdminService {
           ? ({ ownerType: 'COMPANY', ownerId: doc.companyId } as const)
           : null;
 
-    const rawFields = (doc.recognition.fields ?? {}) as Record<string, { value: string; confidence: number; checksumOk: boolean | null; needsReview: boolean }>;
+    const rawFields = (doc.recognition.fields ?? {}) as Record<
+      string,
+      { value?: string; valueMasked?: string; valueEncrypted?: string; confidence: number; checksumOk: boolean | null; needsReview: boolean }
+    >;
     const fields: Record<string, unknown> = {};
     for (const [key, field] of Object.entries(rawFields)) {
-      const identifierType = AdminService.RECOGNIZED_FIELD_IDENTIFIER_TYPE[key];
+      const identifierType = RECOGNIZED_FIELD_IDENTIFIER_TYPE[key];
       let match: 'blacklisted' | 'duplicate' | 'ok' | null = null;
       if (identifierType && this.identifiers) {
-        const result = await this.identifiers.checkMatches(identifierType, field.value, owner ?? undefined);
-        match = result.blocked ? 'blacklisted' : result.duplicateOwner ? 'duplicate' : 'ok';
+        const rawValue = this.resolveRecognizedValue(field);
+        if (rawValue) {
+          const result = await this.identifiers.checkMatches(identifierType, rawValue, owner ?? undefined);
+          match = result.blocked ? 'blacklisted' : result.duplicateOwner ? 'duplicate' : 'ok';
+        }
       }
-      fields[key] = { ...field, match };
+      // Клиенту — маска для чувствительных полей, не то, что хранится
+      // под valueEncrypted; ciphertext наружу вообще не отдаём.
+      fields[key] = { value: field.value ?? field.valueMasked, confidence: field.confidence, checksumOk: field.checksumOk, needsReview: field.needsReview, match };
     }
 
     return {
@@ -819,6 +831,22 @@ export class AdminService {
       durationMs: doc.recognition.durationMs,
       fields,
     };
+  }
+
+  /// Задача 032, п.4 — полное значение чувствительного распознанного поля
+  /// (ИИН/номер прав) ДО одобрения документа — та же пара
+  /// «расшифровать + записать в журнал», что у revealIdentifier, но
+  /// источник — document_recognitions.fields, не identifiers (строки туда
+  /// ещё нет, документ не одобрен).
+  async revealRecognizedField(documentId: string, field: string, adminUserId: string): Promise<{ value: string | null }> {
+    if (!this.identifiers) return { value: null };
+    const doc = await this.prisma.verificationDocument.findUnique({ where: { id: documentId }, include: { recognition: true } });
+    if (!doc) throw new NotFoundException('Document not found');
+    const fields = (doc.recognition?.fields ?? {}) as Record<string, { valueEncrypted?: string } | undefined>;
+    const valueEncrypted = fields[field]?.valueEncrypted;
+    if (!valueEncrypted) return { value: null };
+    const value = await this.identifiers.decryptAndAudit(valueEncrypted, adminUserId, 'DOCUMENT_FIELD_REVEALED', 'VerificationDocument', documentId, { field });
+    return { value };
   }
 
   /// Задача 032, п.2 — последняя проверка перед «Подтвердить», не только в
@@ -843,16 +871,22 @@ export class AdminService {
     });
     const recognizedChecks: Array<{ type: IdentifierTypeValue; value: string }> = [];
     for (const doc of docs) {
-      const fields = (doc.recognition?.fields ?? {}) as Record<string, { value: string } | undefined>;
+      const fields = (doc.recognition?.fields ?? {}) as Record<string, { value?: string; valueEncrypted?: string } | undefined>;
       for (const [key, field] of Object.entries(fields)) {
-        const type = AdminService.RECOGNIZED_FIELD_IDENTIFIER_TYPE[key];
-        if (type && field?.value) recognizedChecks.push({ type, value: field.value });
+        const type = RECOGNIZED_FIELD_IDENTIFIER_TYPE[key];
+        const value = type ? this.resolveRecognizedValue(field) : null;
+        if (type && value) recognizedChecks.push({ type, value });
       }
     }
     const recognizedBlocks = await Promise.all(
       recognizedChecks.map(async (check) => {
         const match = await this.identifiers!.checkMatches(check.type, check.value, { ownerType, ownerId });
-        return match.blocked ? { type: check.type, valueMasked: check.value, reason: match.blocked.reason } : null;
+        // Задача 032, п.4 — valueMasked в НАХОДКЕ блокировки тоже не должен
+        // быть открытым текстом: та же маска, что и у подтверждённых
+        // identifiers (эта находка попадёт в 409-ответ и в audit_log).
+        return match.blocked
+          ? { type: check.type, valueMasked: maskIdentifier(check.type, normalizeIdentifier(check.type, check.value)), reason: match.blocked.reason }
+          : null;
       }),
     );
 
@@ -865,7 +899,7 @@ export class AdminService {
   /// `overrides` — правка админа (dto.confirmedFields), есть только у
   /// документа, который проверяется прямо сейчас.
   private async confirmFieldlessDriverIdentifiers(
-    fields: Record<string, { value: string } | undefined>,
+    fields: Record<string, { value?: string; valueEncrypted?: string } | undefined>,
     overrides: Record<string, string> | undefined,
     driverId: string,
     sourceDocumentId: string,
@@ -874,7 +908,7 @@ export class AdminService {
     if (!this.identifiers) return null;
     let blacklistHit: { reason: string } | null = null;
     for (const [field, type] of [['iin', 'IIN'], ['licenseNumber', 'DRIVER_LICENSE_NO']] as const) {
-      const value = overrides?.[field] ?? fields[field]?.value;
+      const value = overrides?.[field] ?? this.resolveRecognizedValue(fields[field]);
       if (!value) continue;
       const match = await this.identifiers.checkMatches(type, value, { ownerType: 'DRIVER', ownerId: driverId });
       if (match.blocked) blacklistHit = match.blocked;
@@ -914,15 +948,18 @@ export class AdminService {
     // Задача 031, п.23 — правка админа (поле без своей колонки в БД — ИИН,
     // номер прав) по сравнению с тем, что распознал OCR, идёт в audit_log
     // отдельной записью «распознано X → исправлено Y», до записи самого
-    // подтверждённого значения.
-    const recognizedFields = (updated.recognition?.fields ?? {}) as Record<string, { value: string } | undefined>;
+    // подтверждённого значения. Задача 032, п.4 — в сам журнал полные
+    // значения не пишем, только маски (audit_log не настолько защищён,
+    // как identifiers.valueEncrypted).
+    const recognizedFields = (updated.recognition?.fields ?? {}) as Record<string, { value?: string; valueEncrypted?: string } | undefined>;
     for (const [field, confirmedValue] of Object.entries(dto.confirmedFields ?? {})) {
-      const recognizedValue = recognizedFields[field]?.value;
+      const recognizedValue = this.resolveRecognizedValue(recognizedFields[field]);
       if (recognizedValue && recognizedValue !== confirmedValue) {
+        const identifierType = RECOGNIZED_FIELD_IDENTIFIER_TYPE[field];
         await this.logAudit(adminUserId, 'DOCUMENT_FIELD_CORRECTED', 'VerificationDocument', id, {
           field,
-          recognized: recognizedValue,
-          corrected: confirmedValue,
+          recognized: identifierType ? maskIdentifier(identifierType, normalizeIdentifier(identifierType, recognizedValue)) : recognizedValue,
+          corrected: identifierType ? maskIdentifier(identifierType, normalizeIdentifier(identifierType, confirmedValue)) : confirmedValue,
         });
       }
     }

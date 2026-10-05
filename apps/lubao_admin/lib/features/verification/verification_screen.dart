@@ -670,6 +670,12 @@ class _RecognitionPanel extends ConsumerWidget {
                     overrideValue: confirmedValues[entry.key],
                     editable: _editableRecognitionFields.contains(entry.key),
                     onEdit: (value) => onFieldEdited(entry.key, value),
+                    // Задача 032, п.4 — поле в блоке «Распознано» показывает
+                    // маску (ИИН/номер прав); перед правкой нужно полное
+                    // значение, раскрытое через журналируемый эндпоинт, а
+                    // не маску, которую иначе подставили бы в текстовое
+                    // поле редактирования.
+                    onReveal: () => ref.read(adminRepositoryProvider).revealRecognizedField(documentId, entry.key),
                   ),
                 if (anyBlacklisted) ...[
                   const SizedBox(height: 8),
@@ -695,13 +701,21 @@ class _RecognitionPanel extends ConsumerWidget {
 }
 
 class _RecognitionFieldRow extends StatelessWidget {
-  const _RecognitionFieldRow({required this.label, required this.field, required this.overrideValue, required this.editable, required this.onEdit});
+  const _RecognitionFieldRow({
+    required this.label,
+    required this.field,
+    required this.overrideValue,
+    required this.editable,
+    required this.onEdit,
+    required this.onReveal,
+  });
 
   final String label;
   final AdminRecognizedField field;
   final String? overrideValue;
   final bool editable;
   final void Function(String value) onEdit;
+  final Future<String?> Function() onReveal;
 
   @override
   Widget build(BuildContext context) {
@@ -748,7 +762,14 @@ class _RecognitionFieldRow extends StatelessWidget {
 
   Future<void> _editValue(BuildContext context) async {
     final t = context.l10n;
-    final controller = TextEditingController(text: overrideValue ?? field.value);
+    // Задача 032, п.4 — поле может показывать маску (ИИН/номер прав), а не
+    // открытое значение; перед правкой раскрываем его через журналируемый
+    // эндпоинт, иначе отредактированное значение случайно станет самой
+    // маской. `overrideValue` (уже введённая админом правка) остаётся
+    // приоритетной — повторно раскрывать её незачем.
+    final revealed = overrideValue == null ? await onReveal() : null;
+    if (!context.mounted) return;
+    final controller = TextEditingController(text: overrideValue ?? revealed ?? field.value);
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(

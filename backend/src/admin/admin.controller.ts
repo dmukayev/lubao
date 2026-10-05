@@ -178,6 +178,12 @@ export class AdminController {
     return this.admin.revealIdentifier(id, ctx.user.id);
   }
 
+  @Post('verification-documents/:id/recognition/:field/reveal')
+  revealRecognizedField(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Param('field') field: string) {
+    assertAdmin(ctx);
+    return this.admin.revealRecognizedField(id, field, ctx.user.id);
+  }
+
   @Get('documents/:id/file')
   async documentFile(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Res() res: Response) {
     assertAdmin(ctx);

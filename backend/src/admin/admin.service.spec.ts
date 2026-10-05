@@ -1575,6 +1575,73 @@ describe('AdminService.documentRecognition — блок «Распознано»
     // ФИО не идентификатор чёрного списка — match всегда null.
     expect((result.fields as any).fullName.match).toBeNull();
   });
+
+  it('задача 032, п.4 — a field stored only as valueEncrypted (no plaintext value) is still matched against the blacklist, and the response exposes only the mask, never the ciphertext', async () => {
+    const prisma: any = {
+      verificationDocument: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'doc1',
+          driverId: 'd1',
+          vehicleId: null,
+          companyId: null,
+          recognition: {
+            status: 'DONE',
+            engineVersion: 'rules-v1',
+            durationMs: 42,
+            fields: {
+              iin: { valueMasked: '8507••••5611', valueEncrypted: 'opaque-ciphertext', confidence: 0.95, checksumOk: true, needsReview: false },
+            },
+          },
+        }),
+      },
+    };
+    const identifiers = {
+      checkMatches: jest.fn().mockResolvedValue({ blocked: null, duplicateOwner: null }),
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, identifiers as any);
+    jest.spyOn(service as any, 'resolveRecognizedValue').mockReturnValue('850712345611');
+
+    const result = await service.documentRecognition('doc1');
+
+    expect(identifiers.checkMatches).toHaveBeenCalledWith('IIN', '850712345611', { ownerType: 'DRIVER', ownerId: 'd1' });
+    expect((result.fields as any).iin.value).toBe('8507••••5611');
+    expect((result.fields as any).iin).not.toHaveProperty('valueEncrypted');
+  });
+});
+
+describe('AdminService.revealRecognizedField — задача 032, п.4', () => {
+  it('decrypts the encrypted field value and writes a DOCUMENT_FIELD_REVEALED audit_log entry', async () => {
+    const prisma: any = {
+      verificationDocument: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'doc1',
+          recognition: { fields: { iin: { valueMasked: '8507••••5611', valueEncrypted: 'opaque-ciphertext' } } },
+        }),
+      },
+    };
+    const identifiers = { decryptAndAudit: jest.fn().mockResolvedValue('850712345611') };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, identifiers as any);
+
+    const result = await service.revealRecognizedField('doc1', 'iin', 'admin-1');
+
+    expect(identifiers.decryptAndAudit).toHaveBeenCalledWith('opaque-ciphertext', 'admin-1', 'DOCUMENT_FIELD_REVEALED', 'VerificationDocument', 'doc1', { field: 'iin' });
+    expect(result).toEqual({ value: '850712345611' });
+  });
+
+  it('returns { value: null } for a field without an encrypted value, without touching audit_log', async () => {
+    const prisma: any = {
+      verificationDocument: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'doc1', recognition: { fields: { plateNumber: { value: 'A1' } } } }),
+      },
+    };
+    const identifiers = { decryptAndAudit: jest.fn() };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, identifiers as any);
+
+    const result = await service.revealRecognizedField('doc1', 'plateNumber', 'admin-1');
+
+    expect(result).toEqual({ value: null });
+    expect(identifiers.decryptAndAudit).not.toHaveBeenCalled();
+  });
 });
 
 describe('AdminService.reviewVerificationDocument — правка полей без своей колонки (задача 031, этап E, п.23)', () => {
@@ -1609,10 +1676,11 @@ describe('AdminService.reviewVerificationDocument — правка полей б
       confirmedFields: { iin: '850712345611' },
     } as any);
 
+    // Задача 032, п.4 — в audit_log пишутся маски, не открытые значения.
     expect(prisma.auditLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         action: 'DOCUMENT_FIELD_CORRECTED',
-        metadata: { field: 'iin', recognized: '850712345600', corrected: '850712345611' },
+        metadata: { field: 'iin', recognized: '8507••••5600', corrected: '8507••••5611' },
       }),
     });
     expect(identifiers.confirmIdentifier).toHaveBeenCalledWith(

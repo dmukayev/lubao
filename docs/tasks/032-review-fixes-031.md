@@ -152,6 +152,58 @@ editedByAdmin» от клиента не потребовалось — серв
 `identifiers` получил строку `IIN` с маской `9001••••0123`, хотя админ
 ничего не редактировал.
 
+**П.4 (ИИН хранится и отдаётся открытым текстом) — сделано.** Все три
+подпункта из ревью:
+- `recognition.service.ts`: после `extractFields` чувствительные поля
+  (ИИН, номер прав — те же два типа, что уже шифруются в `identifiers`,
+  `isSensitiveIdentifierType`) переписываются в `{valueMasked,
+  valueEncrypted, confidence, checksumOk, needsReview}` ДО записи в
+  `document_recognitions.fields` — открытого `value` там для них больше
+  нет вовсе, только для не-чувствительных полей (ФИО, госномер, VIN...).
+- `admin.service.ts#documentRecognition` (`GET .../recognition`): клиенту
+  отдаётся `value` = маска (ciphertext никогда не уходит в ответ); для
+  живой проверки по чёрному списку сервер расшифровывает значение сам
+  (новый `resolveRecognizedValue`), это не видно снаружи. Новый
+  `revealRecognizedField(documentId, field, adminUserId)` + эндпоинт
+  `POST .../recognition/:field/reveal` — та же пара «расшифровать +
+  audit_log», что у `revealIdentifier` (общий код вынесен в
+  `IdentifiersService.decryptAndAudit`), но для поля, которое ещё не
+  подтверждено как identifiers-строка (документ не одобрен).
+- `DOCUMENT_FIELD_CORRECTED` в `audit_log`: `recognized`/`corrected`
+  теперь маски (`maskIdentifier` + `normalizeIdentifier`), не открытые
+  значения.
+
+Побочно нашёл и исправил плейнтекст-утечку, которую сам же внёс в п.2:
+`blacklistBlocksForOwner`'s `recognizedBlocks` писал `valueMasked:
+check.value` — то есть НЕОТМАСКИРОВАННОЕ значение в поле с именем
+«маска» (попадало бы в 409-ответ и в `blacklistOverride` audit_log при
+force). Теперь маскируется так же, как подтверждённые identifiers.
+
+Flutter: `_RecognitionFieldRow._editValue` раньше подставлял в поле
+правки то, что видно на экране (маску для ИИН/номера прав) — правка
+«для верности» без изменений сохранила бы маску КАК БУДТО реальное
+значение. Теперь перед правкой поле раскрывается через новый
+`AdminRepository.revealRecognizedField` (журналируется), а не читается
+из уже замаскированного `field.value`. Отдельной кнопки «Показать» не
+добавлял — раскрытие без цели сразу править в этом экране не нужно,
+достаточно привязать его к существующему жесту редактирования.
+
+Тесты (`admin.service.spec.ts`, 3 новых): поле с одним `valueEncrypted`
+(без `value`) всё равно матчится с чёрным списком, а в ответе клиенту —
+только маска, без `valueEncrypted`; `revealRecognizedField` расшифровывает
+и пишет `DOCUMENT_FIELD_REVEALED`; без `valueEncrypted` — `{value: null}`
+без обращения к audit_log. Существующий тест на `DOCUMENT_FIELD_CORRECTED`
+обновлён под маски. `recognition.service.spec.ts` — новый assert, что
+`fields.iin.value` не существует, только `valueMasked`/`valueEncrypted`.
+
+**Живая проверка на реальном документе пользователя** (test-data/private/
+Udost.jpg — см. п.8а ниже): после прохождения через настоящий пайплайн
+`document_recognitions.fields.iin` в БД содержит только `valueMasked`/
+`valueEncrypted`, никакого открытого ИИН; `GET .../recognition` как админ
+— видно только маску; `POST .../recognition/iin/reveal` — вернул полное
+значение и записал `DOCUMENT_FIELD_REVEALED` в `audit_log` с
+`{field: 'iin'}` (без значения).
+
 ## 🔴 Блокеры
 
 ### 1. OCR не работает на реальных загрузках + SSRF

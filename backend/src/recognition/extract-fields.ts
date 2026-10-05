@@ -1,5 +1,18 @@
 import { isValidIinOrBin, isValidUscc, isValidVinFormat, matchesKzPlateFormat, vinCheckDigitOk } from './checksums';
 import { namesLikelyMatch } from './name-match';
+import { IdentifierTypeValue } from '../identifiers/normalize';
+
+/// Какие ключи распознанных полей соответствуют типу идентификатора из
+/// чёрного списка (задача 031, п.22) — используется и для живой проверки
+/// при просмотре документа, и при подтверждении (задача 032, п.2/3/4).
+export const RECOGNIZED_FIELD_IDENTIFIER_TYPE: Partial<Record<string, IdentifierTypeValue>> = {
+  iin: 'IIN',
+  bin: 'BIN',
+  uscc: 'USCC',
+  vin: 'VIN',
+  plateNumber: 'PLATE',
+  licenseNumber: 'DRIVER_LICENSE_NO',
+};
 
 export interface RecognizedField {
   value: string;

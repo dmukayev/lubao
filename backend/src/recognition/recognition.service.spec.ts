@@ -97,7 +97,12 @@ describe('RecognitionService#process — п.18/28, п.1/8 (задача 032)', (
 
     const call = prisma.documentRecognition.upsert.mock.calls[0][0];
     expect(call.create.status).toBe('DONE');
-    expect(call.create.fields.iin.value).toBe('850712345611');
+    // Задача 032, п.4 — ИИН не хранится открытым текстом: нет `value`,
+    // только маска + шифр (расшифровывается тем же IDENTIFIER_KEY, что и
+    // identifiers.valueEncrypted).
+    expect(call.create.fields.iin.value).toBeUndefined();
+    expect(call.create.fields.iin.valueMasked).toBe('8507••••5611');
+    expect(typeof call.create.fields.iin.valueEncrypted).toBe('string');
   });
 
   it('calls both ru and ch for COMPANY_REGISTRATION — a company can be registered on either side', async () => {
