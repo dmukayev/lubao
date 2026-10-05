@@ -22,6 +22,7 @@ import { TokenModule } from './token/token.module';
 import { AppSettingsModule } from './app-settings/app-settings.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RealtimeModule } from './realtime/realtime.module';
+import { TranslationModule } from './translation/translation.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { RealtimeModule } from './realtime/realtime.module';
     AppSettingsModule,
     NotificationsModule,
     RealtimeModule,
+    TranslationModule,
     AuthModule,
     ReferenceDataModule,
     DriversModule,
