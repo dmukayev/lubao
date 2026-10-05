@@ -1,4 +1,4 @@
-import { maskNumerics, unmaskNumerics } from './masking';
+import { maskNumerics, unmaskNumerics, verifyLabelsIntact } from './masking';
 
 describe('maskNumerics/unmaskNumerics (задача 010, п.3а)', () => {
   it('masks phone, license plate, amount-with-currency, and time in one message, round-trips perfectly', () => {
@@ -38,5 +38,32 @@ describe('maskNumerics/unmaskNumerics (задача 010, п.3а)', () => {
     // имитация ответа модели — метки остаются, вокруг — перевод
     const modelOutput = 'Позвони ⟦1⟧ в ⟦2⟧';
     expect(unmaskNumerics(modelOutput, values)).toBe('Позвони +7 701 234 56 78 в 18:30');
+  });
+});
+
+describe('verifyLabelsIntact (задача 029, п.5 — перевод не должен «съедать» телефон/сумму)', () => {
+  it('passes when every expected label appears exactly once', () => {
+    expect(verifyLabelsIntact('Позвони ⟦1⟧ в ⟦2⟧', 2)).toBe(true);
+  });
+
+  it('passes trivially when nothing was masked', () => {
+    expect(verifyLabelsIntact('Привет', 0)).toBe(true);
+  });
+
+  it('fails when a label is missing entirely (model silently dropped the phone number)', () => {
+    expect(verifyLabelsIntact('Позвони мне в ⟦2⟧', 2)).toBe(false);
+  });
+
+  it('fails when a label is duplicated', () => {
+    expect(verifyLabelsIntact('⟦1⟧ и снова ⟦1⟧', 2)).toBe(false);
+  });
+
+  it('fails when the model used a look-alike bracket style instead of ours (【1】 or [1])', () => {
+    expect(verifyLabelsIntact('Позвони 【1】 в ⟦2⟧', 2)).toBe(false);
+    expect(verifyLabelsIntact('Позвони [1] в ⟦2⟧', 2)).toBe(false);
+  });
+
+  it('fails when there is an extra, unexpected label', () => {
+    expect(verifyLabelsIntact('⟦1⟧ ⟦2⟧ ⟦3⟧', 2)).toBe(false);
   });
 });

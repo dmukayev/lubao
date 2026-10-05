@@ -27,7 +27,11 @@ export class DeepSeekTranslationProvider extends TranslationProvider {
     if (!apiKey) throw new Error('DEEPSEEK_API_KEY is not configured');
     if (!model) throw new Error('DEEPSEEK_MODEL is not configured');
     this.model = model;
-    this.client = new OpenAI({ apiKey, baseURL: 'https://api.deepseek.com' });
+    // maxRetries:0 — свои 3 попытки с паузой уже в TranslationService
+    // (задача 029, п.5-6); дефолтные 2 ретрая SDK поверх таймаута 5с
+    // давали до ~15с на один вызов, а перевод теперь и так в фоне —
+    // удваивать задержку там незачем.
+    this.client = new OpenAI({ apiKey, baseURL: 'https://api.deepseek.com', maxRetries: 0 });
     this.systemPrompt = this.buildSystemPrompt();
   }
 

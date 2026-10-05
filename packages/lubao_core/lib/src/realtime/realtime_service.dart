@@ -44,10 +44,14 @@ class RealtimeService {
   final _typingController = StreamController<Map<String, dynamic>>.broadcast();
   final _chatUpdatedController = StreamController<Map<String, dynamic>>.broadcast();
   final _reconnectedController = StreamController<void>.broadcast();
+  final _messageTranslatedController = StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Map<String, dynamic>> get onMessageNew => _messageNewController.stream;
   Stream<Map<String, dynamic>> get onMessageRead => _messageReadController.stream;
   Stream<Map<String, dynamic>> get onTyping => _typingController.stream;
+  /// Перевод подъехал отдельно от самого сообщения (задача 029, п.6 —
+  /// `send()` на сервере не ждёт DeepSeek, доставляет оригинал сразу).
+  Stream<Map<String, dynamic>> get onMessageTranslated => _messageTranslatedController.stream;
   /// Чат обновился у пользователя (новое сообщение в одном из его чатов),
   /// независимо от того, открыт ли этот конкретный `chat:<id>` (задача 029,
   /// п.3) — сервер шлёт это в личную комнату пользователя. Экран «Мои
@@ -92,6 +96,7 @@ class RealtimeService {
     socket.on('message:read', (data) => _messageReadController.add(Map<String, dynamic>.from(data as Map)));
     socket.on('typing', (data) => _typingController.add(Map<String, dynamic>.from(data as Map)));
     socket.on('chat:updated', (data) => _chatUpdatedController.add(Map<String, dynamic>.from(data as Map)));
+    socket.on('message:translated', (data) => _messageTranslatedController.add(Map<String, dynamic>.from(data as Map)));
     _socket = socket;
   }
 

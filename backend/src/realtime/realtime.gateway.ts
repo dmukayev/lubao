@@ -125,6 +125,13 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     this.server.to(chatRoom(chatId)).emit('message:read', { chatId, readerUserId });
   }
 
+  /// Перевод подъехал отдельно от самого сообщения (задача 029, п.6 —
+  /// `send()` не ждёт DeepSeek) — клиент подменяет текст в уже
+  /// отрисованном пузыре по этому событию.
+  emitMessageTranslated(chatId: string, payload: unknown): void {
+    this.server.to(chatRoom(chatId)).emit('message:translated', payload);
+  }
+
   /// Список «Мои чаты» обновляется у пользователя, даже если он не
   /// открывал конкретный chat:<id> и поэтому не в его комнате (задача
   /// 029, п.3) — личная комната ловит это независимо.

@@ -35,6 +35,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   StreamSubscription<Map<String, dynamic>>? _messageNewSub;
   StreamSubscription<Map<String, dynamic>>? _messageReadSub;
+  StreamSubscription<Map<String, dynamic>>? _messageTranslatedSub;
   StreamSubscription<void>? _reconnectedSub;
   Timer? _pollTimer;
 
@@ -61,6 +62,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ref.invalidate(chatMessagesProvider(widget.chatId));
       }
     });
+    // Перевод подъехал отдельно (задача 029, п.6) — сообщение уже на
+    // экране с оригиналом, здесь просто подменяем его переводом.
+    _messageTranslatedSub = realtime.onMessageTranslated.listen((data) {
+      if (data['chatId'] == widget.chatId) {
+        ref.invalidate(chatMessagesProvider(widget.chatId));
+      }
+    });
     _reconnectedSub = realtime.onReconnected.listen((_) {
       ref.invalidate(chatMessagesProvider(widget.chatId));
     });
@@ -75,6 +83,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ref.read(realtimeServiceProvider).leaveChat(widget.chatId);
     _messageNewSub?.cancel();
     _messageReadSub?.cancel();
+    _messageTranslatedSub?.cancel();
     _reconnectedSub?.cancel();
     _pollTimer?.cancel();
     _controller.dispose();

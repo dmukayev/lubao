@@ -302,7 +302,7 @@ describe('ChatsService.send — chat:updated в личные комнаты об
   });
 });
 
-describe('ChatsService.send — автоперевод (задача 010)', () => {
+describe('ChatsService.send — автоперевод (задача 010; в фоне — задача 029, п.6)', () => {
   function fixture() {
     return {
       chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1', cargoId: null }), update: jest.fn() },
@@ -312,43 +312,52 @@ describe('ChatsService.send — автоперевод (задача 010)', () =
     };
   }
 
-  it('does not call the translator when the setting is off, and stores SKIPPED', async () => {
+  it('does not enqueue translation when the setting is off, and stores SKIPPED', async () => {
     const prisma: any = fixture();
-    const translation = { translateMessage: jest.fn() };
+    const translation = { enqueueTranslation: jest.fn() };
     const appSettings = { get: jest.fn().mockResolvedValue('false') };
     const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, translation as any, appSettings as any);
 
     await service.send('chat1', driverCtx(), 'привет');
 
-    expect(translation.translateMessage).not.toHaveBeenCalled();
+    expect(translation.enqueueTranslation).not.toHaveBeenCalled();
     expect(prisma.message.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ translationStatus: 'SKIPPED' }) }));
   });
 
-  it('translates to the recipient locale when the setting is on (default, no AppSetting row)', async () => {
+  it('does not enqueue translation when sender and recipient already share a locale', async () => {
     const prisma: any = fixture();
-    const translation = { translateMessage: jest.fn().mockResolvedValue({ translations: { zh: '你好' }, status: 'DONE' }) };
+    prisma.companyMember.findFirst.mockResolvedValue({ company: { name: 'Acme' }, user: { id: 'u-company', name: null, locale: 'ru', phone: null } });
+    const translation = { enqueueTranslation: jest.fn() };
     const appSettings = { get: jest.fn().mockResolvedValue(null) };
     const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, translation as any, appSettings as any);
 
     await service.send('chat1', driverCtx(), 'привет');
 
-    expect(translation.translateMessage).toHaveBeenCalledWith('u-driver', 'привет', 'ru', 'zh');
-    expect(prisma.message.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ translations: { zh: '你好' }, translationStatus: 'DONE' }) }),
-    );
+    expect(translation.enqueueTranslation).not.toHaveBeenCalled();
+    expect(prisma.message.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ translationStatus: 'SKIPPED' }) }));
   });
 
-  it('stores no translations object (undefined) when the provider returns nothing', async () => {
+  it('stores the message as PENDING immediately and enqueues translation — does not wait for a result (задача 029, п.6)', async () => {
     const prisma: any = fixture();
-    const translation = { translateMessage: jest.fn().mockResolvedValue({ translations: {}, status: 'FAILED' }) };
+    const translation = { enqueueTranslation: jest.fn().mockResolvedValue(undefined) };
     const appSettings = { get: jest.fn().mockResolvedValue(null) };
     const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, translation as any, appSettings as any);
 
-    await service.send('chat1', driverCtx(), 'привет');
+    const result = await service.send('chat1', driverCtx(), 'привет');
 
     expect(prisma.message.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ translations: undefined, translationStatus: 'FAILED' }) }),
+      expect.objectContaining({ data: expect.objectContaining({ translationStatus: 'PENDING' }) }),
     );
+    expect(prisma.message.create.mock.calls[0][0].data).not.toHaveProperty('translations');
+    expect(translation.enqueueTranslation).toHaveBeenCalledWith({
+      messageId: 'm1',
+      chatId: 'chat1',
+      text: 'привет',
+      from: 'ru',
+      to: 'zh',
+      senderUserId: 'u-driver',
+    });
+    expect(result.translationStatus).toBe('PENDING');
   });
 });
 

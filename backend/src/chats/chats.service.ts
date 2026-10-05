@@ -177,20 +177,19 @@ export class ChatsService {
   async send(chatId: string, ctx: RequestContext, text: string) {
     const chat = await this.loadChat(chatId, ctx);
 
-    // Автоперевод (задача 010) — только на язык собеседника, до записи
-    // сообщения: переводы и статус сохраняются в той же строке, второй
-    // UPDATE не нужен. Выключатель в админке (п. «Перевод выкл.») —
-    // AppSetting 'translationEnabled', дефолт включено, если строки нет.
+    // Автоперевод (задача 010) — только на язык собеседника. Задача 029,
+    // п.6: НЕ ждём провайдера здесь — DeepSeek мог «висеть» секундами
+    // (таймаут 5с, SDK по умолчанию ещё и ретраит), а значит и отправка
+    // сообщения «висела» вместе с ним. Сообщение сохраняется и доходит
+    // мгновенно с оригиналом (PENDING), перевод — в фоне (translation.
+    // processor.ts), по готовности — message:translated в комнату чата.
     const { driver, companyMember } = await this.resolveParties(chat);
     const recipientUserId = ctx.driver ? companyMember?.user.id : driver.user.id;
     const recipientLocale = ctx.driver ? companyMember?.user.locale : driver.user.locale;
     const senderName = ctx.driver ? driver.fullName : companyMember?.user.name || companyMember?.company.name || '';
 
     const translationEnabled = (await this.appSettings.get('translationEnabled')) !== 'false';
-    const { translations, status } =
-      translationEnabled && recipientLocale
-        ? await this.translation.translateMessage(ctx.user.id, text, ctx.user.locale, recipientLocale)
-        : { translations: {}, status: 'SKIPPED' as const };
+    const needsTranslation = translationEnabled && !!recipientLocale && recipientLocale !== ctx.user.locale;
 
     const message = await this.prisma.message.create({
       data: {
@@ -198,13 +197,23 @@ export class ChatsService {
         senderUserId: ctx.user.id,
         originalText: text,
         originalLang: ctx.user.locale,
-        translations: Object.keys(translations).length > 0 ? translations : undefined,
-        translationStatus: status,
+        translationStatus: needsTranslation ? 'PENDING' : 'SKIPPED',
       },
     });
     // Message не трогает Chat.updatedAt сам по себе — обновляем явно, иначе
     // список «Мои чаты» (order by updatedAt) не поднимет диалог наверх.
     await this.prisma.chat.update({ where: { id: chat.id }, data: { updatedAt: new Date() } });
+
+    if (needsTranslation) {
+      await this.translation.enqueueTranslation({
+        messageId: message.id,
+        chatId: chat.id,
+        text,
+        from: ctx.user.locale,
+        to: recipientLocale!,
+        senderUserId: ctx.user.id,
+      });
+    }
 
     // Push получателю (задача 011, CHAT_MESSAGE) — не чаще раза в минуту на
     // чат, см. throttle в NOTIFICATION_EVENTS; доставка «пока открыт экран»

@@ -175,3 +175,16 @@ describe('RealtimeGateway.handleConnection — joins the personal room (зада
     expect(client.join).not.toHaveBeenCalled();
   });
 });
+
+describe('RealtimeGateway.emitMessageTranslated (задача 029, п.6 — перевод подъезжает отдельно от сообщения)', () => {
+  it('sends to the chat room, not the personal room', () => {
+    const gateway = new RealtimeGateway({} as any, {} as any, {} as any);
+    const emit = jest.fn();
+    (gateway as any).server = { to: jest.fn().mockReturnValue({ emit }) };
+
+    gateway.emitMessageTranslated('chat1', { id: 'm1', translationStatus: 'DONE' });
+
+    expect((gateway as any).server.to).toHaveBeenCalledWith('chat:chat1');
+    expect(emit).toHaveBeenCalledWith('message:translated', { id: 'm1', translationStatus: 'DONE' });
+  });
+});

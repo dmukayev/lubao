@@ -47,3 +47,21 @@ export function unmaskNumerics(text: string, values: string[]): string {
     return index >= 0 && index < values.length ? values[index] : full;
   });
 }
+
+/// Задача 029, п.5 — модель могла потерять метку (телефон молча исчезает),
+/// продублировать её, или вернуть похожий, но НЕ наш символ (`【1】`/`[1]` —
+/// обычный regex `⟦\d+⟧` их не ловит вообще, что тоже должно считаться
+/// порчей, а не «метки нет, значит всё ок»). Правильный ответ — каждая
+/// метка от 1 до expectedCount встречается РОВНО один раз, лишних нет.
+export function verifyLabelsIntact(text: string, expectedCount: number): boolean {
+  if (expectedCount === 0) return true;
+  const matches = [...text.matchAll(/⟦(\d+)⟧/g)];
+  if (matches.length !== expectedCount) return false;
+  const seen = new Set<number>();
+  for (const match of matches) {
+    const n = Number(match[1]);
+    if (n < 1 || n > expectedCount || seen.has(n)) return false;
+    seen.add(n);
+  }
+  return true;
+}
