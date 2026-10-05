@@ -531,6 +531,33 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get unitPallets => '托';
 
   @override
+  String get dealVehicleFullTitle => '车辆已满载';
+
+  @override
+  String dealVehicleFullBody(String used, String capacity, String unit) {
+    return '已确认 $used／$capacity $unit。要接这单，请先完成或取消当前运输。';
+  }
+
+  @override
+  String get dealVehicleFullNextTrip => '该货物装货日期不同 — 属于下一趟。请在当前运输交付后再确认。';
+
+  @override
+  String get dealVehicleFullOpenCurrent => '查看当前交易';
+
+  @override
+  String get dealCancelReasonTookAnother => '已接其他货物';
+
+  @override
+  String driverAlreadyHauling(String used, String unit) {
+    return '正在承运：$used $unit';
+  }
+
+  @override
+  String driverCancelShare(int cancelled, int total) {
+    return '已取消 $total 笔交易中的 $cancelled 笔';
+  }
+
+  @override
   String get garageSizeTitle => '车厢尺寸';
 
   @override

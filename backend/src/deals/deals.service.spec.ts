@@ -30,7 +30,7 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
 
   beforeEach(() => {
     prisma = {
-      deal: { findUnique: jest.fn(), update: jest.fn() },
+      deal: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn() },
       vehicle: {
         findUnique: jest.fn().mockResolvedValue({ isVerified: true, kind: 'TRACTOR' }),
@@ -95,7 +95,7 @@ describe('DealsService.advanceStatus — проверка связки маши�
 
   beforeEach(() => {
     prisma = {
-      deal: { findUnique: jest.fn(), update: jest.fn() },
+      deal: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn() },
       vehicle: { findUnique: jest.fn(), findMany: jest.fn() },
     };
@@ -161,5 +161,141 @@ describe('DealsService.advanceStatus — проверка связки маши�
 
     await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toThrow('VEHICLE_REQUIRED');
     expect(prisma.deal.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('DealsService — догруз разрешён, «бронь всего подряд» — нет (задача 037)', () => {
+  const READY = new Date('2026-10-10T00:00:00Z');
+
+  function cargoFixture(overrides: Record<string, unknown> = {}) {
+    return {
+      companyId: 'c1',
+      publishedByUserId: 'logist-1',
+      weightKg: 10000,
+      volumeM3: null,
+      palletCount: null,
+      readyDate: READY,
+      destinationCountryId: 'kz',
+      destinationCityId: null,
+      ...overrides,
+    };
+  }
+
+  function setup({
+    activeDeals = [] as unknown[],
+    trailer = { capacityTons: 20, volumeM3: null, palletsEuro: null } as { capacityTons: number | null; volumeM3: number | null; palletsEuro: number | null },
+  }) {
+    const prisma: any = {
+      deal: {
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        findMany: jest.fn().mockResolvedValue(activeDeals),
+      },
+      companyMember: { findFirst: jest.fn() },
+      vehicle: {
+        // Первый findUnique — проверка тягача (kind), второй — кузов связки.
+        findUnique: jest.fn().mockImplementation(({ where }: any) =>
+          Promise.resolve(where.id === 'tractor1' ? { isVerified: true, kind: 'TRACTOR' } : { id: 'trailer1', isVerified: true, kind: 'TRAILER', ...trailer }),
+        ),
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'tractor1', isVerified: true },
+          { id: 'trailer1', isVerified: true },
+        ]),
+      },
+    };
+    const service = new DealsService(prisma, { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) } as any, { notify: jest.fn() } as any);
+    return { prisma, service };
+  }
+
+  it('два частичных 8 т + 10 т на машину 20 т — вторая подтверждается', async () => {
+    const { prisma, service } = setup({
+      activeDeals: [{ id: 'deal-old', cargo: cargoFixture({ weightKg: 8000 }) }],
+    });
+    const deal = dealFixture({ cargo: cargoFixture({ weightKg: 10000 }) });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
+
+    await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
+
+    expect(prisma.deal.update).toHaveBeenCalled();
+  });
+
+  it('20 т + 10 т на машину 20 т — вторая падает с 409 VEHICLE_FULL', async () => {
+    const { prisma, service } = setup({
+      activeDeals: [{ id: 'deal-old', cargo: cargoFixture({ weightKg: 20000 }) }],
+    });
+    const deal = dealFixture({ cargo: cargoFixture({ weightKg: 10000 }) });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+
+    await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'VEHICLE_FULL', reason: 'FULL', usedWeightKg: 20000, capacityKg: 20000 }),
+    });
+    expect(prisma.deal.update).not.toHaveBeenCalled();
+  });
+
+  it('груз без веса занимает машину целиком — догруз рядом не подтвердить', async () => {
+    const { prisma, service } = setup({
+      activeDeals: [{ id: 'deal-old', cargo: cargoFixture({ weightKg: null }) }],
+    });
+    const deal = dealFixture({ cargo: cargoFixture({ weightKg: 1000 }) });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+
+    await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toThrow();
+    expect(prisma.deal.update).not.toHaveBeenCalled();
+  });
+
+  it('объём НЕ учитывается, когда неизвестен у машины или груза (отсекает только вес)', async () => {
+    const { prisma, service } = setup({
+      // У машины объёма нет (volumeM3: null) — суммарные 150 м³ не мешают.
+      activeDeals: [{ id: 'deal-old', cargo: cargoFixture({ weightKg: 5000, volumeM3: 80 }) }],
+    });
+    const deal = dealFixture({ cargo: cargoFixture({ weightKg: 5000, volumeM3: 70 }) });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
+
+    await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
+
+    expect(prisma.deal.update).toHaveBeenCalled();
+  });
+
+  it('объём учитывается, когда известен и у машины, и у всех грузов', async () => {
+    const { prisma, service } = setup({
+      trailer: { capacityTons: 20, volumeM3: 90, palletsEuro: null },
+      activeDeals: [{ id: 'deal-old', cargo: cargoFixture({ weightKg: 5000, volumeM3: 80 }) }],
+    });
+    const deal = dealFixture({ cargo: cargoFixture({ weightKg: 5000, volumeM3: 70 }) });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+
+    await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'VEHICLE_FULL' }),
+    });
+  });
+
+  it('погрузка через 3 дня — это следующий рейс, не догруз: 409 с reason NEXT_TRIP', async () => {
+    const { prisma, service } = setup({
+      activeDeals: [{ id: 'deal-old', cargo: cargoFixture({ weightKg: 1000, readyDate: new Date('2026-10-07T00:00:00Z') }) }],
+    });
+    const deal = dealFixture({ cargo: cargoFixture({ weightKg: 1000 }) });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+
+    await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'VEHICLE_FULL', reason: 'NEXT_TRIP' }),
+    });
+  });
+
+  it('последовательные рейсы: активных сделок нет (DELIVERED не считаются — фильтр по статусам в запросе) — без ограничений', async () => {
+    const { prisma, service } = setup({ activeDeals: [] });
+    const deal = dealFixture({ cargo: cargoFixture({ weightKg: 20000 }) });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
+
+    await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
+
+    expect(prisma.deal.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ status: { in: ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT'] } }),
+      }),
+    );
+    expect(prisma.deal.update).toHaveBeenCalled();
   });
 });

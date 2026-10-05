@@ -671,6 +671,7 @@ class AdminDriverStats {
   const AdminDriverStats({
     required this.dealsByStatus,
     required this.cancellations,
+    this.dealsTotal = 0,
     required this.ratingAvg,
     required this.ratingCount,
     required this.reviews,
@@ -682,6 +683,9 @@ class AdminDriverStats {
 
   final Map<String, int> dealsByStatus;
   final int cancellations;
+
+  /// Знаменатель для «отменил 1 из 15 сделок» (задача 037, п.8).
+  final int dealsTotal;
   final double ratingAvg;
   final int ratingCount;
   final List<AdminReviewEntry> reviews;
@@ -693,6 +697,7 @@ class AdminDriverStats {
   factory AdminDriverStats.fromJson(Map<String, dynamic> json) => AdminDriverStats(
         dealsByStatus: (json['dealsByStatus'] as Map<String, dynamic>).map((k, v) => MapEntry(k, v as int)),
         cancellations: json['cancellations'] as int,
+        dealsTotal: json['dealsTotal'] as int? ?? 0,
         ratingAvg: (json['ratingAvg'] as num).toDouble(),
         ratingCount: json['ratingCount'] as int,
         reviews: (json['reviews'] as List<dynamic>).map((e) => AdminReviewEntry.fromJson(e as Map<String, dynamic>)).toList(),

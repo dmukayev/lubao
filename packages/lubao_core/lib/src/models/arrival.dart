@@ -36,6 +36,8 @@ class ArrivalListing {
     this.capacityTons,
     this.volumeM3,
     this.palletsEuro,
+    this.committedWeightKg = 0,
+    this.activeDealsCount = 0,
     required this.anyCountry,
     required this.directionCountryIds,
   });
@@ -57,6 +59,11 @@ class ArrivalListing {
   /// Размер кузова связки (задача 033, п.9) — «тент · 20 т · 90 м³ · 33 пал.».
   final double? volumeM3;
   final int? palletsEuro;
+
+  /// Сколько водитель уже везёт по активным сделкам (задача 037, п.7) —
+  /// логист видит догруз ДО выбора; 0 — свободен.
+  final double committedWeightKg;
+  final int activeDealsCount;
   final bool anyCountry;
   final List<String> directionCountryIds;
 
@@ -76,6 +83,8 @@ class ArrivalListing {
         capacityTons: (json['capacityTons'] as num?)?.toDouble(),
         volumeM3: (json['volumeM3'] as num?)?.toDouble(),
         palletsEuro: json['palletsEuro'] as int?,
+        committedWeightKg: (json['committedWeightKg'] as num?)?.toDouble() ?? 0,
+        activeDealsCount: json['activeDealsCount'] as int? ?? 0,
         anyCountry: json['anyCountry'] as bool? ?? false,
         directionCountryIds:
             (json['directionCountryIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],

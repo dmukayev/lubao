@@ -546,6 +546,34 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get unitPallets => 'pal.';
 
   @override
+  String get dealVehicleFullTitle => 'Vehicle is full';
+
+  @override
+  String dealVehicleFullBody(String used, String capacity, String unit) {
+    return 'Already committed $used of $capacity $unit. To take this one, finish or cancel the current haul first.';
+  }
+
+  @override
+  String get dealVehicleFullNextTrip =>
+      'This cargo loads on a different day — it is the next trip. Confirm it after delivering the current one.';
+
+  @override
+  String get dealVehicleFullOpenCurrent => 'Open current deal';
+
+  @override
+  String get dealCancelReasonTookAnother => 'Took another cargo';
+
+  @override
+  String driverAlreadyHauling(String used, String unit) {
+    return 'Already hauling: $used $unit';
+  }
+
+  @override
+  String driverCancelShare(int cancelled, int total) {
+    return 'Cancelled $cancelled of $total deals';
+  }
+
+  @override
   String get garageSizeTitle => 'Body size';
 
   @override

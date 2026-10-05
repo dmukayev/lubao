@@ -56,8 +56,13 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
       ref.invalidate(dealByIdProvider(widget.dealId));
       ref.invalidate(dealsMineProvider);
     } on DioException catch (e) {
+      final full = asVehicleFullError(e);
       if (isDriverNotVerifiedError(e)) {
         if (mounted) await showVerificationRequiredSheet(context);
+      } else if (full != null) {
+        // Задача 037, п.4 — не «Ошибка», а понятное объяснение с переходом
+        // к сделке, которая занимает машину.
+        if (mounted) await _showVehicleFullSheet(full);
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.commonError)));
       }
@@ -66,18 +71,73 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
     }
   }
 
+  Future<void> _showVehicleFullSheet(VehicleFullError full) async {
+    final t = context.l10n;
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.dealVehicleFullTitle, style: AppTextStyles.title),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                full.isNextTrip
+                    ? t.dealVehicleFullNextTrip
+                    : t.dealVehicleFullBody(
+                        ((full.usedWeightKg ?? 0) / 1000).toStringAsFixed(0),
+                        ((full.capacityKg ?? 0) / 1000).toStringAsFixed(0),
+                        t.unitTon,
+                      ),
+                style: AppTextStyles.body,
+              ),
+              if (full.dealIds.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.lg),
+                OutlinedButton(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    context.push('/deals/${full.dealIds.first}');
+                  },
+                  child: Text(t.dealVehicleFullOpenCurrent),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _cancel() async {
     final t = context.l10n;
     final controller = TextEditingController();
     final reason = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.dealCancel),
-        content: AppTextField(label: t.dealCancelReasonLabel, controller: controller, maxLines: 3),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.commonCancel)),
-          FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: Text(t.commonDone)),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(t.dealCancel),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppTextField(label: t.dealCancelReasonLabel, controller: controller, maxLines: 3),
+              const SizedBox(height: AppSpacing.sm),
+              // Задача 037, п.8 — частая причина отмены после подтверждения;
+              // пресет заполняет поле, админ видит её отдельно в статистике.
+              ActionChip(
+                label: Text(t.dealCancelReasonTookAnother),
+                onPressed: () => setDialogState(() => controller.text = t.dealCancelReasonTookAnother),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text), child: Text(t.commonDone)),
+          ],
+        ),
       ),
     );
     if (reason == null || reason.trim().isEmpty) return;

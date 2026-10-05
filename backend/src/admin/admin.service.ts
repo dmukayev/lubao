@@ -1910,6 +1910,9 @@ export class AdminService {
       stats: {
         dealsByStatus: Object.fromEntries(dealsByStatus.map((g) => [g.status, g._count])),
         cancellations,
+        // Задача 037, п.8 — «отменил 1 из 15 сделок»: знаменатель, чтобы
+        // доля отмен считалась без суммирования dealsByStatus на клиенте.
+        dealsTotal: dealsByStatus.reduce((sum, g) => sum + (g._count as unknown as number), 0),
         ratingAvg: Number(driver.ratingAvg),
         ratingCount: driver.ratingCount,
         reviews,

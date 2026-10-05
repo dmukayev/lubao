@@ -546,6 +546,34 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get unitPallets => 'пал.';
 
   @override
+  String get dealVehicleFullTitle => 'Көлік толы';
+
+  @override
+  String dealVehicleFullBody(String used, String capacity, String unit) {
+    return '$capacity $unit ішінен $used расталған. Мұны алу үшін ағымдағыны аяқтаңыз немесе бас тартыңыз.';
+  }
+
+  @override
+  String get dealVehicleFullNextTrip =>
+      'Бұл жүк басқа күні тиеледі — бұл келесі рейс. Ағымдағыны жеткізгеннен кейін растаңыз.';
+
+  @override
+  String get dealVehicleFullOpenCurrent => 'Ағымдағы мәмілеге';
+
+  @override
+  String get dealCancelReasonTookAnother => 'Басқа жүк алдым';
+
+  @override
+  String driverAlreadyHauling(String used, String unit) {
+    return 'Қазір тасып жүр: $used $unit';
+  }
+
+  @override
+  String driverCancelShare(int cancelled, int total) {
+    return '$total мәміленің $cancelled бас тартқан';
+  }
+
+  @override
   String get garageSizeTitle => 'Шанақ өлшемі';
 
   @override

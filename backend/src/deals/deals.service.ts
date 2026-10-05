@@ -93,6 +93,76 @@ export class DealsService {
     if (!isParty) throw new ForbiddenException('Not a party to this deal');
   }
 
+  /// Задача 037 — догруз разрешён, «бронь всего подряд» — нет: при
+  /// «Подтверждаю перевозку» суммируются ВСЕ активные сделки водителя на
+  /// ту же связку машин (+ новая). Правила:
+  /// - вес: Σ ≤ capacityTons×1000; груз БЕЗ веса = полная загрузка;
+  /// - объём/паллеты: только когда известны и у машины, и у всех грузов;
+  /// - даты погрузки всех грузов в окне ±1 день от новой — иначе это не
+  ///   догруз, а следующий рейс (подтверждать после DELIVERED текущих).
+  /// Отклики и выбор логистом не ограничиваются (п.1/3 — логист видит
+  /// «Уже везёт…» и решает сам), жёсткая проверка только здесь.
+  private async assertVehicleNotFull(deal: DealWithRelations) {
+    const cargo = deal.cargo;
+    if (!cargo) return;
+
+    const activeDeals = await this.prisma.deal.findMany({
+      where: {
+        driverId: deal.driverId,
+        status: { in: ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT'] },
+        tractorId: deal.tractorId,
+        trailerId: deal.trailerId,
+        id: { not: deal.id },
+      },
+      include: { cargo: true },
+    });
+    if (activeDeals.length === 0) return;
+
+    const bodyVehicleId = deal.trailerId ?? deal.tractorId;
+    const vehicle = bodyVehicleId ? await this.prisma.vehicle.findUnique({ where: { id: bodyVehicleId } }) : null;
+    const capacityKg = vehicle?.capacityTons != null ? Number(vehicle.capacityTons) * 1000 : null;
+
+    const allCargos = [cargo, ...activeDeals.map((d) => d.cargo).filter((c): c is NonNullable<typeof c> => c != null)];
+    const describe = activeDeals.map((d) => ({
+      dealId: d.id,
+      weightKg: d.cargo?.weightKg != null ? Number(d.cargo.weightKg) : null,
+      readyDate: d.cargo?.readyDate ?? null,
+      destinationCountryId: d.cargo?.destinationCountryId ?? null,
+      destinationCityId: d.cargo?.destinationCityId ?? null,
+    }));
+    const usedWeightKg = activeDeals.reduce((sum, d) => sum + (d.cargo?.weightKg != null ? Number(d.cargo.weightKg) : 0), 0);
+    const reject = (reason: 'NEXT_TRIP' | 'FULL') => {
+      throw new ConflictException({
+        code: 'VEHICLE_FULL',
+        reason,
+        usedWeightKg,
+        capacityKg,
+        deals: describe,
+        message: 'Vehicle is already committed — finish or cancel the current haul first',
+      });
+    };
+
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const newReady = cargo.readyDate.getTime();
+    const sameWindow = activeDeals.every((d) => d.cargo != null && Math.abs(d.cargo.readyDate.getTime() - newReady) <= DAY_MS);
+    if (!sameWindow) reject('NEXT_TRIP');
+
+    // Груз без веса занимает машину целиком — второй рядом не подтвердить.
+    if (allCargos.some((c) => c.weightKg == null)) reject('FULL');
+    if (capacityKg != null) {
+      const totalKg = allCargos.reduce((sum, c) => sum + Number(c.weightKg), 0);
+      if (totalKg > capacityKg) reject('FULL');
+    }
+    if (vehicle?.volumeM3 != null && allCargos.every((c) => c.volumeM3 != null)) {
+      const totalM3 = allCargos.reduce((sum, c) => sum + Number(c.volumeM3), 0);
+      if (totalM3 > Number(vehicle.volumeM3)) reject('FULL');
+    }
+    if (vehicle?.palletsEuro != null && allCargos.every((c) => c.palletCount != null)) {
+      const totalPallets = allCargos.reduce((sum, c) => sum + (c.palletCount as number), 0);
+      if (totalPallets > vehicle.palletsEuro) reject('FULL');
+    }
+  }
+
   async advanceStatus(id: string, driverId: string, nextStatus: string) {
     const deal = await this.findEntity(id);
     if (deal.driverId !== driverId) throw new ForbiddenException('Not your deal');
@@ -123,6 +193,8 @@ export class DealsService {
       if (notVerified || vehicles.length !== vehicleIds.length) {
         throw new BadRequestException('VEHICLE_NOT_VERIFIED');
       }
+
+      await this.assertVehicleNotFull(deal);
     }
 
     const now = new Date();

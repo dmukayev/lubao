@@ -509,6 +509,12 @@ class _DriverCard extends StatelessWidget {
                         ],
                       ],
                     ),
+                    // Задача 037, п.7 — логист видит догруз до выбора.
+                    if (driver.activeDealsCount > 0)
+                      Text(
+                        t.driverAlreadyHauling((driver.committedWeightKg / 1000).toStringAsFixed(0), t.unitTon),
+                        style: AppTextStyles.caption.copyWith(color: AppColors.accentText),
+                      ),
                   ],
                 ),
               ),

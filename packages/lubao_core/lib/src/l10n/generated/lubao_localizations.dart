@@ -1104,6 +1104,48 @@ abstract class LubaoLocalizations {
   /// **'пал.'**
   String get unitPallets;
 
+  /// No description provided for @dealVehicleFullTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Машина заполнена'**
+  String get dealVehicleFullTitle;
+
+  /// No description provided for @dealVehicleFullBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтверждён груз {used} из {capacity} {unit}. Чтобы взять этот, сначала завершите или отмените текущий.'**
+  String dealVehicleFullBody(String used, String capacity, String unit);
+
+  /// No description provided for @dealVehicleFullNextTrip.
+  ///
+  /// In ru, this message translates to:
+  /// **'Этот груз грузится в другой день — это следующий рейс. Подтвердите его после доставки текущего.'**
+  String get dealVehicleFullNextTrip;
+
+  /// No description provided for @dealVehicleFullOpenCurrent.
+  ///
+  /// In ru, this message translates to:
+  /// **'К текущей сделке'**
+  String get dealVehicleFullOpenCurrent;
+
+  /// No description provided for @dealCancelReasonTookAnother.
+  ///
+  /// In ru, this message translates to:
+  /// **'Взял другой груз'**
+  String get dealCancelReasonTookAnother;
+
+  /// No description provided for @driverAlreadyHauling.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уже везёт: {used} {unit}'**
+  String driverAlreadyHauling(String used, String unit);
+
+  /// No description provided for @driverCancelShare.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменил {cancelled} из {total} сделок'**
+  String driverCancelShare(int cancelled, int total);
+
   /// No description provided for @garageSizeTitle.
   ///
   /// In ru, this message translates to:

@@ -90,6 +90,31 @@ bool isDriverNotVerifiedError(Object error) {
   return data is Map && data['message'] == 'DRIVER_NOT_VERIFIED';
 }
 
+/// Машина уже занята активными сделками (задача 037) — догруз не помещается
+/// или это вообще следующий рейс. `null`, если ошибка другая.
+VehicleFullError? asVehicleFullError(Object error) {
+  if (error is! DioException) return null;
+  final data = error.response?.data;
+  if (data is! Map || data['code'] != 'VEHICLE_FULL') return null;
+  return VehicleFullError(
+    isNextTrip: data['reason'] == 'NEXT_TRIP',
+    usedWeightKg: (data['usedWeightKg'] as num?)?.toDouble(),
+    capacityKg: (data['capacityKg'] as num?)?.toDouble(),
+    dealIds: ((data['deals'] as List<dynamic>?) ?? []).map((d) => (d as Map)['dealId'] as String).toList(),
+  );
+}
+
+class VehicleFullError {
+  const VehicleFullError({required this.isNextTrip, this.usedWeightKg, this.capacityKg, this.dealIds = const []});
+
+  /// true — грузы с разными датами погрузки: это не догруз, а следующий
+  /// рейс, подтверждать после доставки текущего.
+  final bool isNextTrip;
+  final double? usedWeightKg;
+  final double? capacityKg;
+  final List<String> dealIds;
+}
+
 /// true, если SMS-код сгорел после 6-й неверной попытки (см. sms.service.ts) —
 /// в отличие от просто неверного кода, повторный ввод того же кода никогда
 /// не пройдёт, нужен новый код через «Отправить код ещё раз».

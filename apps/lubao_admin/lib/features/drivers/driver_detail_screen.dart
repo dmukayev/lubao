@@ -316,7 +316,14 @@ class _StatsRow extends StatelessWidget {
         children: [
           _Stat(label: t.adminStatDealsActive, value: '$totalDeals'),
           _Stat(label: t.adminColRating, value: '★ ${driver.stats.ratingAvg.toStringAsFixed(1)} (${driver.stats.ratingCount})'),
-          _Stat(label: t.adminStatCancellations, value: '${driver.stats.cancellations}'),
+          _Stat(
+            label: t.adminStatCancellations,
+            // Задача 037, п.8 — «отменил 1 из 15 сделок»: доля, а не голое
+            // число (одна отмена из 15 и из 2 — разные водители).
+            value: driver.stats.dealsTotal > 0
+                ? '${driver.stats.cancellations} / ${driver.stats.dealsTotal}'
+                : '${driver.stats.cancellations}',
+          ),
           _Stat(label: t.adminStatCalls, value: '${driver.stats.calls + driver.stats.whatsapp}'),
           _Stat(label: t.adminStatComplaints, value: '${driver.stats.complaintsAgainst}'),
         ],

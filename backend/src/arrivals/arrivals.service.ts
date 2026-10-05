@@ -341,6 +341,28 @@ export class ArrivalsService {
       });
     }
 
+    // Задача 037, п.7 — логист видит ДО выбора, что водитель уже везёт
+    // догруз: «Уже везёт: 8 т из 20 т». Не запрет, просто прозрачность
+    // (жёсткая проверка вместимости — при подтверждении водителем).
+    const activeDeals =
+      filtered.length === 0
+        ? []
+        : await this.prisma.deal.findMany({
+            where: {
+              driverId: { in: filtered.map((r) => r.arrival.driver.id) },
+              status: { in: ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT'] },
+            },
+            include: { cargo: { select: { weightKg: true, readyDate: true, destinationCountryId: true, destinationCityId: true } } },
+          });
+    const committedByDriver = new Map<string, { weightKg: number; count: number }>();
+    for (const d of activeDeals) {
+      const current = committedByDriver.get(d.driverId) ?? { weightKg: 0, count: 0 };
+      committedByDriver.set(d.driverId, {
+        weightKg: current.weightKg + (d.cargo?.weightKg != null ? Number(d.cargo.weightKg) : 0),
+        count: current.count + 1,
+      });
+    }
+
     return filtered.map((r) => ({
       arrivalId: r.arrival.id,
       driverId: r.arrival.driver.id,
@@ -358,6 +380,9 @@ export class ArrivalsService {
       // Задача 033, п.9 — «тент · 20 т · 90 м³ · 33 пал.» в «Кто будет».
       volumeM3: r.vehicle?.volumeM3 != null ? Number(r.vehicle.volumeM3) : null,
       palletsEuro: r.vehicle?.palletsEuro ?? null,
+      // Задача 037, п.7 — «Уже везёт: 8 т из 20 т».
+      committedWeightKg: committedByDriver.get(r.arrival.driver.id)?.weightKg ?? 0,
+      activeDealsCount: committedByDriver.get(r.arrival.driver.id)?.count ?? 0,
       anyCountry: r.arrival.anyCountry,
       directionCountryIds: r.arrival.directions.map((d) => d.countryId),
     }));
