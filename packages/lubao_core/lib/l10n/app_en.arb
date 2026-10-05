@@ -9,6 +9,7 @@
   "commonRetry": "Retry",
   "commonLoading": "Loading...",
   "commonError": "Something went wrong",
+  "chatOpenFailed": "Couldn't open chat",
   "commonSeeAll": "See all",
   "commonCall": "Call",
   "commonWhatsApp": "WhatsApp",

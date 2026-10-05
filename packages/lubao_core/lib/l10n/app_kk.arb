@@ -9,6 +9,7 @@
   "commonRetry": "Қайталау",
   "commonLoading": "Жүктелуде...",
   "commonError": "Бірдеңе дұрыс болмады",
+  "chatOpenFailed": "Чатты ашу мүмкін болмады",
   "commonSeeAll": "Барлығын көру",
   "commonCall": "Қоңырау шалу",
   "commonWhatsApp": "WhatsApp",

@@ -21,17 +21,32 @@ class DealDetailScreen extends ConsumerStatefulWidget {
 
 class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
   bool _busy = false;
+  bool _openingChat = false;
 
   /// Чат теперь по `chatId`, не по `dealId` (задача 017, п.1) — находим
   /// существующий чат пары водитель+компания по грузу этой сделки (он уже
   /// привязан к сделке на бэкенде) и переходим в него.
   Future<void> _openChat(Deal deal) async {
-    final session = ref.read(sessionProvider);
-    final thread = await ref.read(chatRepositoryProvider).findOrCreate(
-          driverId: session?.driver != null ? null : deal.driverId,
-          cargoId: deal.cargoId,
-        );
-    if (mounted) context.push('/chat/${thread.id}');
+    setState(() => _openingChat = true);
+    try {
+      final session = ref.read(sessionProvider);
+      final thread = await ref.read(chatRepositoryProvider).findOrCreate(
+            driverId: session?.driver != null ? null : deal.driverId,
+            cargoId: deal.cargoId,
+          );
+      if (mounted) context.push('/chat/${thread.id}');
+    } catch (e) {
+      debugPrint('DealDetailScreen: failed to open chat: $e');
+      if (mounted) {
+        final t = context.l10n;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(t.chatOpenFailed),
+          action: SnackBarAction(label: t.commonRetry, onPressed: () => _openChat(deal)),
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _openingChat = false);
+    }
   }
 
   Future<void> _advance(DealStatus next) async {
@@ -130,8 +145,10 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
         actions: [
           if (deal != null)
             IconButton(
-              icon: const Icon(LucideIcons.messageCircle),
-              onPressed: () => _openChat(deal),
+              icon: _openingChat
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(LucideIcons.messageCircle),
+              onPressed: _openingChat ? null : () => _openChat(deal),
             ),
         ],
       ),

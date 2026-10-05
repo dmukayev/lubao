@@ -94,12 +94,13 @@ class AccentButton extends StatelessWidget {
 /// Квадратная кнопка-иконка на фоне primarySoft (уведомления, действия в
 /// хедере и т.п.).
 class IconSquareButton extends StatelessWidget {
-  const IconSquareButton({super.key, required this.icon, this.onPressed, this.badge = false, this.size = 48});
+  const IconSquareButton({super.key, required this.icon, this.onPressed, this.badge = false, this.size = 48, this.loading = false});
 
   final IconData icon;
   final VoidCallback? onPressed;
   final bool badge;
   final double size;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
@@ -114,8 +115,16 @@ class IconSquareButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.field),
             child: InkWell(
               borderRadius: BorderRadius.circular(AppRadius.field),
-              onTap: onPressed,
-              child: Center(child: Icon(icon, color: AppColors.primary, size: 22)),
+              onTap: loading ? null : onPressed,
+              child: Center(
+                child: loading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                      )
+                    : Icon(icon, color: AppColors.primary, size: 22),
+              ),
             ),
           ),
           if (badge)

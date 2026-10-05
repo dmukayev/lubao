@@ -25,6 +25,7 @@ class CargoDetailScreen extends ConsumerStatefulWidget {
 class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
   bool _responding = false;
   bool _responded = false;
+  bool _openingChat = false;
 
   Future<void> _respond() async {
     setState(() => _responding = true);
@@ -75,8 +76,21 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
   }
 
   Future<void> _chat(Cargo cargo) async {
-    final thread = await ref.read(chatRepositoryProvider).findOrCreate(cargoId: cargo.id);
-    if (mounted) context.push('/chat/${thread.id}');
+    setState(() => _openingChat = true);
+    try {
+      final thread = await ref.read(chatRepositoryProvider).findOrCreate(cargoId: cargo.id);
+      if (mounted) context.push('/chat/${thread.id}');
+    } catch (e) {
+      debugPrint('CargoDetailScreen: failed to open chat: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(context.l10n.chatOpenFailed),
+          action: SnackBarAction(label: context.l10n.commonRetry, onPressed: () => _chat(cargo)),
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _openingChat = false);
+    }
   }
 
   @override
@@ -118,6 +132,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
                     IconSquareButton(
                       icon: LucideIcons.messageSquare,
                       size: AppSizes.buttonHeight,
+                      loading: _openingChat,
                       onPressed: () => _chat(cargoAsync.value!),
                     ),
                     const SizedBox(width: AppSpacing.sm),

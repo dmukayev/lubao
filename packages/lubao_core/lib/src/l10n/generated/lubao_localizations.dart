@@ -156,6 +156,12 @@ abstract class LubaoLocalizations {
   /// **'Что-то пошло не так'**
   String get commonError;
 
+  /// No description provided for @chatOpenFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось открыть чат'**
+  String get chatOpenFailed;
+
   /// No description provided for @commonSeeAll.
   ///
   /// In ru, this message translates to:

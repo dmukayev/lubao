@@ -9,6 +9,7 @@
   "commonRetry": "Повторить",
   "commonLoading": "Загрузка...",
   "commonError": "Что-то пошло не так",
+  "chatOpenFailed": "Не удалось открыть чат",
   "commonSeeAll": "Смотреть все",
   "commonCall": "Позвонить",
   "commonWhatsApp": "WhatsApp",

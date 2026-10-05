@@ -33,6 +33,7 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   int _dayOffset = 0;
   Future<List<ArrivalListing>>? _future;
   Future<List<ArrivalSummaryDay>>? _summaryFuture;
+  String? _openingChatDriverId;
 
   @override
   void initState() {
@@ -103,8 +104,22 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   }
 
   Future<void> _chat(ArrivalListing driver) async {
-    final thread = await ref.read(chatRepositoryProvider).findOrCreate(driverId: driver.driverId);
-    if (mounted) context.push('/chat/${thread.id}');
+    setState(() => _openingChatDriverId = driver.driverId);
+    try {
+      final thread = await ref.read(chatRepositoryProvider).findOrCreate(driverId: driver.driverId);
+      if (mounted) context.push('/chat/${thread.id}');
+    } catch (e) {
+      debugPrint('DriversAtPointScreen: failed to open chat: $e');
+      if (mounted) {
+        final t = context.l10n;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(t.chatOpenFailed),
+          action: SnackBarAction(label: t.commonRetry, onPressed: () => _chat(driver)),
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _openingChatDriverId = null);
+    }
   }
 
   Future<void> _invite(ArrivalListing driver) async {
@@ -312,6 +327,7 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                             driver: driver,
                             refData: refData,
                             isChinaCompany: isChinaCompany,
+                            openingChat: _openingChatDriverId == driver.driverId,
                             onCall: _call,
                             onWhatsapp: _whatsapp,
                             onChat: _chat,
@@ -416,6 +432,7 @@ class _DriverCard extends StatelessWidget {
     required this.driver,
     required this.refData,
     required this.isChinaCompany,
+    required this.openingChat,
     required this.onCall,
     required this.onWhatsapp,
     required this.onChat,
@@ -425,6 +442,7 @@ class _DriverCard extends StatelessWidget {
   final ArrivalListing driver;
   final ReferenceData refData;
   final bool isChinaCompany;
+  final bool openingChat;
   final ValueChanged<ArrivalListing> onCall;
   final ValueChanged<ArrivalListing> onWhatsapp;
   final ValueChanged<ArrivalListing> onChat;
@@ -492,7 +510,7 @@ class _DriverCard extends StatelessWidget {
             children: [
               IconSquareButton(icon: LucideIcons.phone, onPressed: driver.phone == null ? null : () => onCall(driver)),
               const SizedBox(width: AppSpacing.sm),
-              IconSquareButton(icon: LucideIcons.messageSquare, onPressed: () => onChat(driver)),
+              IconSquareButton(icon: LucideIcons.messageSquare, loading: openingChat, onPressed: () => onChat(driver)),
               if (!isChinaCompany) ...[
                 const SizedBox(width: AppSpacing.sm),
                 IconSquareButton(icon: LucideIcons.messageCircle, onPressed: driver.phone == null ? null : () => onWhatsapp(driver)),

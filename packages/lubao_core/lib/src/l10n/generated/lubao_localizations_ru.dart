@@ -36,6 +36,9 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get commonError => 'Что-то пошло не так';
 
   @override
+  String get chatOpenFailed => 'Не удалось открыть чат';
+
+  @override
   String get commonSeeAll => 'Смотреть все';
 
   @override

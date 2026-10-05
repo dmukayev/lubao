@@ -38,11 +38,6 @@ class CargoResponsesScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _chat(BuildContext context, WidgetRef ref, CargoResponse response) async {
-    final thread = await ref.read(chatRepositoryProvider).findOrCreate(driverId: response.driverId, cargoId: response.cargoId);
-    if (context.mounted) context.push('/chat/${thread.id}');
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
@@ -95,7 +90,6 @@ class CargoResponsesScreen extends ConsumerWidget {
                     _ResponseCard(
                       response: response,
                       onUpdateStatus: (status) => _updateStatus(ref, response.id, status),
-                      onChat: () => _chat(context, ref, response),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                   ],
@@ -144,16 +138,44 @@ class _CargoSummaryCard extends StatelessWidget {
   }
 }
 
-class _ResponseCard extends StatelessWidget {
-  const _ResponseCard({required this.response, required this.onUpdateStatus, required this.onChat});
+class _ResponseCard extends ConsumerStatefulWidget {
+  const _ResponseCard({required this.response, required this.onUpdateStatus});
 
   final CargoResponse response;
   final ValueChanged<String> onUpdateStatus;
-  final VoidCallback onChat;
+
+  @override
+  ConsumerState<_ResponseCard> createState() => _ResponseCardState();
+}
+
+class _ResponseCardState extends ConsumerState<_ResponseCard> {
+  bool _openingChat = false;
+
+  Future<void> _chat() async {
+    setState(() => _openingChat = true);
+    try {
+      final thread = await ref
+          .read(chatRepositoryProvider)
+          .findOrCreate(driverId: widget.response.driverId, cargoId: widget.response.cargoId);
+      if (mounted) context.push('/chat/${thread.id}');
+    } catch (e) {
+      debugPrint('CargoResponsesScreen: failed to open chat: $e');
+      if (mounted) {
+        final t = context.l10n;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(t.chatOpenFailed),
+          action: SnackBarAction(label: t.commonRetry, onPressed: _chat),
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _openingChat = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    final response = widget.response;
     final (statusLabel, statusColor) = responseStatusPresentation(t, response.status);
 
     return AppCard(
@@ -165,7 +187,7 @@ class _ResponseCard extends StatelessWidget {
             children: [
               Expanded(child: Text(response.driverName, style: AppTextStyles.bodyStrong)),
               StatusBadge(label: statusLabel, color: statusColor),
-              IconSquareButton(icon: LucideIcons.messageSquare, onPressed: onChat),
+              IconSquareButton(icon: LucideIcons.messageSquare, loading: _openingChat, onPressed: _chat),
             ],
           ),
           if (response.message != null) ...[
@@ -177,11 +199,11 @@ class _ResponseCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: PrimaryButton(label: t.responseSelect, onPressed: () => onUpdateStatus('SELECTED')),
+                  child: PrimaryButton(label: t.responseSelect, onPressed: () => widget.onUpdateStatus('SELECTED')),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: OutlinedButton(onPressed: () => onUpdateStatus('REJECTED'), child: Text(t.responseReject)),
+                  child: OutlinedButton(onPressed: () => widget.onUpdateStatus('REJECTED'), child: Text(t.responseReject)),
                 ),
               ],
             ),

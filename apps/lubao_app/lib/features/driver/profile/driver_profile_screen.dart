@@ -3,15 +3,41 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 
+import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/data_providers.dart';
 import '../../../providers/locale_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-class DriverProfileScreen extends ConsumerWidget {
+class DriverProfileScreen extends ConsumerStatefulWidget {
   const DriverProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DriverProfileScreen> createState() => _DriverProfileScreenState();
+}
+
+class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Сессия обновляется из /auth/me только при холодном старте приложения
+    // (SessionController._restore) — если админ подтвердил верификацию, пока
+    // водитель уже был в приложении, бейдж и баннер молча показывали старый
+    // статус. Перетягиваем свежий профиль при каждом открытии вкладки.
+    _refreshDriver();
+  }
+
+  Future<void> _refreshDriver() async {
+    try {
+      final fresh = await ref.read(driverRepositoryProvider).me();
+      if (mounted) ref.read(sessionProvider.notifier).updateDriver(fresh);
+    } catch (e) {
+      debugPrint('DriverProfileScreen: failed to refresh driver status: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.l10n;
     final session = ref.watch(sessionProvider);
     final driver = session?.driver;
@@ -85,16 +111,30 @@ class DriverProfileScreen extends ConsumerWidget {
   }
 }
 
-class _CompletenessBanner extends StatelessWidget {
+const _requiredDriverDocTypes = [
+  VerificationDocType.selfie,
+  VerificationDocType.vehiclePassport,
+  VerificationDocType.trailerPassport,
+  VerificationDocType.driverLicense,
+];
+
+class _CompletenessBanner extends ConsumerWidget {
   const _CompletenessBanner({required this.driver});
 
   final Driver? driver;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
     final pending = driver?.verificationStatus == DriverVerificationStatus.pending;
-    final percent = pending ? 80 : 60;
+    // Процент считается по факту одобренных обязательных документов, а не
+    // по захардкоженной константе 60/80 — та не менялась независимо от
+    // реального прогресса проверки (причина жалобы «висит 60% после
+    // верификации в админке»).
+    final docs = ref.watch(driverVerificationDocumentsProvider).value ?? const [];
+    final approvedCount =
+        docs.where((d) => _requiredDriverDocTypes.contains(d.type) && d.status == VerificationDocStatus.approved).length;
+    final percent = (approvedCount / _requiredDriverDocTypes.length * 100).round();
 
     return AppCard(
       child: Column(

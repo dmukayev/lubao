@@ -36,6 +36,9 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get commonError => 'Бірдеңе дұрыс болмады';
 
   @override
+  String get chatOpenFailed => 'Чатты ашу мүмкін болмады';
+
+  @override
   String get commonSeeAll => 'Барлығын көру';
 
   @override

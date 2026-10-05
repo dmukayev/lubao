@@ -36,6 +36,9 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get commonError => '出错了';
 
   @override
+  String get chatOpenFailed => '无法打开聊天';
+
+  @override
   String get commonSeeAll => '查看全部';
 
   @override

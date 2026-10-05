@@ -9,6 +9,7 @@
   "commonRetry": "重试",
   "commonLoading": "加载中...",
   "commonError": "出错了",
+  "chatOpenFailed": "无法打开聊天",
   "commonSeeAll": "查看全部",
   "commonCall": "拨打电话",
   "commonWhatsApp": "WhatsApp",
