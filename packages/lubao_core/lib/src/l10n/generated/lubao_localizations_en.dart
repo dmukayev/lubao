@@ -1299,6 +1299,16 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get adminForceVerifyCheckbox => 'I verified the documents personally';
 
   @override
+  String get adminBlacklistMatchTitle => 'Blacklist match';
+
+  @override
+  String get adminBlacklistMatchIntro =>
+      'Active blocks found among this profile\'s identifiers:';
+
+  @override
+  String get adminBlacklistMatchOverride => 'Confirm despite the blacklist';
+
+  @override
   String get adminRejectPresetUnreadable => 'Unreadable photo';
 
   @override

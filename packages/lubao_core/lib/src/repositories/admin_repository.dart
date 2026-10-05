@@ -1,7 +1,20 @@
+import 'package:dio/dio.dart';
+
 import '../api/api_client.dart';
 import '../models/admin.dart';
 import '../models/common.dart';
 import '../models/reference_data.dart';
+
+/// Бэкенд отвечает 409 `BLACKLIST_MATCH` (задача 032, п.2), когда среди
+/// идентификаторов владельца есть активная блокировка — обычная кнопка
+/// «Подтвердить» больше не может это молча проигнорировать, UI должен
+/// показать находки и спросить явное подтверждение прежде чем повторить
+/// вызов с `force: true`.
+class BlacklistMatchException implements Exception {
+  BlacklistMatchException(this.blocks);
+
+  final List<AdminBlacklistBlock> blocks;
+}
 
 class AdminRepository {
   AdminRepository(this._client);
@@ -294,12 +307,16 @@ class AdminRepository {
     bool force = false,
     Map<String, bool?>? crossChecks,
   }) async {
-    await _client.dio.patch('/admin/companies/$id/verify', data: {
-      'isVerified': isVerified,
-      'reason': reason,
-      'force': force,
-      if (crossChecks != null) 'crossChecks': crossChecks,
-    });
+    try {
+      await _client.dio.patch('/admin/companies/$id/verify', data: {
+        'isVerified': isVerified,
+        'reason': reason,
+        'force': force,
+        if (crossChecks != null) 'crossChecks': crossChecks,
+      });
+    } on DioException catch (e) {
+      throw _translateVerifyError(e);
+    }
   }
 
   /// Общая панель редактирования (задача 028, п.18/20).
@@ -385,12 +402,28 @@ class AdminRepository {
     bool force = false,
     Map<String, bool?>? crossChecks,
   }) async {
-    await _client.dio.patch('/admin/drivers/$id/verify', data: {
-      'isVerified': isVerified,
-      'reason': reason,
-      'force': force,
-      if (crossChecks != null) 'crossChecks': crossChecks,
-    });
+    try {
+      await _client.dio.patch('/admin/drivers/$id/verify', data: {
+        'isVerified': isVerified,
+        'reason': reason,
+        'force': force,
+        if (crossChecks != null) 'crossChecks': crossChecks,
+      });
+    } on DioException catch (e) {
+      throw _translateVerifyError(e);
+    }
+  }
+
+  /// `BLACKLIST_MATCH` (см. [BlacklistMatchException]) — разворачиваем в
+  /// типизированное исключение, чтобы экран мог показать находки, а не
+  /// общее сообщение «не все документы одобрены»; всё остальное — как есть.
+  Exception _translateVerifyError(DioException e) {
+    final data = e.response?.data;
+    if (e.response?.statusCode == 409 && data is Map<String, dynamic> && data['code'] == 'BLACKLIST_MATCH') {
+      final blocks = (data['blocks'] as List<dynamic>? ?? []).map((b) => AdminBlacklistBlock.fromJson(b as Map<String, dynamic>)).toList();
+      return BlacklistMatchException(blocks);
+    }
+    return e;
   }
 
   /// Общая панель редактирования (задача 028, п.18/19).

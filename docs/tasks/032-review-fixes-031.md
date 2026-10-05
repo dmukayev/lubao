@@ -77,6 +77,51 @@
 `OCR_SERVICE_URL=http://ocr:8000` прописан в корневой `.env` (и в
 `docker-compose.yml` уже был).
 
+**П.2 (чёрный список обходится обычной кнопкой «Подтвердить») — сделано.**
+Новый `IdentifiersService.findActiveBlocksForOwner(ownerType, ownerId)` —
+проходит по ВСЕМ уже подтверждённым идентификаторам владельца и ищет
+активную (`liftedAt: null`) блокировку по каждому — в отличие от проверки
+в момент одобрения одного документа, здесь видно совпадение, даже если
+заблокированный идентификатор подтвердился другим, давно одобренным
+документом (ровно баг из ревью: «одобрили права с ⛔-ИИН, потом селфи —
+проверен»). Новый `AdminService.blacklistBlocksForOwner(ownerType, ownerId,
+documentsWhere)` объединяет это с проверкой **распознанных, но ещё не
+подтверждённых** полей (`DocumentRecognition.fields`) через существующий
+`checkMatches` — перекрывает и сценарий «ИИН распознан, но документ ещё не
+одобрен».
+
+`setDriverVerified`/`setCompanyVerified` теперь считают блоки всегда, когда
+`dto.isVerified` (не только при отсутствии `force`, чтобы блоки попали в
+`audit_log` даже при обходе); без `force` при найденных блоках — 409 с
+`{ code: 'BLACKLIST_MATCH', message, blocks }`; с `force: true` — проходит,
+но `blacklistOverride: [...]` пишется в `audit_log` рядом с `reason`.
+
+Flutter: новая модель `AdminBlacklistBlock`, типизированное
+`BlacklistMatchException` в `admin_repository.dart` (разворачивает 409 с
+`code: 'BLACKLIST_MATCH'`, не путает с обычной ошибкой «не все документы
+одобрены»), новый диалог `showBlacklistMatchDialog` (показывает находки,
+кнопка «Подтвердить вопреки чёрному списку») в `driver_detail_screen.dart`
+и `company_detail_screen.dart` — чекбокс «проверил документы лично» из
+существующего `showVerifyDialog` остался только про документы, про чёрный
+список — отдельное явное подтверждение с текстом находки, не молчаливое
+объединение смыслов. Новые ARB-ключи во всех 4 языках.
+
+Тесты: `identifiers.service.spec.ts` (3 новых — `findActiveBlocksForOwner`
+находит блок через другой подтверждённый идентификатор, игнорирует снятый
+блок, возвращает `[]` без confirmed-идентификаторов); `admin.service.spec.ts`
+(3 новых — блок по подтверждённому идентификатору останавливает проверку;
+блок **только** по распознанному-неподтверждённому полю тоже останавливает;
+`force:true` проходит и пишет `blacklistOverride` в `audit_log`).
+
+**Живая проверка на реальном сервере** (не только моки): подтвердил через
+`PATCH .../verification-documents/:id` реальный PHONE-идентификатор
+водителя (через настоящий код `reviewVerificationDocument`, не руками);
+добавил тестовую строку в `blocked_identifiers` с точно таким же
+`valueHash`, что реально хранится в БД (не угадывал HMAC); `PATCH
+.../drivers/:id/verify` без `force` → `409 BLACKLIST_MATCH` с находкой; тот
+же запрос с `force: true` → `200`, и `audit_log.metadata.blacklistOverride`
+содержит находку. Тестовые строки удалены после проверки.
+
 ## 🔴 Блокеры
 
 ### 1. OCR не работает на реальных загрузках + SSRF

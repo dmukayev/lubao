@@ -1300,6 +1300,16 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get adminForceVerifyCheckbox => 'Құжаттарды өзім тексердім';
 
   @override
+  String get adminBlacklistMatchTitle => 'Қара тізімге сәйкестік';
+
+  @override
+  String get adminBlacklistMatchIntro =>
+      'Осы карточканың идентификаторлары арасында белсенді блоктаулар бар:';
+
+  @override
+  String get adminBlacklistMatchOverride => 'Қара тізімге қарамастан растау';
+
+  @override
   String get adminRejectPresetUnreadable => 'Фото оқылмайды';
 
   @override

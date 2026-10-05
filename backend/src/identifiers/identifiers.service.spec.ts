@@ -85,6 +85,44 @@ describe('IdentifiersService — задача 031, этап C', () => {
     });
   });
 
+  describe('findActiveBlocksForOwner — задача 032, п.2', () => {
+    it('returns [] without touching blockedIdentifier when the owner has no confirmed identifiers', async () => {
+      prisma.identifier.findMany.mockResolvedValue([]);
+
+      const result = await service.findActiveBlocksForOwner('DRIVER', 'd1');
+
+      expect(result).toEqual([]);
+      expect(prisma.blockedIdentifier.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('finds a block even when it was attached to the owner via a DIFFERENT, already-approved identifier than the one being checked today', async () => {
+      prisma.identifier.findMany.mockResolvedValue([
+        { type: 'PHONE', valueHash: 'hash-phone', valueMasked: '+7700•••' },
+        { type: 'IIN', valueHash: 'hash-iin', valueMasked: '••••••••5678' },
+      ]);
+      prisma.blockedIdentifier.findFirst.mockImplementation(({ where }: any) =>
+        Promise.resolve(where.valueHash === 'hash-iin' ? { reason: 'В розыске', createdAt: new Date('2026-09-01') } : null),
+      );
+
+      const result = await service.findActiveBlocksForOwner('DRIVER', 'd1');
+
+      expect(result).toEqual([{ type: 'IIN', valueMasked: '••••••••5678', reason: 'В розыске' }]);
+    });
+
+    it('ignores a lifted block (liftedAt set) — findFirst is scoped to liftedAt: null, same as checkMatches', async () => {
+      prisma.identifier.findMany.mockResolvedValue([{ type: 'IIN', valueHash: 'hash-iin', valueMasked: '••••••••5678' }]);
+      prisma.blockedIdentifier.findFirst.mockResolvedValue(null);
+
+      const result = await service.findActiveBlocksForOwner('DRIVER', 'd1');
+
+      expect(prisma.blockedIdentifier.findFirst).toHaveBeenCalledWith({
+        where: { type: 'IIN', valueHash: 'hash-iin', liftedAt: null },
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('confirmIdentifier', () => {
     it('upserts by (ownerType, ownerId, type), encrypting only sensitive types', async () => {
       await service.confirmIdentifier({

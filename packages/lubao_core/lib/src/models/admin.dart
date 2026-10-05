@@ -424,6 +424,23 @@ class AdminIdentifierEntry {
       );
 }
 
+/// Один идентификатор, найденный в чёрном списке в момент финальной
+/// проверки перед «Подтвердить» (задача 032, п.2) — не история, именно
+/// блокирующая находка в теле 409-ошибки `BLACKLIST_MATCH`.
+class AdminBlacklistBlock {
+  const AdminBlacklistBlock({required this.type, required this.valueMasked, required this.reason});
+
+  final String type;
+  final String valueMasked;
+  final String reason;
+
+  factory AdminBlacklistBlock.fromJson(Map<String, dynamic> json) => AdminBlacklistBlock(
+        type: json['type'] as String,
+        valueMasked: json['valueMasked'] as String,
+        reason: json['reason'] as String,
+      );
+}
+
 /// Запись истории блокировок (задача 031, п.24) — одна блокировка одного
 /// значения, активная (liftedAt == null) или уже снятая.
 class AdminIdentifierBlockEntry {

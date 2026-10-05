@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionService } from '../auth/session.service';
 import { UploadsService } from '../uploads/uploads.service';
@@ -818,6 +819,44 @@ export class AdminService {
       durationMs: doc.recognition.durationMs,
       fields,
     };
+  }
+
+  /// Задача 032, п.2 — последняя проверка перед «Подтвердить», не только в
+  /// момент одобрения отдельного документа: собирает ⛔-совпадения и среди
+  /// уже ПОДТВЕРЖДЁННЫХ идентификаторов владельца (`identifiers`), и среди
+  /// РАСПОЗНАННЫХ, но ещё не подтверждённых полей его документов (OCR мог
+  /// найти ⛔-ИИН на правах, которые админ одобрил после селфи — тогда
+  /// identifiers уже содержит телефон, но не ИИН; без этой проверки
+  /// подтверждение прошло бы).
+  private async blacklistBlocksForOwner(
+    ownerType: 'DRIVER' | 'COMPANY',
+    ownerId: string,
+    documentsWhere: Prisma.VerificationDocumentWhereInput,
+  ): Promise<Array<{ type: string; valueMasked: string; reason: string }>> {
+    if (!this.identifiers) return [];
+
+    const confirmed = await this.identifiers.findActiveBlocksForOwner(ownerType, ownerId);
+
+    const docs = await this.prisma.verificationDocument.findMany({
+      where: { ...documentsWhere, recognition: { isNot: null } },
+      include: { recognition: true },
+    });
+    const recognizedChecks: Array<{ type: IdentifierTypeValue; value: string }> = [];
+    for (const doc of docs) {
+      const fields = (doc.recognition?.fields ?? {}) as Record<string, { value: string } | undefined>;
+      for (const [key, field] of Object.entries(fields)) {
+        const type = AdminService.RECOGNIZED_FIELD_IDENTIFIER_TYPE[key];
+        if (type && field?.value) recognizedChecks.push({ type, value: field.value });
+      }
+    }
+    const recognizedBlocks = await Promise.all(
+      recognizedChecks.map(async (check) => {
+        const match = await this.identifiers!.checkMatches(check.type, check.value, { ownerType, ownerId });
+        return match.blocked ? { type: check.type, valueMasked: check.value, reason: match.blocked.reason } : null;
+      }),
+    );
+
+    return [...confirmed, ...recognizedBlocks.filter((b): b is { type: IdentifierTypeValue; valueMasked: string; reason: string } => b !== null)];
   }
 
   async reviewVerificationDocument(id: string, adminUserId: string, dto: ReviewVerificationDocumentDto) {
@@ -1997,6 +2036,12 @@ export class AdminService {
     const company = await this.prisma.company.findUnique({ where: { id } });
     if (!company) throw new NotFoundException('Company not found');
 
+    // Задача 032, п.2 — чёрный список больше не обходится обычной кнопкой
+    // «Подтвердить»: проверяем и уже подтверждённые идентификаторы, и
+    // распознанные-но-не-подтверждённые значения из документов компании.
+    // Считаем блоки независимо от force, чтобы при подтверждении «вопреки»
+    // они попали в audit_log, а не просто молча пропустились.
+    const blocks = dto.isVerified ? await this.blacklistBlocksForOwner('COMPANY', id, { companyId: id }) : [];
     if (dto.isVerified && !dto.force) {
       const approved = await this.prisma.verificationDocument.findMany({
         where: { companyId: id, status: 'APPROVED' },
@@ -2007,6 +2052,9 @@ export class AdminService {
       if (!allRequiredApproved) {
         throw new BadRequestException('Not all required documents are approved — pass force:true to override');
       }
+      if (blocks.length > 0) {
+        throw new ConflictException({ code: 'BLACKLIST_MATCH', message: 'Identifiers matching the blacklist found — pass force:true with a reason to override', blocks });
+      }
     }
 
     const updated = await this.prisma.company.update({ where: { id }, data: { isVerified: dto.isVerified } });
@@ -2014,6 +2062,7 @@ export class AdminService {
       reason: dto.reason,
       force: dto.force ?? false,
       crossChecks: dto.crossChecks,
+      ...(blocks.length > 0 ? { blacklistOverride: blocks } : {}),
     });
     if (dto.isVerified) {
       const owner = await this.prisma.companyMember.findFirst({ where: { companyId: id, role: 'OWNER' }, orderBy: { createdAt: 'asc' } });
@@ -2135,6 +2184,8 @@ export class AdminService {
     const driver = await this.prisma.driver.findUnique({ where: { id } });
     if (!driver) throw new NotFoundException('Driver not found');
 
+    // Задача 032, п.2 — та же финальная проверка, что и для компании.
+    const blocks = dto.isVerified ? await this.blacklistBlocksForOwner('DRIVER', id, { driverId: id }) : [];
     if (dto.isVerified && !dto.force) {
       const approved = await this.prisma.verificationDocument.findMany({
         where: { driverId: id, status: 'APPROVED' },
@@ -2145,6 +2196,9 @@ export class AdminService {
       if (!allRequiredApproved) {
         throw new BadRequestException('Not all required documents are approved — pass force:true to override');
       }
+      if (blocks.length > 0) {
+        throw new ConflictException({ code: 'BLACKLIST_MATCH', message: 'Identifiers matching the blacklist found — pass force:true with a reason to override', blocks });
+      }
     }
 
     const updated = await this.prisma.driver.update({ where: { id }, data: { isVerified: dto.isVerified } });
@@ -2152,6 +2206,7 @@ export class AdminService {
       reason: dto.reason,
       force: dto.force ?? false,
       crossChecks: dto.crossChecks,
+      ...(blocks.length > 0 ? { blacklistOverride: blocks } : {}),
     });
     if (dto.isVerified) {
       await this.notifications?.notify({ userIds: [driver.userId] }, 'VERIFICATION_APPROVED', {});

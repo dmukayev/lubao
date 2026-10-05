@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { AdminService } from './admin.service';
+import { REQUIRED_DRIVER_DOC_TYPES } from '../drivers/drivers.service';
 
 function fakeUploads() {
   return {
@@ -500,6 +501,63 @@ describe('AdminService.setDriverVerified / setCompanyVerified — force gate (з
     await service.setCompanyVerified('c1', 'admin-1', { isVerified: true, reason: 'x', force: true });
 
     expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['owner-1'] }, 'VERIFICATION_APPROVED', {});
+  });
+
+  it('задача 032, п.2 — a driver with a blacklisted CONFIRMED identifier cannot be verified without force, even with all documents approved', async () => {
+    const approvedDocs = REQUIRED_DRIVER_DOC_TYPES.map((type) => ({ type }));
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1' }) },
+      verificationDocument: { findMany: jest.fn().mockResolvedValue(approvedDocs) },
+    };
+    const identifiers = {
+      findActiveBlocksForOwner: jest.fn().mockResolvedValue([{ type: 'IIN', valueMasked: '••••••••5678', reason: 'В розыске' }]),
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, identifiers as any);
+
+    await expect(service.setDriverVerified('d1', 'admin-1', { isVerified: true, reason: 'проверил' })).rejects.toThrow(ConflictException);
+    expect(identifiers.findActiveBlocksForOwner).toHaveBeenCalledWith('DRIVER', 'd1');
+  });
+
+  it('задача 032, п.2 — a driver with ONLY a recognized-but-not-yet-confirmed blacklisted IIN (from OCR, not in identifiers table) also cannot be verified without force', async () => {
+    const approvedDocs = REQUIRED_DRIVER_DOC_TYPES.map((type) => ({ type }));
+    const recognizedDocs = [{ id: 'doc1', recognition: { fields: { iin: { value: '123456789012' } } } }];
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1' }) },
+      verificationDocument: {
+        findMany: jest.fn().mockImplementation((args: any) => Promise.resolve(args.include ? recognizedDocs : approvedDocs)),
+      },
+    };
+    const identifiers = {
+      findActiveBlocksForOwner: jest.fn().mockResolvedValue([]),
+      checkMatches: jest.fn().mockResolvedValue({ blocked: { reason: 'В розыске', blockedAt: new Date() }, duplicateOwner: null }),
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, identifiers as any);
+
+    await expect(service.setDriverVerified('d1', 'admin-1', { isVerified: true, reason: 'проверил' })).rejects.toThrow(ConflictException);
+    expect(identifiers.checkMatches).toHaveBeenCalledWith('IIN', '123456789012', { ownerType: 'DRIVER', ownerId: 'd1' });
+  });
+
+  it('задача 032, п.2 — force:true lets the admin verify despite a blacklist match, and the match is written to audit_log', async () => {
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1' }), update: jest.fn().mockResolvedValue({ id: 'd1', isVerified: true }) },
+      verificationDocument: { findMany: jest.fn().mockResolvedValue([]) },
+      auditLog: { create: jest.fn().mockResolvedValue({}) },
+    };
+    const identifiers = {
+      findActiveBlocksForOwner: jest.fn().mockResolvedValue([{ type: 'IIN', valueMasked: '••••••••5678', reason: 'В розыске' }]),
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, identifiers as any);
+
+    const result = await service.setDriverVerified('d1', 'admin-1', { isVerified: true, reason: 'проверил лично, ошибка в чёрном списке', force: true });
+
+    expect(result).toEqual({ id: 'd1', isVerified: true });
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          metadata: expect.objectContaining({ blacklistOverride: [{ type: 'IIN', valueMasked: '••••••••5678', reason: 'В розыске' }] }),
+        }),
+      }),
+    );
   });
 });
 

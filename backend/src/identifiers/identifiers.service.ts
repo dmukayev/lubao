@@ -96,6 +96,28 @@ export class IdentifiersService {
     return this.prisma.identifier.findMany({ where: { ownerType, ownerId }, orderBy: { type: 'asc' } });
   }
 
+  /// Задача 032, п.2 — финальная проверка перед «Подтвердить»: среди ВСЕХ
+  /// уже подтверждённых идентификаторов этого владельца есть ли активная
+  /// (не снятая) блокировка. В отличие от проверки в момент одобрения
+  /// ОДНОГО документа (reviewVerificationDocument), здесь видно совпадение,
+  /// даже если заблокированный идентификатор подтвердился другим,
+  /// давно одобренным документом — обойти обычной кнопкой «Подтвердить»
+  /// больше нельзя.
+  async findActiveBlocksForOwner(ownerType: OwnerType, ownerId: string): Promise<Array<{ type: IdentifierTypeValue; valueMasked: string; reason: string }>> {
+    const confirmed = await this.listForOwner(ownerType, ownerId);
+    if (confirmed.length === 0) return [];
+    const blocks = await Promise.all(
+      confirmed.map(async (identifier) => {
+        const blocked = await this.prisma.blockedIdentifier.findFirst({
+          where: { type: identifier.type, valueHash: identifier.valueHash, liftedAt: null },
+          orderBy: { createdAt: 'desc' },
+        });
+        return blocked ? { type: identifier.type as IdentifierTypeValue, valueMasked: identifier.valueMasked, reason: blocked.reason } : null;
+      }),
+    );
+    return blocks.filter((b): b is { type: IdentifierTypeValue; valueMasked: string; reason: string } => b !== null);
+  }
+
   /// История блокировок этого владельца (задача 031, п.24 — карточка
   /// «Идентификаторы») — только блоки, завязанные НА НЕГО (sourceOwnerType/
   /// sourceOwnerId), не все блоки с совпадающим значением у кого угодно.

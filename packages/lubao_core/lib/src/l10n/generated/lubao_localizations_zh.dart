@@ -1277,6 +1277,15 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get adminForceVerifyCheckbox => '我已亲自核实文件';
 
   @override
+  String get adminBlacklistMatchTitle => '与黑名单匹配';
+
+  @override
+  String get adminBlacklistMatchIntro => '该档案的标识符中存在有效的黑名单记录：';
+
+  @override
+  String get adminBlacklistMatchOverride => '仍然确认（覆盖黑名单）';
+
+  @override
   String get adminRejectPresetUnreadable => '照片无法辨认';
 
   @override

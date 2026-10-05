@@ -91,6 +91,42 @@ Future<({String reason, bool force})?> showVerifyDialog(
   );
 }
 
+/// Бэкенд отказал в «Подтвердить» 409 `BLACKLIST_MATCH` (задача 032, п.2) —
+/// показываем находки явно и спрашиваем отдельное подтверждение, прежде
+/// чем повторить вызов с `force: true` (checkbox «проверил лично» из
+/// [showVerifyDialog] не годится — он про документы, а не про чёрный
+/// список, молча объединять эти два смысла нельзя).
+Future<bool> showBlacklistMatchDialog(BuildContext context, List<AdminBlacklistBlock> blocks) async {
+  final t = context.l10n;
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(t.adminBlacklistMatchTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(t.adminBlacklistMatchIntro),
+          const SizedBox(height: 8),
+          ...blocks.map((b) => Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text('${b.type} ${b.valueMasked} · ${b.reason}', style: Theme.of(dialogContext).textTheme.bodySmall),
+              )),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.commonCancel)),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: StatusBadge.danger),
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: Text(t.adminBlacklistMatchOverride),
+        ),
+      ],
+    ),
+  );
+  return result ?? false;
+}
+
 /// Причина отклонения документа — пресеты + свободный текст (задача 026,
 /// п.13). Выбор пресета заполняет поле, админ может его отредактировать.
 Future<String?> showRejectReasonDialog(BuildContext context) async {

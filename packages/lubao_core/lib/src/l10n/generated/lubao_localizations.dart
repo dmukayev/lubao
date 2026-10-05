@@ -2556,6 +2556,24 @@ abstract class LubaoLocalizations {
   /// **'Я проверил документы лично'**
   String get adminForceVerifyCheckbox;
 
+  /// No description provided for @adminBlacklistMatchTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Совпадение с чёрным списком'**
+  String get adminBlacklistMatchTitle;
+
+  /// No description provided for @adminBlacklistMatchIntro.
+  ///
+  /// In ru, this message translates to:
+  /// **'Среди идентификаторов этой карточки есть активные блокировки:'**
+  String get adminBlacklistMatchIntro;
+
+  /// No description provided for @adminBlacklistMatchOverride.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтвердить вопреки чёрному списку'**
+  String get adminBlacklistMatchOverride;
+
   /// No description provided for @adminRejectPresetUnreadable.
   ///
   /// In ru, this message translates to:

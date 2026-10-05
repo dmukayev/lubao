@@ -1295,6 +1295,17 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get adminForceVerifyCheckbox => 'Я проверил документы лично';
 
   @override
+  String get adminBlacklistMatchTitle => 'Совпадение с чёрным списком';
+
+  @override
+  String get adminBlacklistMatchIntro =>
+      'Среди идентификаторов этой карточки есть активные блокировки:';
+
+  @override
+  String get adminBlacklistMatchOverride =>
+      'Подтвердить вопреки чёрному списку';
+
+  @override
   String get adminRejectPresetUnreadable => 'Нечитаемое фото';
 
   @override

@@ -63,6 +63,17 @@ class DriverDetailScreen extends ConsumerWidget {
     try {
       await ref.read(adminRepositoryProvider).setDriverVerified(id, settingVerified, reason: result.reason, force: result.force);
       await _reload(ref);
+    } on BlacklistMatchException catch (e) {
+      if (!context.mounted) return;
+      final override = await showBlacklistMatchDialog(context, e.blocks);
+      if (!override || !context.mounted) return;
+      try {
+        await ref.read(adminRepositoryProvider).setDriverVerified(id, settingVerified, reason: result.reason, force: true);
+        await _reload(ref);
+      } on Exception catch (_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.adminVerifyMissingDocsError)));
+      }
     } on Exception catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.adminVerifyMissingDocsError)));
