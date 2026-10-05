@@ -1551,7 +1551,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @chatAttachLocation.
   ///
   /// In ru, this message translates to:
-  /// **'Прикрепить точку'**
+  /// **'Отправить моё место'**
   String get chatAttachLocation;
 
   /// No description provided for @chatLocationMessagePrefix.
@@ -1565,6 +1565,36 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Не удалось определить местоположение'**
   String get chatLocationError;
+
+  /// No description provided for @chatLoadingPlaceTooltip.
+  ///
+  /// In ru, this message translates to:
+  /// **'Место погрузки'**
+  String get chatLoadingPlaceTooltip;
+
+  /// No description provided for @chatLoadingPlaceDialogTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вставьте ссылку на место погрузки'**
+  String get chatLoadingPlaceDialogTitle;
+
+  /// No description provided for @chatLoadingPlaceDialogHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылка из Baidu/Amap/2ГИС'**
+  String get chatLoadingPlaceDialogHint;
+
+  /// No description provided for @chatLoadingPlaceMessagePrefix.
+  ///
+  /// In ru, this message translates to:
+  /// **'Место погрузки'**
+  String get chatLoadingPlaceMessagePrefix;
+
+  /// No description provided for @chatLoadingPlaceLinkInvalid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нужна ссылка https:// длиной до 500 символов'**
+  String get chatLoadingPlaceLinkInvalid;
 
   /// No description provided for @chatTranslatedBadge.
   ///

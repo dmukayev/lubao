@@ -4,7 +4,6 @@ import 'package:lubao_core/lubao_core.dart';
 
 import 'providers/locale_provider.dart';
 import 'router/app_router.dart';
-import 'services/location_reporter.dart';
 import 'services/realtime_connector.dart';
 
 class LubaoApp extends ConsumerWidget {
@@ -14,7 +13,12 @@ class LubaoApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final locale = ref.watch(localeProvider);
-    ref.watch(locationReporterProvider);
+    // Задача 032, п.14 — фоновая отправка координат выключена до задачи
+    // 008 (согласие, геолокация только логисту активной сделки во время
+    // рейса): LocationReporter слал координаты каждые 45с ЛЮБОГО вошедшего
+    // водителя без согласия и без сделки. Геопозиция теперь запрашивается
+    // только по нажатию «📍» в чате (chat_screen.dart#_sendMyLocation) и
+    // никуда не отправляется на сервер — только в ссылку на карту.
     ref.watch(realtimeConnectorProvider);
 
     return MaterialApp.router(

@@ -771,13 +771,29 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get chatEmpty => 'Хат алысуды бастаңыз';
 
   @override
-  String get chatAttachLocation => 'Нүктені тіркеу';
+  String get chatAttachLocation => 'Менің орнымды жіберу';
 
   @override
   String get chatLocationMessagePrefix => 'Картадағы нүкте';
 
   @override
   String get chatLocationError => 'Орналасқан жерді анықтау мүмкін болмады';
+
+  @override
+  String get chatLoadingPlaceTooltip => 'Тиеу орны';
+
+  @override
+  String get chatLoadingPlaceDialogTitle => 'Тиеу орнына сілтеме қойыңыз';
+
+  @override
+  String get chatLoadingPlaceDialogHint => 'Baidu/Amap/2ГИС сілтемесі';
+
+  @override
+  String get chatLoadingPlaceMessagePrefix => 'Тиеу орны';
+
+  @override
+  String get chatLoadingPlaceLinkInvalid =>
+      'https:// сілтемесі керек, ұзындығы 500 таңбаға дейін';
 
   @override
   String get chatTranslatedBadge => 'Аударылды';

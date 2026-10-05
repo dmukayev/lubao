@@ -196,6 +196,34 @@ describe('ChatsService — counterpart resolution (decisions.md «Компани
     expect(result.counterpartPhone).toBe('+86123');
     expect(result.counterpartWechatId).toBeNull();
   });
+
+  it('задача 032, п.15 — a driver sees the company\'s COUNTRY code (for Amap vs 2ГИС routing), not the logist\'s interface locale', async () => {
+    const prisma: any = {
+      driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ publishedByUserId: null }) },
+      companyMember: {
+        // Логист сам выставил себе русский интерфейс, но компания — китайская.
+        findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme', country: { code: 'CN' } }, user: { locale: 'ru', phone: '+86123' } }),
+      },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+
+    const result = await (service as any).toThreadDto({ id: 'chat1', cargoId: 'cargo1', dealId: null, driverId: 'd1', companyId: 'c1' }, driverCtx());
+
+    expect(result.counterpartCountryCode).toBe('CN');
+  });
+
+  it('is always null for a company/logist viewer — only the driver side uses it to pick a map link', async () => {
+    const prisma: any = {
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ companyId: 'c1' }) },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+    prisma.driver = { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' }, id: 'd1' }) };
+
+    const result = await (service as any).toThreadDto({ id: 'chat1', cargoId: null, dealId: null, driverId: 'd1', companyId: 'c1' }, companyCtx());
+
+    expect(result.counterpartCountryCode).toBeNull();
+  });
 });
 
 describe('ChatsService.myChats — логист видит чаты всей компании (decisions.md, задача 012)', () => {

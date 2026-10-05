@@ -113,7 +113,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  Future<void> _attachLocation() async {
+  /// Водитель — «Отправить моё место» (задача 032, п.15): геопозиция
+  /// запрашивается ТОЛЬКО по нажатию этой кнопки (не фонового слежения,
+  /// см. `LocationReporter`/задача 008/014) и уходит ссылкой на карту —
+  /// Amap для китайской компании-получателя (своя карта, без входа),
+  /// 2ГИС для остальных.
+  Future<void> _sendMyLocation(ChatThread? thread) async {
     final t = context.l10n;
     setState(() => _sharingLocation = true);
     try {
@@ -127,11 +132,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
-      // Amap понимает WGS84-координаты напрямую (coordinate=wgs84) и открывается
-      // как в приложении, так и веб-версией без ключа/входа — подходит и для
-      // казахстанской, и для китайской стороны без встраивания карты в апп.
-      final link = 'https://uri.amap.com/marker?position=${position.longitude},${position.latitude}'
-          '&coordinate=wgs84&src=lubao&callnative=1';
+      final isChina = thread?.counterpartCountryCode == 'CN';
+      final link = isChina
+          // Amap понимает WGS84-координаты напрямую (coordinate=wgs84) и
+          // открывается как в приложении, так и веб-версией без ключа/
+          // входа — не нужно встраивать карту в апп для китайской стороны.
+          ? 'https://uri.amap.com/marker?position=${position.longitude},${position.latitude}'
+              '&coordinate=wgs84&src=lubao&callnative=1'
+          : 'https://2gis.kz/geo/${position.longitude},${position.latitude}';
       await _send('📍 ${t.chatLocationMessagePrefix}: $link');
     } catch (_) {
       if (mounted) {
@@ -140,6 +148,46 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     } finally {
       if (mounted) setState(() => _sharingLocation = false);
     }
+  }
+
+  /// Логист — «Место погрузки» (задача 032, п.15, решение 2026-10-06):
+  /// НЕ его GPS — диалог со вставкой готовой ссылки (Baidu/Amap/2ГИС),
+  /// отправленной тут же в чат. Ничего не сохраняется в груз — адрес
+  /// всегда свежий, разрешение на геолокацию у логиста не запрашивается.
+  Future<void> _sendLoadingPlaceLink() async {
+    final t = context.l10n;
+    final controller = TextEditingController();
+    final link = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          final trimmed = controller.text.trim();
+          final valid = trimmed.startsWith('https://') && trimmed.length <= 500;
+          return AlertDialog(
+            title: Text(t.chatLoadingPlaceDialogTitle),
+            content: AppTextField(
+              label: '',
+              hintText: t.chatLoadingPlaceDialogHint,
+              controller: controller,
+              onChanged: (_) => setDialogState(() {}),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
+              FilledButton(
+                onPressed: valid ? () => Navigator.pop(dialogContext, trimmed) : null,
+                child: Text(t.commonDone),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (link == null || !mounted) return;
+    if (!link.startsWith('https://') || link.length > 500) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.chatLoadingPlaceLinkInvalid)));
+      return;
+    }
+    await _send('📍 ${t.chatLoadingPlaceMessagePrefix}: $link');
   }
 
   /// Звонок не должен ждать запись события (задача 017, п.5г) — сначала
@@ -322,9 +370,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
                 children: [
-                  IconSquareButton(
-                    icon: LucideIcons.mapPin,
-                    onPressed: _sharingLocation ? null : _attachLocation,
+                  Tooltip(
+                    message: isDriver ? t.chatAttachLocation : t.chatLoadingPlaceTooltip,
+                    child: IconSquareButton(
+                      icon: LucideIcons.mapPin,
+                      onPressed: _sharingLocation ? null : (isDriver ? () => _sendMyLocation(thread) : _sendLoadingPlaceLink),
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(child: AppTextField(label: '', hintText: t.chatInputHint, controller: _controller)),

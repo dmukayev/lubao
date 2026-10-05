@@ -11,6 +11,7 @@ class ChatThread {
     this.counterpartLocale,
     this.counterpartPhone,
     this.counterpartWechatId,
+    this.counterpartCountryCode,
   });
 
   final String id;
@@ -22,6 +23,10 @@ class ChatThread {
   final String? counterpartLocale;
   final String? counterpartPhone;
   final String? counterpartWechatId;
+  /// Страна компании-получателя (задача 032, п.15) — только когда viewer —
+  /// водитель; решает, какую карту открыть в ссылке «моё место»: Amap для
+  /// Китая, 2ГИС для остальных. Не язык интерфейса сотрудника.
+  final String? counterpartCountryCode;
 
   factory ChatThread.fromJson(Map<String, dynamic> json) => ChatThread(
         id: json['id'] as String,
@@ -33,6 +38,7 @@ class ChatThread {
         counterpartLocale: json['counterpartLocale'] as String?,
         counterpartPhone: json['counterpartPhone'] as String?,
         counterpartWechatId: json['counterpartWechatId'] as String?,
+        counterpartCountryCode: json['counterpartCountryCode'] as String?,
       );
 }
 

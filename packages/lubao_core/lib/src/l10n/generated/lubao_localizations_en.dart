@@ -771,13 +771,29 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get chatEmpty => 'Start the conversation';
 
   @override
-  String get chatAttachLocation => 'Attach location';
+  String get chatAttachLocation => 'Send my location';
 
   @override
   String get chatLocationMessagePrefix => 'Location on map';
 
   @override
   String get chatLocationError => 'Couldn\'t determine the location';
+
+  @override
+  String get chatLoadingPlaceTooltip => 'Loading place';
+
+  @override
+  String get chatLoadingPlaceDialogTitle => 'Paste a link to the loading place';
+
+  @override
+  String get chatLoadingPlaceDialogHint => 'A Baidu/Amap/2GIS link';
+
+  @override
+  String get chatLoadingPlaceMessagePrefix => 'Loading place';
+
+  @override
+  String get chatLoadingPlaceLinkInvalid =>
+      'Needs an https:// link, up to 500 characters';
 
   @override
   String get chatTranslatedBadge => 'Translated';

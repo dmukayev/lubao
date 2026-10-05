@@ -767,13 +767,29 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get chatEmpty => 'Начните переписку';
 
   @override
-  String get chatAttachLocation => 'Прикрепить точку';
+  String get chatAttachLocation => 'Отправить моё место';
 
   @override
   String get chatLocationMessagePrefix => 'Точка на карте';
 
   @override
   String get chatLocationError => 'Не удалось определить местоположение';
+
+  @override
+  String get chatLoadingPlaceTooltip => 'Место погрузки';
+
+  @override
+  String get chatLoadingPlaceDialogTitle => 'Вставьте ссылку на место погрузки';
+
+  @override
+  String get chatLoadingPlaceDialogHint => 'Ссылка из Baidu/Amap/2ГИС';
+
+  @override
+  String get chatLoadingPlaceMessagePrefix => 'Место погрузки';
+
+  @override
+  String get chatLoadingPlaceLinkInvalid =>
+      'Нужна ссылка https:// длиной до 500 символов';
 
   @override
   String get chatTranslatedBadge => 'Переведено';

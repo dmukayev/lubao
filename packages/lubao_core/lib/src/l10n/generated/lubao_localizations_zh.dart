@@ -755,13 +755,28 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get chatEmpty => '开始对话';
 
   @override
-  String get chatAttachLocation => '附加位置';
+  String get chatAttachLocation => '发送我的位置';
 
   @override
   String get chatLocationMessagePrefix => '地图位置';
 
   @override
   String get chatLocationError => '无法获取位置';
+
+  @override
+  String get chatLoadingPlaceTooltip => '装货地点';
+
+  @override
+  String get chatLoadingPlaceDialogTitle => '粘贴装货地点的链接';
+
+  @override
+  String get chatLoadingPlaceDialogHint => '来自百度/高德/2GIS的链接';
+
+  @override
+  String get chatLoadingPlaceMessagePrefix => '装货地点';
+
+  @override
+  String get chatLoadingPlaceLinkInvalid => '需要 https:// 链接，长度不超过 500 字符';
 
   @override
   String get chatTranslatedBadge => '已翻译';

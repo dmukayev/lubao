@@ -94,7 +94,7 @@ export class ChatsService {
       if (cargo?.publishedByUserId) {
         const publisher = await this.prisma.companyMember.findFirst({
           where: { userId: cargo.publishedByUserId },
-          include: { user: true, company: true },
+          include: { user: true, company: { include: { country: true } } },
         });
         if (publisher) return publisher;
       }
@@ -102,7 +102,7 @@ export class ChatsService {
     return this.prisma.companyMember.findFirst({
       where: { companyId, role: 'OWNER' },
       orderBy: { createdAt: 'asc' },
-      include: { user: true, company: true },
+      include: { user: true, company: { include: { country: true } } },
     });
   }
 
@@ -133,6 +133,9 @@ export class ChatsService {
       counterpartLocale,
       counterpartPhone: ctx.driver ? companyMember?.contactPhone ?? companyMember?.user.phone ?? null : driver.user.phone,
       counterpartWechatId: ctx.driver ? companyMember?.wechatId ?? null : null,
+      // Задача 032, п.15 — водитель решает Amap (Китай) / 2ГИС (остальные)
+      // по СТРАНЕ компании-получателя, не по языку интерфейса сотрудника.
+      counterpartCountryCode: ctx.driver ? companyMember?.company.country?.code ?? null : null,
     };
   }
 
