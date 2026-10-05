@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { BooleanQuery } from '../../common/boolean-query.decorator';
 import { IsPersonName } from '../../common/validators/person-name.validator';
@@ -19,6 +19,8 @@ export class ResolveComplaintDto {
   /// Ответ автору жалобы — обязателен (п.24d): автор видит его в своём
   /// языке в «Мои жалобы» (когда появится модуль уведомлений/экран —
   /// см. заметку в статусе задачи 028).
+  @IsNotEmpty()
+  @MaxLength(1000)
   @IsString()
   resolutionNote!: string;
 }
@@ -27,6 +29,8 @@ export class SetVerifiedDto {
   @IsBoolean()
   isVerified!: boolean;
 
+  @IsNotEmpty()
+  @MaxLength(1000)
   @IsString()
   reason!: string;
 
@@ -38,6 +42,8 @@ export class SetVerifiedDto {
 }
 
 export class BlockUserDto {
+  @IsNotEmpty()
+  @MaxLength(1000)
   @IsString()
   reason!: string;
 }
@@ -267,11 +273,15 @@ export class AdminUpdateCargoDto {
   @IsString()
   description?: string;
 
+  @IsNotEmpty()
+  @MaxLength(1000)
   @IsString()
   reason!: string;
 }
 
 export class AdminReasonDto {
+  @IsNotEmpty()
+  @MaxLength(1000)
   @IsString()
   reason!: string;
 }
@@ -281,6 +291,8 @@ export class AdminDealStatusDto {
   @IsIn(['SELECTED', 'CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED'])
   status!: 'SELECTED' | 'CONFIRMED_BY_DRIVER' | 'LOADED' | 'IN_TRANSIT' | 'DELIVERED';
 
+  @IsNotEmpty()
+  @MaxLength(1000)
   @IsString()
   reason!: string;
 }
@@ -344,6 +356,8 @@ export class AdminUpdateDriverDto {
   @Type(() => AdminDriverVehicleUpdateDto)
   vehicle?: AdminDriverVehicleUpdateDto;
 
+  @IsNotEmpty()
+  @MaxLength(1000)
   @IsString()
   reason!: string;
 }
@@ -373,6 +387,8 @@ export class AdminUpdateCompanyDto {
   @IsString()
   taxId?: string;
 
+  @IsNotEmpty()
+  @MaxLength(1000)
   @IsString()
   reason!: string;
 }
@@ -381,6 +397,8 @@ export class AdminSetMemberRoleDto {
   @IsIn(['OWNER', 'LOGIST'])
   role!: 'OWNER' | 'LOGIST';
 
+  @IsNotEmpty()
+  @MaxLength(1000)
   @IsString()
   reason!: string;
 }
@@ -389,6 +407,8 @@ export class AdminChangeMemberEmailDto {
   @IsEmail()
   email!: string;
 
+  @IsNotEmpty()
+  @MaxLength(1000)
   @IsString()
   reason!: string;
 }
@@ -408,6 +428,8 @@ export class AdminUpdateReferenceItemDto {
   @IsInt()
   sortOrder?: number;
 
+  @IsNotEmpty()
+  @MaxLength(1000)
   @IsString()
   reason!: string;
 }
@@ -432,6 +454,8 @@ export class AdminUpdatePointDto {
   @IsBoolean()
   isActive?: boolean;
 
+  @IsNotEmpty()
+  @MaxLength(1000)
   @IsString()
   reason!: string;
 }
@@ -455,6 +479,8 @@ export class AdminUpdateCityDto {
   @IsNumber()
   lng?: number;
 
+  @IsNotEmpty()
+  @MaxLength(1000)
   @IsString()
   reason!: string;
 }
