@@ -7,6 +7,8 @@ import { TranslationProvider, TranslationResult } from './translation-provider';
 /// админке») — ничего не переводит, сообщение доставляется с оригиналом.
 @Injectable()
 export class NoopTranslationProvider extends TranslationProvider {
+  readonly isAvailable = false;
+
   async translate(): Promise<TranslationResult> {
     return { translations: {} };
   }

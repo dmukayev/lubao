@@ -12,5 +12,11 @@ export interface TranslationResult {
 /// как есть, сохраняя их неизменными (это требование — в системном
 /// промпте DeepSeek-провайдера, не здесь).
 export abstract class TranslationProvider {
+  /// false у Noop (задача 029, п.20) — отличает «перевод не настроен»
+  /// (должно быть SKIPPED — обычный режим без ключа DeepSeek) от «перевод
+  /// настроен, но этот конкретный вызов не удался» (FAILED — настоящая
+  /// проблема, показываем «Перевод недоступен · повторить»).
+  abstract readonly isAvailable: boolean;
+
   abstract translate(text: string, from: Locale, to: Locale[]): Promise<TranslationResult>;
 }

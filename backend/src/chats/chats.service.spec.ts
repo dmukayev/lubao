@@ -396,4 +396,64 @@ describe('ChatsService.retryTranslation (задача 010, п.7)', () => {
 
     await expect(service.retryTranslation('chat1', 'm1', driverCtx())).rejects.toThrow(NotFoundException);
   });
+
+  it('does not re-translate a message that is already DONE (задача 029, п.20)', async () => {
+    const prisma: any = {
+      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1' }) },
+      message: { findUnique: jest.fn().mockResolvedValue({ id: 'm1', chatId: 'chat1', translationStatus: 'DONE' }) },
+    };
+    const translation = { translateMessage: jest.fn() };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, translation as any, { get: jest.fn() } as any);
+
+    await service.retryTranslation('chat1', 'm1', driverCtx());
+
+    expect(translation.translateMessage).not.toHaveBeenCalled();
+  });
+
+  it('does not re-translate a message that is SKIPPED (same language, or translation was off at send time)', async () => {
+    const prisma: any = {
+      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1' }) },
+      message: { findUnique: jest.fn().mockResolvedValue({ id: 'm1', chatId: 'chat1', translationStatus: 'SKIPPED' }) },
+    };
+    const translation = { translateMessage: jest.fn() };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, translation as any, { get: jest.fn() } as any);
+
+    await service.retryTranslation('chat1', 'm1', driverCtx());
+
+    expect(translation.translateMessage).not.toHaveBeenCalled();
+  });
+
+  it('does not re-translate when the "Перевод выкл." setting is off', async () => {
+    const prisma: any = {
+      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1' }) },
+      message: { findUnique: jest.fn().mockResolvedValue({ id: 'm1', chatId: 'chat1', translationStatus: 'FAILED' }) },
+    };
+    const translation = { translateMessage: jest.fn() };
+    const appSettings = { get: jest.fn().mockResolvedValue('false') };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, translation as any, appSettings as any);
+
+    await service.retryTranslation('chat1', 'm1', driverCtx());
+
+    expect(translation.translateMessage).not.toHaveBeenCalled();
+  });
+
+  it('counts the rate limit against whoever clicked retry, not the original sender (задача 029, п.20)', async () => {
+    const prisma: any = {
+      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1' }) },
+      message: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'm1', chatId: 'chat1', senderUserId: 'u-company', originalText: 'hi', originalLang: 'zh', translationStatus: 'FAILED' }),
+        update: jest.fn((args: any) => ({ id: 'm1', chatId: 'chat1', senderUserId: 'u-company', ...args.data })),
+      },
+      driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { id: 'u-driver', locale: 'ru' } }) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { id: 'u-company', locale: 'zh' } }) },
+    };
+    const translation = { translateMessage: jest.fn().mockResolvedValue({ translations: { ru: 'привет' }, status: 'DONE' }) };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, translation as any, { get: jest.fn() } as any);
+
+    // Отправитель сообщения — логист (u-company), но RETRY нажимает
+    // водитель (driverCtx -> u-driver) — лимит должен считаться на него.
+    await service.retryTranslation('chat1', 'm1', driverCtx());
+
+    expect(translation.translateMessage).toHaveBeenCalledWith('u-driver', 'hi', 'zh', 'ru');
+  });
 });

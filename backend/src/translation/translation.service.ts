@@ -71,6 +71,10 @@ export class TranslationService {
   /// даже после одной повторной попытки (п.5).
   async translateMessage(senderUserId: string, text: string, from: Locale, to: Locale): Promise<TranslateMessageResult> {
     if (from === to) return { translations: {}, status: 'SKIPPED' };
+    // Нет настроенного провайдера (обычный режим без ключа DeepSeek) —
+    // SKIPPED, не FAILED (задача 029, п.20): иначе каждое межъязычное
+    // сообщение в деве/демо показывало бы «Перевод недоступен · повторить».
+    if (!this.provider.isAvailable) return { translations: {}, status: 'SKIPPED' };
     if (!(await this.underRateLimit(senderUserId))) {
       return { translations: {}, status: 'SKIPPED' };
     }

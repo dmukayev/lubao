@@ -263,13 +263,22 @@ export class ChatsService {
   }
 
   /// Повторная попытка перевода (задача 010, п.7 — «Перевод недоступен ·
-  /// повторить») — то же, что и при отправке, но для уже существующего
-  /// сообщения; должен звать либо отправитель, либо получатель (оба —
-  /// участники чата).
+  /// повторить»; уточнения — задача 029, п.20): уважает переключатель
+  /// «Перевод выкл.», не трогает уже DONE/SKIPPED (нечего повторять —
+  /// только FAILED/PENDING), лимит 60/мин считается на того, кто НАЖАЛ
+  /// кнопку (ctx.user.id), а не на исходного отправителя — иначе
+  /// получатель, кликающий «повторить» несколько раз, тратил бы лимит
+  /// отправителя.
   async retryTranslation(chatId: string, messageId: string, ctx: RequestContext) {
     const chat = await this.loadChat(chatId, ctx);
     const message = await this.prisma.message.findUnique({ where: { id: messageId } });
     if (!message || message.chatId !== chat.id) throw new NotFoundException('Message not found');
+    if (message.translationStatus === 'DONE' || message.translationStatus === 'SKIPPED') {
+      return this.toMessageDto(message, ctx.user.id);
+    }
+
+    const translationEnabled = (await this.appSettings.get('translationEnabled')) !== 'false';
+    if (!translationEnabled) return this.toMessageDto(message, ctx.user.id);
 
     const { driver, companyMember } = await this.resolveParties(chat);
     const isSenderDriver = message.senderUserId === driver.user.id;
@@ -277,7 +286,7 @@ export class ChatsService {
     if (!recipientLocale) return this.toMessageDto(message, ctx.user.id);
 
     const { translations, status } = await this.translation.translateMessage(
-      message.senderUserId,
+      ctx.user.id,
       message.originalText,
       message.originalLang,
       recipientLocale,

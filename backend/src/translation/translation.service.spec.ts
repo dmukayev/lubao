@@ -10,7 +10,7 @@ describe('TranslationService.translateMessage (задача 010; задача 02
   beforeEach(() => {
     prisma = { translationLog: { create: jest.fn().mockResolvedValue(undefined) } };
     redis = { client: { incr: jest.fn().mockResolvedValue(1), expire: jest.fn().mockResolvedValue(undefined) } };
-    provider = { translate: jest.fn() };
+    provider = { isAvailable: true, translate: jest.fn() };
     queue = { add: jest.fn().mockResolvedValue(undefined) };
     service = new TranslationService(prisma, redis, provider, queue);
   });
@@ -99,6 +99,15 @@ describe('TranslationService.translateMessage (задача 010; задача 02
       expect(provider.translate).toHaveBeenCalledTimes(2);
       expect(result).toEqual({ translations: { zh: '货物在18:30' }, status: 'DONE' });
     });
+  });
+
+  it('returns SKIPPED, not FAILED, when the provider is not configured (задача 029, п.20 — Noop default without a DeepSeek key)', async () => {
+    provider.isAvailable = false;
+
+    const result = await service.translateMessage('u1', 'Привет', 'ru', 'zh');
+
+    expect(result).toEqual({ translations: {}, status: 'SKIPPED' });
+    expect(provider.translate).not.toHaveBeenCalled();
   });
 
   it('skips (not fails) once the per-user rate limit is exceeded, without calling the provider', async () => {

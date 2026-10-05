@@ -12,6 +12,7 @@ const LOCALE_NAMES: Record<Locale, string> = { kk: 'kk', ru: 'ru', zh: 'zh', en:
 /// DeepSeek модели переименовываются) — это .env, не константа.
 @Injectable()
 export class DeepSeekTranslationProvider extends TranslationProvider {
+  readonly isAvailable = true;
   private readonly logger = new Logger(DeepSeekTranslationProvider.name);
   private readonly client: OpenAI;
   private readonly model: string;

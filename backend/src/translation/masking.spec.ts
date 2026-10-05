@@ -29,6 +29,19 @@ describe('maskNumerics/unmaskNumerics (задача 010, п.3а)', () => {
     expect(values).toEqual([]);
   });
 
+  it('does not mistake a distance-in-km phrase for a license plate (задача 029, п.20 — regex was accepting Cyrillic letters)', () => {
+    const text = 'Проедем 500 км 30 м по трассе';
+    const { masked, values } = maskNumerics(text);
+    expect(masked).toBe(text);
+    expect(values).toEqual([]);
+  });
+
+  it('masks Chinese currency words (元/美元/万) and the "тг" tenge abbreviation (задача 029, п.20)', () => {
+    const { masked, values } = maskNumerics('Оплата 500元, ещё 300美元, цена 5万, тариф 2000 тг');
+    expect(masked).toBe('Оплата ⟦1⟧, ещё ⟦2⟧, цена ⟦3⟧, тариф ⟦4⟧');
+    expect(values).toEqual(['500元', '300美元', '5万', '2000 тг']);
+  });
+
   it('unmaskNumerics leaves an unknown label untouched (defensive — should not happen if the model behaves)', () => {
     expect(unmaskNumerics('нечто ⟦5⟧', ['a', 'b'])).toBe('нечто ⟦5⟧');
   });
