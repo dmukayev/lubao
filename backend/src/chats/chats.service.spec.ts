@@ -162,6 +162,40 @@ describe('ChatsService — counterpart resolution (decisions.md «Компани
       expect.objectContaining({ where: { companyId: 'c1', role: 'OWNER' }, orderBy: { createdAt: 'asc' } }),
     );
   });
+
+  it('shows the logist\'s own name/phone/WeChat, not the company name, once «Мой профиль» is filled (задача 012)', async () => {
+    const prisma: any = {
+      driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ publishedByUserId: 'logist-1' }) },
+      companyMember: {
+        findFirst: jest.fn().mockResolvedValue({ fullName: 'Ли Вэй', contactPhone: '+86123', wechatId: 'liwei88', company: { name: 'Acme' }, user: { locale: 'zh', phone: '+86000' } }),
+      },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+
+    const result = await (service as any).toThreadDto({ id: 'chat1', cargoId: 'cargo1', dealId: null, driverId: 'd1', companyId: 'c1' }, driverCtx());
+
+    expect(result.counterpartName).toBe('Ли Вэй');
+    expect(result.counterpartPhone).toBe('+86123');
+    expect(result.counterpartWechatId).toBe('liwei88');
+  });
+
+  it('falls back to the company name when the logist has not filled in «Мой профиль» yet', async () => {
+    const prisma: any = {
+      driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ publishedByUserId: 'logist-1' }) },
+      companyMember: {
+        findFirst: jest.fn().mockResolvedValue({ fullName: null, contactPhone: null, wechatId: null, company: { name: 'Acme' }, user: { locale: 'zh', phone: '+86123' } }),
+      },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+
+    const result = await (service as any).toThreadDto({ id: 'chat1', cargoId: 'cargo1', dealId: null, driverId: 'd1', companyId: 'c1' }, driverCtx());
+
+    expect(result.counterpartName).toBe('Acme');
+    expect(result.counterpartPhone).toBe('+86123');
+    expect(result.counterpartWechatId).toBeNull();
+  });
 });
 
 describe('ChatsService.myChats — логист видит чаты всей компании (decisions.md, задача 012)', () => {

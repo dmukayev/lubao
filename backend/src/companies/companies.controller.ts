@@ -3,8 +3,11 @@ import { CurrentUser } from '../common/current-user.decorator';
 import { Public } from '../common/public.decorator';
 import { RequestContext } from '../common/request-context';
 import { CompaniesService } from './companies.service';
+import { CreateCompanyVerificationDocumentDto } from './dto/create-company-verification-document.dto';
 import { CreateInviteDto } from './dto/invite.dto';
 import { SetPasswordDto } from './dto/set-password.dto';
+import { UpdateCompanyProfileDto } from './dto/update-company-profile.dto';
+import { UpdateMyContactDto } from './dto/update-my-contact.dto';
 import { UpdateWeComWebhookDto } from './dto/update-wecom-webhook.dto';
 
 @Controller('companies')
@@ -37,10 +40,36 @@ export class CompaniesController {
     return this.companies.toCompanyDto(ctx.companyMember.company);
   }
 
+  @Patch('me')
+  updateMe(@CurrentUser() ctx: RequestContext, @Body() dto: UpdateCompanyProfileDto) {
+    if (!ctx.companyMember || ctx.companyMember.role !== 'OWNER') {
+      throw new ForbiddenException('Only the owner can edit company details');
+    }
+    return this.companies.updateProfile(ctx.companyMember.companyId, dto);
+  }
+
+  @Patch('me/contact')
+  updateMyContact(@CurrentUser() ctx: RequestContext, @Body() dto: UpdateMyContactDto) {
+    if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
+    return this.companies.updateMyContact(ctx.user.id, dto);
+  }
+
   @Get('me/members')
   members(@CurrentUser() ctx: RequestContext) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
     return this.companies.members(ctx.companyMember.companyId);
+  }
+
+  @Get('me/verification-documents')
+  verificationDocuments(@CurrentUser() ctx: RequestContext) {
+    if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
+    return this.companies.listVerificationDocuments(ctx.companyMember.companyId);
+  }
+
+  @Post('me/verification-documents')
+  submitVerificationDocument(@CurrentUser() ctx: RequestContext, @Body() dto: CreateCompanyVerificationDocumentDto) {
+    if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
+    return this.companies.submitVerificationDocument(ctx.user.id, ctx.companyMember.companyId, dto);
   }
 
   @Patch('me/wecom-webhook')

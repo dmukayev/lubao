@@ -7,6 +7,10 @@ import { EmailService } from '../email/email.service';
 import { WeComService } from '../notifications/wecom.service';
 import { RegisterCompanyDto } from './dto/register-company.dto';
 import { CreateInviteDto, AcceptInviteDto } from './dto/invite.dto';
+import { UpdateCompanyProfileDto } from './dto/update-company-profile.dto';
+import { UpdateMyContactDto } from './dto/update-my-contact.dto';
+import { CreateCompanyVerificationDocumentDto } from './dto/create-company-verification-document.dto';
+import { isValidRegistrationNumber } from './registration-number';
 
 const INVITE_TTL_DAYS = 7;
 
@@ -25,6 +29,8 @@ export class CompaniesService {
       nameRu: company.nameRu,
       countryId: company.countryId,
       city: company.city,
+      legalAddress: company.legalAddress,
+      taxId: company.taxId,
       isVerified: company.isVerified,
       wecomWebhookUrl: company.wecomWebhookUrl,
       ratingAvg: Number(company.ratingAvg),
@@ -33,12 +39,75 @@ export class CompaniesService {
   }
 
   toMemberDto(member: CompanyMember) {
-    return { id: member.id, companyId: member.companyId, userId: member.userId, role: member.role };
+    return {
+      id: member.id,
+      companyId: member.companyId,
+      userId: member.userId,
+      role: member.role,
+      fullName: member.fullName,
+      contactPhone: member.contactPhone,
+      wechatId: member.wechatId,
+    };
   }
 
   async members(companyId: string) {
     const members = await this.prisma.companyMember.findMany({ where: { companyId } });
     return members.map((m) => this.toMemberDto(m));
+  }
+
+  /// Задача 012, п.1/8 — «Мой профиль»: имя, телефон для водителей, WeChat
+  /// конкретного сотрудника (не компании). И владелец, и логист правят
+  /// это у себя — отдельно от данных компании (только владелец).
+  async updateMyContact(userId: string, dto: UpdateMyContactDto) {
+    const member = await this.prisma.companyMember.update({
+      where: { userId },
+      data: { fullName: dto.fullName, contactPhone: dto.contactPhone, wechatId: dto.wechatId },
+    });
+    return this.toMemberDto(member);
+  }
+
+  /// Данные компании, которые правит владелец (задача 012, п.8: город —
+  /// по желанию, рег. номер — до первой публикации, формат по стране).
+  async updateProfile(companyId: string, dto: UpdateCompanyProfileDto) {
+    const company = await this.prisma.company.findUniqueOrThrow({ where: { id: companyId }, include: { country: { select: { code: true } } } });
+    if (dto.taxId !== undefined && !isValidRegistrationNumber(company.country.code, dto.taxId)) {
+      throw new BadRequestException('Invalid registration number format for this country');
+    }
+    const updated = await this.prisma.company.update({
+      where: { id: companyId },
+      data: { city: dto.city, legalAddress: dto.legalAddress, taxId: dto.taxId },
+    });
+    return this.toCompanyDto(updated);
+  }
+
+  /// Единственный документ, подтверждающий компанию (задача 012, п.5) —
+  /// свидетельство о регистрации. Загрузка не требует isVerified: до
+  /// проверки его как раз и не хватает, чтобы админу было что проверять
+  /// (ревью задачи 012 — главный найденный пробел).
+  async submitVerificationDocument(userId: string, companyId: string, dto: CreateCompanyVerificationDocumentDto) {
+    const doc = await this.prisma.verificationDocument.create({
+      data: { userId, companyId, type: dto.type, fileUrl: dto.fileUrl, status: 'PENDING' },
+    });
+    return this.docToDto(doc);
+  }
+
+  async listVerificationDocuments(companyId: string) {
+    const docs = await this.prisma.verificationDocument.findMany({
+      where: { companyId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return docs.map((d) => this.docToDto(d));
+  }
+
+  private docToDto(doc: { id: string; type: string; fileUrl: string; status: string; rejectReason: string | null; createdAt: Date }) {
+    return {
+      id: doc.id,
+      type: doc.type,
+      fileUrl: doc.fileUrl,
+      status: doc.status,
+      rejectReason: doc.rejectReason,
+      createdAt: doc.createdAt,
+    };
   }
 
   /// Создание Company + CompanyMember{OWNER} для уже существующего User
@@ -61,7 +130,7 @@ export class CompaniesService {
           data: { name: dto.companyName, nameRu: dto.companyNameRu ?? dto.companyName, countryId: dto.countryId },
         });
         const member = await tx.companyMember.create({
-          data: { companyId: company.id, userId, role: 'OWNER' },
+          data: { companyId: company.id, userId, role: 'OWNER', fullName: dto.ownerName },
         });
         await tx.user.update({ where: { id: userId }, data: { name: dto.ownerName } });
         return { company, member };
@@ -157,8 +226,12 @@ export class CompaniesService {
           emailVerifiedAt: new Date(),
         },
       });
+      // Задача 012 — телефон/WeChat из формы приглашения раньше просто
+      // игнорировались (DTO их принимал, но ни одного столбца для записи
+      // не было). CompanyMember.fullName заполняем именем из формы —
+      // то же имя уже уходит в User.name.
       const member = await tx.companyMember.create({
-        data: { companyId: invite.companyId, userId: user.id, role: invite.role },
+        data: { companyId: invite.companyId, userId: user.id, role: invite.role, fullName: dto.name, contactPhone: dto.phone, wechatId: dto.wechat },
       });
       await tx.companyInvite.update({ where: { id: invite.id }, data: { usedAt: new Date() } });
       return { user, member };

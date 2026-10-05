@@ -8,6 +8,13 @@ import { CloseCargoDto } from './dto/close-cargo.dto';
 
 type CargoWithCompany = Cargo & { company: Company & { country: { code: string } }; publishedBy?: { id: string; name: string | null; phone: string | null } | null };
 
+interface CargoContact {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  wechatId: string | null;
+}
+
 @Injectable()
 export class CargosService {
   constructor(
@@ -17,16 +24,33 @@ export class CargosService {
 
   /// Водитель звонит/пишет конкретному логисту, опубликовавшему груз, а не
   /// «компании» (decisions.md «Компания: проверка, роли, контакты», задача
-  /// 012). У грузов до задачи 017 нет `publishedByUserId` — откатываемся
-  /// на владельца компании (самый старый `OWNER` среди участников).
-  private async resolveContact(cargo: CargoWithCompany) {
-    if (cargo.publishedBy) return { id: cargo.publishedBy.id, name: cargo.publishedBy.name, phone: cargo.publishedBy.phone };
+  /// 012) — своё имя/телефон/WeChat у каждого сотрудника (CompanyMember.
+  /// fullName/contactPhone/wechatId), не общий телефон компании. У грузов
+  /// до задачи 017 нет `publishedByUserId` — откатываемся на владельца
+  /// компании (самый старый `OWNER`). Пока сотрудник не заполнил «Мой
+  /// профиль» — показываем то, что есть (User.name/phone), а не пусто.
+  private async resolveContact(cargo: CargoWithCompany): Promise<CargoContact | null> {
+    if (cargo.publishedBy) {
+      const member = await this.prisma.companyMember.findFirst({ where: { userId: cargo.publishedBy.id } });
+      return {
+        id: cargo.publishedBy.id,
+        name: member?.fullName ?? cargo.publishedBy.name,
+        phone: member?.contactPhone ?? cargo.publishedBy.phone,
+        wechatId: member?.wechatId ?? null,
+      };
+    }
     const owner = await this.prisma.companyMember.findFirst({
       where: { companyId: cargo.companyId, role: 'OWNER' },
       orderBy: { createdAt: 'asc' },
       include: { user: { select: { id: true, name: true, phone: true } } },
     });
-    return owner ? { id: owner.user.id, name: owner.user.name, phone: owner.user.phone } : null;
+    if (!owner) return null;
+    return {
+      id: owner.user.id,
+      name: owner.fullName ?? owner.user.name,
+      phone: owner.contactPhone ?? owner.user.phone,
+      wechatId: owner.wechatId,
+    };
   }
 
   async toDto(cargo: CargoWithCompany) {
@@ -46,6 +70,7 @@ export class CargosService {
       contactUserId: contact?.id ?? null,
       contactName: contact?.name ?? null,
       contactPhone: contact?.phone ?? null,
+      contactWechatId: contact?.wechatId ?? null,
       // WhatsApp заблокирован в Китае — водителю показываем чат Lubao
       // вместо кнопки, которая всё равно не дойдёт до логиста (decisions.md
       // «Звонки — обычные, через телефон», 2026-10-05).

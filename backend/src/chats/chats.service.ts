@@ -116,7 +116,12 @@ export class ChatsService {
 
   private async toThreadDto(chat: { id: string; cargoId: string | null; dealId: string | null; driverId: string; companyId: string }, ctx: RequestContext) {
     const { driver, companyMember } = await this.resolveParties(chat);
-    const counterpartName = ctx.driver ? companyMember?.company.name ?? '' : driver.fullName;
+    // Задача 012 — водитель должен видеть конкретного логиста (его имя,
+    // телефон, WeChat), а не «компанию» (decisions.md «Компания: проверка,
+    // роли, контакты»). companyMember.fullName/contactPhone/wechatId —
+    // пока сотрудник не заполнил «Мой профиль», откатываемся на название
+    // компании/User.phone, как было раньше, а не показываем пусто.
+    const counterpartName = ctx.driver ? companyMember?.fullName ?? companyMember?.company.name ?? '' : driver.fullName;
     const counterpartLocale = ctx.driver ? companyMember?.user.locale : driver.user.locale;
     return {
       id: chat.id,
@@ -126,7 +131,8 @@ export class ChatsService {
       companyId: chat.companyId,
       counterpartName,
       counterpartLocale,
-      counterpartPhone: ctx.driver ? companyMember?.user.phone ?? null : driver.user.phone,
+      counterpartPhone: ctx.driver ? companyMember?.contactPhone ?? companyMember?.user.phone ?? null : driver.user.phone,
+      counterpartWechatId: ctx.driver ? companyMember?.wechatId ?? null : null,
     };
   }
 

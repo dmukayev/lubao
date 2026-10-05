@@ -309,3 +309,109 @@ describe('CompaniesService WeCom webhook (задача 011, п.2)', () => {
     expect(result).toEqual({ success: true });
   });
 });
+
+describe('CompaniesService.updateProfile — рег. номер по стране (задача 012, п. «Обязательные поля»)', () => {
+  function fixture(countryCode: string) {
+    return {
+      company: {
+        findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'c1', countryId: 'cn-1', country: { code: countryCode } }),
+        update: jest.fn((args: any) => Promise.resolve({ id: 'c1', name: 'Yidao', nameRu: 'Идао', countryId: 'cn-1', ratingAvg: 0, ratingCount: 0, isVerified: false, wecomWebhookUrl: null, ...args.data })),
+      },
+    };
+  }
+
+  it('accepts an 18-char alnum 统一社会信用代码 for a Chinese company', async () => {
+    const prisma = fixture('CN');
+    const service = new CompaniesService(prisma as any, {} as any, {} as any);
+
+    await expect(service.updateProfile('c1', { taxId: '91330000MA2B1C2D3E' })).resolves.toEqual(
+      expect.objectContaining({ taxId: '91330000MA2B1C2D3E' }),
+    );
+  });
+
+  it('rejects a too-short registration number for a Chinese company', async () => {
+    const prisma = fixture('CN');
+    const service = new CompaniesService(prisma as any, {} as any, {} as any);
+
+    await expect(service.updateProfile('c1', { taxId: '123' })).rejects.toThrow(BadRequestException);
+  });
+
+  it('accepts a 12-digit БИН for a Kazakhstani company', async () => {
+    const prisma = fixture('KZ');
+    const service = new CompaniesService(prisma as any, {} as any, {} as any);
+
+    await expect(service.updateProfile('c1', { taxId: '123456789012' })).resolves.toEqual(
+      expect.objectContaining({ taxId: '123456789012' }),
+    );
+  });
+
+  it('rejects a БИН that is not exactly 12 digits', async () => {
+    const prisma = fixture('KZ');
+    const service = new CompaniesService(prisma as any, {} as any, {} as any);
+
+    await expect(service.updateProfile('c1', { taxId: '12345' })).rejects.toThrow(BadRequestException);
+  });
+
+  it('does not require a format for a country without a defined rule — any non-empty string passes', async () => {
+    const prisma = fixture('RU');
+    const service = new CompaniesService(prisma as any, {} as any, {} as any);
+
+    await expect(service.updateProfile('c1', { taxId: 'anything-non-empty' })).resolves.toEqual(
+      expect.objectContaining({ taxId: 'anything-non-empty' }),
+    );
+  });
+
+  it('city/legalAddress update without taxId does not run the format check', async () => {
+    const prisma = fixture('CN');
+    const service = new CompaniesService(prisma as any, {} as any, {} as any);
+
+    await service.updateProfile('c1', { city: 'Урумчи' });
+
+    expect(prisma.company.update).toHaveBeenCalledWith({ where: { id: 'c1' }, data: { city: 'Урумчи', legalAddress: undefined, taxId: undefined } });
+  });
+});
+
+describe('CompaniesService.updateMyContact — «Мой профиль» сотрудника (задача 012, п.1/8)', () => {
+  it('updates fullName/contactPhone/wechatId for the calling member, by userId', async () => {
+    const prisma = {
+      companyMember: {
+        update: jest.fn().mockResolvedValue({ id: 'm1', companyId: 'c1', userId: 'u1', role: 'LOGIST', fullName: 'Ли Вэй', contactPhone: '+86123', wechatId: 'liwei88' }),
+      },
+    };
+    const service = new CompaniesService(prisma as any, {} as any, {} as any);
+
+    const result = await service.updateMyContact('u1', { fullName: 'Ли Вэй', contactPhone: '+86123', wechatId: 'liwei88' });
+
+    expect(prisma.companyMember.update).toHaveBeenCalledWith({
+      where: { userId: 'u1' },
+      data: { fullName: 'Ли Вэй', contactPhone: '+86123', wechatId: 'liwei88' },
+    });
+    expect(result.fullName).toBe('Ли Вэй');
+  });
+});
+
+describe('CompaniesService verification documents — компания подтверждается одним документом (задача 012, п.5)', () => {
+  it('submitVerificationDocument creates a PENDING document tied to the company, not a driver', async () => {
+    const prisma = {
+      verificationDocument: {
+        create: jest.fn().mockResolvedValue({ id: 'doc1', type: 'COMPANY_REGISTRATION', fileUrl: 'key.jpg', status: 'PENDING', rejectReason: null, createdAt: new Date() }),
+      },
+    };
+    const service = new CompaniesService(prisma as any, {} as any, {} as any);
+
+    await service.submitVerificationDocument('u1', 'c1', { type: 'COMPANY_REGISTRATION', fileUrl: 'key.jpg' });
+
+    expect(prisma.verificationDocument.create).toHaveBeenCalledWith({
+      data: { userId: 'u1', companyId: 'c1', type: 'COMPANY_REGISTRATION', fileUrl: 'key.jpg', status: 'PENDING' },
+    });
+  });
+
+  it('listVerificationDocuments returns only this company\'s documents, newest first', async () => {
+    const prisma = { verificationDocument: { findMany: jest.fn().mockResolvedValue([]) } };
+    const service = new CompaniesService(prisma as any, {} as any, {} as any);
+
+    await service.listVerificationDocuments('c1');
+
+    expect(prisma.verificationDocument.findMany).toHaveBeenCalledWith({ where: { companyId: 'c1' }, orderBy: { createdAt: 'desc' } });
+  });
+});

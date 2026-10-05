@@ -32,24 +32,45 @@ function baseCargo(overrides: Partial<Record<string, unknown>> = {}) {
 }
 
 describe('CargosService — logist contact resolution (задача 017, decisions.md «Компания: проверка, роли, контакты»)', () => {
-  it('uses the publishing logist when the cargo has one', async () => {
+  it('uses the publishing logist\'s own contacts (CompanyMember.fullName/contactPhone/wechatId) when set, задача 012', async () => {
     const prisma: any = {
-      cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedBy: { id: 'logist1', name: 'Ли Вэй', phone: '+86123' } })) },
+      cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedBy: { id: 'logist1', name: 'Li Wei (User.name)', phone: '+86000' } })) },
       deal: { count: jest.fn().mockResolvedValue(0) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ fullName: 'Ли Вэй', contactPhone: '+86123', wechatId: 'liwei88' }) },
     };
     const service = new CargosService(prisma, {} as any);
 
     const result = await service.byId('cargo1');
 
+    expect(prisma.companyMember.findFirst).toHaveBeenCalledWith({ where: { userId: 'logist1' } });
     expect(result.contactUserId).toBe('logist1');
+    expect(result.contactName).toBe('Ли Вэй');
     expect(result.contactPhone).toBe('+86123');
+    expect(result.contactWechatId).toBe('liwei88');
+  });
+
+  it('falls back to User.name/phone when the publishing logist has not filled in «Мой профиль» yet', async () => {
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedBy: { id: 'logist1', name: 'Ли Вэй', phone: '+86123' } })) },
+      deal: { count: jest.fn().mockResolvedValue(0) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ fullName: null, contactPhone: null, wechatId: null }) },
+    };
+    const service = new CargosService(prisma, {} as any);
+
+    const result = await service.byId('cargo1');
+
+    expect(result.contactName).toBe('Ли Вэй');
+    expect(result.contactPhone).toBe('+86123');
+    expect(result.contactWechatId).toBeNull();
   });
 
   it('falls back to the oldest OWNER when the cargo predates publishedByUserId', async () => {
     const prisma: any = {
       cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedBy: null })) },
       deal: { count: jest.fn().mockResolvedValue(0) },
-      companyMember: { findFirst: jest.fn().mockResolvedValue({ user: { id: 'owner1', name: 'Owner', phone: '+77001112233' } }) },
+      companyMember: {
+        findFirst: jest.fn().mockResolvedValue({ fullName: 'Owner Contact', contactPhone: '+77001112233', wechatId: null, user: { id: 'owner1', name: 'Owner', phone: '+77001112233' } }),
+      },
     };
     const service = new CargosService(prisma, {} as any);
 
@@ -59,6 +80,7 @@ describe('CargosService — logist contact resolution (задача 017, decisio
       expect.objectContaining({ where: { companyId: 'c1', role: 'OWNER' }, orderBy: { createdAt: 'asc' } }),
     );
     expect(result.contactUserId).toBe('owner1');
+    expect(result.contactName).toBe('Owner Contact');
   });
 
   it('flags isWhatsappBlocked for a China-based company', async () => {
