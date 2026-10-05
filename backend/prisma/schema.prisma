@@ -688,20 +688,46 @@ model Chat {
   @@map("chats")
 }
 
+/// Автоперевод (задача 010) — SKIPPED: не нужен (получатель пишет на том
+/// же языке), DONE: перевод(ы) в `translations`, FAILED: провайдер
+/// недоступен/таймаут — сообщение доставлено с оригиналом, клиент
+/// показывает «Перевод недоступен · повторить».
+enum TranslationStatus {
+  SKIPPED
+  DONE
+  FAILED
+}
+
 model Message {
-  id            String   @id @default(uuid())
-  chatId        String
-  chat          Chat     @relation(fields: [chatId], references: [id])
-  senderUserId  String
-  sender        User     @relation(fields: [senderUserId], references: [id])
-  originalText  String
-  originalLang  Locale
-  translations  Json?
-  isRead        Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  id                String            @id @default(uuid())
+  chatId            String
+  chat              Chat              @relation(fields: [chatId], references: [id])
+  senderUserId      String
+  sender            User              @relation(fields: [senderUserId], references: [id])
+  originalText      String
+  originalLang      Locale
+  translations      Json?
+  translationStatus TranslationStatus @default(SKIPPED)
+  isRead            Boolean           @default(false)
+  createdAt         DateTime          @default(now())
 
   @@index([chatId, createdAt])
   @@map("messages")
+}
+
+/// Метрика расхода (задача 010, п.8) — «Настройки → Перевод» в админке:
+/// включён/выключен, модель, расход за 7 дней. Одна строка на один вызов
+/// провайдера (не на сообщение — ретрай пишет вторую строку).
+model TranslationLog {
+  id           String   @id @default(uuid())
+  provider     String
+  model        String?
+  success      Boolean
+  tokensUsed   Int?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("translation_logs")
 }
 
 model Review {
