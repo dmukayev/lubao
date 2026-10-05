@@ -226,6 +226,12 @@ export class ChatsService {
       createdAt: message.createdAt,
     });
 
+    // «Мои чаты» обновляется у обеих сторон даже без открытого chat:<id>
+    // (задача 029, п.3) — через личные комнаты, не только через комнату
+    // самого чата.
+    this.realtime.emitChatUpdated(ctx.user.id, { chatId: chat.id });
+    if (recipientUserId) this.realtime.emitChatUpdated(recipientUserId, { chatId: chat.id });
+
     return {
       id: message.id,
       chatId: message.chatId,

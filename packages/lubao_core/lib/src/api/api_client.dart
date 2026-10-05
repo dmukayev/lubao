@@ -63,6 +63,14 @@ class ApiClient {
     return _refreshing ??= _doRefresh().whenComplete(() => _refreshing = null);
   }
 
+  /// Для RealtimeService (задача 029, п.10): сокет может протухнуть
+  /// (access живёт 15 мин — токен из 006) без единого обычного HTTP-
+  /// запроса между делом, который сам обновил бы токен через интерсептор
+  /// `_onError`. Тот же "один в полёте" refresh, что и у HTTP-слоя — два
+  /// параллельных вызова (HTTP 401 и socket connect_error) не плодят два
+  /// запроса на обновление.
+  Future<String?> refreshAccessToken() => _refreshAccessToken();
+
   Future<String?> _doRefresh() async {
     final refreshToken = await tokenStorage.readRefresh();
     if (refreshToken == null) return null;

@@ -29,7 +29,7 @@ final arrivalRepositoryProvider = Provider((ref) => ArrivalRepository(ref.watch(
 final notificationsRepositoryProvider = Provider((ref) => NotificationsRepository(ref.watch(apiClientProvider)));
 
 final realtimeServiceProvider = Provider<RealtimeService>((ref) {
-  final service = RealtimeService(baseUrl: _defaultBaseUrl());
+  final service = RealtimeService(baseUrl: _defaultBaseUrl(), apiClient: ref.watch(apiClientProvider));
   ref.onDispose(service.disconnect);
   return service;
 });

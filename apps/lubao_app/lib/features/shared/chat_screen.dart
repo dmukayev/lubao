@@ -35,11 +35,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   StreamSubscription<Map<String, dynamic>>? _messageNewSub;
   StreamSubscription<Map<String, dynamic>>? _messageReadSub;
+  StreamSubscription<void>? _reconnectedSub;
   Timer? _pollTimer;
 
   /// Сокет — основной канал (задача 011, п.6); если за 10с после открытия
   /// он не поднялся (прокси блокирует WS — см. задачу 020 про Китай),
-  /// переходим на опрос каждые 10с, пока не подключится (п.7).
+  /// переходим на опрос каждые 10с, пока не подключится (п.7). После
+  /// любого (пере)подключения — [RealtimeService] сам перезаходит в эту
+  /// комнату (задача 029, п.3), здесь только догоняющий рефетч на случай
+  /// сообщений, пропущенных во время обрыва.
   @override
   void initState() {
     super.initState();
@@ -57,6 +61,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ref.invalidate(chatMessagesProvider(widget.chatId));
       }
     });
+    _reconnectedSub = realtime.onReconnected.listen((_) {
+      ref.invalidate(chatMessagesProvider(widget.chatId));
+    });
     _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (!realtime.isConnected) ref.invalidate(chatMessagesProvider(widget.chatId));
     });
@@ -68,6 +75,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ref.read(realtimeServiceProvider).leaveChat(widget.chatId);
     _messageNewSub?.cancel();
     _messageReadSub?.cancel();
+    _reconnectedSub?.cancel();
     _pollTimer?.cancel();
     _controller.dispose();
     super.dispose();

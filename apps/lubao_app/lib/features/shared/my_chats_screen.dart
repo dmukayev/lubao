@@ -13,9 +13,12 @@ import 'status_helpers.dart';
 /// Вкладка «Чаты» (задача 017, п.1) — общая для водителя и логиста:
 /// чат теперь существует до сделки, нужен отдельный список, не только
 /// «чат внутри сделки». У логиста это чаты всей компании (см. backend).
-/// Список обновляется, когда приходит новое сообщение в ЛЮБОЙ чат (задача
-/// 011, п.6-7) — сокет уже подключён на уровне приложения (RealtimeConnector),
-/// здесь только подписка + фоллбэк на опрос раз в 10с.
+/// Список обновляется по `chat:updated` (задача 029, п.3) — этот экран
+/// не состоит в комнатах конкретных чатов (`chat:<id>`), поэтому
+/// `message:new` до него никогда не долетит; `chat:updated` сервер шлёт
+/// в личную комнату пользователя независимо от того, какие чаты открыты.
+/// Плюс фоллбэк на опрос раз в 10с и рефетч при каждом (пере)подключении
+/// сокета (onReconnected) — на случай пропущенных во время обрыва событий.
 class MyChatsScreen extends ConsumerStatefulWidget {
   const MyChatsScreen({super.key});
 
@@ -24,14 +27,16 @@ class MyChatsScreen extends ConsumerStatefulWidget {
 }
 
 class _MyChatsScreenState extends ConsumerState<MyChatsScreen> {
-  StreamSubscription<Map<String, dynamic>>? _messageNewSub;
+  StreamSubscription<Map<String, dynamic>>? _chatUpdatedSub;
+  StreamSubscription<void>? _reconnectedSub;
   Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     final realtime = ref.read(realtimeServiceProvider);
-    _messageNewSub = realtime.onMessageNew.listen((_) => ref.invalidate(myChatsProvider));
+    _chatUpdatedSub = realtime.onChatUpdated.listen((_) => ref.invalidate(myChatsProvider));
+    _reconnectedSub = realtime.onReconnected.listen((_) => ref.invalidate(myChatsProvider));
     _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (!realtime.isConnected) ref.invalidate(myChatsProvider);
     });
@@ -39,7 +44,8 @@ class _MyChatsScreenState extends ConsumerState<MyChatsScreen> {
 
   @override
   void dispose() {
-    _messageNewSub?.cancel();
+    _chatUpdatedSub?.cancel();
+    _reconnectedSub?.cancel();
     _pollTimer?.cancel();
     super.dispose();
   }

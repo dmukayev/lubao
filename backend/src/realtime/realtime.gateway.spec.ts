@@ -143,4 +143,35 @@ describe('RealtimeGateway — typing and server-pushed events', () => {
 
     expect(emit).toHaveBeenCalledWith('message:read', { chatId: 'chat1', readerUserId: 'u1' });
   });
+
+  it('emitChatUpdated sends to the user\'s personal room, not a chat room', () => {
+    const gateway = new RealtimeGateway({} as any, {} as any, {} as any);
+    const emit = jest.fn();
+    (gateway as any).server = { to: jest.fn().mockReturnValue({ emit }) };
+
+    gateway.emitChatUpdated('user-1', { chatId: 'chat1' });
+
+    expect((gateway as any).server.to).toHaveBeenCalledWith('user:user-1');
+    expect(emit).toHaveBeenCalledWith('chat:updated', { chatId: 'chat1' });
+  });
+});
+
+describe('RealtimeGateway.handleConnection — joins the personal room (задача 029, п.3)', () => {
+  it('joins user:<id> once ctx is set (guaranteed by the auth middleware having already run)', () => {
+    const gateway = new RealtimeGateway({} as any, {} as any, {} as any);
+    const client = socketMock({ data: { ctx: { user: { id: 'user-1' } } } });
+
+    gateway.handleConnection(client as any);
+
+    expect(client.join).toHaveBeenCalledWith('user:user-1');
+  });
+
+  it('does nothing if ctx is somehow missing (defensive — should not happen post-middleware)', () => {
+    const gateway = new RealtimeGateway({} as any, {} as any, {} as any);
+    const client = socketMock();
+
+    gateway.handleConnection(client as any);
+
+    expect(client.join).not.toHaveBeenCalled();
+  });
 });

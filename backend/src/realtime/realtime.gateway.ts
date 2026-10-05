@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
+  OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
   SubscribeMessage,
@@ -18,13 +19,22 @@ function chatRoom(chatId: string): string {
   return `chat:${chatId}`;
 }
 
+/// Личная комната пользователя (задача 029, п.3) — чаты, которые клиент
+/// не открывал (и поэтому не `join`-ил `chat:<id>`), всё равно должны
+/// обновлять список «Мои чаты»: сюда шлём `chat:updated` при любом
+/// новом сообщении в любом его чате, независимо от того, в каких
+/// chat:<id>-комнатах он сейчас состоит.
+function userRoom(userId: string): string {
+  return `user:${userId}`;
+}
+
 /// Чат в реальном времени (задача 011, п.6-7): авторизация по тому же JWT,
 /// что и HTTP (006), комнаты по chatId, события message:new/message:read/
 /// typing. Клиент переподключается сам (socket.io-client делает это из
 /// коробки); если сокет недоступен совсем — клиентский фоллбэк на polling
 /// каждые 10с (см. packages/lubao_core/lib/src/realtime).
 @WebSocketGateway({ cors: { origin: '*' } })
-export class RealtimeGateway implements OnGatewayInit, OnGatewayDisconnect {
+export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
@@ -66,6 +76,16 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayDisconnect {
     });
   }
 
+  /// `connection` эмитится Socket.IO только после того, как мидлвары из
+  /// `afterInit` вызвали `next()` — `client.data.ctx` уже гарантированно
+  /// проставлен (в отличие от старого `handleConnection`, где сама
+  /// авторизация была асинхронной и гонялась с первым сообщением
+  /// клиента). Кладём в личную комнату — задача 029, п.3.
+  handleConnection(client: Socket): void {
+    const ctx: RequestContext | undefined = client.data.ctx;
+    if (ctx) client.join(userRoom(ctx.user.id));
+  }
+
   handleDisconnect(client: Socket): void {
     this.logger.debug(`Socket disconnected: ${client.id}`);
   }
@@ -103,5 +123,12 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayDisconnect {
 
   emitMessageRead(chatId: string, readerUserId: string): void {
     this.server.to(chatRoom(chatId)).emit('message:read', { chatId, readerUserId });
+  }
+
+  /// Список «Мои чаты» обновляется у пользователя, даже если он не
+  /// открывал конкретный chat:<id> и поэтому не в его комнате (задача
+  /// 029, п.3) — личная комната ловит это независимо.
+  emitChatUpdated(userId: string, payload: { chatId: string }): void {
+    this.server.to(userRoom(userId)).emit('chat:updated', payload);
   }
 }
