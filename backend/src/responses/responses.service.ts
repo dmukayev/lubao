@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Driver, Response as CargoResponseEntity } from '@prisma/client';
+import { Driver, Prisma, Response as CargoResponseEntity } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 type ResponseWithDriver = CargoResponseEntity & { driver: Driver };
@@ -68,7 +68,7 @@ export class ResponsesService {
         data: { status: 'SELECTED' },
         include: { driver: true },
       });
-      await tx.deal.create({
+      const deal = await tx.deal.create({
         data: {
           responseId: selected.id,
           cargoId: selected.cargoId,
@@ -77,6 +77,7 @@ export class ResponsesService {
           status: 'SELECTED',
         },
       });
+      await this.attachChatToDeal(tx, deal);
       return selected;
     });
 
@@ -106,12 +107,23 @@ export class ResponsesService {
             data: { cargoId, driverId, status: 'SELECTED' },
             include: { driver: true },
           });
-      await tx.deal.create({
+      const deal = await tx.deal.create({
         data: { responseId: selected.id, cargoId: selected.cargoId, driverId: selected.driverId, companyId, status: 'SELECTED' },
       });
+      await this.attachChatToDeal(tx, deal);
       return selected;
     });
 
     return this.toDto(updated);
+  }
+
+  /// Чат водитель+логист(+груз), заведённый до сделки (задача 017, п.1/3),
+  /// привязывается к только что созданной сделке — история переписки не
+  /// теряется, карточка сделки закрепляется сверху чата на клиенте.
+  private async attachChatToDeal(tx: Prisma.TransactionClient, deal: { id: string; cargoId: string; driverId: string; companyId: string }) {
+    await tx.chat.updateMany({
+      where: { driverId: deal.driverId, companyId: deal.companyId, cargoId: deal.cargoId },
+      data: { dealId: deal.id },
+    });
   }
 }

@@ -2,24 +2,35 @@ import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
 import { ChatsService } from './chats.service';
+import { FindOrCreateChatDto } from './dto/find-or-create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 
 @Controller('chats')
 export class ChatsController {
   constructor(private readonly chats: ChatsService) {}
 
-  @Get(':dealId')
-  thread(@CurrentUser() ctx: RequestContext, @Param('dealId') dealId: string) {
-    return this.chats.threadForDeal(dealId, ctx);
+  @Get()
+  myChats(@CurrentUser() ctx: RequestContext) {
+    return this.chats.myChats(ctx);
   }
 
-  @Get(':dealId/messages')
-  messages(@CurrentUser() ctx: RequestContext, @Param('dealId') dealId: string) {
-    return this.chats.messages(dealId, ctx);
+  @Post()
+  findOrCreate(@CurrentUser() ctx: RequestContext, @Body() dto: FindOrCreateChatDto) {
+    return this.chats.findOrCreate(ctx, dto);
   }
 
-  @Post(':dealId/messages')
-  send(@CurrentUser() ctx: RequestContext, @Param('dealId') dealId: string, @Body() dto: SendMessageDto) {
-    return this.chats.send(dealId, ctx, dto.text);
+  @Get(':chatId')
+  thread(@CurrentUser() ctx: RequestContext, @Param('chatId') chatId: string) {
+    return this.chats.thread(chatId, ctx);
+  }
+
+  @Get(':chatId/messages')
+  messages(@CurrentUser() ctx: RequestContext, @Param('chatId') chatId: string) {
+    return this.chats.messages(chatId, ctx);
+  }
+
+  @Post(':chatId/messages')
+  send(@CurrentUser() ctx: RequestContext, @Param('chatId') chatId: string, @Body() dto: SendMessageDto) {
+    return this.chats.send(chatId, ctx, dto.text);
   }
 }

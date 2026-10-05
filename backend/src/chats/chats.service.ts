@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestContext } from '../common/request-context';
 
@@ -6,37 +6,77 @@ import { RequestContext } from '../common/request-context';
 export class ChatsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private assertParty(deal: { driverId: string; companyId: string }, ctx: RequestContext) {
-    const isParty = deal.driverId === ctx.driver?.id || deal.companyId === ctx.companyMember?.companyId;
-    if (!isParty) throw new ForbiddenException('Not a party to this deal');
+  private assertParty(chat: { driverId: string; companyId: string }, ctx: RequestContext) {
+    const isParty = chat.driverId === ctx.driver?.id || chat.companyId === ctx.companyMember?.companyId;
+    if (!isParty) throw new ForbiddenException('Not a party to this chat');
   }
 
-  private async getOrCreateChat(dealId: string, ctx: RequestContext) {
-    const deal = await this.prisma.deal.findUnique({ where: { id: dealId } });
-    if (!deal) throw new NotFoundException('Deal not found');
-    this.assertParty(deal, ctx);
+  /// Чат определяется парой водитель+компания (+груз, если есть) — не
+  /// только сделкой (задача 017, п.1): водитель пишет логисту по грузу
+  /// до отклика, логист — водителю из ленты «Кто будет на точке». Когда
+  /// по грузу возникает сделка, тот же чат привязывается к ней задним
+  /// числом (см. `ResponsesService`) — история не теряется.
+  async findOrCreate(ctx: RequestContext, dto: { driverId?: string; cargoId?: string }) {
+    let driverId: string;
+    let companyId: string;
+    let cargoId: string | null = dto.cargoId ?? null;
 
-    let chat = await this.prisma.chat.findFirst({ where: { dealId } });
-    if (!chat) {
-      chat = await this.prisma.chat.create({
-        data: { dealId, cargoId: deal.cargoId, driverId: deal.driverId, companyId: deal.companyId },
-      });
+    if (ctx.driver) {
+      // Водитель пишет по конкретному грузу — груз обязателен, это и есть
+      // вход в чат на карточке груза (п.2).
+      if (!dto.cargoId) throw new BadRequestException('cargoId is required for a driver-initiated chat');
+      const cargo = await this.prisma.cargo.findUnique({ where: { id: dto.cargoId }, select: { companyId: true } });
+      if (!cargo) throw new NotFoundException('Cargo not found');
+      driverId = ctx.driver.id;
+      companyId = cargo.companyId;
+      cargoId = dto.cargoId;
+    } else if (ctx.companyMember) {
+      if (!dto.driverId) throw new BadRequestException('driverId is required for a company-initiated chat');
+      driverId = dto.driverId;
+      companyId = ctx.companyMember.companyId;
+    } else {
+      throw new ForbiddenException('Not a driver or company account');
     }
-    return chat;
+
+    let chat = await this.prisma.chat.findFirst({ where: { driverId, companyId, cargoId } });
+    if (!chat) {
+      // Если по этой паре уже есть сделка (чат открыли на старом грузе,
+      // который уже превратился в сделку) — сразу привязываем, а не ждём
+      // отдельного шага.
+      const deal = await this.prisma.deal.findFirst({ where: { driverId, companyId, cargoId: cargoId ?? undefined } });
+      chat = await this.prisma.chat.create({ data: { driverId, companyId, cargoId, dealId: deal?.id ?? null } });
+    }
+    return this.toThreadDto(chat, ctx);
   }
 
-  async threadForDeal(dealId: string, ctx: RequestContext) {
-    const chat = await this.getOrCreateChat(dealId, ctx);
-    const [driver, companyOwner] = await Promise.all([
+  /// Логист, опубликовавший груз, — не случайный владелец (decisions.md
+  /// «Компания: проверка, роли, контакты», задача 012). Для чата без груза
+  /// (общий чат логиста с водителем) откатываемся на самого старого OWNER.
+  private async resolveCompanyCounterpart(companyId: string, cargoId: string | null) {
+    if (cargoId) {
+      const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId }, select: { publishedByUserId: true } });
+      if (cargo?.publishedByUserId) {
+        const publisher = await this.prisma.companyMember.findFirst({
+          where: { userId: cargo.publishedByUserId },
+          include: { user: true, company: true },
+        });
+        if (publisher) return publisher;
+      }
+    }
+    return this.prisma.companyMember.findFirst({
+      where: { companyId, role: 'OWNER' },
+      orderBy: { createdAt: 'asc' },
+      include: { user: true, company: true },
+    });
+  }
+
+  private async toThreadDto(chat: { id: string; cargoId: string | null; dealId: string | null; driverId: string; companyId: string }, ctx: RequestContext) {
+    const [driver, companyMember] = await Promise.all([
       this.prisma.driver.findUniqueOrThrow({ where: { id: chat.driverId }, include: { user: true } }),
-      this.prisma.companyMember.findFirst({
-        where: { companyId: chat.companyId },
-        include: { user: true, company: true },
-        orderBy: { role: 'asc' },
-      }),
+      this.resolveCompanyCounterpart(chat.companyId, chat.cargoId),
     ]);
-    const counterpartName = ctx.driver ? companyOwner?.company.name ?? '' : driver.fullName;
-    const counterpartLocale = ctx.driver ? companyOwner?.user.locale : driver.user.locale;
+    const counterpartName = ctx.driver ? companyMember?.company.name ?? '' : driver.fullName;
+    const counterpartLocale = ctx.driver ? companyMember?.user.locale : driver.user.locale;
     return {
       id: chat.id,
       cargoId: chat.cargoId,
@@ -45,11 +85,56 @@ export class ChatsService {
       companyId: chat.companyId,
       counterpartName,
       counterpartLocale,
+      counterpartPhone: ctx.driver ? companyMember?.user.phone ?? null : driver.user.phone,
     };
   }
 
-  async messages(dealId: string, ctx: RequestContext) {
-    const chat = await this.getOrCreateChat(dealId, ctx);
+  private async loadChat(chatId: string, ctx: RequestContext) {
+    const chat = await this.prisma.chat.findUnique({ where: { id: chatId } });
+    if (!chat) throw new NotFoundException('Chat not found');
+    this.assertParty(chat, ctx);
+    return chat;
+  }
+
+  async thread(chatId: string, ctx: RequestContext) {
+    const chat = await this.loadChat(chatId, ctx);
+    return this.toThreadDto(chat, ctx);
+  }
+
+  /// Мои чаты (п.1) — логист видит чаты **всех** коллег по компании
+  /// (decisions.md «Кабинет логиста», задача 012: «логист видит все грузы,
+  /// сделки и чаты компании»), не только свои.
+  async myChats(ctx: RequestContext) {
+    const where = ctx.driver ? { driverId: ctx.driver.id } : { companyId: ctx.companyMember!.companyId };
+    const chats = await this.prisma.chat.findMany({
+      where,
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        messages: { orderBy: { createdAt: 'desc' }, take: 1 },
+        cargo: { select: { id: true, point: { select: { name: true } } } },
+      },
+    });
+
+    return Promise.all(
+      chats.map(async (chat) => {
+        const [thread, unreadCount] = await Promise.all([
+          this.toThreadDto(chat, ctx),
+          this.prisma.message.count({ where: { chatId: chat.id, isRead: false, senderUserId: { not: ctx.user.id } } }),
+        ]);
+        const lastMessage = chat.messages[0] ?? null;
+        return {
+          ...thread,
+          cargoPointName: chat.cargo?.point.name ?? null,
+          lastMessageText: lastMessage?.originalText ?? null,
+          lastMessageAt: lastMessage?.createdAt ?? chat.createdAt,
+          unreadCount,
+        };
+      }),
+    );
+  }
+
+  async messages(chatId: string, ctx: RequestContext) {
+    const chat = await this.loadChat(chatId, ctx);
     const messages = await this.prisma.message.findMany({ where: { chatId: chat.id }, orderBy: { createdAt: 'asc' } });
     return messages.map((m) => ({
       id: m.id,
@@ -64,11 +149,14 @@ export class ChatsService {
     }));
   }
 
-  async send(dealId: string, ctx: RequestContext, text: string) {
-    const chat = await this.getOrCreateChat(dealId, ctx);
+  async send(chatId: string, ctx: RequestContext, text: string) {
+    const chat = await this.loadChat(chatId, ctx);
     const message = await this.prisma.message.create({
       data: { chatId: chat.id, senderUserId: ctx.user.id, originalText: text, originalLang: ctx.user.locale },
     });
+    // Message не трогает Chat.updatedAt сам по себе — обновляем явно, иначе
+    // список «Мои чаты» (order by updatedAt) не поднимет диалог наверх.
+    await this.prisma.chat.update({ where: { id: chat.id }, data: { updatedAt: new Date() } });
     return {
       id: message.id,
       chatId: message.chatId,

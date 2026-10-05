@@ -18,7 +18,11 @@ export class DealsService {
     private readonly cargos: CargosService,
   ) {}
 
-  private readonly include = { driver: true, company: true, cargo: { include: { company: true } } } as const;
+  private readonly include = {
+    driver: true,
+    company: true,
+    cargo: { include: { company: { include: { country: { select: { code: true } } } }, publishedBy: { select: { id: true, name: true, phone: true } } } },
+  } as const;
 
   async toDto(deal: DealWithRelations) {
     return {

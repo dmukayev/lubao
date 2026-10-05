@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Param, Patch, Post } from '@nestjs/common';
 import { IsString } from 'class-validator';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
@@ -7,6 +7,7 @@ import { CreateResponseDto } from '../responses/dto/update-response.dto';
 import { CargosService } from './cargos.service';
 import { CreateCargoDto } from './dto/create-cargo.dto';
 import { UpdateCargoDto } from './dto/update-cargo.dto';
+import { CloseCargoDto } from './dto/close-cargo.dto';
 
 class InviteDriverDto {
   @IsString()
@@ -39,7 +40,7 @@ export class CargosController {
   @Post()
   create(@CurrentUser() ctx: RequestContext, @Body() dto: CreateCargoDto) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
-    return this.cargos.create(ctx.companyMember.companyId, dto);
+    return this.cargos.create(ctx.companyMember.companyId, ctx.user.id, dto);
   }
 
   @Patch(':id')
@@ -48,10 +49,16 @@ export class CargosController {
     return this.cargos.update(ctx.companyMember.companyId, id, dto);
   }
 
-  @Delete(':id')
-  async remove(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+  @Get(':id/close-candidates')
+  closeCandidates(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
-    await this.cargos.remove(ctx.companyMember.companyId, id);
+    return this.cargos.closeCandidates(ctx.companyMember.companyId, id);
+  }
+
+  @Post(':id/close')
+  async close(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: CloseCargoDto) {
+    if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
+    await this.cargos.closeCargo(ctx.companyMember.companyId, id, dto);
     return { success: true };
   }
 

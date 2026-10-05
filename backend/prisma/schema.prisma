@@ -44,6 +44,13 @@ enum CargoStatus {
   CANCELLED
 }
 
+/// Закрытие груза без выбора исхода запрещено (задача 017, п.6).
+enum CargoCloseOutcome {
+  FOUND_IN_APP
+  FOUND_OUTSIDE
+  CARGO_CANCELLED
+}
+
 enum Currency {
   USD
   CNY
@@ -306,6 +313,7 @@ model User {
   citiesSubmitted        City[]                  @relation("CitySubmittedBy")
   citiesReviewed         City[]                  @relation("CityReviewedBy")
   companyInvitesSent     CompanyInvite[]
+  cargosPublished        Cargo[]                 @relation("CargoPublishedBy")
 
   @@map("users")
 }
@@ -543,6 +551,13 @@ model Cargo {
   id                    String      @id @default(uuid())
   companyId             String
   company               Company     @relation(fields: [companyId], references: [id])
+  /// Логист, опубликовавший груз (decisions.md «Компания: проверка, роли,
+  /// контакты», задача 012: «водитель звонит конкретному логисту, а не
+  /// компании») — водитель видит и звонит именно ему, не владельцу
+  /// компании. `NULL` у грузов, опубликованных до задачи 017 — на чтении
+  /// падаем на владельца компании.
+  publishedByUserId     String?
+  publishedBy           User?       @relation("CargoPublishedBy", fields: [publishedByUserId], references: [id])
   pointId               String
   point                 Point       @relation(fields: [pointId], references: [id])
   destinationCountryId  String
@@ -562,6 +577,10 @@ model Cargo {
   publishedAt           DateTime    @default(now())
   expiresAt             DateTime
   archivedAt            DateTime?
+  /// Исход закрытия (задача 017, п.6/7) — метрика утечки сделок мимо
+  /// приложения, тот же смысл, что у аналогичной метрики анонсов (014).
+  closeOutcome          CargoCloseOutcome?
+  closedAt              DateTime?
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
 
