@@ -78,6 +78,8 @@ services:
       MOBIZON_API_URL: ${MOBIZON_API_URL:-https://api.mobizon.kz/service/message/sendsmsmessage}
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      IDENTIFIER_PEPPER: ${IDENTIFIER_PEPPER}
+      IDENTIFIER_KEY: ${IDENTIFIER_KEY}
       NODE_ENV: ${NODE_ENV:-development}
     ports:
       - "${BACKEND_PORT:-3000}:3000"

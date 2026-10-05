@@ -8,6 +8,7 @@ import { AppSettingsService } from '../app-settings/app-settings.service';
 import { REQUIRED_DRIVER_DOC_TYPES } from '../drivers/drivers.service';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
+import { IdentifiersService } from '../identifiers/identifiers.service';
 import {
   AdminChangeMemberEmailDto,
   AdminDealStatusDto,
@@ -47,6 +48,7 @@ export class AdminService {
     private readonly uploads: UploadsService,
     private readonly appSettings?: AppSettingsService,
     private readonly notifications?: NotificationsService,
+    private readonly identifiers?: IdentifiersService,
   ) {}
 
   private async logAudit(actorUserId: string, action: string, entityType: string, entityId: string, metadata?: object) {
@@ -776,15 +778,41 @@ export class AdminService {
         reviewedByUserId: adminUserId,
         reviewedAt: new Date(),
       },
-      include: { driver: true, company: true, reviewedBy: { select: { id: true, name: true, email: true } } },
+      include: {
+        driver: { include: { user: true } },
+        company: true,
+        vehicle: true,
+        reviewedBy: { select: { id: true, name: true, email: true } },
+      },
     });
 
     await this.logAudit(adminUserId, dto.status === 'APPROVED' ? 'DOCUMENT_APPROVED' : 'DOCUMENT_REJECTED', 'VerificationDocument', id, {
       rejectReason: dto.rejectReason,
     });
 
+    // Задача 031, этап C, п.15 — совпадение с чёрным списком останавливает
+    // автоматическое подтверждение (⛔ требует явного решения админа,
+    // которого в этом эндпоинте пока нет — Stage E добавит кнопку
+    // «подтвердить несмотря на ⛔»); дубль у другого активного владельца —
+    // только предупреждение, подтверждению не мешает.
+    let blacklistHit: { reason: string } | null = null;
+
     if (dto.status === 'APPROVED') {
-      if (updated.driverId) {
+      if (updated.driverId && updated.driver) {
+        const phone = updated.driver.user.phone;
+        if (phone && this.identifiers) {
+          const match = await this.identifiers.checkMatches('PHONE', phone, { ownerType: 'DRIVER', ownerId: updated.driverId });
+          if (match.blocked) blacklistHit = match.blocked;
+          await this.identifiers.confirmIdentifier({
+            type: 'PHONE',
+            rawValue: phone,
+            ownerType: 'DRIVER',
+            ownerId: updated.driverId,
+            sourceDocumentId: id,
+            confirmedByUserId: adminUserId,
+          });
+        }
+
         // Верифицирован, только когда одобрены ВСЕ обязательные документы
         // личности (селфи + права) — задача 031, этап A: машины (техпаспорта
         // тягача/прицепа) проверяются отдельно, см. блок ниже.
@@ -794,30 +822,68 @@ export class AdminService {
         });
         const approvedTypes = new Set(approved.map((d) => d.type));
         const allRequiredApproved = REQUIRED_DRIVER_DOC_TYPES.every((type) => approvedTypes.has(type));
-        if (allRequiredApproved) {
+        if (allRequiredApproved && !blacklistHit) {
           await this.prisma.driver.update({ where: { id: updated.driverId }, data: { isVerified: true } });
         }
       }
       // Задача 031, этап A, п.3-4 — техпаспорт принадлежит конкретной машине
       // гаража; её одобрение подтверждает именно эту машину, не всего
       // водителя и не остальные машины в гараже.
-      if (updated.vehicleId && (updated.type === 'VEHICLE_PASSPORT' || updated.type === 'TRAILER_PASSPORT')) {
-        await this.prisma.vehicle.update({ where: { id: updated.vehicleId }, data: { isVerified: true } });
+      if (updated.vehicleId && updated.vehicle && (updated.type === 'VEHICLE_PASSPORT' || updated.type === 'TRAILER_PASSPORT')) {
+        const vehicle = updated.vehicle;
+        if (this.identifiers) {
+          const checks: Array<{ type: 'PLATE' | 'VIN'; value: string }> = [
+            ...(vehicle.plateNumber ? [{ type: 'PLATE' as const, value: vehicle.plateNumber }] : []),
+            ...(vehicle.vin ? [{ type: 'VIN' as const, value: vehicle.vin }] : []),
+          ];
+          for (const check of checks) {
+            const match = await this.identifiers.checkMatches(check.type, check.value, { ownerType: 'VEHICLE', ownerId: vehicle.id });
+            // Госномер меняет владельца при перепродаже машины — дубль там
+            // не блокирует; только настоящий чёрный список.
+            if (match.blocked) blacklistHit = match.blocked;
+            await this.identifiers.confirmIdentifier({
+              type: check.type,
+              rawValue: check.value,
+              ownerType: 'VEHICLE',
+              ownerId: vehicle.id,
+              sourceDocumentId: id,
+              confirmedByUserId: adminUserId,
+            });
+          }
+        }
+        if (!blacklistHit) {
+          await this.prisma.vehicle.update({ where: { id: updated.vehicleId }, data: { isVerified: true } });
+        }
       }
-      if (updated.companyId) {
+      if (updated.companyId && updated.company) {
+        if (updated.company.taxId && this.identifiers) {
+          const country = await this.prisma.country.findUnique({ where: { id: updated.company.countryId }, select: { code: true } });
+          const type = country?.code === 'CN' ? 'USCC' : 'BIN';
+          const match = await this.identifiers.checkMatches(type, updated.company.taxId, { ownerType: 'COMPANY', ownerId: updated.companyId });
+          if (match.blocked) blacklistHit = match.blocked;
+          await this.identifiers.confirmIdentifier({
+            type,
+            rawValue: updated.company.taxId,
+            ownerType: 'COMPANY',
+            ownerId: updated.companyId,
+            sourceDocumentId: id,
+            confirmedByUserId: adminUserId,
+          });
+        }
+
         const approved = await this.prisma.verificationDocument.findMany({
           where: { companyId: updated.companyId, status: 'APPROVED' },
           select: { type: true },
         });
         const approvedTypes = new Set(approved.map((d) => d.type));
         const allRequiredApproved = REQUIRED_COMPANY_DOC_TYPES.every((type) => approvedTypes.has(type));
-        if (allRequiredApproved) {
+        if (allRequiredApproved && !blacklistHit) {
           await this.prisma.company.update({ where: { id: updated.companyId }, data: { isVerified: true } });
         }
       }
     }
 
-    return this.docToDto(updated);
+    return { ...(await this.docToDto(updated)), blacklistHit };
   }
 
   /// Прокси вместо presigned-ссылки (задача 028, п.12) — см. комментарий
@@ -1710,21 +1776,42 @@ export class AdminService {
   // -- block / unblock / sessions -----------------------------------------
 
   async blockUser(userId: string, adminUserId: string, dto: BlockUserDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, include: { driver: { include: { vehicles: true } } } });
     if (!user) throw new NotFoundException('User not found');
 
     await this.prisma.user.update({ where: { id: userId }, data: { isBlocked: true } });
     await this.sessions.revokeAllForUser(userId);
     await this.logAudit(adminUserId, 'USER_BLOCKED', 'User', userId, { reason: dto.reason });
+
+    // Задача 031, п.14 — блокируем идентификаторы, а не только аккаунт: ИИН,
+    // права, телефон водителя и VIN/госномера всех его машин (по умолчанию
+    // все подтверждённые — явный выбор отдельных типов делает Stage E).
+    if (user.driver) {
+      await this.identifiers?.blockDriverAndVehicles({
+        driverId: user.driver.id,
+        vehicleIds: user.driver.vehicles.map((v) => v.id),
+        reason: dto.reason,
+        blockedByUserId: adminUserId,
+      });
+    }
     return { id: userId, isBlocked: true };
   }
 
   async unblockUser(userId: string, adminUserId: string, dto: BlockUserDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, include: { driver: { include: { vehicles: true } } } });
     if (!user) throw new NotFoundException('User not found');
 
     await this.prisma.user.update({ where: { id: userId }, data: { isBlocked: false } });
     await this.logAudit(adminUserId, 'USER_UNBLOCKED', 'User', userId, { reason: dto.reason });
+
+    if (user.driver) {
+      await this.identifiers?.liftDriverAndVehicles({
+        driverId: user.driver.id,
+        vehicleIds: user.driver.vehicles.map((v) => v.id),
+        reason: dto.reason,
+        liftedByUserId: adminUserId,
+      });
+    }
     return { id: userId, isBlocked: false };
   }
 
@@ -1742,6 +1829,8 @@ export class AdminService {
     ]);
     await Promise.all(company.members.map((m) => this.sessions.revokeAllForUser(m.userId)));
     await this.logAudit(adminUserId, 'COMPANY_BLOCKED', 'Company', companyId, { reason: dto.reason });
+    // Задача 031, п.14 — БИН/统一社会信用代码 компании тоже в чёрный список.
+    await this.identifiers?.blockOwnerIdentifiers({ ownerType: 'COMPANY', ownerId: companyId, reason: dto.reason, blockedByUserId: adminUserId });
     return { id: companyId, isBlocked: true };
   }
 
@@ -1754,6 +1843,7 @@ export class AdminService {
       this.prisma.user.updateMany({ where: { id: { in: company.members.map((m) => m.userId) } }, data: { isBlocked: false } }),
     ]);
     await this.logAudit(adminUserId, 'COMPANY_UNBLOCKED', 'Company', companyId, { reason: dto.reason });
+    await this.identifiers?.liftOwnerIdentifierBlocks({ ownerType: 'COMPANY', ownerId: companyId, reason: dto.reason, liftedByUserId: adminUserId });
     return { id: companyId, isBlocked: false };
   }
 

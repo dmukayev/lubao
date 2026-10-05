@@ -325,6 +325,9 @@ model User {
   citiesReviewed         City[]                  @relation("CityReviewedBy")
   companyInvitesSent     CompanyInvite[]
   cargosPublished        Cargo[]                 @relation("CargoPublishedBy")
+  identifiersConfirmed   Identifier[]            @relation("IdentifierConfirmedBy")
+  identifiersBlocked     BlockedIdentifier[]     @relation("IdentifierBlockedBy")
+  identifiersLifted      BlockedIdentifier[]     @relation("IdentifierLiftedBy")
 
   @@map("users")
 }
@@ -591,6 +594,82 @@ model AppSetting {
   @@map("app_settings")
 }
 
+// ---------------------------------------------------------------------------
+// Идентификаторы и чёрный список (задача 031, этап C)
+// ---------------------------------------------------------------------------
+
+enum IdentifierType {
+  IIN
+  DRIVER_LICENSE_NO
+  VIN
+  PLATE
+  BIN
+  USCC
+  PHONE
+}
+
+enum IdentifierOwnerType {
+  DRIVER
+  COMPANY
+  VEHICLE
+}
+
+/// Подтверждённое значение идентификатора одного владельца (решение
+/// 2026-10-05 «Распознавание документов и чёрный список»). valueHash —
+/// HMAC-SHA256 нормализованного значения (IDENTIFIER_PEPPER) для поиска
+/// совпадений без хранения открытого текста; valueEncrypted — AES-256-GCM
+/// (IDENTIFIER_KEY), только для IIN/DRIVER_LICENSE_NO — остальные типы не
+/// настолько чувствительны, чтобы прятать даже от админа. Один владелец —
+/// одно подтверждённое значение на тип (новое подтверждение перезаписывает
+/// старое, например при смене госномера).
+model Identifier {
+  id                String               @id @default(uuid())
+  type              IdentifierType
+  valueHash         String
+  valueMasked       String
+  valueEncrypted    String?
+  ownerType         IdentifierOwnerType
+  ownerId           String
+  sourceDocumentId  String?
+  sourceDocument    VerificationDocument? @relation(fields: [sourceDocumentId], references: [id])
+  confirmedByUserId String?
+  confirmedBy       User?                @relation("IdentifierConfirmedBy", fields: [confirmedByUserId], references: [id])
+  confirmedAt       DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@unique([ownerType, ownerId, type])
+  @@index([type, valueHash])
+  @@map("identifiers")
+}
+
+/// Чёрный список по значению, не по аккаунту (решение 2026-10-05) —
+/// переживает удаление/замену владельца. sourceOwnerType/sourceOwnerId —
+/// чей блок изначально породил эту запись (для снятия блокировки пачкой
+/// при разблокировке того же водителя/компании); сама запись может
+/// заблокировать и ДРУГОГО владельца, который позже заявит тот же
+/// идентификатор — в этом и смысл.
+model BlockedIdentifier {
+  id              String               @id @default(uuid())
+  type            IdentifierType
+  valueHash       String
+  valueMasked     String
+  reason          String
+  blockedByUserId String
+  blockedBy       User                 @relation("IdentifierBlockedBy", fields: [blockedByUserId], references: [id])
+  sourceOwnerType IdentifierOwnerType?
+  sourceOwnerId   String?
+  createdAt       DateTime             @default(now())
+  liftedAt        DateTime?
+  liftedByUserId  String?
+  liftedBy        User?                @relation("IdentifierLiftedBy", fields: [liftedByUserId], references: [id])
+  liftReason      String?
+
+  @@index([type, valueHash])
+  @@index([sourceOwnerType, sourceOwnerId])
+  @@map("blocked_identifiers")
+}
+
 model Cargo {
   id                    String      @id @default(uuid())
   companyId             String
@@ -822,6 +901,8 @@ model VerificationDocument {
   rejectReason     String?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
+
+  identifiersSourced Identifier[]
 
   @@index([userId])
   @@index([companyId])

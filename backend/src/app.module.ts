@@ -23,6 +23,7 @@ import { AppSettingsModule } from './app-settings/app-settings.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { TranslationModule } from './translation/translation.module';
+import { IdentifiersModule } from './identifiers/identifiers.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { TranslationModule } from './translation/translation.module';
     NotificationsModule,
     RealtimeModule,
     TranslationModule,
+    IdentifiersModule,
     AuthModule,
     ReferenceDataModule,
     DriversModule,

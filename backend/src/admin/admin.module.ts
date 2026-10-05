@@ -2,11 +2,12 @@ import { Module } from '@nestjs/common';
 import { AppSettingsModule } from '../app-settings/app-settings.module';
 import { AuthModule } from '../auth/auth.module';
 import { UploadsModule } from '../uploads/uploads.module';
+import { IdentifiersModule } from '../identifiers/identifiers.module';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 
 @Module({
-  imports: [AppSettingsModule, AuthModule, UploadsModule],
+  imports: [AppSettingsModule, AuthModule, UploadsModule, IdentifiersModule],
   controllers: [AdminController],
   providers: [AdminService],
 })

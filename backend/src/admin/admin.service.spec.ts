@@ -1355,12 +1355,21 @@ describe('AdminService.reviewVerificationDocument — водитель и маш
     const prisma: any = {
       verificationDocument: {
         findUnique: jest.fn().mockResolvedValue({ id: 'doc1', driverId: 'd1', vehicleId: 'tractor1', type: 'VEHICLE_PASSPORT' }),
-        update: jest.fn().mockResolvedValue({ id: 'doc1', driverId: 'd1', vehicleId: 'tractor1', type: 'VEHICLE_PASSPORT', companyId: null }),
+        update: jest.fn().mockResolvedValue({
+          id: 'doc1',
+          driverId: 'd1',
+          vehicleId: 'tractor1',
+          type: 'VEHICLE_PASSPORT',
+          companyId: null,
+          driver: { id: 'd1', user: { phone: '+77011234567' } },
+          vehicle: { id: 'tractor1', plateNumber: 'A1', vin: null },
+        }),
         findMany: jest.fn().mockResolvedValue([{ type: 'VEHICLE_PASSPORT' }]),
       },
       driver: { update: jest.fn() },
       vehicle: { update: jest.fn() },
       auditLog: { create: jest.fn() },
+      country: { findUnique: jest.fn() },
     };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
@@ -1376,7 +1385,15 @@ describe('AdminService.reviewVerificationDocument — водитель и маш
     const prisma: any = {
       verificationDocument: {
         findUnique: jest.fn().mockResolvedValue({ id: 'doc2', driverId: 'd1', vehicleId: null, type: 'DRIVER_LICENSE' }),
-        update: jest.fn().mockResolvedValue({ id: 'doc2', driverId: 'd1', vehicleId: null, type: 'DRIVER_LICENSE', companyId: null }),
+        update: jest.fn().mockResolvedValue({
+          id: 'doc2',
+          driverId: 'd1',
+          vehicleId: null,
+          type: 'DRIVER_LICENSE',
+          companyId: null,
+          driver: { id: 'd1', user: { phone: '+77011234567' } },
+          vehicle: null,
+        }),
         findMany: jest.fn().mockResolvedValue([{ type: 'SELFIE' }, { type: 'DRIVER_LICENSE' }]),
       },
       driver: { update: jest.fn() },

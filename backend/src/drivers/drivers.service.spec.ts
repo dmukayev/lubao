@@ -73,3 +73,80 @@ describe('DriversService — гараж (задача 031, этап B)', () => {
     expect(prisma.vehicle.update).not.toHaveBeenCalled();
   });
 });
+
+describe('DriversService#updateProfile — подтверждение телефона при регистрации (задача 031, этап C, п.15)', () => {
+  it('confirms the PHONE identifier for a brand-new driver, not for an existing one being edited', async () => {
+    const identifiers = { confirmIdentifier: jest.fn() };
+    const prisma: any = {
+      city: { findUnique: jest.fn().mockResolvedValue({ id: 'city-1' }) },
+      driver: {
+        findUnique: jest.fn().mockResolvedValue(null), // no existing profile — this is a new registration
+        findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'd1' }),
+      },
+      driverDirection: { findMany: jest.fn().mockResolvedValue([]) },
+      driverPermit: { findMany: jest.fn().mockResolvedValue([]) },
+      vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
+      verificationDocument: { findFirst: jest.fn().mockResolvedValue(null) },
+      user: { findUnique: jest.fn().mockResolvedValue({ id: 'user-1', phone: '+77011234501' }) },
+      $transaction: jest.fn(async (cb: any) =>
+        cb({
+          driver: { create: jest.fn().mockResolvedValue({ id: 'd1' }), update: jest.fn() },
+          driverDirection: { deleteMany: jest.fn(), createMany: jest.fn() },
+          driverPermit: { deleteMany: jest.fn(), createMany: jest.fn() },
+          vehicle: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'v1' }) },
+        }),
+      ),
+    };
+    const service = new DriversService(prisma, identifiers as any);
+
+    await service.updateProfile('user-1', {
+      fullName: 'Ерлан Қасымов',
+      homeCityId: 'city-1',
+      anyCountry: true,
+      directionCountryIds: [],
+      permitIds: [],
+      bodyTypeId: 'body-1',
+    } as any);
+
+    expect(identifiers.confirmIdentifier).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'PHONE', rawValue: '+77011234501', ownerType: 'DRIVER', ownerId: 'd1' }),
+    );
+  });
+
+  it('does not re-confirm the phone when editing an already-registered profile', async () => {
+    const identifiers = { confirmIdentifier: jest.fn() };
+    const prisma: any = {
+      city: { findUnique: jest.fn().mockResolvedValue({ id: 'city-1' }) },
+      driver: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'd1' }), // already has a profile
+        findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'd1' }),
+      },
+      driverDirection: { findMany: jest.fn().mockResolvedValue([]) },
+      driverPermit: { findMany: jest.fn().mockResolvedValue([]) },
+      vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
+      verificationDocument: { findFirst: jest.fn().mockResolvedValue(null) },
+      user: { findUnique: jest.fn() },
+      $transaction: jest.fn(async (cb: any) =>
+        cb({
+          driver: { update: jest.fn().mockResolvedValue({ id: 'd1' }), create: jest.fn() },
+          driverDirection: { deleteMany: jest.fn(), createMany: jest.fn() },
+          driverPermit: { deleteMany: jest.fn(), createMany: jest.fn() },
+          vehicle: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'v1' }) },
+        }),
+      ),
+    };
+    const service = new DriversService(prisma, identifiers as any);
+
+    await service.updateProfile('user-1', {
+      fullName: 'Ерлан Қасымов',
+      homeCityId: 'city-1',
+      anyCountry: true,
+      directionCountryIds: [],
+      permitIds: [],
+      bodyTypeId: 'body-1',
+    } as any);
+
+    expect(identifiers.confirmIdentifier).not.toHaveBeenCalled();
+    expect(prisma.user.findUnique).not.toHaveBeenCalled();
+  });
+});

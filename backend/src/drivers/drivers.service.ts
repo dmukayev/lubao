@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Driver } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { IdentifiersService } from '../identifiers/identifiers.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { CreateVerificationDocumentDto } from './dto/create-verification-document.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
@@ -20,7 +21,10 @@ export function requiredVehicleDocType(kind: 'TRACTOR' | 'TRAILER' | 'RIGID'): '
 
 @Injectable()
 export class DriversService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly identifiers?: IdentifiersService,
+  ) {}
 
   private async verificationStatus(userId: string, isVerified: boolean): Promise<'NONE' | 'PENDING' | 'APPROVED'> {
     if (isVerified) return 'APPROVED';
@@ -149,6 +153,24 @@ export class DriversService {
 
       return driver.id;
     });
+
+    // Задача 031, этап C, п.15 — проверка при регистрации: новый профиль
+    // водителя с телефоном из чёрного списка сразу получает подтверждённый
+    // идентификатор, который дальнейшие проверки (см. admin.service.ts
+    // reviewVerificationDocument) уже видят как ⛔ — регистрацию саму не
+    // блокируем (решение 2026-10-05), просто не даём её потом тихо одобрить.
+    if (!existing && this.identifiers) {
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (user?.phone) {
+        await this.identifiers.confirmIdentifier({
+          type: 'PHONE',
+          rawValue: user.phone,
+          ownerType: 'DRIVER',
+          ownerId: driverId,
+          confirmedByUserId: userId,
+        });
+      }
+    }
 
     const updated = await this.prisma.driver.findUniqueOrThrow({ where: { id: driverId } });
     return this.toDto(updated);
