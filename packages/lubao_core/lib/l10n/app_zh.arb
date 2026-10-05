@@ -321,7 +321,7 @@
   "adminNavDrivers": "司机",
   "adminNavReference": "基础数据",
   "adminVerificationTitle": "待审核文件",
-  "adminVerificationEmpty": "暂无待审核文件",
+  "adminVerificationEmpty": "全部审核完毕 👍",
   "adminApprove": "通过",
   "adminReject": "拒绝",
   "adminRejectReasonLabel": "拒绝原因",
@@ -372,7 +372,14 @@
   "adminBlockedBadge": "已封禁",
   "adminPageOf": "第 {page} / {total} 页",
   "@adminPageOf": {
-    "placeholders": { "page": { "type": "int" }, "total": { "type": "int" } }
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "adminBlockConfirmTitle": "封禁该司机?",
   "adminBlockCompanyConfirmTitle": "封禁该公司?",
@@ -406,11 +413,19 @@
   "adminEndSessions": "结束会话",
   "adminWithUsSince": "加入时间 {date}",
   "@adminWithUsSince": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "adminLastLogin": "最后登录: {date}",
   "@adminLastLogin": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "adminReasonLabel": "原因",
   "adminVerifyDialogTitle": "标记为「已验证」",
@@ -430,23 +445,43 @@
   "adminAttentionEmpty": "一切正常——无需关注",
   "adminAttentionPendingVerification": "待审核：{count} 人",
   "@adminAttentionPendingVerification": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionOpenComplaints": "待处理投诉：{count}",
   "@adminAttentionOpenComplaints": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionStaleDeals": "超过3天无进展的交易：{count}",
   "@adminAttentionStaleDeals": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionUnverifiedCompanies": "未验证公司：{count}",
   "@adminAttentionUnverifiedCompanies": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionPendingCities": "新城市：{count}",
   "@adminAttentionPendingCities": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminRecentEventsTitle": "最近事件",
   "adminAuditLogLink": "日志 →",
@@ -459,7 +494,11 @@
   "adminStatOnSiteToday": "今日在场",
   "adminStatOnSiteWeek": "本周：{count}",
   "@adminStatOnSiteWeek": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminGlobalSearchHint": "搜索：姓名、电话、邮箱、车牌号、货源/交易编号",
   "adminSearchNoResults": "未找到结果",
@@ -484,7 +523,49 @@
   "adminColStale": "无进展",
   "adminStaleDays": "{days} 天",
   "@adminStaleDays": {
-    "placeholders": { "days": { "type": "int" } }
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
-  "adminSettingsEmpty": "暂无设置"
+  "adminSettingsEmpty": "暂无设置",
+  "adminVerificationTabDrivers": "司机",
+  "adminVerificationTabCompanies": "公司",
+  "adminVerificationNoSelection": "请从左侧队列中选择一个人或公司",
+  "adminVerificationReasonNew": "新提交 · {count} 份文件",
+  "@adminVerificationReasonNew": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminVerificationReasonResubmitted": "重新提交：{type}",
+  "@adminVerificationReasonResubmitted": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "adminVerificationReasonVehicleChanged": "更换了车辆",
+  "adminVerificationOpenCard": "查看档案 →",
+  "adminVerificationCrossCheckTitle": "与档案核对",
+  "adminCrossCheckName": "姓名 ↔ 驾照",
+  "adminCrossCheckPhoto": "自拍照片 ↔ 驾照照片",
+  "adminCrossCheckPlate": "车牌号 ↔ 牵引车行驶证",
+  "adminCrossCheckTrailerPlate": "挂车 ↔ 挂车行驶证",
+  "adminCrossCheckCompanyName": "公司名称 ↔ 许可证",
+  "adminCrossCheckCompanyTaxId": "注册号 ↔ 许可证",
+  "adminCrossCheckMatch": "一致",
+  "adminCrossCheckMismatch": "不一致",
+  "adminConfirmDriverButton": "确认司机",
+  "adminConfirmCompanyButton": "确认公司",
+  "adminReturnForReworkButton": "退回修改",
+  "adminReturnForReworkDialogTitle": "退回修改",
+  "adminReturnForReworkNoteLabel": "备注（需要重新拍摄的内容）",
+  "adminVerificationMissingDocsHint": "请将所有必需文件标记为「无问题」后才能确认",
+  "adminVerificationCompareWithSelfie": "与自拍对比",
+  "adminRejectPresetPlateMismatch": "车牌号不匹配"
 }

@@ -1006,7 +1006,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get adminVerificationTitle => '待审核文件';
 
   @override
-  String get adminVerificationEmpty => '暂无待审核文件';
+  String get adminVerificationEmpty => '全部审核完毕 👍';
 
   @override
   String get adminApprove => '通过';
@@ -1432,4 +1432,80 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminSettingsEmpty => '暂无设置';
+
+  @override
+  String get adminVerificationTabDrivers => '司机';
+
+  @override
+  String get adminVerificationTabCompanies => '公司';
+
+  @override
+  String get adminVerificationNoSelection => '请从左侧队列中选择一个人或公司';
+
+  @override
+  String adminVerificationReasonNew(int count) {
+    return '新提交 · $count 份文件';
+  }
+
+  @override
+  String adminVerificationReasonResubmitted(String type) {
+    return '重新提交：$type';
+  }
+
+  @override
+  String get adminVerificationReasonVehicleChanged => '更换了车辆';
+
+  @override
+  String get adminVerificationOpenCard => '查看档案 →';
+
+  @override
+  String get adminVerificationCrossCheckTitle => '与档案核对';
+
+  @override
+  String get adminCrossCheckName => '姓名 ↔ 驾照';
+
+  @override
+  String get adminCrossCheckPhoto => '自拍照片 ↔ 驾照照片';
+
+  @override
+  String get adminCrossCheckPlate => '车牌号 ↔ 牵引车行驶证';
+
+  @override
+  String get adminCrossCheckTrailerPlate => '挂车 ↔ 挂车行驶证';
+
+  @override
+  String get adminCrossCheckCompanyName => '公司名称 ↔ 许可证';
+
+  @override
+  String get adminCrossCheckCompanyTaxId => '注册号 ↔ 许可证';
+
+  @override
+  String get adminCrossCheckMatch => '一致';
+
+  @override
+  String get adminCrossCheckMismatch => '不一致';
+
+  @override
+  String get adminConfirmDriverButton => '确认司机';
+
+  @override
+  String get adminConfirmCompanyButton => '确认公司';
+
+  @override
+  String get adminReturnForReworkButton => '退回修改';
+
+  @override
+  String get adminReturnForReworkDialogTitle => '退回修改';
+
+  @override
+  String get adminReturnForReworkNoteLabel => '备注（需要重新拍摄的内容）';
+
+  @override
+  String get adminVerificationMissingDocsHint => '请将所有必需文件标记为「无问题」后才能确认';
+
+  @override
+  String get adminVerificationCompareWithSelfie => '与自拍对比';
+
+  @override
+  String get adminRejectPresetPlateMismatch => '车牌号不匹配';
 }

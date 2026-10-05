@@ -941,3 +941,112 @@ class AdminDealRow {
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 }
+
+/// Причина попадания в очередь проверки (задача 028, п.7) — строковый код
+/// от бэкенда, текст подбирает UI через l10n (см. [adminVerificationReasonLabel]).
+enum AdminVerificationQueueReason { newSubmission, resubmitted, vehicleChanged }
+
+AdminVerificationQueueReason _queueReasonFromJson(String value) {
+  switch (value) {
+    case 'RESUBMITTED':
+      return AdminVerificationQueueReason.resubmitted;
+    case 'VEHICLE_CHANGED':
+      return AdminVerificationQueueReason.vehicleChanged;
+    default:
+      return AdminVerificationQueueReason.newSubmission;
+  }
+}
+
+/// Одна строка очереди «Проверка целиком» — человек/компания, не документ
+/// (задача 028, п.7).
+class AdminVerificationQueueItem {
+  const AdminVerificationQueueItem({
+    required this.subjectId,
+    required this.subjectName,
+    required this.pendingCount,
+    required this.oldestPendingAt,
+    required this.reason,
+    this.resubmittedType,
+  });
+
+  final String subjectId;
+  final String subjectName;
+  final int pendingCount;
+  final DateTime oldestPendingAt;
+  final AdminVerificationQueueReason reason;
+  final String? resubmittedType;
+
+  factory AdminVerificationQueueItem.fromJson(Map<String, dynamic> json) => AdminVerificationQueueItem(
+        subjectId: json['subjectId'] as String,
+        subjectName: json['subjectName'] as String,
+        pendingCount: json['pendingCount'] as int,
+        oldestPendingAt: DateTime.parse(json['oldestPendingAt'] as String),
+        reason: _queueReasonFromJson(json['reason'] as String),
+        resubmittedType: json['resubmittedType'] as String?,
+      );
+}
+
+/// Профиль водителя для сверки с документами (задача 028, п.8) — не весь
+/// [AdminDriverDetail] (там лишнее для этого экрана), только то, что
+/// сверяется, + ВСЕ документы (включая уже одобренные).
+class AdminVerificationDriverProfile {
+  const AdminVerificationDriverProfile({
+    required this.id,
+    required this.fullName,
+    required this.isVerified,
+    required this.vehicles,
+    required this.documents,
+  });
+
+  final String id;
+  final String fullName;
+  final bool isVerified;
+  final List<AdminDriverVehicle> vehicles;
+  final List<AdminCardDocument> documents;
+
+  factory AdminVerificationDriverProfile.fromJson(Map<String, dynamic> json) => AdminVerificationDriverProfile(
+        id: json['id'] as String,
+        fullName: json['fullName'] as String,
+        isVerified: json['isVerified'] as bool,
+        vehicles: (json['vehicles'] as List<dynamic>).map((v) => AdminDriverVehicle.fromJson(v as Map<String, dynamic>)).toList(),
+        documents: (json['documents'] as List<dynamic>).map((d) => AdminCardDocument.fromJson(d as Map<String, dynamic>)).toList(),
+      );
+}
+
+class AdminVerificationCompanyProfile {
+  const AdminVerificationCompanyProfile({
+    required this.id,
+    required this.name,
+    this.nameRu,
+    this.taxId,
+    required this.isVerified,
+    required this.documents,
+  });
+
+  final String id;
+  final String name;
+  final String? nameRu;
+  final String? taxId;
+  final bool isVerified;
+  final List<AdminCardDocument> documents;
+
+  factory AdminVerificationCompanyProfile.fromJson(Map<String, dynamic> json) => AdminVerificationCompanyProfile(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        nameRu: json['nameRu'] as String?,
+        taxId: json['taxId'] as String?,
+        isVerified: json['isVerified'] as bool,
+        documents: (json['documents'] as List<dynamic>).map((d) => AdminCardDocument.fromJson(d as Map<String, dynamic>)).toList(),
+      );
+}
+
+/// Один документ в «Вернуть на доработку» (п.10) — отправляется пачкой,
+/// одно уведомление на человека, не на документ.
+class VerificationReworkDecision {
+  const VerificationReworkDecision({required this.documentId, required this.rejectReason});
+
+  final String documentId;
+  final String rejectReason;
+
+  Map<String, dynamic> toJson() => {'documentId': documentId, 'rejectReason': rejectReason};
+}

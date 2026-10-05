@@ -30,7 +30,11 @@
   "driverLoginCountryLabel": "Country",
   "driverOtpSubtitle": "Code sent to {phone}",
   "@driverOtpSubtitle": {
-    "placeholders": { "phone": { "type": "String" } }
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
   },
   "driverOtpResend": "Resend code",
   "driverOtpInvalidCode": "Invalid code",
@@ -73,7 +77,14 @@
   "acceptInviteTitle": "Company invitation",
   "acceptInviteSubtitle": "You've been invited to «{companyName}» — role: {role}",
   "@acceptInviteSubtitle": {
-    "placeholders": { "companyName": { "type": "String" }, "role": { "type": "String" } }
+    "placeholders": {
+      "companyName": {
+        "type": "String"
+      },
+      "role": {
+        "type": "String"
+      }
+    }
   },
   "acceptInviteNameLabel": "Your name",
   "acceptInvitePhoneLabel": "Phone (for drivers)",
@@ -110,11 +121,22 @@
   "driverVerificationRequiredAction": "Get verified",
   "profileCompleteness": "Profile is {percent}% complete — verified drivers get 3x more invitations",
   "@profileCompleteness": {
-    "placeholders": { "percent": { "type": "int" } }
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
   },
   "driverSetupStepOf": "Step {step} of {total}",
   "@driverSetupStepOf": {
-    "placeholders": { "step": { "type": "int" }, "total": { "type": "int" } }
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "driverSetupFullName": "Full name",
   "driverSetupFullNameError": "Enter a name: 2-80 letters, no digits",
@@ -140,7 +162,11 @@
   "driverSetupDirectionsSubtitle": "We'll show cargo to these countries first. You can change this anytime",
   "driverSetupCountriesSelected": "Countries selected: {count}",
   "@driverSetupCountriesSelected": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "driverSetupSubmit": "Save and continue",
   "feedTitle": "Cargo in Khorgos",
@@ -148,11 +174,19 @@
   "driverHomeAnonsTitle": "My announcement",
   "driverHomeLogistsCount": "Logists nearby: {count}",
   "@driverHomeLogistsCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "driverHomeSince": "On site since {date}",
   "@driverHomeSince": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "driverHomeCheckInEmpty": "Announce your arrival — logists will see you ahead of time",
   "driverHomeCheckInButton": "I'm already on site",
@@ -163,7 +197,11 @@
   "driverHomeEditButton": "Edit",
   "driverHomePlannedFor": "Arriving {date}",
   "@driverHomePlannedFor": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "announceArrivalTitle": "I'll be on site",
   "announceArrivalWhen": "When",
@@ -176,12 +214,20 @@
   "announceArrivalWaitDays": "How long are you willing to wait",
   "announceArrivalWaitDaysValue": "{days} d.",
   "@announceArrivalWaitDaysValue": {
-    "placeholders": { "days": { "type": "int" } }
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
   "announceArrivalSubmit": "Publish",
   "driverHomeFeedCount": "Matching cargo {count}",
   "@driverHomeFeedCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "feedEmpty": "No matching cargo yet",
   "feedSectionHome": "Close to home",
@@ -205,7 +251,11 @@
   "cargoDetailPriceLabel": "Price per trip",
   "cargoDetailCompanyDeals": "{count} deals on Lubao",
   "@cargoDetailCompanyDeals": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "cargoDetailNoReviews": "No reviews yet",
   "cargoStatusPublished": "Published",
@@ -279,7 +329,11 @@
   "chatShowOriginal": "original",
   "chatWritesIn": "Writing in {language}",
   "@chatWritesIn": {
-    "placeholders": { "language": { "type": "String" } }
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
   },
   "chatToday": "Today",
   "chatYesterday": "Yesterday",
@@ -323,17 +377,29 @@
   "navDrivers": "Drivers",
   "driversAtPointTitle": "Who's at {point}",
   "@driversAtPointTitle": {
-    "placeholders": { "point": { "type": "String" } }
+    "placeholders": {
+      "point": {
+        "type": "String"
+      }
+    }
   },
   "driversAtPointSubtitle": "Drivers who announced their arrival in advance",
   "driversAtPointDispatchFrom": "Cargo dispatch point: {point}",
   "@driversAtPointDispatchFrom": {
-    "placeholders": { "point": { "type": "String" } }
+    "placeholders": {
+      "point": {
+        "type": "String"
+      }
+    }
   },
   "driversAtPointPickDate": "Pick a date",
   "driversAtPointCountAtPlace": "On site now: {count}",
   "@driversAtPointCountAtPlace": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "driversAtPointEmpty": "No one's on site yet",
   "driversAtPointFilterCountry": "Country",
@@ -346,11 +412,19 @@
   "driversAtPointInviteSent": "Invitation sent",
   "driversAtPointArrivedAt": "On site since {time}",
   "@driversAtPointArrivedAt": {
-    "placeholders": { "time": { "type": "String" } }
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
   },
   "driversAtPointPlannedAt": "Arriving {time}",
   "@driversAtPointPlannedAt": {
-    "placeholders": { "time": { "type": "String" } }
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
   },
   "driversAtPointToday": "Today",
   "adminLoginTitle": "Admin sign-in",
@@ -372,7 +446,7 @@
   "adminNavDrivers": "Drivers",
   "adminNavReference": "Reference data",
   "adminVerificationTitle": "Documents to review",
-  "adminVerificationEmpty": "No documents to review",
+  "adminVerificationEmpty": "All reviewed 👍",
   "adminApprove": "Approve",
   "adminReject": "Reject",
   "adminRejectReasonLabel": "Rejection reason",
@@ -423,7 +497,14 @@
   "adminBlockedBadge": "Blocked",
   "adminPageOf": "Page {page} of {total}",
   "@adminPageOf": {
-    "placeholders": { "page": { "type": "int" }, "total": { "type": "int" } }
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "adminBlockConfirmTitle": "Block this driver?",
   "adminBlockCompanyConfirmTitle": "Block this company?",
@@ -457,11 +538,19 @@
   "adminEndSessions": "End sessions",
   "adminWithUsSince": "With us since {date}",
   "@adminWithUsSince": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "adminLastLogin": "Last login: {date}",
   "@adminLastLogin": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "adminReasonLabel": "Reason",
   "adminVerifyDialogTitle": "Mark as Verified",
@@ -481,23 +570,43 @@
   "adminAttentionEmpty": "All clear — nothing needs attention",
   "adminAttentionPendingVerification": "Pending verification: {count} people",
   "@adminAttentionPendingVerification": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionOpenComplaints": "Open complaints: {count}",
   "@adminAttentionOpenComplaints": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionStaleDeals": "Deals stuck > 3 days: {count}",
   "@adminAttentionStaleDeals": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionUnverifiedCompanies": "Unverified companies: {count}",
   "@adminAttentionUnverifiedCompanies": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionPendingCities": "New cities: {count}",
   "@adminAttentionPendingCities": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminRecentEventsTitle": "Recent events",
   "adminAuditLogLink": "Log →",
@@ -510,7 +619,11 @@
   "adminStatOnSiteToday": "On site today",
   "adminStatOnSiteWeek": "This week: {count}",
   "@adminStatOnSiteWeek": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminGlobalSearchHint": "Search: name, phone, email, plate, cargo/deal #",
   "adminSearchNoResults": "No results",
@@ -535,7 +648,49 @@
   "adminColStale": "Stuck",
   "adminStaleDays": "{days} d.",
   "@adminStaleDays": {
-    "placeholders": { "days": { "type": "int" } }
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
-  "adminSettingsEmpty": "No settings yet"
+  "adminSettingsEmpty": "No settings yet",
+  "adminVerificationTabDrivers": "Drivers",
+  "adminVerificationTabCompanies": "Companies",
+  "adminVerificationNoSelection": "Select a person or company from the queue on the left",
+  "adminVerificationReasonNew": "New · {count} documents",
+  "@adminVerificationReasonNew": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminVerificationReasonResubmitted": "Resubmitted: {type}",
+  "@adminVerificationReasonResubmitted": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "adminVerificationReasonVehicleChanged": "Changed vehicle",
+  "adminVerificationOpenCard": "Open profile →",
+  "adminVerificationCrossCheckTitle": "Cross-check with profile",
+  "adminCrossCheckName": "Name ↔ driver's license",
+  "adminCrossCheckPhoto": "Selfie face ↔ license photo",
+  "adminCrossCheckPlate": "Plate number ↔ tractor registration",
+  "adminCrossCheckTrailerPlate": "Trailer ↔ trailer registration",
+  "adminCrossCheckCompanyName": "Name ↔ license",
+  "adminCrossCheckCompanyTaxId": "Registration No. ↔ license",
+  "adminCrossCheckMatch": "Matches",
+  "adminCrossCheckMismatch": "Mismatch",
+  "adminConfirmDriverButton": "Confirm driver",
+  "adminConfirmCompanyButton": "Confirm company",
+  "adminReturnForReworkButton": "Return for rework",
+  "adminReturnForReworkDialogTitle": "Return for rework",
+  "adminReturnForReworkNoteLabel": "Note (what to reshoot)",
+  "adminVerificationMissingDocsHint": "Mark all required documents as OK to enable confirmation",
+  "adminVerificationCompareWithSelfie": "Compare with selfie",
+  "adminRejectPresetPlateMismatch": "Plate number mismatch"
 }

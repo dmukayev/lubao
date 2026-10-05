@@ -95,11 +95,33 @@ class AdminRepository {
     );
   }
 
-  Future<List<AdminVerificationDocument>> verificationDocuments({String? status}) async {
-    final res = await _client.dio.get('/admin/verification-documents', queryParameters: {if (status != null) 'status': status});
-    return (res.data as List<dynamic>)
-        .map((e) => AdminVerificationDocument.fromJson(e as Map<String, dynamic>))
-        .toList();
+  Future<List<AdminVerificationQueueItem>> verificationQueue(String type) async {
+    final res = await _client.dio.get('/admin/verification/queue', queryParameters: {'type': type});
+    return (res.data as List<dynamic>).map((e) => AdminVerificationQueueItem.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<AdminVerificationDriverProfile> verificationDriverProfile(String id) async {
+    final res = await _client.dio.get('/admin/verification/drivers/$id');
+    return AdminVerificationDriverProfile.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<AdminVerificationCompanyProfile> verificationCompanyProfile(String id) async {
+    final res = await _client.dio.get('/admin/verification/companies/$id');
+    return AdminVerificationCompanyProfile.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> returnDriverForRework(String id, {required List<VerificationReworkDecision> decisions, String? note}) async {
+    await _client.dio.post('/admin/verification/drivers/$id/return', data: {
+      'decisions': decisions.map((d) => d.toJson()).toList(),
+      if (note != null) 'note': note,
+    });
+  }
+
+  Future<void> returnCompanyForRework(String id, {required List<VerificationReworkDecision> decisions, String? note}) async {
+    await _client.dio.post('/admin/verification/companies/$id/return', data: {
+      'decisions': decisions.map((d) => d.toJson()).toList(),
+      if (note != null) 'note': note,
+    });
   }
 
   Future<AdminVerificationDocument> reviewDocument(String id, {required bool approve, String? rejectReason}) async {

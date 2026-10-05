@@ -2031,7 +2031,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @adminVerificationEmpty.
   ///
   /// In ru, this message translates to:
-  /// **'Нет документов на проверку'**
+  /// **'Все проверены 👍'**
   String get adminVerificationEmpty;
 
   /// No description provided for @adminApprove.
@@ -2843,6 +2843,150 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Настроек пока нет'**
   String get adminSettingsEmpty;
+
+  /// No description provided for @adminVerificationTabDrivers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водители'**
+  String get adminVerificationTabDrivers;
+
+  /// No description provided for @adminVerificationTabCompanies.
+  ///
+  /// In ru, this message translates to:
+  /// **'Компании'**
+  String get adminVerificationTabCompanies;
+
+  /// No description provided for @adminVerificationNoSelection.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите человека или компанию из очереди слева'**
+  String get adminVerificationNoSelection;
+
+  /// No description provided for @adminVerificationReasonNew.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новый · {count} документов'**
+  String adminVerificationReasonNew(int count);
+
+  /// No description provided for @adminVerificationReasonResubmitted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повторно: {type}'**
+  String adminVerificationReasonResubmitted(String type);
+
+  /// No description provided for @adminVerificationReasonVehicleChanged.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сменил машину'**
+  String get adminVerificationReasonVehicleChanged;
+
+  /// No description provided for @adminVerificationOpenCard.
+  ///
+  /// In ru, this message translates to:
+  /// **'Карточка →'**
+  String get adminVerificationOpenCard;
+
+  /// No description provided for @adminVerificationCrossCheckTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сверка с профилем'**
+  String get adminVerificationCrossCheckTitle;
+
+  /// No description provided for @adminCrossCheckName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя ↔ права'**
+  String get adminCrossCheckName;
+
+  /// No description provided for @adminCrossCheckPhoto.
+  ///
+  /// In ru, this message translates to:
+  /// **'Лицо на селфи ↔ фото в правах'**
+  String get adminCrossCheckPhoto;
+
+  /// No description provided for @adminCrossCheckPlate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Госномер ↔ техпаспорт тягача'**
+  String get adminCrossCheckPlate;
+
+  /// No description provided for @adminCrossCheckTrailerPlate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Прицеп ↔ техпаспорт прицепа'**
+  String get adminCrossCheckTrailerPlate;
+
+  /// No description provided for @adminCrossCheckCompanyName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название ↔ лицензия'**
+  String get adminCrossCheckCompanyName;
+
+  /// No description provided for @adminCrossCheckCompanyTaxId.
+  ///
+  /// In ru, this message translates to:
+  /// **'Рег. номер ↔ лицензия'**
+  String get adminCrossCheckCompanyTaxId;
+
+  /// No description provided for @adminCrossCheckMatch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Совпадает'**
+  String get adminCrossCheckMatch;
+
+  /// No description provided for @adminCrossCheckMismatch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не совпадает'**
+  String get adminCrossCheckMismatch;
+
+  /// No description provided for @adminConfirmDriverButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтвердить водителя'**
+  String get adminConfirmDriverButton;
+
+  /// No description provided for @adminConfirmCompanyButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтвердить компанию'**
+  String get adminConfirmCompanyButton;
+
+  /// No description provided for @adminReturnForReworkButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вернуть на доработку'**
+  String get adminReturnForReworkButton;
+
+  /// No description provided for @adminReturnForReworkDialogTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вернуть на доработку'**
+  String get adminReturnForReworkDialogTitle;
+
+  /// No description provided for @adminReturnForReworkNoteLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Комментарий (что переснять)'**
+  String get adminReturnForReworkNoteLabel;
+
+  /// No description provided for @adminVerificationMissingDocsHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отметьте все обязательные документы как «в порядке», чтобы подтвердить'**
+  String get adminVerificationMissingDocsHint;
+
+  /// No description provided for @adminVerificationCompareWithSelfie.
+  ///
+  /// In ru, this message translates to:
+  /// **'Рядом с селфи'**
+  String get adminVerificationCompareWithSelfie;
+
+  /// No description provided for @adminRejectPresetPlateMismatch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Госномер не совпадает'**
+  String get adminRejectPresetPlateMismatch;
 }
 
 class _LubaoLocalizationsDelegate

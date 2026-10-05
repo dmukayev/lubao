@@ -13,6 +13,7 @@ import {
   CreatePointDto,
   DealSearchQueryDto,
   ModerateCityDto,
+  ReturnForReworkDto,
   ReviewVerificationDocumentDto,
   SearchQueryDto,
   SetVerifiedDto,
@@ -404,15 +405,6 @@ export class AdminService {
     };
   }
 
-  async verificationDocuments(status?: string) {
-    const docs = await this.prisma.verificationDocument.findMany({
-      where: status ? { status: status as never } : undefined,
-      include: { driver: true, company: true, reviewedBy: { select: { id: true, name: true, email: true } } },
-      orderBy: { createdAt: 'desc' },
-    });
-    return Promise.all(docs.map((d) => this.docToDto(d)));
-  }
-
   async reviewVerificationDocument(id: string, adminUserId: string, dto: ReviewVerificationDocumentDto) {
     const doc = await this.prisma.verificationDocument.findUnique({ where: { id } });
     if (!doc) throw new NotFoundException('Document not found');
@@ -460,6 +452,239 @@ export class AdminService {
     }
 
     return this.docToDto(updated);
+  }
+
+  /// Прокси вместо presigned-ссылки (задача 028, п.12) — см. комментарий
+  /// у [UploadsService.getDocumentStream]. Легаси-документы (сид/старые
+  /// загрузки) хранят готовый http(s)-URL — для них просто редирект.
+  async documentFileSource(id: string): Promise<{ redirectUrl: string } | { stream: NodeJS.ReadableStream; contentType: string }> {
+    const doc = await this.prisma.verificationDocument.findUnique({ where: { id } });
+    if (!doc) throw new NotFoundException('Document not found');
+    if (/^https?:\/\//.test(doc.fileUrl)) return { redirectUrl: doc.fileUrl };
+    return this.uploads.getDocumentStream(doc.fileUrl);
+  }
+
+  // -- verification queue by subject (задача 028, этап B) ----------------------
+
+  /// Очередь по людям/компаниям, а не по документам (п.7): карточка —
+  /// субъект, у которого есть хотя бы один PENDING документ, с причиной
+  /// («Новый» / «Повторно» / «Сменил машину») и сортировкой по тому, кто
+  /// ждёт дольше.
+  async verificationQueue(type: 'driver' | 'company') {
+    if (type === 'company') return this.verificationQueueCompanies();
+    return this.verificationQueueDrivers();
+  }
+
+  private async verificationQueueDrivers() {
+    const pending = await this.prisma.verificationDocument.findMany({
+      where: { driverId: { not: null }, status: 'PENDING' },
+    });
+    if (pending.length === 0) return [];
+
+    const driverIds = [...new Set(pending.map((d) => d.driverId as string))];
+    const [drivers, allDocs] = await Promise.all([
+      this.prisma.driver.findMany({ where: { id: { in: driverIds } }, select: { id: true, fullName: true, isVerified: true } }),
+      this.prisma.verificationDocument.findMany({ where: { driverId: { in: driverIds } } }),
+    ]);
+    const driverMap = new Map(drivers.map((d) => [d.id, d]));
+
+    return driverIds
+      .map((id) => {
+        const driver = driverMap.get(id);
+        const docsForSubject = allDocs.filter((d) => d.driverId === id);
+        const pendingForSubject = docsForSubject.filter((d) => d.status === 'PENDING');
+        const oldestPendingAt = pendingForSubject.reduce((a, b) => (a.createdAt < b.createdAt ? a : b)).createdAt;
+        const vehiclePending = pendingForSubject.some((d) => d.type === 'VEHICLE_PASSPORT' || d.type === 'TRAILER_PASSPORT');
+        const resubmittedType = pendingForSubject.find((d) =>
+          docsForSubject.some((prior) => prior.type === d.type && prior.status === 'REJECTED'),
+        )?.type;
+
+        let reason: 'NEW' | 'RESUBMITTED' | 'VEHICLE_CHANGED';
+        if (driver?.isVerified && vehiclePending) reason = 'VEHICLE_CHANGED';
+        else if (resubmittedType) reason = 'RESUBMITTED';
+        else reason = 'NEW';
+
+        return {
+          subjectId: id,
+          subjectName: driver?.fullName ?? '—',
+          pendingCount: pendingForSubject.length,
+          oldestPendingAt,
+          reason,
+          resubmittedType: reason === 'RESUBMITTED' ? resubmittedType : null,
+        };
+      })
+      .sort((a, b) => a.oldestPendingAt.getTime() - b.oldestPendingAt.getTime());
+  }
+
+  private async verificationQueueCompanies() {
+    const pending = await this.prisma.verificationDocument.findMany({
+      where: { companyId: { not: null }, status: 'PENDING' },
+    });
+    if (pending.length === 0) return [];
+
+    const companyIds = [...new Set(pending.map((d) => d.companyId as string))];
+    const [companies, allDocs] = await Promise.all([
+      this.prisma.company.findMany({ where: { id: { in: companyIds } }, select: { id: true, name: true, isVerified: true } }),
+      this.prisma.verificationDocument.findMany({ where: { companyId: { in: companyIds } } }),
+    ]);
+    const companyMap = new Map(companies.map((c) => [c.id, c]));
+
+    return companyIds
+      .map((id) => {
+        const company = companyMap.get(id);
+        const docsForSubject = allDocs.filter((d) => d.companyId === id);
+        const pendingForSubject = docsForSubject.filter((d) => d.status === 'PENDING');
+        const oldestPendingAt = pendingForSubject.reduce((a, b) => (a.createdAt < b.createdAt ? a : b)).createdAt;
+        const resubmittedType = pendingForSubject.find((d) =>
+          docsForSubject.some((prior) => prior.type === d.type && prior.status === 'REJECTED'),
+        )?.type;
+
+        return {
+          subjectId: id,
+          subjectName: company?.name ?? '—',
+          pendingCount: pendingForSubject.length,
+          oldestPendingAt,
+          reason: (resubmittedType ? 'RESUBMITTED' : 'NEW') as 'NEW' | 'RESUBMITTED',
+          resubmittedType: resubmittedType ?? null,
+        };
+      })
+      .sort((a, b) => a.oldestPendingAt.getTime() - b.oldestPendingAt.getTime());
+  }
+
+  /// Профиль для сверки (п.8) — не весь driverDetail (там лишнее для этого
+  /// экрана: сделки, отзывы, сессии), только то, что сверяется с
+  /// документами, + ВСЕ документы (включая уже одобренные — для сравнения
+  /// селфи/прав между собой).
+  async verificationDriverProfile(id: string) {
+    const driver = await this.prisma.driver.findUnique({
+      where: { id },
+      include: { vehicles: { include: { bodyType: true }, orderBy: { createdAt: 'asc' } } },
+    });
+    if (!driver) throw new NotFoundException('Driver not found');
+
+    const documents = await this.prisma.verificationDocument.findMany({
+      where: { driverId: id },
+      orderBy: { createdAt: 'desc' },
+      include: { reviewedBy: { select: { id: true, name: true, email: true } } },
+    });
+
+    return {
+      id: driver.id,
+      fullName: driver.fullName,
+      isVerified: driver.isVerified,
+      vehicles: driver.vehicles.map((v) => ({
+        id: v.id,
+        plateNumber: v.plateNumber,
+        brand: v.brand,
+        bodyTypeName: v.bodyType.name,
+        capacityTons: v.capacityTons ? Number(v.capacityTons) : null,
+        lengthM: v.lengthM ? Number(v.lengthM) : null,
+      })),
+      documents: documents.map((d) => ({
+        id: d.id,
+        type: d.type,
+        fileUrl: `/admin/documents/${d.id}/file`,
+        status: d.status,
+        rejectReason: d.rejectReason,
+        reviewedByName: d.reviewedBy?.name ?? d.reviewedBy?.email ?? null,
+        reviewedAt: d.reviewedAt,
+        createdAt: d.createdAt,
+      })),
+    };
+  }
+
+  async verificationCompanyProfile(id: string) {
+    const company = await this.prisma.company.findUnique({ where: { id } });
+    if (!company) throw new NotFoundException('Company not found');
+
+    const documents = await this.prisma.verificationDocument.findMany({
+      where: { companyId: id },
+      orderBy: { createdAt: 'desc' },
+      include: { reviewedBy: { select: { id: true, name: true, email: true } } },
+    });
+
+    return {
+      id: company.id,
+      name: company.name,
+      nameRu: company.nameRu,
+      taxId: company.taxId,
+      isVerified: company.isVerified,
+      documents: documents.map((d) => ({
+        id: d.id,
+        type: d.type,
+        fileUrl: `/admin/documents/${d.id}/file`,
+        status: d.status,
+        rejectReason: d.rejectReason,
+        reviewedByName: d.reviewedBy?.name ?? d.reviewedBy?.email ?? null,
+        reviewedAt: d.reviewedAt,
+        createdAt: d.createdAt,
+      })),
+    };
+  }
+
+  /// «Вернуть на доработку» (п.10) — итог один на человека: отклоняет сразу
+  /// несколько отмеченных документов и шлёт ОДНО уведомление со списком
+  /// «что переснять», а не по уведомлению на документ.
+  async returnDriverForRework(id: string, adminUserId: string, dto: ReturnForReworkDto) {
+    const driver = await this.prisma.driver.findUnique({ where: { id } });
+    if (!driver) throw new NotFoundException('Driver not found');
+    if (dto.decisions.length === 0) throw new BadRequestException('At least one document decision is required');
+
+    const docs = await this.prisma.verificationDocument.findMany({
+      where: { id: { in: dto.decisions.map((d) => d.documentId) }, driverId: id },
+    });
+    if (docs.length !== dto.decisions.length) throw new BadRequestException('Some documents do not belong to this driver');
+
+    await this.prisma.$transaction(
+      dto.decisions.map((d) =>
+        this.prisma.verificationDocument.update({
+          where: { id: d.documentId },
+          data: { status: 'REJECTED', rejectReason: d.rejectReason, reviewedByUserId: adminUserId, reviewedAt: new Date() },
+        }),
+      ),
+    );
+    await this.prisma.driver.update({ where: { id }, data: { isVerified: false } });
+
+    await this.logAudit(adminUserId, 'DRIVER_RETURNED_FOR_REWORK', 'Driver', id, { note: dto.note, decisions: dto.decisions });
+    // TODO(задача 011): реальная отправка push/SMS «профиль нужно доработать»
+    // через модуль уведомлений — пока его нет, фиксируем намерение в логе.
+    await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Driver', id, {
+      channel: 'push',
+      template: 'VERIFICATION_RETURNED',
+      documentIds: dto.decisions.map((d) => d.documentId),
+    });
+
+    return { id, isVerified: false };
+  }
+
+  async returnCompanyForRework(id: string, adminUserId: string, dto: ReturnForReworkDto) {
+    const company = await this.prisma.company.findUnique({ where: { id } });
+    if (!company) throw new NotFoundException('Company not found');
+    if (dto.decisions.length === 0) throw new BadRequestException('At least one document decision is required');
+
+    const docs = await this.prisma.verificationDocument.findMany({
+      where: { id: { in: dto.decisions.map((d) => d.documentId) }, companyId: id },
+    });
+    if (docs.length !== dto.decisions.length) throw new BadRequestException('Some documents do not belong to this company');
+
+    await this.prisma.$transaction(
+      dto.decisions.map((d) =>
+        this.prisma.verificationDocument.update({
+          where: { id: d.documentId },
+          data: { status: 'REJECTED', rejectReason: d.rejectReason, reviewedByUserId: adminUserId, reviewedAt: new Date() },
+        }),
+      ),
+    );
+    await this.prisma.company.update({ where: { id }, data: { isVerified: false } });
+
+    await this.logAudit(adminUserId, 'COMPANY_RETURNED_FOR_REWORK', 'Company', id, { note: dto.note, decisions: dto.decisions });
+    await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Company', id, {
+      channel: 'email',
+      template: 'VERIFICATION_RETURNED',
+      documentIds: dto.decisions.map((d) => d.documentId),
+    });
+
+    return { id, isVerified: false };
   }
 
   // -- complaints --------------------------------------------------------------

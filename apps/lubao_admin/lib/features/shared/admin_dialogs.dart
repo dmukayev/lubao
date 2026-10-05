@@ -96,7 +96,12 @@ Future<({String reason, bool force})?> showVerifyDialog(
 Future<String?> showRejectReasonDialog(BuildContext context) async {
   final t = context.l10n;
   final controller = TextEditingController();
-  final presets = [t.adminRejectPresetUnreadable, t.adminRejectPresetExpired, t.adminRejectPresetMismatch];
+  final presets = [
+    t.adminRejectPresetUnreadable,
+    t.adminRejectPresetExpired,
+    t.adminRejectPresetMismatch,
+    t.adminRejectPresetPlateMismatch,
+  ];
 
   return showDialog<String>(
     context: context,

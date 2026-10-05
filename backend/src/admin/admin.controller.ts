@@ -1,4 +1,5 @@
-import { Body, Controller, ForbiddenException, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Param, Patch, Post, Query, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
 import { AppSettingsService } from '../app-settings/app-settings.service';
@@ -12,6 +13,7 @@ import {
   DealSearchQueryDto,
   ModerateCityDto,
   ResolveComplaintDto,
+  ReturnForReworkDto,
   ReviewVerificationDocumentDto,
   SearchQueryDto,
   SetActiveDto,
@@ -97,12 +99,6 @@ export class AdminController {
     return this.admin.searchDeals(query);
   }
 
-  @Get('verification-documents')
-  verificationDocuments(@CurrentUser() ctx: RequestContext, @Query('status') status?: string) {
-    assertAdmin(ctx);
-    return this.admin.verificationDocuments(status);
-  }
-
   @Patch('verification-documents/:id')
   reviewVerificationDocument(
     @CurrentUser() ctx: RequestContext,
@@ -111,6 +107,48 @@ export class AdminController {
   ) {
     assertAdmin(ctx);
     return this.admin.reviewVerificationDocument(id, ctx.user.id, dto);
+  }
+
+  @Get('documents/:id/file')
+  async documentFile(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Res() res: Response) {
+    assertAdmin(ctx);
+    const source = await this.admin.documentFileSource(id);
+    if ('redirectUrl' in source) {
+      res.redirect(source.redirectUrl);
+      return;
+    }
+    res.setHeader('Content-Type', source.contentType);
+    source.stream.pipe(res);
+  }
+
+  @Get('verification/queue')
+  verificationQueue(@CurrentUser() ctx: RequestContext, @Query('type') type?: string) {
+    assertAdmin(ctx);
+    return this.admin.verificationQueue(type === 'company' ? 'company' : 'driver');
+  }
+
+  @Get('verification/drivers/:id')
+  verificationDriverProfile(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.verificationDriverProfile(id);
+  }
+
+  @Get('verification/companies/:id')
+  verificationCompanyProfile(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.verificationCompanyProfile(id);
+  }
+
+  @Post('verification/drivers/:id/return')
+  returnDriverForRework(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: ReturnForReworkDto) {
+    assertAdmin(ctx);
+    return this.admin.returnDriverForRework(id, ctx.user.id, dto);
+  }
+
+  @Post('verification/companies/:id/return')
+  returnCompanyForRework(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: ReturnForReworkDto) {
+    assertAdmin(ctx);
+    return this.admin.returnCompanyForRework(id, ctx.user.id, dto);
   }
 
   @Get('complaints')

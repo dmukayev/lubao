@@ -2,7 +2,10 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 
 function fakeUploads() {
-  return { presignDocumentUrl: jest.fn(async (key: string) => `https://signed.example/${key}`) };
+  return {
+    presignDocumentUrl: jest.fn(async (key: string) => `https://signed.example/${key}`),
+    getDocumentStream: jest.fn(async (key: string) => ({ stream: `stream:${key}`, contentType: 'image/jpeg' })),
+  };
 }
 
 describe('AdminService — city moderation (task 021)', () => {
@@ -574,5 +577,238 @@ describe('AdminService.searchCargos / searchDeals (задача 028, п.14/16)',
 
     const result = await service.searchDeals({});
     expect(result.items[0].staleDays).toBe(4);
+  });
+});
+
+describe('AdminService.documentFileSource — proxy instead of presigned link (задача 028, п.12)', () => {
+  it('throws NotFoundException for an unknown document', async () => {
+    const prisma: any = { verificationDocument: { findUnique: jest.fn().mockResolvedValue(null) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    await expect(service.documentFileSource('missing')).rejects.toThrow(NotFoundException);
+  });
+
+  it('returns a redirect for legacy http(s) fileUrl without touching MinIO', async () => {
+    const uploads = fakeUploads();
+    const prisma: any = {
+      verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1', fileUrl: 'https://legacy.example/a.jpg' }) },
+    };
+    const service = new AdminService(prisma, {} as any, uploads as any);
+
+    const result = await service.documentFileSource('doc1');
+
+    expect(result).toEqual({ redirectUrl: 'https://legacy.example/a.jpg' });
+    expect(uploads.getDocumentStream).not.toHaveBeenCalled();
+  });
+
+  it('streams from MinIO for an object-key fileUrl', async () => {
+    const uploads = fakeUploads();
+    const prisma: any = {
+      verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1', fileUrl: 'abc123.jpg' }) },
+    };
+    const service = new AdminService(prisma, {} as any, uploads as any);
+
+    const result = await service.documentFileSource('doc1');
+
+    expect(uploads.getDocumentStream).toHaveBeenCalledWith('abc123.jpg');
+    expect(result).toEqual({ stream: 'stream:abc123.jpg', contentType: 'image/jpeg' });
+  });
+});
+
+describe('AdminService.verificationQueue — by subject, not by document (задача 028, п.7)', () => {
+  it('returns one row per driver, sorted by oldest-pending first, with a NEW reason for a first-time submission', async () => {
+    const t0 = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const t1 = new Date(Date.now() - 1 * 60 * 60 * 1000);
+    const prisma: any = {
+      verificationDocument: {
+        findMany: jest
+          .fn()
+          .mockResolvedValueOnce([
+            { driverId: 'd1', type: 'SELFIE', status: 'PENDING', createdAt: t1 },
+            { driverId: 'd2', type: 'SELFIE', status: 'PENDING', createdAt: t0 },
+          ])
+          .mockResolvedValueOnce([
+            { driverId: 'd1', type: 'SELFIE', status: 'PENDING', createdAt: t1 },
+            { driverId: 'd2', type: 'SELFIE', status: 'PENDING', createdAt: t0 },
+          ]),
+      },
+      driver: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'd1', fullName: 'Ерлан', isVerified: false },
+          { id: 'd2', fullName: 'Нурлан', isVerified: false },
+        ]),
+      },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.verificationQueue('driver');
+
+    expect(result.map((r: any) => r.subjectId)).toEqual(['d2', 'd1']); // d2 waits longer
+    expect(result[0].reason).toBe('NEW');
+  });
+
+  it('labels a verified driver with a new vehicle-document submission as VEHICLE_CHANGED', async () => {
+    const now = new Date();
+    const prisma: any = {
+      verificationDocument: {
+        findMany: jest
+          .fn()
+          .mockResolvedValueOnce([{ driverId: 'd1', type: 'VEHICLE_PASSPORT', status: 'PENDING', createdAt: now }])
+          .mockResolvedValueOnce([{ driverId: 'd1', type: 'VEHICLE_PASSPORT', status: 'PENDING', createdAt: now }]),
+      },
+      driver: { findMany: jest.fn().mockResolvedValue([{ id: 'd1', fullName: 'Ерлан', isVerified: true }]) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.verificationQueue('driver');
+
+    expect(result[0].reason).toBe('VEHICLE_CHANGED');
+  });
+
+  it('labels a resubmission (same doc type previously rejected) as RESUBMITTED', async () => {
+    const now = new Date();
+    const prisma: any = {
+      verificationDocument: {
+        findMany: jest
+          .fn()
+          .mockResolvedValueOnce([{ driverId: 'd1', type: 'DRIVER_LICENSE', status: 'PENDING', createdAt: now }])
+          .mockResolvedValueOnce([
+            { driverId: 'd1', type: 'DRIVER_LICENSE', status: 'REJECTED', createdAt: now },
+            { driverId: 'd1', type: 'DRIVER_LICENSE', status: 'PENDING', createdAt: now },
+          ]),
+      },
+      driver: { findMany: jest.fn().mockResolvedValue([{ id: 'd1', fullName: 'Ерлан', isVerified: false }]) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.verificationQueue('driver');
+
+    expect(result[0].reason).toBe('RESUBMITTED');
+    expect(result[0].resubmittedType).toBe('DRIVER_LICENSE');
+  });
+
+  it('returns an empty queue when nothing is pending, without querying drivers', async () => {
+    const prisma: any = { verificationDocument: { findMany: jest.fn().mockResolvedValue([]) }, driver: { findMany: jest.fn() } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.verificationQueue('driver');
+
+    expect(result).toEqual([]);
+    expect(prisma.driver.findMany).not.toHaveBeenCalled();
+  });
+
+  it('companies branch groups by companyId the same way', async () => {
+    const now = new Date();
+    const prisma: any = {
+      verificationDocument: {
+        findMany: jest
+          .fn()
+          .mockResolvedValueOnce([{ companyId: 'c1', type: 'COMPANY_REGISTRATION', status: 'PENDING', createdAt: now }])
+          .mockResolvedValueOnce([{ companyId: 'c1', type: 'COMPANY_REGISTRATION', status: 'PENDING', createdAt: now }]),
+      },
+      company: { findMany: jest.fn().mockResolvedValue([{ id: 'c1', name: 'Acme', isVerified: false }]) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.verificationQueue('company');
+
+    expect(result).toEqual([
+      expect.objectContaining({ subjectId: 'c1', subjectName: 'Acme', reason: 'NEW' }),
+    ]);
+  });
+});
+
+describe('AdminService.verificationDriverProfile / verificationCompanyProfile (задача 028, п.8/11)', () => {
+  it('returns vehicles and ALL documents (including already-approved) with proxy fileUrl, not presigned', async () => {
+    const uploads = fakeUploads();
+    const prisma: any = {
+      driver: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'd1',
+          fullName: 'Ерлан',
+          isVerified: false,
+          vehicles: [{ id: 'v1', plateNumber: 'A123BC', brand: 'Volvo', capacityTons: 20, bodyType: { name: { ru: 'Тент' } } }],
+        }),
+      },
+      verificationDocument: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'doc1', type: 'SELFIE', status: 'APPROVED', rejectReason: null, reviewedBy: null, reviewedAt: null, createdAt: new Date() },
+        ]),
+      },
+    };
+    const service = new AdminService(prisma, {} as any, uploads as any);
+
+    const result = await service.verificationDriverProfile('d1');
+
+    expect(result.vehicles[0]).toEqual(expect.objectContaining({ plateNumber: 'A123BC', bodyTypeName: { ru: 'Тент' } }));
+    expect(result.documents[0].fileUrl).toBe('/admin/documents/doc1/file');
+    expect(uploads.presignDocumentUrl).not.toHaveBeenCalled();
+  });
+
+  it('throws NotFoundException for an unknown driver/company', async () => {
+    const prisma: any = { driver: { findUnique: jest.fn().mockResolvedValue(null) }, company: { findUnique: jest.fn().mockResolvedValue(null) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    await expect(service.verificationDriverProfile('missing')).rejects.toThrow(NotFoundException);
+    await expect(service.verificationCompanyProfile('missing')).rejects.toThrow(NotFoundException);
+  });
+});
+
+describe('AdminService.returnDriverForRework / returnCompanyForRework — one decision per person (задача 028, п.10)', () => {
+  it('rejects at least one document, which is required', async () => {
+    const prisma: any = { driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1' }) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    await expect(service.returnDriverForRework('d1', 'admin-1', { decisions: [] } as any)).rejects.toThrow(BadRequestException);
+  });
+
+  it('rejects the listed documents, unverifies the driver, and writes exactly one decision + one notification audit entry', async () => {
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1' }), update: jest.fn() },
+      verificationDocument: { findMany: jest.fn().mockResolvedValue([{ id: 'doc1', driverId: 'd1' }]), update: jest.fn() },
+      $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.returnDriverForRework('d1', 'admin-1', {
+      decisions: [{ documentId: 'doc1', rejectReason: 'Нечитаемое фото' }],
+      note: 'Переснимите права',
+    } as any);
+
+    expect(prisma.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { isVerified: false } });
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ action: 'DRIVER_RETURNED_FOR_REWORK' }) }),
+    );
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ action: 'NOTIFICATION_QUEUED' }) }),
+    );
+    expect(prisma.auditLog.create).toHaveBeenCalledTimes(2);
+  });
+
+  it('throws if a listed document does not belong to this driver', async () => {
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1' }) },
+      verificationDocument: { findMany: jest.fn().mockResolvedValue([]) }, // doc belongs to someone else
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await expect(
+      service.returnDriverForRework('d1', 'admin-1', { decisions: [{ documentId: 'doc-other', rejectReason: 'x' }] } as any),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('company branch: rejects documents, unverifies the company, logs one decision + one notification entry', async () => {
+    const prisma: any = {
+      company: { findUnique: jest.fn().mockResolvedValue({ id: 'c1' }), update: jest.fn() },
+      verificationDocument: { findMany: jest.fn().mockResolvedValue([{ id: 'doc1', companyId: 'c1' }]), update: jest.fn() },
+      $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.returnCompanyForRework('c1', 'admin-1', {
+      decisions: [{ documentId: 'doc1', rejectReason: 'Документ просрочен' }],
+    } as any);
+
+    expect(prisma.company.update).toHaveBeenCalledWith({ where: { id: 'c1' }, data: { isVerified: false } });
+    expect(prisma.auditLog.create).toHaveBeenCalledTimes(2);
   });
 });

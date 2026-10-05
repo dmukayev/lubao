@@ -1,4 +1,4 @@
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ReviewVerificationDocumentDto {
@@ -189,6 +189,26 @@ export class DealSearchQueryDto {
   @IsInt()
   @Min(1)
   pageSize?: number;
+}
+
+/// Один документ в решении «Вернуть на доработку» (задача 028, п.10).
+export class DocumentDecisionDto {
+  @IsString()
+  documentId!: string;
+
+  @IsString()
+  rejectReason!: string;
+}
+
+export class ReturnForReworkDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DocumentDecisionDto)
+  decisions!: DocumentDecisionDto[];
+
+  @IsOptional()
+  @IsString()
+  note?: string;
 }
 
 export class ModerateCityDto {

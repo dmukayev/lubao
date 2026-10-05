@@ -3,8 +3,23 @@ import 'package:lubao_core/lubao_core.dart';
 
 import 'api_providers.dart';
 
-final verificationDocumentsProvider = FutureProvider.autoDispose<List<AdminVerificationDocument>>((ref) {
-  return ref.watch(adminRepositoryProvider).verificationDocuments(status: 'PENDING');
+/// Тип очереди «Проверка целиком» — водители/компании (задача 028, п.7).
+final adminVerificationTypeProvider = StateProvider.autoDispose<String>((ref) => 'driver');
+
+/// Выбранный в очереди субъект — сохраняется при переключении типа, пока
+/// явно не выбрали другого (экран сам решает, что показать при null).
+final adminVerificationSelectedIdProvider = StateProvider.autoDispose<String?>((ref) => null);
+
+final adminVerificationQueueProvider = FutureProvider.autoDispose.family<List<AdminVerificationQueueItem>, String>((ref, type) {
+  return ref.watch(adminRepositoryProvider).verificationQueue(type);
+});
+
+final adminVerificationDriverProfileProvider = FutureProvider.autoDispose.family<AdminVerificationDriverProfile, String>((ref, id) {
+  return ref.watch(adminRepositoryProvider).verificationDriverProfile(id);
+});
+
+final adminVerificationCompanyProfileProvider = FutureProvider.autoDispose.family<AdminVerificationCompanyProfile, String>((ref, id) {
+  return ref.watch(adminRepositoryProvider).verificationCompanyProfile(id);
 });
 
 final complaintsProvider = FutureProvider.autoDispose<List<AdminComplaint>>((ref) {

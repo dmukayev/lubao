@@ -30,7 +30,11 @@
   "driverLoginCountryLabel": "Страна",
   "driverOtpSubtitle": "Код отправлен на {phone}",
   "@driverOtpSubtitle": {
-    "placeholders": { "phone": { "type": "String" } }
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
   },
   "driverOtpResend": "Отправить код ещё раз",
   "driverOtpInvalidCode": "Неверный код",
@@ -73,7 +77,14 @@
   "acceptInviteTitle": "Приглашение в компанию",
   "acceptInviteSubtitle": "Вас пригласили в «{companyName}» — роль: {role}",
   "@acceptInviteSubtitle": {
-    "placeholders": { "companyName": { "type": "String" }, "role": { "type": "String" } }
+    "placeholders": {
+      "companyName": {
+        "type": "String"
+      },
+      "role": {
+        "type": "String"
+      }
+    }
   },
   "acceptInviteNameLabel": "Ваше имя",
   "acceptInvitePhoneLabel": "Телефон (для водителей)",
@@ -110,11 +121,22 @@
   "driverVerificationRequiredAction": "Пройти верификацию",
   "profileCompleteness": "Профиль заполнен на {percent}% — проверенные водители получают в 3 раза больше приглашений",
   "@profileCompleteness": {
-    "placeholders": { "percent": { "type": "int" } }
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
   },
   "driverSetupStepOf": "Шаг {step} из {total}",
   "@driverSetupStepOf": {
-    "placeholders": { "step": { "type": "int" }, "total": { "type": "int" } }
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "driverSetupFullName": "Ф.И.О.",
   "driverSetupFullNameError": "Введите имя: 2-80 букв, без цифр",
@@ -140,7 +162,11 @@
   "driverSetupDirectionsSubtitle": "Покажем грузы в эти страны первыми. Можно поменять в любой момент",
   "driverSetupCountriesSelected": "Выбрано стран: {count}",
   "@driverSetupCountriesSelected": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "driverSetupSubmit": "Сохранить и продолжить",
   "feedTitle": "Грузы в Хоргосе",
@@ -148,11 +174,19 @@
   "driverHomeAnonsTitle": "Мой анонс",
   "driverHomeLogistsCount": "Логистов рядом: {count}",
   "@driverHomeLogistsCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "driverHomeSince": "На месте с {date}",
   "@driverHomeSince": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "driverHomeCheckInEmpty": "Заявите о прибытии — логисты увидят вас заранее",
   "driverHomeCheckInButton": "Я уже на месте",
@@ -163,7 +197,11 @@
   "driverHomeEditButton": "Изменить",
   "driverHomePlannedFor": "Будет {date}",
   "@driverHomePlannedFor": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "announceArrivalTitle": "Буду на точке",
   "announceArrivalWhen": "Когда",
@@ -176,12 +214,20 @@
   "announceArrivalWaitDays": "Сколько готовы ждать",
   "announceArrivalWaitDaysValue": "{days} дн.",
   "@announceArrivalWaitDaysValue": {
-    "placeholders": { "days": { "type": "int" } }
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
   "announceArrivalSubmit": "Опубликовать",
   "driverHomeFeedCount": "Подходящие грузы {count}",
   "@driverHomeFeedCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "feedEmpty": "Пока нет подходящих грузов",
   "feedSectionHome": "Близко к дому",
@@ -205,7 +251,11 @@
   "cargoDetailPriceLabel": "Цена за рейс",
   "cargoDetailCompanyDeals": "{count} сделок в Lubao",
   "@cargoDetailCompanyDeals": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "cargoDetailNoReviews": "Пока нет отзывов",
   "cargoStatusPublished": "Опубликован",
@@ -279,7 +329,11 @@
   "chatShowOriginal": "оригинал",
   "chatWritesIn": "Пишет на {language}",
   "@chatWritesIn": {
-    "placeholders": { "language": { "type": "String" } }
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
   },
   "chatToday": "Сегодня",
   "chatYesterday": "Вчера",
@@ -323,17 +377,29 @@
   "navDrivers": "Водители",
   "driversAtPointTitle": "Кто будет на {point}",
   "@driversAtPointTitle": {
-    "placeholders": { "point": { "type": "String" } }
+    "placeholders": {
+      "point": {
+        "type": "String"
+      }
+    }
   },
   "driversAtPointSubtitle": "Водители, которые заранее сообщили о прибытии",
   "driversAtPointDispatchFrom": "Пункт отправки груза: {point}",
   "@driversAtPointDispatchFrom": {
-    "placeholders": { "point": { "type": "String" } }
+    "placeholders": {
+      "point": {
+        "type": "String"
+      }
+    }
   },
   "driversAtPointPickDate": "Выбрать дату",
   "driversAtPointCountAtPlace": "Сейчас на месте: {count}",
   "@driversAtPointCountAtPlace": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "driversAtPointEmpty": "Пока никого нет на месте",
   "driversAtPointFilterCountry": "Страна",
@@ -346,11 +412,19 @@
   "driversAtPointInviteSent": "Приглашение отправлено",
   "driversAtPointArrivedAt": "На месте с {time}",
   "@driversAtPointArrivedAt": {
-    "placeholders": { "time": { "type": "String" } }
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
   },
   "driversAtPointPlannedAt": "Будет {time}",
   "@driversAtPointPlannedAt": {
-    "placeholders": { "time": { "type": "String" } }
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
   },
   "driversAtPointToday": "Сегодня",
   "adminLoginTitle": "Вход в админ-панель",
@@ -372,7 +446,7 @@
   "adminNavDrivers": "Водители",
   "adminNavReference": "Справочники",
   "adminVerificationTitle": "Документы на проверку",
-  "adminVerificationEmpty": "Нет документов на проверку",
+  "adminVerificationEmpty": "Все проверены 👍",
   "adminApprove": "Одобрить",
   "adminReject": "Отклонить",
   "adminRejectReasonLabel": "Причина отклонения",
@@ -423,7 +497,14 @@
   "adminBlockedBadge": "Блокирован",
   "adminPageOf": "Страница {page} из {total}",
   "@adminPageOf": {
-    "placeholders": { "page": { "type": "int" }, "total": { "type": "int" } }
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "adminBlockConfirmTitle": "Блокировать водителя?",
   "adminBlockCompanyConfirmTitle": "Блокировать компанию?",
@@ -457,11 +538,19 @@
   "adminEndSessions": "Завершить сессии",
   "adminWithUsSince": "С нами с {date}",
   "@adminWithUsSince": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "adminLastLogin": "Последний вход: {date}",
   "@adminLastLogin": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "adminReasonLabel": "Причина",
   "adminVerifyDialogTitle": "Поставить «Проверен»",
@@ -481,23 +570,43 @@
   "adminAttentionEmpty": "Всё в порядке — внимания не требуется",
   "adminAttentionPendingVerification": "На проверке: {count} человек",
   "@adminAttentionPendingVerification": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionOpenComplaints": "Открытых жалоб: {count}",
   "@adminAttentionOpenComplaints": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionStaleDeals": "Сделок без движения > 3 дней: {count}",
   "@adminAttentionStaleDeals": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionUnverifiedCompanies": "Непроверенных компаний: {count}",
   "@adminAttentionUnverifiedCompanies": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionPendingCities": "Новых городов: {count}",
   "@adminAttentionPendingCities": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminRecentEventsTitle": "Последние события",
   "adminAuditLogLink": "Журнал →",
@@ -510,7 +619,11 @@
   "adminStatOnSiteToday": "На точке сегодня",
   "adminStatOnSiteWeek": "На неделе: {count}",
   "@adminStatOnSiteWeek": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminGlobalSearchHint": "Поиск: имя, телефон, email, госномер, № груза/сделки",
   "adminSearchNoResults": "Ничего не найдено",
@@ -535,7 +648,49 @@
   "adminColStale": "Без движения",
   "adminStaleDays": "{days} дн.",
   "@adminStaleDays": {
-    "placeholders": { "days": { "type": "int" } }
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
-  "adminSettingsEmpty": "Настроек пока нет"
+  "adminSettingsEmpty": "Настроек пока нет",
+  "adminVerificationTabDrivers": "Водители",
+  "adminVerificationTabCompanies": "Компании",
+  "adminVerificationNoSelection": "Выберите человека или компанию из очереди слева",
+  "adminVerificationReasonNew": "Новый · {count} документов",
+  "@adminVerificationReasonNew": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminVerificationReasonResubmitted": "Повторно: {type}",
+  "@adminVerificationReasonResubmitted": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "adminVerificationReasonVehicleChanged": "Сменил машину",
+  "adminVerificationOpenCard": "Карточка →",
+  "adminVerificationCrossCheckTitle": "Сверка с профилем",
+  "adminCrossCheckName": "Имя ↔ права",
+  "adminCrossCheckPhoto": "Лицо на селфи ↔ фото в правах",
+  "adminCrossCheckPlate": "Госномер ↔ техпаспорт тягача",
+  "adminCrossCheckTrailerPlate": "Прицеп ↔ техпаспорт прицепа",
+  "adminCrossCheckCompanyName": "Название ↔ лицензия",
+  "adminCrossCheckCompanyTaxId": "Рег. номер ↔ лицензия",
+  "adminCrossCheckMatch": "Совпадает",
+  "adminCrossCheckMismatch": "Не совпадает",
+  "adminConfirmDriverButton": "Подтвердить водителя",
+  "adminConfirmCompanyButton": "Подтвердить компанию",
+  "adminReturnForReworkButton": "Вернуть на доработку",
+  "adminReturnForReworkDialogTitle": "Вернуть на доработку",
+  "adminReturnForReworkNoteLabel": "Комментарий (что переснять)",
+  "adminVerificationMissingDocsHint": "Отметьте все обязательные документы как «в порядке», чтобы подтвердить",
+  "adminVerificationCompareWithSelfie": "Рядом с селфи",
+  "adminRejectPresetPlateMismatch": "Госномер не совпадает"
 }

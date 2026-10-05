@@ -1026,7 +1026,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get adminVerificationTitle => 'Documents to review';
 
   @override
-  String get adminVerificationEmpty => 'No documents to review';
+  String get adminVerificationEmpty => 'All reviewed 👍';
 
   @override
   String get adminApprove => 'Approve';
@@ -1455,4 +1455,82 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminSettingsEmpty => 'No settings yet';
+
+  @override
+  String get adminVerificationTabDrivers => 'Drivers';
+
+  @override
+  String get adminVerificationTabCompanies => 'Companies';
+
+  @override
+  String get adminVerificationNoSelection =>
+      'Select a person or company from the queue on the left';
+
+  @override
+  String adminVerificationReasonNew(int count) {
+    return 'New · $count documents';
+  }
+
+  @override
+  String adminVerificationReasonResubmitted(String type) {
+    return 'Resubmitted: $type';
+  }
+
+  @override
+  String get adminVerificationReasonVehicleChanged => 'Changed vehicle';
+
+  @override
+  String get adminVerificationOpenCard => 'Open profile →';
+
+  @override
+  String get adminVerificationCrossCheckTitle => 'Cross-check with profile';
+
+  @override
+  String get adminCrossCheckName => 'Name ↔ driver\'s license';
+
+  @override
+  String get adminCrossCheckPhoto => 'Selfie face ↔ license photo';
+
+  @override
+  String get adminCrossCheckPlate => 'Plate number ↔ tractor registration';
+
+  @override
+  String get adminCrossCheckTrailerPlate => 'Trailer ↔ trailer registration';
+
+  @override
+  String get adminCrossCheckCompanyName => 'Name ↔ license';
+
+  @override
+  String get adminCrossCheckCompanyTaxId => 'Registration No. ↔ license';
+
+  @override
+  String get adminCrossCheckMatch => 'Matches';
+
+  @override
+  String get adminCrossCheckMismatch => 'Mismatch';
+
+  @override
+  String get adminConfirmDriverButton => 'Confirm driver';
+
+  @override
+  String get adminConfirmCompanyButton => 'Confirm company';
+
+  @override
+  String get adminReturnForReworkButton => 'Return for rework';
+
+  @override
+  String get adminReturnForReworkDialogTitle => 'Return for rework';
+
+  @override
+  String get adminReturnForReworkNoteLabel => 'Note (what to reshoot)';
+
+  @override
+  String get adminVerificationMissingDocsHint =>
+      'Mark all required documents as OK to enable confirmation';
+
+  @override
+  String get adminVerificationCompareWithSelfie => 'Compare with selfie';
+
+  @override
+  String get adminRejectPresetPlateMismatch => 'Plate number mismatch';
 }

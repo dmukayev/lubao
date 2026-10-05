@@ -1026,7 +1026,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get adminVerificationTitle => 'Тексеруге арналған құжаттар';
 
   @override
-  String get adminVerificationEmpty => 'Тексеруге құжат жоқ';
+  String get adminVerificationEmpty => 'Барлығы тексерілді 👍';
 
   @override
   String get adminApprove => 'Мақұлдау';
@@ -1456,4 +1456,83 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminSettingsEmpty => 'Баптаулар әлі жоқ';
+
+  @override
+  String get adminVerificationTabDrivers => 'Жүргізушілер';
+
+  @override
+  String get adminVerificationTabCompanies => 'Компаниялар';
+
+  @override
+  String get adminVerificationNoSelection =>
+      'Сол жақтағы кезектен адамды немесе компанияны таңдаңыз';
+
+  @override
+  String adminVerificationReasonNew(int count) {
+    return 'Жаңа · $count құжат';
+  }
+
+  @override
+  String adminVerificationReasonResubmitted(String type) {
+    return 'Қайта: $type';
+  }
+
+  @override
+  String get adminVerificationReasonVehicleChanged => 'Көлігін ауыстырды';
+
+  @override
+  String get adminVerificationOpenCard => 'Карточка →';
+
+  @override
+  String get adminVerificationCrossCheckTitle => 'Профильмен салыстыру';
+
+  @override
+  String get adminCrossCheckName => 'Аты-жөні ↔ құқық';
+
+  @override
+  String get adminCrossCheckPhoto => 'Селфидегі бет ↔ құқықтағы фото';
+
+  @override
+  String get adminCrossCheckPlate => 'Мемнөмір ↔ тартқыштың техпаспорты';
+
+  @override
+  String get adminCrossCheckTrailerPlate => 'Тіркеме ↔ тіркеменің техпаспорты';
+
+  @override
+  String get adminCrossCheckCompanyName => 'Атауы ↔ лицензия';
+
+  @override
+  String get adminCrossCheckCompanyTaxId => 'Тіркеу нөмірі ↔ лицензия';
+
+  @override
+  String get adminCrossCheckMatch => 'Сәйкес келеді';
+
+  @override
+  String get adminCrossCheckMismatch => 'Сәйкес келмейді';
+
+  @override
+  String get adminConfirmDriverButton => 'Жүргізушіні растау';
+
+  @override
+  String get adminConfirmCompanyButton => 'Компанияны растау';
+
+  @override
+  String get adminReturnForReworkButton => 'Қайта өңдеуге қайтару';
+
+  @override
+  String get adminReturnForReworkDialogTitle => 'Қайта өңдеуге қайтару';
+
+  @override
+  String get adminReturnForReworkNoteLabel =>
+      'Түсініктеме (нені қайта түсіру керек)';
+
+  @override
+  String get adminVerificationMissingDocsHint =>
+      'Растау үшін барлық міндетті құжаттарды «дұрыс» деп белгілеңіз';
+
+  @override
+  String get adminVerificationCompareWithSelfie => 'Селфимен қатар';
+
+  @override
+  String get adminRejectPresetPlateMismatch => 'Мемнөмір сәйкес келмейді';
 }

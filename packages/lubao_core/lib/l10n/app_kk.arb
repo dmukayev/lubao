@@ -321,7 +321,7 @@
   "adminNavDrivers": "Жүргізушілер",
   "adminNavReference": "Анықтамалықтар",
   "adminVerificationTitle": "Тексеруге арналған құжаттар",
-  "adminVerificationEmpty": "Тексеруге құжат жоқ",
+  "adminVerificationEmpty": "Барлығы тексерілді 👍",
   "adminApprove": "Мақұлдау",
   "adminReject": "Бас тарту",
   "adminRejectReasonLabel": "Бас тарту себебі",
@@ -372,7 +372,14 @@
   "adminBlockedBadge": "Бұғатталған",
   "adminPageOf": "{page} / {total} бет",
   "@adminPageOf": {
-    "placeholders": { "page": { "type": "int" }, "total": { "type": "int" } }
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "adminBlockConfirmTitle": "Жүргізушіні бұғаттау керек пе?",
   "adminBlockCompanyConfirmTitle": "Компанияны бұғаттау керек пе?",
@@ -406,11 +413,19 @@
   "adminEndSessions": "Сессияларды аяқтау",
   "adminWithUsSince": "Бізбен бірге {date}-ден",
   "@adminWithUsSince": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "adminLastLogin": "Соңғы кіру: {date}",
   "@adminLastLogin": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "adminReasonLabel": "Себеп",
   "adminVerifyDialogTitle": "«Тексерілген» деп белгілеу",
@@ -430,23 +445,43 @@
   "adminAttentionEmpty": "Бәрі дұрыс — назар аудару қажет емес",
   "adminAttentionPendingVerification": "Тексеруде: {count} адам",
   "@adminAttentionPendingVerification": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionOpenComplaints": "Ашық шағымдар: {count}",
   "@adminAttentionOpenComplaints": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionStaleDeals": "3 күннен артық қозғалыссыз мәмілелер: {count}",
   "@adminAttentionStaleDeals": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionUnverifiedCompanies": "Тексерілмеген компаниялар: {count}",
   "@adminAttentionUnverifiedCompanies": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminAttentionPendingCities": "Жаңа қалалар: {count}",
   "@adminAttentionPendingCities": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminRecentEventsTitle": "Соңғы оқиғалар",
   "adminAuditLogLink": "Журнал →",
@@ -459,7 +494,11 @@
   "adminStatOnSiteToday": "Бүгін нүктеде",
   "adminStatOnSiteWeek": "Аптада: {count}",
   "@adminStatOnSiteWeek": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "adminGlobalSearchHint": "Іздеу: аты, телефон, email, мем. нөмір, жүк/мәміле №",
   "adminSearchNoResults": "Ештеңе табылмады",
@@ -484,7 +523,49 @@
   "adminColStale": "Қозғалыссыз",
   "adminStaleDays": "{days} күн",
   "@adminStaleDays": {
-    "placeholders": { "days": { "type": "int" } }
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
-  "adminSettingsEmpty": "Баптаулар әлі жоқ"
+  "adminSettingsEmpty": "Баптаулар әлі жоқ",
+  "adminVerificationTabDrivers": "Жүргізушілер",
+  "adminVerificationTabCompanies": "Компаниялар",
+  "adminVerificationNoSelection": "Сол жақтағы кезектен адамды немесе компанияны таңдаңыз",
+  "adminVerificationReasonNew": "Жаңа · {count} құжат",
+  "@adminVerificationReasonNew": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminVerificationReasonResubmitted": "Қайта: {type}",
+  "@adminVerificationReasonResubmitted": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "adminVerificationReasonVehicleChanged": "Көлігін ауыстырды",
+  "adminVerificationOpenCard": "Карточка →",
+  "adminVerificationCrossCheckTitle": "Профильмен салыстыру",
+  "adminCrossCheckName": "Аты-жөні ↔ құқық",
+  "adminCrossCheckPhoto": "Селфидегі бет ↔ құқықтағы фото",
+  "adminCrossCheckPlate": "Мемнөмір ↔ тартқыштың техпаспорты",
+  "adminCrossCheckTrailerPlate": "Тіркеме ↔ тіркеменің техпаспорты",
+  "adminCrossCheckCompanyName": "Атауы ↔ лицензия",
+  "adminCrossCheckCompanyTaxId": "Тіркеу нөмірі ↔ лицензия",
+  "adminCrossCheckMatch": "Сәйкес келеді",
+  "adminCrossCheckMismatch": "Сәйкес келмейді",
+  "adminConfirmDriverButton": "Жүргізушіні растау",
+  "adminConfirmCompanyButton": "Компанияны растау",
+  "adminReturnForReworkButton": "Қайта өңдеуге қайтару",
+  "adminReturnForReworkDialogTitle": "Қайта өңдеуге қайтару",
+  "adminReturnForReworkNoteLabel": "Түсініктеме (нені қайта түсіру керек)",
+  "adminVerificationMissingDocsHint": "Растау үшін барлық міндетті құжаттарды «дұрыс» деп белгілеңіз",
+  "adminVerificationCompareWithSelfie": "Селфимен қатар",
+  "adminRejectPresetPlateMismatch": "Мемнөмір сәйкес келмейді"
 }

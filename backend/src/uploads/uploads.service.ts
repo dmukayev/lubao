@@ -103,4 +103,15 @@ export class UploadsService implements OnModuleInit {
     if (/^https?:\/\//.test(fileKey)) return fileKey;
     return this.presignClient.presignedGetObject(this.documentsBucket, fileKey, DOCUMENT_PRESIGN_TTL_SECONDS);
   }
+
+  /// Прокси вместо presigned-ссылки (задача 028, п.12) — браузер админки
+  /// тянул бы фото напрямую с MinIO (другой origin, без CORS), и зум/превью
+  /// молча не загружались. Бэкенд ходит в MinIO сам (server-to-server, не
+  /// подчиняется CORS) и отдаёт байты через свой собственный ответ — у
+  /// нашего API уже `app.enableCors()` в main.ts.
+  async getDocumentStream(fileKey: string): Promise<{ stream: NodeJS.ReadableStream; contentType: string }> {
+    const stat = await this.client.statObject(this.documentsBucket, fileKey);
+    const stream = await this.client.getObject(this.documentsBucket, fileKey);
+    return { stream, contentType: (stat.metaData?.['content-type'] as string) || 'application/octet-stream' };
+  }
 }

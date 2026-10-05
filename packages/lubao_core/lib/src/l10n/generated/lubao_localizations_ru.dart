@@ -1022,7 +1022,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get adminVerificationTitle => 'Документы на проверку';
 
   @override
-  String get adminVerificationEmpty => 'Нет документов на проверку';
+  String get adminVerificationEmpty => 'Все проверены 👍';
 
   @override
   String get adminApprove => 'Одобрить';
@@ -1451,4 +1451,82 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminSettingsEmpty => 'Настроек пока нет';
+
+  @override
+  String get adminVerificationTabDrivers => 'Водители';
+
+  @override
+  String get adminVerificationTabCompanies => 'Компании';
+
+  @override
+  String get adminVerificationNoSelection =>
+      'Выберите человека или компанию из очереди слева';
+
+  @override
+  String adminVerificationReasonNew(int count) {
+    return 'Новый · $count документов';
+  }
+
+  @override
+  String adminVerificationReasonResubmitted(String type) {
+    return 'Повторно: $type';
+  }
+
+  @override
+  String get adminVerificationReasonVehicleChanged => 'Сменил машину';
+
+  @override
+  String get adminVerificationOpenCard => 'Карточка →';
+
+  @override
+  String get adminVerificationCrossCheckTitle => 'Сверка с профилем';
+
+  @override
+  String get adminCrossCheckName => 'Имя ↔ права';
+
+  @override
+  String get adminCrossCheckPhoto => 'Лицо на селфи ↔ фото в правах';
+
+  @override
+  String get adminCrossCheckPlate => 'Госномер ↔ техпаспорт тягача';
+
+  @override
+  String get adminCrossCheckTrailerPlate => 'Прицеп ↔ техпаспорт прицепа';
+
+  @override
+  String get adminCrossCheckCompanyName => 'Название ↔ лицензия';
+
+  @override
+  String get adminCrossCheckCompanyTaxId => 'Рег. номер ↔ лицензия';
+
+  @override
+  String get adminCrossCheckMatch => 'Совпадает';
+
+  @override
+  String get adminCrossCheckMismatch => 'Не совпадает';
+
+  @override
+  String get adminConfirmDriverButton => 'Подтвердить водителя';
+
+  @override
+  String get adminConfirmCompanyButton => 'Подтвердить компанию';
+
+  @override
+  String get adminReturnForReworkButton => 'Вернуть на доработку';
+
+  @override
+  String get adminReturnForReworkDialogTitle => 'Вернуть на доработку';
+
+  @override
+  String get adminReturnForReworkNoteLabel => 'Комментарий (что переснять)';
+
+  @override
+  String get adminVerificationMissingDocsHint =>
+      'Отметьте все обязательные документы как «в порядке», чтобы подтвердить';
+
+  @override
+  String get adminVerificationCompareWithSelfie => 'Рядом с селфи';
+
+  @override
+  String get adminRejectPresetPlateMismatch => 'Госномер не совпадает';
 }
