@@ -299,6 +299,7 @@ model User {
   notificationSettings   NotificationSetting[]
   complaintsFiled        Complaint[]         @relation("ComplaintReporter")
   complaintsResolved     Complaint[]         @relation("ComplaintResolver")
+  complaintsAssigned     Complaint[]         @relation("ComplaintAssignee")
   auditLogs              AuditLog[]
   reviewedDocuments      VerificationDocument[] @relation("VerificationDocumentReviewer")
   sessions               Session[]
@@ -743,14 +744,30 @@ model Complaint {
   reason           String
   description      String?
   status           ComplaintStatus     @default(OPEN)
+  /// Кто взял в работу (задача 028, п.24e) — отдельно от resolvedByUserId,
+  /// который ставится только при закрытии.
+  assignedToUserId String?
+  assignedTo       User?               @relation("ComplaintAssignee", fields: [assignedToUserId], references: [id])
+  takenAt          DateTime?
   resolvedByUserId String?
   resolvedBy       User?               @relation("ComplaintResolver", fields: [resolvedByUserId], references: [id])
   resolvedAt       DateTime?
+  /// Решение (п.24b) — `NULL` у старых записей, закрытых до этой миграции.
+  resolution       ComplaintResolution?
+  /// Ответ автору жалобы — обязателен при закрытии (п.24d), `NULL` у старых.
+  resolutionNote   String?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
 
   @@index([targetType, targetId])
   @@map("complaints")
+}
+
+enum ComplaintResolution {
+  DISMISSED
+  WARNED
+  CARGO_UNPUBLISHED
+  BLOCKED
 }
 
 model ExchangeRate {

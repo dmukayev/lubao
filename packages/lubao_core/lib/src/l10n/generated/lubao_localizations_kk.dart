@@ -1682,4 +1682,58 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminSettingCargoArchiveDays => 'Жауапсыз жүк мұрағатталу мерзімі';
+
+  @override
+  String get adminComplaintResolutionTitle => 'Шешім';
+
+  @override
+  String get adminComplaintResolutionNoteLabel => 'Шағым авторына жауап';
+
+  @override
+  String get adminComplaintSelectHint =>
+      'Сол жақтағы кезектен шағымды таңдаңыз';
+
+  @override
+  String get adminComplaintTabNew => 'Жаңа';
+
+  @override
+  String get adminComplaintTabInReview => 'Жұмыста';
+
+  @override
+  String get adminComplaintTabClosed => 'Жабылған';
+
+  @override
+  String get adminComplaintMineFilter => 'Менікі';
+
+  @override
+  String adminComplaintMoreThisMonth(int count) {
+    return 'осы айда тағы $count шағым';
+  }
+
+  @override
+  String get adminComplaintTakeOver => 'Жұмысқа алу';
+
+  @override
+  String adminComplaintAssignedTo(String name) {
+    return '$name жұмысында';
+  }
+
+  @override
+  String get adminComplaintReturnToNew => 'Жаңаларға қайтару';
+
+  @override
+  String get adminComplaintResolveButton => 'Шешім қабылдау';
+
+  @override
+  String get adminComplaintResolutionDismissed => 'Расталмады';
+
+  @override
+  String get adminComplaintResolutionWarned => 'Ескерту жасау';
+
+  @override
+  String get adminComplaintResolutionCargoUnpublished =>
+      'Жүкті жариялаудан алу';
+
+  @override
+  String get adminComplaintResolutionBlocked => 'Бұғаттау';
 }

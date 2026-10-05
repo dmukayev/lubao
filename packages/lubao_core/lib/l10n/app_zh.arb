@@ -622,5 +622,35 @@
   "adminSettingNotSet": "未设置",
   "adminSettingHomeRadius": "「离家近」半径（公里）",
   "adminUnitKm": "公里",
-  "adminSettingCargoArchiveDays": "无响应货物的归档期限"
+  "adminSettingCargoArchiveDays": "无响应货物的归档期限",
+  "adminComplaintResolutionTitle": "处理决定",
+  "adminComplaintResolutionNoteLabel": "回复投诉人",
+  "adminComplaintSelectHint": "请从左侧队列中选择一条投诉",
+  "adminComplaintTabNew": "新投诉",
+  "adminComplaintTabInReview": "处理中",
+  "adminComplaintTabClosed": "已关闭",
+  "adminComplaintMineFilter": "我的",
+  "adminComplaintMoreThisMonth": "本月还有{count}起投诉",
+  "@adminComplaintMoreThisMonth": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminComplaintTakeOver": "接手处理",
+  "adminComplaintAssignedTo": "处理人：{name}",
+  "@adminComplaintAssignedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminComplaintReturnToNew": "退回新投诉",
+  "adminComplaintResolveButton": "做出决定",
+  "adminComplaintResolutionDismissed": "未成立",
+  "adminComplaintResolutionWarned": "警告",
+  "adminComplaintResolutionCargoUnpublished": "下架货物",
+  "adminComplaintResolutionBlocked": "封禁"
 }

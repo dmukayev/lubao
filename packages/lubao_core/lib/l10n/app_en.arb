@@ -747,5 +747,35 @@
   "adminSettingNotSet": "Not set",
   "adminSettingHomeRadius": "\"Near home\" radius, km",
   "adminUnitKm": "km",
-  "adminSettingCargoArchiveDays": "Cargo archive period without responses"
+  "adminSettingCargoArchiveDays": "Cargo archive period without responses",
+  "adminComplaintResolutionTitle": "Resolution",
+  "adminComplaintResolutionNoteLabel": "Reply to the reporter",
+  "adminComplaintSelectHint": "Select a complaint from the queue on the left",
+  "adminComplaintTabNew": "New",
+  "adminComplaintTabInReview": "In review",
+  "adminComplaintTabClosed": "Closed",
+  "adminComplaintMineFilter": "Mine",
+  "adminComplaintMoreThisMonth": "{count} more this month",
+  "@adminComplaintMoreThisMonth": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminComplaintTakeOver": "Take over",
+  "adminComplaintAssignedTo": "Assigned to {name}",
+  "@adminComplaintAssignedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminComplaintReturnToNew": "Return to new",
+  "adminComplaintResolveButton": "Resolve",
+  "adminComplaintResolutionDismissed": "Not confirmed",
+  "adminComplaintResolutionWarned": "Warn",
+  "adminComplaintResolutionCargoUnpublished": "Unpublish cargo",
+  "adminComplaintResolutionBlocked": "Block"
 }

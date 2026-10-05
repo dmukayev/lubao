@@ -208,6 +208,13 @@ class AdminComplaint {
     required this.reason,
     this.description,
     required this.status,
+    this.assignedToUserId,
+    this.assignedToName,
+    this.takenAt,
+    this.resolution,
+    this.resolutionNote,
+    this.resolvedByName,
+    this.resolvedAt,
     required this.createdAt,
   });
 
@@ -221,6 +228,13 @@ class AdminComplaint {
   final String reason;
   final String? description;
   final ComplaintStatus status;
+  final String? assignedToUserId;
+  final String? assignedToName;
+  final DateTime? takenAt;
+  final String? resolution;
+  final String? resolutionNote;
+  final String? resolvedByName;
+  final DateTime? resolvedAt;
   final DateTime createdAt;
 
   factory AdminComplaint.fromJson(Map<String, dynamic> json) => AdminComplaint(
@@ -234,8 +248,83 @@ class AdminComplaint {
         reason: json['reason'] as String,
         description: json['description'] as String?,
         status: complaintStatusFromJson(json['status'] as String),
+        assignedToUserId: json['assignedToUserId'] as String?,
+        assignedToName: json['assignedToName'] as String?,
+        takenAt: json['takenAt'] == null ? null : DateTime.parse(json['takenAt'] as String),
+        resolution: json['resolution'] as String?,
+        resolutionNote: json['resolutionNote'] as String?,
+        resolvedByName: json['resolvedByName'] as String?,
+        resolvedAt: json['resolvedAt'] == null ? null : DateTime.parse(json['resolvedAt'] as String),
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
+}
+
+/// Контекст жалобы (задача 028, п.24c) — что применимо к `targetType`.
+class AdminComplaintContextCargo {
+  const AdminComplaintContextCargo({required this.id, required this.pointName, required this.price, required this.currency, required this.companyName});
+
+  final String id;
+  final I18nText pointName;
+  final double price;
+  final String currency;
+  final String companyName;
+
+  factory AdminComplaintContextCargo.fromJson(Map<String, dynamic> json) => AdminComplaintContextCargo(
+        id: json['id'] as String,
+        pointName: I18nText.fromJson(json['pointName'] as Map<String, dynamic>),
+        price: (json['price'] as num).toDouble(),
+        currency: json['currency'] as String,
+        companyName: json['companyName'] as String,
+      );
+}
+
+class AdminComplaintContextDeal {
+  const AdminComplaintContextDeal({required this.id, required this.status, required this.driverName, required this.companyName});
+
+  final String id;
+  final String status;
+  final String driverName;
+  final String companyName;
+
+  factory AdminComplaintContextDeal.fromJson(Map<String, dynamic> json) =>
+      AdminComplaintContextDeal(id: json['id'] as String, status: json['status'] as String, driverName: json['driverName'] as String, companyName: json['companyName'] as String);
+}
+
+class AdminComplaintContextMessage {
+  const AdminComplaintContextMessage({required this.id, required this.originalText, required this.originalLang, this.translations});
+
+  final String id;
+  final String originalText;
+  final String originalLang;
+  final Map<String, dynamic>? translations;
+
+  factory AdminComplaintContextMessage.fromJson(Map<String, dynamic> json) => AdminComplaintContextMessage(
+        id: json['id'] as String,
+        originalText: json['originalText'] as String,
+        originalLang: json['originalLang'] as String,
+        translations: json['translations'] as Map<String, dynamic>?,
+      );
+}
+
+class AdminComplaintDetail {
+  const AdminComplaintDetail({required this.complaint, required this.violatorComplaintsLastMonth, this.cargo, this.deal, this.message});
+
+  final AdminComplaint complaint;
+  final int violatorComplaintsLastMonth;
+  final AdminComplaintContextCargo? cargo;
+  final AdminComplaintContextDeal? deal;
+  final AdminComplaintContextMessage? message;
+
+  factory AdminComplaintDetail.fromJson(Map<String, dynamic> json) {
+    final context = json['context'] as Map<String, dynamic>? ?? {};
+    return AdminComplaintDetail(
+      complaint: AdminComplaint.fromJson(json),
+      violatorComplaintsLastMonth: json['violatorComplaintsLastMonth'] as int,
+      cargo: context['cargo'] == null ? null : AdminComplaintContextCargo.fromJson(context['cargo'] as Map<String, dynamic>),
+      deal: context['deal'] == null ? null : AdminComplaintContextDeal.fromJson(context['deal'] as Map<String, dynamic>),
+      message: context['message'] == null ? null : AdminComplaintContextMessage.fromJson(context['message'] as Map<String, dynamic>),
+    );
+  }
 }
 
 /// Строка списка водителей в админке (задача 026, п.1) — поиск/фильтр/

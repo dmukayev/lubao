@@ -1301,3 +1301,216 @@ describe('AdminService.setAppSetting (задача 028, п.22)', () => {
     );
   });
 });
+
+describe('AdminService.complaints tabs/counts/assignment (задача 028, п.24a/24e)', () => {
+  it('tab=NEW maps to status OPEN, tab=CLOSED maps to RESOLVED+REJECTED', async () => {
+    const prisma: any = { complaint: { findMany: jest.fn().mockResolvedValue([]) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.complaints({ tab: 'NEW' });
+    expect(prisma.complaint.findMany.mock.calls[0][0].where).toEqual({ status: 'OPEN' });
+
+    await service.complaints({ tab: 'CLOSED' });
+    expect(prisma.complaint.findMany.mock.calls[1][0].where).toEqual({ status: { in: ['RESOLVED', 'REJECTED'] } });
+  });
+
+  it('mine filters by assignedToUserId', async () => {
+    const prisma: any = { complaint: { findMany: jest.fn().mockResolvedValue([]) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.complaints({ mine: 'admin-1' });
+    expect(prisma.complaint.findMany.mock.calls[0][0].where).toEqual({ assignedToUserId: 'admin-1' });
+  });
+
+  it('complaintCounts groups OPEN as new, IN_REVIEW as in-review, RESOLVED+REJECTED as closed', async () => {
+    const prisma: any = { complaint: { count: jest.fn().mockResolvedValueOnce(3).mockResolvedValueOnce(2).mockResolvedValueOnce(5) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.complaintCounts();
+    expect(result).toEqual({ newCount: 3, inReviewCount: 2, closedCount: 5 });
+  });
+
+  it('assignComplaint sets assignedToUserId/takenAt and moves to IN_REVIEW', async () => {
+    const prisma: any = {
+      complaint: { findUnique: jest.fn().mockResolvedValue({ id: 'cp1' }), update: jest.fn().mockResolvedValue({ id: 'cp1', reporter: {}, }) },
+      auditLog: { create: jest.fn() },
+      user: { findUnique: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.assignComplaint('cp1', 'admin-1');
+
+    expect(prisma.complaint.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'cp1' }, data: expect.objectContaining({ assignedToUserId: 'admin-1', status: 'IN_REVIEW' }) }),
+    );
+  });
+
+  it('unassignComplaint clears assignment and returns to OPEN', async () => {
+    const prisma: any = {
+      complaint: { findUnique: jest.fn().mockResolvedValue({ id: 'cp1' }), update: jest.fn().mockResolvedValue({ id: 'cp1', reporter: {} }) },
+      auditLog: { create: jest.fn() },
+      user: { findUnique: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.unassignComplaint('cp1', 'admin-1');
+
+    expect(prisma.complaint.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'cp1' }, data: { assignedToUserId: null, takenAt: null, status: 'OPEN' } }),
+    );
+  });
+});
+
+describe('AdminService.complaintDetail — context + violator history (задача 028, п.24c)', () => {
+  it('throws NotFoundException for an unknown complaint', async () => {
+    const prisma: any = { complaint: { findUnique: jest.fn().mockResolvedValue(null) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    await expect(service.complaintDetail('missing')).rejects.toThrow(NotFoundException);
+  });
+
+  it('CARGO target: includes cargo context (with price) and counts other complaints on the same target in the last 30 days', async () => {
+    const prisma: any = {
+      complaint: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'cp1', reporterUserId: 'u1', reporter: { id: 'u1', phone: '+7700', email: null },
+          targetType: 'CARGO', targetId: 'cargo1', reason: 'Фейковый груз', description: null, status: 'OPEN',
+          assignedToUserId: null, assignedTo: null, takenAt: null, resolution: null, resolutionNote: null,
+          resolvedByUserId: null, resolvedBy: null, resolvedAt: null, createdAt: new Date(),
+        }),
+        count: jest.fn().mockResolvedValue(2),
+      },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', price: 500, currency: 'USD', point: { name: { ru: 'Хоргос' } }, company: { name: 'Acme' } }) },
+      company: { findUnique: jest.fn().mockResolvedValue({ id: 'c1', name: 'Acme' }) },
+      user: { findUnique: jest.fn().mockResolvedValue({ id: 'u1', name: null, phone: '+7700', email: null, driver: null, companyMember: null }) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.complaintDetail('cp1');
+
+    expect(result.violatorComplaintsLastMonth).toBe(2);
+    expect(result.context.cargo).toEqual(expect.objectContaining({ id: 'cargo1', price: 500, currency: 'USD', companyName: 'Acme' }));
+    expect(prisma.complaint.count).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ id: { not: 'cp1' } }) }),
+    );
+  });
+
+  it('CHAT_MESSAGE target: includes the message with original text and translations', async () => {
+    const prisma: any = {
+      complaint: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'cp1', reporterUserId: 'u1', reporter: { id: 'u1', phone: '+7700', email: null },
+          targetType: 'CHAT_MESSAGE', targetId: 'msg1', reason: 'Оскорбления', description: null, status: 'OPEN',
+          assignedToUserId: null, assignedTo: null, takenAt: null, resolution: null, resolutionNote: null,
+          resolvedByUserId: null, resolvedBy: null, resolvedAt: null, createdAt: new Date(),
+        }),
+        count: jest.fn().mockResolvedValue(0),
+      },
+      message: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValueOnce({ id: 'msg1', originalText: 'плохое слово', originalLang: 'ru', translations: { kk: '...' } })
+          .mockResolvedValueOnce({ id: 'msg1', originalText: 'плохое слово', originalLang: 'ru', translations: { kk: '...' }, sender: { name: null, phone: '+7700', email: null, driver: null, companyMember: null } }),
+      },
+      user: { findUnique: jest.fn().mockResolvedValue({ id: 'u1', name: null, phone: '+7700', email: null, driver: null, companyMember: null }) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.complaintDetail('cp1');
+
+    expect(result.context.message).toEqual(expect.objectContaining({ id: 'msg1', originalText: 'плохое слово', originalLang: 'ru' }));
+  });
+});
+
+describe('AdminService.resolveComplaint — 4 resolutions, required note (задача 028, п.24d)', () => {
+  function baseComplaint(overrides: Partial<Record<string, unknown>> = {}) {
+    return { id: 'cp1', reporterUserId: 'u1', targetType: 'USER', targetId: 'violator-1', reason: 'Грубость по телефону', ...overrides };
+  }
+
+  it('DISMISSED closes as REJECTED, with no side effect', async () => {
+    const prisma: any = {
+      complaint: { findUnique: jest.fn().mockResolvedValue(baseComplaint()), update: jest.fn().mockResolvedValue({ id: 'cp1', reporter: {} }) },
+      user: { findUnique: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.resolveComplaint('cp1', 'admin-1', { resolution: 'DISMISSED', resolutionNote: 'Не подтвердилось' } as any);
+
+    expect(prisma.complaint.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'REJECTED', resolution: 'DISMISSED', resolutionNote: 'Не подтвердилось' }) }),
+    );
+  });
+
+  it('BLOCKED on a USER target blocks that user (reusing blockUser) with the complaint reason', async () => {
+    const prisma: any = {
+      complaint: { findUnique: jest.fn().mockResolvedValue(baseComplaint()), update: jest.fn().mockResolvedValue({ id: 'cp1', reporter: {} }) },
+      user: { findUnique: jest.fn().mockResolvedValue({ id: 'violator-1' }), update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const sessions = { revokeAllForUser: jest.fn() };
+    const service = new AdminService(prisma, sessions as any, fakeUploads() as any);
+
+    await service.resolveComplaint('cp1', 'admin-1', { resolution: 'BLOCKED', resolutionNote: 'Подтвердилось, заблокирован' } as any);
+
+    expect(prisma.user.update).toHaveBeenCalledWith({ where: { id: 'violator-1' }, data: { isBlocked: true } });
+    expect(sessions.revokeAllForUser).toHaveBeenCalledWith('violator-1');
+  });
+
+  it('BLOCKED on a CARGO target blocks the owning company, not a user', async () => {
+    const prisma: any = {
+      complaint: { findUnique: jest.fn().mockResolvedValue(baseComplaint({ targetType: 'CARGO', targetId: 'cargo1' })), update: jest.fn().mockResolvedValue({ id: 'cp1', reporter: {} }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1' }) },
+      company: { findUnique: jest.fn().mockResolvedValue({ id: 'c1', members: [{ userId: 'owner-1' }] }), update: jest.fn() },
+      user: { updateMany: jest.fn(), findUnique: jest.fn().mockResolvedValue({ id: 'u1' }) },
+      auditLog: { create: jest.fn() },
+      $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
+    };
+    const sessions = { revokeAllForUser: jest.fn() };
+    const service = new AdminService(prisma, sessions as any, fakeUploads() as any);
+
+    await service.resolveComplaint('cp1', 'admin-1', { resolution: 'BLOCKED', resolutionNote: 'Компания заблокирована' } as any);
+
+    expect(prisma.company.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'c1' }, data: { isBlocked: true } }));
+  });
+
+  it('CARGO_UNPUBLISHED on a CARGO target unpublishes that cargo (reusing unpublishCargo)', async () => {
+    const prisma: any = {
+      complaint: { findUnique: jest.fn().mockResolvedValue(baseComplaint({ targetType: 'CARGO', targetId: 'cargo1' })), update: jest.fn().mockResolvedValue({ id: 'cp1', reporter: {} }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', id: 'cargo1' }), update: jest.fn() },
+      user: { findUnique: jest.fn().mockResolvedValue({ id: 'u1' }) },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.resolveComplaint('cp1', 'admin-1', { resolution: 'CARGO_UNPUBLISHED', resolutionNote: 'Груз снят' } as any);
+
+    expect(prisma.cargo.update).toHaveBeenCalledWith({ where: { id: 'cargo1' }, data: { status: 'ARCHIVED', archivedAt: expect.any(Date) } });
+  });
+
+  it('CARGO_UNPUBLISHED on a target with no cargo throws BadRequestException', async () => {
+    const prisma: any = {
+      complaint: { findUnique: jest.fn().mockResolvedValue(baseComplaint({ targetType: 'USER', targetId: 'u2' })) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await expect(
+      service.resolveComplaint('cp1', 'admin-1', { resolution: 'CARGO_UNPUBLISHED', resolutionNote: 'x' } as any),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('WARNED logs a NOTIFICATION_QUEUED entry for the violator in addition to the reporter notification', async () => {
+    const prisma: any = {
+      complaint: { findUnique: jest.fn().mockResolvedValue(baseComplaint()), update: jest.fn().mockResolvedValue({ id: 'cp1', reporter: {} }) },
+      user: { findUnique: jest.fn().mockResolvedValue({ id: 'violator-1' }) },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.resolveComplaint('cp1', 'admin-1', { resolution: 'WARNED', resolutionNote: 'Предупреждён' } as any);
+
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ action: 'NOTIFICATION_QUEUED', metadata: expect.objectContaining({ template: 'COMPLAINT_WARNING', userId: 'violator-1' }) }) }),
+    );
+    expect(prisma.auditLog.create).toHaveBeenCalledTimes(3); // resolved + reporter notification + violator warning
+  });
+});

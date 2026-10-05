@@ -622,5 +622,35 @@
   "adminSettingNotSet": "Орнатылмаған",
   "adminSettingHomeRadius": "«Үйге жақын» радиусы, км",
   "adminUnitKm": "км",
-  "adminSettingCargoArchiveDays": "Жауапсыз жүк мұрағатталу мерзімі"
+  "adminSettingCargoArchiveDays": "Жауапсыз жүк мұрағатталу мерзімі",
+  "adminComplaintResolutionTitle": "Шешім",
+  "adminComplaintResolutionNoteLabel": "Шағым авторына жауап",
+  "adminComplaintSelectHint": "Сол жақтағы кезектен шағымды таңдаңыз",
+  "adminComplaintTabNew": "Жаңа",
+  "adminComplaintTabInReview": "Жұмыста",
+  "adminComplaintTabClosed": "Жабылған",
+  "adminComplaintMineFilter": "Менікі",
+  "adminComplaintMoreThisMonth": "осы айда тағы {count} шағым",
+  "@adminComplaintMoreThisMonth": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminComplaintTakeOver": "Жұмысқа алу",
+  "adminComplaintAssignedTo": "{name} жұмысында",
+  "@adminComplaintAssignedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminComplaintReturnToNew": "Жаңаларға қайтару",
+  "adminComplaintResolveButton": "Шешім қабылдау",
+  "adminComplaintResolutionDismissed": "Расталмады",
+  "adminComplaintResolutionWarned": "Ескерту жасау",
+  "adminComplaintResolutionCargoUnpublished": "Жүкті жариялаудан алу",
+  "adminComplaintResolutionBlocked": "Бұғаттау"
 }

@@ -188,14 +188,39 @@ class AdminRepository {
     await _client.dio.post('/admin/deals/$id/cancel', data: {'reason': reason});
   }
 
-  Future<List<AdminComplaint>> complaints({String? status}) async {
-    final res = await _client.dio.get('/admin/complaints', queryParameters: {if (status != null) 'status': status});
+  /// `tab` — NEW/IN_REVIEW/CLOSED (задача 028, п.24a; раньше запрашивали
+  /// только `status=OPEN`, и жалоба пропадала из вида после «В работе»).
+  Future<List<AdminComplaint>> complaints({String? tab, bool mine = false}) async {
+    final res = await _client.dio.get('/admin/complaints', queryParameters: {
+      if (tab != null) 'tab': tab,
+      if (mine) 'mine': 'true',
+    });
     return (res.data as List<dynamic>).map((e) => AdminComplaint.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  Future<AdminComplaint> resolveComplaint(String id, ComplaintStatus status) async {
-    final res = await _client.dio.patch('/admin/complaints/$id', data: {'status': complaintStatusToJson(status)});
-    return AdminComplaint.fromJson(res.data as Map<String, dynamic>);
+  Future<({int newCount, int inReviewCount, int closedCount})> complaintCounts() async {
+    final res = await _client.dio.get('/admin/complaints/counts');
+    final data = res.data as Map<String, dynamic>;
+    return (newCount: data['newCount'] as int, inReviewCount: data['inReviewCount'] as int, closedCount: data['closedCount'] as int);
+  }
+
+  Future<AdminComplaintDetail> complaintDetail(String id) async {
+    final res = await _client.dio.get('/admin/complaints/$id');
+    return AdminComplaintDetail.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> assignComplaint(String id) async {
+    await _client.dio.post('/admin/complaints/$id/assign');
+  }
+
+  Future<void> unassignComplaint(String id) async {
+    await _client.dio.post('/admin/complaints/$id/unassign');
+  }
+
+  /// Решение по жалобе (п.24d) — один из 4 вариантов, ответ автору всегда
+  /// обязателен.
+  Future<void> resolveComplaint(String id, {required String resolution, required String resolutionNote}) async {
+    await _client.dio.patch('/admin/complaints/$id', data: {'resolution': resolution, 'resolutionNote': resolutionNote});
   }
 
   /// Поиск/фильтр/пагинация (задача 026, п.2/п.10) — таблица компаний в

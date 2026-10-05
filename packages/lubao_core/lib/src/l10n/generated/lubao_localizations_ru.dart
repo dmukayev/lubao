@@ -1676,4 +1676,56 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminSettingCargoArchiveDays => 'Срок архива груза без откликов';
+
+  @override
+  String get adminComplaintResolutionTitle => 'Решение';
+
+  @override
+  String get adminComplaintResolutionNoteLabel => 'Ответ автору жалобы';
+
+  @override
+  String get adminComplaintSelectHint => 'Выберите жалобу из очереди слева';
+
+  @override
+  String get adminComplaintTabNew => 'Новые';
+
+  @override
+  String get adminComplaintTabInReview => 'В работе';
+
+  @override
+  String get adminComplaintTabClosed => 'Закрытые';
+
+  @override
+  String get adminComplaintMineFilter => 'Мои';
+
+  @override
+  String adminComplaintMoreThisMonth(int count) {
+    return 'ещё $count жалоб за месяц';
+  }
+
+  @override
+  String get adminComplaintTakeOver => 'Взять в работу';
+
+  @override
+  String adminComplaintAssignedTo(String name) {
+    return 'В работе у $name';
+  }
+
+  @override
+  String get adminComplaintReturnToNew => 'Вернуть в новые';
+
+  @override
+  String get adminComplaintResolveButton => 'Принять решение';
+
+  @override
+  String get adminComplaintResolutionDismissed => 'Не подтвердилась';
+
+  @override
+  String get adminComplaintResolutionWarned => 'Предупредить';
+
+  @override
+  String get adminComplaintResolutionCargoUnpublished => 'Снять груз';
+
+  @override
+  String get adminComplaintResolutionBlocked => 'Заблокировать';
 }

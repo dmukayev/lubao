@@ -1682,4 +1682,57 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   @override
   String get adminSettingCargoArchiveDays =>
       'Cargo archive period without responses';
+
+  @override
+  String get adminComplaintResolutionTitle => 'Resolution';
+
+  @override
+  String get adminComplaintResolutionNoteLabel => 'Reply to the reporter';
+
+  @override
+  String get adminComplaintSelectHint =>
+      'Select a complaint from the queue on the left';
+
+  @override
+  String get adminComplaintTabNew => 'New';
+
+  @override
+  String get adminComplaintTabInReview => 'In review';
+
+  @override
+  String get adminComplaintTabClosed => 'Closed';
+
+  @override
+  String get adminComplaintMineFilter => 'Mine';
+
+  @override
+  String adminComplaintMoreThisMonth(int count) {
+    return '$count more this month';
+  }
+
+  @override
+  String get adminComplaintTakeOver => 'Take over';
+
+  @override
+  String adminComplaintAssignedTo(String name) {
+    return 'Assigned to $name';
+  }
+
+  @override
+  String get adminComplaintReturnToNew => 'Return to new';
+
+  @override
+  String get adminComplaintResolveButton => 'Resolve';
+
+  @override
+  String get adminComplaintResolutionDismissed => 'Not confirmed';
+
+  @override
+  String get adminComplaintResolutionWarned => 'Warn';
+
+  @override
+  String get adminComplaintResolutionCargoUnpublished => 'Unpublish cargo';
+
+  @override
+  String get adminComplaintResolutionBlocked => 'Block';
 }

@@ -203,15 +203,39 @@ export class AdminController {
   }
 
   @Get('complaints')
-  complaints(@CurrentUser() ctx: RequestContext, @Query('status') status?: string) {
+  complaints(@CurrentUser() ctx: RequestContext, @Query('tab') tab?: 'NEW' | 'IN_REVIEW' | 'CLOSED', @Query('mine') mine?: string) {
     assertAdmin(ctx);
-    return this.admin.complaints(status);
+    return this.admin.complaints({ tab, mine: mine === 'true' ? ctx.user.id : undefined });
+  }
+
+  @Get('complaints/counts')
+  complaintCounts(@CurrentUser() ctx: RequestContext) {
+    assertAdmin(ctx);
+    return this.admin.complaintCounts();
+  }
+
+  @Get('complaints/:id')
+  complaintDetail(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.complaintDetail(id);
+  }
+
+  @Post('complaints/:id/assign')
+  assignComplaint(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.assignComplaint(id, ctx.user.id);
+  }
+
+  @Post('complaints/:id/unassign')
+  unassignComplaint(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.unassignComplaint(id, ctx.user.id);
   }
 
   @Patch('complaints/:id')
   resolveComplaint(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: ResolveComplaintDto) {
     assertAdmin(ctx);
-    return this.admin.resolveComplaint(id, ctx.user.id, dto.status);
+    return this.admin.resolveComplaint(id, ctx.user.id, dto);
   }
 
   @Get('companies')

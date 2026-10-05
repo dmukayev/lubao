@@ -12,8 +12,14 @@ export class ReviewVerificationDocumentDto {
 }
 
 export class ResolveComplaintDto {
-  @IsIn(['IN_REVIEW', 'RESOLVED', 'REJECTED'])
-  status!: 'IN_REVIEW' | 'RESOLVED' | 'REJECTED';
+  @IsIn(['DISMISSED', 'WARNED', 'CARGO_UNPUBLISHED', 'BLOCKED'])
+  resolution!: 'DISMISSED' | 'WARNED' | 'CARGO_UNPUBLISHED' | 'BLOCKED';
+
+  /// Ответ автору жалобы — обязателен (п.24d): автор видит его в своём
+  /// языке в «Мои жалобы» (когда появится модуль уведомлений/экран —
+  /// см. заметку в статусе задачи 028).
+  @IsString()
+  resolutionNote!: string;
 }
 
 export class SetVerifiedDto {

@@ -92,6 +92,21 @@ String responseStatusLabel(LubaoLocalizations t, String status) {
   }
 }
 
+String complaintResolutionLabel(LubaoLocalizations t, String resolution) {
+  switch (resolution) {
+    case 'DISMISSED':
+      return t.adminComplaintResolutionDismissed;
+    case 'WARNED':
+      return t.adminComplaintResolutionWarned;
+    case 'CARGO_UNPUBLISHED':
+      return t.adminComplaintResolutionCargoUnpublished;
+    case 'BLOCKED':
+      return t.adminComplaintResolutionBlocked;
+    default:
+      return resolution;
+  }
+}
+
 String cancelledByRoleLabel(LubaoLocalizations t, String role) {
   switch (role) {
     case 'DRIVER':

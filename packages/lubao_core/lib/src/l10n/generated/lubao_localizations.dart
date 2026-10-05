@@ -3275,6 +3275,102 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Срок архива груза без откликов'**
   String get adminSettingCargoArchiveDays;
+
+  /// No description provided for @adminComplaintResolutionTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Решение'**
+  String get adminComplaintResolutionTitle;
+
+  /// No description provided for @adminComplaintResolutionNoteLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ответ автору жалобы'**
+  String get adminComplaintResolutionNoteLabel;
+
+  /// No description provided for @adminComplaintSelectHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите жалобу из очереди слева'**
+  String get adminComplaintSelectHint;
+
+  /// No description provided for @adminComplaintTabNew.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новые'**
+  String get adminComplaintTabNew;
+
+  /// No description provided for @adminComplaintTabInReview.
+  ///
+  /// In ru, this message translates to:
+  /// **'В работе'**
+  String get adminComplaintTabInReview;
+
+  /// No description provided for @adminComplaintTabClosed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закрытые'**
+  String get adminComplaintTabClosed;
+
+  /// No description provided for @adminComplaintMineFilter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мои'**
+  String get adminComplaintMineFilter;
+
+  /// No description provided for @adminComplaintMoreThisMonth.
+  ///
+  /// In ru, this message translates to:
+  /// **'ещё {count} жалоб за месяц'**
+  String adminComplaintMoreThisMonth(int count);
+
+  /// No description provided for @adminComplaintTakeOver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Взять в работу'**
+  String get adminComplaintTakeOver;
+
+  /// No description provided for @adminComplaintAssignedTo.
+  ///
+  /// In ru, this message translates to:
+  /// **'В работе у {name}'**
+  String adminComplaintAssignedTo(String name);
+
+  /// No description provided for @adminComplaintReturnToNew.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вернуть в новые'**
+  String get adminComplaintReturnToNew;
+
+  /// No description provided for @adminComplaintResolveButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Принять решение'**
+  String get adminComplaintResolveButton;
+
+  /// No description provided for @adminComplaintResolutionDismissed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не подтвердилась'**
+  String get adminComplaintResolutionDismissed;
+
+  /// No description provided for @adminComplaintResolutionWarned.
+  ///
+  /// In ru, this message translates to:
+  /// **'Предупредить'**
+  String get adminComplaintResolutionWarned;
+
+  /// No description provided for @adminComplaintResolutionCargoUnpublished.
+  ///
+  /// In ru, this message translates to:
+  /// **'Снять груз'**
+  String get adminComplaintResolutionCargoUnpublished;
+
+  /// No description provided for @adminComplaintResolutionBlocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заблокировать'**
+  String get adminComplaintResolutionBlocked;
 }
 
 class _LubaoLocalizationsDelegate

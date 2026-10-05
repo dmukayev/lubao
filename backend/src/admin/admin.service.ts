@@ -23,6 +23,7 @@ import {
   CreatePointDto,
   DealSearchQueryDto,
   ModerateCityDto,
+  ResolveComplaintDto,
   ReturnForReworkDto,
   ReviewVerificationDocumentDto,
   SearchQueryDto,
@@ -96,7 +97,7 @@ export class AdminService {
       this.prisma.deal.count({ where: { status: { notIn: ['DELIVERED', 'CANCELLED'] } } }),
       this.prisma.deal.count({ where: { status: 'DELIVERED' } }),
       this.prisma.verificationDocument.count({ where: { status: 'PENDING' } }),
-      this.prisma.complaint.count({ where: { status: 'OPEN' } }),
+      this.prisma.complaint.count({ where: { status: { in: ['OPEN', 'IN_REVIEW'] } } }),
       this.prisma.driver.count({ where: { createdAt: { gte: since } } }),
       this.prisma.company.count({ where: { createdAt: { gte: since } } }),
       this.prisma.cargo.count({ where: { createdAt: { gte: since } } }),
@@ -149,7 +150,7 @@ export class AdminService {
           orderBy: { createdAt: 'asc' },
           select: { createdAt: true },
         }),
-        this.prisma.complaint.count({ where: { status: 'OPEN' } }),
+        this.prisma.complaint.count({ where: { status: { in: ['OPEN', 'IN_REVIEW'] } } }),
         this.prisma.deal.count({ where: { status: { notIn: ['DELIVERED', 'CANCELLED'] }, updatedAt: { lt: staleBefore } } }),
         this.prisma.company.count({ where: { isVerified: false } }),
         this.prisma.city.count({ where: { cityStatus: 'PENDING' } }),
@@ -1063,6 +1064,26 @@ export class AdminService {
     }
   }
 
+  private readonly complaintSelect = {
+    id: true,
+    reporterUserId: true,
+    reporter: { select: { id: true, phone: true, email: true } },
+    targetType: true,
+    targetId: true,
+    reason: true,
+    description: true,
+    status: true,
+    assignedToUserId: true,
+    assignedTo: { select: { name: true, email: true } },
+    takenAt: true,
+    resolution: true,
+    resolutionNote: true,
+    resolvedByUserId: true,
+    resolvedBy: { select: { name: true, email: true } },
+    resolvedAt: true,
+    createdAt: true,
+  } as const;
+
   private async complaintToDto(c: {
     id: string;
     reporterUserId: string;
@@ -1072,6 +1093,14 @@ export class AdminService {
     reason: string;
     description: string | null;
     status: string;
+    assignedToUserId: string | null;
+    assignedTo: { name: string | null; email: string | null } | null;
+    takenAt: Date | null;
+    resolution: string | null;
+    resolutionNote: string | null;
+    resolvedByUserId: string | null;
+    resolvedBy: { name: string | null; email: string | null } | null;
+    resolvedAt: Date | null;
     createdAt: Date;
   }) {
     return {
@@ -1087,54 +1116,175 @@ export class AdminService {
       reason: c.reason,
       description: c.description,
       status: c.status,
+      assignedToUserId: c.assignedToUserId,
+      assignedToName: c.assignedTo?.name ?? c.assignedTo?.email ?? null,
+      takenAt: c.takenAt,
+      resolution: c.resolution,
+      resolutionNote: c.resolutionNote,
+      resolvedByName: c.resolvedBy?.name ?? c.resolvedBy?.email ?? null,
+      resolvedAt: c.resolvedAt,
       createdAt: c.createdAt,
     };
   }
 
-  async complaints(status?: string) {
+  /// Вкладки «Новые / В работе / Закрытые» (п.24a) — раньше список спрашивал
+  /// только `status=OPEN`, и жалоба после «В работе» (`IN_REVIEW`) исчезала
+  /// из очереди, хотя не была закрыта.
+  async complaints(params: { tab?: 'NEW' | 'IN_REVIEW' | 'CLOSED'; mine?: string } = {}) {
+    const statusFilter =
+      params.tab === 'NEW' ? 'OPEN' : params.tab === 'IN_REVIEW' ? 'IN_REVIEW' : params.tab === 'CLOSED' ? { in: ['RESOLVED', 'REJECTED'] } : undefined;
+
     const complaints = await this.prisma.complaint.findMany({
-      where: status ? { status: status as never } : undefined,
-      // select, не include: true — иначе в ответ утекает passwordHash (п.8).
-      select: {
-        id: true,
-        reporterUserId: true,
-        reporter: { select: { id: true, phone: true, email: true } },
-        targetType: true,
-        targetId: true,
-        reason: true,
-        description: true,
-        status: true,
-        createdAt: true,
+      where: {
+        ...(statusFilter ? { status: statusFilter as never } : {}),
+        ...(params.mine ? { assignedToUserId: params.mine } : {}),
       },
+      select: this.complaintSelect,
       orderBy: { createdAt: 'desc' },
     });
     return Promise.all(complaints.map((c) => this.complaintToDto(c)));
   }
 
-  async resolveComplaint(id: string, adminUserId: string, status: 'IN_REVIEW' | 'RESOLVED' | 'REJECTED') {
+  async complaintCounts() {
+    const [newCount, inReviewCount, closedCount] = await Promise.all([
+      this.prisma.complaint.count({ where: { status: 'OPEN' } }),
+      this.prisma.complaint.count({ where: { status: 'IN_REVIEW' } }),
+      this.prisma.complaint.count({ where: { status: { in: ['RESOLVED', 'REJECTED'] } } }),
+    ]);
+    return { newCount, inReviewCount, closedCount };
+  }
+
+  /// Карточка жалобы с контекстом (п.24c): груз (с ценой), сообщение из
+  /// чата (оригинал + перевод), сделка — что применимо к `targetType`, и
+  /// «ещё N жалоб за месяц» на того же нарушителя (без текущей жалобы).
+  async complaintDetail(id: string) {
+    const complaint = await this.prisma.complaint.findUnique({ where: { id }, select: this.complaintSelect });
+    if (!complaint) throw new NotFoundException('Complaint not found');
+
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const violatorComplaintsLastMonth = await this.prisma.complaint.count({
+      where: { targetType: complaint.targetType, targetId: complaint.targetId, createdAt: { gte: since }, id: { not: id } },
+    });
+
+    let context: Record<string, unknown> = {};
+    if (complaint.targetType === 'CARGO' || complaint.targetType === 'DEAL') {
+      const cargoId =
+        complaint.targetType === 'CARGO'
+          ? complaint.targetId
+          : (await this.prisma.deal.findUnique({ where: { id: complaint.targetId }, select: { cargoId: true } }))?.cargoId;
+      if (cargoId) {
+        const cargo = await this.prisma.cargo.findUnique({
+          where: { id: cargoId },
+          select: { id: true, price: true, currency: true, point: { select: { name: true } }, company: { select: { name: true } } },
+        });
+        if (cargo) context.cargo = { id: cargo.id, pointName: cargo.point.name, price: Number(cargo.price), currency: cargo.currency, companyName: cargo.company.name };
+      }
+    }
+    if (complaint.targetType === 'DEAL') {
+      const deal = await this.prisma.deal.findUnique({
+        where: { id: complaint.targetId },
+        select: { id: true, status: true, driver: { select: { fullName: true } }, company: { select: { name: true } } },
+      });
+      if (deal) context.deal = { id: deal.id, status: deal.status, driverName: deal.driver.fullName, companyName: deal.company.name };
+    }
+    if (complaint.targetType === 'CHAT_MESSAGE') {
+      const message = await this.prisma.message.findUnique({ where: { id: complaint.targetId } });
+      if (message) context.message = { id: message.id, originalText: message.originalText, originalLang: message.originalLang, translations: message.translations };
+    }
+
+    return { ...(await this.complaintToDto(complaint)), violatorComplaintsLastMonth, context };
+  }
+
+  /// «Взять в работу» (п.24e) — назначает на текущего админа и переводит в
+  /// `IN_REVIEW` (та же операция, одна причина не нужна — не правка данных
+  /// нарушителя, а внутренняя маршрутизация очереди).
+  async assignComplaint(id: string, adminUserId: string) {
     const complaint = await this.prisma.complaint.findUnique({ where: { id } });
     if (!complaint) throw new NotFoundException('Complaint not found');
 
     const updated = await this.prisma.complaint.update({
       where: { id },
-      data: {
-        status,
-        resolvedByUserId: status === 'RESOLVED' || status === 'REJECTED' ? adminUserId : null,
-        resolvedAt: status === 'RESOLVED' || status === 'REJECTED' ? new Date() : null,
-      },
-      select: {
-        id: true,
-        reporterUserId: true,
-        reporter: { select: { id: true, phone: true, email: true } },
-        targetType: true,
-        targetId: true,
-        reason: true,
-        description: true,
-        status: true,
-        createdAt: true,
-      },
+      data: { assignedToUserId: adminUserId, takenAt: new Date(), status: 'IN_REVIEW' },
+      select: this.complaintSelect,
     });
-    await this.logAudit(adminUserId, 'COMPLAINT_STATUS_CHANGED', 'Complaint', id, { status });
+    await this.logAudit(adminUserId, 'COMPLAINT_ASSIGNED', 'Complaint', id, {});
+    return this.complaintToDto(updated);
+  }
+
+  /// «Вернуть в новые» — снимает назначение.
+  async unassignComplaint(id: string, adminUserId: string) {
+    const complaint = await this.prisma.complaint.findUnique({ where: { id } });
+    if (!complaint) throw new NotFoundException('Complaint not found');
+
+    const updated = await this.prisma.complaint.update({
+      where: { id },
+      data: { assignedToUserId: null, takenAt: null, status: 'OPEN' },
+      select: this.complaintSelect,
+    });
+    await this.logAudit(adminUserId, 'COMPLAINT_UNASSIGNED', 'Complaint', id, {});
+    return this.complaintToDto(updated);
+  }
+
+  /// Кого реально затрагивает решение «Снять груз»/«Заблокировать» —
+  /// отдельно от `complaintTarget` (который строит только текст карточки):
+  /// здесь нужны именно action-ready id для вызова существующих методов.
+  private async resolveComplaintActionTargets(targetType: string, targetId: string): Promise<{ userId?: string; companyId?: string; cargoId?: string }> {
+    switch (targetType) {
+      case 'USER':
+        return { userId: targetId };
+      case 'COMPANY':
+        return { companyId: targetId };
+      case 'CARGO': {
+        const cargo = await this.prisma.cargo.findUnique({ where: { id: targetId }, select: { companyId: true } });
+        return cargo ? { companyId: cargo.companyId, cargoId: targetId } : {};
+      }
+      case 'DEAL': {
+        const deal = await this.prisma.deal.findUnique({ where: { id: targetId }, select: { companyId: true, cargoId: true } });
+        return deal ? { companyId: deal.companyId, cargoId: deal.cargoId } : {};
+      }
+      case 'CHAT_MESSAGE': {
+        const message = await this.prisma.message.findUnique({ where: { id: targetId }, select: { senderUserId: true } });
+        return message ? { userId: message.senderUserId } : {};
+      }
+      default:
+        return {};
+    }
+  }
+
+  /// Решение по жалобе (п.24d) — один из 4 вариантов, ответ автору
+  /// обязателен всегда. «Снять груз»/«Заблокировать» вызывают те же методы,
+  /// что в карточках груза/пользователя/компании, с причиной = текст жалобы.
+  async resolveComplaint(id: string, adminUserId: string, dto: ResolveComplaintDto) {
+    const complaint = await this.prisma.complaint.findUnique({ where: { id } });
+    if (!complaint) throw new NotFoundException('Complaint not found');
+
+    const actionTargets = await this.resolveComplaintActionTargets(complaint.targetType, complaint.targetId);
+
+    if (dto.resolution === 'CARGO_UNPUBLISHED') {
+      if (!actionTargets.cargoId) throw new BadRequestException('This complaint has no cargo to unpublish');
+      await this.unpublishCargo(actionTargets.cargoId, adminUserId, complaint.reason);
+    }
+    if (dto.resolution === 'BLOCKED') {
+      if (actionTargets.userId) await this.blockUser(actionTargets.userId, adminUserId, { reason: complaint.reason });
+      else if (actionTargets.companyId) await this.blockCompany(actionTargets.companyId, adminUserId, { reason: complaint.reason });
+      else throw new BadRequestException('This complaint has no one to block');
+    }
+
+    const status = dto.resolution === 'DISMISSED' ? 'REJECTED' : 'RESOLVED';
+    const updated = await this.prisma.complaint.update({
+      where: { id },
+      data: { status, resolution: dto.resolution, resolutionNote: dto.resolutionNote, resolvedByUserId: adminUserId, resolvedAt: new Date() },
+      select: this.complaintSelect,
+    });
+    await this.logAudit(adminUserId, 'COMPLAINT_RESOLVED', 'Complaint', id, { resolution: dto.resolution, resolutionNote: dto.resolutionNote });
+    // TODO(задача 011): автору — уведомление на его языке со статусом и
+    // ответом («Мои жалобы» в профиле — экран пока не существует, подавать
+    // жалобы в приложении тоже нельзя, см. статус задачи 028).
+    await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Complaint', id, { channel: 'push', template: 'COMPLAINT_RESOLVED', reporterUserId: complaint.reporterUserId });
+    if (dto.resolution === 'WARNED' && actionTargets.userId) {
+      await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Complaint', id, { channel: 'push', template: 'COMPLAINT_WARNING', userId: actionTargets.userId, reason: complaint.reason });
+    }
+
     return this.complaintToDto(updated);
   }
 

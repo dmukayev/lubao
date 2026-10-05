@@ -747,5 +747,35 @@
   "adminSettingNotSet": "Не задано",
   "adminSettingHomeRadius": "Радиус «Близко к дому», км",
   "adminUnitKm": "км",
-  "adminSettingCargoArchiveDays": "Срок архива груза без откликов"
+  "adminSettingCargoArchiveDays": "Срок архива груза без откликов",
+  "adminComplaintResolutionTitle": "Решение",
+  "adminComplaintResolutionNoteLabel": "Ответ автору жалобы",
+  "adminComplaintSelectHint": "Выберите жалобу из очереди слева",
+  "adminComplaintTabNew": "Новые",
+  "adminComplaintTabInReview": "В работе",
+  "adminComplaintTabClosed": "Закрытые",
+  "adminComplaintMineFilter": "Мои",
+  "adminComplaintMoreThisMonth": "ещё {count} жалоб за месяц",
+  "@adminComplaintMoreThisMonth": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminComplaintTakeOver": "Взять в работу",
+  "adminComplaintAssignedTo": "В работе у {name}",
+  "@adminComplaintAssignedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminComplaintReturnToNew": "Вернуть в новые",
+  "adminComplaintResolveButton": "Принять решение",
+  "adminComplaintResolutionDismissed": "Не подтвердилась",
+  "adminComplaintResolutionWarned": "Предупредить",
+  "adminComplaintResolutionCargoUnpublished": "Снять груз",
+  "adminComplaintResolutionBlocked": "Заблокировать"
 }

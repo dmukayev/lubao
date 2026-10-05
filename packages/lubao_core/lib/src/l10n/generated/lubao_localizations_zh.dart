@@ -1654,4 +1654,56 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminSettingCargoArchiveDays => '无响应货物的归档期限';
+
+  @override
+  String get adminComplaintResolutionTitle => '处理决定';
+
+  @override
+  String get adminComplaintResolutionNoteLabel => '回复投诉人';
+
+  @override
+  String get adminComplaintSelectHint => '请从左侧队列中选择一条投诉';
+
+  @override
+  String get adminComplaintTabNew => '新投诉';
+
+  @override
+  String get adminComplaintTabInReview => '处理中';
+
+  @override
+  String get adminComplaintTabClosed => '已关闭';
+
+  @override
+  String get adminComplaintMineFilter => '我的';
+
+  @override
+  String adminComplaintMoreThisMonth(int count) {
+    return '本月还有$count起投诉';
+  }
+
+  @override
+  String get adminComplaintTakeOver => '接手处理';
+
+  @override
+  String adminComplaintAssignedTo(String name) {
+    return '处理人：$name';
+  }
+
+  @override
+  String get adminComplaintReturnToNew => '退回新投诉';
+
+  @override
+  String get adminComplaintResolveButton => '做出决定';
+
+  @override
+  String get adminComplaintResolutionDismissed => '未成立';
+
+  @override
+  String get adminComplaintResolutionWarned => '警告';
+
+  @override
+  String get adminComplaintResolutionCargoUnpublished => '下架货物';
+
+  @override
+  String get adminComplaintResolutionBlocked => '封禁';
 }

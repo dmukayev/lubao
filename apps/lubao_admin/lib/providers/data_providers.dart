@@ -22,8 +22,26 @@ final adminVerificationCompanyProfileProvider = FutureProvider.autoDispose.famil
   return ref.watch(adminRepositoryProvider).verificationCompanyProfile(id);
 });
 
+/// Вкладка очереди жалоб — NEW/IN_REVIEW/CLOSED (задача 028, п.24a).
+final adminComplaintsTabProvider = StateProvider.autoDispose<String>((ref) => 'NEW');
+
+/// «Мои» — только назначенные на текущего админа (п.24a).
+final adminComplaintsMineProvider = StateProvider.autoDispose<bool>((ref) => false);
+
+final adminComplaintSelectedIdProvider = StateProvider.autoDispose<String?>((ref) => null);
+
 final complaintsProvider = FutureProvider.autoDispose<List<AdminComplaint>>((ref) {
-  return ref.watch(adminRepositoryProvider).complaints(status: 'OPEN');
+  final tab = ref.watch(adminComplaintsTabProvider);
+  final mine = ref.watch(adminComplaintsMineProvider);
+  return ref.watch(adminRepositoryProvider).complaints(tab: tab, mine: mine);
+});
+
+final adminComplaintCountsProvider = FutureProvider.autoDispose<({int newCount, int inReviewCount, int closedCount})>((ref) {
+  return ref.watch(adminRepositoryProvider).complaintCounts();
+});
+
+final adminComplaintDetailProvider = FutureProvider.autoDispose.family<AdminComplaintDetail, String>((ref, id) {
+  return ref.watch(adminRepositoryProvider).complaintDetail(id);
 });
 
 /// Параметры поиска/фильтра/пагинации (задача 026) — record, не класс:
