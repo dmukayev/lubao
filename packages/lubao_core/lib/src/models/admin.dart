@@ -1050,3 +1050,248 @@ class VerificationReworkDecision {
 
   Map<String, dynamic> toJson() => {'documentId': documentId, 'rejectReason': rejectReason};
 }
+
+/// Отклик в карточке груза (задача 028, п.15).
+class AdminCargoResponseEntry {
+  const AdminCargoResponseEntry({
+    required this.id,
+    required this.driverId,
+    required this.driverName,
+    this.message,
+    required this.status,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String driverId;
+  final String driverName;
+  final String? message;
+  final String status;
+  final DateTime createdAt;
+
+  factory AdminCargoResponseEntry.fromJson(Map<String, dynamic> json) => AdminCargoResponseEntry(
+        id: json['id'] as String,
+        driverId: json['driverId'] as String,
+        driverName: json['driverName'] as String,
+        message: json['message'] as String?,
+        status: json['status'] as String,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
+}
+
+class AdminCargoDealRef {
+  const AdminCargoDealRef({required this.id, required this.status, required this.driverName});
+
+  final String id;
+  final String status;
+  final String driverName;
+
+  factory AdminCargoDealRef.fromJson(Map<String, dynamic> json) =>
+      AdminCargoDealRef(id: json['id'] as String, status: json['status'] as String, driverName: json['driverName'] as String);
+}
+
+/// Карточка груза для админки (задача 028, п.15) — все поля публикации +
+/// отклики + сделка (если есть) + журнал.
+class AdminCargoDetail {
+  const AdminCargoDetail({
+    required this.id,
+    required this.companyId,
+    required this.companyName,
+    required this.pointName,
+    required this.destinationCountryId,
+    required this.destinationCountryName,
+    this.destinationCityId,
+    this.destinationCityName,
+    required this.bodyTypeId,
+    required this.bodyTypeName,
+    this.weightKg,
+    this.volumeM3,
+    required this.photoUrls,
+    required this.price,
+    required this.currency,
+    this.priceInKzt,
+    required this.readyDate,
+    this.description,
+    required this.status,
+    required this.publishedAt,
+    required this.expiresAt,
+    this.archivedAt,
+    required this.createdAt,
+    required this.responses,
+    this.deal,
+    required this.auditLog,
+  });
+
+  final String id;
+  final String companyId;
+  final String companyName;
+  final I18nText pointName;
+  final String destinationCountryId;
+  final I18nText destinationCountryName;
+  final String? destinationCityId;
+  final I18nText? destinationCityName;
+  final String bodyTypeId;
+  final I18nText bodyTypeName;
+  final double? weightKg;
+  final double? volumeM3;
+  final List<String> photoUrls;
+  final double price;
+  final String currency;
+  final double? priceInKzt;
+  final DateTime readyDate;
+  final String? description;
+  final String status;
+  final DateTime publishedAt;
+  final DateTime expiresAt;
+  final DateTime? archivedAt;
+  final DateTime createdAt;
+  final List<AdminCargoResponseEntry> responses;
+  final AdminCargoDealRef? deal;
+  final List<AdminAuditLogEntry> auditLog;
+
+  factory AdminCargoDetail.fromJson(Map<String, dynamic> json) => AdminCargoDetail(
+        id: json['id'] as String,
+        companyId: json['companyId'] as String,
+        companyName: json['companyName'] as String,
+        pointName: I18nText.fromJson(json['pointName'] as Map<String, dynamic>),
+        destinationCountryId: json['destinationCountryId'] as String,
+        destinationCountryName: I18nText.fromJson(json['destinationCountryName'] as Map<String, dynamic>),
+        destinationCityId: json['destinationCityId'] as String?,
+        destinationCityName: json['destinationCityName'] == null ? null : I18nText.fromJson(json['destinationCityName'] as Map<String, dynamic>),
+        bodyTypeId: json['bodyTypeId'] as String,
+        bodyTypeName: I18nText.fromJson(json['bodyTypeName'] as Map<String, dynamic>),
+        weightKg: json['weightKg'] == null ? null : (json['weightKg'] as num).toDouble(),
+        volumeM3: json['volumeM3'] == null ? null : (json['volumeM3'] as num).toDouble(),
+        photoUrls: (json['photoUrls'] as List<dynamic>).map((e) => e as String).toList(),
+        price: (json['price'] as num).toDouble(),
+        currency: json['currency'] as String,
+        priceInKzt: json['priceInKzt'] == null ? null : (json['priceInKzt'] as num).toDouble(),
+        readyDate: DateTime.parse(json['readyDate'] as String),
+        description: json['description'] as String?,
+        status: json['status'] as String,
+        publishedAt: DateTime.parse(json['publishedAt'] as String),
+        expiresAt: DateTime.parse(json['expiresAt'] as String),
+        archivedAt: json['archivedAt'] == null ? null : DateTime.parse(json['archivedAt'] as String),
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        responses: (json['responses'] as List<dynamic>).map((e) => AdminCargoResponseEntry.fromJson(e as Map<String, dynamic>)).toList(),
+        deal: json['deal'] == null ? null : AdminCargoDealRef.fromJson(json['deal'] as Map<String, dynamic>),
+        auditLog: (json['auditLog'] as List<dynamic>).map((e) => AdminAuditLogEntry.fromJson(e as Map<String, dynamic>)).toList(),
+      );
+}
+
+/// Одна запись истории статусов сделки (задача 028, п.17).
+class AdminDealStatusHistoryEntry {
+  const AdminDealStatusHistoryEntry({required this.status, required this.at});
+
+  final String status;
+  final DateTime at;
+
+  factory AdminDealStatusHistoryEntry.fromJson(Map<String, dynamic> json) =>
+      AdminDealStatusHistoryEntry(status: json['status'] as String, at: DateTime.parse(json['at'] as String));
+}
+
+class AdminDealCallEntry {
+  const AdminDealCallEntry({required this.id, required this.type, required this.createdAt});
+
+  final String id;
+  final String type;
+  final DateTime createdAt;
+
+  factory AdminDealCallEntry.fromJson(Map<String, dynamic> json) =>
+      AdminDealCallEntry(id: json['id'] as String, type: json['type'] as String, createdAt: DateTime.parse(json['createdAt'] as String));
+}
+
+/// Карточка сделки для админки (задача 028, п.17).
+class AdminDealDetail {
+  const AdminDealDetail({
+    required this.id,
+    required this.cargoId,
+    required this.pointName,
+    required this.destinationCountryName,
+    required this.price,
+    required this.currency,
+    this.priceInKzt,
+    required this.driverId,
+    required this.driverName,
+    required this.companyId,
+    required this.companyName,
+    required this.status,
+    this.cancelReason,
+    this.cancelledByRole,
+    required this.staleDays,
+    required this.statusHistory,
+    required this.calls,
+    required this.createdAt,
+    required this.auditLog,
+  });
+
+  final String id;
+  final String cargoId;
+  final I18nText pointName;
+  final I18nText destinationCountryName;
+  final double price;
+  final String currency;
+  final double? priceInKzt;
+  final String driverId;
+  final String driverName;
+  final String companyId;
+  final String companyName;
+  final String status;
+  final String? cancelReason;
+  final String? cancelledByRole;
+  final int staleDays;
+  final List<AdminDealStatusHistoryEntry> statusHistory;
+  final List<AdminDealCallEntry> calls;
+  final DateTime createdAt;
+  final List<AdminAuditLogEntry> auditLog;
+
+  factory AdminDealDetail.fromJson(Map<String, dynamic> json) => AdminDealDetail(
+        id: json['id'] as String,
+        cargoId: json['cargoId'] as String,
+        pointName: I18nText.fromJson(json['pointName'] as Map<String, dynamic>),
+        destinationCountryName: I18nText.fromJson(json['destinationCountryName'] as Map<String, dynamic>),
+        price: (json['price'] as num).toDouble(),
+        currency: json['currency'] as String,
+        priceInKzt: json['priceInKzt'] == null ? null : (json['priceInKzt'] as num).toDouble(),
+        driverId: json['driverId'] as String,
+        driverName: json['driverName'] as String,
+        companyId: json['companyId'] as String,
+        companyName: json['companyName'] as String,
+        status: json['status'] as String,
+        cancelReason: json['cancelReason'] as String?,
+        cancelledByRole: json['cancelledByRole'] as String?,
+        staleDays: json['staleDays'] as int,
+        statusHistory: (json['statusHistory'] as List<dynamic>).map((e) => AdminDealStatusHistoryEntry.fromJson(e as Map<String, dynamic>)).toList(),
+        calls: (json['calls'] as List<dynamic>).map((e) => AdminDealCallEntry.fromJson(e as Map<String, dynamic>)).toList(),
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        auditLog: (json['auditLog'] as List<dynamic>).map((e) => AdminAuditLogEntry.fromJson(e as Map<String, dynamic>)).toList(),
+      );
+}
+
+/// Сообщение переписки — только просмотр (п.17): оригинал + переводы.
+class AdminChatMessage {
+  const AdminChatMessage({
+    required this.id,
+    required this.senderUserId,
+    required this.originalText,
+    required this.originalLang,
+    this.translations,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String senderUserId;
+  final String originalText;
+  final String originalLang;
+  final Map<String, dynamic>? translations;
+  final DateTime createdAt;
+
+  factory AdminChatMessage.fromJson(Map<String, dynamic> json) => AdminChatMessage(
+        id: json['id'] as String,
+        senderUserId: json['senderUserId'] as String,
+        originalText: json['originalText'] as String,
+        originalLang: json['originalLang'] as String,
+        translations: json['translations'] as Map<String, dynamic>?,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
+}

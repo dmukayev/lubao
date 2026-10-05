@@ -11,9 +11,9 @@ import '../shared/admin_status_helpers.dart';
 
 const _pageSize = 50;
 
-/// Таблица сделок (задача 028, п.16) — список и фильтры сейчас; карточка
-/// `/deals/:id` (история статусов, переписка только для просмотра,
-/// «Исправить статус», «Отменить») — этап C.
+/// Таблица сделок (задача 028, п.16); карточка `/deals/:id` (история
+/// статусов, переписка только для просмотра, «Исправить статус»,
+/// «Отменить») — `deal_detail_screen.dart`.
 class AdminDealsScreen extends ConsumerStatefulWidget {
   const AdminDealsScreen({super.key, this.queryParams = const {}});
 

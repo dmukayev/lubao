@@ -11,8 +11,8 @@ import '../shared/admin_status_helpers.dart';
 
 const _pageSize = 50;
 
-/// Таблица грузов (задача 028, п.14) — список и фильтры сейчас; карточка
-/// `/cargos/:id` с действиями («Снять с публикации», «Исправить») — этап C.
+/// Таблица грузов (задача 028, п.14); карточка `/cargos/:id` с действиями
+/// («Снять с публикации», «Исправить») — `cargo_detail_screen.dart`.
 class AdminCargosScreen extends ConsumerStatefulWidget {
   const AdminCargosScreen({super.key, this.queryParams = const {}});
 

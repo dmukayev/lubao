@@ -132,6 +132,62 @@ class AdminRepository {
     return AdminVerificationDocument.fromJson(res.data as Map<String, dynamic>);
   }
 
+  Future<AdminCargoDetail> cargoDetail(String id) async {
+    final res = await _client.dio.get('/admin/cargos/$id');
+    return AdminCargoDetail.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> updateCargo(
+    String id, {
+    String? destinationCountryId,
+    String? destinationCityId,
+    String? bodyTypeId,
+    double? weightKg,
+    double? volumeM3,
+    List<String>? photoUrls,
+    double? price,
+    String? currency,
+    DateTime? readyDate,
+    String? description,
+    required String reason,
+  }) async {
+    await _client.dio.patch('/admin/cargos/$id', data: {
+      if (destinationCountryId != null) 'destinationCountryId': destinationCountryId,
+      if (destinationCityId != null) 'destinationCityId': destinationCityId,
+      if (bodyTypeId != null) 'bodyTypeId': bodyTypeId,
+      if (weightKg != null) 'weightKg': weightKg,
+      if (volumeM3 != null) 'volumeM3': volumeM3,
+      if (photoUrls != null) 'photoUrls': photoUrls,
+      if (price != null) 'price': price,
+      if (currency != null) 'currency': currency,
+      if (readyDate != null) 'readyDate': readyDate.toUtc().toIso8601String(),
+      if (description != null) 'description': description,
+      'reason': reason,
+    });
+  }
+
+  Future<void> unpublishCargo(String id, {required String reason}) async {
+    await _client.dio.post('/admin/cargos/$id/unpublish', data: {'reason': reason});
+  }
+
+  Future<AdminDealDetail> dealDetail(String id) async {
+    final res = await _client.dio.get('/admin/deals/$id');
+    return AdminDealDetail.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<List<AdminChatMessage>> dealChat(String id) async {
+    final res = await _client.dio.get('/admin/deals/$id/chat');
+    return (res.data as List<dynamic>).map((e) => AdminChatMessage.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> advanceDealStatus(String id, {required String status, required String reason}) async {
+    await _client.dio.patch('/admin/deals/$id/status', data: {'status': status, 'reason': reason});
+  }
+
+  Future<void> cancelDeal(String id, {required String reason}) async {
+    await _client.dio.post('/admin/deals/$id/cancel', data: {'reason': reason});
+  }
+
   Future<List<AdminComplaint>> complaints({String? status}) async {
     final res = await _client.dio.get('/admin/complaints', queryParameters: {if (status != null) 'status': status});
     return (res.data as List<dynamic>).map((e) => AdminComplaint.fromJson(e as Map<String, dynamic>)).toList();

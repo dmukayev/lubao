@@ -74,6 +74,10 @@ enum ContactEventType {
 enum ReviewAuthorRole {
   DRIVER
   COMPANY
+  /// Только для `Deal.cancelledByRole` — отмена сделки админом (задача 028,
+  /// п.17). Отзывов от имени админа не существует, `Review.authorRole`
+  /// этого значения никогда не получит.
+  ADMIN
 }
 
 enum VerificationDocType {

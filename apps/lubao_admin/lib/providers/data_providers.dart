@@ -121,6 +121,21 @@ final adminAuditLogProvider = FutureProvider.autoDispose<List<AdminAuditLogEntry
   return ref.watch(adminRepositoryProvider).auditLog();
 });
 
+final adminCargoDetailProvider = FutureProvider.autoDispose.family<AdminCargoDetail, String>((ref, id) {
+  return ref.watch(adminRepositoryProvider).cargoDetail(id);
+});
+
+final adminDealDetailProvider = FutureProvider.autoDispose.family<AdminDealDetail, String>((ref, id) {
+  return ref.watch(adminRepositoryProvider).dealDetail(id);
+});
+
+/// Переписка подгружается только по явному открытию вкладки (п.17 — каждое
+/// открытие пишется в audit_log на бэкенде), а не вместе с карточкой сделки
+/// — поэтому отдельный provider, не часть [adminDealDetailProvider].
+final adminDealChatProvider = FutureProvider.autoDispose.family<List<AdminChatMessage>, String>((ref, id) {
+  return ref.watch(adminRepositoryProvider).dealChat(id);
+});
+
 final adminSettingsProvider = FutureProvider.autoDispose<Map<String, String>>((ref) {
   return ref.watch(adminRepositoryProvider).settings();
 });

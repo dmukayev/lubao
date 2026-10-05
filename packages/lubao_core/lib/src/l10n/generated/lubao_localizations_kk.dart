@@ -1535,4 +1535,78 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminRejectPresetPlateMismatch => 'Мемнөмір сәйкес келмейді';
+
+  @override
+  String get adminCargoUnpublish => 'Жариялаудан алу';
+
+  @override
+  String get adminCargoUnpublishDialogTitle => 'Жүкті жариялаудан алу';
+
+  @override
+  String get adminCargoEdit => 'Түзету';
+
+  @override
+  String get adminCargoEditDialogTitle => 'Жүкті түзету';
+
+  @override
+  String get adminCargoPublishedAt => 'Жарияланды';
+
+  @override
+  String get adminCargoExpiresAt => 'Мерзімі өтеді';
+
+  @override
+  String get adminCargoArchivedAt => 'Жариялаудан алынды';
+
+  @override
+  String get adminCargoTabResponses => 'Жауаптар';
+
+  @override
+  String get adminNoResponses => 'Әзірге жауап жоқ';
+
+  @override
+  String get adminDealCancel => 'Мәмілені болдырмау';
+
+  @override
+  String get adminDealCancelDialogTitle => 'Мәмілені болдырмау';
+
+  @override
+  String get adminDealFixStatus => 'Мәртебесін түзету';
+
+  @override
+  String get adminDealFixStatusDialogTitle => 'Мәміле мәртебесін түзету';
+
+  @override
+  String get adminDealOpenCargo => 'Жүк →';
+
+  @override
+  String adminDealCancelledBy(String role) {
+    return 'Болдырылмады ($role)';
+  }
+
+  @override
+  String get adminDealStatusHistoryTitle => 'Мәртебелер тарихы';
+
+  @override
+  String get adminDealTabChat => 'Хат алмасу';
+
+  @override
+  String get adminDealTabCalls => 'Қоңыраулар';
+
+  @override
+  String get adminDealShowChat => 'Хат алмасуды көрсету';
+
+  @override
+  String get adminNoChat => 'Хабарлама жоқ';
+
+  @override
+  String get adminNoCalls => 'Қоңыраулар болмады';
+
+  @override
+  String get adminContactEventCall => 'Қоңырау';
+
+  @override
+  String get adminContactEventWhatsapp => 'WhatsApp';
+
+  @override
+  String get roleAdmin => 'Әкімші';
 }

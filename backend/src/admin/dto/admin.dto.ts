@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsInt, IsISO8601, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ReviewVerificationDocumentDto {
@@ -209,6 +209,73 @@ export class ReturnForReworkDto {
   @IsOptional()
   @IsString()
   note?: string;
+}
+
+/// Те же поля, что у company-эндпоинта публикации груза (п.15: «Исправить»
+/// — те же поля, что при публикации), плюс обязательная причина — у
+/// company-версии (`UpdateCargoDto`) её нет, т.к. там это не чужое
+/// редактирование, а правка собственного груза.
+export class AdminUpdateCargoDto {
+  @IsOptional()
+  @IsString()
+  destinationCountryId?: string;
+
+  @IsOptional()
+  @IsString()
+  destinationCityId?: string;
+
+  @IsOptional()
+  @IsString()
+  bodyTypeId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  weightKg?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  volumeM3?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  photoUrls?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  price?: number;
+
+  @IsOptional()
+  @IsIn(['USD', 'CNY', 'KZT'])
+  currency?: 'USD' | 'CNY' | 'KZT';
+
+  @IsOptional()
+  @IsISO8601()
+  readyDate?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsString()
+  reason!: string;
+}
+
+export class AdminReasonDto {
+  @IsString()
+  reason!: string;
+}
+
+/// «Исправить статус» — только на соседний (п.17: вперёд/назад на один шаг).
+export class AdminDealStatusDto {
+  @IsIn(['SELECTED', 'CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED'])
+  status!: 'SELECTED' | 'CONFIRMED_BY_DRIVER' | 'LOADED' | 'IN_TRANSIT' | 'DELIVERED';
+
+  @IsString()
+  reason!: string;
 }
 
 export class ModerateCityDto {

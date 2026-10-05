@@ -77,6 +77,45 @@ String verificationDocTypeLabel(LubaoLocalizations t, String type) {
   }
 }
 
+String responseStatusLabel(LubaoLocalizations t, String status) {
+  switch (status) {
+    case 'PENDING':
+      return t.responseStatusPending;
+    case 'SELECTED':
+      return t.responseStatusSelected;
+    case 'REJECTED':
+      return t.responseStatusRejected;
+    case 'CANCELLED':
+      return t.responseStatusCancelled;
+    default:
+      return status;
+  }
+}
+
+String cancelledByRoleLabel(LubaoLocalizations t, String role) {
+  switch (role) {
+    case 'DRIVER':
+      return t.roleDriver;
+    case 'COMPANY':
+      return t.roleCompany;
+    case 'ADMIN':
+      return t.roleAdmin;
+    default:
+      return role;
+  }
+}
+
+String contactEventTypeLabel(LubaoLocalizations t, String type) {
+  switch (type) {
+    case 'CALL':
+      return t.adminContactEventCall;
+    case 'WHATSAPP':
+      return t.adminContactEventWhatsapp;
+    default:
+      return type;
+  }
+}
+
 (String, Color) verificationStatusPresentation(LubaoLocalizations t, VerificationStatus status) {
   switch (status) {
     case VerificationStatus.pending:

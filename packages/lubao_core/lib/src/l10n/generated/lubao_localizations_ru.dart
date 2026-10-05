@@ -1529,4 +1529,78 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminRejectPresetPlateMismatch => 'Госномер не совпадает';
+
+  @override
+  String get adminCargoUnpublish => 'Снять с публикации';
+
+  @override
+  String get adminCargoUnpublishDialogTitle => 'Снять груз с публикации';
+
+  @override
+  String get adminCargoEdit => 'Исправить';
+
+  @override
+  String get adminCargoEditDialogTitle => 'Исправить груз';
+
+  @override
+  String get adminCargoPublishedAt => 'Опубликован';
+
+  @override
+  String get adminCargoExpiresAt => 'Истекает';
+
+  @override
+  String get adminCargoArchivedAt => 'Снят с публикации';
+
+  @override
+  String get adminCargoTabResponses => 'Отклики';
+
+  @override
+  String get adminNoResponses => 'Пока нет откликов';
+
+  @override
+  String get adminDealCancel => 'Отменить сделку';
+
+  @override
+  String get adminDealCancelDialogTitle => 'Отменить сделку';
+
+  @override
+  String get adminDealFixStatus => 'Исправить статус';
+
+  @override
+  String get adminDealFixStatusDialogTitle => 'Исправить статус сделки';
+
+  @override
+  String get adminDealOpenCargo => 'Груз →';
+
+  @override
+  String adminDealCancelledBy(String role) {
+    return 'Отменено ($role)';
+  }
+
+  @override
+  String get adminDealStatusHistoryTitle => 'История статусов';
+
+  @override
+  String get adminDealTabChat => 'Переписка';
+
+  @override
+  String get adminDealTabCalls => 'Звонки';
+
+  @override
+  String get adminDealShowChat => 'Показать переписку';
+
+  @override
+  String get adminNoChat => 'Сообщений нет';
+
+  @override
+  String get adminNoCalls => 'Звонков не было';
+
+  @override
+  String get adminContactEventCall => 'Звонок';
+
+  @override
+  String get adminContactEventWhatsapp => 'WhatsApp';
+
+  @override
+  String get roleAdmin => 'Админ';
 }

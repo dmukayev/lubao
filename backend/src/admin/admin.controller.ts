@@ -5,6 +5,9 @@ import { RequestContext } from '../common/request-context';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { AdminService } from './admin.service';
 import {
+  AdminDealStatusDto,
+  AdminReasonDto,
+  AdminUpdateCargoDto,
   BlockUserDto,
   CargoSearchQueryDto,
   CreateBodyTypeDto,
@@ -97,6 +100,48 @@ export class AdminController {
   searchDeals(@CurrentUser() ctx: RequestContext, @Query() query: DealSearchQueryDto) {
     assertAdmin(ctx);
     return this.admin.searchDeals(query);
+  }
+
+  @Get('cargos/:id')
+  cargoDetail(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.cargoDetail(id);
+  }
+
+  @Patch('cargos/:id')
+  updateCargo(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminUpdateCargoDto) {
+    assertAdmin(ctx);
+    return this.admin.updateCargo(id, ctx.user.id, dto);
+  }
+
+  @Post('cargos/:id/unpublish')
+  unpublishCargo(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminReasonDto) {
+    assertAdmin(ctx);
+    return this.admin.unpublishCargo(id, ctx.user.id, dto.reason);
+  }
+
+  @Get('deals/:id')
+  dealDetail(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.dealDetail(id);
+  }
+
+  @Get('deals/:id/chat')
+  dealChat(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.dealChat(id, ctx.user.id);
+  }
+
+  @Patch('deals/:id/status')
+  advanceDealStatus(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminDealStatusDto) {
+    assertAdmin(ctx);
+    return this.admin.advanceDealStatusByAdmin(id, ctx.user.id, dto);
+  }
+
+  @Post('deals/:id/cancel')
+  cancelDeal(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminReasonDto) {
+    assertAdmin(ctx);
+    return this.admin.cancelDealByAdmin(id, ctx.user.id, dto.reason);
   }
 
   @Patch('verification-documents/:id')

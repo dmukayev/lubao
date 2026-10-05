@@ -14,7 +14,9 @@ import '../features/companies/company_detail_screen.dart';
 import '../features/drivers/admin_drivers_screen.dart';
 import '../features/drivers/driver_detail_screen.dart';
 import '../features/cargos/admin_cargos_screen.dart';
+import '../features/cargos/cargo_detail_screen.dart';
 import '../features/deals/admin_deals_screen.dart';
+import '../features/deals/deal_detail_screen.dart';
 import '../features/audit/admin_audit_screen.dart';
 import '../features/settings/admin_settings_screen.dart';
 import '../features/reference/reference_screen.dart';
@@ -84,10 +86,22 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/cargos',
             builder: (context, state) => AdminCargosScreen(queryParams: state.uri.queryParameters),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (context, state) => CargoDetailScreen(id: state.pathParameters['id']!),
+              ),
+            ],
           ),
           GoRoute(
             path: '/deals',
             builder: (context, state) => AdminDealsScreen(queryParams: state.uri.queryParameters),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (context, state) => DealDetailScreen(id: state.pathParameters['id']!),
+              ),
+            ],
           ),
           GoRoute(path: '/audit', builder: (context, state) => const AdminAuditScreen()),
           GoRoute(path: '/settings', builder: (context, state) => const AdminSettingsScreen()),

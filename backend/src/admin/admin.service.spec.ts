@@ -812,3 +812,235 @@ describe('AdminService.returnDriverForRework / returnCompanyForRework — one de
     expect(prisma.auditLog.create).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('AdminService.cargoDetail / updateCargo / unpublishCargo (задача 028, п.15)', () => {
+  function baseCargo(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      id: 'cargo1',
+      companyId: 'c1',
+      destinationCountryId: 'country1',
+      destinationCityId: null,
+      bodyTypeId: 'bt1',
+      weightKg: null,
+      volumeM3: null,
+      photoUrls: [],
+      price: 100,
+      currency: 'USD',
+      readyDate: new Date('2026-10-01T00:00:00Z'),
+      description: null,
+      status: 'PUBLISHED',
+      publishedAt: new Date(),
+      expiresAt: new Date(),
+      archivedAt: null,
+      createdAt: new Date(),
+      point: { name: { ru: 'Хоргос' } },
+      destinationCountry: { name: { ru: 'Казахстан' } },
+      destinationCity: null,
+      bodyType: { name: { ru: 'Тент' } },
+      company: { id: 'c1', name: 'Acme' },
+      responses: [],
+      deals: [],
+      ...overrides,
+    };
+  }
+
+  it('cargoDetail throws NotFoundException for an unknown cargo', async () => {
+    const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(null) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    await expect(service.cargoDetail('missing')).rejects.toThrow(NotFoundException);
+  });
+
+  it('cargoDetail converts price to KZT using the latest exchange rate, and includes responses/deal/audit', async () => {
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ deals: [{ id: 'deal1', status: 'SELECTED', driverId: 'd1', driver: { fullName: 'Ерлан' } }] })) },
+      auditLog: { findMany: jest.fn().mockResolvedValue([]) },
+      exchangeRate: { findFirst: jest.fn().mockResolvedValue({ rateToKzt: 450 }) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.cargoDetail('cargo1');
+
+    expect(result.priceInKzt).toBe(100 * 450);
+    expect(result.deal).toEqual({ id: 'deal1', status: 'SELECTED', driverName: 'Ерлан' });
+  });
+
+  it('cargoDetail returns priceInKzt null when there is no rate for the currency', async () => {
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo()) },
+      auditLog: { findMany: jest.fn().mockResolvedValue([]) },
+      exchangeRate: { findFirst: jest.fn().mockResolvedValue(null) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.cargoDetail('cargo1');
+    expect(result.priceInKzt).toBeNull();
+  });
+
+  it('updateCargo records old/new only for changed fields, with the reason, and recomputes expiresAt when readyDate changes', async () => {
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo()), update: jest.fn().mockResolvedValue({ id: 'cargo1' }) },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.updateCargo('cargo1', 'admin-1', { price: 200, reason: 'Опечатка в цене' } as any);
+
+    expect(prisma.cargo.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'cargo1' }, data: expect.objectContaining({ price: 200 }) }),
+    );
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: 'CARGO_UPDATED',
+          metadata: expect.objectContaining({ reason: 'Опечатка в цене', changes: { price: { old: 100, new: 200 } } }),
+        }),
+      }),
+    );
+  });
+
+  it('unpublishCargo sets ARCHIVED with archivedAt, and logs one decision + one notification entry', async () => {
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo()), update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.unpublishCargo('cargo1', 'admin-1', 'Груз больше не актуален');
+
+    expect(prisma.cargo.update).toHaveBeenCalledWith({ where: { id: 'cargo1' }, data: { status: 'ARCHIVED', archivedAt: expect.any(Date) } });
+    expect(prisma.auditLog.create).toHaveBeenCalledTimes(2);
+  });
+
+  it('unpublishCargo throws NotFoundException for an unknown cargo', async () => {
+    const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(null) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    await expect(service.unpublishCargo('missing', 'admin-1', 'x')).rejects.toThrow(NotFoundException);
+  });
+});
+
+describe('AdminService.dealDetail / dealChat / advanceDealStatusByAdmin / cancelDealByAdmin (задача 028, п.17)', () => {
+  function baseDeal(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      id: 'deal1',
+      cargoId: 'cargo1',
+      driverId: 'd1',
+      companyId: 'c1',
+      status: 'LOADED',
+      cancelReason: null,
+      cancelledByRole: null,
+      confirmedAt: new Date('2026-10-01T00:00:00Z'),
+      loadedAt: new Date('2026-10-02T00:00:00Z'),
+      inTransitAt: null,
+      deliveredAt: null,
+      createdAt: new Date('2026-09-30T00:00:00Z'),
+      updatedAt: new Date('2026-10-02T00:00:00Z'),
+      cargo: { currency: 'USD', price: 100, point: { name: { ru: 'Хоргос' } }, destinationCountry: { name: { ru: 'Казахстан' } } },
+      driver: { id: 'd1', fullName: 'Ерлан' },
+      company: { id: 'c1', name: 'Acme' },
+      contactEvents: [],
+      ...overrides,
+    };
+  }
+
+  it('dealDetail throws NotFoundException for an unknown deal', async () => {
+    const prisma: any = { deal: { findUnique: jest.fn().mockResolvedValue(null) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    await expect(service.dealDetail('missing')).rejects.toThrow(NotFoundException);
+  });
+
+  it('dealDetail builds a status history only from timestamps that are set', async () => {
+    const prisma: any = {
+      deal: { findUnique: jest.fn().mockResolvedValue(baseDeal()) },
+      auditLog: { findMany: jest.fn().mockResolvedValue([]) },
+      exchangeRate: { findFirst: jest.fn().mockResolvedValue({ rateToKzt: 450 }) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const result = await service.dealDetail('deal1');
+
+    expect(result.statusHistory.map((h: any) => h.status)).toEqual(['SELECTED', 'CONFIRMED_BY_DRIVER', 'LOADED']);
+    expect(result.priceInKzt).toBe(100 * 450);
+  });
+
+  it('dealChat returns the messages of the deal-linked chat and logs exactly one ADMIN_VIEWED_CHAT entry', async () => {
+    const prisma: any = {
+      deal: { findUnique: jest.fn().mockResolvedValue({ id: 'deal1' }) },
+      chat: { findFirst: jest.fn().mockResolvedValue({ id: 'chat1' }) },
+      message: { findMany: jest.fn().mockResolvedValue([{ id: 'm1', senderUserId: 'u1', originalText: 'Привет', originalLang: 'ru', translations: null, createdAt: new Date() }]) },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const messages = await service.dealChat('deal1', 'admin-1');
+
+    expect(messages).toHaveLength(1);
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: 'ADMIN_VIEWED_CHAT' }) }));
+    expect(prisma.auditLog.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('dealChat returns an empty list when there is no chat yet, without crashing', async () => {
+    const prisma: any = {
+      deal: { findUnique: jest.fn().mockResolvedValue({ id: 'deal1' }) },
+      chat: { findFirst: jest.fn().mockResolvedValue(null) },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    expect(await service.dealChat('deal1', 'admin-1')).toEqual([]);
+  });
+
+  it('advanceDealStatusByAdmin allows moving one step forward and sets the new timestamp', async () => {
+    const prisma: any = {
+      deal: { findUnique: jest.fn().mockResolvedValue(baseDeal({ status: 'CONFIRMED_BY_DRIVER' })), update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.advanceDealStatusByAdmin('deal1', 'admin-1', { status: 'LOADED', reason: 'Водитель уже погрузился' } as any);
+
+    expect(prisma.deal.update).toHaveBeenCalledWith({ where: { id: 'deal1' }, data: { status: 'LOADED', loadedAt: expect.any(Date) } });
+  });
+
+  it('advanceDealStatusByAdmin allows moving one step backward and clears the timestamp being undone', async () => {
+    const prisma: any = {
+      deal: { findUnique: jest.fn().mockResolvedValue(baseDeal({ status: 'LOADED' })), update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.advanceDealStatusByAdmin('deal1', 'admin-1', { status: 'CONFIRMED_BY_DRIVER', reason: 'Ошиблись статусом' } as any);
+
+    expect(prisma.deal.update).toHaveBeenCalledWith({ where: { id: 'deal1' }, data: { status: 'CONFIRMED_BY_DRIVER', loadedAt: null } });
+  });
+
+  it('advanceDealStatusByAdmin rejects a jump of more than one step', async () => {
+    const prisma: any = { deal: { findUnique: jest.fn().mockResolvedValue(baseDeal({ status: 'SELECTED' })) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await expect(
+      service.advanceDealStatusByAdmin('deal1', 'admin-1', { status: 'DELIVERED', reason: 'x' } as any),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('cancelDealByAdmin sets CANCELLED with cancelledByRole=ADMIN', async () => {
+    const prisma: any = {
+      deal: { findUnique: jest.fn().mockResolvedValue(baseDeal({ status: 'LOADED' })), update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.cancelDealByAdmin('deal1', 'admin-1', 'Груз утрачен');
+
+    expect(prisma.deal.update).toHaveBeenCalledWith({
+      where: { id: 'deal1' },
+      data: { status: 'CANCELLED', cancelReason: 'Груз утрачен', cancelledByRole: 'ADMIN' },
+    });
+  });
+
+  it('cancelDealByAdmin refuses to cancel an already DELIVERED or CANCELLED deal', async () => {
+    const prisma: any = { deal: { findUnique: jest.fn().mockResolvedValue(baseDeal({ status: 'DELIVERED' })) } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await expect(service.cancelDealByAdmin('deal1', 'admin-1', 'x')).rejects.toThrow(BadRequestException);
+  });
+});

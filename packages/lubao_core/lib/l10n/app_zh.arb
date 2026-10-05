@@ -567,5 +567,36 @@
   "adminReturnForReworkNoteLabel": "备注（需要重新拍摄的内容）",
   "adminVerificationMissingDocsHint": "请将所有必需文件标记为「无问题」后才能确认",
   "adminVerificationCompareWithSelfie": "与自拍对比",
-  "adminRejectPresetPlateMismatch": "车牌号不匹配"
+  "adminRejectPresetPlateMismatch": "车牌号不匹配",
+  "adminCargoUnpublish": "下架",
+  "adminCargoUnpublishDialogTitle": "将货物下架",
+  "adminCargoEdit": "修改",
+  "adminCargoEditDialogTitle": "修改货物信息",
+  "adminCargoPublishedAt": "发布时间",
+  "adminCargoExpiresAt": "到期时间",
+  "adminCargoArchivedAt": "下架时间",
+  "adminCargoTabResponses": "响应",
+  "adminNoResponses": "暂无响应",
+  "adminDealCancel": "取消交易",
+  "adminDealCancelDialogTitle": "取消交易",
+  "adminDealFixStatus": "修正状态",
+  "adminDealFixStatusDialogTitle": "修正交易状态",
+  "adminDealOpenCargo": "货物 →",
+  "adminDealCancelledBy": "由{role}取消",
+  "@adminDealCancelledBy": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "adminDealStatusHistoryTitle": "状态历史",
+  "adminDealTabChat": "聊天记录",
+  "adminDealTabCalls": "通话记录",
+  "adminDealShowChat": "显示聊天记录",
+  "adminNoChat": "暂无消息",
+  "adminNoCalls": "暂无通话记录",
+  "adminContactEventCall": "电话",
+  "adminContactEventWhatsapp": "WhatsApp",
+  "roleAdmin": "管理员"
 }

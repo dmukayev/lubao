@@ -692,5 +692,36 @@
   "adminReturnForReworkNoteLabel": "Комментарий (что переснять)",
   "adminVerificationMissingDocsHint": "Отметьте все обязательные документы как «в порядке», чтобы подтвердить",
   "adminVerificationCompareWithSelfie": "Рядом с селфи",
-  "adminRejectPresetPlateMismatch": "Госномер не совпадает"
+  "adminRejectPresetPlateMismatch": "Госномер не совпадает",
+  "adminCargoUnpublish": "Снять с публикации",
+  "adminCargoUnpublishDialogTitle": "Снять груз с публикации",
+  "adminCargoEdit": "Исправить",
+  "adminCargoEditDialogTitle": "Исправить груз",
+  "adminCargoPublishedAt": "Опубликован",
+  "adminCargoExpiresAt": "Истекает",
+  "adminCargoArchivedAt": "Снят с публикации",
+  "adminCargoTabResponses": "Отклики",
+  "adminNoResponses": "Пока нет откликов",
+  "adminDealCancel": "Отменить сделку",
+  "adminDealCancelDialogTitle": "Отменить сделку",
+  "adminDealFixStatus": "Исправить статус",
+  "adminDealFixStatusDialogTitle": "Исправить статус сделки",
+  "adminDealOpenCargo": "Груз →",
+  "adminDealCancelledBy": "Отменено ({role})",
+  "@adminDealCancelledBy": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "adminDealStatusHistoryTitle": "История статусов",
+  "adminDealTabChat": "Переписка",
+  "adminDealTabCalls": "Звонки",
+  "adminDealShowChat": "Показать переписку",
+  "adminNoChat": "Сообщений нет",
+  "adminNoCalls": "Звонков не было",
+  "adminContactEventCall": "Звонок",
+  "adminContactEventWhatsapp": "WhatsApp",
+  "roleAdmin": "Админ"
 }

@@ -567,5 +567,36 @@
   "adminReturnForReworkNoteLabel": "Түсініктеме (нені қайта түсіру керек)",
   "adminVerificationMissingDocsHint": "Растау үшін барлық міндетті құжаттарды «дұрыс» деп белгілеңіз",
   "adminVerificationCompareWithSelfie": "Селфимен қатар",
-  "adminRejectPresetPlateMismatch": "Мемнөмір сәйкес келмейді"
+  "adminRejectPresetPlateMismatch": "Мемнөмір сәйкес келмейді",
+  "adminCargoUnpublish": "Жариялаудан алу",
+  "adminCargoUnpublishDialogTitle": "Жүкті жариялаудан алу",
+  "adminCargoEdit": "Түзету",
+  "adminCargoEditDialogTitle": "Жүкті түзету",
+  "adminCargoPublishedAt": "Жарияланды",
+  "adminCargoExpiresAt": "Мерзімі өтеді",
+  "adminCargoArchivedAt": "Жариялаудан алынды",
+  "adminCargoTabResponses": "Жауаптар",
+  "adminNoResponses": "Әзірге жауап жоқ",
+  "adminDealCancel": "Мәмілені болдырмау",
+  "adminDealCancelDialogTitle": "Мәмілені болдырмау",
+  "adminDealFixStatus": "Мәртебесін түзету",
+  "adminDealFixStatusDialogTitle": "Мәміле мәртебесін түзету",
+  "adminDealOpenCargo": "Жүк →",
+  "adminDealCancelledBy": "Болдырылмады ({role})",
+  "@adminDealCancelledBy": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "adminDealStatusHistoryTitle": "Мәртебелер тарихы",
+  "adminDealTabChat": "Хат алмасу",
+  "adminDealTabCalls": "Қоңыраулар",
+  "adminDealShowChat": "Хат алмасуды көрсету",
+  "adminNoChat": "Хабарлама жоқ",
+  "adminNoCalls": "Қоңыраулар болмады",
+  "adminContactEventCall": "Қоңырау",
+  "adminContactEventWhatsapp": "WhatsApp",
+  "roleAdmin": "Әкімші"
 }

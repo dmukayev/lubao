@@ -692,5 +692,36 @@
   "adminReturnForReworkNoteLabel": "Note (what to reshoot)",
   "adminVerificationMissingDocsHint": "Mark all required documents as OK to enable confirmation",
   "adminVerificationCompareWithSelfie": "Compare with selfie",
-  "adminRejectPresetPlateMismatch": "Plate number mismatch"
+  "adminRejectPresetPlateMismatch": "Plate number mismatch",
+  "adminCargoUnpublish": "Unpublish",
+  "adminCargoUnpublishDialogTitle": "Unpublish this cargo",
+  "adminCargoEdit": "Edit",
+  "adminCargoEditDialogTitle": "Edit cargo",
+  "adminCargoPublishedAt": "Published",
+  "adminCargoExpiresAt": "Expires",
+  "adminCargoArchivedAt": "Unpublished",
+  "adminCargoTabResponses": "Responses",
+  "adminNoResponses": "No responses yet",
+  "adminDealCancel": "Cancel deal",
+  "adminDealCancelDialogTitle": "Cancel this deal",
+  "adminDealFixStatus": "Fix status",
+  "adminDealFixStatusDialogTitle": "Fix deal status",
+  "adminDealOpenCargo": "Cargo →",
+  "adminDealCancelledBy": "Cancelled by {role}",
+  "@adminDealCancelledBy": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "adminDealStatusHistoryTitle": "Status history",
+  "adminDealTabChat": "Chat",
+  "adminDealTabCalls": "Calls",
+  "adminDealShowChat": "Show chat",
+  "adminNoChat": "No messages",
+  "adminNoCalls": "No calls yet",
+  "adminContactEventCall": "Call",
+  "adminContactEventWhatsapp": "WhatsApp",
+  "roleAdmin": "Admin"
 }

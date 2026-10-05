@@ -2987,6 +2987,150 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Госномер не совпадает'**
   String get adminRejectPresetPlateMismatch;
+
+  /// No description provided for @adminCargoUnpublish.
+  ///
+  /// In ru, this message translates to:
+  /// **'Снять с публикации'**
+  String get adminCargoUnpublish;
+
+  /// No description provided for @adminCargoUnpublishDialogTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Снять груз с публикации'**
+  String get adminCargoUnpublishDialogTitle;
+
+  /// No description provided for @adminCargoEdit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Исправить'**
+  String get adminCargoEdit;
+
+  /// No description provided for @adminCargoEditDialogTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Исправить груз'**
+  String get adminCargoEditDialogTitle;
+
+  /// No description provided for @adminCargoPublishedAt.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опубликован'**
+  String get adminCargoPublishedAt;
+
+  /// No description provided for @adminCargoExpiresAt.
+  ///
+  /// In ru, this message translates to:
+  /// **'Истекает'**
+  String get adminCargoExpiresAt;
+
+  /// No description provided for @adminCargoArchivedAt.
+  ///
+  /// In ru, this message translates to:
+  /// **'Снят с публикации'**
+  String get adminCargoArchivedAt;
+
+  /// No description provided for @adminCargoTabResponses.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отклики'**
+  String get adminCargoTabResponses;
+
+  /// No description provided for @adminNoResponses.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пока нет откликов'**
+  String get adminNoResponses;
+
+  /// No description provided for @adminDealCancel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменить сделку'**
+  String get adminDealCancel;
+
+  /// No description provided for @adminDealCancelDialogTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменить сделку'**
+  String get adminDealCancelDialogTitle;
+
+  /// No description provided for @adminDealFixStatus.
+  ///
+  /// In ru, this message translates to:
+  /// **'Исправить статус'**
+  String get adminDealFixStatus;
+
+  /// No description provided for @adminDealFixStatusDialogTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Исправить статус сделки'**
+  String get adminDealFixStatusDialogTitle;
+
+  /// No description provided for @adminDealOpenCargo.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз →'**
+  String get adminDealOpenCargo;
+
+  /// No description provided for @adminDealCancelledBy.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменено ({role})'**
+  String adminDealCancelledBy(String role);
+
+  /// No description provided for @adminDealStatusHistoryTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'История статусов'**
+  String get adminDealStatusHistoryTitle;
+
+  /// No description provided for @adminDealTabChat.
+  ///
+  /// In ru, this message translates to:
+  /// **'Переписка'**
+  String get adminDealTabChat;
+
+  /// No description provided for @adminDealTabCalls.
+  ///
+  /// In ru, this message translates to:
+  /// **'Звонки'**
+  String get adminDealTabCalls;
+
+  /// No description provided for @adminDealShowChat.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показать переписку'**
+  String get adminDealShowChat;
+
+  /// No description provided for @adminNoChat.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сообщений нет'**
+  String get adminNoChat;
+
+  /// No description provided for @adminNoCalls.
+  ///
+  /// In ru, this message translates to:
+  /// **'Звонков не было'**
+  String get adminNoCalls;
+
+  /// No description provided for @adminContactEventCall.
+  ///
+  /// In ru, this message translates to:
+  /// **'Звонок'**
+  String get adminContactEventCall;
+
+  /// No description provided for @adminContactEventWhatsapp.
+  ///
+  /// In ru, this message translates to:
+  /// **'WhatsApp'**
+  String get adminContactEventWhatsapp;
+
+  /// No description provided for @roleAdmin.
+  ///
+  /// In ru, this message translates to:
+  /// **'Админ'**
+  String get roleAdmin;
 }
 
 class _LubaoLocalizationsDelegate

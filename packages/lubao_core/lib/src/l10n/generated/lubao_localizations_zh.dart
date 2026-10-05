@@ -1508,4 +1508,78 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminRejectPresetPlateMismatch => '车牌号不匹配';
+
+  @override
+  String get adminCargoUnpublish => '下架';
+
+  @override
+  String get adminCargoUnpublishDialogTitle => '将货物下架';
+
+  @override
+  String get adminCargoEdit => '修改';
+
+  @override
+  String get adminCargoEditDialogTitle => '修改货物信息';
+
+  @override
+  String get adminCargoPublishedAt => '发布时间';
+
+  @override
+  String get adminCargoExpiresAt => '到期时间';
+
+  @override
+  String get adminCargoArchivedAt => '下架时间';
+
+  @override
+  String get adminCargoTabResponses => '响应';
+
+  @override
+  String get adminNoResponses => '暂无响应';
+
+  @override
+  String get adminDealCancel => '取消交易';
+
+  @override
+  String get adminDealCancelDialogTitle => '取消交易';
+
+  @override
+  String get adminDealFixStatus => '修正状态';
+
+  @override
+  String get adminDealFixStatusDialogTitle => '修正交易状态';
+
+  @override
+  String get adminDealOpenCargo => '货物 →';
+
+  @override
+  String adminDealCancelledBy(String role) {
+    return '由$role取消';
+  }
+
+  @override
+  String get adminDealStatusHistoryTitle => '状态历史';
+
+  @override
+  String get adminDealTabChat => '聊天记录';
+
+  @override
+  String get adminDealTabCalls => '通话记录';
+
+  @override
+  String get adminDealShowChat => '显示聊天记录';
+
+  @override
+  String get adminNoChat => '暂无消息';
+
+  @override
+  String get adminNoCalls => '暂无通话记录';
+
+  @override
+  String get adminContactEventCall => '电话';
+
+  @override
+  String get adminContactEventWhatsapp => 'WhatsApp';
+
+  @override
+  String get roleAdmin => '管理员';
 }

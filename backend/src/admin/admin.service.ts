@@ -6,6 +6,8 @@ import { SessionService } from '../auth/session.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { REQUIRED_DRIVER_DOC_TYPES } from '../drivers/drivers.service';
 import {
+  AdminDealStatusDto,
+  AdminUpdateCargoDto,
   BlockUserDto,
   CargoSearchQueryDto,
   CreateBodyTypeDto,
@@ -369,6 +371,289 @@ export class AdminService {
     }));
 
     return { items, total };
+  }
+
+  // -- cargo detail & actions (задача 028, п.15) --------------------------------
+
+  private async kztRateFor(currency: string): Promise<number | null> {
+    if (currency === 'KZT') return 1;
+    const rate = await this.prisma.exchangeRate.findFirst({ where: { currency: currency as never }, orderBy: { effectiveDate: 'desc' } });
+    return rate ? Number(rate.rateToKzt) : null;
+  }
+
+  async cargoDetail(id: string) {
+    const cargo = await this.prisma.cargo.findUnique({
+      where: { id },
+      include: {
+        point: { select: { name: true } },
+        destinationCountry: { select: { name: true } },
+        destinationCity: { select: { name: true } },
+        bodyType: { select: { name: true } },
+        company: { select: { id: true, name: true } },
+        responses: { include: { driver: { select: { id: true, fullName: true } } }, orderBy: { createdAt: 'desc' } },
+        deals: { select: { id: true, status: true, driverId: true, driver: { select: { fullName: true } } } },
+      },
+    });
+    if (!cargo) throw new NotFoundException('Cargo not found');
+
+    const auditLog = await this.prisma.auditLog.findMany({
+      where: { entityType: 'Cargo', entityId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+      include: { actor: { select: { name: true, email: true } } },
+    });
+
+    const kztRate = await this.kztRateFor(cargo.currency);
+
+    return {
+      id: cargo.id,
+      companyId: cargo.company.id,
+      companyName: cargo.company.name,
+      pointName: cargo.point.name,
+      destinationCountryId: cargo.destinationCountryId,
+      destinationCountryName: cargo.destinationCountry.name,
+      destinationCityId: cargo.destinationCityId,
+      destinationCityName: cargo.destinationCity?.name ?? null,
+      bodyTypeId: cargo.bodyTypeId,
+      bodyTypeName: cargo.bodyType.name,
+      weightKg: cargo.weightKg ? Number(cargo.weightKg) : null,
+      volumeM3: cargo.volumeM3 ? Number(cargo.volumeM3) : null,
+      photoUrls: cargo.photoUrls,
+      price: Number(cargo.price),
+      currency: cargo.currency,
+      priceInKzt: kztRate != null ? Number(cargo.price) * kztRate : null,
+      readyDate: cargo.readyDate,
+      description: cargo.description,
+      status: cargo.status,
+      publishedAt: cargo.publishedAt,
+      expiresAt: cargo.expiresAt,
+      archivedAt: cargo.archivedAt,
+      createdAt: cargo.createdAt,
+      responses: cargo.responses.map((r) => ({
+        id: r.id,
+        driverId: r.driver.id,
+        driverName: r.driver.fullName,
+        message: r.message,
+        status: r.status,
+        createdAt: r.createdAt,
+      })),
+      deal: cargo.deals[0] ? { id: cargo.deals[0].id, status: cargo.deals[0].status, driverName: cargo.deals[0].driver.fullName } : null,
+      auditLog: auditLog.map((a) => ({
+        id: a.id,
+        action: a.action,
+        actorName: a.actor?.name ?? a.actor?.email ?? null,
+        metadata: a.metadata,
+        createdAt: a.createdAt,
+      })),
+    };
+  }
+
+  /// «Исправить» (п.15) — те же поля, что при публикации, плюс обязательная
+  /// причина; в audit_log пишем старое/новое по каждому изменённому полю
+  /// (общий паттерн редактирования, задача 028, п.18).
+  async updateCargo(id: string, adminUserId: string, dto: AdminUpdateCargoDto) {
+    const existing = await this.prisma.cargo.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Cargo not found');
+
+    const readyDate = dto.readyDate ? new Date(dto.readyDate) : existing.readyDate;
+    const expiresAt = dto.readyDate != null ? new Date(readyDate.getTime() + 48 * 60 * 60 * 1000) : existing.expiresAt;
+
+    const fields: Array<[keyof AdminUpdateCargoDto, unknown, unknown]> = [
+      ['destinationCountryId', existing.destinationCountryId, dto.destinationCountryId],
+      ['destinationCityId', existing.destinationCityId, dto.destinationCityId],
+      ['bodyTypeId', existing.bodyTypeId, dto.bodyTypeId],
+      ['weightKg', existing.weightKg ? Number(existing.weightKg) : null, dto.weightKg],
+      ['volumeM3', existing.volumeM3 ? Number(existing.volumeM3) : null, dto.volumeM3],
+      ['photoUrls', existing.photoUrls, dto.photoUrls],
+      ['price', Number(existing.price), dto.price],
+      ['currency', existing.currency, dto.currency],
+      ['readyDate', existing.readyDate.toISOString(), dto.readyDate],
+      ['description', existing.description, dto.description],
+    ];
+    const changes = Object.fromEntries(
+      fields.filter(([, oldValue, newValue]) => newValue !== undefined && String(oldValue) !== String(newValue)).map(([key, oldValue, newValue]) => [key, { old: oldValue, new: newValue }]),
+    );
+
+    const updated = await this.prisma.cargo.update({
+      where: { id },
+      data: {
+        destinationCountryId: dto.destinationCountryId,
+        destinationCityId: dto.destinationCityId,
+        bodyTypeId: dto.bodyTypeId,
+        weightKg: dto.weightKg,
+        volumeM3: dto.volumeM3,
+        photoUrls: dto.photoUrls,
+        price: dto.price,
+        currency: dto.currency,
+        readyDate,
+        expiresAt,
+        description: dto.description,
+      },
+    });
+
+    await this.logAudit(adminUserId, 'CARGO_UPDATED', 'Cargo', id, { reason: dto.reason, changes });
+    return { id: updated.id };
+  }
+
+  /// «Снять с публикации» (п.15) — ARCHIVED, не CANCELLED: это не отмена
+  /// груза логистом (тот путь уже есть в `cargos.service.remove`), а именно
+  /// административное снятие с витрины — отклики/сделки не трогаем.
+  async unpublishCargo(id: string, adminUserId: string, reason: string) {
+    const cargo = await this.prisma.cargo.findUnique({ where: { id } });
+    if (!cargo) throw new NotFoundException('Cargo not found');
+
+    await this.prisma.cargo.update({ where: { id }, data: { status: 'ARCHIVED', archivedAt: new Date() } });
+    await this.logAudit(adminUserId, 'CARGO_UNPUBLISHED', 'Cargo', id, { reason });
+    // TODO(задача 011): уведомление логисту через модуль уведомлений — пока его нет, фиксируем намерение в логе.
+    await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Cargo', id, { channel: 'push', template: 'CARGO_UNPUBLISHED', companyId: cargo.companyId });
+
+    return { id, status: 'ARCHIVED' };
+  }
+
+  // -- deal detail & actions (задача 028, п.17) ----------------------------------
+
+  private static readonly DEAL_PROGRESSION = ['SELECTED', 'CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED'] as const;
+  private static readonly DEAL_TIMESTAMP_FIELD: Record<string, string> = {
+    CONFIRMED_BY_DRIVER: 'confirmedAt',
+    LOADED: 'loadedAt',
+    IN_TRANSIT: 'inTransitAt',
+    DELIVERED: 'deliveredAt',
+  };
+
+  async dealDetail(id: string) {
+    const deal = await this.prisma.deal.findUnique({
+      where: { id },
+      include: {
+        cargo: { include: { point: { select: { name: true } }, destinationCountry: { select: { name: true } } } },
+        driver: { select: { id: true, fullName: true } },
+        company: { select: { id: true, name: true } },
+        contactEvents: { orderBy: { createdAt: 'desc' } },
+      },
+    });
+    if (!deal) throw new NotFoundException('Deal not found');
+
+    const auditLog = await this.prisma.auditLog.findMany({
+      where: { entityType: 'Deal', entityId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+      include: { actor: { select: { name: true, email: true } } },
+    });
+    const kztRate = await this.kztRateFor(deal.cargo.currency);
+
+    const statusHistory = [
+      { status: 'SELECTED', at: deal.createdAt },
+      deal.confirmedAt ? { status: 'CONFIRMED_BY_DRIVER', at: deal.confirmedAt } : null,
+      deal.loadedAt ? { status: 'LOADED', at: deal.loadedAt } : null,
+      deal.inTransitAt ? { status: 'IN_TRANSIT', at: deal.inTransitAt } : null,
+      deal.deliveredAt ? { status: 'DELIVERED', at: deal.deliveredAt } : null,
+    ].filter((e): e is { status: string; at: Date } => e !== null);
+
+    return {
+      id: deal.id,
+      cargoId: deal.cargoId,
+      pointName: deal.cargo.point.name,
+      destinationCountryName: deal.cargo.destinationCountry.name,
+      price: Number(deal.cargo.price),
+      currency: deal.cargo.currency,
+      priceInKzt: kztRate != null ? Number(deal.cargo.price) * kztRate : null,
+      driverId: deal.driver.id,
+      driverName: deal.driver.fullName,
+      companyId: deal.company.id,
+      companyName: deal.company.name,
+      status: deal.status,
+      cancelReason: deal.cancelReason,
+      cancelledByRole: deal.cancelledByRole,
+      staleDays:
+        deal.status === 'DELIVERED' || deal.status === 'CANCELLED'
+          ? 0
+          : Math.floor((Date.now() - deal.updatedAt.getTime()) / (24 * 60 * 60 * 1000)),
+      statusHistory,
+      calls: deal.contactEvents.map((e) => ({ id: e.id, type: e.type, createdAt: e.createdAt })),
+      createdAt: deal.createdAt,
+      auditLog: auditLog.map((a) => ({
+        id: a.id,
+        action: a.action,
+        actorName: a.actor?.name ?? a.actor?.email ?? null,
+        metadata: a.metadata,
+        createdAt: a.createdAt,
+      })),
+    };
+  }
+
+  /// Переписка — только просмотр, без правки/удаления (п.17). Каждое
+  /// открытие пишется в audit_log отдельно от загрузки самой карточки
+  /// сделки — лог должен отражать именно обращение к личной переписке.
+  async dealChat(id: string, adminUserId: string) {
+    const deal = await this.prisma.deal.findUnique({ where: { id } });
+    if (!deal) throw new NotFoundException('Deal not found');
+
+    const chat = await this.prisma.chat.findFirst({ where: { dealId: id } });
+    const messages = chat
+      ? await this.prisma.message.findMany({ where: { chatId: chat.id }, orderBy: { createdAt: 'asc' } })
+      : [];
+
+    await this.logAudit(adminUserId, 'ADMIN_VIEWED_CHAT', 'Deal', id, {});
+
+    return messages.map((m) => ({
+      id: m.id,
+      senderUserId: m.senderUserId,
+      originalText: m.originalText,
+      originalLang: m.originalLang,
+      translations: m.translations,
+      createdAt: m.createdAt,
+    }));
+  }
+
+  /// «Исправить статус» — только на соседний шаг, вперёд или назад (п.17).
+  /// При движении назад снимаем отметку времени шага, который отменяем —
+  /// иначе `loadedAt` остался бы висеть на сделке, которая снова LOADED не
+  /// значит.
+  async advanceDealStatusByAdmin(id: string, adminUserId: string, dto: AdminDealStatusDto) {
+    const deal = await this.prisma.deal.findUnique({ where: { id } });
+    if (!deal) throw new NotFoundException('Deal not found');
+
+    const progression = AdminService.DEAL_PROGRESSION;
+    const currentIndex = progression.indexOf(deal.status as (typeof progression)[number]);
+    const nextIndex = progression.indexOf(dto.status as (typeof progression)[number]);
+    if (currentIndex === -1 || nextIndex === -1 || Math.abs(nextIndex - currentIndex) !== 1) {
+      throw new BadRequestException(`Can only move a deal to the adjacent status, not from ${deal.status} to ${dto.status}`);
+    }
+
+    const data: Record<string, unknown> = { status: dto.status };
+    if (nextIndex > currentIndex) {
+      const field = AdminService.DEAL_TIMESTAMP_FIELD[dto.status];
+      if (field) data[field] = new Date();
+    } else {
+      const field = AdminService.DEAL_TIMESTAMP_FIELD[deal.status];
+      if (field) data[field] = null;
+    }
+
+    await this.prisma.deal.update({ where: { id }, data });
+    await this.logAudit(adminUserId, 'DEAL_STATUS_FIXED', 'Deal', id, { reason: dto.reason, from: deal.status, to: dto.status });
+    await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Deal', id, { channel: 'push', template: 'DEAL_STATUS_FIXED', driverId: deal.driverId, companyId: deal.companyId });
+
+    return { id, status: dto.status };
+  }
+
+  /// «Отменить сделку» админом (п.17) — причина обязательна,
+  /// `cancelledByRole = ADMIN` (значение добавлено в `ReviewAuthorRole`
+  /// миграцией). Рейтинг сторон не трогаем — он считается только из
+  /// `Review`, сюда вообще не пишем.
+  async cancelDealByAdmin(id: string, adminUserId: string, reason: string) {
+    const deal = await this.prisma.deal.findUnique({ where: { id } });
+    if (!deal) throw new NotFoundException('Deal not found');
+    if (deal.status === 'DELIVERED' || deal.status === 'CANCELLED') {
+      throw new BadRequestException('This deal can no longer be cancelled');
+    }
+
+    await this.prisma.deal.update({
+      where: { id },
+      data: { status: 'CANCELLED', cancelReason: reason, cancelledByRole: 'ADMIN' },
+    });
+    await this.logAudit(adminUserId, 'DEAL_CANCELLED_BY_ADMIN', 'Deal', id, { reason });
+    await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Deal', id, { channel: 'push', template: 'DEAL_CANCELLED', driverId: deal.driverId, companyId: deal.companyId });
+
+    return { id, status: 'CANCELLED' };
   }
 
   // -- verification documents ------------------------------------------------

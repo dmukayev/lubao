@@ -1533,4 +1533,78 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminRejectPresetPlateMismatch => 'Plate number mismatch';
+
+  @override
+  String get adminCargoUnpublish => 'Unpublish';
+
+  @override
+  String get adminCargoUnpublishDialogTitle => 'Unpublish this cargo';
+
+  @override
+  String get adminCargoEdit => 'Edit';
+
+  @override
+  String get adminCargoEditDialogTitle => 'Edit cargo';
+
+  @override
+  String get adminCargoPublishedAt => 'Published';
+
+  @override
+  String get adminCargoExpiresAt => 'Expires';
+
+  @override
+  String get adminCargoArchivedAt => 'Unpublished';
+
+  @override
+  String get adminCargoTabResponses => 'Responses';
+
+  @override
+  String get adminNoResponses => 'No responses yet';
+
+  @override
+  String get adminDealCancel => 'Cancel deal';
+
+  @override
+  String get adminDealCancelDialogTitle => 'Cancel this deal';
+
+  @override
+  String get adminDealFixStatus => 'Fix status';
+
+  @override
+  String get adminDealFixStatusDialogTitle => 'Fix deal status';
+
+  @override
+  String get adminDealOpenCargo => 'Cargo →';
+
+  @override
+  String adminDealCancelledBy(String role) {
+    return 'Cancelled by $role';
+  }
+
+  @override
+  String get adminDealStatusHistoryTitle => 'Status history';
+
+  @override
+  String get adminDealTabChat => 'Chat';
+
+  @override
+  String get adminDealTabCalls => 'Calls';
+
+  @override
+  String get adminDealShowChat => 'Show chat';
+
+  @override
+  String get adminNoChat => 'No messages';
+
+  @override
+  String get adminNoCalls => 'No calls yet';
+
+  @override
+  String get adminContactEventCall => 'Call';
+
+  @override
+  String get adminContactEventWhatsapp => 'WhatsApp';
+
+  @override
+  String get roleAdmin => 'Admin';
 }
