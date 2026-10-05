@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Driver } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { IdentifiersService } from '../identifiers/identifiers.service';
+import { RecognitionService } from '../recognition/recognition.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { CreateVerificationDocumentDto } from './dto/create-verification-document.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
@@ -24,6 +25,7 @@ export class DriversService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly identifiers?: IdentifiersService,
+    private readonly recognition?: RecognitionService,
   ) {}
 
   private async verificationStatus(userId: string, isVerified: boolean): Promise<'NONE' | 'PENDING' | 'APPROVED'> {
@@ -189,6 +191,7 @@ export class DriversService {
     const doc = await this.prisma.verificationDocument.create({
       data: { userId, driverId, vehicleId, type: dto.type, fileUrl: dto.fileUrl, status: 'PENDING' },
     });
+    await this.recognition?.enqueue(doc.id);
     return this.docToDto(doc);
   }
 

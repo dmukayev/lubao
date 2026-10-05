@@ -670,6 +670,35 @@ model BlockedIdentifier {
   @@map("blocked_identifiers")
 }
 
+enum DocumentRecognitionStatus {
+  PENDING
+  DONE
+  FAILED
+  SKIPPED
+}
+
+/// Задача 031, этап D — результат распознавания одного документа. Один на
+/// документ (повторный прогон перезаписывает) — поэтому documentId
+/// уникален, а не просто индексирован. `fields` — JSON вида
+/// `{iin: {value, confidence, checksumOk, needsReview}, ...}`, набор
+/// ключей зависит от типа документа (п.20). Только ПОМОГАЕТ админу —
+/// в identifiers значения попадают лишь после его подтверждения
+/// (reviewVerificationDocument/admin-ручной ввод, не отсюда напрямую).
+model DocumentRecognition {
+  id           String                    @id @default(uuid())
+  documentId   String                    @unique
+  document     VerificationDocument      @relation(fields: [documentId], references: [id])
+  status       DocumentRecognitionStatus @default(PENDING)
+  fields       Json?
+  engineVersion String?
+  durationMs   Int?
+  errorMessage String?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+
+  @@map("document_recognitions")
+}
+
 model Cargo {
   id                    String      @id @default(uuid())
   companyId             String
@@ -903,6 +932,7 @@ model VerificationDocument {
   updatedAt        DateTime            @updatedAt
 
   identifiersSourced Identifier[]
+  recognition        DocumentRecognition?
 
   @@index([userId])
   @@index([companyId])

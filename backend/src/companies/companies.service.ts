@@ -5,6 +5,7 @@ import { Company, CompanyMember, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { WeComService } from '../notifications/wecom.service';
+import { RecognitionService } from '../recognition/recognition.service';
 import { RegisterCompanyDto } from './dto/register-company.dto';
 import { CreateInviteDto, AcceptInviteDto } from './dto/invite.dto';
 import { UpdateCompanyProfileDto } from './dto/update-company-profile.dto';
@@ -20,6 +21,7 @@ export class CompaniesService {
     private readonly prisma: PrismaService,
     private readonly email: EmailService,
     private readonly wecom: WeComService,
+    private readonly recognition?: RecognitionService,
   ) {}
 
   toCompanyDto(company: Company) {
@@ -88,6 +90,7 @@ export class CompaniesService {
     const doc = await this.prisma.verificationDocument.create({
       data: { userId, companyId, type: dto.type, fileUrl: dto.fileUrl, status: 'PENDING' },
     });
+    await this.recognition?.enqueue(doc.id);
     return this.docToDto(doc);
   }
 

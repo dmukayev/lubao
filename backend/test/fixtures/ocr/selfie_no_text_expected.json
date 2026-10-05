@@ -1,0 +1,7 @@
+{
+  "note": "СЕЛФИ не содержит текста для распознавания вовсе — extractFields должен просто вернуть пустой объект полей, а recognition.service.ts не должен звать OCR на этот тип документа (langsForDocType → []).",
+  "documentType": "SELFIE",
+  "lines": [
+    "anything OCR might hallucinate on a face photo"
+  ]
+}

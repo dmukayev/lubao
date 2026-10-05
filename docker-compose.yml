@@ -50,6 +50,17 @@ services:
       timeout: 5s
       retries: 10
 
+  # Задача 031, этап D — распознавание документов (OCR). Внутри docker-сети,
+  # без published-порта: наружу не торчит, backend ходит по OCR_SERVICE_URL.
+  # Не запущен — recognition.service.ts пишет DocumentRecognition.status=
+  # SKIPPED и продолжает, ручная проверка документа админом не затрагивается.
+  ocr:
+    build:
+      context: ./infra/ocr
+    restart: unless-stopped
+    expose:
+      - "8000"
+
   backend:
     build:
       context: ./backend
@@ -80,6 +91,7 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       IDENTIFIER_PEPPER: ${IDENTIFIER_PEPPER}
       IDENTIFIER_KEY: ${IDENTIFIER_KEY}
+      OCR_SERVICE_URL: ${OCR_SERVICE_URL:-}
       NODE_ENV: ${NODE_ENV:-development}
     ports:
       - "${BACKEND_PORT:-3000}:3000"
