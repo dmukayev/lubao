@@ -1,10 +1,16 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestContext } from '../common/request-context';
+import { NotificationsService } from '../notifications/notifications.service';
+
+const CHAT_PREVIEW_LENGTH = 80;
 
 @Injectable()
 export class ChatsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   private assertParty(chat: { driverId: string; companyId: string }, ctx: RequestContext) {
     const isParty = chat.driverId === ctx.driver?.id || chat.companyId === ctx.companyMember?.companyId;
@@ -70,11 +76,16 @@ export class ChatsService {
     });
   }
 
-  private async toThreadDto(chat: { id: string; cargoId: string | null; dealId: string | null; driverId: string; companyId: string }, ctx: RequestContext) {
+  private async resolveParties(chat: { driverId: string; companyId: string; cargoId: string | null }) {
     const [driver, companyMember] = await Promise.all([
       this.prisma.driver.findUniqueOrThrow({ where: { id: chat.driverId }, include: { user: true } }),
       this.resolveCompanyCounterpart(chat.companyId, chat.cargoId),
     ]);
+    return { driver, companyMember };
+  }
+
+  private async toThreadDto(chat: { id: string; cargoId: string | null; dealId: string | null; driverId: string; companyId: string }, ctx: RequestContext) {
+    const { driver, companyMember } = await this.resolveParties(chat);
     const counterpartName = ctx.driver ? companyMember?.company.name ?? '' : driver.fullName;
     const counterpartLocale = ctx.driver ? companyMember?.user.locale : driver.user.locale;
     return {
@@ -157,6 +168,22 @@ export class ChatsService {
     // Message не трогает Chat.updatedAt сам по себе — обновляем явно, иначе
     // список «Мои чаты» (order by updatedAt) не поднимет диалог наверх.
     await this.prisma.chat.update({ where: { id: chat.id }, data: { updatedAt: new Date() } });
+
+    // Push получателю (задача 011, CHAT_MESSAGE) — не чаще раза в минуту на
+    // чат, см. throttle в NOTIFICATION_EVENTS; доставка «пока открыт экран»
+    // идёт мгновенно через Socket.IO (realtime.gateway), push — запасной
+    // канал на случай закрытого приложения.
+    const { driver, companyMember } = await this.resolveParties(chat);
+    const recipientUserId = ctx.driver ? companyMember?.user.id : driver.user.id;
+    const senderName = ctx.driver ? driver.fullName : companyMember?.user.name || companyMember?.company.name || '';
+    if (recipientUserId) {
+      await this.notifications.notify({ userIds: [recipientUserId] }, 'CHAT_MESSAGE', {
+        chatId: chat.id,
+        senderName,
+        preview: text.length > CHAT_PREVIEW_LENGTH ? `${text.slice(0, CHAT_PREVIEW_LENGTH)}…` : text,
+      });
+    }
+
     return {
       id: message.id,
       chatId: message.chatId,

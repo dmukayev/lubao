@@ -1,12 +1,18 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Driver, Prisma, Response as CargoResponseEntity } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveCargoContactUserId } from '../cargos/resolve-contact';
+import { DEAL_STATUS_LABEL_RU } from '../notifications/notification-events';
+import { NotificationsService } from '../notifications/notifications.service';
 
 type ResponseWithDriver = CargoResponseEntity & { driver: Driver };
 
 @Injectable()
 export class ResponsesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   toDto(response: ResponseWithDriver) {
     return {
@@ -34,10 +40,21 @@ export class ResponsesService {
     if (existing) {
       throw new ConflictException('You have already responded to this cargo');
     }
+    const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId } });
+    if (!cargo) throw new NotFoundException('Cargo not found');
+
     const response = await this.prisma.response.create({
       data: { cargoId, driverId, message, status: 'PENDING' },
       include: { driver: true },
     });
+
+    const contactUserId = await resolveCargoContactUserId(this.prisma, cargo);
+    await this.notifications.notify(
+      { userIds: contactUserId ? [contactUserId] : [], companyId: cargo.companyId },
+      'NEW_RESPONSE',
+      { cargoId, driverName: response.driver.fullName },
+    );
+
     return this.toDto(response);
   }
 
@@ -78,16 +95,21 @@ export class ResponsesService {
         },
       });
       await this.attachChatToDeal(tx, deal);
-      return selected;
+      return { selected, deal };
     });
 
-    return this.toDto(updated);
+    await this.notifications.notify({ userIds: [updated.selected.driver.userId] }, 'DEAL_STATUS', {
+      dealId: updated.deal.id,
+      statusLabelRu: DEAL_STATUS_LABEL_RU.SELECTED,
+    });
+
+    return this.toDto(updated.selected);
   }
 
   /// Логист приглашает конкретного водителя на груз напрямую (со страницы
   /// "Кто будет на Хоргосе"), без предварительного отклика водителя.
   async inviteDriver(cargoId: string, driverId: string, companyId: string) {
-    const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId } });
+    const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId }, include: { company: true } });
     if (!cargo) throw new NotFoundException('Cargo not found');
     if (cargo.companyId !== companyId) throw new ForbiddenException('Not your cargo');
 
@@ -112,6 +134,11 @@ export class ResponsesService {
       });
       await this.attachChatToDeal(tx, deal);
       return selected;
+    });
+
+    await this.notifications.notify({ userIds: [updated.driver.userId] }, 'CARGO_INVITE', {
+      cargoId,
+      companyName: cargo.company.name,
     });
 
     return this.toDto(updated);

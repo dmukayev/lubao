@@ -10,6 +10,18 @@ export function pickLocaleText(name: I18nName, locale: Locale): string {
   return name[locale] || name.ru || Object.values(name).find((v) => !!v) || '';
 }
 
+/// DEAL_STATUS шлётся всегда на русском тексте статуса (упрощение — полный
+/// 4-язычный набор статусов сделки не входит в объём 011; `render`
+/// всё равно оборачивает его в заголовок на языке получателя).
+export const DEAL_STATUS_LABEL_RU: Record<string, string> = {
+  SELECTED: 'Водитель выбран',
+  CONFIRMED_BY_DRIVER: 'Водитель подтвердил перевозку',
+  LOADED: 'Груз загружен',
+  IN_TRANSIT: 'В пути',
+  DELIVERED: 'Доставлено',
+  CANCELLED: 'Сделка отменена',
+};
+
 export type DeliveryChannel = 'PUSH' | 'WECOM';
 
 export type NotificationEvent =

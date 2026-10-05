@@ -2,6 +2,9 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { Company, Deal, Driver } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CargosService } from '../cargos/cargos.service';
+import { resolveCargoContactUserId } from '../cargos/resolve-contact';
+import { DEAL_STATUS_LABEL_RU } from '../notifications/notification-events';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const PROGRESSION = ['SELECTED', 'CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED'] as const;
 
@@ -16,7 +19,19 @@ export class DealsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cargos: CargosService,
+    private readonly notifications: NotificationsService,
   ) {}
+
+  /// Push обеим сторонам + WeCom компании при смене статуса сделки
+  /// (задача 011, таблица событий «Смена статуса сделки»).
+  private async notifyStatusChange(deal: DealWithRelations, status: string) {
+    const contactUserId = await resolveCargoContactUserId(this.prisma, deal.cargo);
+    await this.notifications.notify(
+      { userIds: [deal.driver.userId, ...(contactUserId ? [contactUserId] : [])], companyId: deal.companyId },
+      'DEAL_STATUS',
+      { dealId: deal.id, statusLabelRu: DEAL_STATUS_LABEL_RU[status] ?? status },
+    );
+  }
 
   private readonly include = {
     driver: true,
@@ -102,6 +117,7 @@ export class DealsService {
       data: { status: nextStatus as Deal['status'], [timestampField]: now },
       include: this.include,
     });
+    await this.notifyStatusChange(updated, nextStatus);
     return this.toDto(updated);
   }
 
@@ -121,6 +137,7 @@ export class DealsService {
       },
       include: this.include,
     });
+    await this.notifyStatusChange(updated, 'CANCELLED');
     return this.toDto(updated);
   }
 }

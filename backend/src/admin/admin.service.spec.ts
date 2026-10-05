@@ -354,6 +354,46 @@ describe('AdminService.setDriverVerified / setCompanyVerified — force gate (з
       BadRequestException,
     );
   });
+
+  it('setDriverVerified(true) sends VERIFICATION_APPROVED to the driver (задача 011)', async () => {
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1', userId: 'user-d1' }), update: jest.fn().mockResolvedValue({ id: 'd1', isVerified: true }) },
+      auditLog: { create: jest.fn().mockResolvedValue({}) },
+    };
+    const notifications = { notify: jest.fn() };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, notifications as any);
+
+    await service.setDriverVerified('d1', 'admin-1', { isVerified: true, reason: 'проверил лично', force: true });
+
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['user-d1'] }, 'VERIFICATION_APPROVED', {});
+  });
+
+  it('setDriverVerified(false) does not notify', async () => {
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1', userId: 'user-d1' }), update: jest.fn().mockResolvedValue({ id: 'd1', isVerified: false }) },
+      auditLog: { create: jest.fn().mockResolvedValue({}) },
+    };
+    const notifications = { notify: jest.fn() };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, notifications as any);
+
+    await service.setDriverVerified('d1', 'admin-1', { isVerified: false, reason: 'нарушение' });
+
+    expect(notifications.notify).not.toHaveBeenCalled();
+  });
+
+  it('setCompanyVerified(true, force) sends VERIFICATION_APPROVED to the owner (задача 011)', async () => {
+    const prisma: any = {
+      company: { findUnique: jest.fn().mockResolvedValue({ id: 'c1' }), update: jest.fn().mockResolvedValue({ id: 'c1', isVerified: true }) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ userId: 'owner-1' }) },
+      auditLog: { create: jest.fn().mockResolvedValue({}) },
+    };
+    const notifications = { notify: jest.fn() };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, notifications as any);
+
+    await service.setCompanyVerified('c1', 'admin-1', { isVerified: true, reason: 'x', force: true });
+
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['owner-1'] }, 'VERIFICATION_APPROVED', {});
+  });
 });
 
 describe('AdminService.resetCompanyPassword — audit log (задача 026, п.5)', () => {
@@ -795,14 +835,15 @@ describe('AdminService.returnDriverForRework / returnCompanyForRework — one de
     await expect(service.returnDriverForRework('d1', 'admin-1', { decisions: [] } as any)).rejects.toThrow(BadRequestException);
   });
 
-  it('rejects the listed documents, unverifies the driver, and writes exactly one decision + one notification audit entry', async () => {
+  it('rejects the listed documents, unverifies the driver, logs one decision entry, and notifies the driver for real (задача 011)', async () => {
     const prisma: any = {
-      driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1' }), update: jest.fn() },
+      driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1', userId: 'user-d1' }), update: jest.fn() },
       verificationDocument: { findMany: jest.fn().mockResolvedValue([{ id: 'doc1', driverId: 'd1' }]), update: jest.fn() },
       $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
       auditLog: { create: jest.fn() },
     };
-    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    const notifications = { notify: jest.fn() };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, notifications as any);
 
     await service.returnDriverForRework('d1', 'admin-1', {
       decisions: [{ documentId: 'doc1', rejectReason: 'Нечитаемое фото' }],
@@ -813,10 +854,8 @@ describe('AdminService.returnDriverForRework / returnCompanyForRework — one de
     expect(prisma.auditLog.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ action: 'DRIVER_RETURNED_FOR_REWORK' }) }),
     );
-    expect(prisma.auditLog.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ action: 'NOTIFICATION_QUEUED' }) }),
-    );
-    expect(prisma.auditLog.create).toHaveBeenCalledTimes(2);
+    expect(prisma.auditLog.create).toHaveBeenCalledTimes(1);
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['user-d1'] }, 'VERIFICATION_RETURNED', { note: 'Переснимите права' });
   });
 
   it('throws if a listed document does not belong to this driver', async () => {
@@ -831,21 +870,24 @@ describe('AdminService.returnDriverForRework / returnCompanyForRework — one de
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('company branch: rejects documents, unverifies the company, logs one decision + one notification entry', async () => {
+  it('company branch: rejects documents, unverifies the company, logs one decision entry, and notifies the owner', async () => {
     const prisma: any = {
       company: { findUnique: jest.fn().mockResolvedValue({ id: 'c1' }), update: jest.fn() },
       verificationDocument: { findMany: jest.fn().mockResolvedValue([{ id: 'doc1', companyId: 'c1' }]), update: jest.fn() },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ userId: 'owner-1' }) },
       $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
       auditLog: { create: jest.fn() },
     };
-    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    const notifications = { notify: jest.fn() };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, notifications as any);
 
     await service.returnCompanyForRework('c1', 'admin-1', {
       decisions: [{ documentId: 'doc1', rejectReason: 'Документ просрочен' }],
     } as any);
 
     expect(prisma.company.update).toHaveBeenCalledWith({ where: { id: 'c1' }, data: { isVerified: false } });
-    expect(prisma.auditLog.create).toHaveBeenCalledTimes(2);
+    expect(prisma.auditLog.create).toHaveBeenCalledTimes(1);
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['owner-1'] }, 'VERIFICATION_RETURNED', { note: undefined });
   });
 });
 

@@ -6,6 +6,7 @@ import { SessionService } from '../auth/session.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { REQUIRED_DRIVER_DOC_TYPES } from '../drivers/drivers.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   AdminChangeMemberEmailDto,
   AdminDealStatusDto,
@@ -44,6 +45,7 @@ export class AdminService {
     private readonly sessions: SessionService,
     private readonly uploads: UploadsService,
     private readonly appSettings?: AppSettingsService,
+    private readonly notifications?: NotificationsService,
   ) {}
 
   private async logAudit(actorUserId: string, action: string, entityType: string, entityId: string, metadata?: object) {
@@ -960,13 +962,7 @@ export class AdminService {
     await this.prisma.driver.update({ where: { id }, data: { isVerified: false } });
 
     await this.logAudit(adminUserId, 'DRIVER_RETURNED_FOR_REWORK', 'Driver', id, { note: dto.note, decisions: dto.decisions });
-    // TODO(задача 011): реальная отправка push/SMS «профиль нужно доработать»
-    // через модуль уведомлений — пока его нет, фиксируем намерение в логе.
-    await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Driver', id, {
-      channel: 'push',
-      template: 'VERIFICATION_RETURNED',
-      documentIds: dto.decisions.map((d) => d.documentId),
-    });
+    await this.notifications?.notify({ userIds: [driver.userId] }, 'VERIFICATION_RETURNED', { note: dto.note });
 
     return { id, isVerified: false };
   }
@@ -992,11 +988,10 @@ export class AdminService {
     await this.prisma.company.update({ where: { id }, data: { isVerified: false } });
 
     await this.logAudit(adminUserId, 'COMPANY_RETURNED_FOR_REWORK', 'Company', id, { note: dto.note, decisions: dto.decisions });
-    await this.logAudit(adminUserId, 'NOTIFICATION_QUEUED', 'Company', id, {
-      channel: 'email',
-      template: 'VERIFICATION_RETURNED',
-      documentIds: dto.decisions.map((d) => d.documentId),
-    });
+    const owner = await this.prisma.companyMember.findFirst({ where: { companyId: id, role: 'OWNER' }, orderBy: { createdAt: 'asc' } });
+    if (owner) {
+      await this.notifications?.notify({ userIds: [owner.userId] }, 'VERIFICATION_RETURNED', { note: dto.note });
+    }
 
     return { id, isVerified: false };
   }
@@ -1710,6 +1705,10 @@ export class AdminService {
       reason: dto.reason,
       force: dto.force ?? false,
     });
+    if (dto.isVerified) {
+      const owner = await this.prisma.companyMember.findFirst({ where: { companyId: id, role: 'OWNER' }, orderBy: { createdAt: 'asc' } });
+      if (owner) await this.notifications?.notify({ userIds: [owner.userId] }, 'VERIFICATION_APPROVED', {});
+    }
     return { id: updated.id, isVerified: updated.isVerified };
   }
 
@@ -1831,6 +1830,9 @@ export class AdminService {
       reason: dto.reason,
       force: dto.force ?? false,
     });
+    if (dto.isVerified) {
+      await this.notifications?.notify({ userIds: [driver.userId] }, 'VERIFICATION_APPROVED', {});
+    }
     return { id: updated.id, isVerified: updated.isVerified };
   }
 
