@@ -201,8 +201,12 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
                     extra: driver.vehicles.isEmpty
                         ? null
                         : driver.vehicles
-                            .map((v) => '${v.bodyTypeName.forLanguageCode(Localizations.localeOf(context).languageCode)}'
-                                '${v.plateNumber != null ? ' · ${v.plateNumber}' : ''}')
+                            .map((v) => [
+                                  // Тип кузова есть только у прицепа — у
+                                  // тягача bodyTypeName всегда null.
+                                  if (v.bodyTypeName != null) v.bodyTypeName!.forLanguageCode(Localizations.localeOf(context).languageCode) else if (v.brand != null) v.brand!,
+                                  if (v.plateNumber != null) v.plateNumber!,
+                                ].join(' · '))
                             .join(', '),
                   ),
                   const SizedBox(height: AppSpacing.lg),

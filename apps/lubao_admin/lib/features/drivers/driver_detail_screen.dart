@@ -424,9 +424,13 @@ class _VehicleCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Text(
-                '${v.bodyTypeName.forLanguageCode(locale)}'
-                '${v.capacityTons != null ? ' · ${v.capacityTons} ${t.unitTon}' : ''}'
-                '${v.plateNumber != null ? ' · ${v.plateNumber}' : ''}',
+                [
+                  // Тип кузова есть только у прицепа — у тягача (задача
+                  // 031, этап A) bodyTypeName всегда null, показываем марку.
+                  if (v.bodyTypeName != null) v.bodyTypeName!.forLanguageCode(locale) else if (v.brand != null) v.brand!,
+                  if (v.capacityTons != null) '${v.capacityTons} ${t.unitTon}',
+                  if (v.plateNumber != null) v.plateNumber!,
+                ].join(' · '),
               ),
             ),
         ],

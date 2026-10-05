@@ -384,7 +384,7 @@ class AdminDriverRow {
       fullName: json['fullName'] as String,
       phone: json['phone'] as String?,
       homeCityName: I18nText.fromJson(json['homeCityName'] as Map<String, dynamic>),
-      vehicleBodyTypeName: vehicle == null ? null : I18nText.fromJson(vehicle['bodyTypeName'] as Map<String, dynamic>),
+      vehicleBodyTypeName: vehicle?['bodyTypeName'] == null ? null : I18nText.fromJson(vehicle!['bodyTypeName'] as Map<String, dynamic>),
       vehicleCapacityTons: vehicle?['capacityTons'] == null ? null : (vehicle!['capacityTons'] as num).toDouble(),
       isVerified: json['isVerified'] as bool,
       pendingDocsCount: json['pendingDocsCount'] as int,
@@ -515,7 +515,7 @@ class AdminDriverVehicle {
   const AdminDriverVehicle({
     required this.id,
     this.bodyTypeId,
-    required this.bodyTypeName,
+    this.bodyTypeName,
     this.capacityTons,
     this.lengthM,
     this.plateNumber,
@@ -526,7 +526,9 @@ class AdminDriverVehicle {
 
   final String id;
   final String? bodyTypeId;
-  final I18nText bodyTypeName;
+  // Тип кузова есть только у прицепа (задача 031, этап A) — у тягача/
+  // одиночки bodyTypeId/bodyTypeName всегда null.
+  final I18nText? bodyTypeName;
   final double? capacityTons;
   final double? lengthM;
   final String? plateNumber;
@@ -537,7 +539,7 @@ class AdminDriverVehicle {
   factory AdminDriverVehicle.fromJson(Map<String, dynamic> json) => AdminDriverVehicle(
         id: json['id'] as String,
         bodyTypeId: json['bodyTypeId'] as String?,
-        bodyTypeName: I18nText.fromJson(json['bodyTypeName'] as Map<String, dynamic>),
+        bodyTypeName: json['bodyTypeName'] == null ? null : I18nText.fromJson(json['bodyTypeName'] as Map<String, dynamic>),
         capacityTons: json['capacityTons'] == null ? null : (json['capacityTons'] as num).toDouble(),
         lengthM: json['lengthM'] == null ? null : (json['lengthM'] as num).toDouble(),
         plateNumber: json['plateNumber'] as String?,
