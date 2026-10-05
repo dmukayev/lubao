@@ -1734,6 +1734,12 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get adminVehicleBrand => 'Марка';
 
   @override
+  String get adminVehicleTractorTitle => 'Тягач';
+
+  @override
+  String get adminVehicleTrailerTitle => 'Прицеп';
+
+  @override
   String get adminVehicleLengthM => 'Длина, м';
 
   @override

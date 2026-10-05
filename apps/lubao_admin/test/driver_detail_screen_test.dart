@@ -116,8 +116,8 @@ void main() {
       permitNames: const [],
       permitIds: const [],
       vehicles: const [
-        AdminDriverVehicle(id: 'tractor1', bodyTypeName: null, brand: 'MAZ', plateNumber: '1234 AB-7'),
-        AdminDriverVehicle(id: 'trailer1', bodyTypeName: I18nText(ru: 'Автовоз', kk: 'Автовоз', zh: '汽车运输车'), capacityTons: 16),
+        AdminDriverVehicle(id: 'tractor1', kind: VehicleKind.tractor, bodyTypeName: null, brand: 'MAZ', plateNumber: '1234 AB-7'),
+        AdminDriverVehicle(id: 'trailer1', kind: VehicleKind.trailer, bodyTypeName: I18nText(ru: 'Автовоз', kk: 'Автовоз', zh: '汽车运输车'), capacityTons: 16),
       ],
       documents: const [],
       stats: const AdminDriverStats(

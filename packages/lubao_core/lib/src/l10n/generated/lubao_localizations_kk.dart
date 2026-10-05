@@ -1741,6 +1741,12 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get adminVehicleBrand => 'Маркасы';
 
   @override
+  String get adminVehicleTractorTitle => 'Тартқыш';
+
+  @override
+  String get adminVehicleTrailerTitle => 'Тіркеме';
+
+  @override
   String get adminVehicleLengthM => 'Ұзындығы, м';
 
   @override

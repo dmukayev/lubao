@@ -641,6 +641,8 @@
   "adminTaxId": "注册号",
   "adminPhoneChangeWarning": "保存后司机的所有登录会话将被终止",
   "adminVehicleBrand": "品牌",
+  "adminVehicleTractorTitle": "牵引车",
+  "adminVehicleTrailerTitle": "挂车",
   "adminVehicleLengthM": "长度(米)",
   "adminNameEn": "名称 (en)",
   "adminSortOrder": "排序",

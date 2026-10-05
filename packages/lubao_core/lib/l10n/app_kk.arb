@@ -641,6 +641,8 @@
   "adminTaxId": "Тіркеу нөмірі (БСН)",
   "adminPhoneChangeWarning": "Сақтағанда жүргізушінің барлық сеансы аяқталады",
   "adminVehicleBrand": "Маркасы",
+  "adminVehicleTractorTitle": "Тартқыш",
+  "adminVehicleTrailerTitle": "Тіркеме",
   "adminVehicleLengthM": "Ұзындығы, м",
   "adminNameEn": "Атауы (en)",
   "adminSortOrder": "Реті",

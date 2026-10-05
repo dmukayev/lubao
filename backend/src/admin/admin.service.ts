@@ -1112,7 +1112,7 @@ export class AdminService {
   async verificationDriverProfile(id: string) {
     const driver = await this.prisma.driver.findUnique({
       where: { id },
-      include: { vehicles: { include: { bodyType: true }, orderBy: { createdAt: 'asc' } } },
+      include: { vehicles: { include: { bodyType: true }, orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }] } },
     });
     if (!driver) throw new NotFoundException('Driver not found');
 
@@ -1687,7 +1687,7 @@ export class AdminService {
         homeCity: { select: { name: true } },
         directions: { include: { country: { select: { name: true } } } },
         permits: { include: { permit: { select: { name: true } } } },
-        vehicles: { include: { bodyType: { select: { name: true } } } },
+        vehicles: { include: { bodyType: { select: { name: true } } }, orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }] },
       },
     });
     if (!driver) throw new NotFoundException('Driver not found');
@@ -2166,7 +2166,7 @@ export class AdminService {
   async updateDriver(id: string, adminUserId: string, dto: AdminUpdateDriverDto) {
     const driver = await this.prisma.driver.findUnique({
       where: { id },
-      include: { user: true, vehicles: { orderBy: { createdAt: 'asc' } }, directions: true, permits: true },
+      include: { user: true, vehicles: { orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }] }, directions: true, permits: true },
     });
     if (!driver) throw new NotFoundException('Driver not found');
 
@@ -2202,34 +2202,38 @@ export class AdminService {
     }
 
     // Задача 031, этап A — Vehicle разделена на TRACTOR (госномер/марка) и
-    // TRAILER (кузов/тоннаж/длина); экран правки водителя в админке
-    // по-прежнему шлёт одну объединённую форму (Stage E её не трогает),
-    // поэтому здесь сверяем/пишем её поля в обе записи соответственно.
+    // TRAILER (кузов/тоннаж/длина). Задача 032, п.6 — раньше оба блока
+    // читали из ОДНОЙ dto.vehicle; теперь у каждой машины своя часть DTO
+    // (tractorVehicle/trailerVehicle), перепутать нечем независимо от
+    // порядка driver.vehicles.
     const tractor = driver.vehicles.find((v) => v.kind === 'TRACTOR' || v.kind === 'RIGID');
     const trailer = driver.vehicles.find((v) => v.kind === 'TRAILER');
     let vehicleIdentityChanged = false;
-    if (dto.vehicle && (tractor || trailer)) {
-      const v = dto.vehicle;
-      const vehicleChanges: Record<string, { old: unknown; new: unknown }> = {};
-      if (trailer && v.bodyTypeId !== undefined && v.bodyTypeId !== trailer.bodyTypeId) {
-        vehicleChanges.bodyTypeId = { old: trailer.bodyTypeId, new: v.bodyTypeId };
+    const vehicleChanges: Record<string, { old: unknown; new: unknown }> = {};
+    if (dto.trailerVehicle && trailer) {
+      const v = dto.trailerVehicle;
+      if (v.bodyTypeId !== undefined && v.bodyTypeId !== trailer.bodyTypeId) {
+        vehicleChanges.trailerBodyTypeId = { old: trailer.bodyTypeId, new: v.bodyTypeId };
         vehicleIdentityChanged = true;
       }
-      if (tractor && v.plateNumber !== undefined && v.plateNumber !== tractor.plateNumber) {
-        vehicleChanges.plateNumber = { old: tractor.plateNumber, new: v.plateNumber };
-        vehicleIdentityChanged = true;
+      if (v.capacityTons !== undefined && v.capacityTons !== (trailer.capacityTons ? Number(trailer.capacityTons) : null)) {
+        vehicleChanges.trailerCapacityTons = { old: trailer.capacityTons ? Number(trailer.capacityTons) : null, new: v.capacityTons };
       }
-      if (trailer && v.capacityTons !== undefined && v.capacityTons !== (trailer.capacityTons ? Number(trailer.capacityTons) : null)) {
-        vehicleChanges.capacityTons = { old: trailer.capacityTons ? Number(trailer.capacityTons) : null, new: v.capacityTons };
+      if (v.lengthM !== undefined && v.lengthM !== (trailer.lengthM ? Number(trailer.lengthM) : null)) {
+        vehicleChanges.trailerLengthM = { old: trailer.lengthM ? Number(trailer.lengthM) : null, new: v.lengthM };
       }
-      if (trailer && v.lengthM !== undefined && v.lengthM !== (trailer.lengthM ? Number(trailer.lengthM) : null)) {
-        vehicleChanges.lengthM = { old: trailer.lengthM ? Number(trailer.lengthM) : null, new: v.lengthM };
-      }
-      if (tractor && v.brand !== undefined && v.brand !== tractor.brand) {
-        vehicleChanges.brand = { old: tractor.brand, new: v.brand };
-      }
-      if (Object.keys(vehicleChanges).length > 0) changes.vehicle = { old: null, new: vehicleChanges };
     }
+    if (dto.tractorVehicle && tractor) {
+      const v = dto.tractorVehicle;
+      if (v.plateNumber !== undefined && v.plateNumber !== tractor.plateNumber) {
+        vehicleChanges.tractorPlateNumber = { old: tractor.plateNumber, new: v.plateNumber };
+        vehicleIdentityChanged = true;
+      }
+      if (v.brand !== undefined && v.brand !== tractor.brand) {
+        vehicleChanges.tractorBrand = { old: tractor.brand, new: v.brand };
+      }
+    }
+    if (Object.keys(vehicleChanges).length > 0) changes.vehicle = { old: null, new: vehicleChanges };
 
     await this.prisma.$transaction(async (tx) => {
       // Задача 031 — смена машины больше не сбрасывает верификацию
@@ -2254,24 +2258,24 @@ export class AdminService {
           await tx.driverPermit.createMany({ data: dto.permitIds.map((permitId) => ({ driverId: id, permitId })) });
         }
       }
-      if (dto.vehicle && trailer) {
+      if (dto.trailerVehicle && trailer) {
         await tx.vehicle.update({
           where: { id: trailer.id },
           data: {
-            bodyTypeId: dto.vehicle.bodyTypeId,
-            capacityTons: dto.vehicle.capacityTons,
-            lengthM: dto.vehicle.lengthM,
-            ...(dto.vehicle.bodyTypeId !== undefined && dto.vehicle.bodyTypeId !== trailer.bodyTypeId ? { isVerified: false } : {}),
+            bodyTypeId: dto.trailerVehicle.bodyTypeId,
+            capacityTons: dto.trailerVehicle.capacityTons,
+            lengthM: dto.trailerVehicle.lengthM,
+            ...(dto.trailerVehicle.bodyTypeId !== undefined && dto.trailerVehicle.bodyTypeId !== trailer.bodyTypeId ? { isVerified: false } : {}),
           },
         });
       }
-      if (dto.vehicle && tractor) {
+      if (dto.tractorVehicle && tractor) {
         await tx.vehicle.update({
           where: { id: tractor.id },
           data: {
-            plateNumber: dto.vehicle.plateNumber,
-            brand: dto.vehicle.brand,
-            ...(dto.vehicle.plateNumber !== undefined && dto.vehicle.plateNumber !== tractor.plateNumber ? { isVerified: false } : {}),
+            plateNumber: dto.tractorVehicle.plateNumber,
+            brand: dto.tractorVehicle.brand,
+            ...(dto.tractorVehicle.plateNumber !== undefined && dto.tractorVehicle.plateNumber !== tractor.plateNumber ? { isVerified: false } : {}),
           },
         });
       }
@@ -2284,10 +2288,10 @@ export class AdminService {
           where: {
             status: 'APPROVED',
             OR: [
-              ...(trailer && dto.vehicle?.bodyTypeId !== undefined && dto.vehicle.bodyTypeId !== trailer.bodyTypeId
+              ...(trailer && dto.trailerVehicle?.bodyTypeId !== undefined && dto.trailerVehicle.bodyTypeId !== trailer.bodyTypeId
                 ? [{ vehicleId: trailer.id, type: 'TRAILER_PASSPORT' as const }]
                 : []),
-              ...(tractor && dto.vehicle?.plateNumber !== undefined && dto.vehicle.plateNumber !== tractor.plateNumber
+              ...(tractor && dto.tractorVehicle?.plateNumber !== undefined && dto.tractorVehicle.plateNumber !== tractor.plateNumber
                 ? [{ vehicleId: tractor.id, type: 'VEHICLE_PASSPORT' as const }]
                 : []),
             ],

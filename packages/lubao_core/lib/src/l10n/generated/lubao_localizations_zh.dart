@@ -1711,6 +1711,12 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get adminVehicleBrand => '品牌';
 
   @override
+  String get adminVehicleTractorTitle => '牵引车';
+
+  @override
+  String get adminVehicleTrailerTitle => '挂车';
+
+  @override
   String get adminVehicleLengthM => '长度(米)';
 
   @override

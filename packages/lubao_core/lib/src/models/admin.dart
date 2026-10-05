@@ -514,6 +514,7 @@ class AdminDocumentRecognition {
 class AdminDriverVehicle {
   const AdminDriverVehicle({
     required this.id,
+    required this.kind,
     this.bodyTypeId,
     this.bodyTypeName,
     this.capacityTons,
@@ -525,6 +526,10 @@ class AdminDriverVehicle {
   });
 
   final String id;
+  // Задача 032, п.6 — различать тягач/прицеп по kind, а не по тому, какие
+  // поля у записи null (раньше панель правки брала .first без разбора,
+  // отсюда баг с перепутанным госномером).
+  final VehicleKind kind;
   final String? bodyTypeId;
   // Тип кузова есть только у прицепа (задача 031, этап A) — у тягача/
   // одиночки bodyTypeId/bodyTypeName всегда null.
@@ -538,6 +543,7 @@ class AdminDriverVehicle {
 
   factory AdminDriverVehicle.fromJson(Map<String, dynamic> json) => AdminDriverVehicle(
         id: json['id'] as String,
+        kind: vehicleKindFromJson(json['kind'] as String),
         bodyTypeId: json['bodyTypeId'] as String?,
         bodyTypeName: json['bodyTypeName'] == null ? null : I18nText.fromJson(json['bodyTypeName'] as Map<String, dynamic>),
         capacityTons: json['capacityTons'] == null ? null : (json['capacityTons'] as num).toDouble(),

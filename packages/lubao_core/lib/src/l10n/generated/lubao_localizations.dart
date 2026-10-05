@@ -3384,6 +3384,18 @@ abstract class LubaoLocalizations {
   /// **'Марка'**
   String get adminVehicleBrand;
 
+  /// No description provided for @adminVehicleTractorTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Тягач'**
+  String get adminVehicleTractorTitle;
+
+  /// No description provided for @adminVehicleTrailerTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Прицеп'**
+  String get adminVehicleTrailerTitle;
+
   /// No description provided for @adminVehicleLengthM.
   ///
   /// In ru, this message translates to:

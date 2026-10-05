@@ -1739,6 +1739,12 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get adminVehicleBrand => 'Brand';
 
   @override
+  String get adminVehicleTractorTitle => 'Tractor';
+
+  @override
+  String get adminVehicleTrailerTitle => 'Trailer';
+
+  @override
   String get adminVehicleLengthM => 'Length, m';
 
   @override

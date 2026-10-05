@@ -394,6 +394,9 @@ class AdminRepository {
   }
 
   /// Общая панель редактирования (задача 028, п.18/19).
+  /// Задача 032, п.6 — тягач и прицеп правятся раздельными группами полей
+  /// (`tractorVehicle`/`trailerVehicle`), не одной общей `vehicle` — иначе
+  /// легко перепутать местами, какая машина чья.
   Future<void> updateDriver(
     String id, {
     String? fullName,
@@ -402,14 +405,15 @@ class AdminRepository {
     bool? anyCountry,
     List<String>? countryIds,
     List<String>? permitIds,
-    String? vehicleBodyTypeId,
-    double? vehicleCapacityTons,
-    double? vehicleLengthM,
-    String? vehiclePlateNumber,
-    String? vehicleBrand,
+    String? trailerBodyTypeId,
+    double? trailerCapacityTons,
+    double? trailerLengthM,
+    String? tractorPlateNumber,
+    String? tractorBrand,
     required String reason,
   }) async {
-    final hasVehicleChange = vehicleBodyTypeId != null || vehicleCapacityTons != null || vehicleLengthM != null || vehiclePlateNumber != null || vehicleBrand != null;
+    final hasTrailerChange = trailerBodyTypeId != null || trailerCapacityTons != null || trailerLengthM != null;
+    final hasTractorChange = tractorPlateNumber != null || tractorBrand != null;
     await _client.dio.patch('/admin/drivers/$id', data: {
       if (fullName != null) 'fullName': fullName,
       if (phone != null) 'phone': phone,
@@ -417,13 +421,16 @@ class AdminRepository {
       if (anyCountry != null) 'anyCountry': anyCountry,
       if (countryIds != null) 'countryIds': countryIds,
       if (permitIds != null) 'permitIds': permitIds,
-      if (hasVehicleChange)
-        'vehicle': {
-          if (vehicleBodyTypeId != null) 'bodyTypeId': vehicleBodyTypeId,
-          if (vehicleCapacityTons != null) 'capacityTons': vehicleCapacityTons,
-          if (vehicleLengthM != null) 'lengthM': vehicleLengthM,
-          if (vehiclePlateNumber != null) 'plateNumber': vehiclePlateNumber,
-          if (vehicleBrand != null) 'brand': vehicleBrand,
+      if (hasTrailerChange)
+        'trailerVehicle': {
+          if (trailerBodyTypeId != null) 'bodyTypeId': trailerBodyTypeId,
+          if (trailerCapacityTons != null) 'capacityTons': trailerCapacityTons,
+          if (trailerLengthM != null) 'lengthM': trailerLengthM,
+        },
+      if (hasTractorChange)
+        'tractorVehicle': {
+          if (tractorPlateNumber != null) 'plateNumber': tractorPlateNumber,
+          if (tractorBrand != null) 'brand': tractorBrand,
         },
       'reason': reason,
     });

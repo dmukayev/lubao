@@ -82,11 +82,11 @@ class DriverDetailScreen extends ConsumerWidget {
           anyCountry: result.anyCountry,
           countryIds: result.countryIds,
           permitIds: result.permitIds,
-          vehicleBodyTypeId: result.vehicleBodyTypeId,
-          vehicleCapacityTons: result.vehicleCapacityTons,
-          vehicleLengthM: result.vehicleLengthM,
-          vehiclePlateNumber: result.vehiclePlateNumber,
-          vehicleBrand: result.vehicleBrand,
+          trailerBodyTypeId: result.trailerBodyTypeId,
+          trailerCapacityTons: result.trailerCapacityTons,
+          trailerLengthM: result.trailerLengthM,
+          tractorPlateNumber: result.tractorPlateNumber,
+          tractorBrand: result.tractorBrand,
           reason: result.reason,
         );
     await _reload(ref);

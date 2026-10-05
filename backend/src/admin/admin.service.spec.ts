@@ -1356,7 +1356,7 @@ describe('AdminService.updateDriver — общая панель редактир
     };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
-    const result = await service.updateDriver('d1', 'admin-1', { vehicle: { plateNumber: 'NEW999' }, reason: 'Сменил номер машины' } as any);
+    const result = await service.updateDriver('d1', 'admin-1', { tractorVehicle: { plateNumber: 'NEW999' }, reason: 'Сменил номер машины' } as any);
 
     // Задача 031 — смена госномера тягача сбрасывает проверку ТЯГАЧА, не
     // водителя (селфи+права не трогаются) и не прицепа.
@@ -1377,10 +1377,30 @@ describe('AdminService.updateDriver — общая панель редактир
     };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
-    const result = await service.updateDriver('d1', 'admin-1', { vehicle: { capacityTons: 25 }, reason: 'Уточнили тоннаж' } as any);
+    const result = await service.updateDriver('d1', 'admin-1', { trailerVehicle: { capacityTons: 25 }, reason: 'Уточнили тоннаж' } as any);
 
     expect(result.vehicleIdentityChanged).toBe(false);
     expect(tx.verificationDocument.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('задача 032, п.6 — editing only the trailer never touches the tractor plate, and vice versa', async () => {
+    const tx = txMock();
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue(baseDriver()) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    // Раньше одна dto.vehicle шла в обе машины — если бы форма перепутала
+    // прицеп с тягачом (баг из ревью задачи 031), это стёрло бы госномер
+    // тягача пустой строкой. Теперь это структурно невозможно: правка
+    // прицепа физически не имеет доступа к полям тягача.
+    await service.updateDriver('d1', 'admin-1', { trailerVehicle: { bodyTypeId: 'bt2' }, reason: 'Сменили кузов прицепа' } as any);
+
+    expect(tx.vehicle.update).toHaveBeenCalledTimes(1);
+    expect(tx.vehicle.update).toHaveBeenCalledWith({ where: { id: 'v2' }, data: expect.objectContaining({ bodyTypeId: 'bt2' }) });
+    expect(tx.vehicle.update).not.toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'v1' } }));
   });
 
   it('rejects an unknown homeCityId', async () => {

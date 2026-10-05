@@ -11,11 +11,11 @@ class DriverEditResult {
     required this.anyCountry,
     required this.countryIds,
     required this.permitIds,
-    this.vehicleBodyTypeId,
-    this.vehicleCapacityTons,
-    this.vehicleLengthM,
-    this.vehiclePlateNumber,
-    this.vehicleBrand,
+    this.trailerBodyTypeId,
+    this.trailerCapacityTons,
+    this.trailerLengthM,
+    this.tractorPlateNumber,
+    this.tractorBrand,
     required this.reason,
   });
 
@@ -25,38 +25,46 @@ class DriverEditResult {
   final bool anyCountry;
   final List<String> countryIds;
   final List<String> permitIds;
-  final String? vehicleBodyTypeId;
-  final double? vehicleCapacityTons;
-  final double? vehicleLengthM;
-  final String? vehiclePlateNumber;
-  final String? vehicleBrand;
+  final String? trailerBodyTypeId;
+  final double? trailerCapacityTons;
+  final double? trailerLengthM;
+  final String? tractorPlateNumber;
+  final String? tractorBrand;
   final String reason;
 }
 
 /// Общая панель редактирования водителя (задача 028, п.18/19): имя,
 /// телефон (предупреждение — сессии будут отозваны), домашний город (поиск
-/// как в задаче 021), машина, страны/«любая», допуски.
+/// как в задаче 021), машины гаража, страны/«любая», допуски.
+///
+/// Задача 032, п.6 — тягач и прицеп правятся **раздельно**, каждый своими
+/// контроллерами, найденными по `kind`, а не `driver.vehicles.first`: до
+/// этого порядок машин в списке не гарантировался (у пары после миграции
+/// одинаковый `createdAt`), и если прицеп оказывался первым, его пустой
+/// госномер уходил в форму и затем стирал госномер тягача при сохранении.
 Future<DriverEditResult?> showDriverEditPanel(
   BuildContext context, {
   required AdminDriverDetail driver,
   required ReferenceData refData,
 }) async {
   final locale = Localizations.localeOf(context).languageCode;
+  final tractor = driver.vehicles.where((v) => v.kind == VehicleKind.tractor || v.kind == VehicleKind.rigid).firstOrNull;
+  final trailer = driver.vehicles.where((v) => v.kind == VehicleKind.trailer).firstOrNull;
+
   final fullNameController = TextEditingController(text: driver.fullName);
   final phoneController = TextEditingController(text: driver.phone ?? '');
   final cityController = TextEditingController(text: driver.homeCityName.forLanguageCode(locale));
-  final plateController = TextEditingController(text: driver.vehicles.isNotEmpty ? driver.vehicles.first.plateNumber ?? '' : '');
-  final brandController = TextEditingController(text: driver.vehicles.isNotEmpty ? driver.vehicles.first.brand ?? '' : '');
-  final capacityController = TextEditingController(text: driver.vehicles.isNotEmpty ? driver.vehicles.first.capacityTons?.toString() ?? '' : '');
-  final lengthController = TextEditingController(text: driver.vehicles.isNotEmpty ? driver.vehicles.first.lengthM?.toString() ?? '' : '');
+  final plateController = TextEditingController(text: tractor?.plateNumber ?? '');
+  final brandController = TextEditingController(text: tractor?.brand ?? '');
+  final capacityController = TextEditingController(text: trailer?.capacityTons?.toString() ?? '');
+  final lengthController = TextEditingController(text: trailer?.lengthM?.toString() ?? '');
 
   String homeCityId = driver.homeCityId;
   bool anyCountry = driver.anyCountry;
   final selectedCountryIds = {...driver.directionCountryIds};
   final selectedPermitIds = {...driver.permitIds};
-  String? bodyTypeId = refData.bodyTypes.where((b) => driver.vehicles.isNotEmpty && b.id == driver.vehicles.first.bodyTypeId).firstOrNull?.id;
+  String? bodyTypeId = refData.bodyTypes.where((b) => b.id == trailer?.bodyTypeId).firstOrNull?.id;
 
-  final hasVehicle = driver.vehicles.isNotEmpty;
   final originalPhone = driver.phone ?? '';
 
   final reason = await showEditSidePanel(
@@ -90,20 +98,24 @@ Future<DriverEditResult?> showDriverEditPanel(
                 cityController.text = city.name.forLanguageCode(locale);
               }),
             ),
-          const SizedBox(height: 16),
-          Text(t.driverSetupVehicleTitle, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          if (hasVehicle) ...[
+          if (tractor != null) ...[
+            const SizedBox(height: 16),
+            Text(t.adminVehicleTractorTitle, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            AppTextField(label: t.driverSetupVehiclePlate, controller: plateController, onChanged: (_) => setState(() {})),
+            const SizedBox(height: 12),
+            AppTextField(label: t.adminVehicleBrand, controller: brandController, onChanged: (_) => setState(() {})),
+          ],
+          if (trailer != null) ...[
+            const SizedBox(height: 16),
+            Text(t.adminVehicleTrailerTitle, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               initialValue: bodyTypeId,
               decoration: InputDecoration(labelText: t.postCargoBodyType),
               items: refData.bodyTypes.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name.forLanguageCode(locale)))).toList(),
               onChanged: (v) => setState(() => bodyTypeId = v),
             ),
-            const SizedBox(height: 12),
-            AppTextField(label: t.driverSetupVehiclePlate, controller: plateController, onChanged: (_) => setState(() {})),
-            const SizedBox(height: 12),
-            AppTextField(label: t.adminVehicleBrand, controller: brandController, onChanged: (_) => setState(() {})),
             const SizedBox(height: 12),
             AppTextField(label: t.postCargoWeight, controller: capacityController, keyboardType: TextInputType.number, onChanged: (_) => setState(() {})),
             const SizedBox(height: 12),
@@ -156,11 +168,11 @@ Future<DriverEditResult?> showDriverEditPanel(
     anyCountry: anyCountry,
     countryIds: selectedCountryIds.toList(),
     permitIds: selectedPermitIds.toList(),
-    vehicleBodyTypeId: bodyTypeId,
-    vehicleCapacityTons: double.tryParse(capacityController.text.trim()),
-    vehicleLengthM: double.tryParse(lengthController.text.trim()),
-    vehiclePlateNumber: hasVehicle ? plateController.text.trim() : null,
-    vehicleBrand: hasVehicle ? brandController.text.trim() : null,
+    trailerBodyTypeId: trailer != null ? bodyTypeId : null,
+    trailerCapacityTons: trailer != null ? double.tryParse(capacityController.text.trim()) : null,
+    trailerLengthM: trailer != null ? double.tryParse(lengthController.text.trim()) : null,
+    tractorPlateNumber: tractor != null ? plateController.text.trim() : null,
+    tractorBrand: tractor != null ? brandController.text.trim() : null,
     reason: reason,
   );
 }

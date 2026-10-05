@@ -374,10 +374,21 @@ export class AdminUpdateDriverDto {
   @IsString({ each: true })
   permitIds?: string[];
 
+  // Задача 032, п.6 — раньше была одна `vehicle` на обе машины гаража;
+  // Flutter-панель брала поля из driver.vehicles.first (порядок не
+  // гарантирован — у пары после миграции одинаковый createdAt), и если
+  // первым приходил прицеп, его null-госномер уходил пустой строкой в
+  // тягач. Разделены по смыслу — тягач/прицеп правятся каждый своим
+  // набором полей, перепутать нечем.
   @IsOptional()
   @ValidateNested()
   @Type(() => AdminDriverVehicleUpdateDto)
-  vehicle?: AdminDriverVehicleUpdateDto;
+  tractorVehicle?: AdminDriverVehicleUpdateDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AdminDriverVehicleUpdateDto)
+  trailerVehicle?: AdminDriverVehicleUpdateDto;
 
   @IsNotEmpty()
   @MaxLength(1000)

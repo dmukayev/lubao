@@ -766,6 +766,8 @@
   "adminTaxId": "Рег. номер (БИН)",
   "adminPhoneChangeWarning": "При сохранении все сессии водителя будут завершены",
   "adminVehicleBrand": "Марка",
+  "adminVehicleTractorTitle": "Тягач",
+  "adminVehicleTrailerTitle": "Прицеп",
   "adminVehicleLengthM": "Длина, м",
   "adminNameEn": "Название (en)",
   "adminSortOrder": "Порядок",

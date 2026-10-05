@@ -766,6 +766,8 @@
   "adminTaxId": "Registration No.",
   "adminPhoneChangeWarning": "Saving will end all of the driver's sessions",
   "adminVehicleBrand": "Brand",
+  "adminVehicleTractorTitle": "Tractor",
+  "adminVehicleTrailerTitle": "Trailer",
   "adminVehicleLengthM": "Length, m",
   "adminNameEn": "Name (en)",
   "adminSortOrder": "Sort order",

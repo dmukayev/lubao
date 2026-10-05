@@ -14,6 +14,7 @@ void main() {
     test('parses a TRACTOR vehicle where bodyTypeId/bodyTypeName are both null', () {
       final vehicle = AdminDriverVehicle.fromJson({
         'id': 'v1',
+        'kind': 'TRACTOR',
         'bodyTypeId': null,
         'bodyTypeName': null,
         'capacityTons': null,
@@ -31,6 +32,7 @@ void main() {
     test('still parses a TRAILER vehicle with a real bodyTypeName', () {
       final vehicle = AdminDriverVehicle.fromJson({
         'id': 'v2',
+        'kind': 'TRAILER',
         'bodyTypeId': 'bt1',
         'bodyTypeName': {'ru': 'Автовоз', 'kk': 'Автотасығыш', 'zh': '汽车运输车'},
         'capacityTons': 16,
