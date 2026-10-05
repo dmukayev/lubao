@@ -823,6 +823,29 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get chatConfirmButton => 'Тасымалды растаймын';
 
   @override
+  String get chatCargoReadyButton => 'Алуға дайын';
+
+  @override
+  String get chatResponseSentLabel => 'Өтінім жіберілді';
+
+  @override
+  String get chatWithdrawButton => 'Қайтарып алу';
+
+  @override
+  String get chatOfferCargoButton => 'Жүк ұсыну';
+
+  @override
+  String get chatOfferCargoSheetTitle => 'Жүкті таңдаңыз';
+
+  @override
+  String chatSystemDriverReady(String name) {
+    return '$name жүкті алуға дайын';
+  }
+
+  @override
+  String get chatSystemDriverSelected => 'Логист сізді тасымалдауға таңдады';
+
+  @override
   String get chatQuickReplyAtPlace => 'Мен орындамын';
 
   @override

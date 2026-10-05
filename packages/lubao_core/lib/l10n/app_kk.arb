@@ -257,6 +257,16 @@
   "chatConfirmTitle": "Логист сізді осы жүкке таңдады",
   "chatConfirmSubtitle": "Растаңыз — мәміле бекітіледі, сіз пікір мен рейтинг аласыз",
   "chatConfirmButton": "Тасымалды растаймын",
+  "chatCargoReadyButton": "Алуға дайын",
+  "chatResponseSentLabel": "Өтінім жіберілді",
+  "chatWithdrawButton": "Қайтарып алу",
+  "chatOfferCargoButton": "Жүк ұсыну",
+  "chatOfferCargoSheetTitle": "Жүкті таңдаңыз",
+  "chatSystemDriverReady": "{name} жүкті алуға дайын",
+  "@chatSystemDriverReady": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "chatSystemDriverSelected": "Логист сізді тасымалдауға таңдады",
   "chatQuickReplyAtPlace": "Мен орындамын",
   "chatQuickReplyLoaded": "Тиедім",
   "chatQuickReplyLate1h": "1 сағатқа кешігемін",

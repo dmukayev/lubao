@@ -85,6 +85,29 @@ export class ChatsService {
     return this.toThreadDto(chat, ctx);
   }
 
+  /// «Предложить груз» из чата без груза (задача 035, п.3) — логист
+  /// предлагает один из своих опубликованных грузов водителю, с которым
+  /// уже переписывается. Если по этой паре водитель+компания+ГРУЗ чат уже
+  /// существует (например, водитель и раньше писал по этому же грузу) —
+  /// переходим в него, история не теряется; иначе довешиваем cargoId на
+  /// ТЕКУЩИЙ чат (не создаём новую строку — иначе потерялась бы история
+  /// текущей переписки).
+  async attachCargo(chatId: string, ctx: RequestContext, cargoId: string) {
+    const chat = await this.loadChat(chatId, ctx);
+    if (!ctx.companyMember || chat.companyId !== ctx.companyMember.companyId) {
+      throw new ForbiddenException('Not your chat');
+    }
+    if (chat.cargoId) throw new BadRequestException('Chat already has a cargo');
+
+    const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId }, select: { companyId: true } });
+    if (!cargo) throw new NotFoundException('Cargo not found');
+    if (cargo.companyId !== ctx.companyMember.companyId) throw new ForbiddenException('Not your cargo');
+
+    const existing = await this.prisma.chat.findFirst({ where: { driverId: chat.driverId, companyId: chat.companyId, cargoId } });
+    const result = existing ?? (await this.prisma.chat.update({ where: { id: chat.id }, data: { cargoId } }));
+    return this.toThreadDto(result, ctx);
+  }
+
   /// Логист, опубликовавший груз, — не случайный владелец (decisions.md
   /// «Компания: проверка, роли, контакты», задача 012). Для чата без груза
   /// (общий чат логиста с водителем) откатываемся на самого старого OWNER.
@@ -123,6 +146,13 @@ export class ChatsService {
     // компании/User.phone, как было раньше, а не показываем пусто.
     const counterpartName = ctx.driver ? companyMember?.fullName ?? companyMember?.company.name ?? '' : driver.fullName;
     const counterpartLocale = ctx.driver ? companyMember?.user.locale : driver.user.locale;
+    // Задача 035 — закреплённая карточка груза в чате решает, какую
+    // кнопку показать («Готов взять» / «Отклик отправлен»+«Отозвать» /
+    // «Выбрать этого водителя»), по отклику ЭТОЙ пары водитель+груз — чат
+    // уже однозначно определяет её, отдельный запрос не нужен.
+    const cargoResponse = chat.cargoId
+      ? await this.prisma.response.findUnique({ where: { cargoId_driverId: { cargoId: chat.cargoId, driverId: chat.driverId } } })
+      : null;
     return {
       id: chat.id,
       cargoId: chat.cargoId,
@@ -136,6 +166,8 @@ export class ChatsService {
       // Задача 032, п.15 — водитель решает Amap (Китай) / 2ГИС (остальные)
       // по СТРАНЕ компании-получателя, не по языку интерфейса сотрудника.
       counterpartCountryCode: ctx.driver ? companyMember?.company.country?.code ?? null : null,
+      cargoResponseId: cargoResponse?.id ?? null,
+      cargoResponseStatus: cargoResponse?.status ?? null,
     };
   }
 

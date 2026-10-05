@@ -31,6 +31,7 @@ describe('ChatsService.findOrCreate — чат по паре водитель+к
       chat: { findFirst: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1', cargoId: 'cargo1', dealId: null }), create: jest.fn() },
       driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'ru', phone: null } }) },
+      response: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
@@ -71,6 +72,7 @@ describe('ChatsService.findOrCreate — чат по паре водитель+к
       deal: { findFirst: jest.fn().mockResolvedValue({ id: 'deal1' }) },
       driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+      response: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
@@ -139,6 +141,7 @@ describe('ChatsService — counterpart resolution (decisions.md «Компани
       driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
       cargo: { findUnique: jest.fn().mockResolvedValue({ publishedByUserId: 'logist-1' }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'zh', phone: '+86123' } }) },
+      response: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
@@ -153,6 +156,7 @@ describe('ChatsService — counterpart resolution (decisions.md «Компани
       driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
       cargo: { findUnique: jest.fn().mockResolvedValue({ publishedByUserId: null }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'ru', phone: '+77000000000' } }) },
+      response: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
@@ -170,6 +174,7 @@ describe('ChatsService — counterpart resolution (decisions.md «Компани
       companyMember: {
         findFirst: jest.fn().mockResolvedValue({ fullName: 'Ли Вэй', contactPhone: '+86123', wechatId: 'liwei88', company: { name: 'Acme' }, user: { locale: 'zh', phone: '+86000' } }),
       },
+      response: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
@@ -187,6 +192,7 @@ describe('ChatsService — counterpart resolution (decisions.md «Компани
       companyMember: {
         findFirst: jest.fn().mockResolvedValue({ fullName: null, contactPhone: null, wechatId: null, company: { name: 'Acme' }, user: { locale: 'zh', phone: '+86123' } }),
       },
+      response: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
@@ -205,6 +211,7 @@ describe('ChatsService — counterpart resolution (decisions.md «Компани
         // Логист сам выставил себе русский интерфейс, но компания — китайская.
         findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme', country: { code: 'CN' } }, user: { locale: 'ru', phone: '+86123' } }),
       },
+      response: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
@@ -223,6 +230,107 @@ describe('ChatsService — counterpart resolution (decisions.md «Компани
     const result = await (service as any).toThreadDto({ id: 'chat1', cargoId: null, dealId: null, driverId: 'd1', companyId: 'c1' }, companyCtx());
 
     expect(result.counterpartCountryCode).toBeNull();
+  });
+});
+
+describe('ChatsService — cargoResponseId/Status on the thread (задача 035)', () => {
+  it('looks up the response for THIS driver+cargo pair and exposes it on the thread', async () => {
+    const prisma: any = {
+      driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ publishedByUserId: null }) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'ru', phone: null } }) },
+      response: { findUnique: jest.fn().mockResolvedValue({ id: 'resp1', status: 'PENDING' }) },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+
+    const result = await (service as any).toThreadDto({ id: 'chat1', cargoId: 'cargo1', dealId: null, driverId: 'd1', companyId: 'c1' }, driverCtx());
+
+    expect(prisma.response.findUnique).toHaveBeenCalledWith({ where: { cargoId_driverId: { cargoId: 'cargo1', driverId: 'd1' } } });
+    expect(result.cargoResponseId).toBe('resp1');
+    expect(result.cargoResponseStatus).toBe('PENDING');
+  });
+
+  it('is null without a cargo on the chat at all — no response lookup happens', async () => {
+    const prisma: any = {
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ companyId: 'c1' }) },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+    prisma.driver = { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' }, id: 'd1' }) };
+
+    const result = await (service as any).toThreadDto({ id: 'chat1', cargoId: null, dealId: null, driverId: 'd1', companyId: 'c1' }, companyCtx());
+
+    expect(result.cargoResponseId).toBeNull();
+    expect(result.cargoResponseStatus).toBeNull();
+  });
+});
+
+describe('ChatsService.attachCargo — «Предложить груз» из чата без груза (задача 035, п.3)', () => {
+  it('attaches the cargo to the CURRENT chat when no other chat exists for this driver+company+cargo', async () => {
+    const prisma: any = {
+      chat: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1', cargoId: null }),
+        findFirst: jest.fn().mockResolvedValue(null),
+        update: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1', cargoId: 'cargo1', dealId: null }),
+      },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1' }) },
+      driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'ru', phone: null } }) },
+      response: { findUnique: jest.fn().mockResolvedValue(null) },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+
+    const result = await service.attachCargo('chat1', companyCtx('c1'), 'cargo1');
+
+    expect(prisma.chat.update).toHaveBeenCalledWith({ where: { id: 'chat1' }, data: { cargoId: 'cargo1' } });
+    expect(result.cargoId).toBe('cargo1');
+  });
+
+  it('navigates to the EXISTING chat for this driver+company+cargo instead of overwriting the current one (history preserved)', async () => {
+    const prisma: any = {
+      chat: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1', cargoId: null }),
+        findFirst: jest.fn().mockResolvedValue({ id: 'chat-old', driverId: 'd1', companyId: 'c1', cargoId: 'cargo1', dealId: null }),
+        update: jest.fn(),
+      },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1' }) },
+      driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { locale: 'ru', phone: '+7700' } }) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { locale: 'ru', phone: null } }) },
+      response: { findUnique: jest.fn().mockResolvedValue(null) },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+
+    const result = await service.attachCargo('chat1', companyCtx('c1'), 'cargo1');
+
+    expect(prisma.chat.update).not.toHaveBeenCalled();
+    expect(result.id).toBe('chat-old');
+  });
+
+  it('refuses a cargo that belongs to another company', async () => {
+    const prisma: any = {
+      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1', cargoId: null }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ companyId: 'someone-elses-company' }) },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+
+    await expect(service.attachCargo('chat1', companyCtx('c1'), 'cargo1')).rejects.toThrow(ForbiddenException);
+  });
+
+  it('refuses when the chat already has a cargo attached', async () => {
+    const prisma: any = {
+      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1', cargoId: 'already-has-one' }) },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+
+    await expect(service.attachCargo('chat1', companyCtx('c1'), 'cargo1')).rejects.toThrow(BadRequestException);
+  });
+
+  it('refuses a chat that does not belong to this company', async () => {
+    const prisma: any = {
+      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'someone-elses-company', cargoId: null }) },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+
+    await expect(service.attachCargo('chat1', companyCtx('c1'), 'cargo1')).rejects.toThrow(ForbiddenException);
   });
 });
 

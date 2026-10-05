@@ -12,6 +12,8 @@ class ChatThread {
     this.counterpartPhone,
     this.counterpartWechatId,
     this.counterpartCountryCode,
+    this.cargoResponseId,
+    this.cargoResponseStatus,
   });
 
   final String id;
@@ -27,6 +29,11 @@ class ChatThread {
   /// водитель; решает, какую карту открыть в ссылке «моё место»: Amap для
   /// Китая, 2ГИС для остальных. Не язык интерфейса сотрудника.
   final String? counterpartCountryCode;
+  /// Отклик ЭТОГО водителя на груз чата, если груз есть (задача 035) —
+  /// решает, какую кнопку показать в закреплённой карточке: нет отклика —
+  /// «Готов взять», `PENDING` — «Отклик отправлен»+«Отозвать».
+  final String? cargoResponseId;
+  final String? cargoResponseStatus;
 
   factory ChatThread.fromJson(Map<String, dynamic> json) => ChatThread(
         id: json['id'] as String,
@@ -39,6 +46,8 @@ class ChatThread {
         counterpartPhone: json['counterpartPhone'] as String?,
         counterpartWechatId: json['counterpartWechatId'] as String?,
         counterpartCountryCode: json['counterpartCountryCode'] as String?,
+        cargoResponseId: json['cargoResponseId'] as String?,
+        cargoResponseStatus: json['cargoResponseStatus'] as String?,
       );
 }
 

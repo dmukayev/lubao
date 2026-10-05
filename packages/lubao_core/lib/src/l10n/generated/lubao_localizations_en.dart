@@ -823,6 +823,30 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get chatConfirmButton => 'Confirm the trip';
 
   @override
+  String get chatCargoReadyButton => 'Ready to take it';
+
+  @override
+  String get chatResponseSentLabel => 'Response sent';
+
+  @override
+  String get chatWithdrawButton => 'Withdraw';
+
+  @override
+  String get chatOfferCargoButton => 'Offer a cargo';
+
+  @override
+  String get chatOfferCargoSheetTitle => 'Choose a cargo';
+
+  @override
+  String chatSystemDriverReady(String name) {
+    return '$name is ready to take the cargo';
+  }
+
+  @override
+  String get chatSystemDriverSelected =>
+      'The logist selected you for this haul';
+
+  @override
   String get chatQuickReplyAtPlace => 'I\'m on site';
 
   @override

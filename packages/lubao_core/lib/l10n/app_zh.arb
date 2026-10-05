@@ -257,6 +257,16 @@
   "chatConfirmTitle": "物流公司已选择您承运此货物",
   "chatConfirmSubtitle": "请确认——交易将被记录，您将获得评价和信誉分",
   "chatConfirmButton": "确认承运",
+  "chatCargoReadyButton": "可以接单",
+  "chatResponseSentLabel": "已发送响应",
+  "chatWithdrawButton": "撤回",
+  "chatOfferCargoButton": "推荐货物",
+  "chatOfferCargoSheetTitle": "选择货物",
+  "chatSystemDriverReady": "{name} 已准备好承运该货物",
+  "@chatSystemDriverReady": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "chatSystemDriverSelected": "物流专员已选择您承运",
   "chatQuickReplyAtPlace": "我已到达",
   "chatQuickReplyLoaded": "已装货",
   "chatQuickReplyLate1h": "将晚到1小时",

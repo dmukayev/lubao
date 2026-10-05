@@ -65,6 +65,12 @@ class CargoRepository {
     return CargoResponse.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// «Отозвать» (задача 035) — только пока отклик ещё `PENDING`.
+  Future<CargoResponse> withdrawResponse(String responseId) async {
+    final res = await _client.dio.post('/responses/$responseId/withdraw');
+    return CargoResponse.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<void> inviteDriver(String cargoId, String driverId) async {
     await _client.dio.post('/cargos/$cargoId/invite', data: {'driverId': driverId});
   }

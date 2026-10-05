@@ -29,6 +29,16 @@ class ChatRepository {
     return ChatThread.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// «Предложить груз» из чата без груза (задача 035, п.3) — логист
+  /// выбирает один из своих опубликованных грузов; если по этой паре
+  /// водитель+компания+груз чат уже есть, сервер вернёт ЕГО (переход в
+  /// существующий, история сохраняется), иначе — текущий чат с довешенным
+  /// `cargoId`.
+  Future<ChatThread> attachCargo(String chatId, String cargoId) async {
+    final res = await _client.dio.patch('/chats/$chatId/cargo', data: {'cargoId': cargoId});
+    return ChatThread.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<List<ChatMessage>> messages(String chatId) async {
     final res = await _client.dio.get('/chats/$chatId/messages');
     return (res.data as List<dynamic>).map((e) => ChatMessage.fromJson(e as Map<String, dynamic>)).toList();

@@ -347,6 +347,16 @@
   "chatConfirmTitle": "A logist selected you for this cargo",
   "chatConfirmSubtitle": "Confirm — the deal will be locked in, and you'll receive a review and rating",
   "chatConfirmButton": "Confirm the trip",
+  "chatCargoReadyButton": "Ready to take it",
+  "chatResponseSentLabel": "Response sent",
+  "chatWithdrawButton": "Withdraw",
+  "chatOfferCargoButton": "Offer a cargo",
+  "chatOfferCargoSheetTitle": "Choose a cargo",
+  "chatSystemDriverReady": "{name} is ready to take the cargo",
+  "@chatSystemDriverReady": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "chatSystemDriverSelected": "The logist selected you for this haul",
   "chatQuickReplyAtPlace": "I'm on site",
   "chatQuickReplyLoaded": "Loaded",
   "chatQuickReplyLate1h": "Running 1 hour late",

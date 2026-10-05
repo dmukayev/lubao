@@ -283,7 +283,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       body: Column(
         children: [
-          if (deal?.cargo != null && referenceData != null) _DealSummaryBar(deal: deal!, refData: referenceData),
+          if (thread != null && referenceData != null)
+            _CargoActionBar(
+              chatId: widget.chatId,
+              thread: thread,
+              deal: deal,
+              refData: referenceData,
+              isDriver: isDriver,
+              onSystemMessage: _send,
+            ),
           Expanded(
             child: messagesAsync.when(
               loading: () => const LoadingView(),
@@ -432,23 +440,163 @@ class _DateDivider extends StatelessWidget {
   }
 }
 
-class _DealSummaryBar extends StatelessWidget {
-  const _DealSummaryBar({required this.deal, required this.refData});
+/// Закреплённая карточка груза/сделки над перепиской (задача 035) —
+/// заменяет старую `_DealSummaryBar`, которая показывалась только когда
+/// СДЕЛКА уже существовала. Теперь видна с момента, когда у чата просто
+/// есть груз (до отклика), и несёт действия по роли и состоянию: «Готов
+/// взять»/«Отклик отправлен»+«Отозвать» у водителя, «Выбрать водителя» у
+/// логиста — те же вызовы, что в карточке груза/списке откликов, не
+/// дублирующая логика. Для чата без груза вовсе — у логиста «Предложить
+/// груз» вместо карточки.
+class _CargoActionBar extends ConsumerStatefulWidget {
+  const _CargoActionBar({
+    required this.chatId,
+    required this.thread,
+    required this.deal,
+    required this.refData,
+    required this.isDriver,
+    required this.onSystemMessage,
+  });
 
-  final Deal deal;
+  final String chatId;
+  final ChatThread thread;
+  final Deal? deal;
   final ReferenceData refData;
+  final bool isDriver;
+  final Future<void> Function(String text) onSystemMessage;
+
+  @override
+  ConsumerState<_CargoActionBar> createState() => _CargoActionBarState();
+}
+
+class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
+  bool _busy = false;
+
+  void _reload() => ref.invalidate(chatThreadProvider(widget.chatId));
+
+  Future<void> _respond(String cargoId) async {
+    final t = context.l10n;
+    setState(() => _busy = true);
+    try {
+      await ref.read(cargoRepositoryProvider).respond(cargoId);
+      final name = ref.read(sessionProvider)?.driver?.fullName ?? '';
+      await widget.onSystemMessage(t.chatSystemDriverReady(name));
+      _reload();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _withdraw(String responseId) async {
+    setState(() => _busy = true);
+    try {
+      await ref.read(cargoRepositoryProvider).withdrawResponse(responseId);
+      _reload();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _selectDriver(String cargoId, String driverId, String? responseId) async {
+    final t = context.l10n;
+    setState(() => _busy = true);
+    try {
+      if (responseId != null) {
+        await ref.read(cargoRepositoryProvider).updateResponseStatus(responseId, 'SELECTED');
+      } else {
+        await ref.read(cargoRepositoryProvider).inviteDriver(cargoId, driverId);
+      }
+      await widget.onSystemMessage(t.chatSystemDriverSelected);
+      _reload();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _offerCargo() async {
+    final cargo = await showModalBottomSheet<Cargo>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _CargoPickerSheet(refData: widget.refData),
+    );
+    if (cargo == null || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(chatRepositoryProvider).attachCargo(widget.chatId, cargo.id);
+      _reload();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    final thread = widget.thread;
+
+    if (thread.cargoId == null) {
+      // Задача 035, п.3 — чат без груза (логист написал водителю из «Кто
+      // будет на точке»): у водителя тут нечего предлагать, только у
+      // логиста есть что предложить.
+      if (widget.isDriver) return const SizedBox.shrink();
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: const BoxDecoration(color: AppColors.surface, border: Border(bottom: BorderSide(color: AppColors.divider))),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: OutlinedButton.icon(
+            onPressed: _busy ? null : _offerCargo,
+            icon: const Icon(LucideIcons.package, size: 16),
+            label: Text(t.chatOfferCargoButton),
+          ),
+        ),
+      );
+    }
+
+    final cargo = ref.watch(cargoByIdProvider(thread.cargoId!)).valueOrNull;
+    if (cargo == null) return const SizedBox.shrink();
+
     final locale = Localizations.localeOf(context).languageCode;
-    final cargo = deal.cargo!;
-    final country = refData.countryById(cargo.destinationCountryId);
-    final city = refData.cityById(cargo.destinationCityId);
+    final country = widget.refData.countryById(cargo.destinationCountryId);
+    final city = widget.refData.cityById(cargo.destinationCityId);
     final destinationLabel =
         [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
-    final point = refData.pointById(cargo.pointId);
-    final (statusLabel, statusColor) = dealStatusPresentation(t, deal.status);
+    final point = widget.refData.pointById(cargo.pointId);
+    final deal = widget.deal;
+    final (statusLabel, statusColor) = deal != null ? dealStatusPresentation(t, deal.status) : cargoStatusPresentation(t, cargo.status);
+
+    // Как только сделка есть, прогресс (загружен/в пути/доставлено) и его
+    // следующий шаг — зона карточки сделки/`_ConfirmCard`, здесь только
+    // статус-бейдж; дублировать всю карточку сделки в чате — отдельная,
+    // более крупная задача, не в рамках этого захода.
+    Widget? actionRow;
+    if (deal == null) {
+      if (widget.isDriver) {
+        if (thread.cargoResponseStatus == 'PENDING') {
+          actionRow = Row(
+            children: [
+              Expanded(child: OutlinedButton(onPressed: null, child: Text(t.chatResponseSentLabel))),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _busy ? null : () => _withdraw(thread.cargoResponseId!),
+                  child: Text(t.chatWithdrawButton),
+                ),
+              ),
+            ],
+          );
+        } else {
+          actionRow = PrimaryButton(label: t.chatCargoReadyButton, loading: _busy, onPressed: () => _respond(thread.cargoId!));
+        }
+      } else if (thread.cargoResponseStatus != 'SELECTED') {
+        actionRow = PrimaryButton(
+          label: t.responseSelect,
+          loading: _busy,
+          onPressed: () => _selectDriver(thread.cargoId!, thread.driverId, thread.cargoResponseId),
+        );
+      }
+    }
 
     return Container(
       width: double.infinity,
@@ -457,21 +605,84 @@ class _DealSummaryBar extends StatelessWidget {
         color: AppColors.surface,
         border: Border(bottom: BorderSide(color: AppColors.divider)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(LucideIcons.package, size: 18, color: AppColors.textSecondary),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              '${point.name.forLanguageCode(locale)} → $destinationLabel · ${formatMoney(cargo.price, cargo.currency)}',
-              style: AppTextStyles.caption.copyWith(color: AppColors.text),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+          Row(
+            children: [
+              const Icon(LucideIcons.package, size: 18, color: AppColors.textSecondary),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  '${point.name.forLanguageCode(locale)} → $destinationLabel · ${formatMoney(cargo.price, cargo.currency)}',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.text),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              StatusBadge(label: statusLabel, color: statusColor),
+            ],
           ),
-          const SizedBox(width: AppSpacing.sm),
-          StatusBadge(label: statusLabel, color: statusColor),
+          if (actionRow != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            actionRow,
+          ],
         ],
+      ),
+    );
+  }
+}
+
+/// Список своих опубликованных грузов для «Предложить груз» (задача 035,
+/// п.3) — тот же `myCargosProvider`, что у «Мои грузы» логиста.
+class _CargoPickerSheet extends ConsumerWidget {
+  const _CargoPickerSheet({required this.refData});
+
+  final ReferenceData refData;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.l10n;
+    final locale = Localizations.localeOf(context).languageCode;
+    final cargosAsync = ref.watch(myCargosProvider);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.chatOfferCargoSheetTitle, style: AppTextStyles.bodyStrong),
+            const SizedBox(height: AppSpacing.md),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+              child: cargosAsync.when(
+                loading: () => const LoadingView(),
+                error: (e, st) => ErrorView(message: t.commonError),
+                data: (cargos) => cargos.isEmpty
+                    ? EmptyState(message: t.myCargosEmpty)
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: cargos.length,
+                        itemBuilder: (context, index) {
+                          final cargo = cargos[index];
+                          final country = refData.countryById(cargo.destinationCountryId);
+                          final city = refData.cityById(cargo.destinationCityId);
+                          final destinationLabel =
+                              [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
+                          return ListTile(
+                            title: Text(destinationLabel),
+                            subtitle: Text(formatMoney(cargo.price, cargo.currency)),
+                            onTap: () => Navigator.pop(context, cargo),
+                          );
+                        },
+                      ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

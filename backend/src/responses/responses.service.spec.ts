@@ -168,6 +168,41 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
   });
 });
 
+describe('ResponsesService.withdraw — «Отозвать» (задача 035)', () => {
+  it('cancels a PENDING response belonging to this driver', async () => {
+    const prisma: any = {
+      response: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'r1', driverId: 'd1', status: 'PENDING', driver: { fullName: 'Ерлан' } }),
+        update: jest.fn().mockResolvedValue({ id: 'r1', driverId: 'd1', status: 'CANCELLED', driver: { fullName: 'Ерлан' } }),
+      },
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+
+    const result = await service.withdraw('r1', 'd1');
+
+    expect(prisma.response.update).toHaveBeenCalledWith({ where: { id: 'r1' }, data: { status: 'CANCELLED' }, include: { driver: true } });
+    expect(result.status).toBe('CANCELLED');
+  });
+
+  it('throws NotFoundException for an unknown response', async () => {
+    const prisma: any = { response: { findUnique: jest.fn().mockResolvedValue(null) } };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    await expect(service.withdraw('missing', 'd1')).rejects.toThrow(NotFoundException);
+  });
+
+  it('refuses to withdraw another driver\'s response', async () => {
+    const prisma: any = { response: { findUnique: jest.fn().mockResolvedValue({ id: 'r1', driverId: 'someone-else', status: 'PENDING' }) } };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    await expect(service.withdraw('r1', 'd1')).rejects.toThrow(ForbiddenException);
+  });
+
+  it('refuses to withdraw a response that is no longer PENDING (logist already acted on it)', async () => {
+    const prisma: any = { response: { findUnique: jest.fn().mockResolvedValue({ id: 'r1', driverId: 'd1', status: 'SELECTED' }) } };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    await expect(service.withdraw('r1', 'd1')).rejects.toThrow(ConflictException);
+  });
+});
+
 describe('ResponsesService.inviteDriver — attaches the pre-deal chat too (задача 017, п.3) + CARGO_INVITE (011)', () => {
   it('rejects a driver whose response is already decided', async () => {
     const prisma: any = {

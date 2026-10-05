@@ -1644,6 +1644,48 @@ abstract class LubaoLocalizations {
   /// **'Подтверждаю перевозку'**
   String get chatConfirmButton;
 
+  /// No description provided for @chatCargoReadyButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Готов взять'**
+  String get chatCargoReadyButton;
+
+  /// No description provided for @chatResponseSentLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отклик отправлен'**
+  String get chatResponseSentLabel;
+
+  /// No description provided for @chatWithdrawButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отозвать'**
+  String get chatWithdrawButton;
+
+  /// No description provided for @chatOfferCargoButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Предложить груз'**
+  String get chatOfferCargoButton;
+
+  /// No description provided for @chatOfferCargoSheetTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите груз'**
+  String get chatOfferCargoSheetTitle;
+
+  /// No description provided for @chatSystemDriverReady.
+  ///
+  /// In ru, this message translates to:
+  /// **'{name} готов взять груз'**
+  String chatSystemDriverReady(String name);
+
+  /// No description provided for @chatSystemDriverSelected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логист выбрал вас для перевозки'**
+  String get chatSystemDriverSelected;
+
   /// No description provided for @chatQuickReplyAtPlace.
   ///
   /// In ru, this message translates to:

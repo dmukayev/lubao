@@ -85,6 +85,20 @@ export class ResponsesService {
     return { tractorId: tractor?.id ?? null, trailerId: trailer?.id ?? null };
   }
 
+  /// «Отозвать» (задача 035) — только сам водитель, только пока отклик
+  /// ещё `PENDING` (логист уже посмотрел/выбрал — поздно отзывать молча).
+  /// `CANCELLED` — значение уже было в схеме (задача 017), просто не
+  /// использовалось ни одним путём до этой задачи.
+  async withdraw(responseId: string, driverId: string) {
+    const response = await this.prisma.response.findUnique({ where: { id: responseId }, include: { driver: true } });
+    if (!response) throw new NotFoundException('Response not found');
+    if (response.driverId !== driverId) throw new ForbiddenException('Not your response');
+    if (response.status !== 'PENDING') throw new ConflictException('Response is no longer pending');
+
+    const updated = await this.prisma.response.update({ where: { id: responseId }, data: { status: 'CANCELLED' }, include: { driver: true } });
+    return this.toDto(updated);
+  }
+
   async updateStatus(responseId: string, companyId: string, status: 'SELECTED' | 'REJECTED') {
     const response = await this.prisma.response.findUnique({
       where: { id: responseId },

@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
 import { ChatsService } from './chats.service';
+import { AttachCargoDto } from './dto/attach-cargo.dto';
 import { FindOrCreateChatDto } from './dto/find-or-create-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 
@@ -22,6 +23,11 @@ export class ChatsController {
   @Get(':chatId')
   thread(@CurrentUser() ctx: RequestContext, @Param('chatId') chatId: string) {
     return this.chats.thread(chatId, ctx);
+  }
+
+  @Patch(':chatId/cargo')
+  attachCargo(@CurrentUser() ctx: RequestContext, @Param('chatId') chatId: string, @Body() dto: AttachCargoDto) {
+    return this.chats.attachCargo(chatId, ctx, dto.cargoId);
   }
 
   @Get(':chatId/messages')

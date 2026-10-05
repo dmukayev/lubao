@@ -805,6 +805,29 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get chatConfirmButton => '确认承运';
 
   @override
+  String get chatCargoReadyButton => '可以接单';
+
+  @override
+  String get chatResponseSentLabel => '已发送响应';
+
+  @override
+  String get chatWithdrawButton => '撤回';
+
+  @override
+  String get chatOfferCargoButton => '推荐货物';
+
+  @override
+  String get chatOfferCargoSheetTitle => '选择货物';
+
+  @override
+  String chatSystemDriverReady(String name) {
+    return '$name 已准备好承运该货物';
+  }
+
+  @override
+  String get chatSystemDriverSelected => '物流专员已选择您承运';
+
+  @override
   String get chatQuickReplyAtPlace => '我已到达';
 
   @override
