@@ -72,6 +72,12 @@ describe('extractFields — задача 031, этап D, п.20 (фикстур�
       expect(fields.fullName.checksumOk).toBe(true);
       expect(fields.iin.checksumOk).toBe(true);
     });
+
+    it('задача 032, п.8а — the document header ("ҚАЗАҚСТАН РЕСПУБЛИКАСЫ"/"РЕСПУБЛИКА КАЗАХСТАН") is never picked as the name, even when nothing matches the profile', () => {
+      const fields = run('driver_license_header_not_picked_as_name.json');
+      expect(fields.fullName.value).toBe('Серик Абенов');
+      expect(fields.fullName.needsReview).toBe(true);
+    });
   });
 
   describe('VEHICLE_PASSPORT', () => {

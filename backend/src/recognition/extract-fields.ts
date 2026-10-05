@@ -104,8 +104,18 @@ function extractExpiryDate(lines: string[]): RecognizedField | null {
 /// без цифр — достаточно грубый фильтр, чтобы не ловить номера/даты.
 const NAME_LINE_RE = /^[\p{L}\s'-]{4,80}$/u;
 
+/// Заголовок документа («ҚАЗАҚСТАН РЕСПУБЛИКАСЫ», «РЕСПУБЛИКА КАЗАХСТАН»,
+/// «ЖЕКЕ КУӘЛІК», «УДОСТОВЕРЕНИЕ ЛИЧНОСТИ», «ЖүРГІЗУШІ КУӘЛІГІ»...) тоже
+/// проходит NAME_LINE_RE — чистые буквы, 2+ слова — но это не ФИО (задача
+/// 032, п.8а: сначала найдено на синтетическом тесте, подтверждено на
+/// реальном документе пользователя). Чаще всего это САМАЯ ВЕРХНЯЯ строка
+/// документа, поэтому без фильтра побеждает как `candidates[0]`.
+const DOCUMENT_BOILERPLATE_RE = /КАЗАХСТАН|ҚАЗАҚСТАН|KAZAKHSTAN|РЕСПУБЛИК|УДОСТОВЕРЕНИЕ|КУӘЛІК|ЛИЧНОСТИ|ПАСПОРТ|ВОДИТЕЛЬСК|ЖҮРГІЗУШІ/iu;
+
 function extractFullName(lines: string[], profileFullName?: string): RecognizedField | null {
-  const candidates = lines.map((l) => l.trim()).filter((l) => NAME_LINE_RE.test(l) && l.split(/\s+/).length >= 2);
+  const candidates = lines
+    .map((l) => l.trim())
+    .filter((l) => NAME_LINE_RE.test(l) && l.split(/\s+/).length >= 2 && !DOCUMENT_BOILERPLATE_RE.test(l));
   if (candidates.length === 0) return null;
 
   if (profileFullName) {
