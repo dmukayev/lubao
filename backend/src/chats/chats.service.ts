@@ -1,4 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestContext } from '../common/request-context';
 import { AppSettingsService } from '../app-settings/app-settings.service';
@@ -44,6 +45,17 @@ export class ChatsService {
       cargoId = dto.cargoId;
     } else if (ctx.companyMember) {
       if (!dto.driverId) throw new BadRequestException('driverId is required for a company-initiated chat');
+      const driverExists = await this.prisma.driver.findUnique({ where: { id: dto.driverId }, select: { id: true } });
+      if (!driverExists) throw new NotFoundException('Driver not found');
+      // Задача 029, п.13 — компания могла передать cargoId чужого груза
+      // (чат всё равно создавался бы с её companyId, но дальше push/чат
+      // резолвили бы контакт через publishedByUserId ЧУЖОГО груза —
+      // логисту другой компании). Свой груз или вообще без груза, третьего не дано.
+      if (dto.cargoId) {
+        const cargo = await this.prisma.cargo.findUnique({ where: { id: dto.cargoId }, select: { companyId: true } });
+        if (!cargo) throw new NotFoundException('Cargo not found');
+        if (cargo.companyId !== ctx.companyMember.companyId) throw new ForbiddenException('Not your cargo');
+      }
       driverId = dto.driverId;
       companyId = ctx.companyMember.companyId;
     } else {
@@ -56,7 +68,19 @@ export class ChatsService {
       // который уже превратился в сделку) — сразу привязываем, а не ждём
       // отдельного шага.
       const deal = await this.prisma.deal.findFirst({ where: { driverId, companyId, cargoId: cargoId ?? undefined } });
-      chat = await this.prisma.chat.create({ data: { driverId, companyId, cargoId, dealId: deal?.id ?? null } });
+      try {
+        chat = await this.prisma.chat.create({ data: { driverId, companyId, cargoId, dealId: deal?.id ?? null } });
+      } catch (e) {
+        // Двойное нажатие «Написать» (задача 029, п.13) — уникальный
+        // индекс @@unique([driverId, companyId, cargoId]) ловит гонку
+        // двух параллельных findOrCreate; та, что проиграла, просто
+        // находит чат, который успела создать первая.
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+          chat = await this.prisma.chat.findFirstOrThrow({ where: { driverId, companyId, cargoId } });
+        } else {
+          throw e;
+        }
+      }
     }
     return this.toThreadDto(chat, ctx);
   }

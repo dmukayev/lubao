@@ -683,6 +683,7 @@ model Chat {
 
   messages Message[]
 
+  @@unique([driverId, companyId, cargoId])
   @@index([driverId])
   @@index([companyId])
   @@map("chats")
