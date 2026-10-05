@@ -13,6 +13,7 @@ export 'src/models/admin.dart';
 export 'src/models/dial_codes.dart';
 export 'src/models/arrival.dart';
 export 'src/models/session_device.dart';
+export 'src/models/notification_settings.dart';
 
 export 'src/theme/app_theme.dart';
 
@@ -45,3 +46,6 @@ export 'src/repositories/review_repository.dart';
 export 'src/repositories/admin_repository.dart';
 export 'src/repositories/uploads_repository.dart';
 export 'src/repositories/arrival_repository.dart';
+export 'src/repositories/notifications_repository.dart';
+
+export 'src/realtime/realtime_service.dart';

@@ -1780,4 +1780,57 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get chatsEmpty => 'No chats yet';
+
+  @override
+  String get profileNotificationSettings => 'Notifications';
+
+  @override
+  String get notificationSettingsTitle => 'Notifications';
+
+  @override
+  String get notificationSettingsHint =>
+      'A disabled group will not send push for these events';
+
+  @override
+  String get notificationGroupNewCargoMatch => 'New matching cargo';
+
+  @override
+  String get notificationGroupCargoInvite => 'Cargo invitation';
+
+  @override
+  String get notificationGroupChatMessage => 'New chat message';
+
+  @override
+  String get notificationGroupNewResponse => 'Driver response';
+
+  @override
+  String get notificationGroupNewDriverDigest => 'New drivers at point';
+
+  @override
+  String get notificationGroupDealStatus => 'Deal status change';
+
+  @override
+  String get notificationGroupVerification => 'Document verification';
+
+  @override
+  String get notificationGroupAgreedCheck => '\"Agreed?\" check';
+
+  @override
+  String get companyWecomTitle => 'WeCom bot';
+
+  @override
+  String get companyWecomHint =>
+      'WeCom group bot webhook URL — new response and deal notifications will be sent to your group';
+
+  @override
+  String get companyWecomUrlLabel => 'Webhook URL';
+
+  @override
+  String get companyWecomTestButton => 'Test';
+
+  @override
+  String get companyWecomTestSuccess => 'Test message sent';
+
+  @override
+  String get companyWecomTestError => 'Failed to send — check the URL';
 }

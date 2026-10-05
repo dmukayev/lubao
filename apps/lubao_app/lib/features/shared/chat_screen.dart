@@ -33,6 +33,46 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _sharingLocation = false;
   bool _confirming = false;
 
+  StreamSubscription<Map<String, dynamic>>? _messageNewSub;
+  StreamSubscription<Map<String, dynamic>>? _messageReadSub;
+  Timer? _pollTimer;
+
+  /// Сокет — основной канал (задача 011, п.6); если за 10с после открытия
+  /// он не поднялся (прокси блокирует WS — см. задачу 020 про Китай),
+  /// переходим на опрос каждые 10с, пока не подключится (п.7).
+  @override
+  void initState() {
+    super.initState();
+    final realtime = ref.read(realtimeServiceProvider);
+    realtime.joinChat(widget.chatId);
+    _messageNewSub = realtime.onMessageNew.listen((data) {
+      if (data['chatId'] == widget.chatId) {
+        ref.invalidate(chatMessagesProvider(widget.chatId));
+        ref.invalidate(chatThreadProvider(widget.chatId));
+        unawaited(ref.read(chatRepositoryProvider).markRead(widget.chatId));
+      }
+    });
+    _messageReadSub = realtime.onMessageRead.listen((data) {
+      if (data['chatId'] == widget.chatId) {
+        ref.invalidate(chatMessagesProvider(widget.chatId));
+      }
+    });
+    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (!realtime.isConnected) ref.invalidate(chatMessagesProvider(widget.chatId));
+    });
+    unawaited(ref.read(chatRepositoryProvider).markRead(widget.chatId));
+  }
+
+  @override
+  void dispose() {
+    ref.read(realtimeServiceProvider).leaveChat(widget.chatId);
+    _messageNewSub?.cancel();
+    _messageReadSub?.cancel();
+    _pollTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
   Future<void> _send([String? text]) async {
     final message = (text ?? _controller.text).trim();
     if (message.isEmpty) return;
@@ -106,12 +146,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     } finally {
       if (mounted) setState(() => _confirming = false);
     }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   @override

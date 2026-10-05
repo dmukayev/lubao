@@ -676,5 +676,22 @@
   "cargoClose": "Жүкті жабу",
   "navChats": "Чаттар",
   "chatsTabTitle": "Чаттар",
-  "chatsEmpty": "Әзірге чат жоқ"
+  "chatsEmpty": "Әзірге чат жоқ",
+  "profileNotificationSettings": "Хабарландырулар",
+  "notificationSettingsTitle": "Хабарландырулар",
+  "notificationSettingsHint": "Өшірілген топ бұл оқиғалар бойынша push жібермейді",
+  "notificationGroupNewCargoMatch": "Жаңа сәйкес жүк",
+  "notificationGroupCargoInvite": "Жүкке шақыру",
+  "notificationGroupChatMessage": "Чатта жаңа хабарлама",
+  "notificationGroupNewResponse": "Жүргізушінің жауабы",
+  "notificationGroupNewDriverDigest": "Нүктеде жаңа жүргізушілер",
+  "notificationGroupDealStatus": "Мәміле мәртебесінің өзгеруі",
+  "notificationGroupVerification": "Құжаттарды тексеру",
+  "notificationGroupAgreedCheck": "«Келістіңіз бе?»",
+  "companyWecomTitle": "WeCom-бот",
+  "companyWecomHint": "WeCom топтық бот вебхугінің мекенжайы — жаңа жауаптар мен мәмілелер туралы хабарландырулар тобыңызға келеді",
+  "companyWecomUrlLabel": "Вебхук URL",
+  "companyWecomTestButton": "Тексеру",
+  "companyWecomTestSuccess": "Сынақ хабарламасы жіберілді",
+  "companyWecomTestError": "Жіберу мүмкін болмады — мекенжайды тексеріңіз"
 }

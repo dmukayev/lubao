@@ -801,5 +801,22 @@
   "cargoClose": "Закрыть груз",
   "navChats": "Чаты",
   "chatsTabTitle": "Чаты",
-  "chatsEmpty": "Пока нет чатов"
+  "chatsEmpty": "Пока нет чатов",
+  "profileNotificationSettings": "Уведомления",
+  "notificationSettingsTitle": "Уведомления",
+  "notificationSettingsHint": "Выключенная группа не присылает push по этим событиям",
+  "notificationGroupNewCargoMatch": "Новый подходящий груз",
+  "notificationGroupCargoInvite": "Приглашение на груз",
+  "notificationGroupChatMessage": "Новое сообщение в чате",
+  "notificationGroupNewResponse": "Отклик водителя",
+  "notificationGroupNewDriverDigest": "Новые водители на точке",
+  "notificationGroupDealStatus": "Смена статуса сделки",
+  "notificationGroupVerification": "Проверка документов",
+  "notificationGroupAgreedCheck": "«Договорились?»",
+  "companyWecomTitle": "WeCom-бот",
+  "companyWecomHint": "Адрес вебхука группового бота WeCom — уведомления о новых откликах и сделках будут приходить в вашу группу",
+  "companyWecomUrlLabel": "Вебхук URL",
+  "companyWecomTestButton": "Проверить",
+  "companyWecomTestSuccess": "Тестовое сообщение отправлено",
+  "companyWecomTestError": "Не удалось отправить — проверьте адрес"
 }

@@ -801,5 +801,22 @@
   "cargoClose": "Close cargo",
   "navChats": "Chats",
   "chatsTabTitle": "Chats",
-  "chatsEmpty": "No chats yet"
+  "chatsEmpty": "No chats yet",
+  "profileNotificationSettings": "Notifications",
+  "notificationSettingsTitle": "Notifications",
+  "notificationSettingsHint": "A disabled group will not send push for these events",
+  "notificationGroupNewCargoMatch": "New matching cargo",
+  "notificationGroupCargoInvite": "Cargo invitation",
+  "notificationGroupChatMessage": "New chat message",
+  "notificationGroupNewResponse": "Driver response",
+  "notificationGroupNewDriverDigest": "New drivers at point",
+  "notificationGroupDealStatus": "Deal status change",
+  "notificationGroupVerification": "Document verification",
+  "notificationGroupAgreedCheck": "\"Agreed?\" check",
+  "companyWecomTitle": "WeCom bot",
+  "companyWecomHint": "WeCom group bot webhook URL — new response and deal notifications will be sent to your group",
+  "companyWecomUrlLabel": "Webhook URL",
+  "companyWecomTestButton": "Test",
+  "companyWecomTestSuccess": "Test message sent",
+  "companyWecomTestError": "Failed to send — check the URL"
 }

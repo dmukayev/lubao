@@ -151,6 +151,7 @@ class Company {
     required this.countryId,
     this.city,
     required this.isVerified,
+    this.wecomWebhookUrl,
     required this.ratingAvg,
     required this.ratingCount,
   });
@@ -161,6 +162,9 @@ class Company {
   final String countryId;
   final String? city;
   final bool isVerified;
+  /// Вебхук группового бота WeCom (задача 011, п.2) — заполняет владелец в
+  /// профиле компании.
+  final String? wecomWebhookUrl;
   final double ratingAvg;
   final int ratingCount;
 
@@ -171,6 +175,7 @@ class Company {
         countryId: json['countryId'] as String,
         city: json['city'] as String?,
         isVerified: json['isVerified'] as bool? ?? false,
+        wecomWebhookUrl: json['wecomWebhookUrl'] as String?,
         ratingAvg: (json['ratingAvg'] as num?)?.toDouble() ?? 0,
         ratingCount: json['ratingCount'] as int? ?? 0,
       );

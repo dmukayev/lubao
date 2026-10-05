@@ -1750,4 +1750,55 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get chatsEmpty => '暂无聊天记录';
+
+  @override
+  String get profileNotificationSettings => '通知';
+
+  @override
+  String get notificationSettingsTitle => '通知';
+
+  @override
+  String get notificationSettingsHint => '关闭的分组不会推送这些事件';
+
+  @override
+  String get notificationGroupNewCargoMatch => '新匹配货物';
+
+  @override
+  String get notificationGroupCargoInvite => '货物邀请';
+
+  @override
+  String get notificationGroupChatMessage => '聊天新消息';
+
+  @override
+  String get notificationGroupNewResponse => '司机响应';
+
+  @override
+  String get notificationGroupNewDriverDigest => '该点新司机';
+
+  @override
+  String get notificationGroupDealStatus => '交易状态变更';
+
+  @override
+  String get notificationGroupVerification => '文件审核';
+
+  @override
+  String get notificationGroupAgreedCheck => '「谈妥了吗？」';
+
+  @override
+  String get companyWecomTitle => '企业微信机器人';
+
+  @override
+  String get companyWecomHint => '企业微信群机器人的Webhook地址——新响应和交易通知将发送到您的群组';
+
+  @override
+  String get companyWecomUrlLabel => 'Webhook网址';
+
+  @override
+  String get companyWecomTestButton => '测试';
+
+  @override
+  String get companyWecomTestSuccess => '测试消息已发送';
+
+  @override
+  String get companyWecomTestError => '发送失败——请检查地址';
 }

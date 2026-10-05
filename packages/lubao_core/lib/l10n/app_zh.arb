@@ -676,5 +676,22 @@
   "cargoClose": "关闭货物",
   "navChats": "聊天",
   "chatsTabTitle": "聊天",
-  "chatsEmpty": "暂无聊天记录"
+  "chatsEmpty": "暂无聊天记录",
+  "profileNotificationSettings": "通知",
+  "notificationSettingsTitle": "通知",
+  "notificationSettingsHint": "关闭的分组不会推送这些事件",
+  "notificationGroupNewCargoMatch": "新匹配货物",
+  "notificationGroupCargoInvite": "货物邀请",
+  "notificationGroupChatMessage": "聊天新消息",
+  "notificationGroupNewResponse": "司机响应",
+  "notificationGroupNewDriverDigest": "该点新司机",
+  "notificationGroupDealStatus": "交易状态变更",
+  "notificationGroupVerification": "文件审核",
+  "notificationGroupAgreedCheck": "「谈妥了吗？」",
+  "companyWecomTitle": "企业微信机器人",
+  "companyWecomHint": "企业微信群机器人的Webhook地址——新响应和交易通知将发送到您的群组",
+  "companyWecomUrlLabel": "Webhook网址",
+  "companyWecomTestButton": "测试",
+  "companyWecomTestSuccess": "测试消息已发送",
+  "companyWecomTestError": "发送失败——请检查地址"
 }

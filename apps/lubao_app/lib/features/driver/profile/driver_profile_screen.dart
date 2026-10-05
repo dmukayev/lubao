@@ -69,6 +69,11 @@ class DriverProfileScreen extends ConsumerWidget {
             title: Text(t.profileMyDevices),
             onTap: () => context.push('/devices'),
           ),
+          ListTile(
+            leading: const Icon(LucideIcons.bell),
+            title: Text(t.profileNotificationSettings),
+            onTap: () => context.push('/notifications/settings'),
+          ),
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: () => ref.read(sessionProvider.notifier).logout(),

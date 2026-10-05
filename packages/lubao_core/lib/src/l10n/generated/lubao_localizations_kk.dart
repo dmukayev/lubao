@@ -1781,4 +1781,58 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get chatsEmpty => 'Әзірге чат жоқ';
+
+  @override
+  String get profileNotificationSettings => 'Хабарландырулар';
+
+  @override
+  String get notificationSettingsTitle => 'Хабарландырулар';
+
+  @override
+  String get notificationSettingsHint =>
+      'Өшірілген топ бұл оқиғалар бойынша push жібермейді';
+
+  @override
+  String get notificationGroupNewCargoMatch => 'Жаңа сәйкес жүк';
+
+  @override
+  String get notificationGroupCargoInvite => 'Жүкке шақыру';
+
+  @override
+  String get notificationGroupChatMessage => 'Чатта жаңа хабарлама';
+
+  @override
+  String get notificationGroupNewResponse => 'Жүргізушінің жауабы';
+
+  @override
+  String get notificationGroupNewDriverDigest => 'Нүктеде жаңа жүргізушілер';
+
+  @override
+  String get notificationGroupDealStatus => 'Мәміле мәртебесінің өзгеруі';
+
+  @override
+  String get notificationGroupVerification => 'Құжаттарды тексеру';
+
+  @override
+  String get notificationGroupAgreedCheck => '«Келістіңіз бе?»';
+
+  @override
+  String get companyWecomTitle => 'WeCom-бот';
+
+  @override
+  String get companyWecomHint =>
+      'WeCom топтық бот вебхугінің мекенжайы — жаңа жауаптар мен мәмілелер туралы хабарландырулар тобыңызға келеді';
+
+  @override
+  String get companyWecomUrlLabel => 'Вебхук URL';
+
+  @override
+  String get companyWecomTestButton => 'Тексеру';
+
+  @override
+  String get companyWecomTestSuccess => 'Сынақ хабарламасы жіберілді';
+
+  @override
+  String get companyWecomTestError =>
+      'Жіберу мүмкін болмады — мекенжайды тексеріңіз';
 }

@@ -3455,6 +3455,108 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Пока нет чатов'**
   String get chatsEmpty;
+
+  /// No description provided for @profileNotificationSettings.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уведомления'**
+  String get profileNotificationSettings;
+
+  /// No description provided for @notificationSettingsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уведомления'**
+  String get notificationSettingsTitle;
+
+  /// No description provided for @notificationSettingsHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выключенная группа не присылает push по этим событиям'**
+  String get notificationSettingsHint;
+
+  /// No description provided for @notificationGroupNewCargoMatch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новый подходящий груз'**
+  String get notificationGroupNewCargoMatch;
+
+  /// No description provided for @notificationGroupCargoInvite.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приглашение на груз'**
+  String get notificationGroupCargoInvite;
+
+  /// No description provided for @notificationGroupChatMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новое сообщение в чате'**
+  String get notificationGroupChatMessage;
+
+  /// No description provided for @notificationGroupNewResponse.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отклик водителя'**
+  String get notificationGroupNewResponse;
+
+  /// No description provided for @notificationGroupNewDriverDigest.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новые водители на точке'**
+  String get notificationGroupNewDriverDigest;
+
+  /// No description provided for @notificationGroupDealStatus.
+  ///
+  /// In ru, this message translates to:
+  /// **'Смена статуса сделки'**
+  String get notificationGroupDealStatus;
+
+  /// No description provided for @notificationGroupVerification.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверка документов'**
+  String get notificationGroupVerification;
+
+  /// No description provided for @notificationGroupAgreedCheck.
+  ///
+  /// In ru, this message translates to:
+  /// **'«Договорились?»'**
+  String get notificationGroupAgreedCheck;
+
+  /// No description provided for @companyWecomTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'WeCom-бот'**
+  String get companyWecomTitle;
+
+  /// No description provided for @companyWecomHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Адрес вебхука группового бота WeCom — уведомления о новых откликах и сделках будут приходить в вашу группу'**
+  String get companyWecomHint;
+
+  /// No description provided for @companyWecomUrlLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вебхук URL'**
+  String get companyWecomUrlLabel;
+
+  /// No description provided for @companyWecomTestButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверить'**
+  String get companyWecomTestButton;
+
+  /// No description provided for @companyWecomTestSuccess.
+  ///
+  /// In ru, this message translates to:
+  /// **'Тестовое сообщение отправлено'**
+  String get companyWecomTestSuccess;
+
+  /// No description provided for @companyWecomTestError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось отправить — проверьте адрес'**
+  String get companyWecomTestError;
 }
 
 class _LubaoLocalizationsDelegate

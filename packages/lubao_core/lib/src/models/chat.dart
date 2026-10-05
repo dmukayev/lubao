@@ -88,6 +88,20 @@ class ChatMessage {
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 
+  /// `message:new` с сокета не содержит `isMine` (сервер шлёт одно и то же
+  /// всем в комнате) — клиент сам сравнивает senderUserId со своим id.
+  factory ChatMessage.fromRealtimeJson(Map<String, dynamic> json, String viewerUserId) => ChatMessage(
+        id: json['id'] as String,
+        chatId: json['chatId'] as String,
+        senderUserId: json['senderUserId'] as String,
+        isMine: json['senderUserId'] == viewerUserId,
+        originalText: json['originalText'] as String,
+        originalLang: json['originalLang'] as String,
+        translations: json['translations'] == null ? null : I18nText.fromJson(json['translations'] as Map<String, dynamic>),
+        isRead: json['isRead'] as bool? ?? false,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
+
   String displayText(String languageCode) {
     if (languageCode == originalLang) return originalText;
     return translations?.forLanguageCode(languageCode) ?? originalText;

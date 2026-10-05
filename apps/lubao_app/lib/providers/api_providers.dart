@@ -26,6 +26,13 @@ final chatRepositoryProvider = Provider((ref) => ChatRepository(ref.watch(apiCli
 final reviewRepositoryProvider = Provider((ref) => ReviewRepository(ref.watch(apiClientProvider)));
 final uploadsRepositoryProvider = Provider((ref) => UploadsRepository(ref.watch(apiClientProvider)));
 final arrivalRepositoryProvider = Provider((ref) => ArrivalRepository(ref.watch(apiClientProvider)));
+final notificationsRepositoryProvider = Provider((ref) => NotificationsRepository(ref.watch(apiClientProvider)));
+
+final realtimeServiceProvider = Provider<RealtimeService>((ref) {
+  final service = RealtimeService(baseUrl: _defaultBaseUrl());
+  ref.onDispose(service.disconnect);
+  return service;
+});
 
 final referenceDataProvider = FutureProvider<ReferenceData>((ref) {
   return ref.watch(referenceDataRepositoryProvider).fetch();

@@ -38,4 +38,10 @@ class ChatRepository {
     final res = await _client.dio.post('/chats/$chatId/messages', data: {'text': text});
     return ChatMessage.fromJson(res.data as Map<String, dynamic>);
   }
+
+  /// Проставить «прочитано» на чужих сообщениях (задача 011, п.6 —
+  /// закрывает пробел из 017 п.9) — собеседник получит message:read.
+  Future<void> markRead(String chatId) async {
+    await _client.dio.post('/chats/$chatId/read');
+  }
 }

@@ -232,6 +232,89 @@ Future<void> _showSetPasswordDialog(BuildContext context, WidgetRef ref) async {
   );
 }
 
+/// Вебхук группового бота WeCom (задача 011, п.2) — владелец вставляет
+/// адрес в профиле, «Проверить» шлёт туда тестовое сообщение сразу же,
+/// без отдельного сохранения — одной кнопкой одновременно и сохраняем,
+/// и проверяем, что бот действительно настроен.
+Future<void> _showWeComDialog(BuildContext context, WidgetRef ref, String? currentUrl) async {
+  final t = context.l10n;
+  final controller = TextEditingController(text: currentUrl ?? '');
+  String? error;
+  String? info;
+  bool saving = false;
+
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setState) => AlertDialog(
+        title: Text(t.companyWecomTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.companyWecomHint, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(label: t.companyWecomUrlLabel, controller: controller, errorText: error),
+            if (info != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(info!, style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(t.commonCancel)),
+          TextButton(
+            onPressed: saving
+                ? null
+                : () async {
+                    setState(() {
+                      saving = true;
+                      error = null;
+                      info = null;
+                    });
+                    try {
+                      await ref.read(companyRepositoryProvider).updateWeComWebhook(
+                            controller.text.trim().isEmpty ? null : controller.text.trim(),
+                          );
+                      await ref.read(companyRepositoryProvider).testWeComWebhook();
+                      setState(() {
+                        saving = false;
+                        info = t.companyWecomTestSuccess;
+                      });
+                    } catch (_) {
+                      setState(() {
+                        saving = false;
+                        error = t.companyWecomTestError;
+                      });
+                    }
+                  },
+            child: Text(t.companyWecomTestButton),
+          ),
+          FilledButton(
+            onPressed: saving
+                ? null
+                : () async {
+                    setState(() => saving = true);
+                    try {
+                      await ref.read(companyRepositoryProvider).updateWeComWebhook(
+                            controller.text.trim().isEmpty ? null : controller.text.trim(),
+                          );
+                      if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                    } catch (_) {
+                      setState(() {
+                        saving = false;
+                        error = t.commonError;
+                      });
+                    }
+                  },
+            child: Text(t.commonSave),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 class CompanyProfileScreen extends ConsumerWidget {
   const CompanyProfileScreen({super.key});
 
@@ -312,6 +395,18 @@ class CompanyProfileScreen extends ConsumerWidget {
             title: Text(t.profileMyDevices),
             onTap: () => context.push('/devices'),
           ),
+          ListTile(
+            leading: const Icon(LucideIcons.bell),
+            title: Text(t.profileNotificationSettings),
+            onTap: () => context.push('/notifications/settings'),
+          ),
+          if (session?.companyMember?.role == CompanyMemberRole.owner)
+            ListTile(
+              leading: const Icon(LucideIcons.messageSquare),
+              title: Text(t.companyWecomTitle),
+              subtitle: Text(company?.wecomWebhookUrl ?? t.companyWecomHint, maxLines: 1, overflow: TextOverflow.ellipsis),
+              onTap: () => _showWeComDialog(context, ref, company?.wecomWebhookUrl),
+            ),
           ListTile(
             leading: const Icon(LucideIcons.keyRound),
             title: Text(t.companySetPasswordTitle),

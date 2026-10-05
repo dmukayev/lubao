@@ -28,6 +28,7 @@ import '../features/shared/deal_detail_screen.dart';
 import '../features/shared/chat_screen.dart';
 import '../features/shared/my_chats_screen.dart';
 import '../features/shared/devices_screen.dart';
+import '../features/shared/notification_settings_screen.dart';
 import '../features/shared/splash_screen.dart';
 
 class _RouterRefresh extends ChangeNotifier {
@@ -95,6 +96,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
       GoRoute(path: '/devices', builder: (context, state) => const DevicesScreen()),
+      GoRoute(path: '/notifications/settings', builder: (context, state) => const NotificationSettingsScreen()),
       GoRoute(path: '/role-select', builder: (context, state) => const RoleSelectScreen()),
       GoRoute(path: '/login/driver', builder: (context, state) => const DriverLoginScreen()),
       GoRoute(

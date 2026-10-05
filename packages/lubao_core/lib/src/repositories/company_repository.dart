@@ -33,4 +33,14 @@ class CompanyRepository {
     });
     return (res.data as Map<String, dynamic>)['token'] as String;
   }
+
+  /// Вебхук группового бота WeCom (задача 011, п.2) — только владелец.
+  Future<Company> updateWeComWebhook(String? url) async {
+    final res = await _client.dio.patch('/companies/me/wecom-webhook', data: {'wecomWebhookUrl': url});
+    return Company.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> testWeComWebhook() async {
+    await _client.dio.post('/companies/me/wecom-test');
+  }
 }

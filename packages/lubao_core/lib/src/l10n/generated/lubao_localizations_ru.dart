@@ -1773,4 +1773,57 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get chatsEmpty => 'Пока нет чатов';
+
+  @override
+  String get profileNotificationSettings => 'Уведомления';
+
+  @override
+  String get notificationSettingsTitle => 'Уведомления';
+
+  @override
+  String get notificationSettingsHint =>
+      'Выключенная группа не присылает push по этим событиям';
+
+  @override
+  String get notificationGroupNewCargoMatch => 'Новый подходящий груз';
+
+  @override
+  String get notificationGroupCargoInvite => 'Приглашение на груз';
+
+  @override
+  String get notificationGroupChatMessage => 'Новое сообщение в чате';
+
+  @override
+  String get notificationGroupNewResponse => 'Отклик водителя';
+
+  @override
+  String get notificationGroupNewDriverDigest => 'Новые водители на точке';
+
+  @override
+  String get notificationGroupDealStatus => 'Смена статуса сделки';
+
+  @override
+  String get notificationGroupVerification => 'Проверка документов';
+
+  @override
+  String get notificationGroupAgreedCheck => '«Договорились?»';
+
+  @override
+  String get companyWecomTitle => 'WeCom-бот';
+
+  @override
+  String get companyWecomHint =>
+      'Адрес вебхука группового бота WeCom — уведомления о новых откликах и сделках будут приходить в вашу группу';
+
+  @override
+  String get companyWecomUrlLabel => 'Вебхук URL';
+
+  @override
+  String get companyWecomTestButton => 'Проверить';
+
+  @override
+  String get companyWecomTestSuccess => 'Тестовое сообщение отправлено';
+
+  @override
+  String get companyWecomTestError => 'Не удалось отправить — проверьте адрес';
 }

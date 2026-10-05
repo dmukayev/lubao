@@ -5,6 +5,7 @@ import 'package:lubao_core/lubao_core.dart';
 import 'providers/locale_provider.dart';
 import 'router/app_router.dart';
 import 'services/location_reporter.dart';
+import 'services/realtime_connector.dart';
 
 class LubaoApp extends ConsumerWidget {
   const LubaoApp({super.key});
@@ -14,6 +15,7 @@ class LubaoApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final locale = ref.watch(localeProvider);
     ref.watch(locationReporterProvider);
+    ref.watch(realtimeConnectorProvider);
 
     return MaterialApp.router(
       onGenerateTitle: (context) => context.l10n.appName,
