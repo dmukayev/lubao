@@ -116,17 +116,29 @@ class AdminRepository {
     return AdminVerificationCompanyProfile.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<void> returnDriverForRework(String id, {required List<VerificationReworkDecision> decisions, String? note}) async {
+  Future<void> returnDriverForRework(
+    String id, {
+    required List<VerificationReworkDecision> decisions,
+    String? note,
+    Map<String, bool?>? crossChecks,
+  }) async {
     await _client.dio.post('/admin/verification/drivers/$id/return', data: {
       'decisions': decisions.map((d) => d.toJson()).toList(),
       if (note != null) 'note': note,
+      if (crossChecks != null) 'crossChecks': crossChecks,
     });
   }
 
-  Future<void> returnCompanyForRework(String id, {required List<VerificationReworkDecision> decisions, String? note}) async {
+  Future<void> returnCompanyForRework(
+    String id, {
+    required List<VerificationReworkDecision> decisions,
+    String? note,
+    Map<String, bool?>? crossChecks,
+  }) async {
     await _client.dio.post('/admin/verification/companies/$id/return', data: {
       'decisions': decisions.map((d) => d.toJson()).toList(),
       if (note != null) 'note': note,
+      if (crossChecks != null) 'crossChecks': crossChecks,
     });
   }
 
@@ -254,8 +266,19 @@ class AdminRepository {
   /// `reason` обязателен на бэкенде (задача 026, п.5) — любое изменение
   /// «Проверена» видно в логе карточки. `force` — поставить «Проверена» без
   /// одобренных документов («проверил лично»).
-  Future<void> setCompanyVerified(String id, bool isVerified, {required String reason, bool force = false}) async {
-    await _client.dio.patch('/admin/companies/$id/verify', data: {'isVerified': isVerified, 'reason': reason, 'force': force});
+  Future<void> setCompanyVerified(
+    String id,
+    bool isVerified, {
+    required String reason,
+    bool force = false,
+    Map<String, bool?>? crossChecks,
+  }) async {
+    await _client.dio.patch('/admin/companies/$id/verify', data: {
+      'isVerified': isVerified,
+      'reason': reason,
+      'force': force,
+      if (crossChecks != null) 'crossChecks': crossChecks,
+    });
   }
 
   /// Общая панель редактирования (задача 028, п.18/20).
@@ -334,8 +357,19 @@ class AdminRepository {
     return AdminDriverDetail.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<void> setDriverVerified(String id, bool isVerified, {required String reason, bool force = false}) async {
-    await _client.dio.patch('/admin/drivers/$id/verify', data: {'isVerified': isVerified, 'reason': reason, 'force': force});
+  Future<void> setDriverVerified(
+    String id,
+    bool isVerified, {
+    required String reason,
+    bool force = false,
+    Map<String, bool?>? crossChecks,
+  }) async {
+    await _client.dio.patch('/admin/drivers/$id/verify', data: {
+      'isVerified': isVerified,
+      'reason': reason,
+      'force': force,
+      if (crossChecks != null) 'crossChecks': crossChecks,
+    });
   }
 
   /// Общая панель редактирования (задача 028, п.18/19).

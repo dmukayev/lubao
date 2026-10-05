@@ -331,6 +331,27 @@ describe('AdminService.setDriverVerified / setCompanyVerified — force gate (з
     );
   });
 
+  it('crossChecks (сверка профиля с документами) is written to audit_log, not just kept in screen state (задача 029, п.16)', async () => {
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1' }), update: jest.fn().mockResolvedValue({ id: 'd1', isVerified: true }) },
+      auditLog: { create: jest.fn().mockResolvedValue({}) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.setDriverVerified('d1', 'admin-1', {
+      isVerified: true,
+      reason: 'проверил лично',
+      force: true,
+      crossChecks: { name: true, photo: true, plate: false },
+    });
+
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ metadata: expect.objectContaining({ crossChecks: { name: true, photo: true, plate: false } }) }),
+      }),
+    );
+  });
+
   it('un-verifying (isVerified=false) never requires documents', async () => {
     const prisma: any = {
       driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1' }), update: jest.fn().mockResolvedValue({ id: 'd1', isVerified: false }) },
@@ -838,7 +859,7 @@ describe('AdminService.returnDriverForRework / returnCompanyForRework — one de
   it('rejects the listed documents, unverifies the driver, logs one decision entry, and notifies the driver for real (задача 011)', async () => {
     const prisma: any = {
       driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1', userId: 'user-d1' }), update: jest.fn() },
-      verificationDocument: { findMany: jest.fn().mockResolvedValue([{ id: 'doc1', driverId: 'd1' }]), update: jest.fn() },
+      verificationDocument: { findMany: jest.fn().mockResolvedValue([{ id: 'doc1', driverId: 'd1', type: 'SELFIE' }]), update: jest.fn() },
       $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
       auditLog: { create: jest.fn() },
     };
@@ -855,7 +876,32 @@ describe('AdminService.returnDriverForRework / returnCompanyForRework — one de
       expect.objectContaining({ data: expect.objectContaining({ action: 'DRIVER_RETURNED_FOR_REWORK' }) }),
     );
     expect(prisma.auditLog.create).toHaveBeenCalledTimes(1);
-    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['user-d1'] }, 'VERIFICATION_RETURNED', { note: 'Переснимите права' });
+    // Задача 029, п.7 — push несёт список документов и причин, не только
+    // общую заметку (formatVerificationReturnedBody собирает их вместе).
+    expect(notifications.notify).toHaveBeenCalledWith(
+      { userIds: ['user-d1'] },
+      'VERIFICATION_RETURNED',
+      { note: 'Переснимите права', documents: [{ type: 'SELFIE', reason: 'Нечитаемое фото' }] },
+    );
+  });
+
+  it('persists crossChecks to audit_log when returning for rework too (задача 029, п.16)', async () => {
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1', userId: 'user-d1' }), update: jest.fn() },
+      verificationDocument: { findMany: jest.fn().mockResolvedValue([{ id: 'doc1', driverId: 'd1', type: 'SELFIE' }]), update: jest.fn() },
+      $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, { notify: jest.fn() } as any);
+
+    await service.returnDriverForRework('d1', 'admin-1', {
+      decisions: [{ documentId: 'doc1', rejectReason: 'Нечитаемое фото' }],
+      crossChecks: { name: false },
+    } as any);
+
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ metadata: expect.objectContaining({ crossChecks: { name: false } }) }) }),
+    );
   });
 
   it('throws if a listed document does not belong to this driver', async () => {
@@ -873,7 +919,7 @@ describe('AdminService.returnDriverForRework / returnCompanyForRework — one de
   it('company branch: rejects documents, unverifies the company, logs one decision entry, and notifies the owner', async () => {
     const prisma: any = {
       company: { findUnique: jest.fn().mockResolvedValue({ id: 'c1' }), update: jest.fn() },
-      verificationDocument: { findMany: jest.fn().mockResolvedValue([{ id: 'doc1', companyId: 'c1' }]), update: jest.fn() },
+      verificationDocument: { findMany: jest.fn().mockResolvedValue([{ id: 'doc1', companyId: 'c1', type: 'COMPANY_REGISTRATION' }]), update: jest.fn() },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ userId: 'owner-1' }) },
       $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
       auditLog: { create: jest.fn() },
@@ -887,7 +933,11 @@ describe('AdminService.returnDriverForRework / returnCompanyForRework — one de
 
     expect(prisma.company.update).toHaveBeenCalledWith({ where: { id: 'c1' }, data: { isVerified: false } });
     expect(prisma.auditLog.create).toHaveBeenCalledTimes(1);
-    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['owner-1'] }, 'VERIFICATION_RETURNED', { note: undefined });
+    expect(notifications.notify).toHaveBeenCalledWith(
+      { userIds: ['owner-1'] },
+      'VERIFICATION_RETURNED',
+      { note: undefined, documents: [{ type: 'COMPANY_REGISTRATION', reason: 'Документ просрочен' }] },
+    );
   });
 });
 

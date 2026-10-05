@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { BooleanQuery } from '../../common/boolean-query.decorator';
 import { IsPersonName } from '../../common/validators/person-name.validator';
@@ -39,6 +39,15 @@ export class SetVerifiedDto {
   @IsOptional()
   @IsBoolean()
   force?: boolean;
+
+  /// Отметки сверки профиля с документами (имя/фото/номер и т.п., задача
+  /// 028, п.9) — раньше жили только в состоянии экрана и терялись при
+  /// перезагрузке (задача 029, п.16). Ключи задаёт клиент (`name`,
+  /// `photo`, `plate`, …) — тут не валидируем состав, пишем как есть в
+  /// audit_log.
+  @IsOptional()
+  @IsObject()
+  crossChecks?: Record<string, boolean | null>;
 }
 
 export class BlockUserDto {
@@ -222,6 +231,12 @@ export class ReturnForReworkDto {
   @IsOptional()
   @IsString()
   note?: string;
+
+  /// См. SetVerifiedDto.crossChecks — та же сверка сохраняется и при
+  /// возврате на доработку, не только при подтверждении (задача 029, п.16).
+  @IsOptional()
+  @IsObject()
+  crossChecks?: Record<string, boolean | null>;
 }
 
 /// Те же поля, что у company-эндпоинта публикации груза (п.15: «Исправить»

@@ -1004,8 +1004,15 @@ export class AdminService {
     );
     await this.prisma.driver.update({ where: { id }, data: { isVerified: false } });
 
-    await this.logAudit(adminUserId, 'DRIVER_RETURNED_FOR_REWORK', 'Driver', id, { note: dto.note, decisions: dto.decisions });
-    await this.notifications?.notify({ userIds: [driver.userId] }, 'VERIFICATION_RETURNED', { note: dto.note });
+    await this.logAudit(adminUserId, 'DRIVER_RETURNED_FOR_REWORK', 'Driver', id, { note: dto.note, decisions: dto.decisions, crossChecks: dto.crossChecks });
+    // Задача 029, п.7 — push должен содержать список документов и причин
+    // (formatVerificationReturnedBody), а не только общую заметку; docs
+    // уже загружены выше для проверки принадлежности.
+    const docsById = new Map(docs.map((d) => [d.id, d]));
+    await this.notifications?.notify({ userIds: [driver.userId] }, 'VERIFICATION_RETURNED', {
+      note: dto.note,
+      documents: dto.decisions.map((d) => ({ type: docsById.get(d.documentId)!.type, reason: d.rejectReason })),
+    });
 
     return { id, isVerified: false };
   }
@@ -1030,10 +1037,14 @@ export class AdminService {
     );
     await this.prisma.company.update({ where: { id }, data: { isVerified: false } });
 
-    await this.logAudit(adminUserId, 'COMPANY_RETURNED_FOR_REWORK', 'Company', id, { note: dto.note, decisions: dto.decisions });
+    await this.logAudit(adminUserId, 'COMPANY_RETURNED_FOR_REWORK', 'Company', id, { note: dto.note, decisions: dto.decisions, crossChecks: dto.crossChecks });
     const owner = await this.prisma.companyMember.findFirst({ where: { companyId: id, role: 'OWNER' }, orderBy: { createdAt: 'asc' } });
     if (owner) {
-      await this.notifications?.notify({ userIds: [owner.userId] }, 'VERIFICATION_RETURNED', { note: dto.note });
+      const docsById = new Map(docs.map((d) => [d.id, d]));
+      await this.notifications?.notify({ userIds: [owner.userId] }, 'VERIFICATION_RETURNED', {
+        note: dto.note,
+        documents: dto.decisions.map((d) => ({ type: docsById.get(d.documentId)!.type, reason: d.rejectReason })),
+      });
     }
 
     return { id, isVerified: false };
@@ -1763,6 +1774,7 @@ export class AdminService {
     await this.logAudit(adminUserId, dto.isVerified ? 'COMPANY_VERIFIED' : 'COMPANY_UNVERIFIED', 'Company', id, {
       reason: dto.reason,
       force: dto.force ?? false,
+      crossChecks: dto.crossChecks,
     });
     if (dto.isVerified) {
       const owner = await this.prisma.companyMember.findFirst({ where: { companyId: id, role: 'OWNER' }, orderBy: { createdAt: 'asc' } });
@@ -1888,6 +1900,7 @@ export class AdminService {
     await this.logAudit(adminUserId, dto.isVerified ? 'DRIVER_VERIFIED' : 'DRIVER_UNVERIFIED', 'Driver', id, {
       reason: dto.reason,
       force: dto.force ?? false,
+      crossChecks: dto.crossChecks,
     });
     if (dto.isVerified) {
       await this.notifications?.notify({ userIds: [driver.userId] }, 'VERIFICATION_APPROVED', {});

@@ -247,7 +247,7 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
       final repo = ref.read(adminRepositoryProvider);
       final toApprove = driver.documents.where((d) => _decisions[d.id] == true && d.status != VerificationStatus.approved);
       await Future.wait(toApprove.map((d) => repo.reviewDocument(d.id, approve: true)));
-      await repo.setDriverVerified(driver.id, true, reason: reason);
+      await repo.setDriverVerified(driver.id, true, reason: reason, crossChecks: _crossChecks);
       ref.invalidate(adminVerificationQueueProvider('driver'));
       ref.invalidate(adminVerificationDriverProfileProvider(driver.id));
       ref.read(adminVerificationSelectedIdProvider.notifier).state = null;
@@ -270,7 +270,7 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
     if (decisions.isEmpty) return;
     setState(() => _submitting = true);
     try {
-      await ref.read(adminRepositoryProvider).returnDriverForRework(driver.id, decisions: decisions, note: note);
+      await ref.read(adminRepositoryProvider).returnDriverForRework(driver.id, decisions: decisions, note: note, crossChecks: _crossChecks);
       ref.invalidate(adminVerificationQueueProvider('driver'));
       ref.invalidate(adminVerificationDriverProfileProvider(driver.id));
       ref.read(adminVerificationSelectedIdProvider.notifier).state = null;
@@ -386,7 +386,7 @@ class _CompanyDetailPaneState extends ConsumerState<_CompanyDetailPane> {
       final repo = ref.read(adminRepositoryProvider);
       final toApprove = company.documents.where((d) => _decisions[d.id] == true && d.status != VerificationStatus.approved);
       await Future.wait(toApprove.map((d) => repo.reviewDocument(d.id, approve: true)));
-      await repo.setCompanyVerified(company.id, true, reason: reason);
+      await repo.setCompanyVerified(company.id, true, reason: reason, crossChecks: _crossChecks);
       ref.invalidate(adminVerificationQueueProvider('company'));
       ref.invalidate(adminVerificationCompanyProfileProvider(company.id));
       ref.read(adminVerificationSelectedIdProvider.notifier).state = null;
@@ -409,7 +409,7 @@ class _CompanyDetailPaneState extends ConsumerState<_CompanyDetailPane> {
     if (decisions.isEmpty) return;
     setState(() => _submitting = true);
     try {
-      await ref.read(adminRepositoryProvider).returnCompanyForRework(company.id, decisions: decisions, note: note);
+      await ref.read(adminRepositoryProvider).returnCompanyForRework(company.id, decisions: decisions, note: note, crossChecks: _crossChecks);
       ref.invalidate(adminVerificationQueueProvider('company'));
       ref.invalidate(adminVerificationCompanyProfileProvider(company.id));
       ref.read(adminVerificationSelectedIdProvider.notifier).state = null;
