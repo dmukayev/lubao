@@ -904,5 +904,7 @@
   "companyVerificationHint": "Upload the registration certificate — we'll cross-check it with the official registry and call the registered number, usually within 1 business day",
   "companyVerificationStatusNone": "Document not uploaded",
   "companyVerificationStatusPending": "Under review",
-  "companyVerificationStatusRejected": "Needs to be re-taken"
+  "companyVerificationStatusRejected": "Needs to be re-taken",
+  "adminNavSearch": "Search",
+  "adminNavMore": "More"
 }

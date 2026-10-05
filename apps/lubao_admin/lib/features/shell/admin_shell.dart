@@ -5,10 +5,15 @@ import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/data_providers.dart';
+import '../shared/responsive.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 /// Порядок меню — задача 028, п.1: Сводка · Проверка · Жалобы · Водители ·
 /// Компании · Грузы · Сделки · Справочники · Настройки.
+///
+/// На телефоне (< 700 px, задача 030) — другое меню: самые частые
+/// действия админа снизу (Сводка · Проверка · Жалобы · Поиск), всё
+/// остальное — под «Ещё» (decisions.md «Админка на телефоне»).
 class AdminShell extends ConsumerWidget {
   const AdminShell({super.key, required this.child});
 
@@ -26,8 +31,13 @@ class AdminShell extends ConsumerWidget {
     '/settings',
   ];
 
-  int _indexForLocation(String location) {
-    final index = _tabs.indexWhere((tab) => location.startsWith(tab));
+  /// «Ещё» и всё, что под ним (водители/компании/грузы/сделки/справочники/
+  /// настройки/журнал), не даёт нижней навигации подсветить какой-то один
+  /// пункт — остаётся «Ещё» выбранным, это ожидаемо.
+  static const _mobileTabs = ['/dashboard', '/verification', '/complaints', '/search'];
+
+  int _indexForLocation(List<String> tabs, String location) {
+    final index = tabs.indexWhere((tab) => location.startsWith(tab));
     return index < 0 ? 0 : index;
   }
 
@@ -35,11 +45,36 @@ class AdminShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
     final location = GoRouterState.of(context).matchedLocation;
-    final currentIndex = _indexForLocation(location);
     final attention = ref.watch(adminAttentionProvider);
     final pendingVerification = attention.valueOrNull?.pendingVerificationCount;
     final openComplaints = attention.valueOrNull?.openComplaints;
 
+    if (isMobileWidth(context)) {
+      final isKnownTab = _mobileTabs.any((tab) => location.startsWith(tab));
+      final currentIndex = isKnownTab ? _indexForLocation(_mobileTabs, location) : 4;
+      return Scaffold(
+        body: child,
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: currentIndex,
+          onDestinationSelected: (index) => context.go(index < _mobileTabs.length ? _mobileTabs[index] : '/more'),
+          destinations: [
+            NavigationDestination(icon: const Icon(LucideIcons.layoutDashboard), label: t.adminNavDashboard),
+            NavigationDestination(
+              icon: _BadgedIcon(icon: LucideIcons.badgeCheck, count: pendingVerification),
+              label: t.adminNavVerification,
+            ),
+            NavigationDestination(
+              icon: _BadgedIcon(icon: LucideIcons.flag, count: openComplaints),
+              label: t.adminNavComplaints,
+            ),
+            NavigationDestination(icon: const Icon(LucideIcons.search), label: t.adminNavSearch),
+            NavigationDestination(icon: const Icon(LucideIcons.menu), label: t.adminNavMore),
+          ],
+        ),
+      );
+    }
+
+    final currentIndex = _indexForLocation(_tabs, location);
     return Scaffold(
       body: Row(
         children: [

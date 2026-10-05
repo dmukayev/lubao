@@ -7,6 +7,7 @@ import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/data_providers.dart';
+import '../shared/responsive.dart';
 
 const _pageSize = 50;
 
@@ -108,6 +109,62 @@ class _AdminDriversScreenState extends ConsumerState<AdminDriversScreen> {
         page: _page,
       );
 
+  List<ChoiceChip> _filterChips(BuildContext context) {
+    final t = context.l10n;
+    return [
+      for (final f in _StatusFilter.values)
+        ChoiceChip(
+          label: Text(switch (f) {
+            _StatusFilter.all => t.adminFilterAll,
+            _StatusFilter.pending => t.adminFilterPending,
+            _StatusFilter.verified => t.adminFilterVerified,
+            _StatusFilter.blocked => t.adminFilterBlocked,
+          }),
+          selected: _filter == f,
+          onSelected: (_) {
+            setState(() {
+              _filter = f;
+              _page = 1;
+            });
+            _pushUrl();
+          },
+        ),
+    ];
+  }
+
+  // Задача 030, п.1/4 — на телефоне поиск и лента фильтров-чипов в одну
+  // строку с Row не помещаются (RenderFlex overflow): поиск сверху, чипы
+  // снизу в горизонтальной прокрутке, а не сжатый Row.
+  Widget _buildFilterBar(BuildContext context) {
+    final t = context.l10n;
+    final search = AppTextField(
+      label: t.commonSearch,
+      controller: _searchController,
+      onChanged: _onSearchChanged,
+      hintText: t.adminSearchDriverHint,
+    );
+    if (isMobileWidth(context)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          search,
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: [for (final chip in _filterChips(context)) Padding(padding: const EdgeInsets.only(right: 8), child: chip)]),
+          ),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: search),
+        const SizedBox(width: 16),
+        for (final chip in _filterChips(context)) Padding(padding: const EdgeInsets.only(right: 8), child: chip),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
@@ -142,38 +199,7 @@ class _AdminDriversScreenState extends ConsumerState<AdminDriversScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    label: t.commonSearch,
-                    controller: _searchController,
-                    onChanged: _onSearchChanged,
-                    hintText: t.adminSearchDriverHint,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                for (final f in _StatusFilter.values) ...[
-                  ChoiceChip(
-                    label: Text(switch (f) {
-                      _StatusFilter.all => t.adminFilterAll,
-                      _StatusFilter.pending => t.adminFilterPending,
-                      _StatusFilter.verified => t.adminFilterVerified,
-                      _StatusFilter.blocked => t.adminFilterBlocked,
-                    }),
-                    selected: _filter == f,
-                    onSelected: (_) {
-                      setState(() {
-                        _filter = f;
-                        _page = 1;
-                      });
-                      _pushUrl();
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ],
-            ),
+            _buildFilterBar(context),
             const SizedBox(height: 16),
             Expanded(
               child: pageAsync.when(
@@ -184,42 +210,59 @@ class _AdminDriversScreenState extends ConsumerState<AdminDriversScreen> {
                 },
                 data: (page) {
                   if (page.items.isEmpty) return EmptyState(message: t.adminDriversEmpty, icon: LucideIcons.user);
+                  final isMobile = isMobileWidth(context);
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: SingleChildScrollView(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: DataTable(
-                              columns: [
-                                DataColumn(label: Text(t.adminColName)),
-                                DataColumn(label: Text(t.adminColPhone)),
-                                DataColumn(label: Text(t.adminColCity)),
-                                DataColumn(label: Text(t.adminColVehicle)),
-                                DataColumn(label: Text(t.adminColStatus)),
-                                DataColumn(label: Text(t.adminColRating)),
-                                DataColumn(label: Text(t.adminColDeals)),
-                              ],
-                              rows: page.items
-                                  .map(
-                                    (d) => DataRow(
-                                      onSelectChanged: (_) => context.push('/drivers/${d.id}'),
-                                      cells: [
-                                        DataCell(Text(d.fullName)),
-                                        DataCell(Text(d.phone ?? '—')),
-                                        DataCell(Text(d.homeCityName.forLanguageCode(locale))),
-                                        DataCell(Text(d.vehicleBodyTypeName?.forLanguageCode(locale) ?? '—')),
-                                        DataCell(_StatusCell(isVerified: d.isVerified, isBlocked: d.isBlocked, pendingDocsCount: d.pendingDocsCount)),
-                                        DataCell(Text('★ ${d.ratingAvg.toStringAsFixed(1)} (${d.ratingCount})')),
-                                        DataCell(Text('${d.completedDeals}')),
-                                      ],
+                        child: isMobile
+                            ? ListView.separated(
+                                itemCount: page.items.length,
+                                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final d = page.items[index];
+                                  return Card(
+                                    child: ListTile(
+                                      onTap: () => context.push('/drivers/${d.id}'),
+                                      title: Text(d.fullName),
+                                      subtitle: Text('${d.phone ?? '—'} · ${d.homeCityName.forLanguageCode(locale)}'),
+                                      trailing: _StatusCell(isVerified: d.isVerified, isBlocked: d.isBlocked, pendingDocsCount: d.pendingDocsCount),
                                     ),
-                                  )
-                                  .toList(),
-                            ),
-                          ),
-                        ),
+                                  );
+                                },
+                              )
+                            : SingleChildScrollView(
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: DataTable(
+                                    columns: [
+                                      DataColumn(label: Text(t.adminColName)),
+                                      DataColumn(label: Text(t.adminColPhone)),
+                                      DataColumn(label: Text(t.adminColCity)),
+                                      DataColumn(label: Text(t.adminColVehicle)),
+                                      DataColumn(label: Text(t.adminColStatus)),
+                                      DataColumn(label: Text(t.adminColRating)),
+                                      DataColumn(label: Text(t.adminColDeals)),
+                                    ],
+                                    rows: page.items
+                                        .map(
+                                          (d) => DataRow(
+                                            onSelectChanged: (_) => context.push('/drivers/${d.id}'),
+                                            cells: [
+                                              DataCell(Text(d.fullName)),
+                                              DataCell(Text(d.phone ?? '—')),
+                                              DataCell(Text(d.homeCityName.forLanguageCode(locale))),
+                                              DataCell(Text(d.vehicleBodyTypeName?.forLanguageCode(locale) ?? '—')),
+                                              DataCell(_StatusCell(isVerified: d.isVerified, isBlocked: d.isBlocked, pendingDocsCount: d.pendingDocsCount)),
+                                              DataCell(Text('★ ${d.ratingAvg.toStringAsFixed(1)} (${d.ratingCount})')),
+                                              DataCell(Text('${d.completedDeals}')),
+                                            ],
+                                          ),
+                                        )
+                                        .toList(),
+                                  ),
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 8),
                       _Pager(

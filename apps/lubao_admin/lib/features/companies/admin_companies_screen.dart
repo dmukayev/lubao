@@ -7,6 +7,7 @@ import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/data_providers.dart';
+import '../shared/responsive.dart';
 
 const _pageSize = 50;
 
@@ -101,6 +102,59 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
         page: _page,
       );
 
+  List<ChoiceChip> _filterChips(BuildContext context) {
+    final t = context.l10n;
+    return [
+      for (final f in _StatusFilter.values)
+        ChoiceChip(
+          label: Text(switch (f) {
+            _StatusFilter.all => t.adminFilterAll,
+            _StatusFilter.pending => t.adminFilterPending,
+            _StatusFilter.verified => t.adminFilterVerified,
+            _StatusFilter.blocked => t.adminFilterBlocked,
+          }),
+          selected: _filter == f,
+          onSelected: (_) {
+            setState(() {
+              _filter = f;
+              _page = 1;
+            });
+            _pushUrl();
+          },
+        ),
+    ];
+  }
+
+  Widget _buildFilterBar(BuildContext context) {
+    final t = context.l10n;
+    final search = AppTextField(
+      label: t.commonSearch,
+      controller: _searchController,
+      onChanged: _onSearchChanged,
+      hintText: t.adminSearchCompanyHint,
+    );
+    if (isMobileWidth(context)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          search,
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: [for (final chip in _filterChips(context)) Padding(padding: const EdgeInsets.only(right: 8), child: chip)]),
+          ),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: search),
+        const SizedBox(width: 16),
+        for (final chip in _filterChips(context)) Padding(padding: const EdgeInsets.only(right: 8), child: chip),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
@@ -114,38 +168,7 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    label: t.commonSearch,
-                    controller: _searchController,
-                    onChanged: _onSearchChanged,
-                    hintText: t.adminSearchCompanyHint,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                for (final f in _StatusFilter.values) ...[
-                  ChoiceChip(
-                    label: Text(switch (f) {
-                      _StatusFilter.all => t.adminFilterAll,
-                      _StatusFilter.pending => t.adminFilterPending,
-                      _StatusFilter.verified => t.adminFilterVerified,
-                      _StatusFilter.blocked => t.adminFilterBlocked,
-                    }),
-                    selected: _filter == f,
-                    onSelected: (_) {
-                      setState(() {
-                        _filter = f;
-                        _page = 1;
-                      });
-                      _pushUrl();
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ],
-            ),
+            _buildFilterBar(context),
             const SizedBox(height: 16),
             Expanded(
               child: pageAsync.when(
@@ -156,42 +179,59 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
                 },
                 data: (page) {
                   if (page.items.isEmpty) return EmptyState(message: t.adminCompaniesEmpty, icon: LucideIcons.building2);
+                  final isMobile = isMobileWidth(context);
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: SingleChildScrollView(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: DataTable(
-                              columns: [
-                                DataColumn(label: Text(t.adminColName)),
-                                DataColumn(label: Text(t.adminColOwner)),
-                                DataColumn(label: Text(t.adminColEmployees)),
-                                DataColumn(label: Text(t.adminColCargos)),
-                                DataColumn(label: Text(t.adminColStatus)),
-                                DataColumn(label: Text(t.adminColRating)),
-                                DataColumn(label: Text(t.adminColDeals)),
-                              ],
-                              rows: page.items
-                                  .map(
-                                    (c) => DataRow(
-                                      onSelectChanged: (_) => context.push('/companies/${c.id}'),
-                                      cells: [
-                                        DataCell(Text(c.name)),
-                                        DataCell(Text(c.ownerEmail ?? c.ownerName ?? '—')),
-                                        DataCell(Text('${c.employeeCount}')),
-                                        DataCell(Text('${c.activeCargoCount}')),
-                                        DataCell(_StatusCell(isVerified: c.isVerified, isBlocked: c.isBlocked, pendingDocsCount: c.pendingDocsCount)),
-                                        DataCell(Text('★ ${c.ratingAvg.toStringAsFixed(1)} (${c.ratingCount})')),
-                                        DataCell(Text('${c.dealCount}')),
-                                      ],
+                        child: isMobile
+                            ? ListView.separated(
+                                itemCount: page.items.length,
+                                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final c = page.items[index];
+                                  return Card(
+                                    child: ListTile(
+                                      onTap: () => context.push('/companies/${c.id}'),
+                                      title: Text(c.name),
+                                      subtitle: Text('${c.ownerEmail ?? c.ownerName ?? '—'} · ${c.employeeCount}'),
+                                      trailing: _StatusCell(isVerified: c.isVerified, isBlocked: c.isBlocked, pendingDocsCount: c.pendingDocsCount),
                                     ),
-                                  )
-                                  .toList(),
-                            ),
-                          ),
-                        ),
+                                  );
+                                },
+                              )
+                            : SingleChildScrollView(
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: DataTable(
+                                    columns: [
+                                      DataColumn(label: Text(t.adminColName)),
+                                      DataColumn(label: Text(t.adminColOwner)),
+                                      DataColumn(label: Text(t.adminColEmployees)),
+                                      DataColumn(label: Text(t.adminColCargos)),
+                                      DataColumn(label: Text(t.adminColStatus)),
+                                      DataColumn(label: Text(t.adminColRating)),
+                                      DataColumn(label: Text(t.adminColDeals)),
+                                    ],
+                                    rows: page.items
+                                        .map(
+                                          (c) => DataRow(
+                                            onSelectChanged: (_) => context.push('/companies/${c.id}'),
+                                            cells: [
+                                              DataCell(Text(c.name)),
+                                              DataCell(Text(c.ownerEmail ?? c.ownerName ?? '—')),
+                                              DataCell(Text('${c.employeeCount}')),
+                                              DataCell(Text('${c.activeCargoCount}')),
+                                              DataCell(_StatusCell(isVerified: c.isVerified, isBlocked: c.isBlocked, pendingDocsCount: c.pendingDocsCount)),
+                                              DataCell(Text('★ ${c.ratingAvg.toStringAsFixed(1)} (${c.ratingCount})')),
+                                              DataCell(Text('${c.dealCount}')),
+                                            ],
+                                          ),
+                                        )
+                                        .toList(),
+                                  ),
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 8),
                       _Pager(

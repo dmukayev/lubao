@@ -8,6 +8,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/data_providers.dart';
 import '../shared/admin_status_helpers.dart';
+import '../shared/responsive.dart';
 
 const _pageSize = 50;
 
@@ -158,42 +159,59 @@ class _AdminDealsScreenState extends ConsumerState<AdminDealsScreen> {
                 },
                 data: (page) {
                   if (page.items.isEmpty) return EmptyState(message: t.adminDealsEmpty, icon: LucideIcons.fileCheck2);
+                  final isMobile = isMobileWidth(context);
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: SingleChildScrollView(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: DataTable(
-                              columns: [
-                                DataColumn(label: Text(t.adminColRoute)),
-                                DataColumn(label: Text(t.adminColDriver)),
-                                DataColumn(label: Text(t.adminColCompany)),
-                                DataColumn(label: Text(t.adminColPrice)),
-                                DataColumn(label: Text(t.adminColStatus)),
-                                DataColumn(label: Text(t.adminColStale)),
-                                DataColumn(label: Text(t.adminColCreated)),
-                              ],
-                              rows: page.items
-                                  .map(
-                                    (d) => DataRow(
-                                      onSelectChanged: (_) => context.push('/deals/${d.id}'),
-                                      cells: [
-                                        DataCell(Text('${d.pointName.forLanguageCode(locale)} → ${d.destinationCountryName.forLanguageCode(locale)}')),
-                                        DataCell(InkWell(onTap: () => context.push('/drivers/${d.driverId}'), child: Text(d.driverName, style: const TextStyle(decoration: TextDecoration.underline)))),
-                                        DataCell(InkWell(onTap: () => context.push('/companies/${d.companyId}'), child: Text(d.companyName, style: const TextStyle(decoration: TextDecoration.underline)))),
-                                        DataCell(Text(formatMoney(d.price, currencyFromJson(d.currency)))),
-                                        DataCell(Text(dealStatusLabel(t, d.status))),
-                                        DataCell(d.staleDays > 0 ? Text(t.adminStaleDays(d.staleDays), style: const TextStyle(color: StatusBadge.danger)) : const Text('—')),
-                                        DataCell(Text(formatAdminDate(d.createdAt))),
-                                      ],
+                        child: isMobile
+                            ? ListView.separated(
+                                itemCount: page.items.length,
+                                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final d = page.items[index];
+                                  return Card(
+                                    child: ListTile(
+                                      onTap: () => context.push('/deals/${d.id}'),
+                                      title: Text('${d.driverName} · ${d.companyName}'),
+                                      subtitle: Text('${d.pointName.forLanguageCode(locale)} → ${d.destinationCountryName.forLanguageCode(locale)} · ${formatMoney(d.price, currencyFromJson(d.currency))}'),
+                                      trailing: Text(dealStatusLabel(t, d.status), style: Theme.of(context).textTheme.bodySmall),
                                     ),
-                                  )
-                                  .toList(),
-                            ),
-                          ),
-                        ),
+                                  );
+                                },
+                              )
+                            : SingleChildScrollView(
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: DataTable(
+                                    columns: [
+                                      DataColumn(label: Text(t.adminColRoute)),
+                                      DataColumn(label: Text(t.adminColDriver)),
+                                      DataColumn(label: Text(t.adminColCompany)),
+                                      DataColumn(label: Text(t.adminColPrice)),
+                                      DataColumn(label: Text(t.adminColStatus)),
+                                      DataColumn(label: Text(t.adminColStale)),
+                                      DataColumn(label: Text(t.adminColCreated)),
+                                    ],
+                                    rows: page.items
+                                        .map(
+                                          (d) => DataRow(
+                                            onSelectChanged: (_) => context.push('/deals/${d.id}'),
+                                            cells: [
+                                              DataCell(Text('${d.pointName.forLanguageCode(locale)} → ${d.destinationCountryName.forLanguageCode(locale)}')),
+                                              DataCell(InkWell(onTap: () => context.push('/drivers/${d.driverId}'), child: Text(d.driverName, style: const TextStyle(decoration: TextDecoration.underline)))),
+                                              DataCell(InkWell(onTap: () => context.push('/companies/${d.companyId}'), child: Text(d.companyName, style: const TextStyle(decoration: TextDecoration.underline)))),
+                                              DataCell(Text(formatMoney(d.price, currencyFromJson(d.currency)))),
+                                              DataCell(Text(dealStatusLabel(t, d.status))),
+                                              DataCell(d.staleDays > 0 ? Text(t.adminStaleDays(d.staleDays), style: const TextStyle(color: StatusBadge.danger)) : const Text('—')),
+                                              DataCell(Text(formatAdminDate(d.createdAt))),
+                                            ],
+                                          ),
+                                        )
+                                        .toList(),
+                                  ),
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 8),
                       _Pager(

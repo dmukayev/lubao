@@ -6,7 +6,9 @@ import '../providers/auth_provider.dart';
 import '../features/login/admin_login_screen.dart';
 import '../features/login/admin_splash_screen.dart';
 import '../features/shell/admin_shell.dart';
+import '../features/shell/admin_more_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
+import '../features/dashboard/admin_search_screen.dart';
 import '../features/verification/verification_screen.dart';
 import '../features/complaints/complaints_screen.dart';
 import '../features/companies/admin_companies_screen.dart';
@@ -63,6 +65,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/dashboard', builder: (context, state) => const DashboardScreen()),
           GoRoute(path: '/verification', builder: (context, state) => const VerificationScreen()),
           GoRoute(path: '/complaints', builder: (context, state) => const ComplaintsScreen()),
+          // Задача 030, п.2 — только на телефоне (нижняя навигация);
+          // на компьютере поиск встроен в сводку, «Ещё» не показывается.
+          GoRoute(path: '/search', builder: (context, state) => const AdminSearchScreen()),
+          GoRoute(path: '/more', builder: (context, state) => const AdminMoreScreen()),
           GoRoute(
             path: '/companies',
             builder: (context, state) => AdminCompaniesScreen(queryParams: state.uri.queryParameters),

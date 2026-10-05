@@ -4073,6 +4073,18 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Нужно переснять'**
   String get companyVerificationStatusRejected;
+
+  /// No description provided for @adminNavSearch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поиск'**
+  String get adminNavSearch;
+
+  /// No description provided for @adminNavMore.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ещё'**
+  String get adminNavMore;
 }
 
 class _LubaoLocalizationsDelegate

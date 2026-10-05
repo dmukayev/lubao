@@ -11,6 +11,7 @@ import '../shared/admin_document_image.dart';
 import '../shared/admin_status_helpers.dart';
 import '../shared/audit_log_tab.dart';
 import '../shared/document_viewer.dart';
+import '../shared/responsive.dart';
 import 'driver_edit_panel.dart';
 
 class DriverDetailScreen extends ConsumerWidget {
@@ -134,29 +135,22 @@ class DriverDetailScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               _StatsRow(driver: driver),
               const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _DocumentsCard(
-                          documents: driver.documents,
-                          onApprove: (doc) => _reviewDocument(context, ref, doc, approve: true),
-                          onReject: (doc) => _reviewDocument(context, ref, doc, approve: false),
-                        ),
-                        const SizedBox(height: 16),
-                        _VehicleCard(vehicles: driver.vehicles, locale: locale),
-                        const SizedBox(height: 16),
-                        _DirectionsCard(driver: driver, locale: locale),
-                      ],
+              ResponsiveTwoColumn(
+                left: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _DocumentsCard(
+                      documents: driver.documents,
+                      onApprove: (doc) => _reviewDocument(context, ref, doc, approve: true),
+                      onReject: (doc) => _reviewDocument(context, ref, doc, approve: false),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(flex: 3, child: _DriverTabs(driver: driver)),
-                ],
+                    const SizedBox(height: 16),
+                    _VehicleCard(vehicles: driver.vehicles, locale: locale),
+                    const SizedBox(height: 16),
+                    _DirectionsCard(driver: driver, locale: locale),
+                  ],
+                ),
+                right: _DriverTabs(driver: driver),
               ),
             ],
           ),

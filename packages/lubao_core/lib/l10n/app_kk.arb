@@ -779,5 +779,7 @@
   "companyVerificationHint": "Тіркеу туралы куәлікті жүктеңіз — тізіліммен салыстырамыз және тізілімдегі нөмірге қоңырау шаламыз, әдетте 1 жұмыс күніне дейін",
   "companyVerificationStatusNone": "Құжат жүктелмеген",
   "companyVerificationStatusPending": "Тексерілуде",
-  "companyVerificationStatusRejected": "Қайта түсіру керек"
+  "companyVerificationStatusRejected": "Қайта түсіру керек",
+  "adminNavSearch": "Іздеу",
+  "adminNavMore": "Көбірек"
 }

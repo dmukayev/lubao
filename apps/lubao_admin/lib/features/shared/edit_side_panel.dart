@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lubao_core/lubao_core.dart';
 
+import 'responsive.dart';
+
 /// Общий паттерн редактирования карточки (задача 028, п.18): кнопка
 /// «Редактировать» → боковая панель справа поверх карточки, внизу —
 /// обязательная причина и «Сохранить». Возвращает причину; сами значения
@@ -30,7 +32,11 @@ Future<String?> showEditSidePanel({
           child: Material(
             elevation: 8,
             child: SizedBox(
-              width: 440,
+              // Задача 030, п.7 — на телефоне панель редактирования на
+              // весь экран (фиксированные 440px были шире самого экрана
+              // на 360px и обрезались за правым краем), на компьютере —
+              // боковая панель, как раньше.
+              width: isMobileWidth(context) ? MediaQuery.sizeOf(context).width : 440,
               height: double.infinity,
               child: SafeArea(
                 child: StatefulBuilder(

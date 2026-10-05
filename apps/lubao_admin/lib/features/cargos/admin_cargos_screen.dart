@@ -8,6 +8,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/data_providers.dart';
 import '../shared/admin_status_helpers.dart';
+import '../shared/responsive.dart';
 
 const _pageSize = 50;
 
@@ -85,6 +86,60 @@ class _AdminCargosScreenState extends ConsumerState<AdminCargosScreen> {
 
   static const _statuses = ['PUBLISHED', 'ARCHIVED', 'EXPIRED', 'CANCELLED'];
 
+  List<ChoiceChip> _filterChips(BuildContext context) {
+    final t = context.l10n;
+    return [
+      ChoiceChip(
+        label: Text(t.adminFilterAll),
+        selected: _status == null,
+        onSelected: (_) {
+          setState(() {
+            _status = null;
+            _page = 1;
+          });
+          _pushUrl();
+        },
+      ),
+      for (final s in _statuses)
+        ChoiceChip(
+          label: Text(cargoStatusLabel(t, s)),
+          selected: _status == s,
+          onSelected: (_) {
+            setState(() {
+              _status = s;
+              _page = 1;
+            });
+            _pushUrl();
+          },
+        ),
+    ];
+  }
+
+  Widget _buildFilterBar(BuildContext context) {
+    final t = context.l10n;
+    final search = AppTextField(label: t.commonSearch, controller: _searchController, onChanged: _onSearchChanged);
+    if (isMobileWidth(context)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          search,
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: [for (final chip in _filterChips(context)) Padding(padding: const EdgeInsets.only(right: 8), child: chip)]),
+          ),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: search),
+        const SizedBox(width: 16),
+        for (final chip in _filterChips(context)) Padding(padding: const EdgeInsets.only(right: 8), child: chip),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
@@ -99,38 +154,7 @@ class _AdminCargosScreenState extends ConsumerState<AdminCargosScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(child: AppTextField(label: t.commonSearch, controller: _searchController, onChanged: _onSearchChanged)),
-                const SizedBox(width: 16),
-                ChoiceChip(
-                  label: Text(t.adminFilterAll),
-                  selected: _status == null,
-                  onSelected: (_) {
-                    setState(() {
-                      _status = null;
-                      _page = 1;
-                    });
-                    _pushUrl();
-                  },
-                ),
-                const SizedBox(width: 8),
-                for (final s in _statuses) ...[
-                  ChoiceChip(
-                    label: Text(cargoStatusLabel(t, s)),
-                    selected: _status == s,
-                    onSelected: (_) {
-                      setState(() {
-                        _status = s;
-                        _page = 1;
-                      });
-                      _pushUrl();
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ],
-            ),
+            _buildFilterBar(context),
             const SizedBox(height: 16),
             Expanded(
               child: pageAsync.when(
@@ -141,42 +165,59 @@ class _AdminCargosScreenState extends ConsumerState<AdminCargosScreen> {
                 },
                 data: (page) {
                   if (page.items.isEmpty) return EmptyState(message: t.adminCargosEmpty, icon: LucideIcons.truck);
+                  final isMobile = isMobileWidth(context);
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: SingleChildScrollView(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: DataTable(
-                              columns: [
-                                DataColumn(label: Text(t.adminColRoute)),
-                                DataColumn(label: Text(t.adminColBodyType)),
-                                DataColumn(label: Text(t.adminColPrice)),
-                                DataColumn(label: Text(t.adminColCompany)),
-                                DataColumn(label: Text(t.adminColResponses)),
-                                DataColumn(label: Text(t.adminColStatus)),
-                                DataColumn(label: Text(t.adminColPublished)),
-                              ],
-                              rows: page.items
-                                  .map(
-                                    (c) => DataRow(
-                                      onSelectChanged: (_) => context.push('/cargos/${c.id}'),
-                                      cells: [
-                                        DataCell(Text('${c.pointName.forLanguageCode(locale)} → ${c.destinationCityName?.forLanguageCode(locale) ?? c.destinationCountryName.forLanguageCode(locale)}')),
-                                        DataCell(Text(c.bodyTypeName.forLanguageCode(locale))),
-                                        DataCell(Text(formatMoney(c.price, currencyFromJson(c.currency)))),
-                                        DataCell(InkWell(onTap: () => context.push('/companies/${c.companyId}'), child: Text(c.companyName, style: const TextStyle(decoration: TextDecoration.underline)))),
-                                        DataCell(Text('${c.responseCount}')),
-                                        DataCell(Text(cargoStatusLabel(t, c.status))),
-                                        DataCell(Text(formatAdminDate(c.publishedAt))),
-                                      ],
+                        child: isMobile
+                            ? ListView.separated(
+                                itemCount: page.items.length,
+                                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final c = page.items[index];
+                                  return Card(
+                                    child: ListTile(
+                                      onTap: () => context.push('/cargos/${c.id}'),
+                                      title: Text('${c.pointName.forLanguageCode(locale)} → ${c.destinationCityName?.forLanguageCode(locale) ?? c.destinationCountryName.forLanguageCode(locale)}'),
+                                      subtitle: Text('${c.companyName} · ${formatMoney(c.price, currencyFromJson(c.currency))}'),
+                                      trailing: Text(cargoStatusLabel(t, c.status), style: Theme.of(context).textTheme.bodySmall),
                                     ),
-                                  )
-                                  .toList(),
-                            ),
-                          ),
-                        ),
+                                  );
+                                },
+                              )
+                            : SingleChildScrollView(
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: DataTable(
+                                    columns: [
+                                      DataColumn(label: Text(t.adminColRoute)),
+                                      DataColumn(label: Text(t.adminColBodyType)),
+                                      DataColumn(label: Text(t.adminColPrice)),
+                                      DataColumn(label: Text(t.adminColCompany)),
+                                      DataColumn(label: Text(t.adminColResponses)),
+                                      DataColumn(label: Text(t.adminColStatus)),
+                                      DataColumn(label: Text(t.adminColPublished)),
+                                    ],
+                                    rows: page.items
+                                        .map(
+                                          (c) => DataRow(
+                                            onSelectChanged: (_) => context.push('/cargos/${c.id}'),
+                                            cells: [
+                                              DataCell(Text('${c.pointName.forLanguageCode(locale)} → ${c.destinationCityName?.forLanguageCode(locale) ?? c.destinationCountryName.forLanguageCode(locale)}')),
+                                              DataCell(Text(c.bodyTypeName.forLanguageCode(locale))),
+                                              DataCell(Text(formatMoney(c.price, currencyFromJson(c.currency)))),
+                                              DataCell(InkWell(onTap: () => context.push('/companies/${c.companyId}'), child: Text(c.companyName, style: const TextStyle(decoration: TextDecoration.underline)))),
+                                              DataCell(Text('${c.responseCount}')),
+                                              DataCell(Text(cargoStatusLabel(t, c.status))),
+                                              DataCell(Text(formatAdminDate(c.publishedAt))),
+                                            ],
+                                          ),
+                                        )
+                                        .toList(),
+                                  ),
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 8),
                       _Pager(

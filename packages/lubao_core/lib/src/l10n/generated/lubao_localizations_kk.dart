@@ -2104,4 +2104,10 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get companyVerificationStatusRejected => 'Қайта түсіру керек';
+
+  @override
+  String get adminNavSearch => 'Іздеу';
+
+  @override
+  String get adminNavMore => 'Көбірек';
 }

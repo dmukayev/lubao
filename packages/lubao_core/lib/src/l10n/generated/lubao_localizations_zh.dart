@@ -2062,4 +2062,10 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get companyVerificationStatusRejected => '需要重新拍摄';
+
+  @override
+  String get adminNavSearch => '搜索';
+
+  @override
+  String get adminNavMore => '更多';
 }

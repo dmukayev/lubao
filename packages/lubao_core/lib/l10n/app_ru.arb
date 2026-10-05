@@ -904,5 +904,7 @@
   "companyVerificationHint": "Загрузите свидетельство о регистрации — сверим с реестром и позвоним на номер из реестра, обычно до 1 рабочего дня",
   "companyVerificationStatusNone": "Документ не загружен",
   "companyVerificationStatusPending": "На проверке",
-  "companyVerificationStatusRejected": "Нужно переснять"
+  "companyVerificationStatusRejected": "Нужно переснять",
+  "adminNavSearch": "Поиск",
+  "adminNavMore": "Ещё"
 }

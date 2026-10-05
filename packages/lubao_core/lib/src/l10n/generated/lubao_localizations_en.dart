@@ -2101,4 +2101,10 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get companyVerificationStatusRejected => 'Needs to be re-taken';
+
+  @override
+  String get adminNavSearch => 'Search';
+
+  @override
+  String get adminNavMore => 'More';
 }

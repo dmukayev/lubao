@@ -779,5 +779,7 @@
   "companyVerificationHint": "请上传注册证书——我们将与官方登记系统核对，并致电登记系统中的官方号码，通常在1个工作日内完成",
   "companyVerificationStatusNone": "尚未上传文件",
   "companyVerificationStatusPending": "审核中",
-  "companyVerificationStatusRejected": "需要重新拍摄"
+  "companyVerificationStatusRejected": "需要重新拍摄",
+  "adminNavSearch": "搜索",
+  "adminNavMore": "更多"
 }

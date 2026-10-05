@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
 import '../shared/admin_status_helpers.dart';
+import '../shared/responsive.dart';
 import 'complaint_resolve_dialog.dart';
 
 /// Жалобы (задача 028, этап E): вкладки Новые/В работе/Закрытые (раньше
@@ -20,19 +21,20 @@ class ComplaintsScreen extends ConsumerWidget {
     final t = context.l10n;
     final selectedId = ref.watch(adminComplaintSelectedIdProvider);
 
+    final isMobile = isMobileWidth(context);
     return Scaffold(
-      appBar: AppBar(title: Text(t.adminComplaintsTitle)),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(width: 380, child: _Queue()),
-          const VerticalDivider(width: 1),
-          Expanded(
-            child: selectedId == null
-                ? EmptyState(message: t.adminComplaintSelectHint, icon: LucideIcons.flag)
-                : _Detail(key: ValueKey(selectedId), id: selectedId),
-          ),
-        ],
+      appBar: AppBar(
+        title: Text(t.adminComplaintsTitle),
+        leading: isMobile && selectedId != null
+            ? BackButton(onPressed: () => ref.read(adminComplaintSelectedIdProvider.notifier).state = null)
+            : null,
+      ),
+      body: ResponsiveMasterDetail(
+        hasSelection: selectedId != null,
+        master: _Queue(),
+        detail: selectedId == null
+            ? EmptyState(message: t.adminComplaintSelectHint, icon: LucideIcons.flag)
+            : _Detail(key: ValueKey(selectedId), id: selectedId),
       ),
     );
   }

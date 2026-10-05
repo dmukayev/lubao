@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../shared/admin_status_helpers.dart';
+import '../shared/responsive.dart';
 
 class ComplaintResolveResult {
   const ComplaintResolveResult({required this.resolution, required this.resolutionNote});
@@ -27,7 +28,11 @@ Future<ComplaintResolveResult?> showComplaintResolveDialog(BuildContext context,
         return AlertDialog(
           title: Text(t.adminComplaintResolutionTitle),
           content: SizedBox(
-            width: 420,
+            // Задача 030, п.10 — фиксированные 420px клипались на экране
+            // 360px (AlertDialog.insetPadding оставляет ~280px): на
+            // телефоне ширина содержимого подстраивается под диалог,
+            // не наоборот.
+            width: isMobileWidth(dialogContext) ? double.infinity : 420,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,

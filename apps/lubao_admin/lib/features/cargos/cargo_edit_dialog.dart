@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../shared/admin_status_helpers.dart';
+import '../shared/responsive.dart';
 
 /// Результат диалога редактирования груза (задача 028, п.15) — те же поля,
 /// что при публикации (без фото — админ не управляет фотографиями груза),
@@ -83,7 +84,9 @@ class _CargoEditDialogState extends State<_CargoEditDialog> {
         return AlertDialog(
           title: Text(t.adminCargoEditDialogTitle),
           content: SizedBox(
-            width: 420,
+            // Задача 030, п.10 — не клипать на 360px (см. комментарий в
+            // complaint_resolve_dialog.dart).
+            width: isMobileWidth(context) ? double.infinity : 420,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,

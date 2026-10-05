@@ -2094,4 +2094,10 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get companyVerificationStatusRejected => 'Нужно переснять';
+
+  @override
+  String get adminNavSearch => 'Поиск';
+
+  @override
+  String get adminNavMore => 'Ещё';
 }

@@ -10,6 +10,7 @@ import '../shared/admin_dialogs.dart';
 import '../shared/admin_document_image.dart';
 import '../shared/admin_status_helpers.dart';
 import '../shared/document_viewer.dart';
+import '../shared/responsive.dart';
 
 /// Совпадает с REQUIRED_DRIVER_DOC_TYPES / REQUIRED_COMPANY_DOC_TYPES на
 /// бэкенде (`backend/src/drivers/drivers.service.ts`, `admin.service.ts`) —
@@ -28,21 +29,23 @@ class VerificationScreen extends ConsumerWidget {
     final type = ref.watch(adminVerificationTypeProvider);
     final selectedId = ref.watch(adminVerificationSelectedIdProvider);
 
+    final isMobile = isMobileWidth(context);
     return Scaffold(
-      appBar: AppBar(title: Text(t.adminVerificationTitle)),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(width: 340, child: _QueuePane(type: type)),
-          const VerticalDivider(width: 1),
-          Expanded(
-            child: selectedId == null
-                ? EmptyState(message: t.adminVerificationNoSelection, icon: LucideIcons.userCheck)
-                : type == 'company'
-                    ? _CompanyDetailPane(key: ValueKey('company:$selectedId'), id: selectedId)
-                    : _DriverDetailPane(key: ValueKey('driver:$selectedId'), id: selectedId),
-          ),
-        ],
+      appBar: AppBar(
+        title: Text(t.adminVerificationTitle),
+        leading: isMobile && selectedId != null
+            ? BackButton(onPressed: () => ref.read(adminVerificationSelectedIdProvider.notifier).state = null)
+            : null,
+      ),
+      body: ResponsiveMasterDetail(
+        hasSelection: selectedId != null,
+        masterWidth: 340,
+        master: _QueuePane(type: type),
+        detail: selectedId == null
+            ? EmptyState(message: t.adminVerificationNoSelection, icon: LucideIcons.userCheck)
+            : type == 'company'
+                ? _CompanyDetailPane(key: ValueKey('company:$selectedId'), id: selectedId)
+                : _DriverDetailPane(key: ValueKey('driver:$selectedId'), id: selectedId),
       ),
     );
   }
