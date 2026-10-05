@@ -398,7 +398,8 @@ describe('ChatsService.send — автоперевод (задача 010; в ф�
     const prisma: any = fixture();
     const translation = { enqueueTranslation: jest.fn().mockResolvedValue(undefined) };
     const appSettings = { get: jest.fn().mockResolvedValue(null) };
-    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, translation as any, appSettings as any);
+    const notifications = { notify: jest.fn() };
+    const service = new ChatsService(prisma, notifications as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, translation as any, appSettings as any);
 
     const result = await service.send('chat1', driverCtx(), 'привет');
 
@@ -415,6 +416,32 @@ describe('ChatsService.send — автоперевод (задача 010; в ф�
       senderUserId: 'u-driver',
     });
     expect(result.translationStatus).toBe('PENDING');
+
+    // Задача 029, п.11 — перевод не готов на момент push (он асинхронный),
+    // поэтому оригинал на русском получателю, читающему по-китайски, не
+    // показываем: preview уходит null, нейтральный текст рисует render().
+    expect(notifications.notify).toHaveBeenCalledWith(
+      { userIds: ['u-company'] },
+      'CHAT_MESSAGE',
+      expect.objectContaining({ preview: null }),
+    );
+  });
+
+  it('includes the real preview text when sender and recipient share a locale (no translation needed, original is readable)', async () => {
+    const prisma: any = fixture();
+    prisma.companyMember.findFirst.mockResolvedValue({ company: { name: 'Acme' }, user: { id: 'u-company', name: null, locale: 'ru', phone: null } });
+    const translation = { enqueueTranslation: jest.fn() };
+    const appSettings = { get: jest.fn().mockResolvedValue(null) };
+    const notifications = { notify: jest.fn() };
+    const service = new ChatsService(prisma, notifications as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, translation as any, appSettings as any);
+
+    await service.send('chat1', driverCtx(), 'привет');
+
+    expect(notifications.notify).toHaveBeenCalledWith(
+      { userIds: ['u-company'] },
+      'CHAT_MESSAGE',
+      expect.objectContaining({ preview: 'привет' }),
+    );
   });
 });
 

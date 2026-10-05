@@ -247,7 +247,10 @@ export class ChatsService {
       await this.notifications.notify({ userIds: [recipientUserId] }, 'CHAT_MESSAGE', {
         chatId: chat.id,
         senderName,
-        preview: text.length > CHAT_PREVIEW_LENGTH ? `${text.slice(0, CHAT_PREVIEW_LENGTH)}…` : text,
+        // needsTranslation=true → перевод ещё не готов (он асинхронный,
+        // п.6) и оригинал получателю не понятен — null даёт нейтральный
+        // текст на его языке (см. notification-events.ts).
+        preview: needsTranslation ? null : text.length > CHAT_PREVIEW_LENGTH ? `${text.slice(0, CHAT_PREVIEW_LENGTH)}…` : text,
       });
     }
 

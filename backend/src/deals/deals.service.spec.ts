@@ -46,7 +46,7 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
     expect(notifications.notify).toHaveBeenCalledWith(
       { userIds: ['user-d1', 'logist-1'], companyId: 'c1' },
       'DEAL_STATUS',
-      expect.objectContaining({ dealId: 'deal1', statusLabelRu: 'Водитель подтвердил перевозку' }),
+      expect.objectContaining({ dealId: 'deal1', status: 'CONFIRMED_BY_DRIVER' }),
     );
   });
 
@@ -75,7 +75,7 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
     expect(notifications.notify).toHaveBeenCalledWith(
       expect.anything(),
       'DEAL_STATUS',
-      expect.objectContaining({ statusLabelRu: 'Сделка отменена' }),
+      expect.objectContaining({ status: 'CANCELLED' }),
     );
   });
 });

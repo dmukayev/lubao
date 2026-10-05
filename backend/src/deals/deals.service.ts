@@ -3,7 +3,6 @@ import { Company, Deal, Driver } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CargosService } from '../cargos/cargos.service';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
-import { DEAL_STATUS_LABEL_RU } from '../notifications/notification-events';
 import { NotificationsService } from '../notifications/notifications.service';
 
 const PROGRESSION = ['SELECTED', 'CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED'] as const;
@@ -29,7 +28,7 @@ export class DealsService {
     await this.notifications.notify(
       { userIds: [deal.driver.userId, ...(contactUserId ? [contactUserId] : [])], companyId: deal.companyId },
       'DEAL_STATUS',
-      { dealId: deal.id, statusLabelRu: DEAL_STATUS_LABEL_RU[status] ?? status },
+      { dealId: deal.id, status },
     );
   }
 

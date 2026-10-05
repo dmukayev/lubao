@@ -1092,7 +1092,7 @@ describe('AdminService.dealDetail / dealChat / advanceDealStatusByAdmin / cancel
     expect(notifications.notify).toHaveBeenCalledWith(
       { userIds: ['u-driver', 'logist-1'], companyId: 'c1' },
       'DEAL_STATUS',
-      expect.objectContaining({ dealId: 'deal1', statusLabelRu: 'Груз загружен' }),
+      expect.objectContaining({ dealId: 'deal1', status: 'LOADED' }),
     );
   });
 

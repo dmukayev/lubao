@@ -7,7 +7,6 @@ import { UploadsService } from '../uploads/uploads.service';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { REQUIRED_DRIVER_DOC_TYPES } from '../drivers/drivers.service';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
-import { DEAL_STATUS_LABEL_RU } from '../notifications/notification-events';
 import { NotificationsService } from '../notifications/notifications.service';
 import {
   AdminChangeMemberEmailDto,
@@ -706,7 +705,7 @@ export class AdminService {
     await this.notifications?.notify(
       { userIds: [driver.userId, ...(contactUserId ? [contactUserId] : [])], companyId: deal.companyId },
       'DEAL_STATUS',
-      { dealId: deal.id, statusLabelRu: DEAL_STATUS_LABEL_RU[status] ?? status },
+      { dealId: deal.id, status },
     );
   }
 

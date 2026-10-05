@@ -10,6 +10,9 @@ export class ConsolePushProvider extends PushProvider {
   private readonly logger = new Logger(ConsolePushProvider.name);
 
   async send(token: string, platform: DevicePlatform, message: PushMessage): Promise<void> {
-    this.logger.log(`[DEV PUSH/${platform}] ${token.slice(0, 12)}…: ${message.title} — ${message.body}`);
+    // Задача 029, п.12 — лог не должен содержать текст уведомления (имя
+    // собеседника, превью сообщения, причину отмены и т.п.), только
+    // метаданные доставки: тип события и deep-link id.
+    this.logger.log(`[DEV PUSH/${platform}] ${token.slice(0, 12)}… event=${message.data.event} deepLink=${message.data.deepLink}`);
   }
 }

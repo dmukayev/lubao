@@ -2,7 +2,6 @@ import { ConflictException, ForbiddenException, Injectable, NotFoundException } 
 import { Driver, Prisma, Response as CargoResponseEntity } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
-import { DEAL_STATUS_LABEL_RU } from '../notifications/notification-events';
 import { NotificationsService } from '../notifications/notifications.service';
 
 type ResponseWithDriver = CargoResponseEntity & { driver: Driver };
@@ -100,7 +99,7 @@ export class ResponsesService {
 
     await this.notifications.notify({ userIds: [updated.selected.driver.userId] }, 'DEAL_STATUS', {
       dealId: updated.deal.id,
-      statusLabelRu: DEAL_STATUS_LABEL_RU.SELECTED,
+      status: 'SELECTED',
     });
 
     return this.toDto(updated.selected);

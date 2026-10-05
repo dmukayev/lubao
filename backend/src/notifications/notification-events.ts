@@ -35,16 +35,17 @@ function formatVerificationReturnedBody(p: NotificationPayload, locale: Locale, 
   return [documentsText, p.note].filter((part): part is string => !!part).join(' — ') || fallback;
 }
 
-/// DEAL_STATUS шлётся всегда на русском тексте статуса (упрощение — полный
-/// 4-язычный набор статусов сделки не входит в объём 011; `render`
-/// всё равно оборачивает его в заголовок на языке получателя).
-export const DEAL_STATUS_LABEL_RU: Record<string, string> = {
-  SELECTED: 'Водитель выбран',
-  CONFIRMED_BY_DRIVER: 'Водитель подтвердил перевозку',
-  LOADED: 'Груз загружен',
-  IN_TRANSIT: 'В пути',
-  DELIVERED: 'Доставлено',
-  CANCELLED: 'Сделка отменена',
+/// Задача 029, п.11 — раньше тело push всегда было на русском (статус
+/// рендерился в RU на стороне вызывающего и клался в payload как готовая
+/// строка); теперь передаём сырой статус, а текст на языке получателя
+/// выбирает `render` ниже.
+export const DEAL_STATUS_LABEL: Record<string, Record<Locale, string>> = {
+  SELECTED: { ru: 'Водитель выбран', kk: 'Жүргізуші таңдалды', zh: '司机已选定', en: 'Driver selected' },
+  CONFIRMED_BY_DRIVER: { ru: 'Водитель подтвердил перевозку', kk: 'Жүргізуші тасымалды растады', zh: '司机已确认运输', en: 'Driver confirmed the haul' },
+  LOADED: { ru: 'Груз загружен', kk: 'Жүк тиелді', zh: '货物已装载', en: 'Cargo loaded' },
+  IN_TRANSIT: { ru: 'В пути', kk: 'Жолда', zh: '运输中', en: 'In transit' },
+  DELIVERED: { ru: 'Доставлено', kk: 'Жеткізілді', zh: '已送达', en: 'Delivered' },
+  CANCELLED: { ru: 'Сделка отменена', kk: 'Мәміле болдырылмады', zh: '交易已取消', en: 'Deal cancelled' },
 };
 
 export type DeliveryChannel = 'PUSH' | 'WECOM';
@@ -95,11 +96,16 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
     zh: (p) => ({ title: '货物邀请', body: `${p.companyName} 邀请您承运货物` }),
     en: (p) => ({ title: 'Cargo invitation', body: `${p.companyName} invited you to a cargo` }),
   },
+  /// Задача 029, п.11 — если отправитель и получатель на разных языках,
+  /// перевод в момент отправки ещё не готов (п.6: он всегда асинхронный),
+  /// поэтому оригинал в push получателю не понятен; показываем нейтральный
+  /// текст на его языке, а не чужую кириллицу/иероглифы (`preview` придёт
+  /// `null` из ChatsService ровно в этом случае).
   CHAT_MESSAGE: {
-    ru: (p) => ({ title: p.senderName, body: p.preview }),
-    kk: (p) => ({ title: p.senderName, body: p.preview }),
-    zh: (p) => ({ title: p.senderName, body: p.preview }),
-    en: (p) => ({ title: p.senderName, body: p.preview }),
+    ru: (p) => ({ title: p.senderName, body: p.preview ?? 'Новое сообщение' }),
+    kk: (p) => ({ title: p.senderName, body: p.preview ?? 'Жаңа хабарлама' }),
+    zh: (p) => ({ title: p.senderName, body: p.preview ?? '新消息' }),
+    en: (p) => ({ title: p.senderName, body: p.preview ?? 'New message' }),
   },
   NEW_RESPONSE: {
     ru: (p) => ({ title: 'Новый отклик', body: `${p.driverName} откликнулся на ваш груз` }),
@@ -114,10 +120,10 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
     en: (p) => ({ title: 'New drivers at point', body: `${p.count} new drivers matching your filters` }),
   },
   DEAL_STATUS: {
-    ru: (p) => ({ title: 'Статус сделки изменился', body: p.statusLabelRu }),
-    kk: (p) => ({ title: 'Мәміле мәртебесі өзгерді', body: p.statusLabelRu }),
-    zh: (p) => ({ title: '交易状态已变更', body: p.statusLabelRu }),
-    en: (p) => ({ title: 'Deal status changed', body: p.statusLabelRu }),
+    ru: (p) => ({ title: 'Статус сделки изменился', body: DEAL_STATUS_LABEL[p.status]?.ru ?? p.status }),
+    kk: (p) => ({ title: 'Мәміле мәртебесі өзгерді', body: DEAL_STATUS_LABEL[p.status]?.kk ?? p.status }),
+    zh: (p) => ({ title: '交易状态已变更', body: DEAL_STATUS_LABEL[p.status]?.zh ?? p.status }),
+    en: (p) => ({ title: 'Deal status changed', body: DEAL_STATUS_LABEL[p.status]?.en ?? p.status }),
   },
   VERIFICATION_RETURNED: {
     ru: (p) => ({ title: 'Документы нужно доработать', body: formatVerificationReturnedBody(p, 'ru', 'Проверьте профиль') }),
