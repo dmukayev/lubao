@@ -1,5 +1,6 @@
 import { IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { BooleanQuery } from '../../common/boolean-query.decorator';
 import { IsPersonName } from '../../common/validators/person-name.validator';
 
 export class ReviewVerificationDocumentDto {
@@ -47,12 +48,12 @@ export class SearchQueryDto {
   q?: string;
 
   @IsOptional()
-  @Type(() => Boolean)
+  @BooleanQuery()
   @IsBoolean()
   verified?: boolean;
 
   @IsOptional()
-  @Type(() => Boolean)
+  @BooleanQuery()
   @IsBoolean()
   blocked?: boolean;
 
@@ -172,7 +173,7 @@ export class DealSearchQueryDto {
   status?: string;
 
   @IsOptional()
-  @Type(() => Boolean)
+  @BooleanQuery()
   @IsBoolean()
   stale?: boolean;
 

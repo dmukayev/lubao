@@ -93,7 +93,10 @@ class _AdminDealsScreenState extends ConsumerState<AdminDealsScreen> {
   Widget build(BuildContext context) {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
-    final providerArgs = (q: _q, status: _status, stale: _stale, driverId: null, companyId: null, page: _page);
+    // null, не false, когда чип не нажат (задача 029, п.1) — иначе
+    // экран всегда шлёт stale=false и фильтрует по «не зависшим» вместо
+    // «без фильтра».
+    final providerArgs = (q: _q, status: _status, stale: _stale ? true : null, driverId: null, companyId: null, page: _page);
     final pageAsync = ref.watch(adminDealsSearchProvider(providerArgs));
 
     return Scaffold(

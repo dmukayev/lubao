@@ -120,8 +120,8 @@ final adminCargosSearchProvider =
       );
 });
 
-typedef AdminDealQuery = ({String q, String? status, bool stale, String? driverId, String? companyId, int page});
-const defaultAdminDealQuery = (q: '', status: null, stale: false, driverId: null, companyId: null, page: 1);
+typedef AdminDealQuery = ({String q, String? status, bool? stale, String? driverId, String? companyId, int page});
+const defaultAdminDealQuery = (q: '', status: null, stale: null, driverId: null, companyId: null, page: 1);
 
 final adminDealsSearchProvider =
     FutureProvider.autoDispose.family<AdminSearchPage<AdminDealRow>, AdminDealQuery>((ref, query) {
