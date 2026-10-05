@@ -1,10 +1,11 @@
-import { Body, Controller, ForbiddenException, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Param, Patch, Post } from '@nestjs/common';
 import { CurrentUser } from '../common/current-user.decorator';
 import { Public } from '../common/public.decorator';
 import { RequestContext } from '../common/request-context';
 import { CompaniesService } from './companies.service';
 import { CreateInviteDto } from './dto/invite.dto';
 import { SetPasswordDto } from './dto/set-password.dto';
+import { UpdateWeComWebhookDto } from './dto/update-wecom-webhook.dto';
 
 @Controller('companies')
 export class CompaniesController {
@@ -40,5 +41,21 @@ export class CompaniesController {
   members(@CurrentUser() ctx: RequestContext) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
     return this.companies.members(ctx.companyMember.companyId);
+  }
+
+  @Patch('me/wecom-webhook')
+  updateWeComWebhook(@CurrentUser() ctx: RequestContext, @Body() dto: UpdateWeComWebhookDto) {
+    if (!ctx.companyMember || ctx.companyMember.role !== 'OWNER') {
+      throw new ForbiddenException('Only the owner can change the WeCom webhook');
+    }
+    return this.companies.updateWeComWebhook(ctx.companyMember.companyId, dto.wecomWebhookUrl);
+  }
+
+  @Post('me/wecom-test')
+  testWeComWebhook(@CurrentUser() ctx: RequestContext) {
+    if (!ctx.companyMember || ctx.companyMember.role !== 'OWNER') {
+      throw new ForbiddenException('Only the owner can test the WeCom webhook');
+    }
+    return this.companies.testWeComWebhook(ctx.companyMember.companyId);
   }
 }

@@ -20,6 +20,7 @@ import { RedisModule } from './redis/redis.module';
 import { SmsModule } from './sms/sms.module';
 import { TokenModule } from './token/token.module';
 import { AppSettingsModule } from './app-settings/app-settings.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AppSettingsModule } from './app-settings/app-settings.module';
     SmsModule,
     TokenModule,
     AppSettingsModule,
+    NotificationsModule,
     AuthModule,
     ReferenceDataModule,
     DriversModule,

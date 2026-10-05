@@ -4,6 +4,7 @@ import * as bcrypt from 'bcryptjs';
 import { Company, CompanyMember, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
+import { WeComService } from '../notifications/wecom.service';
 import { RegisterCompanyDto } from './dto/register-company.dto';
 import { CreateInviteDto, AcceptInviteDto } from './dto/invite.dto';
 
@@ -14,6 +15,7 @@ export class CompaniesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly email: EmailService,
+    private readonly wecom: WeComService,
   ) {}
 
   toCompanyDto(company: Company) {
@@ -24,6 +26,7 @@ export class CompaniesService {
       countryId: company.countryId,
       city: company.city,
       isVerified: company.isVerified,
+      wecomWebhookUrl: company.wecomWebhookUrl,
       ratingAvg: Number(company.ratingAvg),
       ratingCount: company.ratingCount,
     };
@@ -164,5 +167,19 @@ export class CompaniesService {
     const company = await this.prisma.company.findUniqueOrThrow({ where: { id: invite.companyId } });
 
     return { user, company: this.toCompanyDto(company), companyMember: this.toMemberDto(member) };
+  }
+
+  /// Вебхук группового бота WeCom (задача 011, п.2) — владелец вставляет
+  /// адрес в профиле компании.
+  async updateWeComWebhook(companyId: string, wecomWebhookUrl: string | null | undefined) {
+    const company = await this.prisma.company.update({ where: { id: companyId }, data: { wecomWebhookUrl } });
+    return this.toCompanyDto(company);
+  }
+
+  async testWeComWebhook(companyId: string) {
+    const company = await this.prisma.company.findUniqueOrThrow({ where: { id: companyId } });
+    if (!company.wecomWebhookUrl) throw new BadRequestException('WeCom webhook is not configured');
+    await this.wecom.send(company.wecomWebhookUrl, `Lubao: тестовое сообщение от ${company.name}. Если вы видите это — бот настроен верно.`);
+    return { success: true };
   }
 }

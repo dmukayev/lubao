@@ -19,7 +19,7 @@ describe('CompaniesService.registerOwnedCompany', () => {
         }),
       ),
     };
-    service = new CompaniesService(prisma, { sendMessage: jest.fn() } as any);
+    service = new CompaniesService(prisma, { sendMessage: jest.fn() } as any, { send: jest.fn() } as any);
   });
 
   it('rejects a user who already belongs to a company', async () => {
@@ -120,7 +120,7 @@ describe('CompaniesService invites (задача 025, «Путь Б» из 022)'
       ),
     };
     email = { sendMessage: jest.fn().mockResolvedValue(undefined) };
-    service = new CompaniesService(prisma, email as any);
+    service = new CompaniesService(prisma, email as any, { send: jest.fn() } as any);
   });
 
   it('createInvite generates a unique token, stores it with a 7-day expiry, and emails the link', async () => {
@@ -247,7 +247,7 @@ describe('CompaniesService invites (задача 025, «Путь Б» из 022)'
 describe('CompaniesService.setPassword', () => {
   it('hashes the password and stores it on the user', async () => {
     const prisma = { user: { update: jest.fn().mockResolvedValue(undefined) } };
-    const service = new CompaniesService(prisma as any, { sendMessage: jest.fn() } as any);
+    const service = new CompaniesService(prisma as any, { sendMessage: jest.fn() } as any, { send: jest.fn() } as any);
 
     await service.setPassword('user-1', 'super-secret-1');
 
@@ -256,5 +256,56 @@ describe('CompaniesService.setPassword', () => {
     expect(where).toEqual({ id: 'user-1' });
     expect(data.passwordHash).not.toBe('super-secret-1');
     await expect(bcrypt.compare('super-secret-1', data.passwordHash)).resolves.toBe(true);
+  });
+});
+
+describe('CompaniesService WeCom webhook (задача 011, п.2)', () => {
+  it('updateWeComWebhook stores the url and returns it in the company dto', async () => {
+    const prisma = {
+      company: {
+        update: jest.fn().mockResolvedValue({
+          id: 'company-1',
+          name: 'Yidao',
+          nameRu: null,
+          countryId: 'cn-1',
+          city: null,
+          isVerified: true,
+          wecomWebhookUrl: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=abc',
+          ratingAvg: 0,
+          ratingCount: 0,
+        }),
+      },
+    };
+    const service = new CompaniesService(prisma as any, { sendMessage: jest.fn() } as any, { send: jest.fn() } as any);
+
+    const result = await service.updateWeComWebhook('company-1', 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=abc');
+
+    expect(prisma.company.update).toHaveBeenCalledWith({
+      where: { id: 'company-1' },
+      data: { wecomWebhookUrl: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=abc' },
+    });
+    expect(result.wecomWebhookUrl).toBe('https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=abc');
+  });
+
+  it('testWeComWebhook rejects when no webhook is configured', async () => {
+    const prisma = { company: { findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'company-1', name: 'Yidao', wecomWebhookUrl: null }) } };
+    const wecom = { send: jest.fn() };
+    const service = new CompaniesService(prisma as any, { sendMessage: jest.fn() } as any, wecom as any);
+
+    await expect(service.testWeComWebhook('company-1')).rejects.toThrow(BadRequestException);
+    expect(wecom.send).not.toHaveBeenCalled();
+  });
+
+  it('testWeComWebhook sends a test message through WeComService', async () => {
+    const prisma = {
+      company: { findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'company-1', name: 'Yidao', wecomWebhookUrl: 'https://wecom.example/hook' }) },
+    };
+    const wecom = { send: jest.fn().mockResolvedValue(undefined) };
+    const service = new CompaniesService(prisma as any, { sendMessage: jest.fn() } as any, wecom as any);
+
+    const result = await service.testWeComWebhook('company-1');
+
+    expect(wecom.send).toHaveBeenCalledWith('https://wecom.example/hook', expect.stringContaining('Yidao'));
+    expect(result).toEqual({ success: true });
   });
 });
