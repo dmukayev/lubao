@@ -100,32 +100,45 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.l10n;
     final route = '${cargo.pointName.forLanguageCode(locale)} → ${cargo.destinationCityName?.forLanguageCode(locale) ?? cargo.destinationCountryName.forLanguageCode(locale)}';
+    // Задача 031 (ревью белых экранов) — действия вынесены из строки
+    // заголовка в свой Wrap: голый FilledButton/OutlinedButton рядом с
+    // Expanded в одном Row падает с «BoxConstraints forces an infinite
+    // width» (задачи 030/031); компактный minimumSize — иначе в Wrap
+    // каждая кнопка требует всю ширину строки.
     return AppCard(
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(route, style: Theme.of(context).textTheme.headlineSmall),
-                    const SizedBox(width: 12),
-                    StatusBadge(label: cargoStatusLabel(t, cargo.status), color: _statusColor(cargo.status)),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                InkWell(
-                  onTap: () => context.push('/companies/${cargo.companyId}'),
-                  child: Text(cargo.companyName, style: const TextStyle(decoration: TextDecoration.underline)),
-                ),
-              ],
-            ),
+          Row(
+            children: [
+              Flexible(child: Text(route, style: Theme.of(context).textTheme.headlineSmall)),
+              const SizedBox(width: 12),
+              StatusBadge(label: cargoStatusLabel(t, cargo.status), color: _statusColor(cargo.status)),
+            ],
           ),
-          OutlinedButton(onPressed: onEdit, child: Text(t.adminCargoEdit)),
-          const SizedBox(width: 8),
-          if (cargo.status == 'PUBLISHED') FilledButton(onPressed: onUnpublish, child: Text(t.adminCargoUnpublish)),
+          const SizedBox(height: 4),
+          InkWell(
+            onTap: () => context.push('/companies/${cargo.companyId}'),
+            child: Text(cargo.companyName, style: const TextStyle(decoration: TextDecoration.underline)),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(minimumSize: const Size(0, AppSizes.buttonHeight)),
+                onPressed: onEdit,
+                child: Text(t.adminCargoEdit),
+              ),
+              if (cargo.status == 'PUBLISHED')
+                FilledButton(
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, AppSizes.buttonHeight)),
+                  onPressed: onUnpublish,
+                  child: Text(t.adminCargoUnpublish),
+                ),
+            ],
+          ),
         ],
       ),
     );

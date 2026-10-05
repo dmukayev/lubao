@@ -125,7 +125,13 @@ class AdminSettingsScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
+                    // Тема задаёт FilledButton minimumSize на всю ширину
+                    // (Size.fromHeight) — голый такой виджет рядом с
+                    // Expanded в одном Row падает с «BoxConstraints forces
+                    // an infinite width» (задачи 030/031, тот же баг, что в
+                    // complaints_screen.dart/driver_detail_screen.dart).
                     FilledButton(
+                      style: FilledButton.styleFrom(minimumSize: const Size(0, AppSizes.buttonHeight)),
                       onPressed: cities.isEmpty ? null : () => _pickDefaultCity(context, ref, cities, locale, defaultCityId),
                       child: Text(t.adminEdit),
                     ),
@@ -201,7 +207,11 @@ class _NumberSettingCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          FilledButton(onPressed: onEdit, child: Text(t.adminEdit)),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, AppSizes.buttonHeight)),
+            onPressed: onEdit,
+            child: Text(t.adminEdit),
+          ),
         ],
       ),
     );

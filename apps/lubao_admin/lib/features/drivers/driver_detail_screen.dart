@@ -184,66 +184,99 @@ class _Header extends StatelessWidget {
         ? '?'
         : driver.fullName.trim().split(RegExp(r'\s+')).take(2).map((w) => w[0]).join().toUpperCase();
 
+    // Задача 031 (ревью белых экранов) — заголовок раньше падал с
+    // «BoxConstraints forces an infinite width» (голые OutlinedButton рядом
+    // с Expanded(Column) в одном Row — тот же баг, что в
+    // complaints_screen.dart, задача 030); компактный minimumSize это чинит,
+    // но на узком экране/коротком имени кнопки+меню всё равно не влезали в
+    // одну строку с именем+бейджем — поэтому действия вынесены в свой Wrap
+    // под информационным блоком, а не в одну строку с ним.
     return AppCard(
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(radius: 28, child: Text(initials)),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(radius: 28, child: Text(initials)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(driver.fullName, style: Theme.of(context).textTheme.headlineSmall),
-                    const SizedBox(width: 12),
-                    if (driver.isBlocked)
-                      StatusBadge(label: t.adminBlockedBadge, color: StatusBadge.danger)
-                    else
-                      StatusBadge(
-                        label: driver.isVerified ? t.adminVerified : t.adminNotVerified,
-                        color: driver.isVerified ? StatusBadge.success : StatusBadge.neutral,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(child: Text(driver.fullName, style: Theme.of(context).textTheme.headlineSmall)),
+                        const SizedBox(width: 12),
+                        if (driver.isBlocked)
+                          StatusBadge(label: t.adminBlockedBadge, color: StatusBadge.danger)
+                        else
+                          StatusBadge(
+                            label: driver.isVerified ? t.adminVerified : t.adminNotVerified,
+                            color: driver.isVerified ? StatusBadge.success : StatusBadge.neutral,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 4,
+                      children: [
+                        if (driver.phone != null)
+                          InkWell(
+                            onTap: () => copyToClipboardWithToast(context, driver.phone!, t.adminCopied),
+                            child: Row(mainAxisSize: MainAxisSize.min, children: [Text(driver.phone!), const SizedBox(width: 4), const Icon(LucideIcons.copy, size: 14)]),
+                          ),
+                        Text(driver.homeCityName.forLanguageCode(Localizations.localeOf(context).languageCode)),
+                        Text(t.adminWithUsSince(formatAdminDate(driver.registeredAt))),
+                        Text(t.adminLastLogin(formatAdminDateTime(driver.lastLoginAt))),
+                      ],
+                    ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 4,
-                  children: [
-                    if (driver.phone != null)
-                      InkWell(
-                        onTap: () => copyToClipboardWithToast(context, driver.phone!, t.adminCopied),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [Text(driver.phone!), const SizedBox(width: 4), const Icon(LucideIcons.copy, size: 14)]),
-                      ),
-                    Text(driver.homeCityName.forLanguageCode(Localizations.localeOf(context).languageCode)),
-                    Text(t.adminWithUsSince(formatAdminDate(driver.registeredAt))),
-                    Text(t.adminLastLogin(formatAdminDateTime(driver.lastLoginAt))),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          OutlinedButton(onPressed: onEdit, child: Text(t.adminEdit)),
-          const SizedBox(width: 8),
-          if (driver.isBlocked)
-            OutlinedButton(onPressed: onUnblock, child: Text(t.adminUnblock))
-          else
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(foregroundColor: StatusBadge.danger, side: const BorderSide(color: StatusBadge.danger)),
-              onPressed: onBlock,
-              child: Text(t.adminBlock),
-            ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'end_sessions') onEndSessions();
-              if (value == 'toggle_verified') onToggleVerified();
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(value: 'end_sessions', child: Text(t.adminEndSessions)),
-              PopupMenuItem(value: 'toggle_verified', child: Text(t.adminToggleVerification)),
+          const SizedBox(height: 12),
+          // minimumSize компактный, а не Size.fromHeight темы — иначе каждая
+          // кнопка в Wrap требует всю ширину строки и встаёт вертикальным
+          // столбиком вместо ряда (эту ловушку уже проходили в
+          // complaints_screen.dart, задача 030).
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(minimumSize: const Size(0, AppSizes.buttonHeight)),
+                onPressed: onEdit,
+                child: Text(t.adminEdit),
+              ),
+              if (driver.isBlocked)
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, AppSizes.buttonHeight)),
+                  onPressed: onUnblock,
+                  child: Text(t.adminUnblock),
+                )
+              else
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: StatusBadge.danger,
+                    side: const BorderSide(color: StatusBadge.danger),
+                    minimumSize: const Size(0, AppSizes.buttonHeight),
+                  ),
+                  onPressed: onBlock,
+                  child: Text(t.adminBlock),
+                ),
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'end_sessions') onEndSessions();
+                  if (value == 'toggle_verified') onToggleVerified();
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(value: 'end_sessions', child: Text(t.adminEndSessions)),
+                  PopupMenuItem(value: 'toggle_verified', child: Text(t.adminToggleVerification)),
+                ],
+              ),
             ],
           ),
         ],

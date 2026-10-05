@@ -259,53 +259,70 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    // Задача 031 (ревью белых экранов) — заголовок раньше падал с
+    // «BoxConstraints forces an infinite width» (голые OutlinedButton рядом
+    // с Expanded(Column) в одном Row — тот же баг, что в
+    // complaints_screen.dart/driver_detail_screen.dart, задачи 030/031);
+    // действия вынесены в свой Wrap под информацией, с компактным
+    // minimumSize — иначе в Wrap каждая кнопка требует всю ширину строки и
+    // встаёт вертикальным столбиком.
     return AppCard(
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(company.name, style: Theme.of(context).textTheme.headlineSmall),
-                    const SizedBox(width: 12),
-                    if (company.isBlocked)
-                      StatusBadge(label: t.adminBlockedBadge, color: StatusBadge.danger)
-                    else
-                      StatusBadge(
-                        label: company.isVerified ? t.adminVerified : t.adminNotVerified,
-                        color: company.isVerified ? StatusBadge.success : StatusBadge.neutral,
-                      ),
-                  ],
+          Row(
+            children: [
+              Flexible(child: Text(company.name, style: Theme.of(context).textTheme.headlineSmall)),
+              const SizedBox(width: 12),
+              if (company.isBlocked)
+                StatusBadge(label: t.adminBlockedBadge, color: StatusBadge.danger)
+              else
+                StatusBadge(
+                  label: company.isVerified ? t.adminVerified : t.adminNotVerified,
+                  color: company.isVerified ? StatusBadge.success : StatusBadge.neutral,
                 ),
-                if (company.nameRu != null) Text(company.nameRu!, style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 8),
-                Text(company.countryName.forLanguageCode(Localizations.localeOf(context).languageCode)),
-                if (company.taxId != null) Text('${t.adminCode}: ${company.taxId}'),
-              ],
-            ),
+            ],
           ),
-          const SizedBox(width: 16),
-          OutlinedButton(onPressed: onEdit, child: Text(t.adminEdit)),
-          const SizedBox(width: 8),
-          if (company.isBlocked)
-            OutlinedButton(onPressed: onUnblock, child: Text(t.adminUnblock))
-          else
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(foregroundColor: StatusBadge.danger, side: const BorderSide(color: StatusBadge.danger)),
-              onPressed: onBlock,
-              child: Text(t.adminBlockCompany),
-            ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'reset_password') onResetPassword();
-              if (value == 'toggle_verified') onToggleVerified();
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(value: 'reset_password', child: Text(t.adminResetPassword)),
-              PopupMenuItem(value: 'toggle_verified', child: Text(t.adminToggleVerification)),
+          if (company.nameRu != null) Text(company.nameRu!, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 8),
+          Text(company.countryName.forLanguageCode(Localizations.localeOf(context).languageCode)),
+          if (company.taxId != null) Text('${t.adminCode}: ${company.taxId}'),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(minimumSize: const Size(0, AppSizes.buttonHeight)),
+                onPressed: onEdit,
+                child: Text(t.adminEdit),
+              ),
+              if (company.isBlocked)
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, AppSizes.buttonHeight)),
+                  onPressed: onUnblock,
+                  child: Text(t.adminUnblock),
+                )
+              else
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: StatusBadge.danger,
+                    side: const BorderSide(color: StatusBadge.danger),
+                    minimumSize: const Size(0, AppSizes.buttonHeight),
+                  ),
+                  onPressed: onBlock,
+                  child: Text(t.adminBlockCompany),
+                ),
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'reset_password') onResetPassword();
+                  if (value == 'toggle_verified') onToggleVerified();
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(value: 'reset_password', child: Text(t.adminResetPassword)),
+                  PopupMenuItem(value: 'toggle_verified', child: Text(t.adminToggleVerification)),
+                ],
+              ),
             ],
           ),
         ],

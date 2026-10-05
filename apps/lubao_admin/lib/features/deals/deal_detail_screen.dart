@@ -102,30 +102,39 @@ class _Header extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Text(route, style: Theme.of(context).textTheme.headlineSmall),
-                    const SizedBox(width: 12),
-                    StatusBadge(label: statusLabel, color: statusColor),
-                    if (deal.staleDays > 0) ...[
-                      const SizedBox(width: 8),
-                      StatusBadge(label: t.adminStaleDays(deal.staleDays), color: StatusBadge.danger),
-                    ],
-                  ],
-                ),
-              ),
-              if (!isTerminal) OutlinedButton(onPressed: onFixStatus, child: Text(t.adminDealFixStatus)),
-              if (!isTerminal) ...[
+              Flexible(child: Text(route, style: Theme.of(context).textTheme.headlineSmall)),
+              const SizedBox(width: 12),
+              StatusBadge(label: statusLabel, color: statusColor),
+              if (deal.staleDays > 0) ...[
                 const SizedBox(width: 8),
+                StatusBadge(label: t.adminStaleDays(deal.staleDays), color: StatusBadge.danger),
+              ],
+            ],
+          ),
+          if (!isTerminal) ...[
+            const SizedBox(height: 12),
+            // Задача 031 (ревью белых экранов) — кнопки вынесены из строки
+            // заголовка в свой Wrap: голый FilledButton/OutlinedButton рядом
+            // с Expanded в одном Row падает с «BoxConstraints forces an
+            // infinite width» (задачи 030/031); компактный minimumSize —
+            // иначе в Wrap каждая кнопка требует всю ширину строки.
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, AppSizes.buttonHeight)),
+                  onPressed: onFixStatus,
+                  child: Text(t.adminDealFixStatus),
+                ),
                 FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: StatusBadge.danger),
+                  style: FilledButton.styleFrom(backgroundColor: StatusBadge.danger, minimumSize: const Size(0, AppSizes.buttonHeight)),
                   onPressed: onCancel,
                   child: Text(t.adminDealCancel),
                 ),
               ],
-            ],
-          ),
+            ),
+          ],
           const SizedBox(height: 8),
           InkWell(
             onTap: () => context.push('/cargos/${deal.cargoId}'),
