@@ -1,9 +1,110 @@
 # 011 — Уведомления и чат в реальном времени
 
-Статус: не начато · после 006
+Статус: готово (2026-10-05), кроме «Новый подходящий груз» / дайджеста новых водителей / «Договорились?» — см. «Осознанно отложено».
 
-## Текущее состояние
-`NotificationSetting` и enum `NotificationChannel` (PUSH, WECOM, …) есть в схеме, модуля уведомлений и WebSocket нет.
+## Что сделано
+
+**Модуль `notifications` (backend/src/notifications)** — `NotificationsService.notify(target, event, payload)`
+(п.1): резолвит получателей (`userIds` и/или `companyId`), проверяет обе оси
+настроек (NotificationEventSetting — группа событий, NotificationSetting —
+канал; дефолт включено у обеих), throttle на Redis (CHAT_MESSAGE — не чаще
+раза в минуту на пару чат+получатель), рендерит текст на языке получателя
+(kk/ru/zh/en, `notification-events.ts`) и кладёт готовое задание в очередь
+BullMQ/Redis (retry: 3 попытки, экспоненциальный backoff).
+
+**Push (п.2)** — `PushProvider`: `ConsolePushProvider` (дев, лог, дефолт) и
+`RealPushProvider` (прод, `.env PUSH_PROVIDER=real`) маршрутизирует по
+`DeviceToken.platform` к реальным FCM (HTTP v1, OAuth через JWT сервисного
+аккаунта), APNs (HTTP/2, токен ES256) и JPush (REST v3) — каждый пишет
+предупреждение и не падает, если его учётные данные не заданы в `.env`
+(как `ConsoleSmsProvider`/`ConsoleEmailProvider`). Таблица `DeviceToken`
+привязана к пользователю (не к `Session` из 006 — токен устройства
+переживает много сессий); `POST/DELETE /notifications/device-tokens`.
+Клиентский плагин push-SDK (firebase_messaging и аналоги) **не подключён** —
+см. «Осознанно отложено».
+
+**WeCom (п.2)** — `Company.wecomWebhookUrl`, реальный POST в вебхук
+группового бота; владелец вставляет адрес в профиле компании (Flutter),
+«Проверить» (`POST /companies/me/wecom-test`) шлёт тестовое сообщение.
+Проверено живым запросом к API WeCom (настоящий `93000 invalid webhook
+url` на тестовый адрес — соединение реально уходит наружу).
+
+email/sms как каналы уведомлений — осознанно не реализованы (п.2:
+«интерфейс есть, реализацию отложить»).
+
+**Тексты на языке получателя (п.3)** — `notification-events.ts`, 9 событий
+× 4 языка, выбор локали — по `User.locale`.
+
+**События подключены (п. таблица)** — `CARGO_INVITE` (`ResponsesService.
+inviteDriver`), `NEW_RESPONSE` (`createForCargo` → публикатору груза push
++ компании WeCom), `DEAL_STATUS` (`ResponsesService.updateStatus('SELECTED')`
+и оба метода `DealsService` — `advanceStatus`/`cancel`), `CHAT_MESSAGE`
+(`ChatsService.send`), `VERIFICATION_RETURNED`/`VERIFICATION_APPROVED`
+(`AdminService`: `returnDriverForRework`/`returnCompanyForRework` и
+`setDriverVerified`/`setCompanyVerified(true)` — заменили старые
+`NOTIFICATION_QUEUED`-заглушки из задач 017/028 настоящей отправкой).
+
+**Настройки в профиле (п.4)** — `GET/PATCH /notifications/settings[/:eventGroup]`,
+экран `/notifications/settings` в Flutter (общий для водителя и логиста),
+ссылка из обоих профилей.
+
+**Deep links (п.5)** — каждое событие несёт `deepLink` (`lubao://cargo/:id`,
+`lubao://deal/:id`, `lubao://chat/:id`, `lubao://profile/verification`) в
+push-payload; переход по ним в приложении — не делали (роутер приложения
+не слушает deep links извне ни для одной из существующих push-подобных
+историй — отдельная доработка, не специфичная для 011).
+
+**Socket.IO-шлюз (п.6)** — `RealtimeGateway`: авторизация JWT из 006 через
+`server.use()` (handshake middleware, не `handleConnection` — тот не
+гарантированно завершается до первого сообщения клиента, воспроизвёл
+живым тестом гонку `join` против ещё не проставленного контекста).
+Комнаты по `chatId`, события `message:new`, `message:read`, `typing`.
+`ChatsService.send` шлёт `message:new` в комнату сразу после записи в
+базу. Новый `ChatsService.markRead()` + `POST /chats/:chatId/read`
+закрывает пробел из статуса 017 (п.9): `Message.isRead` раньше никто не
+выставлял.
+
+**Клиент (п.7)** — `RealtimeService` (lubao_core, `socket_io_client`):
+один сокет на сессию, подключается/отключается вместе с сессией
+(`RealtimeConnector`, по образцу `LocationReporter`). `ChatScreen`
+join/leave комнаты, подписка на `message:new`/`message:read`, фоллбэк —
+опрос раз в 10с, если сокет не поднялся. `MyChatsScreen` — то же для
+списка чатов. **Проверка из Китая не делалась** — нет доступа к среде
+с реальным китайским прокси/файрволом в этой сессии; инфраструктурно
+`/socket.io/` уже проксируется через nginx (`infra/nginx/default.conf`,
+WS upgrade настроен), но живой тест из-за GFW не проводился.
+
+Проверено живым сценарием (два `socket.io-client`, реальные JWT, реальный
+чат/сообщения в БД): `typing` долетает собеседнику, `message:new` — после
+обычного `POST /chats/:id/messages`, `markRead` реально помечает чужие
+сообщения прочитанными и шлёт `message:read`.
+
+## Осознанно отложено
+
+**Push-SDK в приложении.** Нет настоящего Firebase/APNs/JPush проекта в
+репозитории (`google-services.json`, `GoogleService-Info.plist`, ключ
+JPush) — подключать `firebase_messaging` и аналоги без них бессмысленно
+(упадёт на старте или будет регистрировать мусорный токен). Backend-часть
+полностью готова и покрыта тестами (`NotificationsRepository.
+registerDeviceToken()` в lubao_core лежит и ждёт вызова) — подключение
+плагина, когда появятся эти проекты, не требует переделки протокола.
+
+**«Новый подходящий груз» (NEW_CARGO_MATCH) и дайджест новых водителей
+(NEW_DRIVER_DIGEST).** Матчинг грузов по стране/кузову/допускам — предмет
+отдельной задачи **016** («Лента грузов водителя — подбор на сервере»,
+не начато); дублировать этот алгоритм здесь означало бы разойтись с
+будущей реализацией в 016. Дайджест — часовой, требует планировщика из
+**018** (тоже не начато). `eventGroup` для обоих уже в схеме и в реестре
+событий `notification-events.ts` — остаётся только вызвать `notify()` из
+нужного места, когда 016/018 появятся.
+
+**«Договорились?» (AGREED_CHECK).** Та же причина, что и в статусе 017,
+п.8-9: нужен планировщик из 018 (проверка «есть `contact_event` старше
+2ч без `Deal`»). `contact_events` уже пишутся правильно (017), шаблон
+текста уже в реестре — ждёт только фоновой задачи.
+
+## Текущее состояние (для справки, на начало задачи)
+`NotificationSetting` и enum `NotificationChannel` (PUSH, WECOM, …) были в схеме, модуля уведомлений и WebSocket не было.
 
 ## Что сделать
 ### Модуль `notifications` (бэкенд)
