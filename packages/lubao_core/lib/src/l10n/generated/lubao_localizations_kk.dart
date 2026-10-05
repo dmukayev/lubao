@@ -1563,6 +1563,9 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get adminRecognitionFailed => 'Тану мүмкін болмады';
 
   @override
+  String get adminRecognitionRetry => 'Қайта тану';
+
+  @override
   String get adminRecognitionMatchOk => 'Тексерілді';
 
   @override

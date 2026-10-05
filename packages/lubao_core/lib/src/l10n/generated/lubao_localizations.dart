@@ -3036,6 +3036,12 @@ abstract class LubaoLocalizations {
   /// **'Не удалось распознать'**
   String get adminRecognitionFailed;
 
+  /// No description provided for @adminRecognitionRetry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Распознать заново'**
+  String get adminRecognitionRetry;
+
   /// No description provided for @adminRecognitionMatchOk.
   ///
   /// In ru, this message translates to:

@@ -184,6 +184,12 @@ export class AdminController {
     return this.admin.revealRecognizedField(id, field, ctx.user.id);
   }
 
+  @Post('verification-documents/:id/recognition/retry')
+  retryRecognition(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    assertAdmin(ctx);
+    return this.admin.retryRecognition(id);
+  }
+
   @Get('documents/:id/file')
   async documentFile(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Res() res: Response) {
     assertAdmin(ctx);

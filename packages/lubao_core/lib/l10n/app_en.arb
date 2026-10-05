@@ -701,6 +701,7 @@
   "adminRecognitionSkipped": "OCR unavailable — review manually",
   "adminRecognitionPending": "Recognition queued…",
   "adminRecognitionFailed": "Recognition failed",
+  "adminRecognitionRetry": "Recognize again",
   "adminRecognitionMatchOk": "Verified",
   "adminRecognitionNeedsReview": "Needs review",
   "adminRecognitionDuplicate": "Duplicate with another owner",

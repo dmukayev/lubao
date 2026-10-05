@@ -576,6 +576,7 @@
   "adminRecognitionSkipped": "OCR 不可用 — 请手动检查",
   "adminRecognitionPending": "识别排队中…",
   "adminRecognitionFailed": "识别失败",
+  "adminRecognitionRetry": "重新识别",
   "adminRecognitionMatchOk": "已核实",
   "adminRecognitionNeedsReview": "请核查",
   "adminRecognitionDuplicate": "与其他持有者重复",

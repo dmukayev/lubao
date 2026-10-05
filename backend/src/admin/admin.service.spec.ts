@@ -1765,6 +1765,28 @@ describe('AdminService.reviewVerificationDocument — правка полей б
   });
 });
 
+describe('AdminService.retryRecognition — задача 032, п.7', () => {
+  it('enqueues a new recognition job for the document', async () => {
+    const prisma: any = { verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1' }) } };
+    const recognition = { enqueue: jest.fn() };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, undefined, recognition as any);
+
+    const result = await service.retryRecognition('doc1');
+
+    expect(recognition.enqueue).toHaveBeenCalledWith('doc1');
+    expect(result).toEqual({ id: 'doc1' });
+  });
+
+  it('throws NotFoundException for an unknown document, without enqueueing anything', async () => {
+    const prisma: any = { verificationDocument: { findUnique: jest.fn().mockResolvedValue(null) } };
+    const recognition = { enqueue: jest.fn() };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, undefined, recognition as any);
+
+    await expect(service.retryRecognition('missing')).rejects.toThrow(NotFoundException);
+    expect(recognition.enqueue).not.toHaveBeenCalled();
+  });
+});
+
 describe('AdminService.revealIdentifier — п.16/24', () => {
   it('delegates to IdentifiersService.revealIdentifier', async () => {
     const identifiers = { revealIdentifier: jest.fn().mockResolvedValue('850712345611') };

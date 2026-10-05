@@ -648,6 +648,20 @@ class _RecognitionPanel extends ConsumerWidget {
                 Icon(LucideIcons.scanLine, size: 16, color: Theme.of(context).colorScheme.outline),
                 const SizedBox(width: 6),
                 Text(label, style: Theme.of(context).textTheme.bodySmall),
+                // Задача 032, п.7 — SKIPPED/FAILED больше не обязательно
+                // «навсегда»: контейнер мог быть недоступен временно,
+                // кнопка ставит документ в очередь распознавания заново.
+                if (r.status == 'SKIPPED' || r.status == 'FAILED') ...[
+                  const SizedBox(width: 8),
+                  TextButton(
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
+                    onPressed: () async {
+                      await ref.read(adminRepositoryProvider).retryRecognition(documentId);
+                      ref.invalidate(adminDocumentRecognitionProvider(documentId));
+                    },
+                    child: Text(t.adminRecognitionRetry),
+                  ),
+                ],
               ],
             ),
           );

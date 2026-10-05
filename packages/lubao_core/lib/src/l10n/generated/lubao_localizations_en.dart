@@ -1561,6 +1561,9 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get adminRecognitionFailed => 'Recognition failed';
 
   @override
+  String get adminRecognitionRetry => 'Recognize again';
+
+  @override
   String get adminRecognitionMatchOk => 'Verified';
 
   @override

@@ -576,6 +576,7 @@
   "adminRecognitionSkipped": "OCR қолжетімсіз — қолмен тексеріңіз",
   "adminRecognitionPending": "Тану кезекте…",
   "adminRecognitionFailed": "Тану мүмкін болмады",
+  "adminRecognitionRetry": "Қайта тану",
   "adminRecognitionMatchOk": "Тексерілді",
   "adminRecognitionNeedsReview": "Тексеріңіз",
   "adminRecognitionDuplicate": "Басқа иесінде қайталанады",

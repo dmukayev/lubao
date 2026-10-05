@@ -194,6 +194,13 @@ class AdminRepository {
     return (res.data as Map<String, dynamic>)['value'] as String?;
   }
 
+  /// «Распознать заново» (задача 032, п.7) — для `SKIPPED`/`FAILED`, когда
+  /// контейнер был временно недоступен все 3 попытки или документ
+  /// почему-то нечитаем; ставит новую задачу в очередь распознавания.
+  Future<void> retryRecognition(String documentId) async {
+    await _client.dio.post('/admin/verification-documents/$documentId/recognition/retry');
+  }
+
   Future<AdminCargoDetail> cargoDetail(String id) async {
     final res = await _client.dio.get('/admin/cargos/$id');
     return AdminCargoDetail.fromJson(res.data as Map<String, dynamic>);

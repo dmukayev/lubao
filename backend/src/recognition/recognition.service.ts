@@ -10,6 +10,16 @@ import { recognizeDocument } from './ocr-client';
 import { RECOGNITION_QUEUE, RecognitionJob } from './recognition.queue';
 
 const ENGINE_VERSION = 'rules-v1';
+const RECOGNITION_ATTEMPTS = 3;
+
+/// Задача 032, п.7 — отличить «OCR недоступен прямо сейчас» (повторить
+/// стоит, помечаем SKIPPED только после последней попытки) от любой
+/// другой ошибки (помечаем FAILED с текстом ошибки).
+class OcrUnreachableError extends Error {
+  constructor() {
+    super('OCR service unreachable');
+  }
+}
 
 /// Задача 032, п.4 — ИИН/номер прав не хранятся в document_recognitions
 /// открытым текстом: значение уходит в БД только зашифрованным (тот же
@@ -67,12 +77,13 @@ export class RecognitionService {
   ) {}
 
   /// Вызывается после создания VerificationDocument (drivers.service.ts/
-  /// companies — загрузка документа). Асинхронно, не блокирует ответ клиенту.
+  /// companies — загрузка документа), а также админской кнопкой
+  /// «Распознать заново» (задача 032, п.7). Асинхронно, не блокирует ответ.
   async enqueue(documentId: string): Promise<void> {
     await this.queue.add(
       'recognize',
       { documentId },
-      { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
+      { attempts: RECOGNITION_ATTEMPTS, backoff: { type: 'exponential', delay: 5000 } },
     );
   }
 
@@ -80,8 +91,15 @@ export class RecognitionService {
   /// (recognition.processor.ts). Публичный метод, чтобы воркер оставался
   /// тонким и тестируемым через мок PrismaService/очереди, как у
   /// notifications.processor.ts/notifications.service.ts.
-  async process(documentId: string): Promise<void> {
+  /// Задача 032, п.7 — раньше ЛЮБАЯ ошибка (включая недоступный OCR-
+  /// контейнер) писала терминальный статус и проглатывалась здесь же, то
+  /// есть BullMQ считал job успешно обработанной и `attempts: 3` никогда
+  /// не срабатывали. Теперь ошибка на НЕпоследней попытке прокидывается
+  /// наружу — BullMQ сам повторит job с экспоненциальной паузой; `SKIPPED`/
+  /// `FAILED` пишутся только когда попыток больше не осталось.
+  async process(documentId: string, attempt: { attemptsMade: number; maxAttempts: number } = { attemptsMade: 0, maxAttempts: 1 }): Promise<void> {
     const startedAt = Date.now();
+    const isLastAttempt = attempt.attemptsMade + 1 >= attempt.maxAttempts;
     const document = await this.prisma.verificationDocument.findUnique({
       where: { id: documentId },
       include: { driver: true, company: true },
@@ -107,11 +125,10 @@ export class RecognitionService {
       const lineSets = await Promise.all(langs.map((lang) => recognizeDocument(buffer, contentType, lang)));
       const reachable = lineSets.filter((r): r is { lines: string[] } => r !== null);
       if (reachable.length === 0) {
-        // OCR_SERVICE_URL не задан или сервис недоступен — честно
-        // пропускаем распознавание, ручная проверка документа админом
-        // остаётся рабочим путём (п.18: «деградация»).
-        await this.writeResult(documentId, { status: 'SKIPPED', fields: null, durationMs: Date.now() - startedAt });
-        return;
+        // OCR_SERVICE_URL не задан или сервис временно недоступен — не
+        // сдаёмся сразу, даём BullMQ дожать до последней попытки (контейнер
+        // может быть просто в процессе рестарта/деплоя).
+        throw new OcrUnreachableError();
       }
 
       const lines = [...new Set(reachable.flatMap((r) => r.lines))];
@@ -122,12 +139,17 @@ export class RecognitionService {
         durationMs: Date.now() - startedAt,
       });
     } catch (err) {
-      this.logger.error(`Recognition failed for document ${documentId}: ${(err as Error).message}`);
+      if (!isLastAttempt) {
+        this.logger.warn(`Recognition attempt ${attempt.attemptsMade + 1}/${attempt.maxAttempts} failed for document ${documentId}, will retry: ${(err as Error).message}`);
+        throw err;
+      }
+      const unreachable = err instanceof OcrUnreachableError;
+      this.logger.error(`Recognition failed for document ${documentId} after the final attempt: ${(err as Error).message}`);
       await this.writeResult(documentId, {
-        status: 'FAILED',
+        status: unreachable ? 'SKIPPED' : 'FAILED',
         fields: null,
         durationMs: Date.now() - startedAt,
-        errorMessage: (err as Error).message,
+        errorMessage: unreachable ? undefined : (err as Error).message,
       });
     }
   }

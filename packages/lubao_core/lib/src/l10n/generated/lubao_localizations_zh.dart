@@ -1535,6 +1535,9 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get adminRecognitionFailed => '识别失败';
 
   @override
+  String get adminRecognitionRetry => '重新识别';
+
+  @override
   String get adminRecognitionMatchOk => '已核实';
 
   @override

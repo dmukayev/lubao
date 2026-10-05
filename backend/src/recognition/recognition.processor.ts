@@ -20,7 +20,7 @@ export class RecognitionProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker<RecognitionJob>(
       RECOGNITION_QUEUE,
       async (job) => {
-        await this.recognition.process(job.data.documentId);
+        await this.recognition.process(job.data.documentId, { attemptsMade: job.attemptsMade, maxAttempts: job.opts.attempts ?? 1 });
       },
       { connection },
     );

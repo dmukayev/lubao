@@ -10,6 +10,7 @@ import { REQUIRED_DRIVER_DOC_TYPES } from '../drivers/drivers.service';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IdentifiersService } from '../identifiers/identifiers.service';
+import { RecognitionService } from '../recognition/recognition.service';
 import { decryptIdentifier, maskIdentifier } from '../identifiers/crypto';
 import { normalizeIdentifier, type IdentifierTypeValue } from '../identifiers/normalize';
 import { RECOGNIZED_FIELD_IDENTIFIER_TYPE } from '../recognition/extract-fields';
@@ -53,6 +54,7 @@ export class AdminService {
     private readonly appSettings?: AppSettingsService,
     private readonly notifications?: NotificationsService,
     private readonly identifiers?: IdentifiersService,
+    private readonly recognition?: RecognitionService,
   ) {}
 
   private async logAudit(actorUserId: string, action: string, entityType: string, entityId: string, metadata?: object) {
@@ -831,6 +833,17 @@ export class AdminService {
       durationMs: doc.recognition.durationMs,
       fields,
     };
+  }
+
+  /// Задача 032, п.7 — кнопка «Распознать заново»: нужна, когда
+  /// распознавание закончилось `SKIPPED`/`FAILED` (контейнер был
+  /// недоступен все 3 попытки, или документ почему-то нечитаем) — админ
+  /// может повторить вручную, не дожидаясь новой загрузки документа.
+  async retryRecognition(documentId: string): Promise<{ id: string }> {
+    const doc = await this.prisma.verificationDocument.findUnique({ where: { id: documentId } });
+    if (!doc) throw new NotFoundException('Document not found');
+    await this.recognition?.enqueue(documentId);
+    return { id: documentId };
   }
 
   /// Задача 032, п.4 — полное значение чувствительного распознанного поля

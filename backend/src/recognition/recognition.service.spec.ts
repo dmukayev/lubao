@@ -128,6 +128,62 @@ describe('RecognitionService#process — п.18/28, п.1/8 (задача 032)', (
     );
   });
 
+  describe('задача 032, п.7 — retries via BullMQ attempts (no longer swallowed on every attempt)', () => {
+    it('rethrows when the OCR service is unreachable on a non-final attempt, without writing any terminal status', async () => {
+      mockedRecognizeDocument.mockResolvedValue(null);
+      const prisma: any = prismaMock({ type: 'DRIVER_LICENSE' });
+      const service = new RecognitionService(prisma, {} as any, uploadsMock());
+
+      await expect(service.process('doc1', { attemptsMade: 0, maxAttempts: 3 })).rejects.toThrow('OCR service unreachable');
+      expect(prisma.documentRecognition.upsert).not.toHaveBeenCalled();
+    });
+
+    it('rethrows an unexpected OCR error on a non-final attempt too', async () => {
+      mockedRecognizeDocument.mockRejectedValue(new Error('boom'));
+      const prisma: any = prismaMock({ type: 'DRIVER_LICENSE' });
+      const service = new RecognitionService(prisma, {} as any, uploadsMock());
+
+      await expect(service.process('doc1', { attemptsMade: 1, maxAttempts: 3 })).rejects.toThrow('boom');
+      expect(prisma.documentRecognition.upsert).not.toHaveBeenCalled();
+    });
+
+    it('writes SKIPPED (not FAILED) only once the LAST attempt still finds the OCR service unreachable', async () => {
+      mockedRecognizeDocument.mockResolvedValue(null);
+      const prisma: any = prismaMock({ type: 'DRIVER_LICENSE' });
+      const service = new RecognitionService(prisma, {} as any, uploadsMock());
+
+      await service.process('doc1', { attemptsMade: 2, maxAttempts: 3 });
+
+      expect(prisma.documentRecognition.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ create: expect.objectContaining({ status: 'SKIPPED' }) }),
+      );
+    });
+
+    it('writes FAILED only once the LAST attempt still throws an unexpected error', async () => {
+      mockedRecognizeDocument.mockRejectedValue(new Error('boom'));
+      const prisma: any = prismaMock({ type: 'DRIVER_LICENSE' });
+      const service = new RecognitionService(prisma, {} as any, uploadsMock());
+
+      await service.process('doc1', { attemptsMade: 2, maxAttempts: 3 });
+
+      expect(prisma.documentRecognition.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ create: expect.objectContaining({ status: 'FAILED', errorMessage: 'boom' }) }),
+      );
+    });
+
+    it('a single-attempt call (default, no attempt info passed) behaves exactly as before — terminal status on the only attempt', async () => {
+      mockedRecognizeDocument.mockResolvedValue(null);
+      const prisma: any = prismaMock({ type: 'DRIVER_LICENSE' });
+      const service = new RecognitionService(prisma, {} as any, uploadsMock());
+
+      await service.process('doc1');
+
+      expect(prisma.documentRecognition.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ create: expect.objectContaining({ status: 'SKIPPED' }) }),
+      );
+    });
+  });
+
   it('does nothing when the document no longer exists (deleted between enqueue and processing)', async () => {
     const prisma: any = { verificationDocument: { findUnique: jest.fn().mockResolvedValue(null) }, documentRecognition: { upsert: jest.fn() } };
     const service = new RecognitionService(prisma, {} as any, uploadsMock());

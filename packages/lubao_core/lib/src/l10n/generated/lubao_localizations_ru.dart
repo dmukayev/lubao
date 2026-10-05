@@ -1558,6 +1558,9 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get adminRecognitionFailed => 'Не удалось распознать';
 
   @override
+  String get adminRecognitionRetry => 'Распознать заново';
+
+  @override
   String get adminRecognitionMatchOk => 'Проверено';
 
   @override

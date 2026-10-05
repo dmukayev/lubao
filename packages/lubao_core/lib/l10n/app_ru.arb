@@ -701,6 +701,7 @@
   "adminRecognitionSkipped": "OCR недоступен — проверьте вручную",
   "adminRecognitionPending": "Распознавание в очереди…",
   "adminRecognitionFailed": "Не удалось распознать",
+  "adminRecognitionRetry": "Распознать заново",
   "adminRecognitionMatchOk": "Проверено",
   "adminRecognitionNeedsReview": "Проверьте",
   "adminRecognitionDuplicate": "Дубль у другого владельца",
