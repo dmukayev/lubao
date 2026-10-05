@@ -307,6 +307,31 @@ class _CargoDetailBody extends StatelessWidget {
                     child: Text(cargo.description!, style: AppTextStyles.body),
                   ),
                 ],
+                // Задача 012 — звонить/писать нужно конкретному логисту,
+                // опубликовавшему груз, а не «компании» (decisions.md
+                // «Компания: проверка, роли, контакты»): имя и WeChat
+                // показываем отдельно от карточки компании выше (там —
+                // репутация компании, тут — живой человек).
+                if (cargo.contactName != null && cargo.contactName!.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      const Icon(LucideIcons.user, size: 16, color: AppColors.textSecondary),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(child: Text(cargo.contactName!, style: AppTextStyles.bodyStrong)),
+                    ],
+                  ),
+                  if (cargo.contactWechatId != null && cargo.contactWechatId!.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Row(
+                      children: [
+                        const Icon(LucideIcons.messageCircle, size: 16, color: AppColors.textSecondary),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text('WeChat: ${cargo.contactWechatId}', style: AppTextStyles.caption),
+                      ],
+                    ),
+                  ],
+                ],
               ],
             ),
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../../providers/api_providers.dart';
@@ -315,6 +316,239 @@ Future<void> _showWeComDialog(BuildContext context, WidgetRef ref, String? curre
   );
 }
 
+/// Данные компании, которые правит владелец (задача 012, п.8) — город,
+/// юр. адрес, рег. номер. Формат рег. номера проверяет бэкенд по стране.
+Future<void> _showCompanyEditDialog(BuildContext context, WidgetRef ref, Company company) async {
+  final t = context.l10n;
+  final cityController = TextEditingController(text: company.city ?? '');
+  final addressController = TextEditingController(text: company.legalAddress ?? '');
+  final taxIdController = TextEditingController(text: company.taxId ?? '');
+  String? error;
+  bool saving = false;
+
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setState) => AlertDialog(
+        title: Text(t.companyEditTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppTextField(label: t.companyEditCityLabel, controller: cityController),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(label: t.companyEditLegalAddressLabel, controller: addressController),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(label: t.companyEditTaxIdLabel, controller: taxIdController, errorText: error),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(t.commonCancel)),
+          FilledButton(
+            onPressed: saving
+                ? null
+                : () async {
+                    setState(() => saving = true);
+                    try {
+                      final updated = await ref.read(companyRepositoryProvider).updateProfile(
+                            city: cityController.text.trim(),
+                            legalAddress: addressController.text.trim(),
+                            taxId: taxIdController.text.trim(),
+                          );
+                      final session = ref.read(sessionProvider);
+                      if (session?.companyMember != null) {
+                        ref.read(sessionProvider.notifier).updateCompany(updated, session!.companyMember!);
+                      }
+                      if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                    } catch (_) {
+                      setState(() {
+                        saving = false;
+                        error = t.companyEditTaxIdError;
+                      });
+                    }
+                  },
+            child: Text(t.commonSave),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// «Мой профиль» (задача 012, п.1/8) — имя, телефон для водителей, WeChat
+/// у конкретного сотрудника (не у компании). И владелец, и логист правят
+/// у себя — то, что увидит водитель по грузу, который они опубликовали.
+Future<void> _showMyContactDialog(BuildContext context, WidgetRef ref, CompanyMember? member) async {
+  final t = context.l10n;
+  final nameController = TextEditingController(text: member?.fullName ?? '');
+  final phoneController = TextEditingController(text: member?.contactPhone ?? '');
+  final wechatController = TextEditingController(text: member?.wechatId ?? '');
+  String? error;
+  bool saving = false;
+
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setState) => AlertDialog(
+        title: Text(t.myProfileTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppTextField(label: t.myProfileNameLabel, controller: nameController, errorText: error),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(label: t.myProfilePhoneLabel, controller: phoneController, keyboardType: TextInputType.phone),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(label: t.myProfileWechatLabel, controller: wechatController),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(t.commonCancel)),
+          FilledButton(
+            onPressed: saving
+                ? null
+                : () async {
+                    final name = nameController.text.trim();
+                    if (name.length < 2) {
+                      setState(() => error = t.myProfileNameError);
+                      return;
+                    }
+                    setState(() {
+                      saving = true;
+                      error = null;
+                    });
+                    try {
+                      final updated = await ref.read(companyRepositoryProvider).updateMyContact(
+                            fullName: name,
+                            contactPhone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+                            wechatId: wechatController.text.trim().isEmpty ? null : wechatController.text.trim(),
+                          );
+                      final session = ref.read(sessionProvider);
+                      if (session?.company != null) {
+                        ref.read(sessionProvider.notifier).updateCompany(session!.company!, updated);
+                      }
+                      if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                    } catch (_) {
+                      setState(() {
+                        saving = false;
+                        error = t.commonError;
+                      });
+                    }
+                  },
+            child: Text(t.commonSave),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Подтверждение компании (задача 012, п.5) — ровно один документ
+/// (свидетельство о регистрации), по тому же паттерну, что у водителя
+/// (DriverVerificationScreen): фото → MinIO → POST verification-documents.
+class _CompanyVerificationCard extends ConsumerStatefulWidget {
+  const _CompanyVerificationCard({required this.company});
+
+  final Company company;
+
+  @override
+  ConsumerState<_CompanyVerificationCard> createState() => _CompanyVerificationCardState();
+}
+
+class _CompanyVerificationCardState extends ConsumerState<_CompanyVerificationCard> {
+  bool _uploading = false;
+
+  Future<void> _pick(ImageSource source) async {
+    final t = context.l10n;
+    final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    if (picked == null) return;
+    setState(() => _uploading = true);
+    try {
+      final bytes = await picked.readAsBytes();
+      final key = await ref.read(uploadsRepositoryProvider).uploadDocument(bytes, filename: picked.name);
+      await ref.read(companyRepositoryProvider).submitVerificationDocument(fileUrl: key);
+      ref.invalidate(companyVerificationDocumentsProvider);
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.driverVerificationUploadFailed)));
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    if (widget.company.isVerified) return const SizedBox.shrink();
+    final docsAsync = ref.watch(companyVerificationDocumentsProvider);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: docsAsync.when(
+          loading: () => const LoadingView(),
+          error: (e, st) => Text(t.commonError),
+          data: (docs) {
+            final doc = docs.isEmpty ? null : docs.first;
+            final (statusLabel, statusColor) = switch (doc?.status) {
+              // Документ одобрен, но admin ещё не поставил isVerified — тот
+              // же текст «на проверке», узкое переходное окно между двумя
+              // независимыми действиями админа (см. AdminService).
+              VerificationDocStatus.pending || VerificationDocStatus.approved => (t.companyVerificationStatusPending, AppColors.accentText),
+              VerificationDocStatus.rejected => (t.companyVerificationStatusRejected, AppColors.error),
+              null => (t.companyVerificationStatusNone, AppColors.textSecondary),
+            };
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(LucideIcons.shieldCheck),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: Text(t.companyVerificationTitle, style: Theme.of(context).textTheme.titleSmall)),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(t.companyVerificationHint, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    Text(statusLabel, style: AppTextStyles.caption.copyWith(color: statusColor)),
+                    if (doc?.status == VerificationDocStatus.rejected && doc?.rejectReason != null) ...[
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(child: Text(doc!.rejectReason!, style: AppTextStyles.caption.copyWith(color: AppColors.error))),
+                    ],
+                  ],
+                ),
+                if (doc?.status != VerificationDocStatus.pending) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _uploading ? null : () => _pick(ImageSource.camera),
+                          icon: const Icon(LucideIcons.camera),
+                          label: Text(t.postCargoAddPhotoCamera),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _uploading ? null : () => _pick(ImageSource.gallery),
+                          icon: const Icon(LucideIcons.image),
+                          label: Text(t.postCargoAddPhotoGallery),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
 class CompanyProfileScreen extends ConsumerWidget {
   const CompanyProfileScreen({super.key});
 
@@ -323,6 +557,7 @@ class CompanyProfileScreen extends ConsumerWidget {
     final t = context.l10n;
     final session = ref.watch(sessionProvider);
     final company = session?.company;
+    final isOwner = session?.companyMember?.role == CompanyMemberRole.owner;
     final members = ref.watch(companyMembersProvider);
     final locale = ref.watch(localeProvider);
 
@@ -332,7 +567,37 @@ class CompanyProfileScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           if (session != null && session.user.emailVerifiedAt == null) const _EmailVerifyBanner(),
-          Text(company?.name ?? '', style: Theme.of(context).textTheme.headlineSmall),
+          // Задача 012, п.4 — компания видит прямо в профиле, почему не
+          // может опубликовать груз, а не только натыкается на 403.
+          if (company != null && !company.isVerified)
+            Card(
+              color: AppColors.primarySoft,
+              margin: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: ListTile(
+                leading: const Icon(LucideIcons.shieldAlert),
+                title: Text(t.companyNotVerifiedBannerText),
+              ),
+            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(company?.name ?? '', style: Theme.of(context).textTheme.headlineSmall),
+                    if (company?.nameRu != null && company!.nameRu!.isNotEmpty && company.nameRu != company.name)
+                      Text(company.nameRu!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+              if (isOwner)
+                IconButton(
+                  icon: const Icon(LucideIcons.pencil),
+                  onPressed: company == null ? null : () => _showCompanyEditDialog(context, ref, company),
+                ),
+            ],
+          ),
           const SizedBox(height: 4),
           Row(
             children: [
@@ -345,6 +610,8 @@ class CompanyProfileScreen extends ConsumerWidget {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          if (company != null) _CompanyVerificationCard(company: company),
           const Divider(height: 32),
           ListTile(
             leading: const Icon(LucideIcons.mail),
@@ -379,17 +646,29 @@ class CompanyProfileScreen extends ConsumerWidget {
               children: list
                   .map((m) => ListTile(
                         leading: const Icon(LucideIcons.user),
-                        title: Text(m.role.name.toUpperCase()),
+                        title: Text(m.fullName ?? m.role.name.toUpperCase()),
+                        subtitle: m.fullName == null ? null : Text(m.role.name.toUpperCase()),
                       ))
                   .toList(),
             ),
           ),
-          if (session?.companyMember?.role == CompanyMemberRole.owner)
+          if (isOwner)
             ListTile(
               leading: const Icon(LucideIcons.userPlus),
               title: Text(t.employeesInviteButton),
               onTap: () => _showInviteDialog(context, ref),
             ),
+          const SizedBox(height: 16),
+          Text(t.myProfileTitle, style: Theme.of(context).textTheme.titleSmall),
+          ListTile(
+            leading: const Icon(LucideIcons.contact),
+            title: Text(session?.companyMember?.fullName ?? t.myProfileNotSetYet),
+            subtitle: Text([
+              if (session?.companyMember?.contactPhone != null) session!.companyMember!.contactPhone!,
+              if (session?.companyMember?.wechatId != null) 'WeChat: ${session!.companyMember!.wechatId}',
+            ].join(' · ')),
+            onTap: () => _showMyContactDialog(context, ref, session?.companyMember),
+          ),
           ListTile(
             leading: const Icon(LucideIcons.smartphone),
             title: Text(t.profileMyDevices),
@@ -400,7 +679,7 @@ class CompanyProfileScreen extends ConsumerWidget {
             title: Text(t.profileNotificationSettings),
             onTap: () => context.push('/notifications/settings'),
           ),
-          if (session?.companyMember?.role == CompanyMemberRole.owner)
+          if (isOwner)
             ListTile(
               leading: const Icon(LucideIcons.messageSquare),
               title: Text(t.companyWecomTitle),

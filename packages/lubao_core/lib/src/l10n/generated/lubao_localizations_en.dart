@@ -2043,4 +2043,62 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminAuditFieldStatus => 'Status';
+
+  @override
+  String get postCargoVerificationRequired =>
+      'Publishing cargo will open after the company is verified — upload the registration certificate in the company profile';
+
+  @override
+  String get companyNotVerifiedBannerText =>
+      'The company is not verified. You can view drivers and message them, but you can\'t publish cargo — upload the registration certificate below';
+
+  @override
+  String get companyEditTitle => 'Company details';
+
+  @override
+  String get companyEditCityLabel => 'City';
+
+  @override
+  String get companyEditLegalAddressLabel => 'Legal address';
+
+  @override
+  String get companyEditTaxIdLabel => 'Registration number (统一社会信用代码 / BIN)';
+
+  @override
+  String get companyEditTaxIdError =>
+      'Invalid registration number format for your country';
+
+  @override
+  String get myProfileTitle => 'My profile';
+
+  @override
+  String get myProfileNameLabel => 'Name';
+
+  @override
+  String get myProfilePhoneLabel => 'Phone for drivers';
+
+  @override
+  String get myProfileWechatLabel => 'WeChat';
+
+  @override
+  String get myProfileNameError => 'Enter a name';
+
+  @override
+  String get myProfileNotSetYet => 'Fill in your profile';
+
+  @override
+  String get companyVerificationTitle => 'Verify the company';
+
+  @override
+  String get companyVerificationHint =>
+      'Upload the registration certificate — we\'ll cross-check it with the official registry and call the registered number, usually within 1 business day';
+
+  @override
+  String get companyVerificationStatusNone => 'Document not uploaded';
+
+  @override
+  String get companyVerificationStatusPending => 'Under review';
+
+  @override
+  String get companyVerificationStatusRejected => 'Needs to be re-taken';
 }

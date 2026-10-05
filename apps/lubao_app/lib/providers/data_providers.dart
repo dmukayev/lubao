@@ -53,6 +53,11 @@ final companyMembersProvider = FutureProvider.autoDispose<List<CompanyMember>>((
   return ref.watch(companyRepositoryProvider).members();
 });
 
+/// Единственный документ, подтверждающий компанию (задача 012, п.5).
+final companyVerificationDocumentsProvider = FutureProvider.autoDispose<List<VerificationDocument>>((ref) {
+  return ref.watch(companyRepositoryProvider).verificationDocuments();
+});
+
 final myArrivalProvider = FutureProvider.autoDispose<Arrival?>((ref) {
   return ref.watch(arrivalRepositoryProvider).mine();
 });

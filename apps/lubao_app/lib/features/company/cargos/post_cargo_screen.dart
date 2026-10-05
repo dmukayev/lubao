@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../../providers/api_providers.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -94,6 +95,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   }
 
   Future<void> _submit() async {
+    if (!_isEditing && !(ref.read(sessionProvider)?.company?.isVerified ?? false)) return;
     if (_countryId == null || _bodyTypeId == null || _priceController.text.isEmpty) return;
     setState(() => _saving = true);
     try {
@@ -127,6 +129,11 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final referenceData = ref.watch(referenceDataProvider);
+    // Задача 012, п.4 — непроверенная компания не публикует новые грузы
+    // (decisions.md «Компания: проверка, роли, контакты»); редактировать
+    // уже опубликованный груз можно — isVerified тут не при чём.
+    final isVerified = ref.watch(sessionProvider.select((s) => s?.company?.isVerified)) ?? false;
+    final blockedByVerification = !_isEditing && !isVerified;
 
     return Scaffold(
       appBar: AppBar(title: Text(_isEditing ? t.editCargoTitle : t.postCargoTitle)),
@@ -148,6 +155,22 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (blockedByVerification) ...[
+                Card(
+                  color: AppColors.primarySoft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        const Icon(LucideIcons.shieldAlert),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(t.postCargoVerificationRequired)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               Autocomplete<CountryCityOption>(
                 initialValue: TextEditingValue(text: initialDestinationLabel),
                 displayStringForOption: (o) => o.label,
@@ -284,7 +307,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
               PrimaryButton(
                 label: _isEditing ? t.commonSave : t.postCargoSubmit,
                 loading: _saving,
-                onPressed: _submit,
+                onPressed: blockedByVerification ? null : _submit,
               ),
             ],
           );

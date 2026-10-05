@@ -2005,4 +2005,61 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminAuditFieldStatus => '状态';
+
+  @override
+  String get postCargoVerificationRequired =>
+      '发布货物功能将在公司验证通过后开放——请在公司资料中上传注册证书';
+
+  @override
+  String get companyNotVerifiedBannerText =>
+      '公司尚未通过验证。您可以查看司机并与其联系，但无法发布货物——请在下方上传注册证书';
+
+  @override
+  String get companyEditTitle => '公司信息';
+
+  @override
+  String get companyEditCityLabel => '城市';
+
+  @override
+  String get companyEditLegalAddressLabel => '法定地址';
+
+  @override
+  String get companyEditTaxIdLabel => '注册号（统一社会信用代码 / БИН）';
+
+  @override
+  String get companyEditTaxIdError => '注册号格式不符合您所在国家的要求';
+
+  @override
+  String get myProfileTitle => '我的资料';
+
+  @override
+  String get myProfileNameLabel => '姓名';
+
+  @override
+  String get myProfilePhoneLabel => '司机联系电话';
+
+  @override
+  String get myProfileWechatLabel => '微信';
+
+  @override
+  String get myProfileNameError => '请输入姓名';
+
+  @override
+  String get myProfileNotSetYet => '请完善资料';
+
+  @override
+  String get companyVerificationTitle => '验证公司';
+
+  @override
+  String get companyVerificationHint =>
+      '请上传注册证书——我们将与官方登记系统核对，并致电登记系统中的官方号码，通常在1个工作日内完成';
+
+  @override
+  String get companyVerificationStatusNone => '尚未上传文件';
+
+  @override
+  String get companyVerificationStatusPending => '审核中';
+
+  @override
+  String get companyVerificationStatusRejected => '需要重新拍摄';
 }

@@ -2046,4 +2046,62 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminAuditFieldStatus => 'Мәртебе';
+
+  @override
+  String get postCargoVerificationRequired =>
+      'Жүктерді жариялау компания тексерілгеннен кейін ашылады — тіркеу туралы куәлікті компания профилінде жүктеңіз';
+
+  @override
+  String get companyNotVerifiedBannerText =>
+      'Компания тексерілмеген. Жүргізушілерді көруге және оларға жазуға болады, бірақ жүк жариялау мүмкін емес — төмендегі тіркеу туралы куәлікті жүктеңіз';
+
+  @override
+  String get companyEditTitle => 'Компания деректері';
+
+  @override
+  String get companyEditCityLabel => 'Қала';
+
+  @override
+  String get companyEditLegalAddressLabel => 'Заңды мекенжай';
+
+  @override
+  String get companyEditTaxIdLabel => 'Тіркеу нөмірі (統一社会信用代码 / БСН)';
+
+  @override
+  String get companyEditTaxIdError =>
+      'Еліңіз үшін тіркеу нөмірінің форматы қате';
+
+  @override
+  String get myProfileTitle => 'Менің профилім';
+
+  @override
+  String get myProfileNameLabel => 'Аты-жөні';
+
+  @override
+  String get myProfilePhoneLabel => 'Жүргізушілер үшін телефон';
+
+  @override
+  String get myProfileWechatLabel => 'WeChat';
+
+  @override
+  String get myProfileNameError => 'Атын енгізіңіз';
+
+  @override
+  String get myProfileNotSetYet => 'Профильді толтырыңыз';
+
+  @override
+  String get companyVerificationTitle => 'Компанияны растаңыз';
+
+  @override
+  String get companyVerificationHint =>
+      'Тіркеу туралы куәлікті жүктеңіз — тізіліммен салыстырамыз және тізілімдегі нөмірге қоңырау шаламыз, әдетте 1 жұмыс күніне дейін';
+
+  @override
+  String get companyVerificationStatusNone => 'Құжат жүктелмеген';
+
+  @override
+  String get companyVerificationStatusPending => 'Тексерілуде';
+
+  @override
+  String get companyVerificationStatusRejected => 'Қайта түсіру керек';
 }

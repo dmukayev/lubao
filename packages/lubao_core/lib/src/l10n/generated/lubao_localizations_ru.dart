@@ -2036,4 +2036,62 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminAuditFieldStatus => 'Статус';
+
+  @override
+  String get postCargoVerificationRequired =>
+      'Публикация грузов откроется после проверки компании — загрузите свидетельство о регистрации в профиле';
+
+  @override
+  String get companyNotVerifiedBannerText =>
+      'Компания не проверена. Можно смотреть водителей и писать им, но нельзя опубликовать груз — загрузите свидетельство о регистрации ниже';
+
+  @override
+  String get companyEditTitle => 'Данные компании';
+
+  @override
+  String get companyEditCityLabel => 'Город';
+
+  @override
+  String get companyEditLegalAddressLabel => 'Юридический адрес';
+
+  @override
+  String get companyEditTaxIdLabel => 'Рег. номер (统一社会信用代码 / БИН)';
+
+  @override
+  String get companyEditTaxIdError =>
+      'Неверный формат рег. номера для вашей страны';
+
+  @override
+  String get myProfileTitle => 'Мой профиль';
+
+  @override
+  String get myProfileNameLabel => 'Имя';
+
+  @override
+  String get myProfilePhoneLabel => 'Телефон для водителей';
+
+  @override
+  String get myProfileWechatLabel => 'WeChat';
+
+  @override
+  String get myProfileNameError => 'Введите имя';
+
+  @override
+  String get myProfileNotSetYet => 'Заполните профиль';
+
+  @override
+  String get companyVerificationTitle => 'Подтвердите компанию';
+
+  @override
+  String get companyVerificationHint =>
+      'Загрузите свидетельство о регистрации — сверим с реестром и позвоним на номер из реестра, обычно до 1 рабочего дня';
+
+  @override
+  String get companyVerificationStatusNone => 'Документ не загружен';
+
+  @override
+  String get companyVerificationStatusPending => 'На проверке';
+
+  @override
+  String get companyVerificationStatusRejected => 'Нужно переснять';
 }

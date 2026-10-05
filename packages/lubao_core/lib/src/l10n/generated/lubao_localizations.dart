@@ -3965,6 +3965,114 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Статус'**
   String get adminAuditFieldStatus;
+
+  /// No description provided for @postCargoVerificationRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Публикация грузов откроется после проверки компании — загрузите свидетельство о регистрации в профиле'**
+  String get postCargoVerificationRequired;
+
+  /// No description provided for @companyNotVerifiedBannerText.
+  ///
+  /// In ru, this message translates to:
+  /// **'Компания не проверена. Можно смотреть водителей и писать им, но нельзя опубликовать груз — загрузите свидетельство о регистрации ниже'**
+  String get companyNotVerifiedBannerText;
+
+  /// No description provided for @companyEditTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Данные компании'**
+  String get companyEditTitle;
+
+  /// No description provided for @companyEditCityLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город'**
+  String get companyEditCityLabel;
+
+  /// No description provided for @companyEditLegalAddressLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Юридический адрес'**
+  String get companyEditLegalAddressLabel;
+
+  /// No description provided for @companyEditTaxIdLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Рег. номер (统一社会信用代码 / БИН)'**
+  String get companyEditTaxIdLabel;
+
+  /// No description provided for @companyEditTaxIdError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверный формат рег. номера для вашей страны'**
+  String get companyEditTaxIdError;
+
+  /// No description provided for @myProfileTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мой профиль'**
+  String get myProfileTitle;
+
+  /// No description provided for @myProfileNameLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя'**
+  String get myProfileNameLabel;
+
+  /// No description provided for @myProfilePhoneLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Телефон для водителей'**
+  String get myProfilePhoneLabel;
+
+  /// No description provided for @myProfileWechatLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'WeChat'**
+  String get myProfileWechatLabel;
+
+  /// No description provided for @myProfileNameError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите имя'**
+  String get myProfileNameError;
+
+  /// No description provided for @myProfileNotSetYet.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заполните профиль'**
+  String get myProfileNotSetYet;
+
+  /// No description provided for @companyVerificationTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтвердите компанию'**
+  String get companyVerificationTitle;
+
+  /// No description provided for @companyVerificationHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Загрузите свидетельство о регистрации — сверим с реестром и позвоним на номер из реестра, обычно до 1 рабочего дня'**
+  String get companyVerificationHint;
+
+  /// No description provided for @companyVerificationStatusNone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Документ не загружен'**
+  String get companyVerificationStatusNone;
+
+  /// No description provided for @companyVerificationStatusPending.
+  ///
+  /// In ru, this message translates to:
+  /// **'На проверке'**
+  String get companyVerificationStatusPending;
+
+  /// No description provided for @companyVerificationStatusRejected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нужно переснять'**
+  String get companyVerificationStatusRejected;
 }
 
 class _LubaoLocalizationsDelegate

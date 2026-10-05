@@ -218,6 +218,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       t.chatWritesIn(_languageNames[thread.counterpartLocale]!),
                       style: AppTextStyles.caption,
                     ),
+                  if (thread?.counterpartWechatId != null)
+                    Text('WeChat: ${thread!.counterpartWechatId}', style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
