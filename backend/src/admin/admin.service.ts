@@ -859,6 +859,37 @@ export class AdminService {
     return [...confirmed, ...recognizedBlocks.filter((b): b is { type: IdentifierTypeValue; valueMasked: string; reason: string } => b !== null)];
   }
 
+  /// Задача 032, п.3 — общая часть для «текущего документа» и «добора» по
+  /// остальным одобренным документам того же водителя: ИИН/номер прав не
+  /// имеют колонки на Driver, подтверждаются только через identifiers.
+  /// `overrides` — правка админа (dto.confirmedFields), есть только у
+  /// документа, который проверяется прямо сейчас.
+  private async confirmFieldlessDriverIdentifiers(
+    fields: Record<string, { value: string } | undefined>,
+    overrides: Record<string, string> | undefined,
+    driverId: string,
+    sourceDocumentId: string,
+    adminUserId: string,
+  ): Promise<{ reason: string } | null> {
+    if (!this.identifiers) return null;
+    let blacklistHit: { reason: string } | null = null;
+    for (const [field, type] of [['iin', 'IIN'], ['licenseNumber', 'DRIVER_LICENSE_NO']] as const) {
+      const value = overrides?.[field] ?? fields[field]?.value;
+      if (!value) continue;
+      const match = await this.identifiers.checkMatches(type, value, { ownerType: 'DRIVER', ownerId: driverId });
+      if (match.blocked) blacklistHit = match.blocked;
+      await this.identifiers.confirmIdentifier({
+        type,
+        rawValue: value,
+        ownerType: 'DRIVER',
+        ownerId: driverId,
+        sourceDocumentId,
+        confirmedByUserId: adminUserId,
+      });
+    }
+    return blacklistHit;
+  }
+
   async reviewVerificationDocument(id: string, adminUserId: string, dto: ReviewVerificationDocumentDto) {
     const doc = await this.prisma.verificationDocument.findUnique({ where: { id } });
     if (!doc) throw new NotFoundException('Document not found');
@@ -925,23 +956,28 @@ export class AdminService {
           });
         }
 
-        // ИИН/номер прав (задача 031, п.23) — без своей колонки на Driver,
-        // живут только в identifiers; подтверждаются значением, которое
-        // админ принял (dto.confirmedFields) — распознанным или его правкой.
-        for (const [field, type] of [['iin', 'IIN'], ['licenseNumber', 'DRIVER_LICENSE_NO']] as const) {
-          const value = dto.confirmedFields?.[field];
-          if (!value || !this.identifiers) continue;
-          const match = await this.identifiers.checkMatches(type, value, { ownerType: 'DRIVER', ownerId: updated.driverId });
-          if (match.blocked) blacklistHit = match.blocked;
-          await this.identifiers.confirmIdentifier({
-            type,
-            rawValue: value,
-            ownerType: 'DRIVER',
-            ownerId: updated.driverId,
-            sourceDocumentId: id,
-            confirmedByUserId: adminUserId,
-          });
+        // Задача 032, п.3 — другие уже одобренные документы этого водителя
+        // могли быть проверены ДО того, как это подтверждение появилось
+        // (или без правки — п.23 раньше сохранял ИИН/номер прав только
+        // когда админ их редактировал, молчаливое согласие терялось).
+        // Добираем их здесь же — confirmIdentifier делает upsert по
+        // (ownerType, ownerId, type), повторный вызов безопасен.
+        const otherApprovedDocs = await this.prisma.verificationDocument.findMany({
+          where: { driverId: updated.driverId, status: 'APPROVED', id: { not: id }, recognition: { isNot: null } },
+          include: { recognition: true },
+        });
+        for (const otherDoc of otherApprovedDocs) {
+          const otherFields = (otherDoc.recognition?.fields ?? {}) as Record<string, { value: string } | undefined>;
+          const hit = await this.confirmFieldlessDriverIdentifiers(otherFields, undefined, updated.driverId, otherDoc.id, adminUserId);
+          if (hit) blacklistHit = hit;
         }
+
+        // ИИН/номер прав (задача 031, п.23) — без своей колонки на Driver,
+        // живут только в identifiers; подтверждаются значением, с которым
+        // согласился админ: правкой (dto.confirmedFields), а если он просто
+        // согласился молча — тем, что распознал OCR (задача 032, п.3).
+        const hit = await this.confirmFieldlessDriverIdentifiers(recognizedFields, dto.confirmedFields, updated.driverId, id, adminUserId);
+        if (hit) blacklistHit = hit;
 
         // Верифицирован, только когда одобрены ВСЕ обязательные документы
         // личности (селфи + права) — задача 031, этап A: машины (техпаспорта

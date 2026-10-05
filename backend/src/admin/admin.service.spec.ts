@@ -1619,6 +1619,82 @@ describe('AdminService.reviewVerificationDocument — правка полей б
       expect.objectContaining({ type: 'IIN', rawValue: '850712345611', ownerType: 'DRIVER', ownerId: 'd1' }),
     );
   });
+
+  it('задача 032, п.3 — approving a document WITHOUT editing the recognized IIN still confirms it (agreeing silently used to be lost)', async () => {
+    const prisma: any = {
+      verificationDocument: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'doc1', driverId: 'd1', vehicleId: null, type: 'DRIVER_LICENSE' }),
+        update: jest.fn().mockResolvedValue({
+          id: 'doc1',
+          driverId: 'd1',
+          vehicleId: null,
+          companyId: null,
+          type: 'DRIVER_LICENSE',
+          driver: { id: 'd1', user: { phone: '+77011234567' } },
+          vehicle: null,
+          recognition: { fields: { iin: { value: '850712345600' } } },
+        }),
+        findMany: jest.fn().mockResolvedValue([{ type: 'DRIVER_LICENSE' }]),
+      },
+      driver: { update: jest.fn() },
+      vehicle: { update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const identifiers = {
+      checkMatches: jest.fn().mockResolvedValue({ blocked: null, duplicateOwner: null }),
+      confirmIdentifier: jest.fn(),
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, identifiers as any);
+
+    // Админ одобряет без confirmedFields вовсе — молча согласился с ИИН,
+    // который распознал OCR.
+    await service.reviewVerificationDocument('doc1', 'admin-1', { status: 'APPROVED' } as any);
+
+    expect(identifiers.confirmIdentifier).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'IIN', rawValue: '850712345600', ownerType: 'DRIVER', ownerId: 'd1', sourceDocumentId: 'doc1' }),
+    );
+    // Молчаливое согласие — не правка, DOCUMENT_FIELD_CORRECTED не пишется.
+    expect(prisma.auditLog.create).not.toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: 'DOCUMENT_FIELD_CORRECTED' }) }));
+  });
+
+  it('задача 032, п.3 — approving a NEW document also backfills the IIN of an OLDER already-approved document of the same driver that was never confirmed', async () => {
+    const prisma: any = {
+      verificationDocument: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'doc-new', driverId: 'd1', vehicleId: null, type: 'SELFIE' }),
+        update: jest.fn().mockResolvedValue({
+          id: 'doc-new',
+          driverId: 'd1',
+          vehicleId: null,
+          companyId: null,
+          type: 'SELFIE',
+          driver: { id: 'd1', user: { phone: '+77011234567' } },
+          vehicle: null,
+          recognition: null,
+        }),
+        findMany: jest.fn().mockImplementation((args: any) =>
+          Promise.resolve(
+            args.include
+              ? [{ id: 'doc-old', recognition: { fields: { licenseNumber: { value: 'AB1234567' } } } }]
+              : [{ type: 'SELFIE' }, { type: 'DRIVER_LICENSE' }],
+          ),
+        ),
+      },
+      driver: { update: jest.fn() },
+      vehicle: { update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const identifiers = {
+      checkMatches: jest.fn().mockResolvedValue({ blocked: null, duplicateOwner: null }),
+      confirmIdentifier: jest.fn(),
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, identifiers as any);
+
+    await service.reviewVerificationDocument('doc-new', 'admin-1', { status: 'APPROVED' } as any);
+
+    expect(identifiers.confirmIdentifier).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'DRIVER_LICENSE_NO', rawValue: 'AB1234567', ownerType: 'DRIVER', ownerId: 'd1', sourceDocumentId: 'doc-old' }),
+    );
+  });
 });
 
 describe('AdminService.revealIdentifier — п.16/24', () => {
