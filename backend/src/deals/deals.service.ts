@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Company, Deal, Driver } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CargosService } from '../cargos/cargos.service';
@@ -103,19 +103,25 @@ export class DealsService {
       throw new BadRequestException(`Cannot move deal from ${deal.status} to ${nextStatus}`);
     }
 
-    // Задача 031, этап A, п.4 — подтвердить сделку можно, только если
-    // проверены И водитель (селфи+права, контроллер уже проверил выше),
-    // И машины выбранной на рейс связки (свои техпаспорта). Сделки без
-    // связки (null — до миграции 031 или анонса не было) проверку машин
-    // пропускают, чтобы не сломать то, что уже шло без гаража.
+    // Задача 031, этап A, п.4 / задача 032, п.5 — подтвердить сделку можно,
+    // только если проверены И водитель (селфи+права, контроллер уже
+    // проверил выше), И машины выбранной на рейс связки (свои техпаспорта).
+    // Раньше сделка без связки (null — до миграции 031 или анонса не было)
+    // тихо пропускала эту проверку — теперь это 409 VEHICLE_REQUIRED, а не
+    // молчаливый пропуск: тягач обязателен всегда, прицеп — если тягач не
+    // RIGID (одиночка без прицепа).
     if (nextStatus === 'CONFIRMED_BY_DRIVER') {
-      const vehicleIds = [deal.tractorId, deal.trailerId].filter((v): v is string => v != null);
-      if (vehicleIds.length > 0) {
-        const vehicles = await this.prisma.vehicle.findMany({ where: { id: { in: vehicleIds } }, select: { id: true, isVerified: true } });
-        const notVerified = vehicles.some((v) => !v.isVerified);
-        if (notVerified || vehicles.length !== vehicleIds.length) {
-          throw new BadRequestException('VEHICLE_NOT_VERIFIED');
-        }
+      if (!deal.tractorId) throw new ConflictException('VEHICLE_REQUIRED');
+      const tractor = await this.prisma.vehicle.findUnique({ where: { id: deal.tractorId }, select: { isVerified: true, kind: true } });
+      if (!tractor) throw new ConflictException('VEHICLE_REQUIRED');
+      const needsTrailer = tractor.kind !== 'RIGID';
+      if (needsTrailer && !deal.trailerId) throw new ConflictException('VEHICLE_REQUIRED');
+
+      const vehicleIds = [deal.tractorId, ...(needsTrailer ? [deal.trailerId as string] : [])];
+      const vehicles = await this.prisma.vehicle.findMany({ where: { id: { in: vehicleIds } }, select: { id: true, isVerified: true } });
+      const notVerified = vehicles.some((v) => !v.isVerified);
+      if (notVerified || vehicles.length !== vehicleIds.length) {
+        throw new BadRequestException('VEHICLE_NOT_VERIFIED');
       }
     }
 

@@ -60,10 +60,24 @@ export class ResponsesService {
   /// Связка машин водителя на момент создания сделки (задача 031, этап A,
   /// п.4) — снимок, а не live-ссылка: если водитель потом сменит гараж,
   /// уже созданная сделка проверяется по машинам, которые он заявлял.
+  /// Задача 032, п.5 — связка берётся из АКТИВНОГО анонса водителя (ту,
+  /// что он выбрал на эту поездку), а не из первых по дате машин гаража:
+  /// иначе проверенный тягач A в гараже проходит проверку, хотя в анонсе
+  /// выбран непроверенный B — логист видит B, сделка подтверждается по A.
   private async currentVehicleCombo(
     client: Prisma.TransactionClient | PrismaService,
     driverId: string,
   ): Promise<{ tractorId: string | null; trailerId: string | null }> {
+    const arrival = await client.arrival.findFirst({
+      where: { driverId, status: { in: ['PLANNED', 'ON_SITE'] } },
+      orderBy: { createdAt: 'desc' },
+      select: { tractorId: true, trailerId: true },
+    });
+    if (arrival?.tractorId) return { tractorId: arrival.tractorId, trailerId: arrival.trailerId };
+
+    // Нет активного анонса (отклик без анонса — теоретически возможно,
+    // например логист пригласил напрямую водителя, который ещё не
+    // анонсировался) — фолбэк на гараж, как раньше.
     const [tractor, trailer] = await Promise.all([
       client.vehicle.findFirst({ where: { driverId, kind: { in: ['TRACTOR', 'RIGID'] }, isArchived: false }, orderBy: { createdAt: 'asc' } }),
       client.vehicle.findFirst({ where: { driverId, kind: 'TRAILER', isArchived: false }, orderBy: { createdAt: 'asc' } }),

@@ -16,6 +16,8 @@ function dealFixture(overrides: Record<string, unknown> = {}) {
     driver: { userId: 'user-d1', fullName: 'Ерлан', currentLat: null, currentLng: null, locationUpdatedAt: null },
     company: { name: 'Acme' },
     cargo: { companyId: 'c1', publishedByUserId: 'logist-1' },
+    tractorId: 'tractor1',
+    trailerId: 'trailer1',
     ...overrides,
   };
 }
@@ -30,6 +32,13 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
     prisma = {
       deal: { findUnique: jest.fn(), update: jest.fn() },
       companyMember: { findFirst: jest.fn() },
+      vehicle: {
+        findUnique: jest.fn().mockResolvedValue({ isVerified: true, kind: 'TRACTOR' }),
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'tractor1', isVerified: true },
+          { id: 'trailer1', isVerified: true },
+        ]),
+      },
     };
     cargos = { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) };
     notifications = { notify: jest.fn() };
@@ -80,7 +89,7 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
   });
 });
 
-describe('DealsService.advanceStatus — проверка связки машин перед CONFIRMED_BY_DRIVER (задача 031, этап A, п.4)', () => {
+describe('DealsService.advanceStatus — проверка связки машин перед CONFIRMED_BY_DRIVER (задача 031/032, п.4/5)', () => {
   let prisma: any;
   let service: DealsService;
 
@@ -88,7 +97,7 @@ describe('DealsService.advanceStatus — проверка связки маши�
     prisma = {
       deal: { findUnique: jest.fn(), update: jest.fn() },
       companyMember: { findFirst: jest.fn() },
-      vehicle: { findMany: jest.fn() },
+      vehicle: { findUnique: jest.fn(), findMany: jest.fn() },
     };
     const cargos = { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) };
     const notifications = { notify: jest.fn() };
@@ -98,6 +107,7 @@ describe('DealsService.advanceStatus — проверка связки маши�
   it('rejects when the tractor of the deal combo is not verified', async () => {
     const deal = dealFixture({ tractorId: 'tractor1', trailerId: 'trailer1' });
     prisma.deal.findUnique.mockResolvedValue(deal);
+    prisma.vehicle.findUnique.mockResolvedValue({ isVerified: false, kind: 'TRACTOR' });
     prisma.vehicle.findMany.mockResolvedValue([
       { id: 'tractor1', isVerified: false },
       { id: 'trailer1', isVerified: true },
@@ -111,6 +121,7 @@ describe('DealsService.advanceStatus — проверка связки маши�
     const deal = dealFixture({ tractorId: 'tractor1', trailerId: 'trailer1' });
     prisma.deal.findUnique.mockResolvedValue(deal);
     prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
+    prisma.vehicle.findUnique.mockResolvedValue({ isVerified: true, kind: 'TRACTOR' });
     prisma.vehicle.findMany.mockResolvedValue([
       { id: 'tractor1', isVerified: true },
       { id: 'trailer1', isVerified: true },
@@ -121,14 +132,34 @@ describe('DealsService.advanceStatus — проверка связки маши�
     expect(prisma.deal.update).toHaveBeenCalled();
   });
 
-  it('skips the vehicle check for legacy deals with no combo snapshot', async () => {
+  it('задача 032, п.5 — a deal without a combo snapshot (legacy, or announce never set one) is now a 409 VEHICLE_REQUIRED, not a silent skip', async () => {
     const deal = dealFixture({ tractorId: null, trailerId: null });
     prisma.deal.findUnique.mockResolvedValue(deal);
+
+    await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toThrow('VEHICLE_REQUIRED');
+    expect(prisma.vehicle.findMany).not.toHaveBeenCalled();
+    expect(prisma.deal.update).not.toHaveBeenCalled();
+  });
+
+  it('задача 032, п.5 — a RIGID tractor (single truck) does not require a trailer', async () => {
+    const deal = dealFixture({ tractorId: 'rigid1', trailerId: null });
+    prisma.deal.findUnique.mockResolvedValue(deal);
     prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
+    prisma.vehicle.findUnique.mockResolvedValue({ isVerified: true, kind: 'RIGID' });
+    prisma.vehicle.findMany.mockResolvedValue([{ id: 'rigid1', isVerified: true }]);
 
     await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
 
-    expect(prisma.vehicle.findMany).not.toHaveBeenCalled();
+    expect(prisma.vehicle.findMany).toHaveBeenCalledWith({ where: { id: { in: ['rigid1'] } }, select: { id: true, isVerified: true } });
     expect(prisma.deal.update).toHaveBeenCalled();
+  });
+
+  it('задача 032, п.5 — a non-RIGID tractor without a trailer in the combo is 409 VEHICLE_REQUIRED', async () => {
+    const deal = dealFixture({ tractorId: 'tractor1', trailerId: null });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+    prisma.vehicle.findUnique.mockResolvedValue({ isVerified: true, kind: 'TRACTOR' });
+
+    await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toThrow('VEHICLE_REQUIRED');
+    expect(prisma.deal.update).not.toHaveBeenCalled();
   });
 });
