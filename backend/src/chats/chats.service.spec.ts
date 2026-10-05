@@ -186,11 +186,18 @@ describe('ChatsService.thread/messages/send — ForbiddenException for a non-par
 });
 
 describe('ChatsService.markRead — закрывает пробел Message.isRead (задача 017 п.9, задача 011)', () => {
-  it('marks the counterpart\'s unread messages as read and emits message:read', async () => {
-    const prisma: any = {
-      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1' }) },
+  function fixture() {
+    return {
+      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1', cargoId: null }) },
       message: { updateMany: jest.fn().mockResolvedValue({ count: 2 }) },
+      driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { id: 'u-driver', locale: 'ru' } }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue(null) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { id: 'u-company-a', locale: 'zh' } }) },
     };
+  }
+
+  it('driver context: marks any company member\'s messages as read (unchanged — driver has one identity)', async () => {
+    const prisma: any = fixture();
     const realtime = { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() };
     const service = new ChatsService(prisma, { notify: jest.fn() } as any, realtime as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
@@ -203,11 +210,26 @@ describe('ChatsService.markRead — закрывает пробел Message.isRe
     expect(realtime.emitMessageRead).toHaveBeenCalledWith('chat1', 'u-driver');
   });
 
+  it('company context: marks ONLY the driver\'s messages as read, never a colleague\'s (задача 029, п.4)', async () => {
+    const prisma: any = fixture();
+    const realtime = { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, realtime as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+
+    // Логист A открывает чат, где писал коллега B — старый баг
+    // (senderUserId != ctx.user.id) пометил бы сообщения B прочитанными
+    // просто потому, что B != A; это неверно: прочитанность отслеживает,
+    // увидел ли ВОДИТЕЛЬ сообщение, а не «кто-то из компании кроме A».
+    await service.markRead('chat1', companyCtx('c1'));
+
+    expect(prisma.message.updateMany).toHaveBeenCalledWith({
+      where: { chatId: 'chat1', senderUserId: 'u-driver', isRead: false },
+      data: { isRead: true },
+    });
+  });
+
   it('does not emit message:read when there was nothing to mark', async () => {
-    const prisma: any = {
-      chat: { findUnique: jest.fn().mockResolvedValue({ id: 'chat1', driverId: 'd1', companyId: 'c1' }) },
-      message: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
-    };
+    const prisma: any = fixture();
+    prisma.message.updateMany.mockResolvedValue({ count: 0 });
     const realtime = { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() };
     const service = new ChatsService(prisma, { notify: jest.fn() } as any, realtime as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
@@ -221,6 +243,44 @@ describe('ChatsService.markRead — закрывает пробел Message.isRe
     const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
 
     await expect(service.markRead('chat1', driverCtx('d1'))).rejects.toThrow(ForbiddenException);
+  });
+});
+
+describe('ChatsService.myChats — unreadCount по "чужой стороне", не по "не я" (задача 029, п.4)', () => {
+  it('does not count a colleague\'s own outgoing messages as unread for a company viewer', async () => {
+    const prisma: any = {
+      chat: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'chat1', cargoId: null, dealId: null, driverId: 'd1', companyId: 'c1', createdAt: new Date(), messages: [], cargo: null, driver: { userId: 'u-driver' } },
+        ]),
+      },
+      driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { id: 'u-driver', locale: 'ru' } }) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { id: 'u-company-b', locale: 'zh' } }) },
+      message: { count: jest.fn().mockResolvedValue(0) },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+
+    await service.myChats(companyCtx('c1'));
+
+    expect(prisma.message.count).toHaveBeenCalledWith({ where: { chatId: 'chat1', isRead: false, senderUserId: 'u-driver' } });
+  });
+
+  it('for a driver viewer, counts any company-side message as unread (unchanged)', async () => {
+    const prisma: any = {
+      chat: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'chat1', cargoId: null, dealId: null, driverId: 'd1', companyId: 'c1', createdAt: new Date(), messages: [], cargo: null, driver: { userId: 'u-driver' } },
+        ]),
+      },
+      driver: { findUniqueOrThrow: jest.fn().mockResolvedValue({ fullName: 'Ерлан', user: { id: 'u-driver', locale: 'ru' } }) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ company: { name: 'Acme' }, user: { id: 'u-company-a', locale: 'zh' } }) },
+      message: { count: jest.fn().mockResolvedValue(0) },
+    };
+    const service = new ChatsService(prisma, { notify: jest.fn() } as any, { emitMessageNew: jest.fn(), emitMessageRead: jest.fn(), emitChatUpdated: jest.fn() } as any, FAKE_TRANSLATION as any, FAKE_APP_SETTINGS as any);
+
+    await service.myChats(driverCtx('d1'));
+
+    expect(prisma.message.count).toHaveBeenCalledWith({ where: { chatId: 'chat1', isRead: false, senderUserId: { not: 'u-driver' } } });
   });
 });
 

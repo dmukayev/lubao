@@ -129,14 +129,21 @@ export class ChatsService {
       include: {
         messages: { orderBy: { createdAt: 'desc' }, take: 1 },
         cargo: { select: { id: true, point: { select: { name: true } } } },
+        driver: { select: { userId: true } },
       },
     });
 
     return Promise.all(
       chats.map(async (chat) => {
+        // «Чужие» = с другой стороны чата, НЕ «не я» (задача 029, п.4):
+        // для водителя — любой сотрудник компании (не он сам); для
+        // компании — именно водитель, а не коллега. Иначе сообщение
+        // коллеги B в чате считалось непрочитанным для коллеги A, хотя A
+        // туда никогда не был адресатом.
+        const incomingSenderUserId = ctx.driver ? { not: chat.driver.userId } : chat.driver.userId;
         const [thread, unreadCount] = await Promise.all([
           this.toThreadDto(chat, ctx),
-          this.prisma.message.count({ where: { chatId: chat.id, isRead: false, senderUserId: { not: ctx.user.id } } }),
+          this.prisma.message.count({ where: { chatId: chat.id, isRead: false, senderUserId: incomingSenderUserId } }),
         ]);
         const lastMessage = chat.messages[0] ?? null;
         return {
@@ -300,9 +307,14 @@ export class ChatsService {
   /// message:read собеседнику (закрывает пробел из задачи 017, п.9:
   /// `Message.isRead` раньше никто не выставлял).
   async markRead(chatId: string, ctx: RequestContext): Promise<{ success: true }> {
-    await this.loadChat(chatId, ctx);
+    const chat = await this.loadChat(chatId, ctx);
+    // «Чужие» = с другой стороны (задача 029, п.4) — см. тот же комментарий
+    // в myChats(): для компании это строго водитель, не коллега, который
+    // тоже писал в этот чат.
+    const { driver } = await this.resolveParties(chat);
+    const incomingSenderUserId = ctx.driver ? { not: driver.user.id } : driver.user.id;
     const { count } = await this.prisma.message.updateMany({
-      where: { chatId, senderUserId: { not: ctx.user.id }, isRead: false },
+      where: { chatId, senderUserId: incomingSenderUserId, isRead: false },
       data: { isRead: true },
     });
     if (count > 0) {
