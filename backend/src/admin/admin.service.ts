@@ -786,7 +786,8 @@ export class AdminService {
     if (dto.status === 'APPROVED') {
       if (updated.driverId) {
         // Верифицирован, только когда одобрены ВСЕ обязательные документы
-        // (селфи + техпаспорта тягача и прицепа + права), а не любой один.
+        // личности (селфи + права) — задача 031, этап A: машины (техпаспорта
+        // тягача/прицепа) проверяются отдельно, см. блок ниже.
         const approved = await this.prisma.verificationDocument.findMany({
           where: { driverId: updated.driverId, status: 'APPROVED' },
           select: { type: true },
@@ -796,6 +797,12 @@ export class AdminService {
         if (allRequiredApproved) {
           await this.prisma.driver.update({ where: { id: updated.driverId }, data: { isVerified: true } });
         }
+      }
+      // Задача 031, этап A, п.3-4 — техпаспорт принадлежит конкретной машине
+      // гаража; её одобрение подтверждает именно эту машину, не всего
+      // водителя и не остальные машины в гараже.
+      if (updated.vehicleId && (updated.type === 'VEHICLE_PASSPORT' || updated.type === 'TRAILER_PASSPORT')) {
+        await this.prisma.vehicle.update({ where: { id: updated.vehicleId }, data: { isVerified: true } });
       }
       if (updated.companyId) {
         const approved = await this.prisma.verificationDocument.findMany({
@@ -933,9 +940,13 @@ export class AdminService {
       isVerified: driver.isVerified,
       vehicles: driver.vehicles.map((v) => ({
         id: v.id,
+        kind: v.kind,
+        isVerified: v.isVerified,
+        isArchived: v.isArchived,
         plateNumber: v.plateNumber,
+        vin: v.vin,
         brand: v.brand,
-        bodyTypeName: v.bodyType.name,
+        bodyTypeName: v.bodyType?.name ?? null,
         capacityTons: v.capacityTons ? Number(v.capacityTons) : null,
         lengthM: v.lengthM ? Number(v.lengthM) : null,
       })),
@@ -1391,7 +1402,8 @@ export class AdminService {
         include: {
           user: { select: { phone: true, isBlocked: true, createdAt: true } },
           homeCity: { select: { name: true } },
-          vehicles: { select: { bodyType: { select: { name: true } }, capacityTons: true }, take: 1 },
+          // Задача 031 — кузов/тоннаж теперь у TRAILER/RIGID, не у тягача.
+          vehicles: { where: { kind: { in: ['TRAILER', 'RIGID'] } }, select: { bodyType: { select: { name: true } }, capacityTons: true }, take: 1 },
           verificationDocuments: { where: { status: 'PENDING' }, select: { id: true } },
           arrivals: { orderBy: { createdAt: 'desc' }, take: 1, select: { status: true, plannedAt: true, arrivedAt: true } },
           _count: { select: { deals: true } },
@@ -1408,7 +1420,7 @@ export class AdminService {
       phone: d.user.phone,
       homeCityName: d.homeCity.name,
       vehicle: d.vehicles[0]
-        ? { bodyTypeName: d.vehicles[0].bodyType.name, capacityTons: d.vehicles[0].capacityTons ? Number(d.vehicles[0].capacityTons) : null }
+        ? { bodyTypeName: d.vehicles[0].bodyType?.name ?? null, capacityTons: d.vehicles[0].capacityTons ? Number(d.vehicles[0].capacityTons) : null }
         : null,
       isVerified: d.isVerified,
       pendingDocsCount: d.verificationDocuments.length,
@@ -1547,11 +1559,15 @@ export class AdminService {
       permits: driver.permits.map((p) => ({ permitId: p.permitId, name: p.permit.name })),
       vehicles: driver.vehicles.map((v) => ({
         id: v.id,
+        kind: v.kind,
+        isVerified: v.isVerified,
+        isArchived: v.isArchived,
         bodyTypeId: v.bodyTypeId,
-        bodyTypeName: v.bodyType.name,
+        bodyTypeName: v.bodyType?.name ?? null,
         capacityTons: v.capacityTons ? Number(v.capacityTons) : null,
         lengthM: v.lengthM ? Number(v.lengthM) : null,
         plateNumber: v.plateNumber,
+        vin: v.vin,
         brand: v.brand,
       })),
       // Задача 029, п.15 — карточка (не только экран проверки) тоже должна
@@ -1964,40 +1980,43 @@ export class AdminService {
       if (JSON.stringify(old) !== JSON.stringify(next)) changes.permitIds = { old, new: next };
     }
 
-    const vehicle = driver.vehicles[0];
+    // Задача 031, этап A — Vehicle разделена на TRACTOR (госномер/марка) и
+    // TRAILER (кузов/тоннаж/длина); экран правки водителя в админке
+    // по-прежнему шлёт одну объединённую форму (Stage E её не трогает),
+    // поэтому здесь сверяем/пишем её поля в обе записи соответственно.
+    const tractor = driver.vehicles.find((v) => v.kind === 'TRACTOR' || v.kind === 'RIGID');
+    const trailer = driver.vehicles.find((v) => v.kind === 'TRAILER');
     let vehicleIdentityChanged = false;
-    if (dto.vehicle && vehicle) {
+    if (dto.vehicle && (tractor || trailer)) {
       const v = dto.vehicle;
       const vehicleChanges: Record<string, { old: unknown; new: unknown }> = {};
-      if (v.bodyTypeId !== undefined && v.bodyTypeId !== vehicle.bodyTypeId) {
-        vehicleChanges.bodyTypeId = { old: vehicle.bodyTypeId, new: v.bodyTypeId };
+      if (trailer && v.bodyTypeId !== undefined && v.bodyTypeId !== trailer.bodyTypeId) {
+        vehicleChanges.bodyTypeId = { old: trailer.bodyTypeId, new: v.bodyTypeId };
         vehicleIdentityChanged = true;
       }
-      if (v.plateNumber !== undefined && v.plateNumber !== vehicle.plateNumber) {
-        vehicleChanges.plateNumber = { old: vehicle.plateNumber, new: v.plateNumber };
+      if (tractor && v.plateNumber !== undefined && v.plateNumber !== tractor.plateNumber) {
+        vehicleChanges.plateNumber = { old: tractor.plateNumber, new: v.plateNumber };
         vehicleIdentityChanged = true;
       }
-      if (v.capacityTons !== undefined && v.capacityTons !== (vehicle.capacityTons ? Number(vehicle.capacityTons) : null)) {
-        vehicleChanges.capacityTons = { old: vehicle.capacityTons ? Number(vehicle.capacityTons) : null, new: v.capacityTons };
+      if (trailer && v.capacityTons !== undefined && v.capacityTons !== (trailer.capacityTons ? Number(trailer.capacityTons) : null)) {
+        vehicleChanges.capacityTons = { old: trailer.capacityTons ? Number(trailer.capacityTons) : null, new: v.capacityTons };
       }
-      if (v.lengthM !== undefined && v.lengthM !== (vehicle.lengthM ? Number(vehicle.lengthM) : null)) {
-        vehicleChanges.lengthM = { old: vehicle.lengthM ? Number(vehicle.lengthM) : null, new: v.lengthM };
+      if (trailer && v.lengthM !== undefined && v.lengthM !== (trailer.lengthM ? Number(trailer.lengthM) : null)) {
+        vehicleChanges.lengthM = { old: trailer.lengthM ? Number(trailer.lengthM) : null, new: v.lengthM };
       }
-      if (v.brand !== undefined && v.brand !== vehicle.brand) {
-        vehicleChanges.brand = { old: vehicle.brand, new: v.brand };
+      if (tractor && v.brand !== undefined && v.brand !== tractor.brand) {
+        vehicleChanges.brand = { old: tractor.brand, new: v.brand };
       }
       if (Object.keys(vehicleChanges).length > 0) changes.vehicle = { old: null, new: vehicleChanges };
     }
 
     await this.prisma.$transaction(async (tx) => {
+      // Задача 031 — смена машины больше не сбрасывает верификацию
+      // водителя (селфи+права); сбрасывается isVerified только у самой
+      // изменившейся машины (см. блоки tractor/trailer ниже).
       await tx.driver.update({
         where: { id },
-        data: {
-          fullName: dto.fullName,
-          homeCityId: dto.homeCityId,
-          anyCountry: dto.anyCountry,
-          ...(vehicleIdentityChanged ? { isVerified: false } : {}),
-        },
+        data: { fullName: dto.fullName, homeCityId: dto.homeCityId, anyCountry: dto.anyCountry },
       });
       if (dto.phone !== undefined) {
         await tx.user.update({ where: { id: driver.userId }, data: { phone: dto.phone } });
@@ -2014,23 +2033,44 @@ export class AdminService {
           await tx.driverPermit.createMany({ data: dto.permitIds.map((permitId) => ({ driverId: id, permitId })) });
         }
       }
-      if (dto.vehicle && vehicle) {
+      if (dto.vehicle && trailer) {
         await tx.vehicle.update({
-          where: { id: vehicle.id },
+          where: { id: trailer.id },
           data: {
             bodyTypeId: dto.vehicle.bodyTypeId,
             capacityTons: dto.vehicle.capacityTons,
             lengthM: dto.vehicle.lengthM,
+            ...(dto.vehicle.bodyTypeId !== undefined && dto.vehicle.bodyTypeId !== trailer.bodyTypeId ? { isVerified: false } : {}),
+          },
+        });
+      }
+      if (dto.vehicle && tractor) {
+        await tx.vehicle.update({
+          where: { id: tractor.id },
+          data: {
             plateNumber: dto.vehicle.plateNumber,
             brand: dto.vehicle.brand,
+            ...(dto.vehicle.plateNumber !== undefined && dto.vehicle.plateNumber !== tractor.plateNumber ? { isVerified: false } : {}),
           },
         });
       }
       if (vehicleIdentityChanged) {
-        // Смена кузова/госномера тягача — техпаспорта нужно переснять и
-        // проверить заново; селфи и права не трогаем (решение 2026-10-04).
+        // Смена кузова прицепа или госномера тягача — соответствующий
+        // техпаспорт нужно переснять и проверить заново (решение 2026-10-04);
+        // селфи и права водителя не трогаем. Задача 031 — сбрасываем
+        // техпаспорт именно изменившейся машины, не обеих разом.
         await tx.verificationDocument.updateMany({
-          where: { driverId: id, type: { in: ['VEHICLE_PASSPORT', 'TRAILER_PASSPORT'] }, status: 'APPROVED' },
+          where: {
+            status: 'APPROVED',
+            OR: [
+              ...(trailer && dto.vehicle?.bodyTypeId !== undefined && dto.vehicle.bodyTypeId !== trailer.bodyTypeId
+                ? [{ vehicleId: trailer.id, type: 'TRAILER_PASSPORT' as const }]
+                : []),
+              ...(tractor && dto.vehicle?.plateNumber !== undefined && dto.vehicle.plateNumber !== tractor.plateNumber
+                ? [{ vehicleId: tractor.id, type: 'VEHICLE_PASSPORT' as const }]
+                : []),
+            ],
+          },
           data: { status: 'PENDING', reviewedByUserId: null, reviewedAt: null, rejectReason: null },
         });
       }

@@ -292,22 +292,23 @@ async function main() {
       });
     }
 
-    const vehicleId = demoId(`vehicle:${def.key}`);
+    // Задача 031, этап A — гараж: тягач (госномер/марка) и прицеп (кузов/
+    // тоннаж/длина) отдельными записями вместо одной Vehicle на всю связку.
+    const tractorId = demoId(`vehicle:${def.key}:tractor`);
+    const trailerId = demoId(`vehicle:${def.key}:trailer`);
     await prisma.vehicle.upsert({
-      where: { id: vehicleId },
-      update: {
-        bodyTypeId: def.vehicle.bodyType.id,
-        plateNumber: def.vehicle.plate,
-        brand: def.vehicle.brand,
-        capacityTons: def.vehicle.capacityTons,
-        lengthM: def.vehicle.lengthM,
-      },
+      where: { id: tractorId },
+      update: { plateNumber: def.vehicle.plate, brand: def.vehicle.brand },
+      create: { id: tractorId, driverId: driver.id, kind: 'TRACTOR', plateNumber: def.vehicle.plate, brand: def.vehicle.brand },
+    });
+    await prisma.vehicle.upsert({
+      where: { id: trailerId },
+      update: { bodyTypeId: def.vehicle.bodyType.id, capacityTons: def.vehicle.capacityTons, lengthM: def.vehicle.lengthM },
       create: {
-        id: vehicleId,
+        id: trailerId,
         driverId: driver.id,
+        kind: 'TRAILER',
         bodyTypeId: def.vehicle.bodyType.id,
-        plateNumber: def.vehicle.plate,
-        brand: def.vehicle.brand,
         capacityTons: def.vehicle.capacityTons,
         lengthM: def.vehicle.lengthM,
       },
@@ -870,6 +871,7 @@ async function main() {
       id: demoId('doc:driver-6-license'),
       driverId: drivers['driver-6'].driverId,
       userId: drivers['driver-6'].userId,
+      vehicleId: demoId('vehicle:driver-6:tractor'),
       type: 'VEHICLE_PASSPORT',
       fileUrl: 'https://placehold.co/600x400?text=Vehicle+Passport',
       status: 'PENDING',

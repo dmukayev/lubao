@@ -37,6 +37,15 @@ enum ArrivalStatus {
   CANCELLED
 }
 
+/// Гараж водителя (задача 031, этап A): тягач и прицеп проверяются и
+/// учитываются по отдельности; RIGID — одиночка (кузов на шасси, без
+/// отдельного прицепа), использует те же поля, что и TRAILER.
+enum VehicleKind {
+  TRACTOR
+  TRAILER
+  RIGID
+}
+
 enum CargoStatus {
   PUBLISHED
   ARCHIVED
@@ -394,18 +403,34 @@ model DriverPermit {
 }
 
 model Vehicle {
-  id            String   @id @default(uuid())
+  id            String      @id @default(uuid())
   driverId      String
-  driver        Driver   @relation(fields: [driverId], references: [id])
-  bodyTypeId    String
-  bodyType      BodyType @relation(fields: [bodyTypeId], references: [id])
+  driver        Driver      @relation(fields: [driverId], references: [id])
+  kind          VehicleKind
+  /// Кузов/тоннаж/длина — только у TRAILER и RIGID (решение 2026-10-05,
+  /// «Несколько машин: гараж»); у TRACTOR всегда null.
+  bodyTypeId    String?
+  bodyType      BodyType?   @relation(fields: [bodyTypeId], references: [id])
   plateNumber   String?
+  vin           String?
   brand         String?
-  capacityTons  Decimal? @db.Decimal(6, 2)
-  lengthM       Decimal? @db.Decimal(5, 2)
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  capacityTons  Decimal?    @db.Decimal(6, 2)
+  lengthM       Decimal?    @db.Decimal(5, 2)
+  /// Водитель — собственник или работает на чужой машине.
+  isOwner       Boolean     @default(true)
+  /// Техпаспорт одобрен (ставится при approve соответствующего документа,
+  /// см. admin.service.ts) — отдельно от Driver.isVerified (селфи+права).
+  isVerified    Boolean     @default(false)
+  isActive      Boolean     @default(true)
+  isArchived    Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  verificationDocuments VerificationDocument[] @relation("VehicleVerificationDocuments")
+  arrivalsAsTractor     Arrival[]               @relation("ArrivalTractor")
+  arrivalsAsTrailer     Arrival[]               @relation("ArrivalTrailer")
+  dealsAsTractor        Deal[]                  @relation("DealTractor")
+  dealsAsTrailer        Deal[]                  @relation("DealTrailer")
 
   @@index([driverId])
   @@index([bodyTypeId])
@@ -511,6 +536,12 @@ model Arrival {
   waitDays   Int           @default(2)
   anyCountry Boolean       @default(false)
   status     ArrivalStatus @default(PLANNED)
+  /// Связка на эту поездку (задача 031, этап A) — для RIGID используется
+  /// только tractorId (сама машина), trailerId остаётся null.
+  tractorId  String?
+  tractor    Vehicle?      @relation("ArrivalTractor", fields: [tractorId], references: [id])
+  trailerId  String?
+  trailer    Vehicle?      @relation("ArrivalTrailer", fields: [trailerId], references: [id])
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
 
@@ -635,6 +666,14 @@ model Deal {
   driver             Driver     @relation(fields: [driverId], references: [id])
   companyId          String
   company             Company   @relation(fields: [companyId], references: [id])
+  /// Связка машин на этот рейс (задача 031, этап A) — снимок с актуальной
+  /// заявки водителя на момент создания сделки; null — старые сделки до
+  /// миграции 031 или водитель без заявки на точке (проверка по связке
+  /// тогда пропускается, см. deals.service.ts).
+  tractorId          String?
+  tractor            Vehicle?   @relation("DealTractor", fields: [tractorId], references: [id])
+  trailerId          String?
+  trailer            Vehicle?   @relation("DealTrailer", fields: [trailerId], references: [id])
   status             DealStatus @default(SELECTED)
   cancelReason       String?
   cancelledByRole    ReviewAuthorRole?
@@ -770,6 +809,10 @@ model VerificationDocument {
   driver           Driver?             @relation("DriverVerificationDocuments", fields: [driverId], references: [id])
   companyId        String?
   company          Company?            @relation("CompanyVerificationDocuments", fields: [companyId], references: [id])
+  /// Техпаспорт конкретной машины гаража (задача 031, этап A) — VEHICLE_PASSPORT/
+  /// TRAILER_PASSPORT принадлежат машине, не только водителю.
+  vehicleId        String?
+  vehicle          Vehicle?            @relation("VehicleVerificationDocuments", fields: [vehicleId], references: [id])
   type             VerificationDocType
   fileUrl          String
   status           VerificationStatus  @default(PENDING)
@@ -782,6 +825,7 @@ model VerificationDocument {
 
   @@index([userId])
   @@index([companyId])
+  @@index([vehicleId])
   @@map("verification_documents")
 }
 

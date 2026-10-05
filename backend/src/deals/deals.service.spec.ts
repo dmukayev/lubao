@@ -79,3 +79,56 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
     );
   });
 });
+
+describe('DealsService.advanceStatus — проверка связки машин перед CONFIRMED_BY_DRIVER (задача 031, этап A, п.4)', () => {
+  let prisma: any;
+  let service: DealsService;
+
+  beforeEach(() => {
+    prisma = {
+      deal: { findUnique: jest.fn(), update: jest.fn() },
+      companyMember: { findFirst: jest.fn() },
+      vehicle: { findMany: jest.fn() },
+    };
+    const cargos = { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) };
+    const notifications = { notify: jest.fn() };
+    service = new DealsService(prisma, cargos as any, notifications as any);
+  });
+
+  it('rejects when the tractor of the deal combo is not verified', async () => {
+    const deal = dealFixture({ tractorId: 'tractor1', trailerId: 'trailer1' });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+    prisma.vehicle.findMany.mockResolvedValue([
+      { id: 'tractor1', isVerified: false },
+      { id: 'trailer1', isVerified: true },
+    ]);
+
+    await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toThrow('VEHICLE_NOT_VERIFIED');
+    expect(prisma.deal.update).not.toHaveBeenCalled();
+  });
+
+  it('allows confirmation once both tractor and trailer of the combo are verified', async () => {
+    const deal = dealFixture({ tractorId: 'tractor1', trailerId: 'trailer1' });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
+    prisma.vehicle.findMany.mockResolvedValue([
+      { id: 'tractor1', isVerified: true },
+      { id: 'trailer1', isVerified: true },
+    ]);
+
+    await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
+
+    expect(prisma.deal.update).toHaveBeenCalled();
+  });
+
+  it('skips the vehicle check for legacy deals with no combo snapshot', async () => {
+    const deal = dealFixture({ tractorId: null, trailerId: null });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
+
+    await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
+
+    expect(prisma.vehicle.findMany).not.toHaveBeenCalled();
+    expect(prisma.deal.update).toHaveBeenCalled();
+  });
+});

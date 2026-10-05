@@ -57,6 +57,20 @@ export class ResponsesService {
     return this.toDto(response);
   }
 
+  /// Связка машин водителя на момент создания сделки (задача 031, этап A,
+  /// п.4) — снимок, а не live-ссылка: если водитель потом сменит гараж,
+  /// уже созданная сделка проверяется по машинам, которые он заявлял.
+  private async currentVehicleCombo(
+    client: Prisma.TransactionClient | PrismaService,
+    driverId: string,
+  ): Promise<{ tractorId: string | null; trailerId: string | null }> {
+    const [tractor, trailer] = await Promise.all([
+      client.vehicle.findFirst({ where: { driverId, kind: { in: ['TRACTOR', 'RIGID'] }, isArchived: false }, orderBy: { createdAt: 'asc' } }),
+      client.vehicle.findFirst({ where: { driverId, kind: 'TRAILER', isArchived: false }, orderBy: { createdAt: 'asc' } }),
+    ]);
+    return { tractorId: tractor?.id ?? null, trailerId: trailer?.id ?? null };
+  }
+
   async updateStatus(responseId: string, companyId: string, status: 'SELECTED' | 'REJECTED') {
     const response = await this.prisma.response.findUnique({
       where: { id: responseId },
@@ -84,6 +98,7 @@ export class ResponsesService {
         data: { status: 'SELECTED' },
         include: { driver: true },
       });
+      const combo = await this.currentVehicleCombo(tx, selected.driverId);
       const deal = await tx.deal.create({
         data: {
           responseId: selected.id,
@@ -91,6 +106,8 @@ export class ResponsesService {
           driverId: selected.driverId,
           companyId,
           status: 'SELECTED',
+          tractorId: combo.tractorId,
+          trailerId: combo.trailerId,
         },
       });
       await this.attachChatToDeal(tx, deal);
@@ -128,8 +145,17 @@ export class ResponsesService {
             data: { cargoId, driverId, status: 'SELECTED' },
             include: { driver: true },
           });
+      const combo = await this.currentVehicleCombo(tx, selected.driverId);
       const deal = await tx.deal.create({
-        data: { responseId: selected.id, cargoId: selected.cargoId, driverId: selected.driverId, companyId, status: 'SELECTED' },
+        data: {
+          responseId: selected.id,
+          cargoId: selected.cargoId,
+          driverId: selected.driverId,
+          companyId,
+          status: 'SELECTED',
+          tractorId: combo.tractorId,
+          trailerId: combo.trailerId,
+        },
       });
       await this.attachChatToDeal(tx, deal);
       return selected;

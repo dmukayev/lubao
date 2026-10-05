@@ -6,6 +6,8 @@ function txMock() {
     response: { updateMany: jest.fn(), update: jest.fn(), create: jest.fn() },
     deal: { create: jest.fn() },
     chat: { updateMany: jest.fn() },
+    // Задача 031 — снимок связки тягач/прицеп при создании сделки.
+    vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
   };
 }
 

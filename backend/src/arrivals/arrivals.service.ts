@@ -88,6 +88,25 @@ export class ArrivalsService {
     };
   }
 
+  /// Связка на поездку (задача 031, этап A, п.5) — по умолчанию та же, что
+  /// в прошлом анонсе; если анонсов ещё не было, берём текущий тягач/прицеп
+  /// водителя из гаража. Выбор связки шагом анонса — Stage B; здесь только
+  /// заполняем поле, ничего не ломая в текущем Flutter-клиенте.
+  private async resolveDefaultVehicleCombo(driverId: string): Promise<{ tractorId: string | null; trailerId: string | null }> {
+    const lastWithCombo = await this.prisma.arrival.findFirst({
+      where: { driverId, OR: [{ tractorId: { not: null } }, { trailerId: { not: null } }] },
+      orderBy: { createdAt: 'desc' },
+      select: { tractorId: true, trailerId: true },
+    });
+    if (lastWithCombo) return lastWithCombo;
+
+    const [tractor, trailer] = await Promise.all([
+      this.prisma.vehicle.findFirst({ where: { driverId, kind: { in: ['TRACTOR', 'RIGID'] }, isArchived: false }, orderBy: { createdAt: 'asc' } }),
+      this.prisma.vehicle.findFirst({ where: { driverId, kind: 'TRAILER', isArchived: false }, orderBy: { createdAt: 'asc' } }),
+    ]);
+    return { tractorId: tractor?.id ?? null, trailerId: trailer?.id ?? null };
+  }
+
   /// Анонс «буду на точке» — создаёт новый активный анонс или обновляет уже
   /// существующий PLANNED (один активный анонс на водителя, п. 2). Если
   /// водитель уже ON_SITE, дата/точка не трогаются — меняются только
@@ -112,6 +131,7 @@ export class ArrivalsService {
     const existing = await this.prisma.arrival.findFirst({
       where: { driverId: driver.id, status: { in: ['PLANNED', 'ON_SITE'] } },
     });
+    const combo = existing ? null : await this.resolveDefaultVehicleCombo(driver.id);
 
     const arrival = await this.prisma.$transaction(async (tx) => {
       const saved =
@@ -123,7 +143,16 @@ export class ArrivalsService {
                 data: { pointId: dto.pointId, plannedAt, anyCountry, waitDays, status: 'PLANNED' },
               })
             : await tx.arrival.create({
-                data: { driverId: driver.id, pointId: dto.pointId, plannedAt, anyCountry, waitDays, status: 'PLANNED' },
+                data: {
+                  driverId: driver.id,
+                  pointId: dto.pointId,
+                  plannedAt,
+                  anyCountry,
+                  waitDays,
+                  status: 'PLANNED',
+                  tractorId: combo?.tractorId,
+                  trailerId: combo?.trailerId,
+                },
               });
 
       await tx.arrivalDirection.deleteMany({ where: { arrivalId: saved.id } });
@@ -250,12 +279,20 @@ export class ArrivalsService {
       return sameDay(a.plannedAt, targetDate);
     });
 
+    // Задача 031, этап A, п.6 — кузов/тоннаж связки ЭТОЙ поездки (её прицеп,
+    // либо сама машина для RIGID-одиночки), не первой попавшейся машины
+    // гаража. Старые записи без связки (до миграции 031) — по-прежнему
+    // берём единственную TRAILER/RIGID машину водителя.
     const rows = await Promise.all(
       dayFiltered.map(async (arrival) => {
-        const vehicle = await this.prisma.vehicle.findFirst({
-          where: { driverId: arrival.driverId },
-          orderBy: { createdAt: 'asc' },
-        });
+        const vehicle = arrival.trailerId
+          ? await this.prisma.vehicle.findUnique({ where: { id: arrival.trailerId } })
+          : arrival.tractorId
+            ? await this.prisma.vehicle.findUnique({ where: { id: arrival.tractorId } })
+            : await this.prisma.vehicle.findFirst({
+                where: { driverId: arrival.driverId, kind: { in: ['TRAILER', 'RIGID'] } },
+                orderBy: { createdAt: 'asc' },
+              });
         return { arrival, vehicle };
       }),
     );

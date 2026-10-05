@@ -4,10 +4,18 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateVerificationDocumentDto } from './dto/create-verification-document.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 
-/// 4 обязательных документа для подтверждения личности водителя: селфи,
-/// техпаспорта тягача и прицепа, права. Без всех четырёх — водитель не
-/// верифицирован, даже если часть уже одобрена (см. admin.service.ts).
-export const REQUIRED_DRIVER_DOC_TYPES = ['SELFIE', 'VEHICLE_PASSPORT', 'TRAILER_PASSPORT', 'DRIVER_LICENSE'] as const;
+/// Задача 031, этап A, п.4 — проверка разделена: водитель «Проверен» по
+/// селфи и правам (человек); техпаспорта тягача/прицепа теперь проверяют
+/// конкретную машину (Vehicle.isVerified, см. admin.service.ts), а не
+/// личность водителя. «Подтвердить сделку» дополнительно требует проверенную
+/// связку машин (deals.service.ts).
+export const REQUIRED_DRIVER_DOC_TYPES = ['SELFIE', 'DRIVER_LICENSE'] as const;
+
+/// Обязательный документ для машины зависит от её вида — тягач и одиночка
+/// (RIGID) показывают техпаспорт машины, прицеп — свой отдельный.
+export function requiredVehicleDocType(kind: 'TRACTOR' | 'TRAILER' | 'RIGID'): 'VEHICLE_PASSPORT' | 'TRAILER_PASSPORT' {
+  return kind === 'TRAILER' ? 'TRAILER_PASSPORT' : 'VEHICLE_PASSPORT';
+}
 
 @Injectable()
 export class DriversService {
@@ -20,12 +28,18 @@ export class DriversService {
   }
 
   async toDto(driver: Driver) {
-    const [directions, permits, vehicle, verificationStatus] = await Promise.all([
+    const [directions, permits, tractor, trailer, verificationStatus] = await Promise.all([
       this.prisma.driverDirection.findMany({ where: { driverId: driver.id } }),
       this.prisma.driverPermit.findMany({ where: { driverId: driver.id } }),
-      this.prisma.vehicle.findFirst({ where: { driverId: driver.id }, orderBy: { createdAt: 'asc' } }),
+      this.prisma.vehicle.findFirst({ where: { driverId: driver.id, kind: { in: ['TRACTOR', 'RIGID'] }, isArchived: false }, orderBy: { createdAt: 'asc' } }),
+      this.prisma.vehicle.findFirst({ where: { driverId: driver.id, kind: 'TRAILER', isArchived: false }, orderBy: { createdAt: 'asc' } }),
       this.verificationStatus(driver.userId, driver.isVerified),
     ]);
+    // Задача 031 — Vehicle разделена на тягач+прицеп (гараж), но старый
+    // контракт /drivers/me отдаёт одну объединённую «машину» (пока Stage B
+    // не завёл в клиенте настоящий список гаража) — склеиваем здесь, чтобы
+    // ничего в уже работающем Flutter-коде не ломать.
+    const vehicle = tractor || trailer;
 
     return {
       id: driver.id,
@@ -50,10 +64,10 @@ export class DriversService {
       vehicle: vehicle
         ? {
             id: vehicle.id,
-            bodyTypeId: vehicle.bodyTypeId,
-            plateNumber: vehicle.plateNumber,
-            brand: vehicle.brand,
-            capacityTons: vehicle.capacityTons ? Number(vehicle.capacityTons) : null,
+            bodyTypeId: trailer?.bodyTypeId ?? tractor?.bodyTypeId ?? null,
+            plateNumber: tractor?.plateNumber ?? null,
+            brand: tractor?.brand ?? trailer?.brand ?? null,
+            capacityTons: trailer?.capacityTons ? Number(trailer.capacityTons) : null,
           }
         : null,
     };
@@ -109,20 +123,26 @@ export class DriversService {
         });
       }
 
-      const vehicle = await tx.vehicle.findFirst({ where: { driverId: driver.id } });
-      if (vehicle) {
+      // Задача 031 — форма регистрации всё ещё редактирует «одну машину»
+      // (настоящий гараж с несколькими тягачами/прицепами — Stage B), но
+      // под капотом это теперь пара TRACTOR (госномер) + TRAILER (кузов/
+      // тоннаж), как и у остальных водителей после миграции.
+      const tractor = await tx.vehicle.findFirst({ where: { driverId: driver.id, kind: 'TRACTOR' } });
+      if (tractor) {
+        await tx.vehicle.update({ where: { id: tractor.id }, data: { plateNumber: input.plateNumber } });
+      } else {
+        await tx.vehicle.create({ data: { driverId: driver.id, kind: 'TRACTOR', plateNumber: input.plateNumber } });
+      }
+
+      const trailer = await tx.vehicle.findFirst({ where: { driverId: driver.id, kind: 'TRAILER' } });
+      if (trailer) {
         await tx.vehicle.update({
-          where: { id: vehicle.id },
-          data: { bodyTypeId: input.bodyTypeId, plateNumber: input.plateNumber, capacityTons: input.capacityTons },
+          where: { id: trailer.id },
+          data: { bodyTypeId: input.bodyTypeId, capacityTons: input.capacityTons },
         });
       } else {
         await tx.vehicle.create({
-          data: {
-            driverId: driver.id,
-            bodyTypeId: input.bodyTypeId,
-            plateNumber: input.plateNumber,
-            capacityTons: input.capacityTons,
-          },
+          data: { driverId: driver.id, kind: 'TRAILER', bodyTypeId: input.bodyTypeId, capacityTons: input.capacityTons },
         });
       }
 
@@ -134,8 +154,17 @@ export class DriversService {
   }
 
   async submitVerificationDocument(userId: string, driverId: string, dto: CreateVerificationDocumentDto) {
+    let vehicleId = dto.vehicleId ?? null;
+    if (!vehicleId && (dto.type === 'VEHICLE_PASSPORT' || dto.type === 'TRAILER_PASSPORT')) {
+      const vehicle = await this.prisma.vehicle.findFirst({
+        where: { driverId, kind: dto.type === 'TRAILER_PASSPORT' ? 'TRAILER' : { in: ['TRACTOR', 'RIGID'] }, isArchived: false },
+        orderBy: { createdAt: 'asc' },
+      });
+      vehicleId = vehicle?.id ?? null;
+    }
+
     const doc = await this.prisma.verificationDocument.create({
-      data: { userId, driverId, type: dto.type, fileUrl: dto.fileUrl, status: 'PENDING' },
+      data: { userId, driverId, vehicleId, type: dto.type, fileUrl: dto.fileUrl, status: 'PENDING' },
     });
     return this.docToDto(doc);
   }

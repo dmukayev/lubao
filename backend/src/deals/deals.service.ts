@@ -103,6 +103,22 @@ export class DealsService {
       throw new BadRequestException(`Cannot move deal from ${deal.status} to ${nextStatus}`);
     }
 
+    // Задача 031, этап A, п.4 — подтвердить сделку можно, только если
+    // проверены И водитель (селфи+права, контроллер уже проверил выше),
+    // И машины выбранной на рейс связки (свои техпаспорта). Сделки без
+    // связки (null — до миграции 031 или анонса не было) проверку машин
+    // пропускают, чтобы не сломать то, что уже шло без гаража.
+    if (nextStatus === 'CONFIRMED_BY_DRIVER') {
+      const vehicleIds = [deal.tractorId, deal.trailerId].filter((v): v is string => v != null);
+      if (vehicleIds.length > 0) {
+        const vehicles = await this.prisma.vehicle.findMany({ where: { id: { in: vehicleIds } }, select: { id: true, isVerified: true } });
+        const notVerified = vehicles.some((v) => !v.isVerified);
+        if (notVerified || vehicles.length !== vehicleIds.length) {
+          throw new BadRequestException('VEHICLE_NOT_VERIFIED');
+        }
+      }
+    }
+
     const now = new Date();
     const timestampField = {
       CONFIRMED_BY_DRIVER: 'confirmedAt',

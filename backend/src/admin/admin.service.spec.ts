@@ -1243,7 +1243,11 @@ describe('AdminService.updateDriver — общая панель редактир
       homeCityId: 'city1',
       anyCountry: false,
       user: { phone: '+77001112233' },
-      vehicles: [{ id: 'v1', bodyTypeId: 'bt1', plateNumber: 'A1', capacityTons: null, lengthM: null, brand: null, createdAt: new Date() }],
+      // Задача 031 — тягач и прицеп раздельными записями гаража.
+      vehicles: [
+        { id: 'v1', kind: 'TRACTOR', bodyTypeId: null, plateNumber: 'A1', capacityTons: null, lengthM: null, brand: null, createdAt: new Date() },
+        { id: 'v2', kind: 'TRAILER', bodyTypeId: 'bt1', plateNumber: null, capacityTons: null, lengthM: null, brand: null, createdAt: new Date() },
+      ],
       directions: [],
       permits: [],
       ...overrides,
@@ -1310,10 +1314,13 @@ describe('AdminService.updateDriver — общая панель редактир
 
     const result = await service.updateDriver('d1', 'admin-1', { vehicle: { plateNumber: 'NEW999' }, reason: 'Сменил номер машины' } as any);
 
+    // Задача 031 — смена госномера тягача сбрасывает проверку ТЯГАЧА, не
+    // водителя (селфи+права не трогаются) и не прицепа.
     expect(result.vehicleIdentityChanged).toBe(true);
-    expect(tx.driver.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ isVerified: false }) }));
+    expect(tx.driver.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.not.objectContaining({ isVerified: expect.anything() }) }));
+    expect(tx.vehicle.update).toHaveBeenCalledWith({ where: { id: 'v1' }, data: expect.objectContaining({ plateNumber: 'NEW999', isVerified: false }) });
     expect(tx.verificationDocument.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ driverId: 'd1', type: { in: ['VEHICLE_PASSPORT', 'TRAILER_PASSPORT'] } }) }),
+      expect.objectContaining({ where: expect.objectContaining({ status: 'APPROVED', OR: expect.arrayContaining([{ vehicleId: 'v1', type: 'VEHICLE_PASSPORT' }]) }) }),
     );
   });
 
@@ -1340,6 +1347,48 @@ describe('AdminService.updateDriver — общая панель редактир
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     await expect(service.updateDriver('d1', 'admin-1', { homeCityId: 'missing', reason: 'x' } as any)).rejects.toThrow(NotFoundException);
+  });
+});
+
+describe('AdminService.reviewVerificationDocument — водитель и машина проверяются раздельно (задача 031, этап A, п.3-4)', () => {
+  it('approving a VEHICLE_PASSPORT tied to a vehicleId verifies only that vehicle, not the driver', async () => {
+    const prisma: any = {
+      verificationDocument: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'doc1', driverId: 'd1', vehicleId: 'tractor1', type: 'VEHICLE_PASSPORT' }),
+        update: jest.fn().mockResolvedValue({ id: 'doc1', driverId: 'd1', vehicleId: 'tractor1', type: 'VEHICLE_PASSPORT', companyId: null }),
+        findMany: jest.fn().mockResolvedValue([{ type: 'VEHICLE_PASSPORT' }]),
+      },
+      driver: { update: jest.fn() },
+      vehicle: { update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.reviewVerificationDocument('doc1', 'admin-1', { status: 'APPROVED' } as any);
+
+    expect(prisma.vehicle.update).toHaveBeenCalledWith({ where: { id: 'tractor1' }, data: { isVerified: true } });
+    // Одобрен только VEHICLE_PASSPORT — у водителя ещё нет SELFIE+DRIVER_LICENSE,
+    // поэтому driver.isVerified не трогается.
+    expect(prisma.driver.update).not.toHaveBeenCalled();
+  });
+
+  it('approving the last of SELFIE+DRIVER_LICENSE verifies the driver without requiring vehicle documents', async () => {
+    const prisma: any = {
+      verificationDocument: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'doc2', driverId: 'd1', vehicleId: null, type: 'DRIVER_LICENSE' }),
+        update: jest.fn().mockResolvedValue({ id: 'doc2', driverId: 'd1', vehicleId: null, type: 'DRIVER_LICENSE', companyId: null }),
+        findMany: jest.fn().mockResolvedValue([{ type: 'SELFIE' }, { type: 'DRIVER_LICENSE' }]),
+      },
+      driver: { update: jest.fn() },
+      vehicle: { update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.reviewVerificationDocument('doc2', 'admin-1', { status: 'APPROVED' } as any);
+
+    expect(prisma.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { isVerified: true } });
+    expect(prisma.vehicle.update).not.toHaveBeenCalled();
   });
 });
 
