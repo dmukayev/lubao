@@ -150,6 +150,8 @@ class Company {
     this.nameRu,
     required this.countryId,
     this.city,
+    this.legalAddress,
+    this.taxId,
     required this.isVerified,
     this.wecomWebhookUrl,
     required this.ratingAvg,
@@ -161,6 +163,9 @@ class Company {
   final String? nameRu;
   final String countryId;
   final String? city;
+  final String? legalAddress;
+  /// Рег. номер — 统一社会信用代码 (КНР) или БИН (Казахстан), задача 012.
+  final String? taxId;
   final bool isVerified;
   /// Вебхук группового бота WeCom (задача 011, п.2) — заполняет владелец в
   /// профиле компании.
@@ -174,6 +179,8 @@ class Company {
         nameRu: json['nameRu'] as String?,
         countryId: json['countryId'] as String,
         city: json['city'] as String?,
+        legalAddress: json['legalAddress'] as String?,
+        taxId: json['taxId'] as String?,
         isVerified: json['isVerified'] as bool? ?? false,
         wecomWebhookUrl: json['wecomWebhookUrl'] as String?,
         ratingAvg: (json['ratingAvg'] as num?)?.toDouble() ?? 0,
@@ -182,18 +189,34 @@ class Company {
 }
 
 class CompanyMember {
-  const CompanyMember({required this.id, required this.companyId, required this.userId, required this.role});
+  const CompanyMember({
+    required this.id,
+    required this.companyId,
+    required this.userId,
+    required this.role,
+    this.fullName,
+    this.contactPhone,
+    this.wechatId,
+  });
 
   final String id;
   final String companyId;
   final String userId;
   final CompanyMemberRole role;
+  /// «Мой профиль» (задача 012) — водитель видит это, не общий телефон
+  /// компании. null, пока сотрудник не заполнил профиль.
+  final String? fullName;
+  final String? contactPhone;
+  final String? wechatId;
 
   factory CompanyMember.fromJson(Map<String, dynamic> json) => CompanyMember(
         id: json['id'] as String,
         companyId: json['companyId'] as String,
         userId: json['userId'] as String,
         role: companyMemberRoleFromJson(json['role'] as String),
+        fullName: json['fullName'] as String?,
+        contactPhone: json['contactPhone'] as String?,
+        wechatId: json['wechatId'] as String?,
       );
 }
 

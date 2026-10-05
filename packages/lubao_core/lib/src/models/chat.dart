@@ -10,6 +10,7 @@ class ChatThread {
     required this.counterpartName,
     this.counterpartLocale,
     this.counterpartPhone,
+    this.counterpartWechatId,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class ChatThread {
   final String counterpartName;
   final String? counterpartLocale;
   final String? counterpartPhone;
+  final String? counterpartWechatId;
 
   factory ChatThread.fromJson(Map<String, dynamic> json) => ChatThread(
         id: json['id'] as String,
@@ -30,6 +32,7 @@ class ChatThread {
         counterpartName: json['counterpartName'] as String? ?? '',
         counterpartLocale: json['counterpartLocale'] as String?,
         counterpartPhone: json['counterpartPhone'] as String?,
+        counterpartWechatId: json['counterpartWechatId'] as String?,
       );
 }
 

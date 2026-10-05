@@ -26,6 +26,7 @@ class Cargo {
     this.contactUserId,
     this.contactName,
     this.contactPhone,
+    this.contactWechatId,
     this.isWhatsappBlocked = false,
     this.closeOutcome,
     this.closedAt,
@@ -59,6 +60,7 @@ class Cargo {
   final String? contactUserId;
   final String? contactName;
   final String? contactPhone;
+  final String? contactWechatId;
 
   /// WhatsApp заблокирован в Китае — показываем чат Lubao вместо кнопки,
   /// которая всё равно не дойдёт (задача 017, п.5в).
@@ -91,6 +93,7 @@ class Cargo {
         contactUserId: json['contactUserId'] as String?,
         contactName: json['contactName'] as String?,
         contactPhone: json['contactPhone'] as String?,
+        contactWechatId: json['contactWechatId'] as String?,
         isWhatsappBlocked: json['isWhatsappBlocked'] as bool? ?? false,
         closeOutcome: json['closeOutcome'] as String?,
         closedAt: json['closedAt'] == null ? null : DateTime.parse(json['closedAt'] as String),

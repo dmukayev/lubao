@@ -24,6 +24,9 @@ class DriverVerificationScreen extends ConsumerWidget {
       VerificationDocType.vehiclePassport => t.driverVerificationVehiclePassport,
       VerificationDocType.trailerPassport => t.driverVerificationTrailerPassport,
       VerificationDocType.driverLicense => t.driverVerificationLicense,
+      // Этот экран — только для водителя; companyRegistration сюда не
+      // попадает, но enum общий с компанией (packages/lubao_core).
+      VerificationDocType.companyRegistration => '',
     };
   }
 

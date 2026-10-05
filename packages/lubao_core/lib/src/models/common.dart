@@ -109,13 +109,15 @@ DriverVerificationStatus driverVerificationStatusFromJson(String? value) => Driv
       orElse: () => DriverVerificationStatus.none,
     );
 
-enum VerificationDocType { selfie, vehiclePassport, trailerPassport, driverLicense }
+enum VerificationDocType { selfie, vehiclePassport, trailerPassport, driverLicense, companyRegistration }
 
 const _verificationDocTypeJson = {
   VerificationDocType.selfie: 'SELFIE',
   VerificationDocType.vehiclePassport: 'VEHICLE_PASSPORT',
   VerificationDocType.trailerPassport: 'TRAILER_PASSPORT',
   VerificationDocType.driverLicense: 'DRIVER_LICENSE',
+  /// Единственный документ, подтверждающий компанию (задача 012, п.5).
+  VerificationDocType.companyRegistration: 'COMPANY_REGISTRATION',
 };
 
 VerificationDocType verificationDocTypeFromJson(String value) => _verificationDocTypeJson.entries
