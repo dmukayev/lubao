@@ -62,11 +62,45 @@ class DriverRepository {
   Future<VerificationDocument> submitVerificationDocument({
     required VerificationDocType type,
     required String fileUrl,
+    String? vehicleId,
   }) async {
     final res = await _client.dio.post('/drivers/me/verification-documents', data: {
       'type': verificationDocTypeToJson(type),
       'fileUrl': fileUrl,
+      if (vehicleId != null) 'vehicleId': vehicleId,
     });
     return VerificationDocument.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  // -- Гараж (задача 031, этап B, макет 26) --------------------------------
+
+  Future<List<GarageVehicle>> vehicles() async {
+    final res = await _client.dio.get('/drivers/me/vehicles');
+    return (res.data as List<dynamic>).map((e) => GarageVehicle.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<GarageVehicle> addVehicle({
+    required VehicleKind kind,
+    String? bodyTypeId,
+    String? plateNumber,
+    String? vin,
+    String? brand,
+    double? capacityTons,
+    double? lengthM,
+  }) async {
+    final res = await _client.dio.post('/drivers/me/vehicles', data: {
+      'kind': vehicleKindToJson(kind),
+      if (bodyTypeId != null) 'bodyTypeId': bodyTypeId,
+      if (plateNumber != null) 'plateNumber': plateNumber,
+      if (vin != null) 'vin': vin,
+      if (brand != null) 'brand': brand,
+      if (capacityTons != null) 'capacityTons': capacityTons,
+      if (lengthM != null) 'lengthM': lengthM,
+    });
+    return GarageVehicle.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> archiveVehicle(String id) async {
+    await _client.dio.post('/drivers/me/vehicles/$id/archive');
   }
 }

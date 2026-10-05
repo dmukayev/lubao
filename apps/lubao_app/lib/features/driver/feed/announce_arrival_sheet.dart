@@ -4,6 +4,7 @@ import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
+import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
 
 const _waitDaysOptions = [1, 2, 3];
@@ -61,6 +62,9 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
   late final Set<String> _countryIds;
   int _waitDays = 2;
   bool _saving = false;
+  String? _tractorId;
+  String? _trailerId;
+  bool _comboTouched = false;
 
   @override
   void initState() {
@@ -68,6 +72,17 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
     _pointId = widget.template?.pointId ?? (widget.refData.points.isEmpty ? '' : widget.refData.points.first.id);
     _anyCountry = widget.template?.anyCountry ?? widget.driverAnyCountry;
     _countryIds = {...(widget.template?.countryIds ?? widget.driverDirectionCountryIds)};
+  }
+
+  /// Задача 031, этап B, п.9 — по умолчанию связка из прошлого анонса; пока
+  /// гараж не загрузился (или водитель ничего не выбрал) используем первую
+  /// непроверенную-или-проверенную машину каждого вида, как и сервер.
+  void _defaultCombo(List<GarageVehicle> vehicles) {
+    if (_comboTouched) return;
+    final tractor = vehicles.where((v) => v.kind == VehicleKind.tractor || v.kind == VehicleKind.rigid).firstOrNull;
+    final trailer = vehicles.where((v) => v.kind == VehicleKind.trailer).firstOrNull;
+    _tractorId = tractor?.id;
+    _trailerId = trailer?.id;
   }
 
   DateTime get _plannedDate {
@@ -112,11 +127,18 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
             anyCountry: _anyCountry,
             countryIds: _anyCountry ? const [] : _countryIds.toList(),
             waitDays: _waitDays,
+            tractorId: _tractorId,
+            trailerId: _trailerId,
           );
       if (mounted) Navigator.of(context).pop(true);
     } catch (_) {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  String _comboLabel(String details, String fallback, bool verified, String pendingBadge) {
+    final base = details.isEmpty ? fallback : details;
+    return verified ? base : '$base · $pendingBadge';
   }
 
   @override
@@ -239,6 +261,84 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
                     ),
                 ],
               ),
+              const SizedBox(height: AppSpacing.lg),
+
+              Text(t.garageComboTitle, style: AppTextStyles.bodyStrong),
+              const SizedBox(height: AppSpacing.sm),
+              Consumer(
+                builder: (context, ref, _) {
+                  final vehiclesAsync = ref.watch(garageVehiclesProvider);
+                  return vehiclesAsync.when(
+                    loading: () => const SizedBox(height: 40, child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
+                    error: (e, st) => const SizedBox.shrink(),
+                    data: (vehicles) {
+                      _defaultCombo(vehicles);
+                      final tractors = vehicles.where((v) => v.kind == VehicleKind.tractor || v.kind == VehicleKind.rigid).toList();
+                      final trailers = vehicles.where((v) => v.kind == VehicleKind.trailer).toList();
+                      if (tractors.isEmpty && trailers.isEmpty) {
+                        return Text(t.garageComboEmpty, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary));
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (tractors.isNotEmpty) ...[
+                            Text(t.garageComboTractorLabel, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                            const SizedBox(height: AppSpacing.xs),
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: [
+                                for (final v in tractors)
+                                  SelectableTile(
+                                    label: _comboLabel(
+                                      [v.brand, v.plateNumber].whereType<String>().join(' · '),
+                                      t.garageKindTractor,
+                                      v.isVerified,
+                                      t.garageComboPendingBadge,
+                                    ),
+                                    selected: _tractorId == v.id,
+                                    onTap: () => setState(() {
+                                      _comboTouched = true;
+                                      _tractorId = _tractorId == v.id ? null : v.id;
+                                    }),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                          ],
+                          if (trailers.isNotEmpty) ...[
+                            Text(t.garageComboTrailerLabel, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                            const SizedBox(height: AppSpacing.xs),
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: [
+                                for (final v in trailers)
+                                  SelectableTile(
+                                    label: _comboLabel(
+                                      [
+                                        if (v.capacityTons != null) '${v.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
+                                        v.plateNumber,
+                                      ].whereType<String>().join(' · '),
+                                      t.garageKindTrailer,
+                                      v.isVerified,
+                                      t.garageComboPendingBadge,
+                                    ),
+                                    selected: _trailerId == v.id,
+                                    onTap: () => setState(() {
+                                      _comboTouched = true;
+                                      _trailerId = _trailerId == v.id ? null : v.id;
+                                    }),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
               const SizedBox(height: AppSpacing.xxl),
 
               PrimaryButton(label: t.announceArrivalSubmit, loading: _saving, onPressed: _submit),
@@ -248,4 +348,8 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
       ),
     );
   }
+}
+
+extension _FirstOrNull<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
 }

@@ -101,6 +101,8 @@ class Arrival {
     required this.countryIds,
     required this.status,
     required this.viewsCount,
+    this.tractorId,
+    this.trailerId,
   });
 
   final String id;
@@ -112,6 +114,9 @@ class Arrival {
   final List<String> countryIds;
   final ArrivalStatus status;
   final int viewsCount;
+  /// Связка на эту поездку (задача 031, этап B, п.9).
+  final String? tractorId;
+  final String? trailerId;
 
   factory Arrival.fromJson(Map<String, dynamic> json) => Arrival(
         id: json['id'] as String,
@@ -123,6 +128,8 @@ class Arrival {
         countryIds: (json['countryIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
         status: arrivalStatusFromJson(json['status'] as String),
         viewsCount: json['viewsCount'] as int? ?? 0,
+        tractorId: json['tractorId'] as String?,
+        trailerId: json['trailerId'] as String?,
       );
 }
 

@@ -2113,4 +2113,86 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminNavMore => 'Көбірек';
+
+  @override
+  String get garageTitle => 'Менің гаражым';
+
+  @override
+  String get garageTractorsSection => 'ТЯГАЧТАР';
+
+  @override
+  String get garageTrailersSection => 'ТІРКЕМЕЛЕР';
+
+  @override
+  String get garageVerified => 'тексерілді';
+
+  @override
+  String get garagePending => 'тексеруде';
+
+  @override
+  String get garageAddedYesterday => 'кеше қосылды';
+
+  @override
+  String get garageAddVehicle => 'Машина қосу';
+
+  @override
+  String get garageEmptyTractors => 'Тягач жоқ';
+
+  @override
+  String get garageEmptyTrailers => 'Тіркеме жоқ';
+
+  @override
+  String get garageOcrHint =>
+      'Техпаспортты суретке түсіріңіз — мемномер мен VIN өздігінен толады. Тексеріп, жіберіңіз.';
+
+  @override
+  String get garageArchive => 'Мұрағатқа';
+
+  @override
+  String get garageArchived => 'Машина мұрағатқа ауыстырылды';
+
+  @override
+  String get garageKindTitle => 'Қандай машина?';
+
+  @override
+  String get garageKindTractor => 'Тягач';
+
+  @override
+  String get garageKindTrailer => 'Тіркеме';
+
+  @override
+  String get garageVin => 'VIN';
+
+  @override
+  String get garageLength => 'Ұзындығы, м';
+
+  @override
+  String get garagePhotoRequired => 'Техпаспортты суретке түсіріңіз';
+
+  @override
+  String get garageSubmit => 'Тексеруге жіберу';
+
+  @override
+  String get garageAddFailed => 'Машина қосылмады';
+
+  @override
+  String get garageFieldRequired => 'Жолды толтырыңыз';
+
+  @override
+  String get garageComboTitle => 'Немен барасыз?';
+
+  @override
+  String get garageComboTractorLabel => 'Тягач';
+
+  @override
+  String get garageComboTrailerLabel => 'Тіркеме';
+
+  @override
+  String get garageComboPendingBadge => 'тексеруде';
+
+  @override
+  String get garageComboEmpty => 'Гараж бос — профильде машина қосыңыз';
+
+  @override
+  String get garageGoToGarage => 'Менің гаражым';
 }

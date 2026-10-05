@@ -126,6 +126,17 @@ VerificationDocType verificationDocTypeFromJson(String value) => _verificationDo
 
 String verificationDocTypeToJson(VerificationDocType type) => _verificationDocTypeJson[type]!;
 
+/// Гараж водителя (задача 031, этап A/B) — тягач, прицеп или одиночка
+/// (кузов на шасси, без отдельного прицепа).
+enum VehicleKind { tractor, trailer, rigid }
+
+VehicleKind vehicleKindFromJson(String value) => VehicleKind.values.firstWhere(
+      (e) => e.name.toUpperCase() == value.toUpperCase(),
+      orElse: () => VehicleKind.rigid,
+    );
+
+String vehicleKindToJson(VehicleKind kind) => kind.name.toUpperCase();
+
 enum VerificationDocStatus { pending, approved, rejected }
 
 VerificationDocStatus verificationDocStatusFromJson(String value) => VerificationDocStatus.values.firstWhere(

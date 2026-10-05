@@ -70,6 +70,11 @@ final driverVerificationDocumentsProvider = FutureProvider.autoDispose<List<Veri
   return ref.watch(driverRepositoryProvider).verificationDocuments();
 });
 
+/// Гараж (задача 031, этап B) — тягачи и прицепы водителя.
+final garageVehiclesProvider = FutureProvider.autoDispose<List<GarageVehicle>>((ref) {
+  return ref.watch(driverRepositoryProvider).vehicles();
+});
+
 final devicesProvider = FutureProvider.autoDispose<List<DeviceSession>>((ref) {
   return ref.watch(authRepositoryProvider).listSessions();
 });

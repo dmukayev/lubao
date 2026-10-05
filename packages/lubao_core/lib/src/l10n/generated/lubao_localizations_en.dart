@@ -2110,4 +2110,87 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminNavMore => 'More';
+
+  @override
+  String get garageTitle => 'My garage';
+
+  @override
+  String get garageTractorsSection => 'TRACTORS';
+
+  @override
+  String get garageTrailersSection => 'TRAILERS';
+
+  @override
+  String get garageVerified => 'verified';
+
+  @override
+  String get garagePending => 'under review';
+
+  @override
+  String get garageAddedYesterday => 'added yesterday';
+
+  @override
+  String get garageAddVehicle => 'Add a vehicle';
+
+  @override
+  String get garageEmptyTractors => 'No tractors yet';
+
+  @override
+  String get garageEmptyTrailers => 'No trailers yet';
+
+  @override
+  String get garageOcrHint =>
+      'Photograph the registration certificate — the plate and VIN fill in automatically. Review and submit.';
+
+  @override
+  String get garageArchive => 'Archive';
+
+  @override
+  String get garageArchived => 'Vehicle archived';
+
+  @override
+  String get garageKindTitle => 'What kind of vehicle?';
+
+  @override
+  String get garageKindTractor => 'Tractor';
+
+  @override
+  String get garageKindTrailer => 'Trailer';
+
+  @override
+  String get garageVin => 'VIN';
+
+  @override
+  String get garageLength => 'Length, m';
+
+  @override
+  String get garagePhotoRequired => 'Photograph the registration certificate';
+
+  @override
+  String get garageSubmit => 'Submit for review';
+
+  @override
+  String get garageAddFailed => 'Couldn\'t add the vehicle';
+
+  @override
+  String get garageFieldRequired => 'This field is required';
+
+  @override
+  String get garageComboTitle => 'What are you driving?';
+
+  @override
+  String get garageComboTractorLabel => 'Tractor';
+
+  @override
+  String get garageComboTrailerLabel => 'Trailer';
+
+  @override
+  String get garageComboPendingBadge => 'under review';
+
+  @override
+  String get garageComboEmpty =>
+      'Your garage is empty — add a vehicle in your profile';
+
+  @override
+  String get garageGoToGarage => 'My garage';
 }

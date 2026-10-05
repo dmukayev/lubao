@@ -23,4 +23,15 @@ export class AnnounceArrivalDto {
   @Min(1)
   @Max(3)
   waitDays?: number;
+
+  /// Связка на эту поездку (задача 031, этап B, п.9) — чипы из гаража;
+  /// если не указаны, сервис сам подставляет связку прошлого анонса или
+  /// текущую машину водителя (этап A).
+  @IsOptional()
+  @IsString()
+  tractorId?: string;
+
+  @IsOptional()
+  @IsString()
+  trailerId?: string;
 }

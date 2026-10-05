@@ -1,0 +1,200 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:lubao_core/lubao_core.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+
+import '../../../providers/api_providers.dart';
+
+/// Добавление машины в гараж (задача 031, этап B, п.8) — без распознавания
+/// (этап D) поля заполняются вручную, ничего не блокируется. Возвращает
+/// true, если машина была добавлена.
+Future<bool> showAddVehicleSheet(BuildContext context, WidgetRef ref) async {
+  final result = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge))),
+    builder: (context) => const _AddVehicleSheet(),
+  );
+  return result ?? false;
+}
+
+class _AddVehicleSheet extends ConsumerStatefulWidget {
+  const _AddVehicleSheet();
+
+  @override
+  ConsumerState<_AddVehicleSheet> createState() => _AddVehicleSheetState();
+}
+
+class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
+  VehicleKind _kind = VehicleKind.tractor;
+  String? _bodyTypeId;
+  final _plateController = TextEditingController();
+  final _vinController = TextEditingController();
+  final _brandController = TextEditingController();
+  final _capacityController = TextEditingController();
+  final _lengthController = TextEditingController();
+  XFile? _photo;
+  bool _submitting = false;
+  String? _photoError;
+
+  @override
+  void dispose() {
+    _plateController.dispose();
+    _vinController.dispose();
+    _brandController.dispose();
+    _capacityController.dispose();
+    _lengthController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickPhoto(ImageSource source) async {
+    final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    if (picked != null) setState(() { _photo = picked; _photoError = null; });
+  }
+
+  Future<void> _submit() async {
+    final t = context.l10n;
+    if (_photo == null) {
+      setState(() => _photoError = t.garagePhotoRequired);
+      return;
+    }
+
+    setState(() => _submitting = true);
+    try {
+      final vehicle = await ref.read(driverRepositoryProvider).addVehicle(
+            kind: _kind,
+            bodyTypeId: _kind == VehicleKind.tractor ? null : _bodyTypeId,
+            plateNumber: _plateController.text.trim().isEmpty ? null : _plateController.text.trim(),
+            vin: _vinController.text.trim().isEmpty ? null : _vinController.text.trim(),
+            brand: _brandController.text.trim().isEmpty ? null : _brandController.text.trim(),
+            capacityTons: _kind == VehicleKind.tractor ? null : double.tryParse(_capacityController.text.trim()),
+            lengthM: _kind == VehicleKind.tractor ? null : double.tryParse(_lengthController.text.trim()),
+          );
+
+      final bytes = await _photo!.readAsBytes();
+      final key = await ref.read(uploadsRepositoryProvider).uploadDocument(bytes, filename: _photo!.name);
+      await ref.read(driverRepositoryProvider).submitVerificationDocument(
+            type: _kind == VehicleKind.trailer ? VerificationDocType.trailerPassport : VerificationDocType.vehiclePassport,
+            fileUrl: key,
+            vehicleId: vehicle.id,
+          );
+
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      debugPrint('AddVehicleSheet: failed to add vehicle: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.garageAddFailed)));
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final locale = Localizations.localeOf(context).languageCode;
+    final refData = ref.watch(referenceDataProvider).valueOrNull;
+    final isTrailer = _kind == VehicleKind.trailer;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.garageAddVehicle, style: AppTextStyles.title),
+              const SizedBox(height: AppSpacing.lg),
+              Text(t.garageKindTitle, style: AppTextStyles.bodyStrong),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: SelectableTile(
+                      label: t.garageKindTractor,
+                      selected: _kind == VehicleKind.tractor,
+                      onTap: () => setState(() => _kind = VehicleKind.tractor),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: SelectableTile(
+                      label: t.garageKindTrailer,
+                      selected: isTrailer,
+                      onTap: () => setState(() => _kind = VehicleKind.trailer),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              if (isTrailer && refData != null) ...[
+                DropdownButtonFormField<String>(
+                  initialValue: _bodyTypeId,
+                  decoration: InputDecoration(labelText: t.driverSetupVehicleBodyType),
+                  items: refData.bodyTypes.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name.forLanguageCode(locale)))).toList(),
+                  onChanged: (v) => setState(() => _bodyTypeId = v),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppTextField(label: t.driverSetupCapacity, controller: _capacityController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                const SizedBox(height: AppSpacing.md),
+                AppTextField(label: t.garageLength, controller: _lengthController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                const SizedBox(height: AppSpacing.md),
+              ] else ...[
+                AppTextField(label: t.driverSetupVehicleTitle, controller: _brandController),
+                const SizedBox(height: AppSpacing.md),
+                AppTextField(label: t.garageVin, controller: _vinController),
+                const SizedBox(height: AppSpacing.md),
+              ],
+              AppTextField(label: t.driverSetupVehiclePlate, controller: _plateController),
+              const SizedBox(height: AppSpacing.lg),
+              Text(t.garagePhotoRequired, style: AppTextStyles.bodyStrong),
+              const SizedBox(height: AppSpacing.sm),
+              if (_photo != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: Row(
+                    children: [
+                      const Icon(LucideIcons.checkCircle2, size: 16, color: AppColors.success),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(child: Text(_photo!.name, overflow: TextOverflow.ellipsis)),
+                    ],
+                  ),
+                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickPhoto(ImageSource.camera),
+                      icon: const Icon(LucideIcons.camera),
+                      label: Text(t.postCargoAddPhotoCamera),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickPhoto(ImageSource.gallery),
+                      icon: const Icon(LucideIcons.image),
+                      label: Text(t.postCargoAddPhotoGallery),
+                    ),
+                  ),
+                ],
+              ),
+              if (_photoError != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(_photoError!, style: AppTextStyles.caption.copyWith(color: AppColors.error)),
+              ],
+              const SizedBox(height: AppSpacing.lg),
+              PrimaryButton(label: t.garageSubmit, loading: _submitting, onPressed: _submit),
+              const SizedBox(height: AppSpacing.md),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

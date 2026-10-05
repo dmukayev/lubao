@@ -353,3 +353,53 @@ describe('ArrivalsService.summary', () => {
     expect(result[1].count).toBe(0);
   });
 });
+
+describe('ArrivalsService.announce — связка «на чём еду» (задача 031, этап B, п.9)', () => {
+  let prisma: ReturnType<typeof makePrisma>;
+  let service: ArrivalsService;
+
+  beforeEach(() => {
+    prisma = makePrisma();
+    service = new ArrivalsService(prisma);
+    prisma.driver.findUnique.mockResolvedValue({ id: 'driver-1', anyCountry: false });
+    prisma.point.findUnique.mockResolvedValue({ id: 'point-1', isActive: true });
+    prisma.vehicle.findMany = jest.fn();
+  });
+
+  it('defaults a brand-new arrival to the combo of the last announcement that had one', async () => {
+    prisma.arrival.findFirst
+      .mockResolvedValueOnce(null) // no active arrival
+      .mockResolvedValueOnce({ tractorId: 'old-tractor', trailerId: 'old-trailer' }); // last with combo
+    prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
+
+    await service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString() });
+
+    expect(prisma.__tx.arrival.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ tractorId: 'old-tractor', trailerId: 'old-trailer' }) }),
+    );
+  });
+
+  it('uses an explicit combo from the dto after validating it belongs to this driver', async () => {
+    prisma.arrival.findFirst.mockResolvedValue(null);
+    prisma.vehicle.findMany.mockResolvedValue([{ id: 'tractor-9' }, { id: 'trailer-9' }]);
+    prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
+
+    await service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString(), tractorId: 'tractor-9', trailerId: 'trailer-9' });
+
+    expect(prisma.vehicle.findMany).toHaveBeenCalledWith({
+      where: { id: { in: ['tractor-9', 'trailer-9'] }, driverId: 'driver-1', isArchived: false },
+    });
+    expect(prisma.__tx.arrival.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ tractorId: 'tractor-9', trailerId: 'trailer-9' }) }),
+    );
+  });
+
+  it('rejects a combo that references a vehicle outside this driver\'s garage', async () => {
+    prisma.arrival.findFirst.mockResolvedValue(null);
+    prisma.vehicle.findMany.mockResolvedValue([{ id: 'tractor-9' }]); // trailer-9 missing/not owned
+
+    await expect(
+      service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString(), tractorId: 'tractor-9', trailerId: 'trailer-9' }),
+    ).rejects.toThrow(BadRequestException);
+  });
+});

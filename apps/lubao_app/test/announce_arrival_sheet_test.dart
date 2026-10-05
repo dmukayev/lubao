@@ -5,6 +5,7 @@ import 'package:lubao_core/lubao_core.dart';
 
 import 'package:lubao_app/features/driver/feed/announce_arrival_sheet.dart';
 import 'package:lubao_app/providers/api_providers.dart';
+import 'package:lubao_app/providers/data_providers.dart';
 import 'package:lubao_app/providers/locale_provider.dart';
 
 const _kz = Country(id: 'kz-1', code: 'KZ', name: I18nText(kk: 'Қазақстан', ru: 'Казахстан', zh: '哈萨克斯坦'), isCisMember: true);
@@ -36,6 +37,8 @@ class _FakeArrivalRepository extends ArrivalRepository {
     bool anyCountry = false,
     List<String> countryIds = const [],
     int waitDays = 2,
+    String? tractorId,
+    String? trailerId,
   }) async {
     lastPointId = pointId;
     lastPlannedAt = plannedAt;
@@ -62,7 +65,10 @@ void main() {
     late BuildContext capturedContext;
 
     await tester.pumpWidget(ProviderScope(
-      overrides: [arrivalRepositoryProvider.overrideWithValue(fakeRepo)],
+      overrides: [
+        arrivalRepositoryProvider.overrideWithValue(fakeRepo),
+        garageVehiclesProvider.overrideWith((ref) async => const []),
+      ],
       child: MaterialApp(
         locale: const Locale('ru'),
         supportedLocales: supportedLocales,
@@ -104,7 +110,10 @@ void main() {
     late BuildContext capturedContext;
 
     await tester.pumpWidget(ProviderScope(
-      overrides: [arrivalRepositoryProvider.overrideWithValue(fakeRepo)],
+      overrides: [
+        arrivalRepositoryProvider.overrideWithValue(fakeRepo),
+        garageVehiclesProvider.overrideWith((ref) async => const []),
+      ],
       child: MaterialApp(
         locale: const Locale('ru'),
         supportedLocales: supportedLocales,

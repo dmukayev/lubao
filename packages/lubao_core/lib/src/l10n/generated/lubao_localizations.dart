@@ -4091,6 +4091,168 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Ещё'**
   String get adminNavMore;
+
+  /// No description provided for @garageTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мой гараж'**
+  String get garageTitle;
+
+  /// No description provided for @garageTractorsSection.
+  ///
+  /// In ru, this message translates to:
+  /// **'ТЯГАЧИ'**
+  String get garageTractorsSection;
+
+  /// No description provided for @garageTrailersSection.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПРИЦЕПЫ'**
+  String get garageTrailersSection;
+
+  /// No description provided for @garageVerified.
+  ///
+  /// In ru, this message translates to:
+  /// **'проверена'**
+  String get garageVerified;
+
+  /// No description provided for @garagePending.
+  ///
+  /// In ru, this message translates to:
+  /// **'на проверке'**
+  String get garagePending;
+
+  /// No description provided for @garageAddedYesterday.
+  ///
+  /// In ru, this message translates to:
+  /// **'добавлен вчера'**
+  String get garageAddedYesterday;
+
+  /// No description provided for @garageAddVehicle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить машину'**
+  String get garageAddVehicle;
+
+  /// No description provided for @garageEmptyTractors.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет тягачей'**
+  String get garageEmptyTractors;
+
+  /// No description provided for @garageEmptyTrailers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет прицепов'**
+  String get garageEmptyTrailers;
+
+  /// No description provided for @garageOcrHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сфотографируйте техпаспорт — госномер и VIN заполнятся сами. Проверьте и отправьте.'**
+  String get garageOcrHint;
+
+  /// No description provided for @garageArchive.
+  ///
+  /// In ru, this message translates to:
+  /// **'В архив'**
+  String get garageArchive;
+
+  /// No description provided for @garageArchived.
+  ///
+  /// In ru, this message translates to:
+  /// **'Машина перенесена в архив'**
+  String get garageArchived;
+
+  /// No description provided for @garageKindTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Какая машина?'**
+  String get garageKindTitle;
+
+  /// No description provided for @garageKindTractor.
+  ///
+  /// In ru, this message translates to:
+  /// **'Тягач'**
+  String get garageKindTractor;
+
+  /// No description provided for @garageKindTrailer.
+  ///
+  /// In ru, this message translates to:
+  /// **'Прицеп'**
+  String get garageKindTrailer;
+
+  /// No description provided for @garageVin.
+  ///
+  /// In ru, this message translates to:
+  /// **'VIN'**
+  String get garageVin;
+
+  /// No description provided for @garageLength.
+  ///
+  /// In ru, this message translates to:
+  /// **'Длина, м'**
+  String get garageLength;
+
+  /// No description provided for @garagePhotoRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сфотографируйте техпаспорт'**
+  String get garagePhotoRequired;
+
+  /// No description provided for @garageSubmit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отправить на проверку'**
+  String get garageSubmit;
+
+  /// No description provided for @garageAddFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось добавить машину'**
+  String get garageAddFailed;
+
+  /// No description provided for @garageFieldRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заполните поле'**
+  String get garageFieldRequired;
+
+  /// No description provided for @garageComboTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'На чём едете?'**
+  String get garageComboTitle;
+
+  /// No description provided for @garageComboTractorLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Тягач'**
+  String get garageComboTractorLabel;
+
+  /// No description provided for @garageComboTrailerLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Прицеп'**
+  String get garageComboTrailerLabel;
+
+  /// No description provided for @garageComboPendingBadge.
+  ///
+  /// In ru, this message translates to:
+  /// **'на проверке'**
+  String get garageComboPendingBadge;
+
+  /// No description provided for @garageComboEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'В гараже пока пусто — добавьте машину в профиле'**
+  String get garageComboEmpty;
+
+  /// No description provided for @garageGoToGarage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мой гараж'**
+  String get garageGoToGarage;
 }
 
 class _LubaoLocalizationsDelegate

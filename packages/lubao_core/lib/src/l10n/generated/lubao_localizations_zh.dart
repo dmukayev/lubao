@@ -2071,4 +2071,85 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminNavMore => '更多';
+
+  @override
+  String get garageTitle => '我的车库';
+
+  @override
+  String get garageTractorsSection => '牵引车';
+
+  @override
+  String get garageTrailersSection => '挂车';
+
+  @override
+  String get garageVerified => '已核验';
+
+  @override
+  String get garagePending => '审核中';
+
+  @override
+  String get garageAddedYesterday => '昨天添加';
+
+  @override
+  String get garageAddVehicle => '添加车辆';
+
+  @override
+  String get garageEmptyTractors => '暂无牵引车';
+
+  @override
+  String get garageEmptyTrailers => '暂无挂车';
+
+  @override
+  String get garageOcrHint => '拍摄车辆登记证——车牌号和车架号将自动填写。请检查后提交。';
+
+  @override
+  String get garageArchive => '归档';
+
+  @override
+  String get garageArchived => '车辆已归档';
+
+  @override
+  String get garageKindTitle => '车辆类型？';
+
+  @override
+  String get garageKindTractor => '牵引车';
+
+  @override
+  String get garageKindTrailer => '挂车';
+
+  @override
+  String get garageVin => '车架号 (VIN)';
+
+  @override
+  String get garageLength => '长度（米）';
+
+  @override
+  String get garagePhotoRequired => '请拍摄车辆登记证';
+
+  @override
+  String get garageSubmit => '提交审核';
+
+  @override
+  String get garageAddFailed => '添加车辆失败';
+
+  @override
+  String get garageFieldRequired => '请填写此字段';
+
+  @override
+  String get garageComboTitle => '驾驶哪辆车？';
+
+  @override
+  String get garageComboTractorLabel => '牵引车';
+
+  @override
+  String get garageComboTrailerLabel => '挂车';
+
+  @override
+  String get garageComboPendingBadge => '审核中';
+
+  @override
+  String get garageComboEmpty => '车库是空的——请在个人资料中添加车辆';
+
+  @override
+  String get garageGoToGarage => '我的车库';
 }

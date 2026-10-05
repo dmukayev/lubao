@@ -68,6 +68,55 @@ class Vehicle {
       );
 }
 
+/// Запись гаража (задача 031, этап B, макет 26) — тягач или прицеп по
+/// отдельности, со своей проверкой. Не путать с [Vehicle] — старой
+/// объединённой формой, которую `Driver.vehicle` отдаёт для обратной
+/// совместимости, пока эту модель использует только экран «Мой гараж».
+class GarageVehicle {
+  const GarageVehicle({
+    required this.id,
+    required this.kind,
+    this.bodyTypeId,
+    this.plateNumber,
+    this.vin,
+    this.brand,
+    this.capacityTons,
+    this.lengthM,
+    required this.isOwner,
+    required this.isVerified,
+    required this.isArchived,
+    required this.createdAt,
+  });
+
+  final String id;
+  final VehicleKind kind;
+  final String? bodyTypeId;
+  final String? plateNumber;
+  final String? vin;
+  final String? brand;
+  final double? capacityTons;
+  final double? lengthM;
+  final bool isOwner;
+  final bool isVerified;
+  final bool isArchived;
+  final DateTime createdAt;
+
+  factory GarageVehicle.fromJson(Map<String, dynamic> json) => GarageVehicle(
+        id: json['id'] as String,
+        kind: vehicleKindFromJson(json['kind'] as String),
+        bodyTypeId: json['bodyTypeId'] as String?,
+        plateNumber: json['plateNumber'] as String?,
+        vin: json['vin'] as String?,
+        brand: json['brand'] as String?,
+        capacityTons: (json['capacityTons'] as num?)?.toDouble(),
+        lengthM: (json['lengthM'] as num?)?.toDouble(),
+        isOwner: json['isOwner'] as bool? ?? true,
+        isVerified: json['isVerified'] as bool? ?? false,
+        isArchived: json['isArchived'] as bool? ?? false,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
+}
+
 class VerificationDocument {
   const VerificationDocument({
     required this.id,

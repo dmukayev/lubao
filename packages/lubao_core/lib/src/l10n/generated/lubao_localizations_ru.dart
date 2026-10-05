@@ -2103,4 +2103,87 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminNavMore => 'Ещё';
+
+  @override
+  String get garageTitle => 'Мой гараж';
+
+  @override
+  String get garageTractorsSection => 'ТЯГАЧИ';
+
+  @override
+  String get garageTrailersSection => 'ПРИЦЕПЫ';
+
+  @override
+  String get garageVerified => 'проверена';
+
+  @override
+  String get garagePending => 'на проверке';
+
+  @override
+  String get garageAddedYesterday => 'добавлен вчера';
+
+  @override
+  String get garageAddVehicle => 'Добавить машину';
+
+  @override
+  String get garageEmptyTractors => 'Нет тягачей';
+
+  @override
+  String get garageEmptyTrailers => 'Нет прицепов';
+
+  @override
+  String get garageOcrHint =>
+      'Сфотографируйте техпаспорт — госномер и VIN заполнятся сами. Проверьте и отправьте.';
+
+  @override
+  String get garageArchive => 'В архив';
+
+  @override
+  String get garageArchived => 'Машина перенесена в архив';
+
+  @override
+  String get garageKindTitle => 'Какая машина?';
+
+  @override
+  String get garageKindTractor => 'Тягач';
+
+  @override
+  String get garageKindTrailer => 'Прицеп';
+
+  @override
+  String get garageVin => 'VIN';
+
+  @override
+  String get garageLength => 'Длина, м';
+
+  @override
+  String get garagePhotoRequired => 'Сфотографируйте техпаспорт';
+
+  @override
+  String get garageSubmit => 'Отправить на проверку';
+
+  @override
+  String get garageAddFailed => 'Не удалось добавить машину';
+
+  @override
+  String get garageFieldRequired => 'Заполните поле';
+
+  @override
+  String get garageComboTitle => 'На чём едете?';
+
+  @override
+  String get garageComboTractorLabel => 'Тягач';
+
+  @override
+  String get garageComboTrailerLabel => 'Прицеп';
+
+  @override
+  String get garageComboPendingBadge => 'на проверке';
+
+  @override
+  String get garageComboEmpty =>
+      'В гараже пока пусто — добавьте машину в профиле';
+
+  @override
+  String get garageGoToGarage => 'Мой гараж';
 }

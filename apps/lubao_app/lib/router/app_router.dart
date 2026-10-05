@@ -17,6 +17,7 @@ import '../features/driver/deals/driver_deals_screen.dart';
 import '../features/driver/profile/driver_profile_screen.dart';
 import '../features/driver/profile/driver_setup_screen.dart';
 import '../features/driver/profile/driver_verification_screen.dart';
+import '../features/driver/profile/garage_screen.dart';
 import '../features/company/company_shell.dart';
 import '../features/company/cargos/company_cargos_screen.dart';
 import '../features/company/cargos/post_cargo_screen.dart';
@@ -139,6 +140,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/driver/verification',
         builder: (context, state) => const DriverVerificationScreen(),
+      ),
+      GoRoute(
+        path: '/driver/garage',
+        builder: (context, state) => const GarageScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => CompanyShell(child: child),

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Driver } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { CreateVerificationDocumentDto } from './dto/create-verification-document.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 
@@ -204,5 +205,71 @@ export class DriversService {
       data: { currentLat: lat, currentLng: lng, locationUpdatedAt: new Date() },
     });
     return this.toDto(updated);
+  }
+
+  // -- Гараж (задача 031, этап B, макет 26) --------------------------------
+
+  private vehicleToDto(v: {
+    id: string;
+    kind: string;
+    bodyTypeId: string | null;
+    plateNumber: string | null;
+    vin: string | null;
+    brand: string | null;
+    capacityTons: unknown;
+    lengthM: unknown;
+    isOwner: boolean;
+    isVerified: boolean;
+    isArchived: boolean;
+    createdAt: Date;
+  }) {
+    return {
+      id: v.id,
+      kind: v.kind,
+      bodyTypeId: v.bodyTypeId,
+      plateNumber: v.plateNumber,
+      vin: v.vin,
+      brand: v.brand,
+      capacityTons: v.capacityTons != null ? Number(v.capacityTons) : null,
+      lengthM: v.lengthM != null ? Number(v.lengthM) : null,
+      isOwner: v.isOwner,
+      isVerified: v.isVerified,
+      isArchived: v.isArchived,
+      createdAt: v.createdAt,
+    };
+  }
+
+  async listVehicles(driverId: string) {
+    const vehicles = await this.prisma.vehicle.findMany({
+      where: { driverId, isArchived: false },
+      orderBy: { createdAt: 'asc' },
+    });
+    return vehicles.map((v) => this.vehicleToDto(v));
+  }
+
+  async createVehicle(driverId: string, dto: CreateVehicleDto) {
+    const vehicle = await this.prisma.vehicle.create({
+      data: {
+        driverId,
+        kind: dto.kind,
+        bodyTypeId: dto.kind === 'TRACTOR' ? null : dto.bodyTypeId,
+        plateNumber: dto.plateNumber,
+        vin: dto.vin,
+        brand: dto.brand,
+        capacityTons: dto.kind === 'TRACTOR' ? null : dto.capacityTons,
+        lengthM: dto.kind === 'TRACTOR' ? null : dto.lengthM,
+      },
+    });
+    return this.vehicleToDto(vehicle);
+  }
+
+  /// В архив, не удалить (п.10) — история сделок, где машина уже
+  /// участвовала, не должна потерять ссылку.
+  async archiveVehicle(driverId: string, vehicleId: string) {
+    const vehicle = await this.prisma.vehicle.findUnique({ where: { id: vehicleId } });
+    if (!vehicle || vehicle.driverId !== driverId) throw new NotFoundException('Vehicle not found');
+
+    const updated = await this.prisma.vehicle.update({ where: { id: vehicleId }, data: { isArchived: true } });
+    return this.vehicleToDto(updated);
   }
 }

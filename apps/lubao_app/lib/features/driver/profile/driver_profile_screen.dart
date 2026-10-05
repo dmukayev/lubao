@@ -91,6 +91,11 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
             ),
           ),
           ListTile(
+            leading: const Icon(LucideIcons.truck),
+            title: Text(t.garageGoToGarage),
+            onTap: () => context.push('/driver/garage'),
+          ),
+          ListTile(
             leading: const Icon(LucideIcons.smartphone),
             title: Text(t.profileMyDevices),
             onTap: () => context.push('/devices'),

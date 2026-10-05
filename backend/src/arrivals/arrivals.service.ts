@@ -36,6 +36,8 @@ export class ArrivalsService {
       countryIds: directions.map((d) => d.countryId),
       status: arrival.status,
       viewsCount,
+      tractorId: arrival.tractorId,
+      trailerId: arrival.trailerId,
     };
   }
 
@@ -131,16 +133,36 @@ export class ArrivalsService {
     const existing = await this.prisma.arrival.findFirst({
       where: { driverId: driver.id, status: { in: ['PLANNED', 'ON_SITE'] } },
     });
-    const combo = existing ? null : await this.resolveDefaultVehicleCombo(driver.id);
+
+    // Задача 031, этап B, п.9 — шаг «На чём еду»: явный выбор в dto
+    // проверяется (машина должна быть в гараже этого водителя и не в
+    // архиве) и используется; без явного выбора — связка прошлого анонса
+    // по умолчанию (этап A) при создании нового анонса, а у уже
+    // существующего анонса связка остаётся как была (не затирается каждым
+    // мелким редактированием срока/направлений).
+    let combo: { tractorId: string | null; trailerId: string | null } | null = null;
+    if (dto.tractorId !== undefined || dto.trailerId !== undefined) {
+      const ids = [dto.tractorId, dto.trailerId].filter((v): v is string => v != null);
+      if (ids.length > 0) {
+        const owned = await this.prisma.vehicle.findMany({ where: { id: { in: ids }, driverId: driver.id, isArchived: false } });
+        if (owned.length !== ids.length) throw new BadRequestException('Unknown vehicle in combo');
+      }
+      combo = { tractorId: dto.tractorId ?? null, trailerId: dto.trailerId ?? null };
+    } else if (!existing) {
+      combo = await this.resolveDefaultVehicleCombo(driver.id);
+    }
 
     const arrival = await this.prisma.$transaction(async (tx) => {
       const saved =
         existing && existing.status === 'ON_SITE'
-          ? await tx.arrival.update({ where: { id: existing.id }, data: { anyCountry, waitDays } })
+          ? await tx.arrival.update({
+              where: { id: existing.id },
+              data: { anyCountry, waitDays, ...(combo ?? {}) },
+            })
           : existing
             ? await tx.arrival.update({
                 where: { id: existing.id },
-                data: { pointId: dto.pointId, plannedAt, anyCountry, waitDays, status: 'PLANNED' },
+                data: { pointId: dto.pointId, plannedAt, anyCountry, waitDays, status: 'PLANNED', ...(combo ?? {}) },
               })
             : await tx.arrival.create({
                 data: {

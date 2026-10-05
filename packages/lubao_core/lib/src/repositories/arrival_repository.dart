@@ -34,6 +34,8 @@ class ArrivalRepository {
     bool anyCountry = false,
     List<String> countryIds = const [],
     int waitDays = 2,
+    String? tractorId,
+    String? trailerId,
   }) async {
     final res = await _client.dio.post('/arrivals', data: {
       'pointId': pointId,
@@ -41,6 +43,8 @@ class ArrivalRepository {
       'anyCountry': anyCountry,
       'countryIds': countryIds,
       'waitDays': waitDays,
+      if (tractorId != null) 'tractorId': tractorId,
+      if (trailerId != null) 'trailerId': trailerId,
     });
     return Arrival.fromJson(res.data as Map<String, dynamic>);
   }

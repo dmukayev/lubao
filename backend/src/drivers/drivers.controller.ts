@@ -1,6 +1,7 @@
-import { Body, Controller, ForbiddenException, Get, Patch, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Param, Patch, Post } from '@nestjs/common';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
+import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { CreateVerificationDocumentDto } from './dto/create-verification-document.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
@@ -40,5 +41,23 @@ export class DriversController {
   submitVerificationDocument(@CurrentUser() ctx: RequestContext, @Body() dto: CreateVerificationDocumentDto) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');
     return this.drivers.submitVerificationDocument(ctx.user.id, ctx.driver.id, dto);
+  }
+
+  @Get('me/vehicles')
+  vehicles(@CurrentUser() ctx: RequestContext) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.drivers.listVehicles(ctx.driver.id);
+  }
+
+  @Post('me/vehicles')
+  addVehicle(@CurrentUser() ctx: RequestContext, @Body() dto: CreateVehicleDto) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.drivers.createVehicle(ctx.driver.id, dto);
+  }
+
+  @Post('me/vehicles/:id/archive')
+  archiveVehicle(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.drivers.archiveVehicle(ctx.driver.id, id);
   }
 }
