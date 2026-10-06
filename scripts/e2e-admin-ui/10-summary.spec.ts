@@ -31,7 +31,8 @@ test('сводка: плитки и «Требует внимания» веду
     expect(rows.length).toBeGreaterThan(0);
     const x = Math.round((page.viewportSize()?.width ?? 1280) / 2);
     await scrollPaneTo(page, page.getByText('По городам', { exact: true }), x);
-    await expect(page.getByText(rows[0].name.ru, { exact: true }).first()).toBeVisible();
+    // Flutter склеивает таблицу в один семантический узел — ищем подстрокой.
+    await expect(page.getByText(rows[0].name.ru).first()).toBeVisible();
     await openRoute(page, '/dashboard');
   });
 

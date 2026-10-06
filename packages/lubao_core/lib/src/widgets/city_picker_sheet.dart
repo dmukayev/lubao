@@ -101,8 +101,8 @@ class _CityPickerSheetState extends State<_CityPickerSheet> {
     final sortedAll = [...widget.points]..sort((a, b) => a.name.forLanguageCode(locale).compareTo(b.name.forLanguageCode(locale)));
     final results = query.isEmpty ? null : searchPoints(widget.points, query);
 
-    Widget row(LoadingPoint p) => ListTile(
-          key: Key('cityPickerRow-${p.id}'),
+    Widget row(LoadingPoint p, {String prefix = 'cityPickerRow'}) => ListTile(
+          key: Key('$prefix-${p.id}'),
           contentPadding: EdgeInsets.zero,
           minVerticalPadding: AppSpacing.md,
           title: Text(p.name.forLanguageCode(locale), style: AppTextStyles.body),
@@ -163,7 +163,7 @@ class _CityPickerSheetState extends State<_CityPickerSheet> {
                         children: [
                           if (recent.isNotEmpty) ...[
                             Text(t.cityPickerRecent, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
-                            for (final p in recent) row(p),
+                            for (final p in recent) row(p, prefix: 'cityPickerRecent'),
                             const SizedBox(height: AppSpacing.md),
                             Text(t.cityPickerAll, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
                           ],
