@@ -1,4 +1,4 @@
-import { IsArray, IsIn, IsISO8601, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsIn, IsISO8601, IsNumber, IsOptional, IsString, Min, IsInt } from 'class-validator';
 
 export class CreateCargoDto {
   @IsString()
@@ -23,8 +23,8 @@ export class CreateCargoDto {
 
   /// Паллеты (задача 033, п.4) — вместо/вместе с объёмом.
   @IsOptional()
-  @IsNumber()
-  @Min(0)
+  @IsInt()
+  @Min(1)
   palletCount?: number;
 
   @IsOptional()

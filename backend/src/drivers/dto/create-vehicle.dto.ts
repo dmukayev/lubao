@@ -1,4 +1,4 @@
-import { IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString, Min, Max } from 'class-validator';
 
 const VEHICLE_KINDS = ['TRACTOR', 'TRAILER', 'RIGID'] as const;
 
@@ -51,16 +51,19 @@ export class CreateVehicleDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(20)
   innerLengthM?: number;
 
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(3)
   innerWidthM?: number;
 
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(4.5)
   innerHeightM?: number;
 }
 
@@ -75,15 +78,18 @@ export class SetVehicleSizeDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(20)
   innerLengthM?: number;
 
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(3)
   innerWidthM?: number;
 
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(4.5)
   innerHeightM?: number;
 }

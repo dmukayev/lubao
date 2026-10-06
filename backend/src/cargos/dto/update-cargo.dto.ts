@@ -1,4 +1,4 @@
-import { IsArray, IsIn, IsISO8601, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsIn, IsISO8601, IsNumber, IsOptional, IsString, Min, IsInt } from 'class-validator';
 
 export class UpdateCargoDto {
   @IsOptional()
@@ -24,8 +24,8 @@ export class UpdateCargoDto {
   volumeM3?: number;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
+  @IsInt()
+  @Min(1)
   palletCount?: number;
 
   @IsOptional()
