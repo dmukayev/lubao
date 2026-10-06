@@ -52,10 +52,15 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Тентованный').last);
       await tester.pumpAndSettle();
-      await tester.enterText(find.byKey(const Key('postCargoVolume')), '90');
-      await tester.enterText(find.byKey(const Key('postCargoWeight')), '12');
-      await tester.enterText(find.byKey(const Key('postCargoPrice')), '1500');
-      await tester.pumpAndSettle();
+      // Каждое поле — сначала на экран: иначе нажатие не фокусирует его и
+      // текст уходит в предыдущее поле (цена оставалась пустой).
+      for (final (key, value) in [('postCargoVolume', '90'), ('postCargoWeight', '12'), ('postCargoPrice', '1500')]) {
+        final field = find.byKey(Key(key));
+        await reveal(tester, field);
+        await tester.enterText(field, value);
+        await tester.pumpAndSettle();
+      }
+      expect(find.text('1500'), findsOneWidget);
       expectInsideSafeZone(tester);
     });
 

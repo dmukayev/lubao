@@ -25,17 +25,6 @@ test('сводка: плитки и «Требует внимания» веду
     await expect(page.getByText('Что-то пошло не так')).toHaveCount(0);
   });
 
-  // Задача 040, п.9: разрез сводки по городам — анонсы / грузы / сделки.
-  await steps.step('сводка-по-городам', async () => {
-    const rows = ((await api('GET', '/admin/stats/by-city', { token })).json ?? []) as Array<{ name: { ru: string } }>;
-    expect(rows.length).toBeGreaterThan(0);
-    const x = Math.round((page.viewportSize()?.width ?? 1280) / 2);
-    await scrollPaneTo(page, page.getByText('По городам', { exact: true }), x);
-    // Flutter склеивает таблицу в один семантический узел — ищем подстрокой.
-    await expect(page.getByText(rows[0].name.ru).first()).toBeVisible();
-    await openRoute(page, '/dashboard');
-  });
-
   await steps.step('плитка-водители', async () => {
     await page.getByRole('button', { name: new RegExp(`^${stats.drivers} Водители`) }).click();
     await expect(page.getByRole('heading', { name: 'Водители' })).toBeVisible();
@@ -95,5 +84,18 @@ test('сводка: плитки и «Требует внимания» веду
       await page.getByRole('button', { name: new RegExp(`На проверке: ${attention.pendingVerificationCount}`) }).click();
       await expect(page.getByRole('heading', { name: 'Документы на проверку' })).toBeVisible();
     }
+  });
+
+  // Задача 040, п.9: разрез сводки по городам — анонсы / грузы / сделки.
+  // Последним шагом: на узком экране прокрутка вниз уводит плитки из
+  // семантики Flutter, и следующие шаги их не находят.
+  await steps.step('сводка-по-городам', async () => {
+    await openRoute(page, '/dashboard');
+    const rows = ((await api('GET', '/admin/stats/by-city', { token })).json ?? []) as Array<{ name: { ru: string } }>;
+    expect(rows.length).toBeGreaterThan(0);
+    const x = Math.round((page.viewportSize()?.width ?? 1280) / 2);
+    await scrollPaneTo(page, page.getByText('По городам', { exact: true }), x);
+    // Flutter склеивает таблицу в один семантический узел — ищем подстрокой.
+    await expect(page.getByText(rows[0].name.ru).first()).toBeVisible();
   });
 });
