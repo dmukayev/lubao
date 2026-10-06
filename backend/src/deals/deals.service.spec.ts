@@ -39,7 +39,11 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
           { id: 'trailer1', isVerified: true },
         ]),
       },
+      // 038 п.7 — подтверждение идёт в $transaction под advisory-замком;
+      // в тестах транзакция «прозрачная»: tx = тот же prisma-мок.
+      $queryRaw: jest.fn().mockResolvedValue([]),
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     cargos = { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) };
     notifications = { notify: jest.fn() };
     service = new DealsService(prisma, cargos, notifications);
@@ -98,7 +102,9 @@ describe('DealsService.advanceStatus — проверка связки маши�
       deal: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn() },
       vehicle: { findUnique: jest.fn(), findMany: jest.fn() },
+      $queryRaw: jest.fn().mockResolvedValue([]),
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const cargos = { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) };
     const notifications = { notify: jest.fn() };
     service = new DealsService(prisma, cargos as any, notifications as any);
@@ -202,7 +208,9 @@ describe('DealsService — догруз разрешён, «бронь всег�
           { id: 'trailer1', isVerified: true },
         ]),
       },
+      $queryRaw: jest.fn().mockResolvedValue([]),
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new DealsService(prisma, { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) } as any, { notify: jest.fn() } as any);
     return { prisma, service };
   }
@@ -297,5 +305,70 @@ describe('DealsService — догруз разрешён, «бронь всег�
       }),
     );
     expect(prisma.deal.update).toHaveBeenCalled();
+  });
+
+  it('задача 038, п.6 — активные сделки считаются по тягачу: смена прицепа не обходит проверку', async () => {
+    const { prisma, service } = setup({
+      // Активная сделка на тот же тягач, но ДРУГОЙ прицеп — всё равно
+      // учитывается: один тягач не везёт две полные машины.
+      activeDeals: [{ id: 'deal-old', trailerId: 'other-trailer', cargo: cargoFixture({ weightKg: 20000 }) }],
+    });
+    const deal = dealFixture({ cargo: cargoFixture({ weightKg: 10000 }) });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+
+    await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'VEHICLE_FULL' }),
+    });
+    // В where нет trailerId — фильтр только по тягачу.
+    const where = prisma.deal.findMany.mock.calls[0][0].where;
+    expect(where.tractorId).toBe('tractor1');
+    expect('trailerId' in where).toBe(false);
+  });
+
+  it('задача 038, п.6 — прицеп без тоннажа: вместимость неизвестна, вторая активная сделка запрещена', async () => {
+    const { prisma, service } = setup({
+      trailer: { capacityTons: null, volumeM3: null, palletsEuro: null },
+      activeDeals: [{ id: 'deal-old', cargo: cargoFixture({ weightKg: 1000 }) }],
+    });
+    const deal = dealFixture({ cargo: cargoFixture({ weightKg: 1000 }) });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+
+    await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'VEHICLE_FULL', reason: 'FULL' }),
+    });
+    expect(prisma.deal.update).not.toHaveBeenCalled();
+  });
+
+  it('задача 038, п.7 — проверка и запись статуса идут в одной транзакции под advisory-замком по водителю', async () => {
+    const { prisma, service } = setup({
+      activeDeals: [{ id: 'deal-old', cargo: cargoFixture({ weightKg: 8000 }) }],
+    });
+    const deal = dealFixture({ cargo: cargoFixture({ weightKg: 10000 }) });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
+
+    await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
+
+    expect(prisma.$transaction).toHaveBeenCalled();
+    // Замок взят ДО перечитывания/проверки вместимости.
+    expect(prisma.$queryRaw).toHaveBeenCalled();
+    const lockOrder = prisma.$queryRaw.mock.invocationCallOrder[0];
+    const findManyOrder = prisma.deal.findMany.mock.invocationCallOrder[0];
+    const updateOrder = prisma.deal.update.mock.invocationCallOrder[0];
+    expect(lockOrder).toBeLessThan(findManyOrder);
+    expect(findManyOrder).toBeLessThan(updateOrder);
+  });
+
+  it('задача 038, п.7 — статус перечитывается под замком: сделка уже CONFIRMED → 400, не вторая запись', async () => {
+    const { prisma, service } = setup({ activeDeals: [] });
+    const deal = dealFixture({ cargo: cargoFixture({ weightKg: 10000 }) });
+    // Снаружи транзакции сделка ещё SELECTED, под замком — уже CONFIRMED
+    // (параллельное подтверждение успело первым).
+    prisma.deal.findUnique
+      .mockResolvedValueOnce(deal)
+      .mockResolvedValueOnce({ status: 'CONFIRMED_BY_DRIVER' });
+
+    await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toThrow('Cannot move deal');
+    expect(prisma.deal.update).not.toHaveBeenCalled();
   });
 });

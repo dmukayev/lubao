@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Company, Deal, Driver } from '@prisma/client';
+import { Company, Deal, Driver, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CargosService } from '../cargos/cargos.service';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
@@ -102,16 +102,19 @@ export class DealsService {
   ///   догруз, а следующий рейс (подтверждать после DELIVERED текущих).
   /// Отклики и выбор логистом не ограничиваются (п.1/3 — логист видит
   /// «Уже везёт…» и решает сам), жёсткая проверка только здесь.
-  private async assertVehicleNotFull(deal: DealWithRelations) {
+  private async assertVehicleNotFull(tx: Prisma.TransactionClient | PrismaService, deal: DealWithRelations) {
     const cargo = deal.cargo;
     if (!cargo) return;
 
-    const activeDeals = await this.prisma.deal.findMany({
+    // Задача 038, п.6 — активные сделки считаем по ТЯГАЧУ, без прицепа в
+    // фильтре: одна машина везёт одну загрузку, и смена прицепа в анонсе —
+    // не способ подтвердить вторую полную машину тем же тягачом. Прицеп
+    // участвует только как источник вместимости (ниже).
+    const activeDeals = await tx.deal.findMany({
       where: {
         driverId: deal.driverId,
         status: { in: ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT'] },
         tractorId: deal.tractorId,
-        trailerId: deal.trailerId,
         id: { not: deal.id },
       },
       include: { cargo: true },
@@ -119,7 +122,7 @@ export class DealsService {
     if (activeDeals.length === 0) return;
 
     const bodyVehicleId = deal.trailerId ?? deal.tractorId;
-    const vehicle = bodyVehicleId ? await this.prisma.vehicle.findUnique({ where: { id: bodyVehicleId } }) : null;
+    const vehicle = bodyVehicleId ? await tx.vehicle.findUnique({ where: { id: bodyVehicleId } }) : null;
     const capacityKg = vehicle?.capacityTons != null ? Number(vehicle.capacityTons) * 1000 : null;
 
     const allCargos = [cargo, ...activeDeals.map((d) => d.cargo).filter((c): c is NonNullable<typeof c> => c != null)];
@@ -147,12 +150,15 @@ export class DealsService {
     const sameWindow = activeDeals.every((d) => d.cargo != null && Math.abs(d.cargo.readyDate.getTime() - newReady) <= DAY_MS);
     if (!sameWindow) reject('NEXT_TRIP');
 
+    // Задача 038, п.6 — прицеп без тоннажа: вместимость неизвестна, догруз
+    // не посчитать — разрешаем только ОДНУ активную сделку на тягач
+    // (раньше вес вообще не проверялся, и лимита не было).
+    if (capacityKg == null) reject('FULL');
+
     // Груз без веса занимает машину целиком — второй рядом не подтвердить.
     if (allCargos.some((c) => c.weightKg == null)) reject('FULL');
-    if (capacityKg != null) {
-      const totalKg = allCargos.reduce((sum, c) => sum + Number(c.weightKg), 0);
-      if (totalKg > capacityKg) reject('FULL');
-    }
+    const totalKg = allCargos.reduce((sum, c) => sum + Number(c.weightKg), 0);
+    if (capacityKg != null && totalKg > capacityKg) reject('FULL');
     if (vehicle?.volumeM3 != null && allCargos.every((c) => c.volumeM3 != null)) {
       const totalM3 = allCargos.reduce((sum, c) => sum + Number(c.volumeM3), 0);
       if (totalM3 > Number(vehicle.volumeM3)) reject('FULL');
@@ -193,8 +199,6 @@ export class DealsService {
       if (notVerified || vehicles.length !== vehicleIds.length) {
         throw new BadRequestException('VEHICLE_NOT_VERIFIED');
       }
-
-      await this.assertVehicleNotFull(deal);
     }
 
     const now = new Date();
@@ -205,11 +209,37 @@ export class DealsService {
       DELIVERED: 'deliveredAt',
     }[nextStatus as 'CONFIRMED_BY_DRIVER' | 'LOADED' | 'IN_TRANSIT' | 'DELIVERED'];
 
-    const updated = await this.prisma.deal.update({
-      where: { id },
-      data: { status: nextStatus as Deal['status'], [timestampField]: now },
-      include: this.include,
-    });
+    let updated: DealWithRelations;
+    if (nextStatus === 'CONFIRMED_BY_DRIVER') {
+      // Задача 038, п.7 — проверка вместимости и запись статуса в ОДНОЙ
+      // транзакции под advisory-замком по водителю: два параллельных
+      // «Подтверждаю перевозку» сериализуются, и второй уже видит сделку,
+      // записанную первым (раньше оба читали «свободно» и оба проходили).
+      // pg_advisory_xact_lock освобождается сам при commit/rollback.
+      updated = await this.prisma.$transaction(async (tx) => {
+        // ::text — pg_advisory_xact_lock возвращает void, который Prisma
+        // не умеет десериализовать (Raw query failed … type 'void').
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${deal.driverId}))::text`;
+        // Перечитываем статус под замком — параллельное подтверждение ТОЙ
+        // ЖЕ сделки второй раз не пройдёт прогрессию.
+        const fresh = await tx.deal.findUnique({ where: { id }, select: { status: true } });
+        if (fresh?.status !== deal.status) {
+          throw new BadRequestException(`Cannot move deal from ${fresh?.status ?? 'missing'} to ${nextStatus}`);
+        }
+        await this.assertVehicleNotFull(tx, deal);
+        return tx.deal.update({
+          where: { id },
+          data: { status: nextStatus as Deal['status'], [timestampField]: now },
+          include: this.include,
+        });
+      });
+    } else {
+      updated = await this.prisma.deal.update({
+        where: { id },
+        data: { status: nextStatus as Deal['status'], [timestampField]: now },
+        include: this.include,
+      });
+    }
     await this.notifyStatusChange(updated, nextStatus);
     return this.toDto(updated);
   }
