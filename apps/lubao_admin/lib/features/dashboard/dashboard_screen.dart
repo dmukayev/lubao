@@ -21,6 +21,7 @@ class DashboardScreen extends ConsumerWidget {
     final stats = ref.watch(adminStatsProvider);
     final attention = ref.watch(adminAttentionProvider);
     final events = ref.watch(adminRecentEventsProvider);
+    final cityStats = ref.watch(adminCityStatsProvider);
     final period = ref.watch(adminStatsPeriodProvider);
 
     return Scaffold(
@@ -30,6 +31,7 @@ class DashboardScreen extends ConsumerWidget {
           ref.invalidate(adminStatsProvider);
           ref.invalidate(adminAttentionProvider);
           ref.invalidate(adminRecentEventsProvider);
+          ref.invalidate(adminCityStatsProvider);
         },
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -100,6 +102,66 @@ class DashboardScreen extends ConsumerWidget {
               },
               data: (list) => _RecentEventsList(events: list),
             ),
+            const SizedBox(height: 24),
+            Text(t.adminCityStatsTitle, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            cityStats.when(
+              loading: () => const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
+              error: (e, st) {
+                debugPrint('DashboardScreen (cityStats): $e');
+                return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminCityStatsProvider));
+              },
+              data: (rows) => _CityStatsBlock(rows: rows),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Анонсы / грузы / сделки по городам (задача 040, п.9).
+class _CityStatsBlock extends StatelessWidget {
+  const _CityStatsBlock({required this.rows});
+
+  final List<CityStatsRow> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final locale = Localizations.localeOf(context).languageCode;
+    if (rows.isEmpty) {
+      return Text(t.adminCityStatsEmpty, style: Theme.of(context).textTheme.bodyMedium);
+    }
+    return Card(
+      key: const Key('adminCityStats'),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Expanded(flex: 3, child: SizedBox.shrink()),
+                for (final label in [t.adminCityStatsArrivals, t.adminCityStatsCargos, t.adminCityStatsDeals])
+                  Expanded(
+                    flex: 2,
+                    child: Text(label, textAlign: TextAlign.end, style: Theme.of(context).textTheme.labelMedium, overflow: TextOverflow.ellipsis),
+                  ),
+              ],
+            ),
+            const Divider(),
+            for (final r in rows)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(flex: 3, child: Text(r.name.forLanguageCode(locale), overflow: TextOverflow.ellipsis)),
+                    Expanded(flex: 2, child: Text('${r.arrivals}', textAlign: TextAlign.end)),
+                    Expanded(flex: 2, child: Text('${r.cargos}', textAlign: TextAlign.end)),
+                    Expanded(flex: 2, child: Text('${r.dealsActive} / ${r.dealsDelivered}', textAlign: TextAlign.end)),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

@@ -20,6 +20,8 @@ const E2E_CARGO_2_ID = '11111111-1111-4111-8111-111111111002';
 const E2E_CARGO_3_ID = '11111111-1111-4111-8111-111111111003';
 const E2E_CARGO_4_ID = '11111111-1111-4111-8111-111111111004';
 const E2E_CARGO_5_ID = '11111111-1111-4111-8111-111111111005';
+const E2E_CARGO_6_ID = '11111111-1111-4111-8111-111111111006';
+const E2E_CARGO_7_ID = '11111111-1111-4111-8111-111111111007';
 
 export const E2E_FIXTURES = {
   // Три водителя: SMS-лимит 1 код/мин на номер — сценарии не должны делить
@@ -51,7 +53,24 @@ export const E2E_FIXTURES = {
   cargo4Id: E2E_CARGO_4_ID,
   /// Груз 5 — свободный до конца прогона: на него откликается НЕПРОВЕРЕННЫЙ новичок (041, п.1).
   cargo5Id: E2E_CARGO_5_ID,
+  /// Груз 6 — из Алматы, «можно догрузом»; груз 7 — из Астаны (задача 040: порядок ленты по городу анонса).
+  cargo6Id: E2E_CARGO_6_ID,
+  cargo7Id: E2E_CARGO_7_ID,
+  /// D6 — анонсировал «свободен в Алматы» на сегодня (040: «Кто свободен» с выбором города).
+  driverPhone6: '+77010000008',
 };
+
+/// «Сегодня» по часовому поясу приложения — тем же правилом, что у правила
+/// свежести анонса на сервере (APP_TIMEZONE, по умолчанию Алматы).
+function localToday(): Date {
+  const day = new Intl.DateTimeFormat('en-CA', {
+    timeZone: process.env.APP_TIMEZONE || 'Asia/Almaty',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+  return new Date(`${day}T00:00:00.000Z`);
+}
 
 function daysFromNow(days: number): Date {
   const d = new Date();
@@ -71,6 +90,10 @@ async function bodyType(code: string) {
   return prisma.bodyType.findFirstOrThrow({ where: { code } });
 }
 
+async function pointByCityCode(code: string) {
+  return prisma.point.findFirstOrThrow({ where: { city: { code } } });
+}
+
 async function khorgosPoint() {
   // Хоргос — терминал, остальные точки (города РК) заведены сидом справочника (задача 040).
   return prisma.point.findFirstOrThrow({ where: { city: { code: 'KZ-ZHETYSU-KHORGOS' } } });
@@ -83,6 +106,8 @@ async function main() {
   const [almaty] = await Promise.all([cityByRuName('Алматы')]);
   const tent = await bodyType('TENT');
   const khorgos = await khorgosPoint();
+  const almatyPoint = await pointByCityCode('KZ-ALMATY');
+  const astanaPoint = await pointByCityCode('KZ-ASTANA');
 
   // -----------------------------------------------------------------
   // Водители — зарегистрированы, машины ПРОВЕРЕНЫ (иначе «Подтверждаю
@@ -94,6 +119,7 @@ async function main() {
     { n: 3, phone: E2E_FIXTURES.driverPhone3, name: 'Борис Точкин' },
     { n: 4, phone: E2E_FIXTURES.driverPhone4, name: 'Нурлан Холодов' },
     { n: 5, phone: E2E_FIXTURES.driverPhone5, name: 'Ержан Блоков' },
+    { n: 6, phone: E2E_FIXTURES.driverPhone6, name: 'Алия Алматинская' },
   ];
   const driverIds: Record<number, string> = {};
   // Машины первой версии сида (другие id, прицеп не проверен) — убираем,
@@ -131,6 +157,21 @@ async function main() {
     // Просмотры анонса логистом (arrival_views) ссылаются на анонс — первыми.
     await prisma.arrivalView.deleteMany({ where: { arrival: { driverId: driver.id } } });
     await prisma.arrival.deleteMany({ where: { driverId: driver.id } });
+    if (def.n === 6) {
+      // D6 — «свободен в Алматы» на сегодня: логист видит в «Кто свободен» после выбора города.
+      await prisma.arrival.create({
+        data: {
+          driverId: driver.id,
+          pointId: almatyPoint.id,
+          plannedAt: new Date(),
+          plannedDay: localToday(),
+          status: 'PLANNED',
+          anyCountry: true,
+          tractorId,
+          trailerId,
+        },
+      });
+    }
     if (def.n === 3 || def.n === 4) {
       // D3 (проверен) и D4 (нет) уже на точке — логист видит их в «Водители» без других сценариев.
       await prisma.arrival.create({
@@ -138,8 +179,9 @@ async function main() {
           driverId: driver.id,
           pointId: khorgos.id,
           plannedAt: new Date(),
-          plannedDay: new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z'),
+          plannedDay: localToday(),
           arrivedAt: new Date(Date.now() - 15 * 60 * 1000),
+          lastConfirmedAt: new Date(Date.now() - 15 * 60 * 1000),
           status: 'ON_SITE',
           anyCountry: true,
           tractorId,
@@ -217,12 +259,16 @@ async function main() {
   // Сначала сброс следов прошлого прогона (сделки → отклики → чаты).
   // -----------------------------------------------------------------
   const readyDate = daysFromNow(1);
+  // Порядок = порядок создания (createdAt): последний груз компании — груз 5
+  // из Хоргоса, и именно его город «Кто свободен» берёт по умолчанию.
   const cargoDefs = [
-    { id: E2E_FIXTURES.cargoId, weightKg: 10000, price: 1000, note: 'E2E — груз 1 (10 т)' },
-    { id: E2E_FIXTURES.cargo2Id, weightKg: 8000, price: 800, note: 'E2E — груз 2 (8 т, догруз)' },
-    { id: E2E_FIXTURES.cargo3Id, weightKg: 10000, price: 900, note: 'E2E — груз 3 (10 т, не поместится)' },
-    { id: E2E_FIXTURES.cargo4Id, weightKg: 5000, price: 700, note: 'E2E — груз 4 (5 т, приглашение из чата)' },
-    { id: E2E_FIXTURES.cargo5Id, weightKg: 3000, price: 600, note: 'E2E — груз 5 (3 т, отклик новичка)' },
+    { id: E2E_FIXTURES.cargo6Id, weightKg: 4000, price: 500, note: 'E2E — груз 6 (из Алматы, можно догрузом)', pointId: almatyPoint.id, allowPartial: true },
+    { id: E2E_FIXTURES.cargo7Id, weightKg: 4000, price: 500, note: 'E2E — груз 7 (из Астаны)', pointId: astanaPoint.id, allowPartial: false },
+    { id: E2E_FIXTURES.cargoId, weightKg: 10000, price: 1000, note: 'E2E — груз 1 (10 т)', pointId: khorgos.id, allowPartial: false },
+    { id: E2E_FIXTURES.cargo2Id, weightKg: 8000, price: 800, note: 'E2E — груз 2 (8 т, догруз)', pointId: khorgos.id, allowPartial: false },
+    { id: E2E_FIXTURES.cargo3Id, weightKg: 10000, price: 900, note: 'E2E — груз 3 (10 т, не поместится)', pointId: khorgos.id, allowPartial: false },
+    { id: E2E_FIXTURES.cargo4Id, weightKg: 5000, price: 700, note: 'E2E — груз 4 (5 т, приглашение из чата)', pointId: khorgos.id, allowPartial: false },
+    { id: E2E_FIXTURES.cargo5Id, weightKg: 3000, price: 600, note: 'E2E — груз 5 (3 т, отклик новичка)', pointId: khorgos.id, allowPartial: false },
   ];
   const cargoIds = cargoDefs.map((c) => c.id);
   await prisma.deal.deleteMany({ where: { cargoId: { in: cargoIds } } });
@@ -230,9 +276,12 @@ async function main() {
   await prisma.chat.deleteMany({ where: { cargoId: { in: cargoIds } } });
   await prisma.response.deleteMany({ where: { cargoId: { in: cargoIds } } });
 
-  for (const def of cargoDefs) {
+  for (const [index, def] of cargoDefs.entries()) {
     const data = {
       status: 'PUBLISHED' as const,
+      createdAt: new Date(Date.now() - (cargoDefs.length - index) * 1000),
+      allowPartial: def.allowPartial,
+      pointId: def.pointId,
       weightKg: def.weightKg,
       price: def.price,
       currency: Currency.USD,
@@ -246,7 +295,6 @@ async function main() {
       create: {
         id: def.id,
         companyId: company.id,
-        pointId: khorgos.id,
         destinationCountryId: kz.id,
         destinationCityId: almaty.id,
         bodyTypeId: tent.id,

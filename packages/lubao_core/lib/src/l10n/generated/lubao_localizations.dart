@@ -912,12 +912,6 @@ abstract class LubaoLocalizations {
   /// **'Сохранить и продолжить'**
   String get driverSetupSubmit;
 
-  /// No description provided for @feedTitle.
-  ///
-  /// In ru, this message translates to:
-  /// **'Грузы в Хоргосе'**
-  String get feedTitle;
-
   /// No description provided for @driverHomeGreeting.
   ///
   /// In ru, this message translates to:
@@ -2271,7 +2265,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @driversAtPointTitle.
   ///
   /// In ru, this message translates to:
-  /// **'Кто будет на {point}'**
+  /// **'Кто свободен: {point}'**
   String driversAtPointTitle(String point);
 
   /// No description provided for @driversAtPointSubtitle.
@@ -5129,6 +5123,228 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Мой гараж'**
   String get garageGoToGarage;
+
+  /// No description provided for @cityPickerTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите город'**
+  String get cityPickerTitle;
+
+  /// No description provided for @cityPickerSearchHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поиск города'**
+  String get cityPickerSearchHint;
+
+  /// No description provided for @cityPickerNearby.
+  ///
+  /// In ru, this message translates to:
+  /// **'Рядом со мной'**
+  String get cityPickerNearby;
+
+  /// No description provided for @cityPickerNearbyNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Рядом нет подходящего города — выберите из списка'**
+  String get cityPickerNearbyNotFound;
+
+  /// No description provided for @cityPickerRecent.
+  ///
+  /// In ru, this message translates to:
+  /// **'Недавние'**
+  String get cityPickerRecent;
+
+  /// No description provided for @cityPickerAll.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все города'**
+  String get cityPickerAll;
+
+  /// No description provided for @cityPickerNothingFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ничего не найдено'**
+  String get cityPickerNothingFound;
+
+  /// No description provided for @cityFieldPlaceholder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите город'**
+  String get cityFieldPlaceholder;
+
+  /// No description provided for @announceArrivalCityError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите город, где вы свободны'**
+  String get announceArrivalCityError;
+
+  /// No description provided for @announceArrivalAddAnother.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ещё один анонс'**
+  String get announceArrivalAddAnother;
+
+  /// No description provided for @announceArrivalOthers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дальше в планах'**
+  String get announceArrivalOthers;
+
+  /// No description provided for @announceArrivalLimit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не больше пяти анонсов одновременно'**
+  String get announceArrivalLimit;
+
+  /// No description provided for @arrivalQuestionDay.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доехали? Нажмите «Я на месте»'**
+  String get arrivalQuestionDay;
+
+  /// No description provided for @arrivalQuestionStill.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ещё ищете груз?'**
+  String get arrivalQuestionStill;
+
+  /// No description provided for @arrivalStillYes.
+  ///
+  /// In ru, this message translates to:
+  /// **'Да, ищу'**
+  String get arrivalStillYes;
+
+  /// No description provided for @arrivalStillLeft.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уехал'**
+  String get arrivalStillLeft;
+
+  /// No description provided for @feedBadgePartial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Догруз'**
+  String get feedBadgePartial;
+
+  /// No description provided for @feedLoadMore.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показать ещё'**
+  String get feedLoadMore;
+
+  /// No description provided for @cargoPartialHintFits.
+  ///
+  /// In ru, this message translates to:
+  /// **'Помещается к текущему: {committed} т + {cargo} т из {capacity} т'**
+  String cargoPartialHintFits(String committed, String cargo, String capacity);
+
+  /// No description provided for @cargoPartialHintFull.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не поместится к текущему: {committed} т + {cargo} т из {capacity} т'**
+  String cargoPartialHintFull(String committed, String cargo, String capacity);
+
+  /// No description provided for @cargoPartialHintNextTrip.
+  ///
+  /// In ru, this message translates to:
+  /// **'Другая дата погрузки — это следующий рейс, а не догруз'**
+  String get cargoPartialHintNextTrip;
+
+  /// No description provided for @cargoPickupCityLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город погрузки'**
+  String get cargoPickupCityLabel;
+
+  /// No description provided for @postCargoPickupCity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город погрузки'**
+  String get postCargoPickupCity;
+
+  /// No description provided for @postCargoPickupCityError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите город погрузки'**
+  String get postCargoPickupCityError;
+
+  /// No description provided for @postCargoAllowPartial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Можно догрузом'**
+  String get postCargoAllowPartial;
+
+  /// No description provided for @postCargoAllowPartialHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз не на всю машину — водитель может взять ещё'**
+  String get postCargoAllowPartialHint;
+
+  /// No description provided for @notificationGroupArrivalCheck.
+  ///
+  /// In ru, this message translates to:
+  /// **'Напоминания об анонсе («Доехали?»)'**
+  String get notificationGroupArrivalCheck;
+
+  /// No description provided for @adminPointKind.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вид точки'**
+  String get adminPointKind;
+
+  /// No description provided for @adminPointKindCity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город'**
+  String get adminPointKindCity;
+
+  /// No description provided for @adminPointKindTerminal.
+  ///
+  /// In ru, this message translates to:
+  /// **'Терминал (геозона)'**
+  String get adminPointKindTerminal;
+
+  /// No description provided for @adminPointRadius.
+  ///
+  /// In ru, this message translates to:
+  /// **'Радиус геозоны, м'**
+  String get adminPointRadius;
+
+  /// No description provided for @adminPointTerminalNeedsGeofence.
+  ///
+  /// In ru, this message translates to:
+  /// **'Для терминала нужны широта, долгота и радиус'**
+  String get adminPointTerminalNeedsGeofence;
+
+  /// No description provided for @adminCityStatsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'По городам'**
+  String get adminCityStatsTitle;
+
+  /// No description provided for @adminCityStatsArrivals.
+  ///
+  /// In ru, this message translates to:
+  /// **'Анонсы'**
+  String get adminCityStatsArrivals;
+
+  /// No description provided for @adminCityStatsCargos.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грузы'**
+  String get adminCityStatsCargos;
+
+  /// No description provided for @adminCityStatsDeals.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделки'**
+  String get adminCityStatsDeals;
+
+  /// No description provided for @adminCityStatsEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пока нет активности по городам'**
+  String get adminCityStatsEmpty;
 }
 
 class _LubaoLocalizationsDelegate

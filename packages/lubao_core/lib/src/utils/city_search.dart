@@ -128,3 +128,19 @@ List<City> searchCities(List<City> cities, List<Country> countries, String query
   ranked.sort((a, b) => a.$2.compareTo(b.$2));
   return ranked.take(limit).map((r) => r.$1).toList();
 }
+
+/// Поиск города погрузки (задача 040): те же правила, что у [searchCities] —
+/// по названиям на всех четырёх языках, не зависит от языка интерфейса.
+/// Пустой запрос — пустой результат (вызывающий покажет полный список).
+List<LoadingPoint> searchPoints(List<LoadingPoint> points, String query, {int limit = 50}) {
+  final queryCandidates = _searchCandidates(query);
+  if (queryCandidates.isEmpty) return const [];
+
+  final ranked = <(LoadingPoint, int)>[];
+  for (final point in points) {
+    final rank = _rank(queryCandidates, _candidatesForI18n(point.name));
+    if (rank != null) ranked.add((point, rank));
+  }
+  ranked.sort((a, b) => a.$2.compareTo(b.$2));
+  return ranked.take(limit).map((r) => r.$1).toList();
+}

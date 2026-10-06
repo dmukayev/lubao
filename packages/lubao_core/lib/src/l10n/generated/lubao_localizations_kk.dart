@@ -440,9 +440,6 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get driverSetupSubmit => 'Сақтап, жалғастыру';
 
   @override
-  String get feedTitle => 'Хоргостағы жүктер';
-
-  @override
   String get driverHomeGreeting => 'Сәлем,';
 
   @override
@@ -1166,7 +1163,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String driversAtPointTitle(String point) {
-    return '$point нүктесінде кімдер болады';
+    return 'Бос жүргізушілер: $point';
   }
 
   @override
@@ -2684,4 +2681,126 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get garageGoToGarage => 'Менің гаражым';
+
+  @override
+  String get cityPickerTitle => 'Қаланы таңдаңыз';
+
+  @override
+  String get cityPickerSearchHint => 'Қаланы іздеу';
+
+  @override
+  String get cityPickerNearby => 'Маған жақын';
+
+  @override
+  String get cityPickerNearbyNotFound =>
+      'Жақын жерде қала табылмады — тізімнен таңдаңыз';
+
+  @override
+  String get cityPickerRecent => 'Соңғылар';
+
+  @override
+  String get cityPickerAll => 'Барлық қалалар';
+
+  @override
+  String get cityPickerNothingFound => 'Ештеңе табылмады';
+
+  @override
+  String get cityFieldPlaceholder => 'Қаланы таңдаңыз';
+
+  @override
+  String get announceArrivalCityError => 'Бос болатын қаланы таңдаңыз';
+
+  @override
+  String get announceArrivalAddAnother => 'Тағы бір жариялау';
+
+  @override
+  String get announceArrivalOthers => 'Жоспардағы келесілері';
+
+  @override
+  String get announceArrivalLimit =>
+      'Бір уақытта бестен артық жариялауға болмайды';
+
+  @override
+  String get arrivalQuestionDay =>
+      'Жеттіңіз бе? «Мен осындамын» түймесін басыңыз';
+
+  @override
+  String get arrivalQuestionStill => 'Әлі жүк іздеп жүрсіз бе?';
+
+  @override
+  String get arrivalStillYes => 'Иә, іздеп жүрмін';
+
+  @override
+  String get arrivalStillLeft => 'Кеттім';
+
+  @override
+  String get feedBadgePartial => 'Қосымша жүк';
+
+  @override
+  String get feedLoadMore => 'Тағы көрсету';
+
+  @override
+  String cargoPartialHintFits(String committed, String cargo, String capacity) {
+    return 'Ағымдағы жүкке сыяды: $committed т + $cargo т / $capacity т';
+  }
+
+  @override
+  String cargoPartialHintFull(String committed, String cargo, String capacity) {
+    return 'Ағымдағы жүкке сыймайды: $committed т + $cargo т / $capacity т';
+  }
+
+  @override
+  String get cargoPartialHintNextTrip =>
+      'Тиеу күні басқа — бұл қосымша жүк емес, келесі рейс';
+
+  @override
+  String get cargoPickupCityLabel => 'Тиеу қаласы';
+
+  @override
+  String get postCargoPickupCity => 'Тиеу қаласы';
+
+  @override
+  String get postCargoPickupCityError => 'Тиеу қаласын таңдаңыз';
+
+  @override
+  String get postCargoAllowPartial => 'Қосымша жүк қосуға болады';
+
+  @override
+  String get postCargoAllowPartialHint =>
+      'Жүк бүкіл көлікке емес — жүргізуші тағы алуы мүмкін';
+
+  @override
+  String get notificationGroupArrivalCheck =>
+      'Жариялау туралы еске салу («Жеттіңіз бе?»)';
+
+  @override
+  String get adminPointKind => 'Нүкте түрі';
+
+  @override
+  String get adminPointKindCity => 'Қала';
+
+  @override
+  String get adminPointKindTerminal => 'Терминал (геоаймақ)';
+
+  @override
+  String get adminPointRadius => 'Геоаймақ радиусы, м';
+
+  @override
+  String get adminPointTerminalNeedsGeofence =>
+      'Терминал үшін ендік, бойлық және радиус қажет';
+
+  @override
+  String get adminCityStatsTitle => 'Қалалар бойынша';
+
+  @override
+  String get adminCityStatsArrivals => 'Жарияланымдар';
+
+  @override
+  String get adminCityStatsCargos => 'Жүктер';
+
+  @override
+  String get adminCityStatsDeals => 'Мәмілелер';
+
+  @override
+  String get adminCityStatsEmpty => 'Қалалар бойынша белсенділік жоқ';
 }

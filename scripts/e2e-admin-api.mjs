@@ -154,4 +154,86 @@ await api('PATCH', `/admin/drivers/${e2eDriver.id}`, {
   body: { fullName: 'Эдуард Тестов', reason: 'E2E: откат' },
 });
 
+// ---- 040. Точка → город --------------------------------------------------------
+const ref040 = (await api('GET', '/reference-data')).json;
+const terminal = ref040.points.find((p) => p.kind === 'TERMINAL');
+assert(!!terminal && terminal.radiusM === 3000 && typeof terminal.lat === 'number', 'Хоргос — терминал с геозоной (kind=TERMINAL, радиус, координаты числами)', JSON.stringify(terminal));
+assert(ref040.points.filter((p) => p.kind === 'CITY').length >= 20, 'справочник точек: областные центры РК — города (kind=CITY)');
+assert(
+  ref040.cities.filter((c) => c.lat != null).every((c) => typeof c.lat === 'number' && typeof c.lng === 'number'),
+  'координаты городов в справочнике — числа, а не строки Decimal (иначе клиент не разберёт справочник)',
+);
+assert(ref040.cities.some((c) => c.lat != null), 'у городов-точек есть координаты');
+const almatyPoint = ref040.points.find((p) => p.name.ru === 'Алматы');
+const astanaPoint = ref040.points.find((p) => p.name.ru === 'Астана');
+assert(!!almatyPoint && !!astanaPoint, 'в справочнике есть точки Алматы и Астана');
+
+// Админка точек: терминал без геозоны не заводится; город ↔ терминал; выключение.
+const zharkent = ref040.cities.find((c) => c.code === 'KZ-ZHETYSU-ZHARKENT');
+const pointName = { kk: 'E2E Жаркент', ru: 'E2E Жаркент', zh: 'E2E Zharkent', en: 'E2E Zharkent' };
+const terminalNoGeo = await api('POST', '/admin/reference/points', { token, body: { cityId: zharkent.id, kind: 'TERMINAL', name: pointName } });
+assert(terminalNoGeo.status === 400, 'терминал без координат и радиуса отклоняется (400)', `status=${terminalNoGeo.status}`);
+const cityPoint = await api('POST', '/admin/reference/points', { token, body: { cityId: zharkent.id, name: pointName } });
+assert(cityPoint.status === 201 && cityPoint.json.kind === 'CITY' && cityPoint.json.radiusM === null, 'точка-город создаётся без геозоны', JSON.stringify(cityPoint.json));
+const patchNoRadius = await api('PATCH', `/admin/reference/points/${cityPoint.json.id}`, { token, body: { kind: 'TERMINAL', reason: 'E2E' } });
+assert(patchNoRadius.status === 400, 'город → терминал без радиуса отклоняется', `status=${patchNoRadius.status}`);
+const patchTerminal = await api('PATCH', `/admin/reference/points/${cityPoint.json.id}`, { token, body: { kind: 'TERMINAL', radiusM: 2500, reason: 'E2E' } });
+assert(patchTerminal.status < 300, 'город → терминал с радиусом принимается', `status=${patchTerminal.status} ${patchTerminal.text.slice(0, 120)}`);
+const patchBack = await api('PATCH', `/admin/reference/points/${cityPoint.json.id}`, { token, body: { kind: 'CITY', isActive: false, reason: 'E2E: убираем тестовую точку' } });
+assert(patchBack.status < 300, 'терминал → город и выключение точки принимаются');
+
+// Разрез сводки по городам: Алматы — анонс D6 и груз 6.
+const byCity = (await get('/admin/stats/by-city')).json;
+const almatyRow = byCity.find((r) => r.pointId === almatyPoint.id);
+assert(!!almatyRow && almatyRow.arrivals >= 1 && almatyRow.cargos >= 1, 'сводка по городам: у Алматы есть анонсы и грузы', JSON.stringify(almatyRow));
+
+// Груз без города погрузки опубликовать нельзя.
+const ownerLogin = await api('POST', '/auth/company/login', { body: { email: 'e2e-owner@lubao-test.cn', password: 'E2eLubao2026!', deviceName: 'e2e', platform: 'ios' } });
+const ownerToken = ownerLogin.json.accessToken;
+const refCountry = ref040.countries.find((c) => c.code === 'KZ');
+const cargoBody = { destinationCountryId: refCountry.id, bodyTypeId: ref040.bodyTypes[0].id, price: 100, currency: 'USD', readyDate: '2030-01-01' };
+const noPoint = await api('POST', '/cargos', { token: ownerToken, body: cargoBody });
+assert(noPoint.status === 400, 'груз без города погрузки отклоняется (400)', `status=${noPoint.status}`);
+const badPoint = await api('POST', '/cargos', { token: ownerToken, body: { ...cargoBody, pointId: cityPoint.json.id } });
+assert(badPoint.status === 400, 'груз с выключенным городом отклоняется (400)', `status=${badPoint.status}`);
+
+// Лента водителя на сервере и несколько анонсов (D6 — «свободен в Алматы», код 1111).
+const D6 = '+77010000008';
+await api('POST', '/auth/phone/request-code', { body: { phone: D6 } });
+const d6Login = await api('POST', '/auth/phone/verify', { body: { phone: D6, code: '1111', deviceName: 'e2e', platform: 'ios' } });
+assert(d6Login.status < 300, 'вход водителя D6 по SMS-коду', `status=${d6Login.status}`);
+const d6 = d6Login.json.accessToken;
+const feed = await api('GET', '/cargos?limit=2&offset=0', { token: d6 });
+assert(Array.isArray(feed.json.items) && feed.json.items.length === 2 && feed.json.total >= 7 && feed.json.limit === 2, 'лента: страница {items,total,limit} вместо голого массива', JSON.stringify(Object.keys(feed.json)));
+assert(feed.json.originCityId === almatyPoint.cityId && feed.json.originSource === 'arrival', 'лента считается от города анонса (Алматы)', `${feed.json.originCityId} ${feed.json.originSource}`);
+assert(feed.json.items[0].id === '11111111-1111-4111-8111-111111111006' && feed.json.items[0].pickupRank === 0, 'первым — груз из Алматы (город анонса = город погрузки)', feed.json.items[0].id);
+assert(feed.json.items[0].allowPartial === true, 'груз 6 помечен «можно догрузом»');
+const page2 = await api('GET', '/cargos?limit=2&offset=2', { token: d6 });
+assert(page2.json.items.length === 2 && !page2.json.items.some((c) => feed.json.items.map((x) => x.id).includes(c.id)), 'вторая страница ленты без повторов');
+assert(page2.json.items.every((c) => c.pickupRank >= 0), 'каждая карточка ленты несёт ранг города');
+const hint = await api('GET', '/cargos/11111111-1111-4111-8111-111111111006/partial-hint', { token: d6 });
+assert(hint.status === 200 && hint.json.hint === null, 'подсказка догруза: без активной сделки её нет');
+
+const mineBefore = (await api('GET', '/arrivals/me', { token: d6 })).json;
+assert(mineBefore.arrivals.length === 1 && mineBefore.arrival.id === mineBefore.arrivals[0].id, '/arrivals/me: один анонс D6 (текущий = единственный)');
+const notOnSite = await api('POST', '/arrivals/still-looking', { token: d6, body: {} });
+assert(notOnSite.status === 404, '«Да, ещё ищу» без анонса «на месте» — 404', `status=${notOnSite.status}`);
+const second = await api('POST', '/arrivals', {
+  token: d6,
+  body: { pointId: astanaPoint.id, plannedAt: new Date(Date.now() + 2 * 86400000).toISOString(), plannedDay: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10), anyCountry: true },
+});
+assert(second.status < 300, 'второй анонс (Астана, через 2 дня) создаётся рядом с первым', `status=${second.status} ${second.text.slice(0, 120)}`);
+const mineTwo = (await api('GET', '/arrivals/me', { token: d6 })).json;
+assert(mineTwo.arrivals.length === 2, 'у D6 два активных анонса', `${mineTwo.arrivals.length}`);
+const checkin = await api('POST', '/arrivals/checkin', { token: d6, body: { arrivalId: mineBefore.arrival.id } });
+assert(checkin.status < 300 && checkin.json.status === 'ON_SITE' && !!checkin.json.lastConfirmedAt, '«Я на месте» по id анонса: ON_SITE + lastConfirmedAt', JSON.stringify(checkin.json));
+const confirmed = await api('POST', '/arrivals/still-looking', { token: d6, body: {} });
+assert(confirmed.status < 300 && confirmed.json.status === 'ON_SITE', '«Да, ещё ищу» подтверждает анонс «на месте»');
+const mineAfter = (await api('GET', '/arrivals/me', { token: d6 })).json;
+assert(mineAfter.arrival.status === 'ON_SITE' && mineAfter.arrivals[0].status === 'ON_SITE', 'текущий анонс — тот, где водитель на месте, он первым в списке');
+const cancelSecond = await api('POST', '/arrivals/cancel', { token: d6, body: { arrivalId: second.json.id } });
+assert(cancelSecond.status < 300, 'отмена второго анонса по id');
+const mineEnd = (await api('GET', '/arrivals/me', { token: d6 })).json;
+assert(mineEnd.arrivals.length === 1 && mineEnd.arrival.status === 'ON_SITE', 'остался один анонс — тот, где водитель на месте (D6 виден логисту в Алматы)');
+
 console.log(`Готово: ${checks} проверок.`);

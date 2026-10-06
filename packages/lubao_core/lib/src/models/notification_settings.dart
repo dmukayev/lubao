@@ -9,6 +9,7 @@ enum NotificationEventGroup {
   dealStatus,
   verification,
   agreedCheck,
+  arrivalCheck,
 }
 
 const _eventGroupWire = {
@@ -20,6 +21,7 @@ const _eventGroupWire = {
   NotificationEventGroup.dealStatus: 'DEAL_STATUS',
   NotificationEventGroup.verification: 'VERIFICATION',
   NotificationEventGroup.agreedCheck: 'AGREED_CHECK',
+  NotificationEventGroup.arrivalCheck: 'ARRIVAL_CHECK',
 };
 
 String eventGroupToWire(NotificationEventGroup group) => _eventGroupWire[group]!;

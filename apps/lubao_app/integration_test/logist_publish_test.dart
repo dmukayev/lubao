@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lubao_app/app.dart';
+import 'package:lubao_app/providers/api_providers.dart';
 import 'package:lubao_app/providers/data_providers.dart';
 import 'package:lubao_core/lubao_core.dart';
 
@@ -41,6 +42,8 @@ void main() {
       await tester.tap(find.byKey(const Key('companyPostCargoFab')));
       await waitFor(tester, find.byKey(const Key('postCargoDestination')));
       expect(find.byKey(const Key('postCargoVerificationBanner')), findsNothing);
+      // 040, п.7: у новой компании грузов ещё нет — города по умолчанию нет, он обязателен.
+      expect(find.text(t.cityFieldPlaceholder), findsOneWidget);
       await tester.enterText(find.byKey(const Key('postCargoDestination')), 'Алматы');
       await tester.pumpAndSettle();
       await tester.tap(find.textContaining('Алматы').last);
@@ -56,6 +59,31 @@ void main() {
       expectInsideSafeZone(tester);
     });
 
+    // Груз без города погрузки не публикуется: форма говорит почему.
+    await run.step(tester, 'город-погрузки-обязателен', () async {
+      final submit = find.byKey(const Key('postCargoSubmit'));
+      await reveal(tester, submit);
+      await tester.tap(submit);
+      await tester.pumpAndSettle();
+      // Поле города — первое в форме: возвращаемся наверх, оно ленивое.
+      await tester.drag(find.byType(ListView).first, const Offset(0, 3000));
+      await tester.pumpAndSettle();
+      expect(find.text(t.postCargoPickupCityError), findsOneWidget);
+    });
+
+    await run.step(tester, 'выбор-города-погрузки-и-догруз', () async {
+      final field = find.byKey(const Key('postCargoPickupCity'));
+      await waitFor(tester, field);
+      await tester.tap(field);
+      await pickCityByName(tester, 'Astana', 'Астана');
+      expect(find.text(t.postCargoPickupCityError), findsNothing);
+      final partial = find.byKey(const Key('postCargoAllowPartial'));
+      await reveal(tester, partial);
+      await tester.tap(partial);
+      await tester.pumpAndSettle();
+      expect(tester.widget<SwitchListTile>(partial).value, isTrue);
+    });
+
     late String cargoId;
     await run.step(tester, 'публикация', () async {
       final submit = find.byKey(const Key('postCargoSubmit'));
@@ -67,6 +95,9 @@ void main() {
       expect(cargos, isNotEmpty);
       final cargo = cargos.first;
       expect(cargo.volumeM3, 90);
+      expect(cargo.allowPartial, isTrue, reason: '«Можно догрузом» ушло на сервер');
+      final refData = await container.read(referenceDataProvider.future);
+      expect(refData.pointOrNull(cargo.pointId)?.name.ru, 'Астана', reason: 'город погрузки — из выбора, не первая точка');
       cargoId = cargo.id;
       expectNoOverflow(tester);
     });

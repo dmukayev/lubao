@@ -30,6 +30,9 @@ const e2eCargo2 = '11111111-1111-4111-8111-111111111002';
 const e2eCargo3 = '11111111-1111-4111-8111-111111111003';
 const e2eCargo4 = '11111111-1111-4111-8111-111111111004';
 const e2eCargo5 = '11111111-1111-4111-8111-111111111005';
+/// Груз из Алматы (можно догрузом) и груз из Астаны — порядок ленты по городу анонса (040).
+const e2eCargo6 = '11111111-1111-4111-8111-111111111006';
+const e2eCargo7 = '11111111-1111-4111-8111-111111111007';
 
 /// Ждём виджет реальным временем, а не кадрами: первый сетевой запрос
 /// (сессия, справочники) может идти дольше, чем `pumpAndSettle` считает
@@ -395,4 +398,27 @@ Future<void> reveal(WidgetTester tester, Finder finder) async {
   }
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle(const Duration(milliseconds: 100), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 3)).catchError((_) => 0);
+}
+
+/// Выбор города в общем выборе города (040, п.2): ввод названия в поиск (на
+/// любом языке/латиницей) и касание найденной строки. Шторка уже открыта.
+Future<void> pickCityByName(WidgetTester tester, String query, String shownName) async {
+  await waitFor(tester, find.byKey(const Key('cityPickerSearch')));
+  await tester.enterText(find.byKey(const Key('cityPickerSearch')), query);
+  await tester.pumpAndSettle();
+  final row = find.descendant(of: find.byType(ListTile), matching: find.text(shownName));
+  await waitFor(tester, row);
+  await tester.tap(row.first);
+  await tester.pumpAndSettle();
+}
+
+/// id груза в самой верхней (первой в списке) карточке ленты. Строится только
+/// видимая часть ленты, поэтому сравнивать позиции далёких карточек нельзя.
+String firstFeedCargoId(WidgetTester tester) {
+  final cards = find
+      .byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('feedCargoCard-'))
+      .evaluate()
+      .toList();
+  if (cards.isEmpty) fail('В ленте нет ни одной карточки груза');
+  return (cards.first.widget.key as ValueKey<String>).value.substring('feedCargoCard-'.length);
 }

@@ -1,7 +1,8 @@
 /// Статус анонса прибытия (задача 015): PLANNED — «буду», ON_SITE — «на
-/// месте», COMPLETED/CANCELLED — завершён. Неизвестное значение с бэкенда
-/// не должно падать клиент — фолбэк на `planned`.
-enum ArrivalStatus { planned, onSite, completed, cancelled }
+/// месте», COMPLETED/CANCELLED — завершён, EXPIRED — угас по правилу
+/// свежести (040). Неизвестное значение с бэкенда не должно падать клиент —
+/// фолбэк на `planned`.
+enum ArrivalStatus { planned, onSite, completed, cancelled, expired }
 
 ArrivalStatus arrivalStatusFromJson(String value) {
   switch (value) {
@@ -11,6 +12,8 @@ ArrivalStatus arrivalStatusFromJson(String value) {
       return ArrivalStatus.completed;
     case 'CANCELLED':
       return ArrivalStatus.cancelled;
+    case 'EXPIRED':
+      return ArrivalStatus.expired;
     case 'PLANNED':
     default:
       return ArrivalStatus.planned;
@@ -136,11 +139,15 @@ class ArrivalTemplate {
       );
 }
 
+/// Что приложению спросить у водителя сейчас (правило свежести, 040).
+enum ArrivalQuestion { day, stillLooking }
+
 class Arrival {
   const Arrival({
     required this.id,
     required this.pointId,
     required this.plannedAt,
+    required this.plannedDay,
     this.arrivedAt,
     required this.waitDays,
     required this.anyCountry,
@@ -149,11 +156,15 @@ class Arrival {
     required this.viewsCount,
     this.tractorId,
     this.trailerId,
+    this.ask,
   });
 
   final String id;
   final String pointId;
   final DateTime plannedAt;
+
+  /// Календарный день приезда без часового пояса (041, п.5).
+  final DateTime plannedDay;
   final DateTime? arrivedAt;
   final int waitDays;
   final bool anyCountry;
@@ -164,10 +175,15 @@ class Arrival {
   final String? tractorId;
   final String? trailerId;
 
+  /// «Доехали?» (в день приезда) / «Ещё ищете груз?» (на месте, 12 ч без
+  /// ответа) — сервер уже отправил push, приложение показывает те же кнопки.
+  final ArrivalQuestion? ask;
+
   factory Arrival.fromJson(Map<String, dynamic> json) => Arrival(
         id: json['id'] as String,
         pointId: json['pointId'] as String,
         plannedAt: DateTime.parse(json['plannedAt'] as String),
+        plannedDay: DateTime.parse((json['plannedDay'] ?? json['plannedAt']) as String),
         arrivedAt: json['arrivedAt'] == null ? null : DateTime.parse(json['arrivedAt'] as String),
         waitDays: json['waitDays'] as int? ?? 2,
         anyCountry: json['anyCountry'] as bool? ?? false,
@@ -176,7 +192,25 @@ class Arrival {
         viewsCount: json['viewsCount'] as int? ?? 0,
         tractorId: json['tractorId'] as String?,
         trailerId: json['trailerId'] as String?,
+        ask: switch (json['ask']) {
+          'DAY' => ArrivalQuestion.day,
+          'STILL_LOOKING' => ArrivalQuestion.stillLooking,
+          _ => null,
+        },
       );
+}
+
+/// Мои активные анонсы (040: их может быть несколько): `current` — где
+/// водитель на месте, иначе ближайший; `all` — все активные, «на месте»
+/// первым, остальные по дате.
+class MyArrivals {
+  const MyArrivals({required this.current, required this.all});
+
+  final Arrival? current;
+  final List<Arrival> all;
+
+  /// Остальные анонсы, кроме текущего.
+  List<Arrival> get others => all.where((a) => a.id != current?.id).toList();
 }
 
 class ArrivalSummaryDay {

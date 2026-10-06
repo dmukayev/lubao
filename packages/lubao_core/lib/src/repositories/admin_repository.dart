@@ -22,6 +22,12 @@ class AdminRepository {
 
   final ApiClient _client;
 
+  /// Разрез сводки по городам (040, п.9).
+  Future<List<CityStatsRow>> statsByCity() async {
+    final res = await _client.dio.get('/admin/stats/by-city');
+    return (res.data as List<dynamic>).map((e) => CityStatsRow.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
   Future<AdminStats> stats({String period = 'today'}) async {
     final res = await _client.dio.get('/admin/stats', queryParameters: {'period': period});
     return AdminStats.fromJson(res.data as Map<String, dynamic>);
@@ -514,8 +520,22 @@ class AdminRepository {
     return Permit.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<LoadingPoint> createPoint(String cityId, I18nText name) async {
-    final res = await _client.dio.post('/admin/reference/points', data: {'cityId': cityId, 'name': name.toJson()});
+  Future<LoadingPoint> createPoint(
+    String cityId,
+    I18nText name, {
+    PointKind kind = PointKind.city,
+    double? lat,
+    double? lng,
+    int? radiusM,
+  }) async {
+    final res = await _client.dio.post('/admin/reference/points', data: {
+      'cityId': cityId,
+      'name': name.toJson(),
+      'kind': kind == PointKind.terminal ? 'TERMINAL' : 'CITY',
+      if (lat != null) 'lat': lat,
+      if (lng != null) 'lng': lng,
+      if (radiusM != null) 'radiusM': radiusM,
+    });
     return LoadingPoint.fromJson(res.data as Map<String, dynamic>);
   }
 
@@ -593,8 +613,20 @@ class AdminRepository {
 
   /// Общая правка точки — названия, город, координаты, включить/выключить
   /// (задача 028, п.21); заменяет узкий `setPointActive` без следа в журнале.
-  Future<void> updatePoint(String id, {I18nText? name, String? cityId, double? lat, double? lng, bool? isActive, required String reason}) async {
+  Future<void> updatePoint(
+    String id, {
+    I18nText? name,
+    String? cityId,
+    double? lat,
+    double? lng,
+    bool? isActive,
+    PointKind? kind,
+    int? radiusM,
+    required String reason,
+  }) async {
     await _client.dio.patch('/admin/reference/points/$id', data: {
+      if (kind != null) 'kind': kind == PointKind.terminal ? 'TERMINAL' : 'CITY',
+      if (radiusM != null) 'radiusM': radiusM,
       if (name != null) 'name': name.toJson(),
       if (cityId != null) 'cityId': cityId,
       if (lat != null) 'lat': lat,

@@ -7,6 +7,9 @@ import 'package:lubao_core/lubao_core.dart';
 /// переопределить: `flutter run --dart-define=API_BASE_URL=http://<lan-ip>:3000`.
 const _apiBaseUrlOverride = String.fromEnvironment('API_BASE_URL');
 
+/// Публичный адрес приложения для ссылок-приглашений (https, не lubao://).
+const appPublicUrl = String.fromEnvironment('APP_PUBLIC_URL', defaultValue: 'https://app.lubao.kz');
+
 String _defaultBaseUrl() {
   if (_apiBaseUrlOverride.isNotEmpty) return _apiBaseUrlOverride;
   if (kIsWeb) return 'http://localhost:3000';

@@ -37,6 +37,8 @@ dependencies:
     path: ../../packages/lubao_core
 
   flutter_riverpod: ^2.6.1
+  flutter_web_plugins:
+    sdk: flutter
   intl: ^0.20.2
   go_router: ^14.6.2
   dio: ^5.7.0

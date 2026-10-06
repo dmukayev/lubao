@@ -231,20 +231,72 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
   }
 }
 
-class _CargoDetailBody extends StatelessWidget {
+/// «Можно догрузом» + для водителя с активной сделкой подсказка «Помещается к
+/// текущему: 8 т + 10 т из 20 т» (040, п.6).
+class PartialLoadBlock extends StatelessWidget {
+  const PartialLoadBlock({required this.cargo, required this.hint});
+
+  final Cargo cargo;
+  final PartialHint? hint;
+
+  static String _tons(double kg) {
+    final tons = kg / 1000;
+    return tons == tons.roundToDouble() ? tons.toStringAsFixed(0) : tons.toStringAsFixed(1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final h = hint;
+    String? hintText;
+    var good = false;
+    if (h != null) {
+      if (h.reason == 'NEXT_TRIP') {
+        hintText = t.cargoPartialHintNextTrip;
+      } else if (h.cargoWeightKg != null && h.capacityKg != null) {
+        good = h.fits;
+        hintText = (h.fits ? t.cargoPartialHintFits : t.cargoPartialHintFull)(
+          _tons(h.committedWeightKg),
+          _tons(h.cargoWeightKg!),
+          _tons(h.capacityKg!),
+        );
+      }
+    }
+    return Container(
+      key: const Key('cargoPartialBlock'),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: hintText == null || good ? AppColors.primarySoft : AppColors.accentSoft,
+        borderRadius: BorderRadius.circular(AppRadius.field),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(t.feedBadgePartial, style: AppTextStyles.bodyStrong.copyWith(color: AppColors.primary)),
+          if (hintText != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(hintText, key: const Key('cargoPartialHint'), style: AppTextStyles.body),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CargoDetailBody extends ConsumerWidget {
   const _CargoDetailBody({required this.cargo, required this.refData});
 
   final Cargo cargo;
   final ReferenceData refData;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final country = refData.countryById(cargo.destinationCountryId);
     final city = refData.cityById(cargo.destinationCityId);
     final bodyType = refData.bodyTypeById(cargo.bodyTypeId);
-    final point = refData.pointById(cargo.pointId);
+    final pointName = refData.pointOrNull(cargo.pointId)?.name.forLanguageCode(locale) ?? '';
     final destinationLabel = [
       city?.name.forLanguageCode(locale),
       country.name.forLanguageCode(locale),
@@ -264,7 +316,7 @@ class _CargoDetailBody extends StatelessWidget {
               children: [
                 _RoutePoint(
                   color: AppColors.primary,
-                  title: point.name.forLanguageCode(locale),
+                  title: pointName,
                   subtitle: formatDate(cargo.readyDate),
                 ),
                 Padding(
@@ -299,6 +351,13 @@ class _CargoDetailBody extends StatelessWidget {
               ],
             ),
           ),
+          if (cargo.allowPartial) ...[
+            const SizedBox(height: AppSpacing.md),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+              child: PartialLoadBlock(cargo: cargo, hint: ref.watch(partialHintProvider(cargo.id)).valueOrNull),
+            ),
+          ],
           const SizedBox(height: AppSpacing.md),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),

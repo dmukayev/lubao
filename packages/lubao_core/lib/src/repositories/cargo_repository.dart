@@ -12,9 +12,20 @@ class CargoRepository {
   final ApiClient _client;
   final ContactEventQueue _contactEventQueue;
 
-  Future<List<Cargo>> feed() async {
-    final res = await _client.dio.get('/cargos');
-    return (res.data as List<dynamic>).map((e) => Cargo.fromJson(e as Map<String, dynamic>)).toList();
+  /// Лента водителя: порядок и отсев на сервере, страницами (040, п.5).
+  Future<CargoFeedPage> feed({int limit = 30, int offset = 0}) async {
+    final res = await _client.dio.get('/cargos', queryParameters: {'limit': limit, 'offset': offset});
+    return CargoFeedPage.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// «Помещается к текущему: 8 т + 10 т из 20 т» — только для водителя с
+  /// активной сделкой, иначе `null` (040, п.6).
+  Future<PartialHint?> partialHint(String cargoId) async {
+    final res = await _client.dio.get('/cargos/$cargoId/partial-hint');
+    final data = res.data;
+    if (data is! Map<String, dynamic>) return null;
+    final hint = data['hint'];
+    return hint is Map<String, dynamic> ? PartialHint.fromJson(hint) : null;
   }
 
   Future<List<Cargo>> mine() async {
@@ -51,8 +62,9 @@ class CargoRepository {
   }
 
   /// «Подходит N водителям на точке» при публикации (задача 033, п.10).
-  Future<int> fitCount({double? weightKg, double? volumeM3, int? palletCount}) async {
+  Future<int> fitCount({double? weightKg, double? volumeM3, int? palletCount, String? pointId}) async {
     final res = await _client.dio.get('/cargos/fit-count', queryParameters: {
+      if (pointId != null) 'pointId': pointId,
       if (weightKg != null) 'weightKg': weightKg,
       if (volumeM3 != null) 'volumeM3': volumeM3,
       if (palletCount != null) 'palletCount': palletCount,

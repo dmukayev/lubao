@@ -441,9 +441,6 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get driverSetupSubmit => 'Save and continue';
 
   @override
-  String get feedTitle => 'Cargo in Khorgos';
-
-  @override
   String get driverHomeGreeting => 'Hi,';
 
   @override
@@ -1171,7 +1168,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String driversAtPointTitle(String point) {
-    return 'Who\'s at $point';
+    return 'Who is free: $point';
   }
 
   @override
@@ -2686,4 +2683,126 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get garageGoToGarage => 'My garage';
+
+  @override
+  String get cityPickerTitle => 'Choose a city';
+
+  @override
+  String get cityPickerSearchHint => 'Search city';
+
+  @override
+  String get cityPickerNearby => 'Near me';
+
+  @override
+  String get cityPickerNearbyNotFound =>
+      'No city nearby — pick one from the list';
+
+  @override
+  String get cityPickerRecent => 'Recent';
+
+  @override
+  String get cityPickerAll => 'All cities';
+
+  @override
+  String get cityPickerNothingFound => 'Nothing found';
+
+  @override
+  String get cityFieldPlaceholder => 'Choose a city';
+
+  @override
+  String get announceArrivalCityError =>
+      'Choose the city where you will be free';
+
+  @override
+  String get announceArrivalAddAnother => 'Add another announcement';
+
+  @override
+  String get announceArrivalOthers => 'Coming up';
+
+  @override
+  String get announceArrivalLimit =>
+      'No more than five announcements at a time';
+
+  @override
+  String get arrivalQuestionDay => 'Arrived? Tap “I\'m here”';
+
+  @override
+  String get arrivalQuestionStill => 'Still looking for cargo?';
+
+  @override
+  String get arrivalStillYes => 'Yes, still looking';
+
+  @override
+  String get arrivalStillLeft => 'I left';
+
+  @override
+  String get feedBadgePartial => 'Part load';
+
+  @override
+  String get feedLoadMore => 'Show more';
+
+  @override
+  String cargoPartialHintFits(String committed, String cargo, String capacity) {
+    return 'Fits with your current load: $committed t + $cargo t of $capacity t';
+  }
+
+  @override
+  String cargoPartialHintFull(String committed, String cargo, String capacity) {
+    return 'Does not fit with your current load: $committed t + $cargo t of $capacity t';
+  }
+
+  @override
+  String get cargoPartialHintNextTrip =>
+      'A different loading date means the next trip, not a part load';
+
+  @override
+  String get cargoPickupCityLabel => 'Loading city';
+
+  @override
+  String get postCargoPickupCity => 'Pickup city';
+
+  @override
+  String get postCargoPickupCityError => 'Choose the pickup city';
+
+  @override
+  String get postCargoAllowPartial => 'Part load allowed';
+
+  @override
+  String get postCargoAllowPartialHint =>
+      'The cargo does not fill the truck — the driver can take more';
+
+  @override
+  String get notificationGroupArrivalCheck =>
+      'Announcement reminders (“Arrived?”)';
+
+  @override
+  String get adminPointKind => 'Point kind';
+
+  @override
+  String get adminPointKindCity => 'City';
+
+  @override
+  String get adminPointKindTerminal => 'Terminal (geofence)';
+
+  @override
+  String get adminPointRadius => 'Geofence radius, m';
+
+  @override
+  String get adminPointTerminalNeedsGeofence =>
+      'A terminal needs latitude, longitude and radius';
+
+  @override
+  String get adminCityStatsTitle => 'By city';
+
+  @override
+  String get adminCityStatsArrivals => 'Announcements';
+
+  @override
+  String get adminCityStatsCargos => 'Cargos';
+
+  @override
+  String get adminCityStatsDeals => 'Deals';
+
+  @override
+  String get adminCityStatsEmpty => 'No city activity yet';
 }

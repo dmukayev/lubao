@@ -425,9 +425,6 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get driverSetupSubmit => '保存并继续';
 
   @override
-  String get feedTitle => '霍尔果斯货源';
-
-  @override
   String get driverHomeGreeting => '你好，';
 
   @override
@@ -1140,7 +1137,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String driversAtPointTitle(String point) {
-    return '谁将抵达$point';
+    return '$point的空闲司机';
   }
 
   @override
@@ -2631,4 +2628,119 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get garageGoToGarage => '我的车库';
+
+  @override
+  String get cityPickerTitle => '选择城市';
+
+  @override
+  String get cityPickerSearchHint => '搜索城市';
+
+  @override
+  String get cityPickerNearby => '我附近';
+
+  @override
+  String get cityPickerNearbyNotFound => '附近没有合适的城市，请从列表中选择';
+
+  @override
+  String get cityPickerRecent => '最近使用';
+
+  @override
+  String get cityPickerAll => '所有城市';
+
+  @override
+  String get cityPickerNothingFound => '未找到';
+
+  @override
+  String get cityFieldPlaceholder => '选择城市';
+
+  @override
+  String get announceArrivalCityError => '请选择您空闲的城市';
+
+  @override
+  String get announceArrivalAddAnother => '再发布一条';
+
+  @override
+  String get announceArrivalOthers => '接下来的计划';
+
+  @override
+  String get announceArrivalLimit => '同时最多发布五条';
+
+  @override
+  String get arrivalQuestionDay => '到了吗？请点击“我已到达”';
+
+  @override
+  String get arrivalQuestionStill => '还在找货吗？';
+
+  @override
+  String get arrivalStillYes => '是，还在找';
+
+  @override
+  String get arrivalStillLeft => '已离开';
+
+  @override
+  String get feedBadgePartial => '可拼货';
+
+  @override
+  String get feedLoadMore => '显示更多';
+
+  @override
+  String cargoPartialHintFits(String committed, String cargo, String capacity) {
+    return '可与当前货物拼装：$committed 吨 + $cargo 吨，共 $capacity 吨';
+  }
+
+  @override
+  String cargoPartialHintFull(String committed, String cargo, String capacity) {
+    return '无法与当前货物拼装：$committed 吨 + $cargo 吨，共 $capacity 吨';
+  }
+
+  @override
+  String get cargoPartialHintNextTrip => '装货日期不同——这是下一趟，不是拼货';
+
+  @override
+  String get cargoPickupCityLabel => '装货城市';
+
+  @override
+  String get postCargoPickupCity => '装货城市';
+
+  @override
+  String get postCargoPickupCityError => '请选择装货城市';
+
+  @override
+  String get postCargoAllowPartial => '可拼货';
+
+  @override
+  String get postCargoAllowPartialHint => '货物不满载——司机可以再拼装其他货物';
+
+  @override
+  String get notificationGroupArrivalCheck => '发布提醒（“到了吗？”）';
+
+  @override
+  String get adminPointKind => '点位类型';
+
+  @override
+  String get adminPointKindCity => '城市';
+
+  @override
+  String get adminPointKindTerminal => '码头（地理围栏）';
+
+  @override
+  String get adminPointRadius => '围栏半径（米）';
+
+  @override
+  String get adminPointTerminalNeedsGeofence => '码头需要纬度、经度和半径';
+
+  @override
+  String get adminCityStatsTitle => '按城市';
+
+  @override
+  String get adminCityStatsArrivals => '公告';
+
+  @override
+  String get adminCityStatsCargos => '货物';
+
+  @override
+  String get adminCityStatsDeals => '交易';
+
+  @override
+  String get adminCityStatsEmpty => '暂无城市活动';
 }

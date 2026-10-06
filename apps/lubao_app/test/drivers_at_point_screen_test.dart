@@ -6,7 +6,9 @@ import 'package:lubao_core/lubao_core.dart';
 
 import 'package:lubao_app/features/company/drivers/drivers_at_point_screen.dart';
 import 'package:lubao_app/providers/api_providers.dart';
+import 'package:lubao_app/providers/data_providers.dart';
 import 'package:lubao_app/providers/auth_provider.dart';
+import 'package:lubao_app/features/shared/city_picking.dart';
 import 'package:lubao_app/providers/locale_provider.dart';
 
 /// Задача 036, п.8 — экран «Водители» открывается без переполнений на 360 px
@@ -85,6 +87,30 @@ ReferenceData _refData({bool twoPoints = false}) => ReferenceData(
       ],
     );
 
+class _FakeRecentPoints extends RecentPointsStore {
+  @override
+  Future<List<String>> load() async => const [];
+
+  @override
+  Future<void> remember(String pointId) async {}
+}
+
+/// Последний груз компании — из него берётся город по умолчанию (040, п.8).
+Cargo _lastCargo() => Cargo(
+      id: 'cargo-1',
+      companyId: 'co',
+      companyName: 'Co',
+      pointId: 'p1',
+      destinationCountryId: 'kz',
+      bodyTypeId: 'bt1',
+      price: 100,
+      currency: Currency.usd,
+      readyDate: DateTime.now(),
+      status: CargoStatus.published,
+      publishedAt: DateTime.now(),
+      expiresAt: DateTime.now(),
+    );
+
 Future<_FakeArrivalRepository> _pump(WidgetTester tester, {required Size size, double textScale = 1.0, String locale = 'ru', bool twoPoints = false}) async {
   tester.view.physicalSize = size * 3;
   tester.view.devicePixelRatio = 3;
@@ -94,6 +120,8 @@ Future<_FakeArrivalRepository> _pump(WidgetTester tester, {required Size size, d
     overrides: [
       authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
       arrivalRepositoryProvider.overrideWithValue(arrivals),
+      myCargosProvider.overrideWith((ref) async => [_lastCargo()]),
+      recentPointsStoreProvider.overrideWithValue(_FakeRecentPoints()),
       referenceDataProvider.overrideWith((ref) async => _refData(twoPoints: twoPoints)),
     ],
     child: MaterialApp(
@@ -113,16 +141,16 @@ Future<_FakeArrivalRepository> _pump(WidgetTester tester, {required Size size, d
 
 void main() {
   testWidgets('360 px: нет переполнений, видны заголовок, итоги и карточки', (tester) async {
-    await _pump(tester, size: const Size(360, 780));
+    final arrivals = await _pump(tester, size: const Size(360, 780));
+    final arrivalsCalledWithPoint = arrivals.lastPointId;
 
     expect(tester.takeException(), isNull);
     expect(find.text('Водители'), findsOneWidget);
     expect(find.text('На месте сейчас · 1'), findsOneWidget);
     expect(find.text('ещё 1 будут сегодня'), findsOneWidget);
-    // Единственная точка — чипа точки в шапке нет (п.1).
-    expect(find.text('Хоргос'), findsNothing);
-    // «Хоргос» нигде не вписан в тексты (п.7).
-    expect(find.textContaining('Хоргос'), findsNothing);
+    // Город по умолчанию — город последнего груза компании, название — из справочника (040, п.8).
+    expect(find.text('Кто свободен: Хоргос'), findsOneWidget);
+    expect(arrivalsCalledWithPoint, 'p1');
   });
 
   testWidgets('крупный шрифт 1.3 на 320 px: нет переполнений', (tester) async {
@@ -158,15 +186,16 @@ void main() {
     expect(firstCard / 844, lessThan(0.4));
   });
 
-  testWidgets('п.7: чип точки при двух точках открывает шторку и перезапрашивает с pointId', (tester) async {
+  testWidgets('040, п.8: «Кто свободен: <город>» — выбор города открывает поиск и перезапрашивает с pointId', (tester) async {
     final arrivals = await _pump(tester, size: const Size(390, 844), twoPoints: true);
+    expect(arrivals.lastPointId, 'p1');
     expect(find.byKey(const Key('driversPointChip')), findsOneWidget);
     await tester.tap(find.byKey(const Key('driversPointChip')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Алтынколь'));
+    await tester.tap(find.byKey(const Key('cityPickerRow-p2')));
     await tester.pumpAndSettle();
     expect(arrivals.lastPointId, 'p2');
-    expect(find.text('Алтынколь'), findsOneWidget);
+    expect(find.text('Кто свободен: Алтынколь'), findsOneWidget);
   });
 
   testWidgets('п.8: в полосе дней — «Сег», а не «Сегодня»', (tester) async {

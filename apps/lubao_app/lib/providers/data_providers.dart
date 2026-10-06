@@ -3,8 +3,14 @@ import 'package:lubao_core/lubao_core.dart';
 
 import 'api_providers.dart';
 
-final cargoFeedProvider = FutureProvider.autoDispose<List<Cargo>>((ref) {
+/// Первая страница ленты водителя; порядок и отсев — на сервере (040, п.5).
+final cargoFeedProvider = FutureProvider.autoDispose<CargoFeedPage>((ref) {
   return ref.watch(cargoRepositoryProvider).feed();
+});
+
+/// «Помещается к текущему» (040, п.6): есть только у водителя с активной сделкой.
+final partialHintProvider = FutureProvider.autoDispose.family<PartialHint?, String>((ref, cargoId) {
+  return ref.watch(cargoRepositoryProvider).partialHint(cargoId);
 });
 
 final myCargosProvider = FutureProvider.autoDispose<List<Cargo>>((ref) {
@@ -63,7 +69,8 @@ final companyVerificationDocumentsProvider = FutureProvider.autoDispose<List<Ver
   return ref.watch(companyRepositoryProvider).verificationDocuments();
 });
 
-final myArrivalProvider = FutureProvider.autoDispose<Arrival?>((ref) {
+/// Мои активные анонсы (040: их может быть несколько).
+final myArrivalsProvider = FutureProvider.autoDispose<MyArrivals>((ref) {
   return ref.watch(arrivalRepositoryProvider).mine();
 });
 

@@ -1621,3 +1621,31 @@ class AdminTranslationStats {
         tokensUsed7d: json['tokensUsed7d'] as int,
       );
 }
+
+/// Строка разреза сводки по городам (задача 040, п.9).
+class CityStatsRow {
+  const CityStatsRow({
+    required this.pointId,
+    required this.name,
+    required this.arrivals,
+    required this.cargos,
+    required this.dealsActive,
+    required this.dealsDelivered,
+  });
+
+  final String pointId;
+  final I18nText name;
+  final int arrivals;
+  final int cargos;
+  final int dealsActive;
+  final int dealsDelivered;
+
+  factory CityStatsRow.fromJson(Map<String, dynamic> json) => CityStatsRow(
+        pointId: json['pointId'] as String,
+        name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
+        arrivals: json['arrivals'] as int? ?? 0,
+        cargos: json['cargos'] as int? ?? 0,
+        dealsActive: json['dealsActive'] as int? ?? 0,
+        dealsDelivered: json['dealsDelivered'] as int? ?? 0,
+      );
+}

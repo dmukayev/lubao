@@ -7,16 +7,18 @@ class ArrivalRepository {
 
   final ApiClient _client;
 
-  Future<Arrival?> mine() async {
+  /// Мои активные анонсы (040: их может быть несколько).
+  Future<MyArrivals> mine() async {
     final res = await _client.dio.get('/arrivals/me');
-    // Бэкенд всегда отдаёт объект-обёртку `{ arrival: ... | null }` (задача
-    // 027) — но на пустое тело без Content-Type (старые/прокси-ответы)
+    // Бэкенд всегда отдаёт объект-обёртку `{ arrival: ... | null, arrivals: [...] }`
+    // (задача 027) — но на пустое тело без Content-Type (старые/прокси-ответы)
     // Dio кладёт в res.data пустую строку, а не null, так что проверка типа
     // всё равно нужна как защита от этого случая.
     final data = res.data;
-    if (data is! Map<String, dynamic>) return null;
+    if (data is! Map<String, dynamic>) return const MyArrivals(current: null, all: []);
     final arrival = data['arrival'];
-    return arrival is Map<String, dynamic> ? Arrival.fromJson(arrival) : null;
+    final all = (data['arrivals'] as List<dynamic>?)?.map((e) => Arrival.fromJson(e as Map<String, dynamic>)).toList() ?? const <Arrival>[];
+    return MyArrivals(current: arrival is Map<String, dynamic> ? Arrival.fromJson(arrival) : null, all: all);
   }
 
   Future<ArrivalTemplate?> lastTemplate() async {
@@ -30,6 +32,7 @@ class ArrivalRepository {
   /// Анонс «буду на точке» (задача 015) — дата/время прибытия, точка,
   /// страны на эту поездку, срок ожидания.
   Future<Arrival> announce({
+    String? arrivalId,
     required String pointId,
     required DateTime plannedAt,
     bool anyCountry = false,
@@ -39,6 +42,7 @@ class ArrivalRepository {
     String? trailerId,
   }) async {
     final res = await _client.dio.post('/arrivals', data: {
+      if (arrivalId != null) 'arrivalId': arrivalId,
       'pointId': pointId,
       'plannedAt': plannedAt.toUtc().toIso8601String(),
       // День — календарная дата как её выбрал водитель, без часового пояса.
@@ -57,13 +61,24 @@ class ArrivalRepository {
     return Arrival.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<Arrival> checkIn() async {
-    final res = await _client.dio.post('/arrivals/checkin');
+  /// «Я на месте» — для конкретного анонса; без `arrivalId` сервер берёт
+  /// ближайший на сегодня.
+  Future<Arrival> checkIn({String? arrivalId, String? pointId}) async {
+    final res = await _client.dio.post('/arrivals/checkin', data: {
+      if (arrivalId != null) 'arrivalId': arrivalId,
+      if (pointId != null) 'pointId': pointId,
+    });
     return Arrival.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<void> cancel() async {
-    await _client.dio.post('/arrivals/cancel');
+  /// «Да, ещё ищу груз» на вопрос «Ещё ищете груз?» (правило свежести, 040).
+  Future<Arrival> stillLooking({String? arrivalId}) async {
+    final res = await _client.dio.post('/arrivals/still-looking', data: {if (arrivalId != null) 'arrivalId': arrivalId});
+    return Arrival.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> cancel({String? arrivalId}) async {
+    await _client.dio.post('/arrivals/cancel', data: {if (arrivalId != null) 'arrivalId': arrivalId});
   }
 
   Future<List<ArrivalListing>> listForCompany({

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lubao_core/src/api/api_client.dart';
 import 'package:lubao_core/src/api/token_storage.dart';
 import 'package:lubao_core/src/repositories/arrival_repository.dart';
+import 'package:lubao_core/src/models/arrival.dart';
 
 /// Не трогает flutter_secure_storage — ApiClient() по умолчанию создаёт
 /// настоящий TokenStorage, которому нужен платформенный канал.
@@ -57,14 +58,16 @@ void main() {
   // репозиторий должен переживать и старое поведение (пустое тело), не
   // падая с CastError.
   group('ArrivalRepository.mine — пустые/явные ответы (027)', () {
-    test('пустое тело без Content-Type → null, без исключения', () async {
+    test('пустое тело без Content-Type → нет анонсов, без исключения', () async {
       final repo = _repoWithBody('', withJsonContentType: false);
-      expect(await repo.mine(), isNull);
+      final mine = await repo.mine();
+      expect(mine.current, isNull);
+      expect(mine.all, isEmpty);
     });
 
-    test('{"arrival": null} → null', () async {
+    test('{"arrival": null} → нет текущего анонса', () async {
       final repo = _repoWithBody('{"arrival": null}');
-      expect(await repo.mine(), isNull);
+      expect((await repo.mine()).current, isNull);
     });
 
     test('{"arrival": {...}} → распарсенный Arrival', () async {
@@ -72,9 +75,30 @@ void main() {
         '{"arrival": {"id":"a1","pointId":"p1","plannedAt":"2026-01-01T00:00:00.000Z","waitDays":2,'
         '"anyCountry":false,"countryIds":[],"status":"PLANNED","viewsCount":0}}',
       );
-      final arrival = await repo.mine();
+      final arrival = (await repo.mine()).current;
       expect(arrival, isNotNull);
       expect(arrival!.id, 'a1');
+    });
+
+    test('040: несколько анонсов — «текущий» и «остальные», вопрос свежести распознаётся', () async {
+      final repo = _repoWithBody(
+        '{"arrival": {"id":"a1","pointId":"p1","plannedAt":"2026-01-01T00:00:00.000Z","plannedDay":"2026-01-01","waitDays":2,'
+        '"anyCountry":false,"countryIds":[],"status":"ON_SITE","viewsCount":0,"ask":"STILL_LOOKING"},'
+        '"arrivals": ['
+        '{"id":"a1","pointId":"p1","plannedAt":"2026-01-01T00:00:00.000Z","plannedDay":"2026-01-01","waitDays":2,"anyCountry":false,"countryIds":[],"status":"ON_SITE","viewsCount":0,"ask":"STILL_LOOKING"},'
+        '{"id":"a2","pointId":"p2","plannedAt":"2026-01-05T00:00:00.000Z","plannedDay":"2026-01-05","waitDays":2,"anyCountry":true,"countryIds":[],"status":"PLANNED","viewsCount":0,"ask":null}'
+        ']}',
+      );
+      final mine = await repo.mine();
+      expect(mine.all.length, 2);
+      expect(mine.current!.ask, ArrivalQuestion.stillLooking);
+      expect(mine.others.map((a) => a.id), ['a2']);
+      expect(mine.others.single.ask, isNull);
+    });
+
+    test('EXPIRED распознаётся как статус', () {
+      expect(arrivalStatusFromJson('EXPIRED'), ArrivalStatus.expired);
+      expect(arrivalStatusFromJson('чего-то-нового'), ArrivalStatus.planned);
     });
   });
 

@@ -14,6 +14,8 @@ import 'e2e_support.dart';
 /// Водители сида (backend/prisma/seed-e2e.ts): D3 проверен, D4 — нет.
 const _d3Card = Key('driversAtPointCard-dddddddd-dddd-4ddd-8ddd-ddddddddd003');
 const _d4Card = Key('driversAtPointCard-dddddddd-dddd-4ddd-8ddd-ddddddddd004');
+/// D6 — «свободен в Алматы» на сегодня (040).
+const _d6Card = Key('driversAtPointCard-dddddddd-dddd-4ddd-8ddd-ddddddddd006');
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -36,8 +38,10 @@ void main() {
       await waitFor(tester, find.byKey(_d3Card));
       expectInsideSafeZone(tester);
       expectNoOverflow(tester);
-      // Единственная точка — чипа точки нет; в полосе дней «Сег», не «Сегодня».
-      expect(find.byKey(const Key('driversPointChip')), findsNothing);
+      // Город по умолчанию — город последнего груза компании (Хоргос, 040 п.8);
+      // название — из справочника, в тексте ARB города нет. В полосе дней «Сег».
+      expect(find.byKey(const Key('driversPointChip')), findsOneWidget);
+      expect(find.text(t.driversAtPointTitle('Хоргос')), findsOneWidget);
       expect(find.text(t.driversAtPointTodayShort), findsOneWidget);
       // Два водителя на точке: проверенный и нет.
       expect(find.byKey(_d4Card), findsOneWidget);
@@ -48,6 +52,26 @@ void main() {
         findsNothing,
         reason: 'у непроверенного водителя нет плашки «Проверен»',
       );
+    });
+
+    // 040, п.8: «Кто свободен в <город>» — выбор города сверху; водитель, объявивший
+    // «свободен в Алматы», виден только там.
+    await run.step(tester, 'кто-свободен-выбор-города-алматы', () async {
+      await tester.tap(find.byKey(const Key('driversPointChip')));
+      await pickCityByName(tester, 'Almaty', 'Алматы');
+      await waitFor(tester, find.byKey(_d6Card));
+      expect(find.text(t.driversAtPointTitle('Алматы')), findsOneWidget);
+      expect(find.byKey(_d3Card), findsNothing, reason: 'D3 на месте в другом городе');
+      expect(find.byKey(_d4Card), findsNothing);
+      expectInsideSafeZone(tester);
+      expectNoOverflow(tester);
+    });
+
+    await run.step(tester, 'кто-свободен-обратно-хоргос', () async {
+      await tester.tap(find.byKey(const Key('driversPointChip')));
+      await pickCityByName(tester, 'korg', 'Хоргос');
+      await waitFor(tester, find.byKey(_d3Card));
+      expect(find.byKey(_d6Card), findsNothing);
     });
 
     await run.step(tester, 'фильтр-проверенные', () async {
@@ -180,6 +204,16 @@ void main() {
       // Остались в чате: поле ввода на месте.
       expect(find.byKey(const Key('chatMessageInput')), findsOneWidget);
       expectInsideSafeZone(tester);
+      expectNoOverflow(tester);
+    });
+
+    // 040, п.4: подтвердил сделку в приложении — анонс исполнил свою работу и погас сам.
+    await run.step(tester, 'анонс-погас-после-подтверждения', () async {
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+      await goTab(tester, t.navFeed);
+      await waitFor(tester, find.byKey(const Key('driverAnnounceArrivalButton')));
+      expect(find.byKey(const Key('driverCheckInButton')), findsNothing);
       expectNoOverflow(tester);
     });
   });

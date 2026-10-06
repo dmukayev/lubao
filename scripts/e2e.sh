@@ -210,7 +210,7 @@ start_backend() {
   (
     cd backend
     DATABASE_URL="$E2E_DB_URL" REDIS_URL="redis://localhost:${REDIS_PORT:-6379}/1" PORT="$E2E_PORT" \
-      SMS_PROVIDER=console EMAIL_PROVIDER=console TRANSLATION_PROVIDER=noop NODE_ENV=development \
+      SMS_PROVIDER=console EMAIL_PROVIDER=console TRANSLATION_PROVIDER=noop NODE_ENV=development JOBS_DISABLED=true \
       OCR_SERVICE_URL="http://localhost:${OCR_PORT}" \
       exec node dist/src/main.js >"$RESULTS/backend.log" 2>&1
   ) &
@@ -355,6 +355,14 @@ for DEVICE in "${DEVICES[@]}"; do
       row "админка: API-смоук (10, 13, 14)" "❌" "см. $DEVICE_SLUG-admin-api.log"
       tail -15 "$RESULTS/$DEVICE_SLUG-admin-api.log"; FAILED=$((FAILED + 1))
     fi
+    # Правило свежести анонса на реальной БД (задача 040, п.4): время подставляется
+    # параметром, ждать сутки не нужно; трогает только анонсы водителя D5 и убирает их.
+    if DATABASE_URL="$E2E_DB_URL" run_with_timeout 120 "$RESULTS/$DEVICE_SLUG-freshness.log" node scripts/e2e-freshness.mjs; then
+      row "правило свежести анонса (040, п.4): день приезда, 12 ч, гашение, геозона" "✅" "$(grep -c '^ok ' "$RESULTS/$DEVICE_SLUG-freshness.log") проверок"
+    else
+      row "правило свежести анонса (040, п.4)" "❌" "см. $DEVICE_SLUG-freshness.log"
+      tail -15 "$RESULTS/$DEVICE_SLUG-freshness.log"; FAILED=$((FAILED + 1))
+    fi
     # Смоук меняет данные (регистрирует водителя из ЧС) — для UI админки
     # чистое состояние нужно заново.
     if [[ -z "${E2E_SKIP_ADMIN_UI:-}" ]]; then
@@ -378,8 +386,8 @@ for DEVICE in "${DEVICES[@]}"; do
   run_admin_ui
 
   echo "== сценарии приложения: часть 2 (после решений админа) =="
-  for name in "${PHASE3[@]}"; do run_ios "$name"; done
-  for name in "${PHASE4[@]}"; do run_ios "$name"; done
+  for name in "${PHASE3[@]:-}"; do [[ -n "$name" ]] && run_ios "$name"; done
+  for name in "${PHASE4[@]:-}"; do [[ -n "$name" ]] && run_ios "$name"; done
 
   xcrun simctl shutdown "$UDID" >/dev/null 2>&1 || true
   append_steps "$DEVICE_SLUG"

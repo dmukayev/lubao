@@ -55,6 +55,8 @@ class CompanyCargosScreen extends ConsumerWidget {
 
                 return CargoCard(
                   key: Key('companyCargoCard-${cargo.id}'),
+                  originLabel: refData?.pointOrNull(cargo.pointId)?.name.forLanguageCode(locale),
+                  partialLabel: cargo.allowPartial ? t.feedBadgePartial : null,
                   destinationLabel: destinationLabel,
                   bodyTypeLabel: bodyType?.name.forLanguageCode(locale) ?? '',
                   priceLabel: formatMoney(cargo.price, cargo.currency),

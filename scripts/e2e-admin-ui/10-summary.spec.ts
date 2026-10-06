@@ -1,7 +1,7 @@
 // Сценарий 10: сводка — плитки и строки «Требует внимания» совпадают со
 // списками, в которые ведут (число на плитке = число строк в списке).
 import { expect, test, type Page } from '@playwright/test';
-import { api, adminToken, login, openRoute, Steps } from './helpers';
+import { api, adminToken, login, openRoute, scrollPaneTo, Steps } from './helpers';
 
 async function listCount(page: Page, kind: 'drivers' | 'companies' | 'cargos'): Promise<number> {
   const desktop = (page.viewportSize()?.width ?? 0) >= 800;
@@ -23,6 +23,16 @@ test('сводка: плитки и «Требует внимания» веду
     await expect(page.getByRole('button', { name: new RegExp(`^${stats.openComplaints} Открытые жалобы`) })).toBeVisible();
     await expect(page.getByRole('button', { name: new RegExp(`^${stats.pendingDocs} Документы на проверке`) })).toBeVisible();
     await expect(page.getByText('Что-то пошло не так')).toHaveCount(0);
+  });
+
+  // Задача 040, п.9: разрез сводки по городам — анонсы / грузы / сделки.
+  await steps.step('сводка-по-городам', async () => {
+    const rows = ((await api('GET', '/admin/stats/by-city', { token })).json ?? []) as Array<{ name: { ru: string } }>;
+    expect(rows.length).toBeGreaterThan(0);
+    const x = Math.round((page.viewportSize()?.width ?? 1280) / 2);
+    await scrollPaneTo(page, page.getByText('По городам', { exact: true }), x);
+    await expect(page.getByText(rows[0].name.ru, { exact: true }).first()).toBeVisible();
+    await openRoute(page, '/dashboard');
   });
 
   await steps.step('плитка-водители', async () => {

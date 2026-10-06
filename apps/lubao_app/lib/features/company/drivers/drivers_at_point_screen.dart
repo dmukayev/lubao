@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
+import '../../shared/city_picking.dart';
 import '../../shared/status_helpers.dart';
 import '../haul_hint.dart';
 
@@ -43,6 +44,19 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   @override
   void initState() {
     super.initState();
+    _initCity();
+  }
+
+  /// По умолчанию — город последнего груза компании (040, п.8); нет грузов —
+  /// все города, логист выбирает сам.
+  Future<void> _initCity() async {
+    try {
+      final cargos = await ref.read(myCargosProvider.future);
+      _pointId = cargos.firstOrNull?.pointId;
+    } catch (e) {
+      debugPrint('DriversAtPointScreen: default city failed: $e');
+    }
+    if (!mounted) return;
     _loadSummary();
     _reload();
   }
@@ -295,8 +309,8 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     // Чип точки (задача 036, п.1) — только когда активных точек больше
     // одной; единственную точку показывать незачем.
     final activePoints = referenceData.valueOrNull?.points.where((p) => p.isActive).toList() ?? const [];
-    final selectedPoint = activePoints.where((p) => p.id == _pointId).firstOrNull ?? activePoints.firstOrNull;
-    final primaryPointName = selectedPoint?.name.forLanguageCode(locale) ?? '';
+    final selectedPoint = activePoints.where((p) => p.id == _pointId).firstOrNull;
+    final selectedPointName = selectedPoint?.name.forLanguageCode(locale);
     // WhatsApp заблокирован в Китае — логисту оттуда вместо него только чат
     // Lubao (decisions.md «Звонки — обычные, через телефон», задача 017).
     final companyCountryId = ref.watch(sessionProvider)?.company?.countryId;
@@ -309,33 +323,6 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
       appBar: AppBar(
         title: Text(t.driversAtPointTitleShort),
         actions: [
-          if (activePoints.length > 1)
-            Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.xs),
-              child: SizedBox(
-                height: 40,
-                child: _FilterChip(
-                  key: const Key('driversPointChip'),
-                  label: primaryPointName,
-                  active: false,
-                  dropdown: true,
-                  onTap: () async {
-                    final picked = await _pickFromSheet(
-                      context,
-                      title: t.driversAtPointPickPoint,
-                      options: [for (final p in activePoints) (p.id, p.name.forLanguageCode(locale))],
-                      current: selectedPoint?.id,
-                    );
-                    if (picked == null || picked == _clearFilter) return;
-                    setState(() {
-                      _pointId = picked as String;
-                      _loadSummary();
-                    });
-                    _reload();
-                  },
-                ),
-              ),
-            ),
           IconButton(
             icon: const Icon(LucideIcons.calendar),
             tooltip: t.driversAtPointPickDate,
@@ -355,6 +342,35 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
 
           return Column(
             children: [
+              // «Кто свободен: <город>» — город выбирается здесь же (040, п.8).
+              InkWell(
+                key: const Key('driversPointChip'),
+                onTap: () async {
+                  final picked = await pickCity(context, ref, refData: refData, selectedId: _pointId, title: t.driversAtPointPickPoint);
+                  if (picked == null) return;
+                  setState(() {
+                    _pointId = picked.id;
+                    _loadSummary();
+                  });
+                  _reload();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, AppSpacing.sm),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          selectedPointName == null ? t.cityPickerTitle : t.driversAtPointTitle(selectedPointName),
+                          style: AppTextStyles.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(LucideIcons.chevronDown, size: 20),
+                    ],
+                  ),
+                ),
+              ),
               // Полоса дней — квадратные плашки 52×52 (задача 036, п.3).
               SizedBox(
                 height: 60,
@@ -465,7 +481,7 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                 child: FutureBuilder<List<ArrivalListing>>(
                   future: _future,
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) return const LoadingView();
+                    if (_future == null || snapshot.connectionState == ConnectionState.waiting) return const LoadingView();
                     if (snapshot.hasError) return ErrorView(message: t.commonError, onRetry: _reload);
                     final list = snapshot.data ?? [];
                     if (list.isEmpty) return EmptyState(message: t.driversAtPointEmpty, icon: LucideIcons.users);

@@ -27,6 +27,8 @@ String _groupLabel(BuildContext context, NotificationEventGroup group) {
       return t.notificationGroupVerification;
     case NotificationEventGroup.agreedCheck:
       return t.notificationGroupAgreedCheck;
+    case NotificationEventGroup.arrivalCheck:
+      return t.notificationGroupArrivalCheck;
   }
 }
 

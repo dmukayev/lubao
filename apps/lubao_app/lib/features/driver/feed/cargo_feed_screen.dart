@@ -11,11 +11,39 @@ import '../../shared/status_helpers.dart';
 import 'announce_arrival_sheet.dart';
 import '../../shared/error_feedback.dart';
 
-class CargoFeedScreen extends ConsumerWidget {
+class CargoFeedScreen extends ConsumerStatefulWidget {
   const CargoFeedScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CargoFeedScreen> createState() => _CargoFeedScreenState();
+}
+
+class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
+  /// Страницы после первой (первая приходит из `cargoFeedProvider`); при
+  /// перезагрузке ленты (новый объект первой страницы) сбрасываются.
+  CargoFeedPage? _firstPage;
+  final List<Cargo> _more = [];
+  int _total = 0;
+  bool _loadingMore = false;
+
+  Future<void> _loadMore(CargoFeedPage first) async {
+    setState(() => _loadingMore = true);
+    try {
+      final page = await ref.read(cargoRepositoryProvider).feed(offset: first.items.length + _more.length);
+      if (!mounted) return;
+      setState(() {
+        _more.addAll(page.items);
+        _total = page.total;
+      });
+    } catch (e) {
+      if (mounted) showApiError(context, e, onRetry: () => _loadMore(first));
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.l10n;
     final referenceData = ref.watch(referenceDataProvider);
     final cargoFeed = ref.watch(cargoFeedProvider);
@@ -40,19 +68,19 @@ class CargoFeedScreen extends ConsumerWidget {
                 retryLabel: t.commonRetry,
               );
             },
-            data: (cargos) {
-              final homeCity = driver == null ? null : refData.cityById(driver.homeCityId);
-              final items = sortCargoFeed(
-                cargos: cargos,
-                driverHomeCountryId: homeCity?.countryId,
-                driverDirectionCountryIds: driver?.directionCountryIds.toSet() ?? {},
-                anyCountry: driver?.anyCountry ?? true,
-              );
+            data: (first) {
+              if (!identical(first, _firstPage)) {
+                _firstPage = first;
+                _more.clear();
+                _total = first.total;
+              }
+              final items = [...first.items, ..._more];
+              final hasMore = items.length < _total;
 
               return RefreshIndicator(
                 onRefresh: () async {
                   ref.invalidate(cargoFeedProvider);
-                  ref.invalidate(myArrivalProvider);
+                  ref.invalidate(myArrivalsProvider);
                 },
                 child: ListView(
                   padding: const EdgeInsets.only(top: AppSpacing.xxl, bottom: AppSpacing.lg),
@@ -69,16 +97,27 @@ class CargoFeedScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.xl),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-                      child: Text(t.driverHomeFeedCount(cargos.length), style: AppTextStyles.title),
+                      child: Text(t.driverHomeFeedCount(_total), style: AppTextStyles.title),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    if (cargos.isEmpty)
+                    if (items.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
                         child: EmptyState(message: t.feedEmpty),
                       )
                     else
-                      for (final item in items) _feedCard(context, refData, item),
+                      for (final cargo in items) _feedCard(context, refData, cargo),
+                    if (hasMore)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen, vertical: AppSpacing.md),
+                        child: OutlinedButton(
+                          key: const Key('feedLoadMoreButton'),
+                          onPressed: _loadingMore ? null : () => _loadMore(first),
+                          child: _loadingMore
+                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                              : Text(t.feedLoadMore),
+                        ),
+                      ),
                   ],
                 ),
               );
@@ -89,19 +128,21 @@ class CargoFeedScreen extends ConsumerWidget {
     );
   }
 
-  Widget _feedCard(BuildContext context, ReferenceData refData, CargoFeedItem item) {
+  Widget _feedCard(BuildContext context, ReferenceData refData, Cargo cargo) {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
-    final cargo = item.cargo;
     final country = refData.countryById(cargo.destinationCountryId);
     final city = refData.cityById(cargo.destinationCityId);
     final destinationLabel =
         [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
     final bodyType = refData.bodyTypeById(cargo.bodyTypeId);
     final (statusLabel, statusColor) = cargoStatusPresentation(t, cargo.status);
+    final isHere = cargo.pickupRank == 0;
+    final isHomeSection = cargo.feedSection == CargoFeedSection.home;
 
     return CargoCard(
       key: Key('feedCargoCard-${cargo.id}'),
+      originLabel: refData.pointOrNull(cargo.pointId)?.name.forLanguageCode(locale),
       destinationLabel: destinationLabel,
       bodyTypeLabel: bodyType.name.forLanguageCode(locale),
       priceLabel: formatMoney(cargo.price, cargo.currency),
@@ -109,8 +150,9 @@ class CargoFeedScreen extends ConsumerWidget {
       readyDateLabel: formatDate(cargo.readyDate),
       statusLabel: statusLabel,
       statusColor: statusColor,
-      accentBorder: item.section == CargoFeedSection.home,
-      badge: item.section == CargoFeedSection.home
+      partialLabel: cargo.allowPartial ? t.feedBadgePartial : null,
+      accentBorder: isHere || isHomeSection,
+      badge: isHomeSection
           ? Container(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
               decoration: BoxDecoration(color: AppColors.accentSoft, borderRadius: BorderRadius.circular(999)),
@@ -161,18 +203,33 @@ class _AnonsCard extends ConsumerWidget {
 
   final ReferenceData refData;
 
-  Future<void> _openSheet(BuildContext context, WidgetRef ref, {ArrivalTemplate? template}) async {
+  Future<void> _openSheet(BuildContext context, WidgetRef ref, {Arrival? editing}) async {
     final driver = ref.read(sessionProvider)?.driver;
     final result = await showAnnounceArrivalSheet(
       context,
       refData: refData,
-      template: template,
+      editing: editing,
       driverAnyCountry: driver?.anyCountry ?? false,
       driverDirectionCountryIds: driver?.directionCountryIds ?? const [],
+      driverHomeCityId: driver?.homeCityId,
     );
     if (result == true) {
-      ref.invalidate(myArrivalProvider);
+      ref.invalidate(myArrivalsProvider);
       ref.invalidate(arrivalTemplateProvider);
+      ref.invalidate(cargoFeedProvider);
+    }
+  }
+
+  /// Любое действие над анонсом: выполнить, обновить анонсы и ленту (город
+  /// анонса задаёт порядок ленты), ошибка — понятным текстом с повтором.
+  Future<void> _run(BuildContext context, WidgetRef ref, Future<void> Function() action) async {
+    try {
+      await action();
+      ref.invalidate(myArrivalsProvider);
+      ref.invalidate(arrivalTemplateProvider);
+      ref.invalidate(cargoFeedProvider);
+    } catch (e) {
+      if (context.mounted) showApiError(context, e, onRetry: () => _run(context, ref, action));
     }
   }
 
@@ -180,57 +237,31 @@ class _AnonsCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
-    final arrivalAsync = ref.watch(myArrivalProvider);
-
-    Future<void> checkIn() async {
-      try {
-        await ref.read(arrivalRepositoryProvider).checkIn();
-        ref.invalidate(myArrivalProvider);
-      } catch (e) {
-        if (context.mounted) showApiError(context, e, onRetry: checkIn);
-      }
-    }
-
-    Future<void> cancel() async {
-      try {
-        await ref.read(arrivalRepositoryProvider).cancel();
-        ref.invalidate(myArrivalProvider);
-        ref.invalidate(arrivalTemplateProvider);
-      } catch (e) {
-        if (context.mounted) showApiError(context, e, onRetry: cancel);
-      }
-    }
-
-    Future<void> repeat() async {
-      try {
-        await ref.read(arrivalRepositoryProvider).repeat();
-        ref.invalidate(myArrivalProvider);
-      } catch (e) {
-        if (context.mounted) showApiError(context, e, onRetry: repeat);
-      }
-    }
+    final arrivalsAsync = ref.watch(myArrivalsProvider);
+    final repo = ref.read(arrivalRepositoryProvider);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(AppRadius.cardLarge)),
-      child: arrivalAsync.when(
+      child: arrivalsAsync.when(
         loading: () => const SizedBox(height: 160, child: Center(child: CircularProgressIndicator(color: Colors.white))),
         error: (e, st) {
-          debugPrint('CargoFeedScreen (myArrival): $e');
+          debugPrint('CargoFeedScreen (myArrivals): $e');
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(t.commonError, style: AppTextStyles.body.copyWith(color: Colors.white)),
               TextButton(
-                onPressed: () => ref.invalidate(myArrivalProvider),
+                onPressed: () => ref.invalidate(myArrivalsProvider),
                 child: Text(t.commonRetry, style: AppTextStyles.body.copyWith(color: Colors.white)),
               ),
             ],
           );
         },
-        data: (arrival) {
+        data: (mine) {
           final pill = _Pill(label: t.driverHomeAnonsTitle);
+          final arrival = mine.current;
           if (arrival == null) {
             final templateAsync = ref.watch(arrivalTemplateProvider);
             return Column(
@@ -256,7 +287,7 @@ class _AnonsCard extends ConsumerWidget {
                           padding: const EdgeInsets.only(top: AppSpacing.sm),
                           child: Center(
                             child: TextButton(
-                              onPressed: repeat,
+                              onPressed: () => _run(context, ref, repo.repeat),
                               child: Text(
                                 t.driverHomeRepeatButton,
                                 style: AppTextStyles.caption.copyWith(color: Colors.white),
@@ -270,7 +301,7 @@ class _AnonsCard extends ConsumerWidget {
             );
           }
 
-          final point = refData.pointById(arrival.pointId);
+          final cityName = refData.pointOrNull(arrival.pointId)?.name.forLanguageCode(locale) ?? '';
           final isOnSite = arrival.status == ArrivalStatus.onSite;
           final countryChips = <Widget>[
             if (arrival.anyCountry)
@@ -284,28 +315,41 @@ class _AnonsCard extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  pill,
+                  Flexible(child: pill),
+                  const SizedBox(width: AppSpacing.sm),
                   const Spacer(),
                   Icon(LucideIcons.eye, color: Colors.white.withAlpha(200), size: 16),
                   const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    t.driverHomeLogistsCount(arrival.viewsCount),
-                    style: AppTextStyles.caption.copyWith(color: Colors.white.withAlpha(200)),
+                  Flexible(
+                    child: Text(
+                      t.driverHomeLogistsCount(arrival.viewsCount),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption.copyWith(color: Colors.white.withAlpha(200)),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text(point.name.forLanguageCode(locale), style: AppTextStyles.headline.copyWith(color: Colors.white)),
+              Text(cityName, key: const Key('anonsCityName'), style: AppTextStyles.headline.copyWith(color: Colors.white)),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 isOnSite
                     ? t.driverHomeSince(formatDateTime(arrival.arrivedAt ?? arrival.plannedAt))
-                    : t.driverHomePlannedFor(formatDateTime(arrival.plannedAt)),
+                    : t.driverHomePlannedFor(formatDate(arrival.plannedDay)),
                 style: AppTextStyles.body.copyWith(color: Colors.white.withAlpha(200)),
               ),
               if (countryChips.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.md),
                 Wrap(spacing: AppSpacing.sm, runSpacing: AppSpacing.sm, children: countryChips),
+              ],
+              if (arrival.ask != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                _Question(
+                  arrival: arrival,
+                  onStillLooking: () => _run(context, ref, () => repo.stillLooking(arrivalId: arrival.id)),
+                  onLeft: () => _run(context, ref, () => repo.cancel(arrivalId: arrival.id)),
+                ),
               ],
               const SizedBox(height: AppSpacing.lg),
               if (!isOnSite) ...[
@@ -313,7 +357,7 @@ class _AnonsCard extends ConsumerWidget {
                   key: const Key('driverCheckInButton'),
                   label: t.driverHomeCheckInButton,
                   icon: LucideIcons.mapPin,
-                  onPressed: checkIn,
+                  onPressed: () => _run(context, ref, () => repo.checkIn(arrivalId: arrival.id)),
                 ),
                 const SizedBox(height: AppSpacing.sm),
               ],
@@ -321,19 +365,12 @@ class _AnonsCard extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton(
-                    onPressed: () => _openSheet(
-                      context,
-                      ref,
-                      template: ArrivalTemplate(
-                        pointId: arrival.pointId,
-                        anyCountry: arrival.anyCountry,
-                        countryIds: arrival.countryIds,
-                      ),
-                    ),
+                    key: const Key('anonsEditButton'),
+                    onPressed: () => _openSheet(context, ref, editing: arrival),
                     child: Text(t.driverHomeEditButton, style: AppTextStyles.caption.copyWith(color: Colors.white)),
                   ),
                   TextButton(
-                    onPressed: cancel,
+                    onPressed: () => _run(context, ref, () => repo.cancel(arrivalId: arrival.id)),
                     child: Text(
                       isOnSite ? t.driverHomeLeaveButton : t.driverHomeCancelButton,
                       style: AppTextStyles.caption.copyWith(color: Colors.white),
@@ -341,9 +378,135 @@ class _AnonsCard extends ConsumerWidget {
                   ),
                 ],
               ),
+              for (final other in mine.others)
+                _OtherArrivalRow(
+                  key: Key('otherArrival-${other.id}'),
+                  arrival: other,
+                  cityName: refData.pointOrNull(other.pointId)?.name.forLanguageCode(locale) ?? '',
+                  onCheckIn: () => _run(context, ref, () => repo.checkIn(arrivalId: other.id)),
+                  onCancel: () => _run(context, ref, () => repo.cancel(arrivalId: other.id)),
+                  onStillLooking: () => _run(context, ref, () => repo.stillLooking(arrivalId: other.id)),
+                ),
+              if (mine.all.length < _maxArrivals)
+                Center(
+                  child: TextButton.icon(
+                    key: const Key('driverAnnounceAnotherButton'),
+                    onPressed: () => _openSheet(context, ref),
+                    icon: const Icon(LucideIcons.plus, size: 16, color: Colors.white),
+                    label: Text(t.announceArrivalAddAnother, style: AppTextStyles.caption.copyWith(color: Colors.white)),
+                  ),
+                ),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+const _maxArrivals = 5;
+
+/// Вопрос по правилу свежести (040, п.4): «Доехали?» (в день приезда) или
+/// «Ещё ищете груз?» (на месте, 12 ч без ответа). На «Доехали?» отвечает
+/// кнопка «Я на месте» самой карточки; на «Ещё ищете груз?» — «Да / Уехал».
+class _Question extends StatelessWidget {
+  const _Question({required this.arrival, required this.onStillLooking, required this.onLeft});
+
+  final Arrival arrival;
+  final VoidCallback onStillLooking;
+  final VoidCallback onLeft;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final still = arrival.ask == ArrivalQuestion.stillLooking;
+    return Container(
+      key: const Key('arrivalQuestion'),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(color: Colors.white.withAlpha(30), borderRadius: BorderRadius.circular(AppRadius.field)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            still ? t.arrivalQuestionStill : t.arrivalQuestionDay,
+            style: AppTextStyles.bodyStrong.copyWith(color: Colors.white),
+          ),
+          if (still) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: AccentButton(key: const Key('arrivalStillYesButton'), label: t.arrivalStillYes, onPressed: onStillLooking),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                TextButton(
+                  key: const Key('arrivalStillLeftButton'),
+                  onPressed: onLeft,
+                  child: Text(t.arrivalStillLeft, style: AppTextStyles.bodyStrong.copyWith(color: Colors.white)),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Остальные анонсы водителя («дальше в планах»): город, день, быстрые
+/// действия — «Я на месте» (если день уже наступил), «Отменить».
+class _OtherArrivalRow extends StatelessWidget {
+  const _OtherArrivalRow({
+    super.key,
+    required this.arrival,
+    required this.cityName,
+    required this.onCheckIn,
+    required this.onCancel,
+    required this.onStillLooking,
+  });
+
+  final Arrival arrival;
+  final String cityName;
+  final VoidCallback onCheckIn;
+  final VoidCallback onCancel;
+  final VoidCallback onStillLooking;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final isOnSite = arrival.status == ArrivalStatus.onSite;
+    final today = DateTime.now();
+    final dayReached = !arrival.plannedDay.isAfter(DateTime(today.year, today.month, today.day));
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Divider(color: Colors.white.withAlpha(60), height: 1),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '$cityName · ${isOnSite ? t.driverHomeSince(formatDateTime(arrival.arrivedAt ?? arrival.plannedAt)) : t.driverHomePlannedFor(formatDate(arrival.plannedDay))}',
+                  style: AppTextStyles.body.copyWith(color: Colors.white),
+                ),
+              ),
+              if (!isOnSite && dayReached)
+                TextButton(
+                  key: Key('otherArrivalCheckIn-${arrival.id}'),
+                  onPressed: onCheckIn,
+                  child: Text(t.driverHomeCheckInButton, style: AppTextStyles.caption.copyWith(color: AppColors.accent)),
+                ),
+              TextButton(
+                key: Key('otherArrivalCancel-${arrival.id}'),
+                onPressed: onCancel,
+                child: Text(isOnSite ? t.driverHomeLeaveButton : t.driverHomeCancelButton, style: AppTextStyles.caption.copyWith(color: Colors.white)),
+              ),
+            ],
+          ),
+          if (arrival.ask != null) _Question(arrival: arrival, onStillLooking: onStillLooking, onLeft: onCancel),
+        ],
       ),
     );
   }
@@ -359,7 +522,7 @@ class _Pill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
       decoration: BoxDecoration(color: Colors.white.withAlpha(38), borderRadius: BorderRadius.circular(999)),
-      child: Text(label, style: AppTextStyles.small.copyWith(color: Colors.white)),
+      child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.small.copyWith(color: Colors.white)),
     );
   }
 }

@@ -56,6 +56,9 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
       await ref.read(dealRepositoryProvider).advanceStatus(widget.dealId, next);
       ref.invalidate(dealByIdProvider(widget.dealId));
       ref.invalidate(dealsMineProvider);
+      // Подтверждение сделки гасит анонс водителя на сервере (040, п.4).
+      ref.invalidate(myArrivalsProvider);
+      ref.invalidate(cargoFeedProvider);
     } on DioException catch (e) {
       final full = asVehicleFullError(e);
       if (isDriverNotVerifiedError(e)) {

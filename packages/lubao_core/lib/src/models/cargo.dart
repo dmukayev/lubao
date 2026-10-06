@@ -32,6 +32,9 @@ class Cargo {
     this.isWhatsappBlocked = false,
     this.closeOutcome,
     this.closedAt,
+    this.allowPartial = false,
+    this.pickupRank,
+    this.feedSection,
   });
 
   final String id;
@@ -73,6 +76,14 @@ class Cargo {
   final String? closeOutcome;
   final DateTime? closedAt;
 
+  /// «Можно догрузом» (040, п.6) — груз не на всю машину.
+  final bool allowPartial;
+
+  /// Только в ленте водителя: 0 — грузится в городе водителя, 1 — в той же
+  /// области или ≤200 км, 2 — остальные (сервер считает, 040 п.5).
+  final int? pickupRank;
+  final CargoFeedSection? feedSection;
+
   factory Cargo.fromJson(Map<String, dynamic> json) => Cargo(
         id: json['id'] as String,
         companyId: json['companyId'] as String,
@@ -103,6 +114,56 @@ class Cargo {
         isWhatsappBlocked: json['isWhatsappBlocked'] as bool? ?? false,
         closeOutcome: json['closeOutcome'] as String?,
         closedAt: json['closedAt'] == null ? null : DateTime.parse(json['closedAt'] as String),
+        allowPartial: json['allowPartial'] as bool? ?? false,
+        pickupRank: json['pickupRank'] as int?,
+        feedSection: switch (json['feedSection']) {
+          'home' => CargoFeedSection.home,
+          'selected' => CargoFeedSection.selected,
+          'other' => CargoFeedSection.other,
+          _ => null,
+        },
+      );
+}
+
+/// Страница ленты водителя (040): порядок и отсев — на сервере.
+class CargoFeedPage {
+  const CargoFeedPage({required this.items, required this.total, required this.offset, this.originCityId});
+
+  final List<Cargo> items;
+  final int total;
+  final int offset;
+
+  /// Город, от которого сервер считал «рядом» (город анонса или домашний).
+  final String? originCityId;
+
+  bool get hasMore => offset + items.length < total;
+
+  factory CargoFeedPage.fromJson(Map<String, dynamic> json) => CargoFeedPage(
+        items: (json['items'] as List<dynamic>).map((e) => Cargo.fromJson(e as Map<String, dynamic>)).toList(),
+        total: json['total'] as int? ?? 0,
+        offset: json['offset'] as int? ?? 0,
+        originCityId: json['originCityId'] as String?,
+      );
+}
+
+/// Подсказка «Помещается к текущему: 8 т + 10 т из 20 т» (040, п.6).
+class PartialHint {
+  const PartialHint({required this.fits, this.reason, required this.committedWeightKg, this.cargoWeightKg, this.capacityKg});
+
+  final bool fits;
+
+  /// `NEXT_TRIP` — другое окно дат, `FULL` — не помещается.
+  final String? reason;
+  final double committedWeightKg;
+  final double? cargoWeightKg;
+  final double? capacityKg;
+
+  factory PartialHint.fromJson(Map<String, dynamic> json) => PartialHint(
+        fits: json['fits'] as bool? ?? false,
+        reason: json['reason'] as String?,
+        committedWeightKg: (json['committedWeightKg'] as num?)?.toDouble() ?? 0,
+        cargoWeightKg: (json['cargoWeightKg'] as num?)?.toDouble(),
+        capacityKg: (json['capacityKg'] as num?)?.toDouble(),
       );
 }
 
@@ -119,6 +180,8 @@ class CargoCloseCandidate {
 
 class CreateCargoInput {
   const CreateCargoInput({
+    required this.pointId,
+    this.allowPartial = false,
     required this.destinationCountryId,
     this.destinationCityId,
     required this.bodyTypeId,
@@ -132,6 +195,9 @@ class CreateCargoInput {
     this.description,
   });
 
+  /// Город погрузки — обязателен (040, п.7).
+  final String pointId;
+  final bool allowPartial;
   final String destinationCountryId;
   final String? destinationCityId;
   final String bodyTypeId;
@@ -145,6 +211,8 @@ class CreateCargoInput {
   final String? description;
 
   Map<String, dynamic> toJson() => {
+        'pointId': pointId,
+        'allowPartial': allowPartial,
         'destinationCountryId': destinationCountryId,
         if (destinationCityId != null) 'destinationCityId': destinationCityId,
         'bodyTypeId': bodyTypeId,
@@ -159,33 +227,6 @@ class CreateCargoInput {
       };
 }
 
-/// Три сортировочные секции ленты: домой -> выбранные страны -> остальное.
+/// Секции ленты внутри одного «города погрузки»: домой → выбранные страны
+/// → остальное (порядок считает сервер).
 enum CargoFeedSection { home, selected, other }
-
-class CargoFeedItem {
-  const CargoFeedItem({required this.cargo, required this.section});
-
-  final Cargo cargo;
-  final CargoFeedSection section;
-}
-
-List<CargoFeedItem> sortCargoFeed({
-  required List<Cargo> cargos,
-  required String? driverHomeCountryId,
-  required Set<String> driverDirectionCountryIds,
-  required bool anyCountry,
-}) {
-  CargoFeedSection sectionFor(Cargo c) {
-    if (driverHomeCountryId != null && c.destinationCountryId == driverHomeCountryId) {
-      return CargoFeedSection.home;
-    }
-    if (anyCountry || driverDirectionCountryIds.contains(c.destinationCountryId)) {
-      return CargoFeedSection.selected;
-    }
-    return CargoFeedSection.other;
-  }
-
-  final items = cargos.map((c) => CargoFeedItem(cargo: c, section: sectionFor(c))).toList();
-  items.sort((a, b) => a.section.index.compareTo(b.section.index));
-  return items;
-}

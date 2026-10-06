@@ -17,7 +17,15 @@ class CargoCard extends StatelessWidget {
     this.badge,
     this.accentBorder = false,
     this.secondaryPriceLabel,
+    this.originLabel,
+    this.partialLabel,
   });
+
+  /// Город погрузки (задача 040, п.7) — крупно, до маршрута: «Алматы → Ташкент».
+  final String? originLabel;
+
+  /// Плашка «Догруз» (040, п.6), если груз можно брать догрузом.
+  final String? partialLabel;
 
   final String destinationLabel;
   final String bodyTypeLabel;
@@ -55,7 +63,14 @@ class CargoCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              Expanded(child: Text(destinationLabel, style: AppTextStyles.route)),
+              Expanded(
+                child: Text(
+                  originLabel == null ? destinationLabel : '$originLabel → $destinationLabel',
+                  style: AppTextStyles.route,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               StatusBadge(label: statusLabel, color: statusColor),
             ],
           ),
@@ -74,6 +89,14 @@ class CargoCard extends StatelessWidget {
               ),
             ],
           ),
+          if (partialLabel != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+              decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(999)),
+              child: Text(partialLabel!, style: AppTextStyles.small.copyWith(color: AppColors.primary)),
+            ),
+          ],
           if (trailing != null) ...[const SizedBox(height: AppSpacing.sm), trailing!],
         ],
       ),

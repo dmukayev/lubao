@@ -1,5 +1,12 @@
 import 'common.dart';
 
+/// Координата с сервера: число, а на случай Prisma-Decimal — строка с числом.
+double? _coordinate(Object? value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
+}
+
 class Country {
   const Country({required this.id, required this.code, required this.name, required this.isCisMember});
 
@@ -47,8 +54,8 @@ class City {
         name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
         isCapital: json['isCapital'] as bool? ?? false,
         cityStatus: cityStatusFromJson(json['cityStatus'] as String? ?? 'APPROVED'),
-        lat: (json['lat'] as num?)?.toDouble(),
-        lng: (json['lng'] as num?)?.toDouble(),
+        lat: _coordinate(json['lat']),
+        lng: _coordinate(json['lng']),
       );
 }
 
@@ -104,8 +111,20 @@ class Permit {
       );
 }
 
+/// Вид точки погрузки (задача 040): обычный город или терминал с геозоной.
+enum PointKind { city, terminal }
+
 class LoadingPoint {
-  const LoadingPoint({required this.id, required this.cityId, required this.name, required this.isActive, this.lat, this.lng});
+  const LoadingPoint({
+    required this.id,
+    required this.cityId,
+    required this.name,
+    required this.isActive,
+    this.lat,
+    this.lng,
+    this.kind = PointKind.city,
+    this.radiusM,
+  });
 
   final String id;
   final String cityId;
@@ -113,14 +132,20 @@ class LoadingPoint {
   final bool isActive;
   final double? lat;
   final double? lng;
+  final PointKind kind;
+
+  /// Радиус геозоны, м — только у терминала.
+  final int? radiusM;
 
   factory LoadingPoint.fromJson(Map<String, dynamic> json) => LoadingPoint(
         id: json['id'] as String,
         cityId: json['cityId'] as String,
         name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
         isActive: json['isActive'] as bool? ?? true,
-        lat: (json['lat'] as num?)?.toDouble(),
-        lng: (json['lng'] as num?)?.toDouble(),
+        lat: _coordinate(json['lat']),
+        lng: _coordinate(json['lng']),
+        kind: json['kind'] == 'TERMINAL' ? PointKind.terminal : PointKind.city,
+        radiusM: json['radiusM'] as int?,
       );
 }
 
@@ -237,7 +262,9 @@ class ReferenceData {
   Country countryById(String id) => countries.firstWhere((c) => c.id == id, orElse: () => countries.first);
   City? cityById(String? id) => id == null ? null : cities.where((c) => c.id == id).firstOrNull;
   BodyType bodyTypeById(String id) => bodyTypes.firstWhere((b) => b.id == id, orElse: () => bodyTypes.first);
-  LoadingPoint pointById(String id) => points.firstWhere((p) => p.id == id, orElse: () => points.first);
+  /// Город погрузки по id; `null` — точку выключили в справочнике (не
+  /// подставлять «первую попавшуюся», когда точек десятки — 040).
+  LoadingPoint? pointOrNull(String id) => points.where((p) => p.id == id).firstOrNull;
   List<Region> regionsOf(String countryId) => regions.where((r) => r.countryId == countryId).toList();
 
   /// Активные шаблоны размера для типа кузова (задача 033) — шаблон с

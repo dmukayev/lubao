@@ -100,6 +100,11 @@ final adminStatsProvider = FutureProvider.autoDispose<AdminStats>((ref) {
   return ref.watch(adminRepositoryProvider).stats(period: period);
 });
 
+/// Разрез сводки по городам (040, п.9).
+final adminCityStatsProvider = FutureProvider.autoDispose<List<CityStatsRow>>((ref) {
+  return ref.watch(adminRepositoryProvider).statsByCity();
+});
+
 final adminAttentionProvider = FutureProvider.autoDispose<AdminAttention>((ref) {
   return ref.watch(adminRepositoryProvider).attention();
 });

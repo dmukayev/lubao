@@ -7,6 +7,7 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../shared/city_picking.dart';
 import '../../shared/photo_picker.dart';
 import '../../shared/error_feedback.dart';
 
@@ -31,6 +32,9 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   bool _fitCountLoading = false;
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
+  String? _pointId;
+  String? _pointError;
+  bool _allowPartial = false;
   String? _countryId;
   String? _cityId;
   String? _bodyTypeId;
@@ -49,7 +53,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   void initState() {
     super.initState();
     final cargo = widget.cargo;
+    _pointId = cargo?.pointId;
+    if (cargo == null) _defaultPointFromLastCargo();
     if (cargo != null) {
+      _allowPartial = cargo.allowPartial;
       _countryId = cargo.destinationCountryId;
       _cityId = cargo.destinationCityId;
       _bodyTypeId = cargo.bodyTypeId;
@@ -62,6 +69,18 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       if (cargo.palletCount != null) _palletController.text = cargo.palletCount.toString();
       _priceController.text = _trimNum(cargo.price);
       _descriptionController.text = cargo.description ?? '';
+    }
+  }
+
+  /// Новый груз — по умолчанию из города последнего груза компании (040, п.7);
+  /// выбранный вручную город не перезаписывается.
+  Future<void> _defaultPointFromLastCargo() async {
+    try {
+      final cargos = await ref.read(myCargosProvider.future);
+      final last = cargos.firstOrNull?.pointId;
+      if (mounted && _pointId == null && last != null) setState(() => _pointId = last);
+    } catch (e) {
+      debugPrint('PostCargoScreen: default city failed: $e');
     }
   }
 
@@ -111,7 +130,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     }
     setState(() => _fitCountLoading = true);
     try {
-      final count = await ref.read(cargoRepositoryProvider).fitCount(weightKg: weightKg, volumeM3: volumeM3, palletCount: palletCount);
+      final count = await ref.read(cargoRepositoryProvider).fitCount(weightKg: weightKg, volumeM3: volumeM3, palletCount: palletCount, pointId: _pointId);
       if (mounted) setState(() => _fitCount = count);
     } catch (e) {
       // Подсказка best-effort: при сбое просто не показываем (но в лог пишем).
@@ -119,6 +138,16 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       if (mounted) setState(() => _fitCount = null);
     } finally {
       if (mounted) setState(() => _fitCountLoading = false);
+    }
+  }
+
+  Future<void> _pickCity(ReferenceData refData) async {
+    final picked = await pickCity(context, ref, refData: refData, selectedId: _pointId);
+    if (picked != null && mounted) {
+      setState(() {
+        _pointId = picked.id;
+        _pointError = null;
+      });
     }
   }
 
@@ -137,14 +166,17 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     final t = context.l10n;
     final price = double.tryParse(_priceController.text.trim().replaceAll(',', '.'));
     setState(() {
+      _pointError = _pointId == null ? t.postCargoPickupCityError : null;
       _destinationError = _countryId == null ? t.postCargoDestinationError : null;
       _bodyTypeError = _bodyTypeId == null ? t.postCargoBodyTypeError : null;
       _priceError = price == null ? t.postCargoPriceError : null;
     });
-    if (_destinationError != null || _bodyTypeError != null || _priceError != null) return;
+    if (_pointError != null || _destinationError != null || _bodyTypeError != null || _priceError != null) return;
     setState(() => _saving = true);
     try {
       final input = CreateCargoInput(
+        pointId: _pointId!,
+        allowPartial: _allowPartial,
         destinationCountryId: _countryId!,
         destinationCityId: _cityId,
         bodyTypeId: _bodyTypeId!,
@@ -220,6 +252,14 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
+              CityField(
+                key: const Key('postCargoPickupCity'),
+                label: t.postCargoPickupCity,
+                value: _pointId == null ? null : refData.pointOrNull(_pointId!)?.name.forLanguageCode(locale),
+                errorText: _pointError,
+                onTap: () => _pickCity(refData),
+              ),
+              const SizedBox(height: 12),
               Autocomplete<CountryCityOption>(
                 initialValue: TextEditingValue(text: initialDestinationLabel),
                 displayStringForOption: (o) => o.label,
@@ -286,6 +326,14 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 const SizedBox(height: 4),
                 Text(t.postCargoFitCount(_fitCount!), style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
               ],
+              SwitchListTile(
+                key: const Key('postCargoAllowPartial'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(t.postCargoAllowPartial),
+                subtitle: Text(t.postCargoAllowPartialHint),
+                value: _allowPartial,
+                onChanged: (value) => setState(() => _allowPartial = value),
+              ),
               const SizedBox(height: 12),
               Row(
                 children: [

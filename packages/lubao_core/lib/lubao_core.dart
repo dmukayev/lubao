@@ -30,9 +30,11 @@ export 'src/widgets/chat_bubble.dart';
 export 'src/widgets/quick_reply_chip.dart';
 export 'src/widgets/step_progress.dart';
 export 'src/widgets/language_picker_button.dart';
+export 'src/widgets/city_picker_sheet.dart';
 
 export 'src/utils/city_search.dart';
 export 'src/utils/date_only.dart';
+export 'src/utils/geo.dart';
 export 'src/utils/person_name.dart';
 
 export 'src/api/api_client.dart';
@@ -42,6 +44,7 @@ export 'src/repositories/driver_repository.dart';
 export 'src/repositories/company_repository.dart';
 export 'src/offline/contact_event_queue.dart';
 export 'src/offline/pending_contact_event.dart';
+export 'src/offline/recent_points_store.dart';
 export 'src/repositories/cargo_repository.dart';
 export 'src/repositories/deal_repository.dart';
 export 'src/repositories/chat_repository.dart';

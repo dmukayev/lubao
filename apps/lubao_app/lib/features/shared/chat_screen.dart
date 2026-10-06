@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -14,6 +13,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/data_providers.dart';
 import 'status_helpers.dart';
 import 'error_feedback.dart';
+import 'location_permission.dart';
 
 /// Название языка для «Пишет на …» — из ARB на языке читателя (041, п.9).
 String? _languageName(LubaoLocalizations t, String? code) => switch (code) {
@@ -172,29 +172,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final t = context.l10n;
     setState(() => _sharingLocation = true);
     try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        // Сначала объясняем, зачем нужна геопозиция (041, п.8), потом системный запрос.
-        final agreed = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(t.locationRationaleTitle),
-            content: Text(t.locationRationaleBody),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.commonCancel)),
-              FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(t.locationRationaleContinue)),
-            ],
-          ),
-        );
-        if (agreed != true) return;
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
-        throw Exception('location permission denied');
-      }
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-      );
+      final position = await currentPositionWithRationale(context);
+      if (position == null) return;
       final isChina = thread?.counterpartCountryCode == 'CN';
       final link = isChina
           // Amap понимает WGS84-координаты напрямую (coordinate=wgs84) и
@@ -276,6 +255,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     try {
       await ref.read(dealRepositoryProvider).advanceStatus(dealId, status);
       ref.invalidate(dealByIdProvider(dealId));
+      // Подтверждение сделки гасит анонс водителя на сервере (040, п.4).
+      ref.invalidate(myArrivalsProvider);
+      ref.invalidate(cargoFeedProvider);
     } on DioException catch (e) {
       final full = asVehicleFullError(e);
       if (isDriverNotVerifiedError(e)) {
@@ -735,7 +717,7 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
     final city = widget.refData.cityById(cargo.destinationCityId);
     final destinationLabel =
         [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
-    final point = widget.refData.pointById(cargo.pointId);
+    final pointName = widget.refData.pointOrNull(cargo.pointId)?.name.forLanguageCode(locale) ?? '';
     final deal = widget.deal;
     final (statusLabel, statusColor) = deal != null ? dealStatusPresentation(t, deal.status) : cargoStatusPresentation(t, cargo.status);
 
@@ -867,7 +849,7 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      '${point.name.forLanguageCode(locale)} → $destinationLabel · ${formatMoney(cargo.price, cargo.currency)}',
+                      '$pointName → $destinationLabel · ${formatMoney(cargo.price, cargo.currency)}',
                       style: AppTextStyles.caption.copyWith(color: AppColors.text),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

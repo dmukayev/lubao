@@ -28,14 +28,42 @@ void main() {
       expectInsideSafeZone(tester);
     });
 
-    await run.step(tester, 'анонс-буду-на-точке', () async {
+    // 040: «свободен в <город>» — город по умолчанию домашний (Алматы), несколько
+    // анонсов в одном приложении, порядок ленты задаёт город анонса.
+    await run.step(tester, 'анонс-свободен-в-алматы', () async {
       await tester.tap(find.byKey(const Key('driverAnnounceArrivalButton')));
       await tester.pumpAndSettle();
       expectInsideSafeZone(tester);
+      // Город по умолчанию — домашний город водителя (Алматы).
+      expect(find.descendant(of: find.byKey(const Key('announceCityField')), matching: find.text('Алматы')), findsOneWidget);
       final submitButton = find.byKey(const Key('announceArrivalSubmitButton'));
       await reveal(tester, submitButton);
       await tester.tap(submitButton);
       await waitFor(tester, find.byKey(const Key('driverCheckInButton')));
+      expect(tester.widget<Text>(find.byKey(const Key('anonsCityName'))).data, 'Алматы');
+      // Груз из Алматы виден первым (город анонса = город погрузки).
+      await waitFor(tester, find.byKey(const Key('feedCargoCard-$e2eCargo6')));
+      expect(find.text('Догруз'), findsWidgets, reason: 'груз 6 помечен «можно догрузом»');
+      expect(firstFeedCargoId(tester), e2eCargo6);
+    });
+
+    await run.step(tester, 'смена-города-анонса-на-астану', () async {
+      await reveal(tester, find.byKey(const Key('anonsEditButton')));
+      await tester.tap(find.byKey(const Key('anonsEditButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('announceCityField')));
+      await tester.pumpAndSettle();
+      // Поиск не зависит от языка интерфейса: латиницей.
+      await pickCityByName(tester, 'Astana', 'Астана');
+      final submitButton = find.byKey(const Key('announceArrivalSubmitButton'));
+      await reveal(tester, submitButton);
+      await tester.tap(submitButton);
+      await waitFor(tester, find.byKey(const Key('anonsCityName')));
+      await waitFor(tester, find.byKey(const Key('feedCargoCard-$e2eCargo7')));
+      expect(tester.widget<Text>(find.byKey(const Key('anonsCityName'))).data, 'Астана');
+      // Теперь первым — груз из Астаны, груз из Алматы ушёл вниз.
+      expect(firstFeedCargoId(tester), e2eCargo7);
+      expectNoOverflow(tester);
     });
 
     await run.step(tester, 'лента-карточка-груза', () async {

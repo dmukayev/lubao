@@ -38,15 +38,26 @@ class LocationReporter {
   }
 
   /// Решение «два уровня» (008): координаты уходят только пока у водителя
-  /// есть активная сделка в статусе «Загружен»/«В пути»; без неё трекинга нет.
+  /// есть активная сделка в статусе «Загружен»/«В пути» (и, 040, пока он «на
+  /// месте» в терминале с геозоной); иначе трекинга нет.
   Future<bool> _hasTrackedDeal() async {
     final deals = await _ref.read(dealRepositoryProvider).mine();
     return deals.any((d) => d.status == DealStatus.loaded || d.status == DealStatus.inTransit);
   }
 
+  /// Геозона терминала (040, п.4): водитель «на месте» в городе-терминале —
+  /// сервер сам закроет анонс, когда он выйдет за радиус; для этого нужны
+  /// координаты. В обычном городе («на месте» по нажатию) трекинга нет.
+  Future<bool> _isOnSiteAtTerminal() async {
+    final current = (await _ref.read(arrivalRepositoryProvider).mine()).current;
+    if (current == null || current.status != ArrivalStatus.onSite) return false;
+    final refData = _ref.read(referenceDataProvider).valueOrNull;
+    return refData?.pointOrNull(current.pointId)?.kind == PointKind.terminal;
+  }
+
   Future<void> _tick() async {
     try {
-      if (!await _hasTrackedDeal()) return;
+      if (!await _hasTrackedDeal() && !await _isOnSiteAtTerminal()) return;
       // Разрешение здесь НЕ запрашиваем (041, п.8): его просят с объяснением
       // в момент первого осознанного действия (📍 в чате); нет разрешения —
       // просто не шлём.

@@ -5,22 +5,25 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
+import '../../shared/city_picking.dart';
 import '../../shared/status_helpers.dart';
 import '../../shared/error_feedback.dart';
 
 const _waitDaysOptions = [1, 2, 3];
 
-/// «Буду на точке» в 3 нажатия (задача 015): когда, где, куда готов.
-/// Возвращает true, если анонс опубликован — вызывающий код сам
-/// инвалидирует `myArrivalProvider`. `_AnnounceArrivalSheet` сам читает
-/// провайдеры через `ConsumerStatefulWidget`, поэтому отдельный `WidgetRef`
-/// сюда передавать не нужно.
+/// «Свободен в <город> с <даты>» (задачи 015, 040): где, когда, куда готов.
+/// [editing] — правка существующего анонса (их может быть несколько).
+/// Возвращает true, если анонс сохранён — вызывающий код сам инвалидирует
+/// `myArrivalsProvider`. `_AnnounceArrivalSheet` сам читает провайдеры через
+/// `ConsumerStatefulWidget`, поэтому отдельный `WidgetRef` сюда передавать
+/// не нужно.
 Future<bool?> showAnnounceArrivalSheet(
   BuildContext context, {
   required ReferenceData refData,
-  ArrivalTemplate? template,
+  Arrival? editing,
   bool driverAnyCountry = false,
   List<String> driverDirectionCountryIds = const [],
+  String? driverHomeCityId,
 }) {
   return showModalBottomSheet<bool>(
     context: context,
@@ -29,9 +32,10 @@ Future<bool?> showAnnounceArrivalSheet(
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge))),
     builder: (context) => _AnnounceArrivalSheet(
       refData: refData,
-      template: template,
+      editing: editing,
       driverAnyCountry: driverAnyCountry,
       driverDirectionCountryIds: driverDirectionCountryIds,
+      driverHomeCityId: driverHomeCityId,
     ),
   );
 }
@@ -39,15 +43,17 @@ Future<bool?> showAnnounceArrivalSheet(
 class _AnnounceArrivalSheet extends ConsumerStatefulWidget {
   const _AnnounceArrivalSheet({
     required this.refData,
-    this.template,
+    this.editing,
     required this.driverAnyCountry,
     required this.driverDirectionCountryIds,
+    this.driverHomeCityId,
   });
 
   final ReferenceData refData;
-  final ArrivalTemplate? template;
+  final Arrival? editing;
   final bool driverAnyCountry;
   final List<String> driverDirectionCountryIds;
+  final String? driverHomeCityId;
 
   @override
   ConsumerState<_AnnounceArrivalSheet> createState() => _AnnounceArrivalSheetState();
@@ -58,7 +64,8 @@ enum _DayChoice { today, tomorrow, dayAfter, custom }
 class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
   _DayChoice _dayChoice = _DayChoice.today;
   DateTime? _customDate;
-  late String _pointId;
+  String? _pointId;
+  bool _pointError = false;
   late bool _anyCountry;
   late final Set<String> _countryIds;
   int _waitDays = 2;
@@ -70,9 +77,44 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
   @override
   void initState() {
     super.initState();
-    _pointId = widget.template?.pointId ?? (widget.refData.points.isEmpty ? '' : widget.refData.points.first.id);
-    _anyCountry = widget.template?.anyCountry ?? widget.driverAnyCountry;
-    _countryIds = {...(widget.template?.countryIds ?? widget.driverDirectionCountryIds)};
+    final editing = widget.editing;
+    // Город по умолчанию — домашний город водителя, если он есть среди
+    // городов погрузки; иначе выбирает сам (первую попавшуюся не подставляем).
+    _pointId = editing?.pointId ??
+        widget.refData.points.where((p) => p.cityId == widget.driverHomeCityId).map((p) => p.id).firstOrNull;
+    _anyCountry = editing?.anyCountry ?? widget.driverAnyCountry;
+    _countryIds = {...(editing?.countryIds ?? widget.driverDirectionCountryIds)};
+    if (editing != null) {
+      _waitDays = editing.waitDays;
+      _tractorId = editing.tractorId;
+      _trailerId = editing.trailerId;
+      _comboTouched = true;
+      _dayChoice = _dayChoiceFor(editing.plannedDay);
+      if (_dayChoice == _DayChoice.custom) _customDate = DateTime(editing.plannedDay.year, editing.plannedDay.month, editing.plannedDay.day, 12);
+    }
+  }
+
+  static _DayChoice _dayChoiceFor(DateTime plannedDay) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(plannedDay.year, plannedDay.month, plannedDay.day);
+    final diff = day.difference(today).inDays;
+    return switch (diff) {
+      0 => _DayChoice.today,
+      1 => _DayChoice.tomorrow,
+      2 => _DayChoice.dayAfter,
+      _ => _DayChoice.custom,
+    };
+  }
+
+  Future<void> _pickCity() async {
+    final picked = await pickCity(context, ref, refData: widget.refData, selectedId: _pointId);
+    if (picked != null && mounted) {
+      setState(() {
+        _pointId = picked.id;
+        _pointError = false;
+      });
+    }
   }
 
   /// Задача 031, этап B, п.9 — по умолчанию связка из прошлого анонса; пока
@@ -119,11 +161,16 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
   }
 
   Future<void> _submit() async {
-    if (_pointId.isEmpty) return;
+    final pointId = _pointId;
+    if (pointId == null) {
+      setState(() => _pointError = true);
+      return;
+    }
     setState(() => _saving = true);
     try {
       await ref.read(arrivalRepositoryProvider).announce(
-            pointId: _pointId,
+            arrivalId: widget.editing?.id,
+            pointId: pointId,
             plannedAt: _plannedDate,
             anyCountry: _anyCountry,
             countryIds: _anyCountry ? const [] : _countryIds.toList(),
@@ -177,18 +224,12 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
 
               Text(t.announceArrivalWhere, style: AppTextStyles.bodyStrong),
               const SizedBox(height: AppSpacing.sm),
-              InputDecorator(
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _pointId.isEmpty ? null : _pointId,
-                    isExpanded: true,
-                    items: widget.refData.points
-                        .map((p) => DropdownMenuItem(value: p.id, child: Text(p.name.forLanguageCode(locale))))
-                        .toList(),
-                    onChanged: (value) => setState(() => _pointId = value ?? _pointId),
-                  ),
-                ),
+              CityField(
+                key: const Key('announceCityField'),
+                label: t.cityPickerTitle,
+                value: _pointId == null ? null : widget.refData.pointOrNull(_pointId!)?.name.forLanguageCode(locale),
+                errorText: _pointError ? t.announceArrivalCityError : null,
+                onTap: _pickCity,
               ),
               const SizedBox(height: AppSpacing.lg),
 

@@ -169,6 +169,10 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
     final kkController = TextEditingController();
     final ruController = TextEditingController();
     final zhController = TextEditingController();
+    final latController = TextEditingController();
+    final lngController = TextEditingController();
+    final radiusController = TextEditingController(text: '3000');
+    var kind = PointKind.city;
     final locale = Localizations.localeOf(context).languageCode;
 
     final confirmed = await showDialog<bool>(
@@ -194,6 +198,25 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
                 AppTextField(label: t.adminNameRu, controller: ruController),
                 const SizedBox(height: 8),
                 AppTextField(label: t.adminNameZh, controller: zhController),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<PointKind>(
+                  key: const Key('adminPointKind'),
+                  initialValue: kind,
+                  decoration: InputDecoration(labelText: t.adminPointKind, border: const OutlineInputBorder()),
+                  items: [
+                    DropdownMenuItem(value: PointKind.city, child: Text(t.adminPointKindCity)),
+                    DropdownMenuItem(value: PointKind.terminal, child: Text(t.adminPointKindTerminal)),
+                  ],
+                  onChanged: (value) => setDialogState(() => kind = value ?? kind),
+                ),
+                if (kind == PointKind.terminal) ...[
+                  const SizedBox(height: 8),
+                  AppTextField(label: t.adminLat, controller: latController, keyboardType: TextInputType.number),
+                  const SizedBox(height: 8),
+                  AppTextField(label: t.adminLng, controller: lngController, keyboardType: TextInputType.number),
+                  const SizedBox(height: 8),
+                  AppTextField(label: t.adminPointRadius, controller: radiusController, keyboardType: TextInputType.number),
+                ],
               ],
             ),
           ),
@@ -206,9 +229,20 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
     );
 
     if (confirmed != true || cityId == null) return;
+    final lat = double.tryParse(latController.text.trim());
+    final lng = double.tryParse(lngController.text.trim());
+    final radiusM = int.tryParse(radiusController.text.trim());
+    if (kind == PointKind.terminal && (lat == null || lng == null || radiusM == null)) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.adminPointTerminalNeedsGeofence)));
+      return;
+    }
     await ref.read(adminRepositoryProvider).createPoint(
           cityId!,
           I18nText(kk: kkController.text.trim(), ru: ruController.text.trim(), zh: zhController.text.trim()),
+          kind: kind,
+          lat: kind == PointKind.terminal ? lat : null,
+          lng: kind == PointKind.terminal ? lng : null,
+          radiusM: kind == PointKind.terminal ? radiusM : null,
         );
     ref.invalidate(referenceDataProvider);
   }
@@ -311,8 +345,10 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
     final enController = TextEditingController(text: point.name.en);
     final latController = TextEditingController(text: point.lat?.toString() ?? '');
     final lngController = TextEditingController(text: point.lng?.toString() ?? '');
+    final radiusController = TextEditingController(text: point.radiusM?.toString() ?? '');
     String cityId = point.cityId;
     bool isActive = point.isActive;
+    var kind = point.kind;
     final t = context.l10n;
 
     final reason = await showEditSidePanel(
@@ -341,6 +377,21 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
           const SizedBox(height: 8),
           AppTextField(label: t.adminLng, controller: lngController, keyboardType: TextInputType.number, onChanged: (_) => setState(() {})),
           const SizedBox(height: 8),
+          DropdownButtonFormField<PointKind>(
+            key: const Key('adminPointKind'),
+            initialValue: kind,
+            decoration: InputDecoration(labelText: t.adminPointKind),
+            items: [
+              DropdownMenuItem(value: PointKind.city, child: Text(t.adminPointKindCity)),
+              DropdownMenuItem(value: PointKind.terminal, child: Text(t.adminPointKindTerminal)),
+            ],
+            onChanged: (v) => setState(() => kind = v ?? kind),
+          ),
+          if (kind == PointKind.terminal) ...[
+            const SizedBox(height: 8),
+            AppTextField(label: t.adminPointRadius, controller: radiusController, keyboardType: TextInputType.number, onChanged: (_) => setState(() {})),
+          ],
+          const SizedBox(height: 8),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             value: isActive,
@@ -351,13 +402,22 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
       ),
     );
     if (reason == null) return;
+    final lat = double.tryParse(latController.text.trim());
+    final lng = double.tryParse(lngController.text.trim());
+    final radiusM = int.tryParse(radiusController.text.trim());
+    if (kind == PointKind.terminal && ((lat ?? point.lat) == null || (lng ?? point.lng) == null || (radiusM ?? point.radiusM) == null)) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.adminPointTerminalNeedsGeofence)));
+      return;
+    }
 
     await ref.read(adminRepositoryProvider).updatePoint(
           point.id,
           name: I18nText(kk: kkController.text.trim(), ru: ruController.text.trim(), zh: zhController.text.trim(), en: enController.text.trim()),
           cityId: cityId,
-          lat: double.tryParse(latController.text.trim()),
-          lng: double.tryParse(lngController.text.trim()),
+          lat: lat,
+          lng: lng,
+          kind: kind,
+          radiusM: kind == PointKind.terminal ? radiusM : null,
           isActive: isActive,
           reason: reason,
         );
@@ -668,7 +728,10 @@ class _PointsList extends StatelessWidget {
             final point = points[index];
             return ListTile(
               title: Text(point.name.forLanguageCode(locale)),
-              subtitle: Text(point.isActive ? t.adminActive : t.adminInactive),
+              subtitle: Text([
+                point.kind == PointKind.terminal ? t.adminPointKindTerminal : t.adminPointKindCity,
+                point.isActive ? t.adminActive : t.adminInactive,
+              ].join(' · ')),
               trailing: IconButton(icon: const Icon(LucideIcons.pencil), onPressed: () => onEdit(point)),
             );
           },

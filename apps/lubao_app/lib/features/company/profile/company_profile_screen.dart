@@ -167,7 +167,7 @@ Future<void> _showInviteDialog(BuildContext context, WidgetRef ref) async {
                                 await ref.read(companyRepositoryProvider).createInvite(email: email, role: role);
                             setState(() {
                               saving = false;
-                              resultLink = 'lubao://invite/$token';
+                              resultLink = '${appPublicUrl.replaceAll(RegExp(r'/+$'), '')}/invite/$token';
                             });
                           } catch (e) {
                             setState(() {

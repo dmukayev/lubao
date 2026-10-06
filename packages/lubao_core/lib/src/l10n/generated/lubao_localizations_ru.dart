@@ -436,9 +436,6 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get driverSetupSubmit => 'Сохранить и продолжить';
 
   @override
-  String get feedTitle => 'Грузы в Хоргосе';
-
-  @override
   String get driverHomeGreeting => 'Сәлем,';
 
   @override
@@ -1162,7 +1159,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String driversAtPointTitle(String point) {
-    return 'Кто будет на $point';
+    return 'Кто свободен: $point';
   }
 
   @override
@@ -2675,4 +2672,124 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get garageGoToGarage => 'Мой гараж';
+
+  @override
+  String get cityPickerTitle => 'Выберите город';
+
+  @override
+  String get cityPickerSearchHint => 'Поиск города';
+
+  @override
+  String get cityPickerNearby => 'Рядом со мной';
+
+  @override
+  String get cityPickerNearbyNotFound =>
+      'Рядом нет подходящего города — выберите из списка';
+
+  @override
+  String get cityPickerRecent => 'Недавние';
+
+  @override
+  String get cityPickerAll => 'Все города';
+
+  @override
+  String get cityPickerNothingFound => 'Ничего не найдено';
+
+  @override
+  String get cityFieldPlaceholder => 'Выберите город';
+
+  @override
+  String get announceArrivalCityError => 'Выберите город, где вы свободны';
+
+  @override
+  String get announceArrivalAddAnother => 'Ещё один анонс';
+
+  @override
+  String get announceArrivalOthers => 'Дальше в планах';
+
+  @override
+  String get announceArrivalLimit => 'Не больше пяти анонсов одновременно';
+
+  @override
+  String get arrivalQuestionDay => 'Доехали? Нажмите «Я на месте»';
+
+  @override
+  String get arrivalQuestionStill => 'Ещё ищете груз?';
+
+  @override
+  String get arrivalStillYes => 'Да, ищу';
+
+  @override
+  String get arrivalStillLeft => 'Уехал';
+
+  @override
+  String get feedBadgePartial => 'Догруз';
+
+  @override
+  String get feedLoadMore => 'Показать ещё';
+
+  @override
+  String cargoPartialHintFits(String committed, String cargo, String capacity) {
+    return 'Помещается к текущему: $committed т + $cargo т из $capacity т';
+  }
+
+  @override
+  String cargoPartialHintFull(String committed, String cargo, String capacity) {
+    return 'Не поместится к текущему: $committed т + $cargo т из $capacity т';
+  }
+
+  @override
+  String get cargoPartialHintNextTrip =>
+      'Другая дата погрузки — это следующий рейс, а не догруз';
+
+  @override
+  String get cargoPickupCityLabel => 'Город погрузки';
+
+  @override
+  String get postCargoPickupCity => 'Город погрузки';
+
+  @override
+  String get postCargoPickupCityError => 'Выберите город погрузки';
+
+  @override
+  String get postCargoAllowPartial => 'Можно догрузом';
+
+  @override
+  String get postCargoAllowPartialHint =>
+      'Груз не на всю машину — водитель может взять ещё';
+
+  @override
+  String get notificationGroupArrivalCheck =>
+      'Напоминания об анонсе («Доехали?»)';
+
+  @override
+  String get adminPointKind => 'Вид точки';
+
+  @override
+  String get adminPointKindCity => 'Город';
+
+  @override
+  String get adminPointKindTerminal => 'Терминал (геозона)';
+
+  @override
+  String get adminPointRadius => 'Радиус геозоны, м';
+
+  @override
+  String get adminPointTerminalNeedsGeofence =>
+      'Для терминала нужны широта, долгота и радиус';
+
+  @override
+  String get adminCityStatsTitle => 'По городам';
+
+  @override
+  String get adminCityStatsArrivals => 'Анонсы';
+
+  @override
+  String get adminCityStatsCargos => 'Грузы';
+
+  @override
+  String get adminCityStatsDeals => 'Сделки';
+
+  @override
+  String get adminCityStatsEmpty => 'Пока нет активности по городам';
 }
