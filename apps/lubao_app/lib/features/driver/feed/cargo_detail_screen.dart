@@ -147,6 +147,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
                     ],
                     Expanded(
                       child: PrimaryButton(
+                        key: const Key('cargoDetailRespondButton'),
                         label: _responded ? t.cargoAlreadyResponded : t.cargoRespond,
                         loading: _responding,
                         onPressed: _responded ? null : _respond,

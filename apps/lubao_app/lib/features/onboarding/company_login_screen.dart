@@ -72,12 +72,14 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
         child: Column(
           children: [
             AppTextField(
+              key: const Key('companyLoginEmailField'),
               label: t.companyLoginEmailLabel,
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 12),
             AppTextField(
+              key: const Key('companyLoginPasswordField'),
               label: t.adminLoginPasswordLabel,
               controller: _passwordController,
               obscureText: _obscurePassword,
@@ -91,7 +93,7 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            PrimaryButton(label: t.companyLoginVerify, loading: _loading, onPressed: _submit),
+            PrimaryButton(key: const Key('companyLoginSubmitButton'), label: t.companyLoginVerify, loading: _loading, onPressed: _submit),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

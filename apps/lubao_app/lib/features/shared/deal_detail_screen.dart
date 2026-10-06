@@ -248,6 +248,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                 const SizedBox(height: 24),
                 if (isDriver && deal.nextStatus != null) ...[
                   PrimaryButton(
+                    key: const Key('dealNextStatusButton'),
                     label: switch (deal.nextStatus!) {
                       DealStatus.confirmedByDriver => t.dealConfirm,
                       DealStatus.loaded => t.dealMarkLoaded,

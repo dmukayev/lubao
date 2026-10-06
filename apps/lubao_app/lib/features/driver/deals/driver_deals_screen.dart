@@ -47,6 +47,7 @@ class DriverDealsScreen extends ConsumerWidget {
                         .join(', ');
 
                 return CargoCard(
+                  key: Key('driverDealCard-${deal.id}'),
                   destinationLabel: destinationLabel,
                   bodyTypeLabel: deal.companyName,
                   priceLabel: deal.cargo != null ? formatMoney(deal.cargo!.price, deal.cargo!.currency) : '',

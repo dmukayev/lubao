@@ -44,6 +44,7 @@ class RoleSelectScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               PrimaryButton(
+                key: const Key('roleSelectCompanyButton'),
                 label: t.roleCompany,
                 icon: LucideIcons.building2,
                 onPressed: () => context.push('/login/company'),

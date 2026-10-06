@@ -692,7 +692,13 @@ class _DriverCard extends StatelessWidget {
     final buttons = <Widget>[
       IconSquareButton(size: 40, icon: LucideIcons.phone, onPressed: driver.phone == null ? null : () => onCall(driver)),
       const SizedBox(width: AppSpacing.sm),
-      IconSquareButton(size: 40, icon: LucideIcons.messageSquare, loading: openingChat, onPressed: () => onChat(driver)),
+      IconSquareButton(
+        key: Key('driversAtPointChat-${driver.driverId}'),
+        size: 40,
+        icon: LucideIcons.messageSquare,
+        loading: openingChat,
+        onPressed: () => onChat(driver),
+      ),
       if (!isChinaCompany) ...[
         const SizedBox(width: AppSpacing.sm),
         IconSquareButton(size: 40, icon: LucideIcons.messageCircle, onPressed: driver.phone == null ? null : () => onWhatsapp(driver)),
