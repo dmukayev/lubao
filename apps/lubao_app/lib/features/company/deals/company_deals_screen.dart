@@ -48,12 +48,15 @@ class CompanyDealsScreen extends ConsumerWidget {
 
                 return CargoCard(
                   destinationLabel: destinationLabel,
-                  bodyTypeLabel: deal.driverName,
+                  bodyTypeLabel: [
+                    if (deal.cargo != null && refData != null) refData.bodyTypeById(deal.cargo!.bodyTypeId).name.forLanguageCode(locale),
+                    deal.driverName,
+                  ].join(' · '),
                   priceLabel: deal.cargo != null ? formatMoney(deal.cargo!.price, deal.cargo!.currency) : '',
                   secondaryPriceLabel: deal.cargo == null || refData == null
                       ? null
                       : formatKztConversion(refData.convertToKzt(deal.cargo!.price, deal.cargo!.currency)),
-                  readyDateLabel: formatDate(deal.createdAt),
+                  readyDateLabel: formatDate(deal.cargo?.readyDate ?? deal.createdAt),
                   statusLabel: statusLabel,
                   statusColor: statusColor,
                   onTap: () => context.push('/deal/${deal.id}'),

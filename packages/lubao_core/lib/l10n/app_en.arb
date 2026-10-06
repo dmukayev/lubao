@@ -377,6 +377,10 @@
   "chatTranslatedBadge": "Translated",
   "chatShowOriginal": "original",
   "chatWritesIn": "Writing in {language}",
+  "languageNameRu": "Russian",
+  "languageNameKk": "Kazakh",
+  "languageNameZh": "Chinese",
+  "languageNameEn": "English",
   "@chatWritesIn": {
     "placeholders": {
       "language": {

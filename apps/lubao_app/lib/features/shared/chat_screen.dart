@@ -15,7 +15,14 @@ import '../../providers/data_providers.dart';
 import 'status_helpers.dart';
 import 'error_feedback.dart';
 
-const _languageNames = {'ru': 'русском', 'kk': 'қазақском', 'zh': 'китайском'};
+/// Название языка для «Пишет на …» — из ARB на языке читателя (041, п.9).
+String? _languageName(LubaoLocalizations t, String? code) => switch (code) {
+      'ru' => t.languageNameRu,
+      'kk' => t.languageNameKk,
+      'zh' => t.languageNameZh,
+      'en' => t.languageNameEn,
+      _ => null,
+    };
 
 /// Чат — пара водитель+компания(+груз), не только сделка (задача 017,
 /// п.1): экран открывается по `chatId`, а не по `dealId` — сделка (если
@@ -323,9 +330,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (thread?.counterpartLocale != null && _languageNames[thread!.counterpartLocale] != null)
+                  if (_languageName(t, thread?.counterpartLocale) != null)
                     Text(
-                      t.chatWritesIn(_languageNames[thread.counterpartLocale]!),
+                      t.chatWritesIn(_languageName(t, thread!.counterpartLocale)!),
                       style: AppTextStyles.caption,
                     ),
                   if (thread?.counterpartWechatId != null)

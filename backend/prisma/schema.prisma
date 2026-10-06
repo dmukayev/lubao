@@ -881,6 +881,9 @@ model Chat {
   driver    Driver   @relation(fields: [driverId], references: [id])
   companyId String
   company   Company  @relation(fields: [companyId], references: [id])
+  /// Логист, начавший чат без груза (041, п.9): собеседник водителя — он, а не
+  /// случайный владелец компании.
+  companyUserId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -909,6 +909,18 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   }
 
   @override
+  String get languageNameRu => '俄语';
+
+  @override
+  String get languageNameKk => '哈萨克语';
+
+  @override
+  String get languageNameZh => '中文';
+
+  @override
+  String get languageNameEn => '英语';
+
+  @override
   String get chatToday => '今天';
 
   @override

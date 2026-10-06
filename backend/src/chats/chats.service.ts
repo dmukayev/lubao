@@ -71,7 +71,9 @@ export class ChatsService {
       // отдельного шага.
       const deal = await this.prisma.deal.findFirst({ where: { driverId, companyId, cargoId: cargoId ?? undefined } });
       try {
-        chat = await this.prisma.chat.create({ data: { driverId, companyId, cargoId, dealId: deal?.id ?? null } });
+        chat = await this.prisma.chat.create({
+          data: { driverId, companyId, cargoId, dealId: deal?.id ?? null, companyUserId: ctx.companyMember ? ctx.user.id : null },
+        });
       } catch (e) {
         // Двойное нажатие «Написать» (задача 029, п.13) — уникальный
         // индекс @@unique([driverId, companyId, cargoId]) ловит гонку
@@ -116,7 +118,7 @@ export class ChatsService {
   /// Логист, опубликовавший груз, — не случайный владелец (decisions.md
   /// «Компания: проверка, роли, контакты», задача 012). Для чата без груза
   /// (общий чат логиста с водителем) откатываемся на самого старого OWNER.
-  private async resolveCompanyCounterpart(companyId: string, cargoId: string | null) {
+  private async resolveCompanyCounterpart(companyId: string, cargoId: string | null, companyUserId?: string | null) {
     if (cargoId) {
       const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId }, select: { publishedByUserId: true } });
       if (cargo?.publishedByUserId) {
@@ -127,6 +129,15 @@ export class ChatsService {
         if (publisher) return publisher;
       }
     }
+    // Чат без груза: собеседник — тот логист, кто написал первым (041, п.9),
+    // и только если его нет — старейший OWNER.
+    if (companyUserId) {
+      const writer = await this.prisma.companyMember.findFirst({
+        where: { userId: companyUserId, companyId },
+        include: { user: true, company: { include: { country: true } } },
+      });
+      if (writer) return writer;
+    }
     return this.prisma.companyMember.findFirst({
       where: { companyId, role: 'OWNER' },
       orderBy: { createdAt: 'asc' },
@@ -134,15 +145,15 @@ export class ChatsService {
     });
   }
 
-  private async resolveParties(chat: { driverId: string; companyId: string; cargoId: string | null }) {
+  private async resolveParties(chat: { driverId: string; companyId: string; cargoId: string | null; companyUserId?: string | null }) {
     const [driver, companyMember] = await Promise.all([
       this.prisma.driver.findUniqueOrThrow({ where: { id: chat.driverId }, include: { user: true } }),
-      this.resolveCompanyCounterpart(chat.companyId, chat.cargoId),
+      this.resolveCompanyCounterpart(chat.companyId, chat.cargoId, chat.companyUserId),
     ]);
     return { driver, companyMember };
   }
 
-  private async toThreadDto(chat: { id: string; cargoId: string | null; dealId: string | null; driverId: string; companyId: string }, ctx: RequestContext) {
+  private async toThreadDto(chat: { id: string; cargoId: string | null; dealId: string | null; driverId: string; companyId: string; companyUserId?: string | null }, ctx: RequestContext) {
     const { driver, companyMember } = await this.resolveParties(chat);
     // Задача 012 — водитель должен видеть конкретного логиста (его имя,
     // телефон, WeChat), а не «компанию» (decisions.md «Компания: проверка,

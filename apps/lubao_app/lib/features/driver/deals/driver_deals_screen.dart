@@ -49,12 +49,15 @@ class DriverDealsScreen extends ConsumerWidget {
                 return CargoCard(
                   key: Key('driverDealCard-${deal.id}'),
                   destinationLabel: destinationLabel,
-                  bodyTypeLabel: deal.companyName,
+                  bodyTypeLabel: [
+                    if (deal.cargo != null && refData != null) refData.bodyTypeById(deal.cargo!.bodyTypeId).name.forLanguageCode(locale),
+                    deal.companyName,
+                  ].join(' · '),
                   priceLabel: deal.cargo != null ? formatMoney(deal.cargo!.price, deal.cargo!.currency) : '',
                   secondaryPriceLabel: deal.cargo == null || refData == null
                       ? null
                       : formatKztConversion(refData.convertToKzt(deal.cargo!.price, deal.cargo!.currency)),
-                  readyDateLabel: formatDate(deal.createdAt),
+                  readyDateLabel: formatDate(deal.cargo?.readyDate ?? deal.createdAt),
                   statusLabel: statusLabel,
                   statusColor: statusColor,
                   onTap: () => context.push('/deal/${deal.id}'),

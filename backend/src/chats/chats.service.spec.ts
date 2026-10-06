@@ -63,7 +63,7 @@ describe('ChatsService.findOrCreate — чат по паре водитель+к
 
     await service.findOrCreate(companyCtx(), { driverId: 'd1' });
 
-    expect(prisma.chat.create).toHaveBeenCalledWith({ data: { driverId: 'd1', companyId: 'c1', cargoId: null, dealId: null } });
+    expect(prisma.chat.create).toHaveBeenCalledWith({ data: { driverId: 'd1', companyId: 'c1', cargoId: null, dealId: null, companyUserId: 'u-company' } });
   });
 
   it('creating a chat for a pair that already has a deal attaches dealId immediately', async () => {
@@ -79,7 +79,7 @@ describe('ChatsService.findOrCreate — чат по паре водитель+к
 
     await service.findOrCreate(driverCtx(), { cargoId: 'cargo1' });
 
-    expect(prisma.chat.create).toHaveBeenCalledWith({ data: { driverId: 'd1', companyId: 'c1', cargoId: 'cargo1', dealId: 'deal1' } });
+    expect(prisma.chat.create).toHaveBeenCalledWith({ data: { driverId: 'd1', companyId: 'c1', cargoId: 'cargo1', dealId: 'deal1', companyUserId: null } });
   });
 });
 

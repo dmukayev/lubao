@@ -934,6 +934,18 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   }
 
   @override
+  String get languageNameRu => 'Russian';
+
+  @override
+  String get languageNameKk => 'Kazakh';
+
+  @override
+  String get languageNameZh => 'Chinese';
+
+  @override
+  String get languageNameEn => 'English';
+
+  @override
   String get chatToday => 'Today';
 
   @override
