@@ -2184,6 +2184,12 @@ abstract class LubaoLocalizations {
   /// **'Сег'**
   String get driversAtPointTodayShort;
 
+  /// No description provided for @driversAtPointFilterCapacityChip.
+  ///
+  /// In ru, this message translates to:
+  /// **'Тоннаж'**
+  String get driversAtPointFilterCapacityChip;
+
   /// No description provided for @driversAtPointInviteShort.
   ///
   /// In ru, this message translates to:
@@ -3419,6 +3425,18 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Подтвердить водителя'**
   String get adminConfirmDriverButton;
+
+  /// No description provided for @adminVerificationBlacklistedBadge.
+  ///
+  /// In ru, this message translates to:
+  /// **'⛔ Чёрный список'**
+  String get adminVerificationBlacklistedBadge;
+
+  /// No description provided for @adminConfirmDespiteBlacklist.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтвердить вопреки совпадению'**
+  String get adminConfirmDespiteBlacklist;
 
   /// No description provided for @adminConfirmCompanyButton.
   ///

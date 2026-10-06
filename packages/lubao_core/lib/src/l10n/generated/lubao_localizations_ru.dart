@@ -1125,6 +1125,9 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get driversAtPointTodayShort => 'Сег';
 
   @override
+  String get driversAtPointFilterCapacityChip => 'Тоннаж';
+
+  @override
   String get driversAtPointInviteShort => 'Пригласить';
 
   @override
@@ -1789,6 +1792,12 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminConfirmDriverButton => 'Подтвердить водителя';
+
+  @override
+  String get adminVerificationBlacklistedBadge => '⛔ Чёрный список';
+
+  @override
+  String get adminConfirmDespiteBlacklist => 'Подтвердить вопреки совпадению';
 
   @override
   String get adminConfirmCompanyButton => 'Подтвердить компанию';

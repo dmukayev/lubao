@@ -1,0 +1,7 @@
+{
+  "name": "lubao-e2e-admin-ui",
+  "private": true,
+  "description": "Задача 034: сценарии админки в Chrome (Playwright по семантике Flutter)",
+  "scripts": { "test": "playwright test" },
+  "devDependencies": { "@playwright/test": "^1.49.0" }
+}

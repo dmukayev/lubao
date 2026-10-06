@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
+import '../../shared/photo_picker.dart';
 
 const _requiredDocs = [
   // Задача 032, п.13 (038) — техпаспорта убраны: они загружаются в гараже
@@ -85,7 +86,7 @@ class _DocSlotState extends ConsumerState<_DocSlot> {
   Future<void> _pick(ImageSource source) async {
     if (_locked) return;
     final t = context.l10n;
-    final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    final picked = await pickPhoto(source);
     if (picked == null) return;
     setState(() => _uploading = true);
     try {
@@ -164,6 +165,7 @@ class _DocSlotState extends ConsumerState<_DocSlot> {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: OutlinedButton.icon(
+                    key: Key('driverVerifyGallery-${widget.type.name}'),
                     onPressed: _uploading ? null : () => _pick(ImageSource.gallery),
                     icon: const Icon(LucideIcons.image),
                     label: Text(t.postCargoAddPhotoGallery),

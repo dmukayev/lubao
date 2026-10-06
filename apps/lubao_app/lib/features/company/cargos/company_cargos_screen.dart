@@ -20,6 +20,7 @@ class CompanyCargosScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(t.myCargosTitle)),
       floatingActionButton: FloatingActionButton.extended(
+        key: const Key('companyPostCargoFab'),
         onPressed: () => context.push('/company/cargos/new'),
         icon: const Icon(LucideIcons.plus),
         label: Text(t.postCargoTitle),
@@ -53,6 +54,7 @@ class CompanyCargosScreen extends ConsumerWidget {
                 final (statusLabel, statusColor) = cargoStatusPresentation(t, cargo.status);
 
                 return CargoCard(
+                  key: Key('companyCargoCard-${cargo.id}'),
                   destinationLabel: destinationLabel,
                   bodyTypeLabel: bodyType?.name.forLanguageCode(locale) ?? '',
                   priceLabel: formatMoney(cargo.price, cargo.currency),

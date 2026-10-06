@@ -161,6 +161,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
 
           final step0Fields = [
               AppTextField(
+                key: const Key('driverSetupFullName'),
                 label: t.driverSetupFullName,
                 controller: _fullNameController,
                 errorText: _fullNameError,
@@ -207,6 +208,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                 fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
                   _cityFieldController = controller;
                   return AppTextField(
+                    key: const Key('driverSetupHomeCity'),
                     label: t.driverSetupHomeCity,
                     hintText: t.searchCityCountryHint,
                     controller: controller,
@@ -236,6 +238,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                       children: [
                         Expanded(
                           child: _VehicleTile(
+                            key: Key('driverSetupBody-${refData.bodyTypes[i].code}'),
                             icon: _bodyTypeIcon(refData.bodyTypes[i].code),
                             label: refData.bodyTypes[i].name.forLanguageCode(locale),
                             selected: _bodyTypeId == refData.bodyTypes[i].id,
@@ -271,6 +274,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                 children: [
                   for (final capacity in _capacityPresets)
                     SelectableTile(
+                      key: Key('driverSetupCapacity-${capacity.toStringAsFixed(0)}'),
                       label: '${capacity.toStringAsFixed(0)} ${t.unitTon}',
                       selected: _capacityTons == capacity,
                       onTap: () => setState(() => _capacityTons = capacity),
@@ -399,6 +403,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.screen),
                 child: PrimaryButton(
+                  key: const Key('driverSetupNext'),
                   label: isLastStep
                       ? (_anyCountry || _selectedCountries.isEmpty
                           ? t.driverSetupSubmit
@@ -447,7 +452,7 @@ IconData _bodyTypeIcon(String code) {
 }
 
 class _VehicleTile extends StatelessWidget {
-  const _VehicleTile({required this.icon, required this.label, required this.selected, required this.onTap});
+  const _VehicleTile({super.key, required this.icon, required this.label, required this.selected, required this.onTap});
 
   final IconData icon;
   final String label;

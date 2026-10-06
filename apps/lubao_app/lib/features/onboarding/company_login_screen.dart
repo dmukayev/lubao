@@ -99,6 +99,7 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 TextButton(
+                  key: const Key('companyLoginRegisterLink'),
                   onPressed: () => context.push('/login/company/register'),
                   child: Text(t.companyLoginRegisterLink),
                 ),

@@ -744,9 +744,16 @@ class _DriverCard extends StatelessWidget {
         ? t.driversAtPointOnSiteAgo(_ago(t, driver.arrivedAt ?? driver.plannedAt))
         : t.driversAtPointPlannedApprox(_plannedDayLabel(t), _timeOf(driver.plannedAt));
     final statusColor = onSite ? AppColors.success : AppColors.primary;
-    final status = Text(
-      onSite ? '📍 $statusText' : statusText,
-      style: AppTextStyles.caption.copyWith(color: statusColor, fontWeight: FontWeight.w600),
+    final statusStyle = AppTextStyles.caption.copyWith(color: statusColor, fontWeight: FontWeight.w600);
+    // Иконка вместо эмодзи: эмодзи нет в шрифте, на части устройств рисуется «?».
+    final status = Text.rich(
+      TextSpan(
+        style: statusStyle,
+        children: [
+          if (onSite) WidgetSpan(alignment: PlaceholderAlignment.middle, child: Padding(padding: const EdgeInsets.only(right: 4), child: Icon(LucideIcons.mapPin, size: 14, color: statusColor))),
+          TextSpan(text: statusText),
+        ],
+      ),
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
     );

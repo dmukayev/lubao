@@ -268,7 +268,7 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
             Row(
               children: [
                 Expanded(
-                  child: PrimaryButton(label: t.responseSelect, onPressed: () => _select(haulHint)),
+                  child: PrimaryButton(key: const Key('responseSelectButton'), label: t.responseSelect, onPressed: () => _select(haulHint)),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(

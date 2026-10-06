@@ -203,6 +203,7 @@ class GarageScreen extends ConsumerWidget {
                 ],
               const SizedBox(height: AppSpacing.md),
               OutlinedButton.icon(
+                key: const Key('garageAddVehicle'),
                 onPressed: () => _addVehicle(context, ref),
                 icon: const Icon(LucideIcons.plus),
                 label: Text(t.garageAddVehicle),

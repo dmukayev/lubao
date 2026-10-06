@@ -5,6 +5,7 @@ import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
+import '../../shared/photo_picker.dart';
 
 /// Добавление машины в гараж (задача 031, этап B, п.8) — без распознавания
 /// (этап D) поля заполняются вручную, ничего не блокируется. Возвращает
@@ -60,7 +61,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   }
 
   Future<void> _pickPhoto(ImageSource source) async {
-    final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    final picked = await pickPhoto(source);
     if (picked != null) setState(() { _photo = picked; _photoError = null; });
   }
 
@@ -137,6 +138,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: SelectableTile(
+                      key: const Key('addVehicleKindTrailer'),
                       label: t.garageKindTrailer,
                       selected: isTrailer,
                       onTap: () => setState(() => _kind = VehicleKind.trailer),
@@ -147,15 +149,16 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
               const SizedBox(height: AppSpacing.lg),
               if (isTrailer && refData != null) ...[
                 DropdownButtonFormField<String>(
+                  key: const Key('addVehicleBodyType'),
                   initialValue: _bodyTypeId,
                   decoration: InputDecoration(labelText: t.driverSetupVehicleBodyType),
                   items: refData.bodyTypes.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name.forLanguageCode(locale)))).toList(),
                   onChanged: (v) => setState(() => _bodyTypeId = v),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                AppTextField(label: t.driverSetupCapacity, controller: _capacityController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                AppTextField(key: const Key('addVehicleCapacity'), label: t.driverSetupCapacity, controller: _capacityController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                 const SizedBox(height: AppSpacing.md),
-                AppTextField(label: t.garageLength, controller: _lengthController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                AppTextField(key: const Key('addVehicleLength'), label: t.garageLength, controller: _lengthController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                 const SizedBox(height: AppSpacing.md),
                 Text(t.garageSizeTitle, style: AppTextStyles.bodyStrong),
                 const SizedBox(height: AppSpacing.sm),
@@ -165,6 +168,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                   children: [
                     for (final preset in refData.sizePresetsForBodyType(_bodyTypeId))
                       SelectableTile(
+                        key: Key('addVehicleSizePreset-${preset.id}'),
                         label: preset.volumeM3 != null && preset.palletsEuro != null
                             ? '${preset.name.forLanguageCode(locale)}\n≈ ${preset.volumeM3!.toStringAsFixed(0)} ${t.unitM3} · ${preset.palletsEuro} ${t.unitPallets}'
                             : preset.name.forLanguageCode(locale),
@@ -196,7 +200,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                 AppTextField(label: t.garageVin, controller: _vinController),
                 const SizedBox(height: AppSpacing.md),
               ],
-              AppTextField(label: t.driverSetupVehiclePlate, controller: _plateController),
+              AppTextField(key: const Key('addVehiclePlate'), label: t.driverSetupVehiclePlate, controller: _plateController),
               const SizedBox(height: AppSpacing.lg),
               Text(t.garagePhotoRequired, style: AppTextStyles.bodyStrong),
               const SizedBox(height: AppSpacing.sm),
@@ -223,6 +227,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: OutlinedButton.icon(
+                      key: const Key('addVehiclePhotoGallery'),
                       onPressed: () => _pickPhoto(ImageSource.gallery),
                       icon: const Icon(LucideIcons.image),
                       label: Text(t.postCargoAddPhotoGallery),
@@ -235,7 +240,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                 Text(_photoError!, style: AppTextStyles.caption.copyWith(color: AppColors.error)),
               ],
               const SizedBox(height: AppSpacing.lg),
-              PrimaryButton(label: t.garageSubmit, loading: _submitting, onPressed: _submit),
+              PrimaryButton(key: const Key('addVehicleSubmit'), label: t.garageSubmit, loading: _submitting, onPressed: _submit),
               const SizedBox(height: AppSpacing.md),
             ],
           ),

@@ -7,6 +7,7 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../shared/photo_picker.dart';
 
 class PostCargoScreen extends ConsumerStatefulWidget {
   const PostCargoScreen({super.key, this.cargo});
@@ -73,7 +74,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   }
 
   Future<void> _addPhoto(ImageSource source) async {
-    final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    final picked = await pickPhoto(source);
     if (picked == null) return;
     setState(() => _uploadingPhoto = true);
     try {
@@ -185,6 +186,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
             children: [
               if (blockedByVerification) ...[
                 Card(
+                  key: const Key('postCargoVerificationBanner'),
                   color: AppColors.primarySoft,
                   child: Padding(
                     padding: const EdgeInsets.all(12),
@@ -212,6 +214,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   _cityId = option.cityId;
                 }),
                 fieldViewBuilder: (context, controller, focusNode, onSubmitted) => AppTextField(
+                  key: const Key('postCargoDestination'),
                   label: t.cargoDestination,
                   hintText: t.searchCityCountryHint,
                   controller: controller,
@@ -221,6 +224,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
+                key: const Key('postCargoBodyType'),
                 initialValue: _bodyTypeId,
                 decoration: InputDecoration(labelText: t.postCargoBodyType, border: const OutlineInputBorder()),
                 items: refData.bodyTypes
@@ -233,6 +237,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 children: [
                   Expanded(
                     child: AppTextField(
+                      key: const Key('postCargoVolume'),
                       label: t.postCargoVolume,
                       controller: _volumeController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -242,6 +247,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: AppTextField(
+                      key: const Key('postCargoWeight'),
                       label: t.postCargoWeight,
                       controller: _weightController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -265,7 +271,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: AppTextField(label: t.postCargoPrice, controller: _priceController, keyboardType: TextInputType.number),
+                    child: AppTextField(key: const Key('postCargoPrice'), label: t.postCargoPrice, controller: _priceController, keyboardType: TextInputType.number),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -345,6 +351,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
               AppTextField(label: t.postCargoDescription, controller: _descriptionController, maxLines: 3),
               const SizedBox(height: 24),
               PrimaryButton(
+                key: const Key('postCargoSubmit'),
                 label: _isEditing ? t.commonSave : t.postCargoSubmit,
                 loading: _saving,
                 onPressed: blockedByVerification ? null : _submit,

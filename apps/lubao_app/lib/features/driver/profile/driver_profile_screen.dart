@@ -161,6 +161,7 @@ class _CompletenessBanner extends ConsumerWidget {
           if (!pending) ...[
             const SizedBox(height: AppSpacing.md),
             PrimaryButton(
+              key: const Key('driverProfileVerifyButton'),
               label: t.driverVerificationRequiredAction,
               onPressed: () => context.push('/driver/verification'),
             ),

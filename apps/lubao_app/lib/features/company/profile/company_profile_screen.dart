@@ -10,6 +10,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../../providers/locale_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../shared/photo_picker.dart';
 
 /// Плашка-напоминание о неподтверждённом email (задача 025, п. 7) — не
 /// блокирует ничего, просто предлагает подтвердить. «Отправить код» зовёт
@@ -458,7 +459,7 @@ class _CompanyVerificationCardState extends ConsumerState<_CompanyVerificationCa
 
   Future<void> _pick(ImageSource source) async {
     final t = context.l10n;
-    final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    final picked = await pickPhoto(source);
     if (picked == null) return;
     setState(() => _uploading = true);
     try {
@@ -511,7 +512,7 @@ class _CompanyVerificationCardState extends ConsumerState<_CompanyVerificationCa
                 const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    Text(statusLabel, style: AppTextStyles.caption.copyWith(color: statusColor)),
+                    Text(statusLabel, key: const Key('companyVerificationStatus'), style: AppTextStyles.caption.copyWith(color: statusColor)),
                     if (doc?.status == VerificationDocStatus.rejected && doc?.rejectReason != null) ...[
                       const SizedBox(width: AppSpacing.xs),
                       Expanded(child: Text(doc!.rejectReason!, style: AppTextStyles.caption.copyWith(color: AppColors.error))),
@@ -532,6 +533,7 @@ class _CompanyVerificationCardState extends ConsumerState<_CompanyVerificationCa
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: OutlinedButton.icon(
+                          key: const Key('companyVerificationGallery'),
                           onPressed: _uploading ? null : () => _pick(ImageSource.gallery),
                           icon: const Icon(LucideIcons.image),
                           label: Text(t.postCargoAddPhotoGallery),
@@ -571,6 +573,7 @@ class CompanyProfileScreen extends ConsumerWidget {
           // может опубликовать груз, а не только натыкается на 403.
           if (company != null && !company.isVerified)
             Card(
+              key: const Key('companyNotVerifiedBanner'),
               color: AppColors.primarySoft,
               margin: const EdgeInsets.only(bottom: AppSpacing.md),
               child: ListTile(
@@ -694,6 +697,7 @@ class CompanyProfileScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           OutlinedButton(
+            key: const Key('companyProfileLogoutButton'),
             onPressed: () => ref.read(sessionProvider.notifier).logout(),
             child: Text(t.profileLogout),
           ),

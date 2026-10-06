@@ -140,6 +140,7 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
             padding: const EdgeInsets.all(AppSpacing.screen),
             children: [
               AppTextField(
+                key: const Key('companyRegisterEmail'),
                 label: t.companyLoginEmailLabel,
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -147,6 +148,7 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
+                key: const Key('companyRegisterPassword'),
                 label: t.adminLoginPasswordLabel,
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -160,12 +162,14 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
                 ),
               ),
               AppTextField(
+                key: const Key('companyRegisterOwnerName'),
                 label: t.companyRegisterOwnerName,
                 controller: _ownerNameController,
                 errorText: _ownerNameError,
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
+                key: const Key('companyRegisterCompanyName'),
                 label: t.companyRegisterCompanyName,
                 controller: _companyNameController,
                 errorText: _companyNameError,
@@ -185,6 +189,7 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
                 children: [
                   if (china != null)
                     SelectableTile(
+                      key: const Key('companyRegisterCountryCN'),
                       label: china.name.forLanguageCode(locale),
                       selected: _countryId == china.id,
                       onTap: () => _selectCountry(china.id),
@@ -224,7 +229,7 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
                 Text(_countryError!, style: AppTextStyles.caption.copyWith(color: AppColors.error)),
               ],
               const SizedBox(height: AppSpacing.xxl),
-              PrimaryButton(label: t.companyRegisterSubmit, loading: _saving, onPressed: _submit),
+              PrimaryButton(key: const Key('companyRegisterSubmit'), label: t.companyRegisterSubmit, loading: _saving, onPressed: _submit),
             ],
           );
         },

@@ -43,3 +43,4 @@ test-data/private/
 
 # e2e screenshots and reports
 test-results/
+scripts/e2e-admin-ui/explore*

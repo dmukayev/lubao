@@ -136,6 +136,18 @@ bool? _effectiveOk(_DocDecisions local, AdminCardDocument doc) {
   return null;
 }
 
+/// Есть ли у документов совпадение распознанных идентификаторов с чёрным
+/// списком (⛔, задача 034 п.12): тогда обычное «Подтвердить» недоступно,
+/// остаётся «вопреки совпадению» с обязательной причиной.
+bool _anyBlacklisted(WidgetRef ref, Iterable<AdminCardDocument> docs) {
+  var found = false;
+  for (final d in docs) {
+    final recognition = ref.watch(adminDocumentRecognitionProvider(d.id)).valueOrNull;
+    if (recognition != null && recognition.fields.values.any((f) => f.match == 'blacklisted')) found = true;
+  }
+  return found;
+}
+
 class _DriverDetailPane extends ConsumerStatefulWidget {
   const _DriverDetailPane({super.key, required this.id});
 
@@ -175,6 +187,7 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
           (type) => driver.documents.any((d) => d.type == type && _effectiveOk(_decisions, d) == true),
         );
         final anyProblem = driver.documents.any((d) => _effectiveOk(_decisions, d) == false);
+        final blacklisted = _anyBlacklisted(ref, driver.documents);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,6 +199,7 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
                   _Header(
                     title: driver.fullName,
                     isVerified: driver.isVerified,
+                    blacklisted: blacklisted,
                     onOpenCard: () => context.push('/drivers/${driver.id}'),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -245,8 +259,11 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
             _ActionBar(
               submitting: _submitting,
               confirmLabel: t.adminConfirmDriverButton,
-              confirmEnabled: allRequiredOk,
+              confirmEnabled: allRequiredOk && !blacklisted,
               returnEnabled: anyProblem,
+              blacklisted: blacklisted,
+              forceEnabled: allRequiredOk,
+              onForceConfirm: () => _confirm(driver, force: true),
               hint: allRequiredOk ? null : t.adminVerificationMissingDocsHint,
               onConfirm: () => _confirm(driver),
               onReturn: () => _returnForRework(driver),
@@ -257,7 +274,7 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
     );
   }
 
-  Future<void> _confirm(AdminVerificationDriverProfile driver) async {
+  Future<void> _confirm(AdminVerificationDriverProfile driver, {bool force = false}) async {
     final reason = await showReasonDialog(context, title: context.l10n.adminVerifyDialogTitle, confirmLabel: context.l10n.commonDone);
     if (reason == null || !mounted) return;
     setState(() => _submitting = true);
@@ -269,7 +286,7 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
             approve: true,
             confirmedFields: (d.type == 'DRIVER_LICENSE' || d.type == 'IDENTITY') ? _confirmedFields : null,
           )));
-      await repo.setDriverVerified(driver.id, true, reason: reason, crossChecks: _crossChecks);
+      await repo.setDriverVerified(driver.id, true, reason: reason, force: force, crossChecks: _crossChecks);
       ref.invalidate(adminVerificationQueueProvider('driver'));
       ref.invalidate(adminVerificationDriverProfileProvider(driver.id));
       ref.read(adminVerificationSelectedIdProvider.notifier).state = null;
@@ -336,6 +353,7 @@ class _CompanyDetailPaneState extends ConsumerState<_CompanyDetailPane> {
           (type) => company.documents.any((d) => d.type == type && _effectiveOk(_decisions, d) == true),
         );
         final anyProblem = company.documents.any((d) => _effectiveOk(_decisions, d) == false);
+        final blacklisted = _anyBlacklisted(ref, company.documents);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,6 +365,7 @@ class _CompanyDetailPaneState extends ConsumerState<_CompanyDetailPane> {
                   _Header(
                     title: company.name,
                     isVerified: company.isVerified,
+                    blacklisted: blacklisted,
                     onOpenCard: () => context.push('/companies/${company.id}'),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -388,8 +407,11 @@ class _CompanyDetailPaneState extends ConsumerState<_CompanyDetailPane> {
             _ActionBar(
               submitting: _submitting,
               confirmLabel: t.adminConfirmCompanyButton,
-              confirmEnabled: allRequiredOk,
+              confirmEnabled: allRequiredOk && !blacklisted,
               returnEnabled: anyProblem,
+              blacklisted: blacklisted,
+              forceEnabled: allRequiredOk,
+              onForceConfirm: () => _confirm(company, force: true),
               hint: allRequiredOk ? null : t.adminVerificationMissingDocsHint,
               onConfirm: () => _confirm(company),
               onReturn: () => _returnForRework(company),
@@ -400,7 +422,7 @@ class _CompanyDetailPaneState extends ConsumerState<_CompanyDetailPane> {
     );
   }
 
-  Future<void> _confirm(AdminVerificationCompanyProfile company) async {
+  Future<void> _confirm(AdminVerificationCompanyProfile company, {bool force = false}) async {
     final reason = await showReasonDialog(context, title: context.l10n.adminVerifyDialogTitle, confirmLabel: context.l10n.commonDone);
     if (reason == null || !mounted) return;
     setState(() => _submitting = true);
@@ -408,7 +430,7 @@ class _CompanyDetailPaneState extends ConsumerState<_CompanyDetailPane> {
       final repo = ref.read(adminRepositoryProvider);
       final toApprove = company.documents.where((d) => _decisions[d.id] == true && d.status != VerificationStatus.approved);
       await Future.wait(toApprove.map((d) => repo.reviewDocument(d.id, approve: true)));
-      await repo.setCompanyVerified(company.id, true, reason: reason, crossChecks: _crossChecks);
+      await repo.setCompanyVerified(company.id, true, reason: reason, force: force, crossChecks: _crossChecks);
       ref.invalidate(adminVerificationQueueProvider('company'));
       ref.invalidate(adminVerificationCompanyProfileProvider(company.id));
       ref.read(adminVerificationSelectedIdProvider.notifier).state = null;
@@ -442,10 +464,11 @@ class _CompanyDetailPaneState extends ConsumerState<_CompanyDetailPane> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.title, required this.isVerified, required this.onOpenCard});
+  const _Header({required this.title, required this.isVerified, required this.onOpenCard, this.blacklisted = false});
 
   final String title;
   final bool isVerified;
+  final bool blacklisted;
   final VoidCallback onOpenCard;
 
   @override
@@ -462,6 +485,7 @@ class _Header extends StatelessWidget {
               Flexible(child: Text(title, style: Theme.of(context).textTheme.headlineSmall, overflow: TextOverflow.ellipsis)),
               const SizedBox(width: 12),
               if (isVerified) StatusBadge(label: t.adminVerified, color: StatusBadge.success),
+              if (blacklisted) StatusBadge(label: t.adminVerificationBlacklistedBadge, color: StatusBadge.danger),
             ],
           ),
         ),
@@ -861,12 +885,18 @@ class _ActionBar extends StatelessWidget {
     required this.hint,
     required this.onConfirm,
     required this.onReturn,
+    this.blacklisted = false,
+    this.forceEnabled = false,
+    this.onForceConfirm,
   });
 
   final bool submitting;
   final String confirmLabel;
   final bool confirmEnabled;
   final bool returnEnabled;
+  final bool blacklisted;
+  final bool forceEnabled;
+  final VoidCallback? onForceConfirm;
   final String? hint;
   final VoidCallback onConfirm;
   final VoidCallback onReturn;
@@ -882,6 +912,11 @@ class _ActionBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (blacklisted)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(t.adminRecognitionBlacklistBanner, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: StatusBadge.danger)),
+              ),
             if (hint != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(hint!, style: Theme.of(context).textTheme.bodySmall)),
             Row(
               children: [
@@ -900,6 +935,18 @@ class _ActionBar extends StatelessWidget {
                 ),
               ],
             ),
+            if (blacklisted)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(foregroundColor: StatusBadge.danger),
+                    onPressed: submitting || !forceEnabled ? null : onForceConfirm,
+                    child: Text(t.adminConfirmDespiteBlacklist),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

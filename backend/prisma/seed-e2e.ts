@@ -1,6 +1,6 @@
 import { PrismaClient, Currency } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { hashIdentifier, maskIdentifier } from '../src/identifiers/crypto';
+import { encryptIdentifier, hashIdentifier, maskIdentifier } from '../src/identifiers/crypto';
 import { normalizeIdentifier } from '../src/identifiers/normalize';
 
 if (process.env.NODE_ENV === 'production') {
@@ -18,6 +18,7 @@ const E2E_PASSWORD = 'E2eLubao2026!';
 const E2E_CARGO_ID = '11111111-1111-4111-8111-111111111001';
 const E2E_CARGO_2_ID = '11111111-1111-4111-8111-111111111002';
 const E2E_CARGO_3_ID = '11111111-1111-4111-8111-111111111003';
+const E2E_CARGO_4_ID = '11111111-1111-4111-8111-111111111004';
 
 export const E2E_FIXTURES = {
   // Три водителя: SMS-лимит 1 код/мин на номер — сценарии не должны делить
@@ -25,6 +26,15 @@ export const E2E_FIXTURES = {
   // D3 — виден логисту (анонс на точке уже есть).
   /// Номер в чёрном списке (нет аккаунта) — сценарий «регистрируется заново».
   blacklistedPhone: '+77010000099',
+  /// D4 — НЕ проверен, на точке: шаг «Проверенные» у логиста обязан менять список.
+  driverPhone4: '+77010000004',
+  /// D5 — с подтверждённым синтетическим ИИН: админ блокирует его (сценарий 12).
+  driverPhone5: '+77010000005',
+  /// Новые водители сценариев 11/12 регистрируются в приложении (+…006 — A, +…007 — B).
+  newDriverPhoneA: '+77010000006',
+  newDriverPhoneB: '+77010000007',
+  /// Синтетический ИИН (контрольная сумма верна, не принадлежит человеку).
+  syntheticIin: '900101500109',
   driverPhone2: '+77010000002',
   driverPhone3: '+77010000003',
   driverPhone: '+77010000001',
@@ -36,6 +46,8 @@ export const E2E_FIXTURES = {
   cargoId: E2E_CARGO_ID,
   cargo2Id: E2E_CARGO_2_ID,
   cargo3Id: E2E_CARGO_3_ID,
+  /// Груз 4 — только для приглашения логистом из чата (сценарий «цепочка 035»).
+  cargo4Id: E2E_CARGO_4_ID,
 };
 
 function daysFromNow(days: number): Date {
@@ -76,6 +88,8 @@ async function main() {
     { n: 1, phone: E2E_FIXTURES.driverPhone, name: E2E_FIXTURES.driverFullName },
     { n: 2, phone: E2E_FIXTURES.driverPhone2, name: 'Давид Сделкин' },
     { n: 3, phone: E2E_FIXTURES.driverPhone3, name: 'Борис Точкин' },
+    { n: 4, phone: E2E_FIXTURES.driverPhone4, name: 'Нурлан Холодов' },
+    { n: 5, phone: E2E_FIXTURES.driverPhone5, name: 'Ержан Блоков' },
   ];
   const driverIds: Record<number, string> = {};
   // Машины первой версии сида (другие id, прицеп не проверен) — убираем,
@@ -91,8 +105,8 @@ async function main() {
     });
     const driver = await prisma.driver.upsert({
       where: { userId: user.id },
-      update: { fullName: def.name, homeCityId: almaty.id, anyCountry: true, isVerified: true },
-      create: { userId: user.id, fullName: def.name, homeCityId: almaty.id, anyCountry: true, isVerified: true },
+      update: { fullName: def.name, homeCityId: almaty.id, anyCountry: true, isVerified: def.n !== 4 },
+      create: { userId: user.id, fullName: def.name, homeCityId: almaty.id, anyCountry: true, isVerified: def.n !== 4 },
     });
     driverIds[def.n] = driver.id;
 
@@ -100,21 +114,21 @@ async function main() {
     const trailerId = `bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbb00${def.n}`;
     await prisma.vehicle.upsert({
       where: { id: tractorId },
-      update: { isVerified: true },
-      create: { id: tractorId, driverId: driver.id, kind: 'TRACTOR', plateNumber: `E2E00${def.n}KZ`, brand: 'Volvo FH', isVerified: true },
+      update: { isVerified: def.n !== 4 },
+      create: { id: tractorId, driverId: driver.id, kind: 'TRACTOR', plateNumber: `E2E00${def.n}KZ`, brand: 'Volvo FH', isVerified: def.n !== 4 },
     });
     await prisma.vehicle.upsert({
       where: { id: trailerId },
-      update: { isVerified: true, capacityTons: 20 },
-      create: { id: trailerId, driverId: driver.id, kind: 'TRAILER', bodyTypeId: tent.id, capacityTons: 20, lengthM: 13.6, isVerified: true },
+      update: { isVerified: def.n !== 4, capacityTons: 20 },
+      create: { id: trailerId, driverId: driver.id, kind: 'TRAILER', bodyTypeId: tent.id, capacityTons: 20, lengthM: 13.6, isVerified: def.n !== 4 },
     });
 
     // Сброс следов прошлых прогонов: анонсы, чаты, отклики, сделки.
     // Просмотры анонса логистом (arrival_views) ссылаются на анонс — первыми.
     await prisma.arrivalView.deleteMany({ where: { arrival: { driverId: driver.id } } });
     await prisma.arrival.deleteMany({ where: { driverId: driver.id } });
-    if (def.n === 3) {
-      // D3 уже на точке — логист видит его в «Водители» без участия других сценариев.
+    if (def.n === 3 || def.n === 4) {
+      // D3 (проверен) и D4 (нет) уже на точке — логист видит их в «Водители» без других сценариев.
       await prisma.arrival.create({
         data: {
           driverId: driver.id,
@@ -129,6 +143,22 @@ async function main() {
       });
     }
   }
+
+  // D5 — подтверждённый ИИН (сценарий 12: блокировка «по идентификаторам»).
+  const iinNorm = normalizeIdentifier('IIN', E2E_FIXTURES.syntheticIin);
+  await prisma.identifier.upsert({
+    where: { ownerType_ownerId_type: { ownerType: 'DRIVER', ownerId: driverIds[5], type: 'IIN' } },
+    update: { valueHash: hashIdentifier(iinNorm), valueMasked: maskIdentifier('IIN', iinNorm), valueEncrypted: encryptIdentifier(iinNorm) },
+    create: {
+      type: 'IIN',
+      valueHash: hashIdentifier(iinNorm),
+      valueMasked: maskIdentifier('IIN', iinNorm),
+      valueEncrypted: encryptIdentifier(iinNorm),
+      ownerType: 'DRIVER',
+      ownerId: driverIds[5],
+      confirmedAt: new Date(),
+    },
+  });
 
   // -----------------------------------------------------------------
   // Компания — логист и владелец.
@@ -186,6 +216,7 @@ async function main() {
     { id: E2E_FIXTURES.cargoId, weightKg: 10000, price: 1000, note: 'E2E — груз 1 (10 т)' },
     { id: E2E_FIXTURES.cargo2Id, weightKg: 8000, price: 800, note: 'E2E — груз 2 (8 т, догруз)' },
     { id: E2E_FIXTURES.cargo3Id, weightKg: 10000, price: 900, note: 'E2E — груз 3 (10 т, не поместится)' },
+    { id: E2E_FIXTURES.cargo4Id, weightKg: 5000, price: 700, note: 'E2E — груз 4 (5 т, приглашение из чата)' },
   ];
   const cargoIds = cargoDefs.map((c) => c.id);
   await prisma.deal.deleteMany({ where: { cargoId: { in: cargoIds } } });

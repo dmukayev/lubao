@@ -1129,6 +1129,9 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get driversAtPointTodayShort => 'Бүг';
 
   @override
+  String get driversAtPointFilterCapacityChip => 'Тоннаж';
+
+  @override
   String get driversAtPointInviteShort => 'Шақыру';
 
   @override
@@ -1793,6 +1796,12 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminConfirmDriverButton => 'Жүргізушіні растау';
+
+  @override
+  String get adminVerificationBlacklistedBadge => '⛔ Қара тізім';
+
+  @override
+  String get adminConfirmDespiteBlacklist => 'Сәйкестікке қарамастан растау';
 
   @override
   String get adminConfirmCompanyButton => 'Компанияны растау';

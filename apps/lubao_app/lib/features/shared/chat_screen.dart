@@ -668,6 +668,7 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
         child: Align(
           alignment: Alignment.centerLeft,
           child: OutlinedButton.icon(
+            key: const Key('chatOfferCargoButton'),
             onPressed: _busy ? null : _offerCargo,
             icon: const Icon(LucideIcons.package, size: 16),
             label: Text(t.chatOfferCargoButton),
@@ -696,6 +697,7 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
       final next = deal.nextStatus;
       if (widget.isDriver && next != null && next != DealStatus.confirmedByDriver) {
         actionRow = PrimaryButton(
+          key: const Key('chatCardNextStatusButton'),
           label: switch (next) {
             DealStatus.loaded => t.dealMarkLoaded,
             DealStatus.inTransit => t.dealMarkInTransit,
@@ -732,13 +734,14 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
         } else {
           // null (ещё не откликался) или CANCELLED (отозвал и передумал —
           // сервер переоткрывает тот же отклик, 038 п.2).
-          actionRow = PrimaryButton(label: t.chatCargoReadyButton, loading: _busy, onPressed: () => _respond(thread.cargoId!));
+          actionRow = PrimaryButton(key: const Key('chatCargoReadyButton'), label: t.chatCargoReadyButton, loading: _busy, onPressed: () => _respond(thread.cargoId!));
         }
       } else {
         if (responseStatus == null || responseStatus == 'PENDING') {
           // Нет отклика — это приглашение («Пригласить к грузу»), есть —
           // выбор из откликов (038, п.27).
           actionRow = PrimaryButton(
+            key: const Key('chatCardActionButton'),
             label: responseStatus == null ? t.driversAtPointInvite : t.responseSelect,
             loading: _busy,
             onPressed: () => _selectDriver(thread.cargoId!, thread.driverId, thread.cargoResponseId),
@@ -857,6 +860,7 @@ class _CargoPickerSheet extends ConsumerWidget {
                           final destinationLabel =
                               [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
                           return ListTile(
+                            key: Key('chatCargoPickerItem-${cargo.id}'),
                             title: Text(destinationLabel),
                             subtitle: Text(formatMoney(cargo.price, cargo.currency)),
                             onTap: () => Navigator.pop(context, cargo),
@@ -896,7 +900,7 @@ class _ConfirmCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(t.chatConfirmSubtitle, style: AppTextStyles.caption),
           const SizedBox(height: AppSpacing.md),
-          AccentButton(label: t.chatConfirmButton, loading: confirming, onPressed: onConfirm),
+          AccentButton(key: const Key('chatConfirmButton'), label: t.chatConfirmButton, loading: confirming, onPressed: onConfirm),
         ],
       ),
     );
