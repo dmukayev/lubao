@@ -22,11 +22,60 @@ class DriverDetailScreen extends ConsumerWidget {
 
   Future<void> _reload(WidgetRef ref) async => ref.invalidate(adminDriverDetailProvider(id));
 
+  /// Блокировка с галочками «заблокировать также по…» (032 п.11 / 038):
+  /// по умолчанию все идентификаторы отмечены (как и раньше по умолчанию),
+  /// админ может снять лишние — например, госномер проданной машины.
   Future<void> _block(BuildContext context, WidgetRef ref, AdminDriverDetail driver) async {
     final t = context.l10n;
-    final reason = await showReasonDialog(context, title: t.adminBlockConfirmTitle, confirmLabel: t.adminBlock, danger: true);
-    if (reason == null) return;
-    await ref.read(adminRepositoryProvider).blockUser(driver.userId, reason: reason);
+    final reasonController = TextEditingController();
+    final types = <String, (String, bool)>{
+      'IIN': (t.adminIdentifierTypeIin, true),
+      'DRIVER_LICENSE_NO': (t.adminIdentifierTypeLicense, true),
+      'PHONE': (t.adminIdentifierTypePhone, true),
+      'VIN': (t.adminIdentifierTypeVin, true),
+      'PLATE': (t.adminIdentifierTypePlate, true),
+    };
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(t.adminBlockConfirmTitle),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppTextField(label: t.adminReasonLabel, controller: reasonController, maxLines: 3),
+                const SizedBox(height: AppSpacing.md),
+                Text(t.adminBlockAlsoByTitle, style: AppTextStyles.bodyStrong),
+                for (final entry in types.entries)
+                  CheckboxListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    value: entry.value.$2,
+                    title: Text(entry.value.$1),
+                    onChanged: (checked) =>
+                        setDialogState(() => types[entry.key] = (entry.value.$1, checked ?? false)),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.commonCancel)),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(t.adminBlock),
+            ),
+          ],
+        ),
+      ),
+    );
+    final reason = reasonController.text.trim();
+    if (confirmed != true || reason.isEmpty) return;
+    final selectedTypes = [for (final e in types.entries) if (e.value.$2) e.key];
+    await ref.read(adminRepositoryProvider).blockUser(driver.userId, reason: reason, identifierTypes: selectedTypes);
     await _reload(ref);
   }
 

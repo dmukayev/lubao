@@ -117,10 +117,11 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
   }
 }
 
+/// Задача 032, п.13 (038) — верификация ЛИЧНОСТИ: только селфи и права;
+/// техпаспорта живут у машин в гараже (задача 031, этап A) и на процент
+/// готовности профиля не влияют.
 const _requiredDriverDocTypes = [
   VerificationDocType.selfie,
-  VerificationDocType.vehiclePassport,
-  VerificationDocType.trailerPassport,
   VerificationDocType.driverLicense,
 ];
 

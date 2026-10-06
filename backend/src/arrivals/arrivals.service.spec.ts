@@ -372,6 +372,8 @@ describe('ArrivalsService.announce — связка «на чём еду» (за
     prisma.arrival.findFirst
       .mockResolvedValueOnce(null) // no active arrival
       .mockResolvedValueOnce({ tractorId: 'old-tractor', trailerId: 'old-trailer' }); // last with combo
+    // 038: прошлая связка проверяется на архивность — обе машины живы.
+    prisma.vehicle.findMany.mockResolvedValue([{ id: 'old-tractor' }, { id: 'old-trailer' }]);
     prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
 
     await service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString() });
@@ -383,7 +385,7 @@ describe('ArrivalsService.announce — связка «на чём еду» (за
 
   it('uses an explicit combo from the dto after validating it belongs to this driver', async () => {
     prisma.arrival.findFirst.mockResolvedValue(null);
-    prisma.vehicle.findMany.mockResolvedValue([{ id: 'tractor-9' }, { id: 'trailer-9' }]);
+    prisma.vehicle.findMany.mockResolvedValue([{ id: 'tractor-9', kind: 'TRACTOR' }, { id: 'trailer-9', kind: 'TRAILER' }]);
     prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
 
     await service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString(), tractorId: 'tractor-9', trailerId: 'trailer-9' });
@@ -403,5 +405,33 @@ describe('ArrivalsService.announce — связка «на чём еду» (за
     await expect(
       service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString(), tractorId: 'tractor-9', trailerId: 'trailer-9' }),
     ).rejects.toThrow(BadRequestException);
+  });
+});
+
+describe('ArrivalsService.announce — типы связки (задача 032, п.12 / 038)', () => {
+  function setup(vehicles: Array<{ id: string; kind: string }>) {
+    const prisma = makePrisma();
+    const service = new ArrivalsService(prisma);
+    prisma.driver.findUnique.mockResolvedValue({ id: 'driver-1', anyCountry: false });
+    prisma.point.findUnique.mockResolvedValue({ id: 'point-1', isActive: true });
+    prisma.arrival.findFirst.mockResolvedValue(null);
+    prisma.vehicle.findMany = jest.fn().mockResolvedValue(vehicles);
+    return { service };
+  }
+  const base = { pointId: 'point-1', plannedAt: new Date().toISOString() };
+
+  it('прицеп в поле tractorId отклоняется', async () => {
+    const { service } = setup([{ id: 't1', kind: 'TRAILER' }]);
+    await expect(service.announce('u1', { ...base, tractorId: 't1' })).rejects.toThrow('tractorId must be');
+  });
+
+  it('тягач в поле trailerId отклоняется', async () => {
+    const { service } = setup([{ id: 'x1', kind: 'TRACTOR' }]);
+    await expect(service.announce('u1', { ...base, trailerId: 'x1' })).rejects.toThrow('trailerId must be a trailer');
+  });
+
+  it('у RIGID-одиночки не бывает прицепа', async () => {
+    const { service } = setup([{ id: 'r1', kind: 'RIGID' }, { id: 'tr1', kind: 'TRAILER' }]);
+    await expect(service.announce('u1', { ...base, tractorId: 'r1', trailerId: 'tr1' })).rejects.toThrow('rigid truck has no trailer');
   });
 });

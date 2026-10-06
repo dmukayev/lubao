@@ -1110,6 +1110,12 @@ abstract class LubaoLocalizations {
   /// **'Машина заполнена'**
   String get dealVehicleFullTitle;
 
+  /// No description provided for @dealVehicleNotVerified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Машина ещё на проверке — откройте гараж'**
+  String get dealVehicleNotVerified;
+
   /// No description provided for @dealVehicleFullBody.
   ///
   /// In ru, this message translates to:
@@ -2897,6 +2903,48 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Всё в порядке — внимания не требуется'**
   String get adminAttentionEmpty;
+
+  /// No description provided for @adminAttentionBlacklistMatches.
+  ///
+  /// In ru, this message translates to:
+  /// **'Совпадения с чёрным списком: {count}'**
+  String adminAttentionBlacklistMatches(int count);
+
+  /// No description provided for @adminBlockAlsoByTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заблокировать также по:'**
+  String get adminBlockAlsoByTitle;
+
+  /// No description provided for @adminIdentifierTypeIin.
+  ///
+  /// In ru, this message translates to:
+  /// **'ИИН'**
+  String get adminIdentifierTypeIin;
+
+  /// No description provided for @adminIdentifierTypeLicense.
+  ///
+  /// In ru, this message translates to:
+  /// **'Номер прав'**
+  String get adminIdentifierTypeLicense;
+
+  /// No description provided for @adminIdentifierTypePhone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Телефон'**
+  String get adminIdentifierTypePhone;
+
+  /// No description provided for @adminIdentifierTypeVin.
+  ///
+  /// In ru, this message translates to:
+  /// **'VIN'**
+  String get adminIdentifierTypeVin;
+
+  /// No description provided for @adminIdentifierTypePlate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Госномер'**
+  String get adminIdentifierTypePlate;
 
   /// No description provided for @adminAttentionPendingVerification.
   ///

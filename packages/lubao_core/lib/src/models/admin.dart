@@ -1064,6 +1064,7 @@ class AdminAttention {
     required this.staleDeals,
     required this.unverifiedCompanies,
     required this.pendingCities,
+    this.blacklistMatches = 0,
   });
 
   final int pendingVerificationCount;
@@ -1072,6 +1073,9 @@ class AdminAttention {
   final int staleDeals;
   final int unverifiedCompanies;
   final int pendingCities;
+
+  /// «Совпадения с чёрным списком» (задача 032, п.11 / 038).
+  final int blacklistMatches;
 
   factory AdminAttention.fromJson(Map<String, dynamic> json) {
     final pv = json['pendingVerification'] as Map<String, dynamic>;
@@ -1082,6 +1086,7 @@ class AdminAttention {
       staleDeals: json['staleDeals'] as int,
       unverifiedCompanies: json['unverifiedCompanies'] as int,
       pendingCities: json['pendingCities'] as int,
+      blacklistMatches: json['blacklistMatches'] as int? ?? 0,
     );
   }
 }

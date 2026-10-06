@@ -190,7 +190,16 @@ export class DriversService {
       throw new BadRequestException('fileUrl must be a key returned by POST /uploads/document for this user');
     }
 
+    // Задача 032, п.12 (038) — vehicleId из запроса раньше принимался на
+    // веру: техпаспорт можно было прицепить к ЧУЖОЙ машине, и её одобрение
+    // верифицировало чужой транспорт.
     let vehicleId = dto.vehicleId ?? null;
+    if (vehicleId) {
+      const vehicle = await this.prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { driverId: true } });
+      if (!vehicle || vehicle.driverId !== driverId) {
+        throw new BadRequestException('vehicleId does not belong to this driver');
+      }
+    }
     if (!vehicleId && (dto.type === 'VEHICLE_PASSPORT' || dto.type === 'TRAILER_PASSPORT')) {
       const vehicle = await this.prisma.vehicle.findFirst({
         where: { driverId, kind: dto.type === 'TRAILER_PASSPORT' ? 'TRAILER' : { in: ['TRACTOR', 'RIGID'] }, isArchived: false },
@@ -338,21 +347,45 @@ export class DriversService {
     return vehicles.map((v) => this.vehicleToDto(v));
   }
 
-  async createVehicle(driverId: string, dto: CreateVehicleDto) {
+  async createVehicle(userId: string, driverId: string, dto: CreateVehicleDto) {
+    // Задача 032, п.12 (038) — файл техпаспорта проверяется ДО создания
+    // машины (тот же гейт, что у submitVerificationDocument), а машина и
+    // документ создаются одной транзакцией: никакой машины-сироты, если
+    // клиент упал между «создать машину» и «приложить документ».
+    if (dto.documentFileUrl && this.uploads && !(await this.uploads.verifyDocumentOwnership(dto.documentFileUrl, userId))) {
+      throw new BadRequestException('documentFileUrl must be a key returned by POST /uploads/document for this user');
+    }
+
     const sizeFields = dto.kind === 'TRACTOR' ? {} : await this.resolveSizeFields(dto);
-    const vehicle = await this.prisma.vehicle.create({
-      data: {
-        driverId,
-        kind: dto.kind,
-        bodyTypeId: dto.kind === 'TRACTOR' ? null : dto.bodyTypeId,
-        plateNumber: dto.plateNumber,
-        vin: dto.vin,
-        brand: dto.brand,
-        capacityTons: dto.kind === 'TRACTOR' ? null : dto.capacityTons,
-        lengthM: dto.kind === 'TRACTOR' ? null : dto.lengthM,
-        ...sizeFields,
-      },
+    const { vehicle, document } = await this.prisma.$transaction(async (tx) => {
+      const vehicle = await tx.vehicle.create({
+        data: {
+          driverId,
+          kind: dto.kind,
+          bodyTypeId: dto.kind === 'TRACTOR' ? null : dto.bodyTypeId,
+          plateNumber: dto.plateNumber,
+          vin: dto.vin,
+          brand: dto.brand,
+          capacityTons: dto.kind === 'TRACTOR' ? null : dto.capacityTons,
+          lengthM: dto.kind === 'TRACTOR' ? null : dto.lengthM,
+          ...sizeFields,
+        },
+      });
+      const document = dto.documentFileUrl
+        ? await tx.verificationDocument.create({
+            data: {
+              userId,
+              driverId,
+              vehicleId: vehicle.id,
+              type: dto.kind === 'TRAILER' ? 'TRAILER_PASSPORT' : 'VEHICLE_PASSPORT',
+              fileUrl: dto.documentFileUrl,
+              status: 'PENDING',
+            },
+          })
+        : null;
+      return { vehicle, document };
     });
+    if (document) await this.recognition?.enqueue(document.id);
     return this.vehicleToDto(vehicle);
   }
 

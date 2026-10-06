@@ -101,13 +101,26 @@ export class ArrivalsService {
       orderBy: { createdAt: 'desc' },
       select: { tractorId: true, trailerId: true },
     });
-    if (lastWithCombo) return lastWithCombo;
+    // Задача 032, п.12 (038) — прошлая связка могла устареть: машина уже
+    // в архиве. Проверяем каждую и выкидываем архивные, а не подставляем
+    // слепо; оставшиеся дыры добираем из гаража ниже.
+    let fromLast: { tractorId: string | null; trailerId: string | null } | null = null;
+    if (lastWithCombo) {
+      const ids = [lastWithCombo.tractorId, lastWithCombo.trailerId].filter((v): v is string => v != null);
+      const alive = await this.prisma.vehicle.findMany({ where: { id: { in: ids }, isArchived: false }, select: { id: true } });
+      const aliveIds = new Set(alive.map((v) => v.id));
+      fromLast = {
+        tractorId: lastWithCombo.tractorId && aliveIds.has(lastWithCombo.tractorId) ? lastWithCombo.tractorId : null,
+        trailerId: lastWithCombo.trailerId && aliveIds.has(lastWithCombo.trailerId) ? lastWithCombo.trailerId : null,
+      };
+      if (fromLast.tractorId) return fromLast;
+    }
 
     const [tractor, trailer] = await Promise.all([
       this.prisma.vehicle.findFirst({ where: { driverId, kind: { in: ['TRACTOR', 'RIGID'] }, isArchived: false }, orderBy: { createdAt: 'asc' } }),
       this.prisma.vehicle.findFirst({ where: { driverId, kind: 'TRAILER', isArchived: false }, orderBy: { createdAt: 'asc' } }),
     ]);
-    return { tractorId: tractor?.id ?? null, trailerId: trailer?.id ?? null };
+    return { tractorId: tractor?.id ?? null, trailerId: fromLast?.trailerId ?? trailer?.id ?? null };
   }
 
   /// Анонс «буду на точке» — создаёт новый активный анонс или обновляет уже
@@ -147,6 +160,15 @@ export class ArrivalsService {
       if (ids.length > 0) {
         const owned = await this.prisma.vehicle.findMany({ where: { id: { in: ids }, driverId: driver.id, isArchived: false } });
         if (owned.length !== ids.length) throw new BadRequestException('Unknown vehicle in combo');
+        // Задача 032, п.12 (038) — проверка ТИПОВ связки: в tractorId нельзя
+        // подставить прицеп, в trailerId — тягач, а у RIGID-одиночки
+        // прицепа не бывает вовсе.
+        const byId = new Map(owned.map((v) => [v.id, v]));
+        const tractor = dto.tractorId ? byId.get(dto.tractorId) : null;
+        if (tractor && tractor.kind === 'TRAILER') throw new BadRequestException('tractorId must be a tractor or rigid truck');
+        const trailer = dto.trailerId ? byId.get(dto.trailerId) : null;
+        if (trailer && trailer.kind !== 'TRAILER') throw new BadRequestException('trailerId must be a trailer');
+        if (tractor?.kind === 'RIGID' && dto.trailerId) throw new BadRequestException('A rigid truck has no trailer');
       }
       combo = { tractorId: dto.tractorId ?? null, trailerId: dto.trailerId ?? null };
     } else if (!existing) {

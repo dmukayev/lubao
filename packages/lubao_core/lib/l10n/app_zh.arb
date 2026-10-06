@@ -168,6 +168,7 @@
   "unitTon": "吨",
   "unitPallets": "托",
   "dealVehicleFullTitle": "车辆已满载",
+  "dealVehicleNotVerified": "车辆仍在审核中——请打开车库",
   "dealVehicleFullBody": "已确认 {used}／{capacity} {unit}。要接这单，请先完成或取消当前运输。",
   "@dealVehicleFullBody": { "placeholders": { "used": { "type": "String" }, "capacity": { "type": "String" }, "unit": { "type": "String" } } },
   "dealVehicleFullNextTrip": "该货物装货日期不同 — 属于下一趟。请在当前运输交付后再确认。",
@@ -501,6 +502,14 @@
   "adminComplaintTarget": "投诉对象",
   "adminAttentionTitle": "需要关注",
   "adminAttentionEmpty": "一切正常——无需关注",
+  "adminAttentionBlacklistMatches": "黑名单匹配：{count}",
+  "@adminAttentionBlacklistMatches": { "placeholders": { "count": { "type": "int" } } },
+  "adminBlockAlsoByTitle": "同时按以下项封禁：",
+  "adminIdentifierTypeIin": "个人识别号",
+  "adminIdentifierTypeLicense": "驾照号码",
+  "adminIdentifierTypePhone": "电话",
+  "adminIdentifierTypeVin": "VIN",
+  "adminIdentifierTypePlate": "车牌号",
   "adminAttentionPendingVerification": "待审核：{count} 人",
   "@adminAttentionPendingVerification": {
     "placeholders": {

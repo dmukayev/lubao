@@ -9,6 +9,14 @@ export class CreateVehicleDto {
   @IsIn(VEHICLE_KINDS)
   kind!: (typeof VEHICLE_KINDS)[number];
 
+  /// Задача 032, п.12 (038) — техпаспорт прикладывается прямо при создании:
+  /// файл загружен заранее (POST /uploads/document), машина и документ
+  /// создаются одной транзакцией — упавший между двумя запросами клиент
+  /// больше не оставляет машину-сироту без документа.
+  @IsOptional()
+  @IsString()
+  documentFileUrl?: string;
+
   @IsOptional()
   @IsString()
   bodyTypeId?: string;

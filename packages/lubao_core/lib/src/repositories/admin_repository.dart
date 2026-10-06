@@ -486,8 +486,13 @@ class AdminRepository {
     });
   }
 
-  Future<void> blockUser(String userId, {required String reason}) async {
-    await _client.dio.post('/admin/users/$userId/block', data: {'reason': reason});
+  /// `identifierTypes` — галочки «заблокировать также по…» (032 п.11 / 038):
+  /// null — все подтверждённые идентификаторы, [] — только аккаунт.
+  Future<void> blockUser(String userId, {required String reason, List<String>? identifierTypes}) async {
+    await _client.dio.post('/admin/users/$userId/block', data: {
+      'reason': reason,
+      if (identifierTypes != null) 'identifierTypes': identifierTypes,
+    });
   }
 
   Future<void> unblockUser(String userId, {required String reason}) async {

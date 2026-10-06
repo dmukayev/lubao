@@ -90,6 +90,16 @@ bool isDriverNotVerifiedError(Object error) {
   return data is Map && data['message'] == 'DRIVER_NOT_VERIFIED';
 }
 
+/// true, если подтверждение упёрлось в НЕпроверенную/отсутствующую машину
+/// связки (VEHICLE_NOT_VERIFIED / VEHICLE_REQUIRED, deals.service.ts) —
+/// вместо «Ошибка» показываем «Машина ещё на проверке — откройте гараж»
+/// (задача 032, п.12 / 038).
+bool isVehicleNotVerifiedError(Object error) {
+  if (error is! DioException) return false;
+  final data = error.response?.data;
+  return data is Map && (data['message'] == 'VEHICLE_NOT_VERIFIED' || data['message'] == 'VEHICLE_REQUIRED');
+}
+
 /// Машина уже занята активными сделками (задача 037) — догруз не помещается
 /// или это вообще следующий рейс. `null`, если ошибка другая.
 VehicleFullError? asVehicleFullError(Object error) {
@@ -276,14 +286,11 @@ Future<void> showVerificationRequiredSheet(BuildContext context) {
           children: [
             Text(t.driverVerificationRequiredPrompt, style: AppTextStyles.title),
             const SizedBox(height: AppSpacing.lg),
+            // Задача 032, п.13 (038) — личность: селфи и права; техпаспорта
+            // живут у машин в гараже и загружаются при добавлении машины.
             _VerificationBullet(index: 1, label: t.driverVerificationSelfie),
             const SizedBox(height: AppSpacing.sm),
-            _VerificationBullet(
-              index: 2,
-              label: '${t.driverVerificationVehiclePassport} · ${t.driverVerificationTrailerPassport}',
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            _VerificationBullet(index: 3, label: t.driverVerificationLicense),
+            _VerificationBullet(index: 2, label: t.driverVerificationLicense),
             const SizedBox(height: AppSpacing.xl),
             PrimaryButton(
               label: t.driverVerificationRequiredAction,

@@ -199,6 +199,9 @@ class _AttentionBlock extends StatelessWidget {
       if (attention.unverifiedCompanies > 0)
         (t.adminAttentionUnverifiedCompanies(attention.unverifiedCompanies), false, '/companies?filter=pending'),
       if (attention.pendingCities > 0) (t.adminAttentionPendingCities(attention.pendingCities), false, '/reference'),
+      // 032 п.11 (038) — совпадения подтверждённых идентификаторов с
+      // активным чёрным списком (кроме самих заблокированных).
+      if (attention.blacklistMatches > 0) (t.adminAttentionBlacklistMatches(attention.blacklistMatches), true, '/drivers'),
     ];
 
     if (rows.isEmpty) {

@@ -102,9 +102,13 @@ class DriverRepository {
     double? innerLengthM,
     double? innerWidthM,
     double? innerHeightM,
+    String? documentFileUrl,
   }) async {
     final res = await _client.dio.post('/drivers/me/vehicles', data: {
       'kind': vehicleKindToJson(kind),
+      // 032 п.12 (038) — техпаспорт в том же запросе: машина и документ
+      // создаются на сервере одной транзакцией.
+      if (documentFileUrl != null) 'documentFileUrl': documentFileUrl,
       if (bodyTypeId != null) 'bodyTypeId': bodyTypeId,
       if (plateNumber != null) 'plateNumber': plateNumber,
       if (vin != null) 'vin': vin,

@@ -63,6 +63,14 @@ export class BlockUserDto {
   @MaxLength(1000)
   @IsString()
   reason!: string;
+
+  /// Задача 032, п.11 (038) — галочки «заблокировать также по…»:
+  /// не передан — блокируются ВСЕ подтверждённые идентификаторы (как
+  /// раньше); пустой массив — только аккаунт, без чёрного списка.
+  @IsOptional()
+  @IsArray()
+  @IsIn(['IIN', 'DRIVER_LICENSE_NO', 'VIN', 'PLATE', 'PHONE'], { each: true })
+  identifierTypes?: Array<'IIN' | 'DRIVER_LICENSE_NO' | 'VIN' | 'PLATE' | 'PHONE'>;
 }
 
 export class SearchQueryDto {

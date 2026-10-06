@@ -58,7 +58,7 @@ export class DriversController {
   @Post('me/vehicles')
   addVehicle(@CurrentUser() ctx: RequestContext, @Body() dto: CreateVehicleDto) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');
-    return this.drivers.createVehicle(ctx.driver.id, dto);
+    return this.drivers.createVehicle(ctx.user.id, ctx.driver.id, dto);
   }
 
   @Post('me/vehicles/:id/archive')

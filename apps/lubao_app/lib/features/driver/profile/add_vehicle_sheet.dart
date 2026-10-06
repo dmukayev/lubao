@@ -74,8 +74,14 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
     setState(() => _submitting = true);
     try {
       final isTractor = _kind == VehicleKind.tractor;
-      final vehicle = await ref.read(driverRepositoryProvider).addVehicle(
+      // 032 п.12 (038) — сначала файл, потом машина+документ ОДНИМ запросом
+      // (сервер создаёт их в транзакции): обрыв между шагами больше не
+      // оставляет машину без техпаспорта.
+      final bytes = await _photo!.readAsBytes();
+      final key = await ref.read(uploadsRepositoryProvider).uploadDocument(bytes, filename: _photo!.name);
+      await ref.read(driverRepositoryProvider).addVehicle(
             kind: _kind,
+            documentFileUrl: key,
             bodyTypeId: isTractor ? null : _bodyTypeId,
             plateNumber: _plateController.text.trim().isEmpty ? null : _plateController.text.trim(),
             vin: _vinController.text.trim().isEmpty ? null : _vinController.text.trim(),
@@ -86,14 +92,6 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
             innerLengthM: isTractor || !_customSize ? null : double.tryParse(_innerLengthController.text.trim()),
             innerWidthM: isTractor || !_customSize ? null : double.tryParse(_innerWidthController.text.trim()),
             innerHeightM: isTractor || !_customSize ? null : double.tryParse(_innerHeightController.text.trim()),
-          );
-
-      final bytes = await _photo!.readAsBytes();
-      final key = await ref.read(uploadsRepositoryProvider).uploadDocument(bytes, filename: _photo!.name);
-      await ref.read(driverRepositoryProvider).submitVerificationDocument(
-            type: _kind == VehicleKind.trailer ? VerificationDocType.trailerPassport : VerificationDocType.vehiclePassport,
-            fileUrl: key,
-            vehicleId: vehicle.id,
           );
 
       if (mounted) Navigator.of(context).pop(true);

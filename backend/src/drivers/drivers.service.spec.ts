@@ -37,6 +37,8 @@ describe('DriversService — гараж (задача 031, этап B)', () => {
 
   beforeEach(() => {
     prisma = { vehicle: { findMany: jest.fn(), create: jest.fn(), findUnique: jest.fn(), update: jest.fn() } };
+    // 032 п.12 (038) — машина+документ создаются одной транзакцией.
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     service = new DriversService(prisma);
   });
 
@@ -59,7 +61,7 @@ describe('DriversService — гараж (задача 031, этап B)', () => {
       capacityTons: null, lengthM: null, isOwner: true, isVerified: false, isArchived: false, createdAt: new Date(),
     });
 
-    await service.createVehicle('d1', { kind: 'TRACTOR', bodyTypeId: 'bt1', plateNumber: 'B2', vin: 'VIN123', brand: 'MAN', capacityTons: 20, lengthM: 13.6 } as any);
+    await service.createVehicle('u1', 'd1', { kind: 'TRACTOR', bodyTypeId: 'bt1', plateNumber: 'B2', vin: 'VIN123', brand: 'MAN', capacityTons: 20, lengthM: 13.6 } as any);
 
     expect(prisma.vehicle.create).toHaveBeenCalledWith({
       data: { driverId: 'd1', kind: 'TRACTOR', bodyTypeId: null, plateNumber: 'B2', vin: 'VIN123', brand: 'MAN', capacityTons: null, lengthM: null },

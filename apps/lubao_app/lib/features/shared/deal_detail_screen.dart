@@ -63,6 +63,15 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
         // Задача 037, п.4 — не «Ошибка», а понятное объяснение с переходом
         // к сделке, которая занимает машину.
         if (mounted) await _showVehicleFullSheet(full);
+      } else if (isVehicleNotVerifiedError(e)) {
+        // Задача 032, п.12 (038) — понятный текст и переход в гараж.
+        if (mounted) {
+          final t = context.l10n;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(t.dealVehicleNotVerified),
+            action: SnackBarAction(label: t.garageGoToGarage, onPressed: () => context.push('/driver/garage')),
+          ));
+        }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.commonError)));
       }

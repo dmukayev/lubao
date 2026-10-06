@@ -200,6 +200,20 @@ export class AdminService {
         this.prisma.city.count({ where: { cityStatus: 'PENDING' } }),
       ]);
 
+    // Задача 032, п.11 (038) — «Совпадения с чёрным списком»: сколько
+    // владельцев с ПОДТВЕРЖДЁННЫМ идентификатором, который сейчас в
+    // активном чёрном списке, не считая самих заблокированных (источник
+    // блокировки всегда совпадает сам с собой — это не находка). Телефоны
+    // незадокументированных новичков сюда не попадают (хеш считается в
+    // приложении, не в SQL) — они видны в карточке проверки (⛔).
+    const blacklistMatchRows = await this.prisma.$queryRaw<Array<{ count: bigint }>>`
+      SELECT COUNT(DISTINCT (i."ownerType", i."ownerId"))::bigint AS count
+      FROM identifiers i
+      JOIN blocked_identifiers b
+        ON b.type = i.type AND b."valueHash" = i."valueHash" AND b."liftedAt" IS NULL
+      WHERE NOT (b."sourceOwnerType" = i."ownerType" AND b."sourceOwnerId" = i."ownerId")`;
+    const blacklistMatches = Number(blacklistMatchRows[0]?.count ?? 0);
+
     const pendingPeopleCount = pendingDriverDocs.length + pendingCompanyDocs.length;
     const oldestAgeHours = oldestPendingDoc ? Math.floor((Date.now() - oldestPendingDoc.createdAt.getTime()) / (60 * 60 * 1000)) : 0;
 
@@ -209,6 +223,7 @@ export class AdminService {
       staleDeals,
       unverifiedCompanies,
       pendingCities,
+      blacklistMatches,
     };
   }
 
@@ -879,6 +894,20 @@ export class AdminService {
     if (!this.identifiers) return [];
 
     const confirmed = await this.identifiers.findActiveBlocksForOwner(ownerType, ownerId);
+
+    // Задача 032, п.11 (038) — телефон известен с РЕГИСТРАЦИИ, а не с
+    // первого одобренного документа: совпадение номера нового аккаунта с
+    // чёрным списком видно в проверке сразу (⛔), документов не нужно.
+    if (ownerType === 'DRIVER') {
+      const driver = await this.prisma.driver.findUnique({ where: { id: ownerId }, select: { user: { select: { phone: true } } } });
+      const phone = driver?.user?.phone;
+      if (phone) {
+        const match = await this.identifiers.checkMatches('PHONE', phone, { ownerType, ownerId });
+        if (match.blocked) {
+          confirmed.push({ type: 'PHONE', valueMasked: maskIdentifier('PHONE', normalizeIdentifier('PHONE', phone)), reason: match.blocked.reason });
+        }
+      }
+    }
 
     const docs = await this.prisma.verificationDocument.findMany({
       where: { ...documentsWhere, recognition: { isNot: null } },
@@ -2074,15 +2103,31 @@ export class AdminService {
     await this.logAudit(adminUserId, 'USER_BLOCKED', 'User', userId, { reason: dto.reason });
 
     // Задача 031, п.14 — блокируем идентификаторы, а не только аккаунт: ИИН,
-    // права, телефон водителя и VIN/госномера всех его машин (по умолчанию
-    // все подтверждённые — явный выбор отдельных типов делает Stage E).
+    // права, телефон водителя и VIN/госномера всех его машин. Задача 032,
+    // п.11 (038) — галочки «заблокировать также по…»: dto.identifierTypes
+    // сужает набор (пустой массив = только аккаунт).
     if (user.driver) {
       await this.identifiers?.blockDriverAndVehicles({
         driverId: user.driver.id,
         vehicleIds: user.driver.vehicles.map((v) => v.id),
         reason: dto.reason,
         blockedByUserId: adminUserId,
+        types: dto.identifierTypes,
       });
+      // Телефон известен с регистрации, но identifier-ряд для него
+      // появляется только при одобрении документов — блокируем сырое
+      // значение, иначе перерегистрация с тем же номером не ловится.
+      const includePhone = !dto.identifierTypes || dto.identifierTypes.includes('PHONE');
+      if (user.phone && includePhone) {
+        await this.identifiers?.blockRawValue({
+          type: 'PHONE',
+          rawValue: user.phone,
+          reason: dto.reason,
+          blockedByUserId: adminUserId,
+          sourceOwnerType: 'DRIVER',
+          sourceOwnerId: user.driver.id,
+        });
+      }
     }
     return { id: userId, isBlocked: true };
   }

@@ -168,6 +168,7 @@
   "unitTon": "т",
   "unitPallets": "пал.",
   "dealVehicleFullTitle": "Көлік толы",
+  "dealVehicleNotVerified": "Көлік әлі тексерілуде — гаражды ашыңыз",
   "dealVehicleFullBody": "{capacity} {unit} ішінен {used} расталған. Мұны алу үшін ағымдағыны аяқтаңыз немесе бас тартыңыз.",
   "@dealVehicleFullBody": { "placeholders": { "used": { "type": "String" }, "capacity": { "type": "String" }, "unit": { "type": "String" } } },
   "dealVehicleFullNextTrip": "Бұл жүк басқа күні тиеледі — бұл келесі рейс. Ағымдағыны жеткізгеннен кейін растаңыз.",
@@ -501,6 +502,14 @@
   "adminComplaintTarget": "Шағым нысаны",
   "adminAttentionTitle": "Назар аудару қажет",
   "adminAttentionEmpty": "Бәрі дұрыс — назар аудару қажет емес",
+  "adminAttentionBlacklistMatches": "Қара тізіммен сәйкестіктер: {count}",
+  "@adminAttentionBlacklistMatches": { "placeholders": { "count": { "type": "int" } } },
+  "adminBlockAlsoByTitle": "Сондай-ақ мыналар бойынша бұғаттау:",
+  "adminIdentifierTypeIin": "ЖСН",
+  "adminIdentifierTypeLicense": "Куәлік нөмірі",
+  "adminIdentifierTypePhone": "Телефон",
+  "adminIdentifierTypeVin": "VIN",
+  "adminIdentifierTypePlate": "Мемлекеттік нөмір",
   "adminAttentionPendingVerification": "Тексеруде: {count} адам",
   "@adminAttentionPendingVerification": {
     "placeholders": {

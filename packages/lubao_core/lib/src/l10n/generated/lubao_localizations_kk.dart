@@ -549,6 +549,9 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get dealVehicleFullTitle => 'Көлік толы';
 
   @override
+  String get dealVehicleNotVerified => 'Көлік әлі тексерілуде — гаражды ашыңыз';
+
+  @override
   String dealVehicleFullBody(String used, String capacity, String unit) {
     return '$capacity $unit ішінен $used расталған. Мұны алу үшін ағымдағыны аяқтаңыз немесе бас тартыңыз.';
   }
@@ -1492,6 +1495,29 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminAttentionEmpty => 'Бәрі дұрыс — назар аудару қажет емес';
+
+  @override
+  String adminAttentionBlacklistMatches(int count) {
+    return 'Қара тізіммен сәйкестіктер: $count';
+  }
+
+  @override
+  String get adminBlockAlsoByTitle => 'Сондай-ақ мыналар бойынша бұғаттау:';
+
+  @override
+  String get adminIdentifierTypeIin => 'ЖСН';
+
+  @override
+  String get adminIdentifierTypeLicense => 'Куәлік нөмірі';
+
+  @override
+  String get adminIdentifierTypePhone => 'Телефон';
+
+  @override
+  String get adminIdentifierTypeVin => 'VIN';
+
+  @override
+  String get adminIdentifierTypePlate => 'Мемлекеттік нөмір';
 
   @override
   String adminAttentionPendingVerification(int count) {

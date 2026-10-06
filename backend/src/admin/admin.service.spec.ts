@@ -707,6 +707,8 @@ describe('AdminService.attention (задача 028, п.4)', () => {
       deal: { count: jest.fn().mockResolvedValue(1) },
       company: { count: jest.fn().mockResolvedValue(3) },
       city: { count: jest.fn().mockResolvedValue(0) },
+      // 038 (032 п.11) — «Совпадения с чёрным списком» на сводке.
+      $queryRaw: jest.fn().mockResolvedValue([{ count: 0n }]),
     };
     prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);

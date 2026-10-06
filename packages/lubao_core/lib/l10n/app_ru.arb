@@ -244,6 +244,7 @@
   "unitTon": "т",
   "unitPallets": "пал.",
   "dealVehicleFullTitle": "Машина заполнена",
+  "dealVehicleNotVerified": "Машина ещё на проверке — откройте гараж",
   "dealVehicleFullBody": "Подтверждён груз {used} из {capacity} {unit}. Чтобы взять этот, сначала завершите или отмените текущий.",
   "@dealVehicleFullBody": { "placeholders": { "used": { "type": "String" }, "capacity": { "type": "String" }, "unit": { "type": "String" } } },
   "dealVehicleFullNextTrip": "Этот груз грузится в другой день — это следующий рейс. Подтвердите его после доставки текущего.",
@@ -626,6 +627,14 @@
   "adminComplaintTarget": "Объект жалобы",
   "adminAttentionTitle": "Требует внимания",
   "adminAttentionEmpty": "Всё в порядке — внимания не требуется",
+  "adminAttentionBlacklistMatches": "Совпадения с чёрным списком: {count}",
+  "@adminAttentionBlacklistMatches": { "placeholders": { "count": { "type": "int" } } },
+  "adminBlockAlsoByTitle": "Заблокировать также по:",
+  "adminIdentifierTypeIin": "ИИН",
+  "adminIdentifierTypeLicense": "Номер прав",
+  "adminIdentifierTypePhone": "Телефон",
+  "adminIdentifierTypeVin": "VIN",
+  "adminIdentifierTypePlate": "Госномер",
   "adminAttentionPendingVerification": "На проверке: {count} человек",
   "@adminAttentionPendingVerification": {
     "placeholders": {

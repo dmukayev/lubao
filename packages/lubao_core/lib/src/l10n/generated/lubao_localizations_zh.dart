@@ -534,6 +534,9 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get dealVehicleFullTitle => '车辆已满载';
 
   @override
+  String get dealVehicleNotVerified => '车辆仍在审核中——请打开车库';
+
+  @override
   String dealVehicleFullBody(String used, String capacity, String unit) {
     return '已确认 $used／$capacity $unit。要接这单，请先完成或取消当前运输。';
   }
@@ -1464,6 +1467,29 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminAttentionEmpty => '一切正常——无需关注';
+
+  @override
+  String adminAttentionBlacklistMatches(int count) {
+    return '黑名单匹配：$count';
+  }
+
+  @override
+  String get adminBlockAlsoByTitle => '同时按以下项封禁：';
+
+  @override
+  String get adminIdentifierTypeIin => '个人识别号';
+
+  @override
+  String get adminIdentifierTypeLicense => '驾照号码';
+
+  @override
+  String get adminIdentifierTypePhone => '电话';
+
+  @override
+  String get adminIdentifierTypeVin => 'VIN';
+
+  @override
+  String get adminIdentifierTypePlate => '车牌号';
 
   @override
   String adminAttentionPendingVerification(int count) {

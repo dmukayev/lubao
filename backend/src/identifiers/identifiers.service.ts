@@ -223,14 +223,40 @@ export class IdentifiersService {
 
   /// Гараж целиком (задача 031, п.14 — «VIN/госномера машин») — все
   /// Vehicle-идентификаторы водителя, не только сам водитель.
-  async blockDriverAndVehicles(params: { driverId: string; vehicleIds: string[]; reason: string; blockedByUserId: string }) {
+  /// `types` — галочки «заблокировать также по…» (задача 032, п.11 / 038):
+  /// не передан — все подтверждённые; пустой массив — ничего.
+  async blockDriverAndVehicles(params: { driverId: string; vehicleIds: string[]; reason: string; blockedByUserId: string; types?: IdentifierTypeValue[] }) {
+    if (params.types && params.types.length === 0) return [];
     const [driverBlocked, ...vehicleBlocked] = await Promise.all([
-      this.blockOwnerIdentifiers({ ownerType: 'DRIVER', ownerId: params.driverId, reason: params.reason, blockedByUserId: params.blockedByUserId }),
+      this.blockOwnerIdentifiers({ ownerType: 'DRIVER', ownerId: params.driverId, reason: params.reason, blockedByUserId: params.blockedByUserId, types: params.types }),
       ...params.vehicleIds.map((vehicleId) =>
-        this.blockOwnerIdentifiers({ ownerType: 'VEHICLE', ownerId: vehicleId, reason: params.reason, blockedByUserId: params.blockedByUserId }),
+        this.blockOwnerIdentifiers({ ownerType: 'VEHICLE', ownerId: vehicleId, reason: params.reason, blockedByUserId: params.blockedByUserId, types: params.types }),
       ),
     ]);
     return [...driverBlocked, ...vehicleBlocked.flat()];
+  }
+
+  /// Блокировка «сырого» значения без подтверждённого identifier-ряда
+  /// (задача 032, п.11 / 038): телефон водителя известен с регистрации,
+  /// но identifier для него появляется только при одобрении документов —
+  /// без этого метода блокировка водителя без документов не вносила его
+  /// телефон в чёрный список, и перерегистрация проходила незамеченной.
+  async blockRawValue(params: { type: IdentifierTypeValue; rawValue: string; reason: string; blockedByUserId: string; sourceOwnerType?: OwnerType; sourceOwnerId?: string }) {
+    const normalized = normalizeIdentifier(params.type, params.rawValue);
+    const valueHash = hashIdentifier(normalized);
+    const alreadyBlocked = await this.prisma.blockedIdentifier.findFirst({ where: { type: params.type, valueHash, liftedAt: null } });
+    if (alreadyBlocked) return alreadyBlocked;
+    return this.prisma.blockedIdentifier.create({
+      data: {
+        type: params.type,
+        valueHash,
+        valueMasked: maskIdentifier(params.type, normalized),
+        reason: params.reason,
+        blockedByUserId: params.blockedByUserId,
+        sourceOwnerType: params.sourceOwnerType ?? null,
+        sourceOwnerId: params.sourceOwnerId ?? null,
+      },
+    });
   }
 
   async liftDriverAndVehicles(params: { driverId: string; vehicleIds: string[]; reason: string; liftedByUserId: string }) {

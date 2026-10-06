@@ -8,9 +8,9 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
 
 const _requiredDocs = [
+  // Задача 032, п.13 (038) — техпаспорта убраны: они загружаются в гараже
+  // при добавлении машины, здесь только документы ЛИЧНОСТИ.
   VerificationDocType.selfie,
-  VerificationDocType.vehiclePassport,
-  VerificationDocType.trailerPassport,
   VerificationDocType.driverLicense,
 ];
 

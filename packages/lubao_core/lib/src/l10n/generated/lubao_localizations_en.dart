@@ -549,6 +549,10 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get dealVehicleFullTitle => 'Vehicle is full';
 
   @override
+  String get dealVehicleNotVerified =>
+      'The vehicle is still under review — open the garage';
+
+  @override
   String dealVehicleFullBody(String used, String capacity, String unit) {
     return 'Already committed $used of $capacity $unit. To take this one, finish or cancel the current haul first.';
   }
@@ -1494,6 +1498,29 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminAttentionEmpty => 'All clear — nothing needs attention';
+
+  @override
+  String adminAttentionBlacklistMatches(int count) {
+    return 'Blacklist matches: $count';
+  }
+
+  @override
+  String get adminBlockAlsoByTitle => 'Also block by:';
+
+  @override
+  String get adminIdentifierTypeIin => 'IIN';
+
+  @override
+  String get adminIdentifierTypeLicense => 'License number';
+
+  @override
+  String get adminIdentifierTypePhone => 'Phone';
+
+  @override
+  String get adminIdentifierTypeVin => 'VIN';
+
+  @override
+  String get adminIdentifierTypePlate => 'Plate number';
 
   @override
   String adminAttentionPendingVerification(int count) {
