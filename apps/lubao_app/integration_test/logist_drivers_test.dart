@@ -106,6 +106,7 @@ void main() {
       await logoutViaProfile(tester, driver: false);
     });
 
+    final d3FirstLogin = DateTime.now();
     await run.step(tester, 'вход-водителя-D3', () async {
       await loginDriver(tester, '7010000003');
       await waitFor(tester, find.byType(NavigationBar));
@@ -152,6 +153,9 @@ void main() {
     });
 
     await run.step(tester, 'вход-водителя-D3-снова', () async {
+      // Лимит SMS — 1 код в минуту на номер: ждём реальным временем, не кадрами.
+      final wait = const Duration(seconds: 62) - DateTime.now().difference(d3FirstLogin);
+      if (!wait.isNegative) await tester.runAsync(() => Future<void>.delayed(wait));
       await loginDriver(tester, '7010000003');
       await waitFor(tester, find.byType(NavigationBar));
     });
