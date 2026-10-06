@@ -1126,6 +1126,71 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get driversAtPointToday => 'Бүгін';
 
   @override
+  String get driversAtPointTitleShort => 'Жүргізушілер';
+
+  @override
+  String get driversAtPointFilterVerifiedChip => 'Тексерілген';
+
+  @override
+  String driversAtPointNowAtPlace(int count) {
+    return 'Қазір орнында · $count';
+  }
+
+  @override
+  String driversAtPointMoreToday(int count) {
+    return 'тағы $count бүгін келеді';
+  }
+
+  @override
+  String driversAtPointWillBeOnDay(String day, int count) {
+    return '$day келеді · $count';
+  }
+
+  @override
+  String driversAtPointOnSiteAgo(String ago) {
+    return 'Орнында · $ago';
+  }
+
+  @override
+  String driversAtPointAgoMinutes(int n) {
+    return '$n мин бұрын';
+  }
+
+  @override
+  String driversAtPointAgoHours(int n) {
+    return '$n сағ бұрын';
+  }
+
+  @override
+  String get driversAtPointAgoJustNow => 'жаңа ғана';
+
+  @override
+  String driversAtPointPlannedApprox(String day, String time) {
+    return '$day ~$time';
+  }
+
+  @override
+  String get weekdayShort1 => 'Дс';
+
+  @override
+  String get weekdayShort2 => 'Сс';
+
+  @override
+  String get weekdayShort3 => 'Ср';
+
+  @override
+  String get weekdayShort4 => 'Бс';
+
+  @override
+  String get weekdayShort5 => 'Жм';
+
+  @override
+  String get weekdayShort6 => 'Сб';
+
+  @override
+  String get weekdayShort7 => 'Жс';
+
+  @override
   String get adminLoginTitle => 'Әкімші тіркелгісіне кіру';
 
   @override

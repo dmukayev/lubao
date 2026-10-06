@@ -1129,6 +1129,71 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get driversAtPointToday => 'Today';
 
   @override
+  String get driversAtPointTitleShort => 'Drivers';
+
+  @override
+  String get driversAtPointFilterVerifiedChip => 'Verified';
+
+  @override
+  String driversAtPointNowAtPlace(int count) {
+    return 'On site now · $count';
+  }
+
+  @override
+  String driversAtPointMoreToday(int count) {
+    return '$count more arriving today';
+  }
+
+  @override
+  String driversAtPointWillBeOnDay(String day, int count) {
+    return 'Arriving $day · $count';
+  }
+
+  @override
+  String driversAtPointOnSiteAgo(String ago) {
+    return 'On site · $ago';
+  }
+
+  @override
+  String driversAtPointAgoMinutes(int n) {
+    return '$n min ago';
+  }
+
+  @override
+  String driversAtPointAgoHours(int n) {
+    return '$n h ago';
+  }
+
+  @override
+  String get driversAtPointAgoJustNow => 'just now';
+
+  @override
+  String driversAtPointPlannedApprox(String day, String time) {
+    return '$day ~$time';
+  }
+
+  @override
+  String get weekdayShort1 => 'Mon';
+
+  @override
+  String get weekdayShort2 => 'Tue';
+
+  @override
+  String get weekdayShort3 => 'Wed';
+
+  @override
+  String get weekdayShort4 => 'Thu';
+
+  @override
+  String get weekdayShort5 => 'Fri';
+
+  @override
+  String get weekdayShort6 => 'Sat';
+
+  @override
+  String get weekdayShort7 => 'Sun';
+
+  @override
   String get adminLoginTitle => 'Admin sign-in';
 
   @override

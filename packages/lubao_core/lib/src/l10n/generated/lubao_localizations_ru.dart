@@ -1122,6 +1122,71 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get driversAtPointToday => 'Сегодня';
 
   @override
+  String get driversAtPointTitleShort => 'Водители';
+
+  @override
+  String get driversAtPointFilterVerifiedChip => 'Проверенные';
+
+  @override
+  String driversAtPointNowAtPlace(int count) {
+    return 'На месте сейчас · $count';
+  }
+
+  @override
+  String driversAtPointMoreToday(int count) {
+    return 'ещё $count будут сегодня';
+  }
+
+  @override
+  String driversAtPointWillBeOnDay(String day, int count) {
+    return 'Будут $day · $count';
+  }
+
+  @override
+  String driversAtPointOnSiteAgo(String ago) {
+    return 'На месте · $ago';
+  }
+
+  @override
+  String driversAtPointAgoMinutes(int n) {
+    return '$n мин назад';
+  }
+
+  @override
+  String driversAtPointAgoHours(int n) {
+    return '$n ч назад';
+  }
+
+  @override
+  String get driversAtPointAgoJustNow => 'только что';
+
+  @override
+  String driversAtPointPlannedApprox(String day, String time) {
+    return '$day ~$time';
+  }
+
+  @override
+  String get weekdayShort1 => 'Пн';
+
+  @override
+  String get weekdayShort2 => 'Вт';
+
+  @override
+  String get weekdayShort3 => 'Ср';
+
+  @override
+  String get weekdayShort4 => 'Чт';
+
+  @override
+  String get weekdayShort5 => 'Пт';
+
+  @override
+  String get weekdayShort6 => 'Сб';
+
+  @override
+  String get weekdayShort7 => 'Вс';
+
+  @override
   String get adminLoginTitle => 'Вход в админ-панель';
 
   @override

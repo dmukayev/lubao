@@ -2178,6 +2178,108 @@ abstract class LubaoLocalizations {
   /// **'Сегодня'**
   String get driversAtPointToday;
 
+  /// No description provided for @driversAtPointTitleShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водители'**
+  String get driversAtPointTitleShort;
+
+  /// No description provided for @driversAtPointFilterVerifiedChip.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверенные'**
+  String get driversAtPointFilterVerifiedChip;
+
+  /// No description provided for @driversAtPointNowAtPlace.
+  ///
+  /// In ru, this message translates to:
+  /// **'На месте сейчас · {count}'**
+  String driversAtPointNowAtPlace(int count);
+
+  /// No description provided for @driversAtPointMoreToday.
+  ///
+  /// In ru, this message translates to:
+  /// **'ещё {count} будут сегодня'**
+  String driversAtPointMoreToday(int count);
+
+  /// No description provided for @driversAtPointWillBeOnDay.
+  ///
+  /// In ru, this message translates to:
+  /// **'Будут {day} · {count}'**
+  String driversAtPointWillBeOnDay(String day, int count);
+
+  /// No description provided for @driversAtPointOnSiteAgo.
+  ///
+  /// In ru, this message translates to:
+  /// **'На месте · {ago}'**
+  String driversAtPointOnSiteAgo(String ago);
+
+  /// No description provided for @driversAtPointAgoMinutes.
+  ///
+  /// In ru, this message translates to:
+  /// **'{n} мин назад'**
+  String driversAtPointAgoMinutes(int n);
+
+  /// No description provided for @driversAtPointAgoHours.
+  ///
+  /// In ru, this message translates to:
+  /// **'{n} ч назад'**
+  String driversAtPointAgoHours(int n);
+
+  /// No description provided for @driversAtPointAgoJustNow.
+  ///
+  /// In ru, this message translates to:
+  /// **'только что'**
+  String get driversAtPointAgoJustNow;
+
+  /// No description provided for @driversAtPointPlannedApprox.
+  ///
+  /// In ru, this message translates to:
+  /// **'{day} ~{time}'**
+  String driversAtPointPlannedApprox(String day, String time);
+
+  /// No description provided for @weekdayShort1.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пн'**
+  String get weekdayShort1;
+
+  /// No description provided for @weekdayShort2.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вт'**
+  String get weekdayShort2;
+
+  /// No description provided for @weekdayShort3.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ср'**
+  String get weekdayShort3;
+
+  /// No description provided for @weekdayShort4.
+  ///
+  /// In ru, this message translates to:
+  /// **'Чт'**
+  String get weekdayShort4;
+
+  /// No description provided for @weekdayShort5.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пт'**
+  String get weekdayShort5;
+
+  /// No description provided for @weekdayShort6.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сб'**
+  String get weekdayShort6;
+
+  /// No description provided for @weekdayShort7.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вс'**
+  String get weekdayShort7;
+
   /// No description provided for @adminLoginTitle.
   ///
   /// In ru, this message translates to:

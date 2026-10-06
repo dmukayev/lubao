@@ -1102,6 +1102,71 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get driversAtPointToday => '今天';
 
   @override
+  String get driversAtPointTitleShort => '司机';
+
+  @override
+  String get driversAtPointFilterVerifiedChip => '已验证';
+
+  @override
+  String driversAtPointNowAtPlace(int count) {
+    return '当前在场 · $count';
+  }
+
+  @override
+  String driversAtPointMoreToday(int count) {
+    return '今天还有 $count 位将到';
+  }
+
+  @override
+  String driversAtPointWillBeOnDay(String day, int count) {
+    return '$day 将到 · $count';
+  }
+
+  @override
+  String driversAtPointOnSiteAgo(String ago) {
+    return '在场 · $ago';
+  }
+
+  @override
+  String driversAtPointAgoMinutes(int n) {
+    return '$n 分钟前';
+  }
+
+  @override
+  String driversAtPointAgoHours(int n) {
+    return '$n 小时前';
+  }
+
+  @override
+  String get driversAtPointAgoJustNow => '刚刚';
+
+  @override
+  String driversAtPointPlannedApprox(String day, String time) {
+    return '$day ~$time';
+  }
+
+  @override
+  String get weekdayShort1 => '一';
+
+  @override
+  String get weekdayShort2 => '二';
+
+  @override
+  String get weekdayShort3 => '三';
+
+  @override
+  String get weekdayShort4 => '四';
+
+  @override
+  String get weekdayShort5 => '五';
+
+  @override
+  String get weekdayShort6 => '六';
+
+  @override
+  String get weekdayShort7 => '日';
+
+  @override
   String get adminLoginTitle => '管理员登录';
 
   @override

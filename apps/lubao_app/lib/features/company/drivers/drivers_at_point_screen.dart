@@ -213,26 +213,91 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.driversAtPointInviteSent)));
   }
 
+  /// Выбор из нижнего листа (задача 036, п.4): «Страна ▾» / «Кузов ▾» —
+  /// первый пункт сбрасывает фильтр. Возвращает выбранный id или null
+  /// («Любая»/«Все»); отмена листа (свайп вниз) — `_sheetDismissed`.
+  Future<Object?> _pickFromSheet(
+    BuildContext context, {
+    required String title,
+    required String anyLabel,
+    required List<(String id, String label)> options,
+    required String? current,
+  }) {
+    return showModalBottomSheet<Object?>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge))),
+      builder: (sheetContext) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(sheetContext).size.height * 0.7),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.sm),
+                child: Text(title, style: AppTextStyles.title),
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    ListTile(
+                      title: Text(anyLabel),
+                      trailing: current == null ? const Icon(LucideIcons.check, color: AppColors.primary) : null,
+                      onTap: () => Navigator.pop(sheetContext, _clearFilter),
+                    ),
+                    for (final option in options)
+                      ListTile(
+                        title: Text(option.$2),
+                        trailing: current == option.$1 ? const Icon(LucideIcons.check, color: AppColors.primary) : null,
+                        onTap: () => Navigator.pop(sheetContext, option.$1),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static const _clearFilter = '__clear__';
+
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final referenceData = ref.watch(referenceDataProvider);
     // Точка загрузки — справочник (решение 2026-10-04, «Не привязывать
-    // продукт к Хоргосу в текстах»): название подставляется сюда, а не
-    // пишется текстом — когда появятся другие точки (008), здесь же будет
-    // их выбор.
-    final primaryPoint = referenceData.valueOrNull?.points.where((p) => p.isActive).firstOrNull;
-    final primaryPointName = primaryPoint?.name.forLanguageCode(locale) ?? '';
+    // продукт к Хоргосу в текстах»): название берётся из справочника.
+    // Чип точки (задача 036, п.1) — только когда активных точек больше
+    // одной; единственную точку показывать незачем.
+    final activePoints = referenceData.valueOrNull?.points.where((p) => p.isActive).toList() ?? const [];
+    final primaryPointName = activePoints.firstOrNull?.name.forLanguageCode(locale) ?? '';
     // WhatsApp заблокирован в Китае — логисту оттуда вместо него только чат
     // Lubao (decisions.md «Звонки — обычные, через телефон», задача 017).
     final companyCountryId = ref.watch(sessionProvider)?.company?.countryId;
     final isChinaCompany = referenceData.valueOrNull?.countries.where((c) => c.id == companyCountryId).firstOrNull?.code == 'CN';
 
     return Scaffold(
+      // AppBar сам отступает от выреза/строки статуса (задача 036, п.9) —
+      // фиксированных отступов сверху нет.
       appBar: AppBar(
-        title: Text(t.driversAtPointTitle(primaryPointName)),
+        title: Text(t.driversAtPointTitleShort),
         actions: [
+          if (activePoints.length > 1)
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.xs),
+              child: Chip(
+                label: Text(primaryPointName, style: AppTextStyles.bodyStrong),
+                avatar: const Icon(LucideIcons.chevronDown, size: 16),
+                backgroundColor: AppColors.surface,
+                side: BorderSide.none,
+              ),
+            ),
           IconButton(
             icon: const Icon(LucideIcons.calendar),
             tooltip: t.driversAtPointPickDate,
@@ -246,153 +311,198 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
           debugPrint('DriversAtPointScreen: $e');
           return ErrorView(message: t.commonError);
         },
-        data: (refData) => Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(t.driversAtPointSubtitle, style: AppTextStyles.caption),
-                  if (primaryPointName.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(t.driversAtPointDispatchFrom(primaryPointName), style: AppTextStyles.caption),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            SizedBox(
-              height: 72,
-              child: FutureBuilder<List<ArrivalSummaryDay>>(
-                future: _summaryFuture,
-                builder: (context, snapshot) {
-                  final counts = snapshot.data;
-                  return ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-                    itemCount: _dayStripLength,
-                    separatorBuilder: (context, _) => const SizedBox(width: AppSpacing.sm),
-                    itemBuilder: (context, index) {
-                      final date = DateTime.now().add(Duration(days: index));
-                      final count = counts == null || index >= counts.length ? null : counts[index].count;
-                      return _DayChip(
-                        label: index == 0 ? t.driversAtPointToday : _weekdayLabel(context, date),
-                        count: count,
-                        selected: _dayOffset == index,
-                        onTap: () => _selectDay(index),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.screen),
-              child: Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  _FilterDropdown<String?>(
-                    label: t.driversAtPointFilterCountry,
-                    value: _countryId,
-                    items: [
-                      DropdownMenuItem(value: null, child: Text(t.driverSetupAnyCountry)),
-                      for (final country in refData.countries)
-                        DropdownMenuItem(value: country.id, child: Text(country.name.forLanguageCode(locale))),
-                    ],
-                    onChanged: (value) {
-                      _countryId = value;
-                      _reload();
-                    },
-                  ),
-                  _FilterDropdown<String?>(
-                    label: t.driversAtPointFilterBodyType,
-                    value: _bodyTypeId,
-                    items: [
-                      DropdownMenuItem(value: null, child: Text(t.driversAtPointFilterBodyType)),
-                      for (final bodyType in refData.bodyTypes)
-                        DropdownMenuItem(value: bodyType.id, child: Text(bodyType.name.forLanguageCode(locale))),
-                    ],
-                    onChanged: (value) {
-                      _bodyTypeId = value;
-                      _reload();
-                    },
-                  ),
-                  SelectableTile(
-                    label: t.driversAtPointFilterMinCapacity,
-                    selected: _minCapacity,
-                    onTap: () {
-                      _minCapacity = !_minCapacity;
-                      _reload();
-                    },
-                  ),
-                  SelectableTile(
-                    label: t.driversAtPointFilterVerifiedOnly,
-                    selected: _verifiedOnly,
-                    onTap: () {
-                      _verifiedOnly = !_verifiedOnly;
-                      _reload();
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: FutureBuilder<List<ArrivalListing>>(
-                future: _future,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) return const LoadingView();
-                  if (snapshot.hasError) return ErrorView(message: t.commonError, onRetry: _reload);
-                  final list = snapshot.data ?? [];
-                  if (list.isEmpty) return EmptyState(message: t.driversAtPointEmpty, icon: LucideIcons.users);
+        data: (refData) {
+          final selectedCountry = _countryId == null ? null : refData.countryById(_countryId!);
+          final selectedBodyType = _bodyTypeId == null ? null : refData.bodyTypeById(_bodyTypeId!);
 
-                  return RefreshIndicator(
-                    onRefresh: () async => _reload(),
-                    child: ListView(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-                          child: Text(t.driversAtPointCountAtPlace(list.length), style: AppTextStyles.bodyStrong),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        for (final driver in list)
-                          _DriverCard(
-                            driver: driver,
-                            refData: refData,
-                            isChinaCompany: isChinaCompany,
-                            openingChat: _openingChatDriverId == driver.driverId,
-                            onCall: _call,
-                            onWhatsapp: _whatsapp,
-                            onChat: _chat,
-                            onInvite: _invite,
-                          ),
-                      ],
-                    ),
-                  );
-                },
+          return Column(
+            children: [
+              // Полоса дней — квадратные плашки 52×52 (задача 036, п.3).
+              SizedBox(
+                height: 60,
+                child: FutureBuilder<List<ArrivalSummaryDay>>(
+                  future: _summaryFuture,
+                  builder: (context, snapshot) {
+                    final counts = snapshot.data;
+                    return ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                      itemCount: _dayStripLength,
+                      separatorBuilder: (context, _) => const SizedBox(width: AppSpacing.sm),
+                      itemBuilder: (context, index) {
+                        final date = DateTime.now().add(Duration(days: index));
+                        final count = counts == null || index >= counts.length ? null : counts[index].count;
+                        return _DayChip(
+                          label: index == 0 ? t.driversAtPointToday : _weekdayLabel(t, date),
+                          count: count,
+                          selected: _dayOffset == index,
+                          onTap: () => _selectDay(index),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
-        ),
+              const SizedBox(height: AppSpacing.sm),
+              // Фильтры — одна строка чипов с горизонтальной прокруткой
+              // (задача 036, п.4); активный — синий, со значением.
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                  children: [
+                    _FilterChip(
+                      label: selectedCountry?.name.forLanguageCode(locale) ?? t.driversAtPointFilterCountry,
+                      active: _countryId != null,
+                      dropdown: true,
+                      onTap: () async {
+                        final picked = await _pickFromSheet(
+                          context,
+                          title: t.driversAtPointFilterCountry,
+                          anyLabel: t.driverSetupAnyCountry,
+                          options: [for (final c in refData.countries) (c.id, c.name.forLanguageCode(locale))],
+                          current: _countryId,
+                        );
+                        if (picked == null) return; // лист закрыт без выбора
+                        _countryId = picked == _clearFilter ? null : picked as String;
+                        _reload();
+                      },
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    _FilterChip(
+                      label: selectedBodyType?.name.forLanguageCode(locale) ?? t.driversAtPointFilterBodyType,
+                      active: _bodyTypeId != null,
+                      dropdown: true,
+                      onTap: () async {
+                        final picked = await _pickFromSheet(
+                          context,
+                          title: t.driversAtPointFilterBodyType,
+                          anyLabel: t.driversAtPointFilterBodyType,
+                          options: [for (final b in refData.bodyTypes) (b.id, b.name.forLanguageCode(locale))],
+                          current: _bodyTypeId,
+                        );
+                        if (picked == null) return;
+                        _bodyTypeId = picked == _clearFilter ? null : picked as String;
+                        _reload();
+                      },
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    _FilterChip(
+                      label: t.driversAtPointFilterMinCapacity,
+                      active: _minCapacity,
+                      onTap: () {
+                        _minCapacity = !_minCapacity;
+                        _reload();
+                      },
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    _FilterChip(
+                      key: const Key('driversFilterVerified'),
+                      label: t.driversAtPointFilterVerifiedChip,
+                      active: _verifiedOnly,
+                      leadingCheck: _verifiedOnly,
+                      onTap: () {
+                        _verifiedOnly = !_verifiedOnly;
+                        _reload();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Expanded(
+                child: FutureBuilder<List<ArrivalListing>>(
+                  future: _future,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) return const LoadingView();
+                    if (snapshot.hasError) return ErrorView(message: t.commonError, onRetry: _reload);
+                    final list = snapshot.data ?? [];
+                    if (list.isEmpty) return EmptyState(message: t.driversAtPointEmpty, icon: LucideIcons.users);
+
+                    final onSite = list.where((d) => d.status == ArrivalStatus.onSite).length;
+                    final planned = list.length - onSite;
+                    // Строка итогов (задача 036, п.5): сегодня — «На месте
+                    // сейчас · N» и «ещё M будут сегодня»; другой день —
+                    // «Будут <дата> · N».
+                    final summaryLeft = _dayOffset == 0
+                        ? t.driversAtPointNowAtPlace(onSite)
+                        : t.driversAtPointWillBeOnDay(_shortDate(_selectedDate), list.length);
+                    final summaryRight = _dayOffset == 0 && planned > 0 ? t.driversAtPointMoreToday(planned) : null;
+
+                    return RefreshIndicator(
+                      onRefresh: () async => _reload(),
+                      child: ListView(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                            child: Row(
+                              children: [
+                                Expanded(child: Text(summaryLeft, style: AppTextStyles.bodyStrong, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                if (summaryRight != null) ...[
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Flexible(
+                                    child: Text(
+                                      summaryRight,
+                                      style: AppTextStyles.caption,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.end,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          for (final driver in list)
+                            _DriverCard(
+                              driver: driver,
+                              refData: refData,
+                              isChinaCompany: isChinaCompany,
+                              openingChat: _openingChatDriverId == driver.driverId,
+                              onCall: _call,
+                              onWhatsapp: _whatsapp,
+                              onChat: _chat,
+                              onInvite: _invite,
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-const _weekdayShort = {
-  'ru': ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
-  'kk': ['Дс', 'Сс', 'Ср', 'Бс', 'Жм', 'Сб', 'Жс'],
-  'zh': ['一', '二', '三', '四', '五', '六', '日'],
-};
-
-String _weekdayLabel(BuildContext context, DateTime date) {
-  final locale = Localizations.localeOf(context).languageCode;
-  final names = _weekdayShort[locale] ?? _weekdayShort['ru']!;
-  return names[date.weekday - 1];
+String _shortDate(DateTime d) {
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${two(d.day)}.${two(d.month)}';
 }
 
+/// Короткое имя дня недели из ARB (задача 036, п.3) — раньше было
+/// захардкожено и без английского.
+List<String> _weekdayNames(LubaoLocalizations t) => [
+      t.weekdayShort1,
+      t.weekdayShort2,
+      t.weekdayShort3,
+      t.weekdayShort4,
+      t.weekdayShort5,
+      t.weekdayShort6,
+      t.weekdayShort7,
+    ];
+
+String _weekdayLabel(LubaoLocalizations t, DateTime date) => _weekdayNames(t)[date.weekday - 1];
+
+/// Плашка дня 52×52 (задача 036, п.3): день сверху, число водителей ниже;
+/// ноль — серым, выбранный — синий. Шрифт ограничен масштабом 1.0..1.2,
+/// чтобы 52×52 не ломалась на крупном системном шрифте.
 class _DayChip extends StatelessWidget {
   const _DayChip({required this.label, required this.count, required this.selected, required this.onTap});
 
@@ -403,65 +513,109 @@ class _DayChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.field),
-      child: Container(
-        width: 56,
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.field),
-          border: Border.all(color: selected ? AppColors.primary : AppColors.border),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              label,
-              style: AppTextStyles.caption.copyWith(color: selected ? Colors.white : AppColors.textSecondary),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              count?.toString() ?? '–',
-              style: AppTextStyles.bodyStrong.copyWith(color: selected ? Colors.white : AppColors.text),
-            ),
-          ],
+    final isZero = count == 0;
+    final fg = selected ? Colors.white : AppColors.text;
+    final muted = selected ? Colors.white70 : AppColors.textSecondary;
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.2)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.field),
+        child: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.field),
+            border: Border.all(color: selected ? AppColors.primary : AppColors.border),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(label, style: AppTextStyles.caption.copyWith(color: muted), maxLines: 1),
+              ),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  count?.toString() ?? '–',
+                  style: AppTextStyles.bodyStrong.copyWith(color: isZero && !selected ? AppColors.textSecondary.withAlpha(150) : fg),
+                  maxLines: 1,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _FilterDropdown<T> extends StatelessWidget {
-  const _FilterDropdown({required this.label, required this.value, required this.items, required this.onChanged});
+/// Чип фильтра (задача 036, п.4): серый — не задан, синий — активен.
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    super.key,
+    required this.label,
+    required this.active,
+    required this.onTap,
+    this.dropdown = false,
+    this.leadingCheck = false,
+  });
 
   final String label;
-  final T value;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T> onChanged;
+  final bool active;
+  final bool dropdown;
+  final bool leadingCheck;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.field),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          items: items,
-          onChanged: (v) => onChanged(v as T),
-          style: AppTextStyles.bodyStrong.copyWith(color: AppColors.text),
+    final color = active ? AppColors.primary : AppColors.text;
+    return Material(
+      color: active ? AppColors.primarySoft : AppColors.surface,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: active ? AppColors.primary.withAlpha(90) : AppColors.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (leadingCheck) ...[Icon(LucideIcons.check, size: 16, color: color), const SizedBox(width: AppSpacing.xs)],
+              Text(label, style: AppTextStyles.bodyStrong.copyWith(color: color)),
+              if (dropdown) ...[const SizedBox(width: AppSpacing.xs), Icon(LucideIcons.chevronDown, size: 16, color: color)],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
+/// «Ерлан Тохтаров» → «Ерлан Т.» (задача 036, п.6) — компактное имя.
+String _shortName(String full) {
+  final parts = full.trim().split(RegExp(r'\s+'));
+  if (parts.length < 2 || parts[1].isEmpty) return full.trim();
+  return '${parts[0]} ${parts[1].substring(0, 1).toUpperCase()}.';
+}
+
+String _initials(String full) {
+  final parts = full.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+  if (parts.isEmpty) return '';
+  final first = parts[0].substring(0, 1).toUpperCase();
+  return parts.length > 1 ? '$first${parts[1].substring(0, 1).toUpperCase()}' : first;
+}
+
+/// Компактная карточка водителя (задача 036, п.6): аватар, имя, ✓, рейтинг;
+/// «кузов · тоннаж · объём · страны»; статус и кнопки (звонок, чат,
+/// «Пригласить»). WhatsApp (не для китайских компаний) и статус при
+/// нехватке ширины уходят на свою строку, а не вызывают переполнение.
 class _DriverCard extends StatelessWidget {
   const _DriverCard({
     required this.driver,
@@ -483,11 +637,75 @@ class _DriverCard extends StatelessWidget {
   final ValueChanged<ArrivalListing> onChat;
   final ValueChanged<ArrivalListing> onInvite;
 
+  String _ago(LubaoLocalizations t, DateTime since) {
+    final diff = DateTime.now().difference(since);
+    if (diff.inMinutes < 1) return t.driversAtPointAgoJustNow;
+    if (diff.inMinutes < 60) return t.driversAtPointAgoMinutes(diff.inMinutes);
+    return t.driversAtPointAgoHours(diff.inHours);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final bodyType = driver.bodyTypeId == null ? null : refData.bodyTypeById(driver.bodyTypeId!);
+    final onSite = driver.status == ArrivalStatus.onSite;
+
+    // «тент · 20 т · 90 м³ · 33 пал. · KZ UZ KG» — одна строка, обрезается.
+    final countries = driver.anyCountry
+        ? t.driverSetupAnyCountry
+        : driver.directionCountryIds.map((id) => refData.countryById(id).code).join(' ');
+    final spec = [
+      if (bodyType != null) bodyType.name.forLanguageCode(locale),
+      if (driver.capacityTons != null) '${driver.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
+      if (driver.volumeM3 != null) '${driver.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+      if (driver.palletsEuro != null) '${driver.palletsEuro} ${t.unitPallets}',
+      if (countries.isNotEmpty) countries,
+    ].join(' · ');
+
+    final statusText = onSite
+        ? t.driversAtPointOnSiteAgo(_ago(t, driver.arrivedAt ?? driver.plannedAt))
+        : t.driversAtPointPlannedApprox(_plannedDayLabel(t), _timeOf(driver.plannedAt));
+    final statusColor = onSite ? AppColors.success : AppColors.primary;
+    final status = Text(
+      onSite ? '📍 $statusText' : statusText,
+      style: AppTextStyles.caption.copyWith(color: statusColor, fontWeight: FontWeight.w600),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    final haulHint = driver.activeDealsCount > 0
+        ? haulHintText(
+            t,
+            refData,
+            locale,
+            activeDealsCount: driver.activeDealsCount,
+            committedWeightKg: driver.committedWeightKg,
+            hasUnknownWeight: driver.committedHasUnknownWeight,
+            capacityTons: driver.capacityTons,
+            destinationCountryId: driver.committedDestinationCountryId,
+            destinationCityId: driver.committedDestinationCityId,
+            readyDate: driver.committedReadyDate,
+          )
+        : null;
+
+    final buttons = <Widget>[
+      IconSquareButton(size: 40, icon: LucideIcons.phone, onPressed: driver.phone == null ? null : () => onCall(driver)),
+      const SizedBox(width: AppSpacing.sm),
+      IconSquareButton(size: 40, icon: LucideIcons.messageSquare, loading: openingChat, onPressed: () => onChat(driver)),
+      if (!isChinaCompany) ...[
+        const SizedBox(width: AppSpacing.sm),
+        IconSquareButton(size: 40, icon: LucideIcons.messageCircle, onPressed: driver.phone == null ? null : () => onWhatsapp(driver)),
+      ],
+    ];
+    final invite = SizedBox(
+      height: 40,
+      child: FilledButton(
+        onPressed: () => onInvite(driver),
+        style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg), minimumSize: const Size(0, 40)),
+        child: Text(t.driversAtPointInvite, maxLines: 1, overflow: TextOverflow.ellipsis),
+      ),
+    );
 
     return AppCard(
       child: Column(
@@ -498,10 +716,7 @@ class _DriverCard extends StatelessWidget {
               CircleAvatar(
                 radius: 22,
                 backgroundColor: AppColors.primarySoft,
-                child: Text(
-                  driver.driverName.isEmpty ? '' : driver.driverName.substring(0, 1).toUpperCase(),
-                  style: AppTextStyles.bodyStrong.copyWith(color: AppColors.primary),
-                ),
+                child: Text(_initials(driver.driverName), style: AppTextStyles.bodyStrong.copyWith(color: AppColors.primary)),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -510,133 +725,84 @@ class _DriverCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Flexible(child: Text(driver.driverName, style: AppTextStyles.bodyStrong)),
+                        Flexible(
+                          child: Text(_shortName(driver.driverName), style: AppTextStyles.bodyStrong, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ),
                         if (driver.isVerified) ...[
                           const SizedBox(width: AppSpacing.xs),
-                          const Icon(LucideIcons.badgeCheck, size: 16, color: AppColors.primary),
+                          const Icon(LucideIcons.badgeCheck, size: 16, color: AppColors.success),
                         ],
+                        const SizedBox(width: AppSpacing.sm),
+                        const Icon(LucideIcons.star, size: 13, color: AppColors.accent),
+                        const SizedBox(width: 2),
+                        Text(driver.ratingCount > 0 ? driver.ratingAvg.toStringAsFixed(1) : '–', style: AppTextStyles.caption),
                       ],
                     ),
-                    Row(
-                      children: [
-                        if (driver.ratingCount > 0) ...[
-                          const Icon(LucideIcons.star, size: 14, color: AppColors.accent),
-                          const SizedBox(width: AppSpacing.xs),
-                          Text(driver.ratingAvg.toStringAsFixed(1), style: AppTextStyles.caption),
-                        ] else
-                          Text(t.cargoDetailNoReviews, style: AppTextStyles.caption),
-                        if (bodyType != null) ...[
-                          const Text(' · ', style: AppTextStyles.caption),
-                          Text(bodyType.name.forLanguageCode(locale), style: AppTextStyles.caption),
-                        ],
-                        if (driver.capacityTons != null) ...[
-                          const Text(' · ', style: AppTextStyles.caption),
-                          Text('${driver.capacityTons!.toStringAsFixed(0)} ${t.unitTon}', style: AppTextStyles.caption),
-                        ],
-                        // Задача 033, п.9 — «тент · 20 т · 90 м³ · 33 пал.».
-                        if (driver.volumeM3 != null) ...[
-                          const Text(' · ', style: AppTextStyles.caption),
-                          Text('${driver.volumeM3!.toStringAsFixed(0)} ${t.unitM3}', style: AppTextStyles.caption),
-                        ],
-                        if (driver.palletsEuro != null) ...[
-                          const Text(' · ', style: AppTextStyles.caption),
-                          Text('${driver.palletsEuro} ${t.unitPallets}', style: AppTextStyles.caption),
-                        ],
-                      ],
-                    ),
-                    // Задача 037, п.7 / 038, п.8 — логист видит догруз до
-                    // выбора: «Уже везёт: 8 т из 20 т · Алматы · погрузка …»;
-                    // груз без веса — «машина занята», не «0 т».
-                    if (driver.activeDealsCount > 0)
-                      Builder(builder: (context) {
-                        final locale = Localizations.localeOf(context).languageCode;
-                        final hint = haulHintText(
-                          t,
-                          refData,
-                          locale,
-                          activeDealsCount: driver.activeDealsCount,
-                          committedWeightKg: driver.committedWeightKg,
-                          hasUnknownWeight: driver.committedHasUnknownWeight,
-                          capacityTons: driver.capacityTons,
-                          destinationCountryId: driver.committedDestinationCountryId,
-                          destinationCityId: driver.committedDestinationCityId,
-                          readyDate: driver.committedReadyDate,
-                        );
-                        return hint == null
-                            ? const SizedBox.shrink()
-                            : Text(hint, style: AppTextStyles.caption.copyWith(color: AppColors.accentText));
-                      }),
-                    // Задача 038, п.15 (037, п.8) — доля отмен водителем,
-                    // только когда отмены были: «Отменил 1 из 15 сделок».
-                    if (driver.dealsCancelledByDriver > 0)
-                      Text(
-                        t.driverCancelShare(driver.dealsCancelledByDriver, driver.dealsTotal),
-                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-                      ),
+                    if (spec.isNotEmpty)
+                      Text(spec, style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
             ],
           ),
+          if (haulHint != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(haulHint, style: AppTextStyles.caption.copyWith(color: AppColors.accentText), maxLines: 2, overflow: TextOverflow.ellipsis),
+          ],
+          if (driver.dealsCancelledByDriver > 0)
+            Text(
+              t.driverCancelShare(driver.dealsCancelledByDriver, driver.dealsTotal),
+              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+            ),
           const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              IconSquareButton(icon: LucideIcons.phone, onPressed: driver.phone == null ? null : () => onCall(driver)),
-              const SizedBox(width: AppSpacing.sm),
-              IconSquareButton(icon: LucideIcons.messageSquare, loading: openingChat, onPressed: () => onChat(driver)),
-              if (!isChinaCompany) ...[
-                const SizedBox(width: AppSpacing.sm),
-                IconSquareButton(icon: LucideIcons.messageCircle, onPressed: driver.phone == null ? null : () => onWhatsapp(driver)),
-              ],
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Статус и кнопки в одну строку, если хватает места (эталон
+              // 27); иначе статус — отдельной строкой, ничего не переполняется.
+              final sameRow = isChinaCompany && constraints.maxWidth >= 300;
+              if (sameRow) {
+                return Row(
+                  children: [
+                    Expanded(child: status),
+                    const SizedBox(width: AppSpacing.sm),
+                    ...buttons,
+                    const SizedBox(width: AppSpacing.sm),
+                    Flexible(child: invite),
+                  ],
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  status,
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      ...buttons,
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(child: invite),
+                    ],
+                  ),
+                ],
+              );
+            },
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            children: [
-              if (driver.anyCountry)
-                _pill(t.driverSetupAnyCountry)
-              else
-                for (final countryId in driver.directionCountryIds) CountryCode(code: refData.countryById(countryId).code),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              Icon(
-                driver.status == ArrivalStatus.onSite ? LucideIcons.mapPin : LucideIcons.calendarClock,
-                size: 14,
-                color: driver.status == ArrivalStatus.onSite ? AppColors.success : AppColors.textSecondary,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                driver.status == ArrivalStatus.onSite
-                    ? t.driversAtPointArrivedAt(_formatTime(driver.arrivedAt ?? driver.plannedAt))
-                    : t.driversAtPointPlannedAt(_formatTime(driver.plannedAt)),
-                style: AppTextStyles.caption.copyWith(
-                  color: driver.status == ArrivalStatus.onSite ? AppColors.success : AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          PrimaryButton(label: t.driversAtPointInvite, onPressed: () => onInvite(driver)),
         ],
       ),
     );
   }
 
-  Widget _pill(String label) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-        decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(999)),
-        child: Text(label, style: AppTextStyles.small.copyWith(color: AppColors.primary)),
-      );
+  String _plannedDayLabel(LubaoLocalizations t) {
+    final now = DateTime.now();
+    final local = driver.plannedAt.toLocal();
+    final isToday = local.year == now.year && local.month == now.month && local.day == now.day;
+    return isToday ? t.driversAtPointToday : _weekdayLabel(t, local);
+  }
 
-  String _formatTime(DateTime date) {
+  String _timeOf(DateTime date) {
     final local = date.toLocal();
     String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(local.day)}.${two(local.month)} ${two(local.hour)}:${two(local.minute)}';
+    return '${two(local.hour)}:${two(local.minute)}';
   }
 }
 
@@ -676,7 +842,7 @@ class _ArrivalsCalendarSheetState extends State<_ArrivalsCalendarSheet> {
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
-    final weekdayNames = _weekdayShort[locale] ?? _weekdayShort['ru']!;
+    final weekdayNames = _weekdayNames(context.l10n);
 
     return SafeArea(
       child: Padding(
