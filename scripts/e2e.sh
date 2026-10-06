@@ -180,6 +180,18 @@ if ! RWT_DIR=backend run_with_timeout 300 "$RESULTS/build.log" npx nest build; t
   row "окружение: сборка backend" "❌" "см. build.log"; tail -20 "$RESULTS/build.log"; exit 1
 fi
 
+# Playwright для админки: зависимости и браузер (Chromium качает сам Playwright,
+# системный Chrome не нужен).
+if [[ -z "${E2E_SKIP_ADMIN_UI:-}" ]]; then
+  echo "== Playwright: npm ci + chromium =="
+  if ! RWT_DIR=scripts/e2e-admin-ui run_with_timeout 900 "$RESULTS/playwright-install.log" \
+       bash -c 'npm ci --no-audit --no-fund && npx playwright install chromium'; then
+    row "окружение: Playwright" "❌" "npm ci / playwright install не завершились (см. playwright-install.log)"
+    tail -20 "$RESULTS/playwright-install.log"; FAILED=$((FAILED + 1))
+    E2E_SKIP_ADMIN_UI=playwright-install-failed
+  fi
+fi
+
 # Админка: одна сборка web на весь прогон, раздаём со своего сервера.
 ADMIN_WEB="$RESULTS/admin-web"
 if [[ -z "${E2E_SKIP_ADMIN_UI:-}" && -z "${E2E_SKIP_ADMIN_BUILD:-}" ]]; then

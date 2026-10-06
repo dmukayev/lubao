@@ -2742,6 +2742,12 @@ abstract class LubaoLocalizations {
   /// **'Блокирован'**
   String get adminBlockedBadge;
 
+  /// No description provided for @adminBlockedByPhoneBadge.
+  ///
+  /// In ru, this message translates to:
+  /// **'⛔ Номер в чёрном списке'**
+  String get adminBlockedByPhoneBadge;
+
   /// No description provided for @adminPageOf.
   ///
   /// In ru, this message translates to:

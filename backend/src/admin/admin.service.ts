@@ -1910,10 +1910,18 @@ export class AdminService {
         Promise.all(driver.vehicles.map((v) => this.identifiersCard('VEHICLE', v.id))),
       ]);
 
+    // 039, п.24 — явный признак для карточки: телефон из чёрного списка
+    // (а не просто «Не проверен»).
+    const phoneMatch =
+      driver.user.phone && this.identifiers
+        ? await this.identifiers.checkMatches('PHONE', driver.user.phone, { ownerType: 'DRIVER', ownerId: id })
+        : null;
+
     return {
       id: driver.id,
       fullName: driver.fullName,
       isVerified: driver.isVerified,
+      blockedByPhone: !!phoneMatch?.blocked,
       identifiers: driverIdentifiers.identifiers,
       identifierBlockHistory: driverIdentifiers.blockHistory,
       user: {

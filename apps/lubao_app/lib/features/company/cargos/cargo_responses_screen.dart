@@ -266,16 +266,13 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
           ],
           if (response.status == ResponseStatus.pending) ...[
             const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: PrimaryButton(key: const Key('responseSelectButton'), label: t.responseSelect, onPressed: () => _select(haulHint)),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: OutlinedButton(onPressed: () => widget.onUpdateStatus('REJECTED'), child: Text(t.responseReject)),
-                ),
-              ],
+            // Друг под другом: «Выбрать водителя» в половине узкого экрана не
+            // помещалось (переполнение, найдено сценарием 9 на iPhone 16e/17).
+            PrimaryButton(key: const Key('responseSelectButton'), label: t.responseSelect, onPressed: () => _select(haulHint)),
+            const SizedBox(height: AppSpacing.sm),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(onPressed: () => widget.onUpdateStatus('REJECTED'), child: Text(t.responseReject)),
             ),
           ],
         ],

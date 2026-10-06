@@ -125,7 +125,10 @@ export class ArrivalsService {
     ]);
     // RIGID-одиночка — без прицепа (039, п.5).
     if (tractor?.kind === 'RIGID') return { tractorId: tractor.id, trailerId: null };
-    return { tractorId: tractor?.id ?? null, trailerId: fromLast?.trailerId ?? trailer?.id ?? null };
+    // Прицеп из прошлой связки переносим, только если у неё вообще не было
+    // тягача; если тягач ушёл в архив, прицеп принадлежал старой паре (039, п.5).
+    const carriedTrailer = lastWithCombo && lastWithCombo.tractorId == null ? fromLast?.trailerId : null;
+    return { tractorId: tractor?.id ?? null, trailerId: carriedTrailer ?? trailer?.id ?? null };
   }
 
   /// Анонс «буду на точке» — создаёт новый активный анонс или обновляет уже

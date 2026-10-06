@@ -585,6 +585,7 @@
   "adminColCity": "Город",
   "adminColVehicle": "Машина",
   "adminBlockedBadge": "Блокирован",
+  "adminBlockedByPhoneBadge": "⛔ Номер в чёрном списке",
   "adminPageOf": "Страница {page} из {total}",
   "@adminPageOf": {
     "placeholders": {

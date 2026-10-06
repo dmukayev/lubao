@@ -460,6 +460,7 @@
   "adminColCity": "城市",
   "adminColVehicle": "车辆",
   "adminBlockedBadge": "已封禁",
+  "adminBlockedByPhoneBadge": "⛔ 号码在黑名单中",
   "adminPageOf": "第 {page} / {total} 页",
   "@adminPageOf": {
     "placeholders": {

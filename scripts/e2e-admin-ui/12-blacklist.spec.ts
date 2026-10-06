@@ -36,7 +36,7 @@ test('блокировка по ИИН и ⛔ у нового водителя �
     await openRoute(page, '/verification');
     await page.getByRole('button', { name: /Руслан Дублёров/ }).click();
     await page.waitForTimeout(1500);
-    await expect(page.getByText(/Чёрный список/).first()).toBeVisible();
+    await expect(page.getByRole('group', { name: /Руслан Дублёров.*Чёрный список/ })).toBeVisible();
     const confirm = page.getByRole('button', { name: 'Подтвердить водителя' });
     await expect(confirm).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Подтвердить вопреки совпадению' })).toBeVisible();

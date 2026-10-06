@@ -1421,6 +1421,9 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get adminBlockedBadge => 'Блокирован';
 
   @override
+  String get adminBlockedByPhoneBadge => '⛔ Номер в чёрном списке';
+
+  @override
   String adminPageOf(int page, int total) {
     return 'Страница $page из $total';
   }

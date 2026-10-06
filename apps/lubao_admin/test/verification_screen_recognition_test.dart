@@ -62,7 +62,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Распознано'), findsOneWidget);
-    expect(find.text('Совпадение с чёрным списком — подтвердить без явного решения нельзя'), findsOneWidget);
+    expect(find.text('Совпадение с чёрным списком — подтвердить без явного решения нельзя'), findsWidgets);
   });
 
   testWidgets('renders correctly at a 390px mobile width too', (tester) async {

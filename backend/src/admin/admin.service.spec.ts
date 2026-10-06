@@ -255,10 +255,15 @@ describe('AdminService.driverDetail / companyDetail — document links go throug
         Promise.resolve(ownerType === 'DRIVER' ? [{ id: 'i1', type: 'PHONE', valueMasked: '+7700', createdAt: new Date() }] : [{ id: 'i2', type: 'PLATE', valueMasked: 'A1', createdAt: new Date() }]),
       ),
       listBlockHistory: jest.fn().mockResolvedValue([]),
+      checkMatches: jest.fn().mockResolvedValue({ blocked: { reason: 'E2E' }, duplicateOwner: null }),
     };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, undefined, identifiers as any);
 
     const result = await service.driverDetail('d1');
+
+    // 039, п.24 — телефон из чёрного списка виден явным признаком.
+    expect((result as any).blockedByPhone).toBe(true);
+    expect(identifiers.checkMatches).toHaveBeenCalledWith('PHONE', expect.any(String), { ownerType: 'DRIVER', ownerId: 'd1' });
 
     expect(identifiers.listForOwner).toHaveBeenCalledWith('DRIVER', 'd1');
     expect(identifiers.listForOwner).toHaveBeenCalledWith('VEHICLE', 'v1');

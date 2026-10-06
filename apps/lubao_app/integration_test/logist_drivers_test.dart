@@ -11,6 +11,10 @@ import 'package:lubao_core/lubao_core.dart';
 
 import 'e2e_support.dart';
 
+/// Водители сида (backend/prisma/seed-e2e.ts): D3 проверен, D4 — нет.
+const _d3Card = Key('driversAtPointCard-dddddddd-dddd-4ddd-8ddd-ddddddddd003');
+const _d4Card = Key('driversAtPointCard-dddddddd-dddd-4ddd-8ddd-ddddddddd004');
+
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -29,16 +33,16 @@ void main() {
     await run.step(tester, 'водители-экран', () async {
       await tester.tap(find.text(t.navDrivers));
       await waitFor(tester, find.text(t.driversAtPointTitleShort));
-      await waitFor(tester, find.text('Борис Т.'));
+      await waitFor(tester, find.byKey(_d3Card));
       expectInsideSafeZone(tester);
       expectNoOverflow(tester);
       // Единственная точка — чипа точки нет; в полосе дней «Сег», не «Сегодня».
       expect(find.byKey(const Key('driversPointChip')), findsNothing);
       expect(find.text(t.driversAtPointTodayShort), findsOneWidget);
       // Два водителя на точке: проверенный и нет.
-      expect(find.text('Нурлан Х.'), findsOneWidget);
+      expect(find.byKey(_d4Card), findsOneWidget);
       expect(find.byWidgetPredicate((w) => w.key is ValueKey && w.key.toString().contains('driverVerifiedPill-')), findsWidgets);
-      final d4Card = find.ancestor(of: find.text('Нурлан Х.'), matching: find.byType(AppCard));
+      final d4Card = find.byKey(_d4Card);
       expect(
         find.descendant(of: d4Card, matching: find.byWidgetPredicate((w) => w.key is ValueKey && w.key.toString().contains('driverVerifiedPill-'))),
         findsNothing,
@@ -54,17 +58,17 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(verified);
       await tester.pumpAndSettle(const Duration(seconds: 2));
-      expect(find.text('Борис Т.'), findsOneWidget);
-      expect(find.text('Нурлан Х.'), findsNothing, reason: 'непроверенный водитель должен пропасть из списка «Проверенные»');
+      expect(find.byKey(_d3Card), findsOneWidget);
+      expect(find.byKey(_d4Card), findsNothing, reason: 'непроверенный водитель должен пропасть из списка «Проверенные»');
       expectNoOverflow(tester);
       // Выключаем фильтр: непроверенный снова в списке.
       await tester.tap(verified);
       await tester.pumpAndSettle(const Duration(seconds: 2));
-      expect(find.text('Нурлан Х.'), findsOneWidget);
+      expect(find.byKey(_d4Card), findsOneWidget);
     });
 
     await run.step(tester, 'чат-с-водителем', () async {
-      final card = find.ancestor(of: find.text('Борис Т.'), matching: find.byType(AppCard));
+      final card = find.byKey(_d3Card);
       final chatButton = find.descendant(
         of: card,
         matching: find.byWidgetPredicate((w) => w.key is ValueKey && w.key.toString().contains('driversAtPointChat-')),

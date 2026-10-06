@@ -106,7 +106,7 @@ async function main() {
     const driver = await prisma.driver.upsert({
       where: { userId: user.id },
       update: { fullName: def.name, homeCityId: almaty.id, anyCountry: true, isVerified: def.n !== 4 },
-      create: { userId: user.id, fullName: def.name, homeCityId: almaty.id, anyCountry: true, isVerified: def.n !== 4 },
+      create: { id: `dddddddd-dddd-4ddd-8ddd-ddddddddd00${def.n}`, userId: user.id, fullName: def.name, homeCityId: almaty.id, anyCountry: true, isVerified: def.n !== 4 },
     });
     driverIds[def.n] = driver.id;
 

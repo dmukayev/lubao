@@ -224,7 +224,19 @@ void expectNoOverflow(WidgetTester tester) {
 /// — ДО завершения приложения, прямо из теста. Построчный отчёт —
 /// `<E2E_SHOT_DIR>/<устройство>/steps.jsonl` (собирается в report.md).
 class E2eRun {
-  E2eRun(this.binding, this.scenario);
+  E2eRun(this.binding, this.scenario) {
+    // Полные подробности ошибок кадра (какой виджет переполнился) — в лог:
+    // takeException() их уже не содержит.
+    final original = FlutterError.onError;
+    FlutterError.onError = (details) {
+      debugPrint('E2E FlutterError: ${details.exceptionAsString()}');
+      final info = details.informationCollector?.call() ?? const [];
+      for (final node in info) {
+        debugPrint(node.toStringDeep());
+      }
+      original?.call(details);
+    };
+  }
 
   final IntegrationTestWidgetsFlutterBinding binding;
   final String scenario;

@@ -1400,6 +1400,9 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get adminBlockedBadge => '已封禁';
 
   @override
+  String get adminBlockedByPhoneBadge => '⛔ 号码在黑名单中';
+
+  @override
   String adminPageOf(int page, int total) {
     return '第 $page / $total 页';
   }

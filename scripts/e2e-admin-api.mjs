@@ -91,6 +91,10 @@ const setup = await api('PATCH', '/drivers/me', {
 assert(setup.status < 300, 'профиль водителя с заблокированным номером создаётся', `status=${setup.status} ${setup.text.slice(0, 160)}`);
 const attentionAfter = (await get('/admin/attention')).json.blacklistMatches;
 assert(attentionAfter === attentionBefore + 1, '«Требует внимания»: совпадение с чёрным списком появилось', `${attentionBefore} → ${attentionAfter}`);
+const blockedDriver = (await get('/admin/drivers?search=%2B77010000099')).json.items.find((d) => d.phone === BLOCKED_PHONE);
+assert(!!blockedDriver, 'зарегистрированный по номеру из ЧС водитель виден в админке');
+const blockedCard = (await get(`/admin/drivers/${blockedDriver.id}`)).json;
+assert(blockedCard.blockedByPhone === true, 'карточка админа: явный признак blockedByPhone (039, п.24)', JSON.stringify(blockedCard.blockedByPhone));
 const respond = await api('POST', `/cargos/11111111-1111-4111-8111-111111111001/responses`, { token: newDriverToken, body: {} });
 assert(respond.status === 403, 'водитель с заблокированным номером не может откликаться (403)', `status=${respond.status}`);
 

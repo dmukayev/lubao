@@ -1425,6 +1425,9 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get adminBlockedBadge => 'Бұғатталған';
 
   @override
+  String get adminBlockedByPhoneBadge => '⛔ Нөмір қара тізімде';
+
+  @override
   String adminPageOf(int page, int total) {
     return '$page / $total бет';
   }

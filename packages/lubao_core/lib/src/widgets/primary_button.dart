@@ -35,7 +35,7 @@ class PrimaryButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (icon != null) ...[Icon(icon, size: 20), const SizedBox(width: AppSpacing.sm)],
-                  Text(label),
+                  Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
                 ],
               ),
       ),
@@ -83,7 +83,7 @@ class AccentButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (icon != null) ...[Icon(icon, size: 20), const SizedBox(width: AppSpacing.sm)],
-                  Text(label),
+                  Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
                 ],
               ),
       ),

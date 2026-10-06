@@ -585,6 +585,7 @@
   "adminColCity": "City",
   "adminColVehicle": "Vehicle",
   "adminBlockedBadge": "Blocked",
+  "adminBlockedByPhoneBadge": "⛔ Phone is blacklisted",
   "adminPageOf": "Page {page} of {total}",
   "@adminPageOf": {
     "placeholders": {

@@ -276,6 +276,8 @@ class _Header extends StatelessWidget {
                         const SizedBox(width: 12),
                         if (driver.isBlocked)
                           StatusBadge(label: t.adminBlockedBadge, color: StatusBadge.danger)
+                        else if (driver.blockedByPhone)
+                          StatusBadge(label: t.adminBlockedByPhoneBadge, color: StatusBadge.danger)
                         else
                           StatusBadge(
                             label: driver.isVerified ? t.adminVerified : t.adminNotVerified,

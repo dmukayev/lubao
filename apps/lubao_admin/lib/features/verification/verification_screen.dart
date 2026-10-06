@@ -528,12 +528,12 @@ class _Header extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Row(
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Flexible(
-                child: Text(title, style: Theme.of(context).textTheme.headlineSmall, overflow: TextOverflow.ellipsis),
-              ),
-              const SizedBox(width: 12),
+              Text(title, style: Theme.of(context).textTheme.headlineSmall),
               if (isVerified) StatusBadge(label: t.adminVerified, color: StatusBadge.success),
               if (blacklisted) StatusBadge(label: t.adminVerificationBlacklistedBadge, color: StatusBadge.danger),
             ],

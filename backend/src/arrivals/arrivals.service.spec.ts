@@ -397,6 +397,24 @@ describe('ArrivalsService.announce — связка «на чём еду» (за
     );
   });
 
+  it('039 п.5: тягач прошлой связки в архиве — её прицеп не подставляется, берём из гаража', async () => {
+    prisma.arrival.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ tractorId: 'old-tractor', trailerId: 'old-trailer' });
+    // В живых остался только старый прицеп; тягач заархивирован.
+    prisma.vehicle.findMany.mockResolvedValue([{ id: 'old-trailer', kind: 'TRAILER' }]);
+    prisma.vehicle.findFirst = jest.fn().mockImplementation(async ({ where }: any) =>
+      where.kind === 'TRAILER' ? { id: 'garage-trailer', kind: 'TRAILER' } : { id: 'garage-tractor', kind: 'TRACTOR' },
+    );
+    prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
+
+    await service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString() });
+
+    expect(prisma.__tx.arrival.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ tractorId: 'garage-tractor', trailerId: 'garage-trailer' }) }),
+    );
+  });
+
   it('uses an explicit combo from the dto after validating it belongs to this driver', async () => {
     prisma.arrival.findFirst.mockResolvedValue(null);
     prisma.vehicle.findMany.mockResolvedValue([{ id: 'tractor-9', kind: 'TRACTOR' }, { id: 'trailer-9', kind: 'TRAILER' }]);

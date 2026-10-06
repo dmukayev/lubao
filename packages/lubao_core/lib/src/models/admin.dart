@@ -734,11 +734,15 @@ class AdminDriverDetail {
     required this.auditLog,
     this.identifiers = const [],
     this.identifierBlockHistory = const [],
+    this.blockedByPhone = false,
   });
 
   final String id;
   final String fullName;
   final bool isVerified;
+
+  /// Телефон водителя в чёрном списке (039, п.24) — явный ⛔ в карточке.
+  final bool blockedByPhone;
   final String userId;
   final String? phone;
   final String locale;
@@ -790,6 +794,7 @@ class AdminDriverDetail {
       deals: (json['deals'] as List<dynamic>).map((e) => AdminDriverDealEntry.fromJson(e as Map<String, dynamic>)).toList(),
       sessions: (json['sessions'] as List<dynamic>).map((e) => AdminSessionEntry.fromJson(e as Map<String, dynamic>)).toList(),
       auditLog: (json['auditLog'] as List<dynamic>).map((e) => AdminAuditLogEntry.fromJson(e as Map<String, dynamic>)).toList(),
+      blockedByPhone: json['blockedByPhone'] as bool? ?? false,
       identifiers: json['identifiers'] == null
           ? const []
           : (json['identifiers'] as List<dynamic>).map((e) => AdminIdentifierEntry.fromJson(e as Map<String, dynamic>)).toList(),

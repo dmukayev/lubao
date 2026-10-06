@@ -429,7 +429,7 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                     _FilterChip(
                       key: const Key('driversFilterCapacity'),
                       label: _minCapacityTons == null
-                          ? t.driversAtPointFilterMinCapacityTitle
+                          ? t.driversAtPointFilterCapacityChip
                           : t.driversAtPointMinCapacityLabel(_minCapacityTons!),
                       active: _minCapacityTons != null,
                       dropdown: _minCapacityTons == null,
@@ -754,7 +754,7 @@ class _DriverCard extends StatelessWidget {
           TextSpan(text: statusText),
         ],
       ),
-      maxLines: 3,
+      maxLines: 2,
       overflow: TextOverflow.ellipsis,
     );
 
@@ -775,22 +775,22 @@ class _DriverCard extends StatelessWidget {
 
     final buttons = <Widget>[
       IconSquareButton(
-        size: 36,
+        size: 34,
         icon: LucideIcons.phone,
         onPressed: driver.phone == null ? null : () => onCall(driver),
       ),
-      const SizedBox(width: AppSpacing.sm),
+      const SizedBox(width: AppSpacing.xs + 2),
       IconSquareButton(
         key: Key('driversAtPointChat-${driver.driverId}'),
-        size: 36,
+        size: 34,
         icon: LucideIcons.messageSquare,
         loading: openingChat,
         onPressed: () => onChat(driver),
       ),
       if (!isChinaCompany) ...[
-        const SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.xs + 2),
         IconSquareButton(
-          size: 36,
+          size: 34,
           icon: LucideIcons.messageCircle,
           onPressed: driver.phone == null ? null : () => onWhatsapp(driver),
         ),
@@ -801,7 +801,7 @@ class _DriverCard extends StatelessWidget {
       child: FilledButton(
         onPressed: () => onInvite(driver),
         style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
           minimumSize: const Size(0, 36),
         ),
         child: Text(t.driversAtPointInviteShort, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -809,6 +809,7 @@ class _DriverCard extends StatelessWidget {
     );
 
     return AppCard(
+      key: Key('driversAtPointCard-${driver.driverId}'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

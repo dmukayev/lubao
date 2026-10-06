@@ -460,6 +460,7 @@
   "adminColCity": "Қала",
   "adminColVehicle": "Көлік",
   "adminBlockedBadge": "Бұғатталған",
+  "adminBlockedByPhoneBadge": "⛔ Нөмір қара тізімде",
   "adminPageOf": "{page} / {total} бет",
   "@adminPageOf": {
     "placeholders": {
