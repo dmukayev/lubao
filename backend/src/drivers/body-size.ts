@@ -10,10 +10,19 @@ const EURO_SHORT_M = 0.8;
 /// 5 см — минимальный монтажный зазор на длину кузова для этой раскладки.
 const TIGHT_FIT_CLEARANCE_M = 0.05;
 
+/// Плавающая точка: 2.4 / 0.8 = 2.999999…96, и floor терял целый ряд
+/// паллет при ширине 2,40 м (задача 038, п.5). Эпсилон меньше любого
+/// осмысленного зазора (1 нм), но съедает ошибку представления double.
+const FLOAT_EPSILON = 1e-9;
+
+function floorDiv(a: number, b: number): number {
+  return Math.floor(a / b + FLOAT_EPSILON);
+}
+
 export function calculatePalletsEuro(innerLengthM: number, innerWidthM: number): number {
   if (innerLengthM <= 0 || innerWidthM <= 0) return 0;
-  const standard = Math.floor(innerLengthM / EURO_LONG_M) * Math.floor(innerWidthM / EURO_SHORT_M);
-  const rotated = Math.floor((innerLengthM - TIGHT_FIT_CLEARANCE_M) / EURO_SHORT_M) * Math.floor(innerWidthM / EURO_LONG_M);
+  const standard = floorDiv(innerLengthM, EURO_LONG_M) * floorDiv(innerWidthM, EURO_SHORT_M);
+  const rotated = floorDiv(innerLengthM - TIGHT_FIT_CLEARANCE_M, EURO_SHORT_M) * floorDiv(innerWidthM, EURO_LONG_M);
   return Math.max(standard, rotated, 0);
 }
 
