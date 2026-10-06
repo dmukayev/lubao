@@ -5,6 +5,7 @@ import { ResponsesService } from '../responses/responses.service';
 import { CreateCargoDto } from './dto/create-cargo.dto';
 import { UpdateCargoDto } from './dto/update-cargo.dto';
 import { CloseCargoDto } from './dto/close-cargo.dto';
+import { parseDateOnly, toDateOnly } from '../common/date-only';
 
 type CargoWithCompany = Cargo & { company: Company & { country: { code: string } }; publishedBy?: { id: string; name: string | null; phone: string | null } | null };
 
@@ -85,7 +86,7 @@ export class CargosService {
       photoUrls: cargo.photoUrls,
       price: Number(cargo.price),
       currency: cargo.currency,
-      readyDate: cargo.readyDate,
+      readyDate: toDateOnly(cargo.readyDate),
       description: cargo.description,
       status: cargo.status,
       publishedAt: cargo.publishedAt,
@@ -204,7 +205,7 @@ export class CargosService {
     if (!companyIsVerified) throw new ForbiddenException('COMPANY_NOT_VERIFIED');
 
     const point = await this.prisma.point.findFirstOrThrow({ where: { isActive: true } });
-    const readyDate = new Date(dto.readyDate);
+    const readyDate = parseDateOnly(dto.readyDate);
     const expiresAt = new Date(readyDate.getTime() + 48 * 60 * 60 * 1000);
 
     const cargo = await this.prisma.cargo.create({
@@ -254,7 +255,7 @@ export class CargosService {
   async update(companyId: string, userId: string, role: string, id: string, dto: UpdateCargoDto) {
     const existing = await this.assertCanEdit(id, companyId, userId, role);
 
-    const readyDate = dto.readyDate ? new Date(dto.readyDate) : existing.readyDate;
+    const readyDate = dto.readyDate ? parseDateOnly(dto.readyDate) : existing.readyDate;
     const expiresAt =
       dto.readyDate != null ? new Date(readyDate.getTime() + 48 * 60 * 60 * 1000) : existing.expiresAt;
 

@@ -9,6 +9,11 @@ export class AnnounceArrivalDto {
   @IsDateString()
   plannedAt!: string;
 
+  /// Календарный день приезда `YYYY-MM-DD` (041, п.5) — без часового пояса.
+  @IsOptional()
+  @IsString()
+  plannedDay?: string;
+
   @IsOptional()
   @IsBoolean()
   anyCountry?: boolean;

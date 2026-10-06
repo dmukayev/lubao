@@ -31,6 +31,7 @@ class ArrivalListing {
     required this.pointId,
     required this.status,
     required this.plannedAt,
+    required this.plannedDay,
     this.arrivedAt,
     this.bodyTypeId,
     this.capacityTons,
@@ -58,6 +59,9 @@ class ArrivalListing {
   final String pointId;
   final ArrivalStatus status;
   final DateTime plannedAt;
+
+  /// Календарный день приезда (041, п.5) — без часового пояса.
+  final DateTime plannedDay;
   final DateTime? arrivedAt;
   final String? bodyTypeId;
   final double? capacityTons;
@@ -96,6 +100,7 @@ class ArrivalListing {
         pointId: json['pointId'] as String,
         status: arrivalStatusFromJson(json['status'] as String),
         plannedAt: DateTime.parse(json['plannedAt'] as String),
+        plannedDay: DateTime.parse((json['plannedDay'] ?? json['plannedAt']) as String),
         arrivedAt: json['arrivedAt'] == null ? null : DateTime.parse(json['arrivedAt'] as String),
         bodyTypeId: json['bodyTypeId'] as String?,
         capacityTons: (json['capacityTons'] as num?)?.toDouble(),

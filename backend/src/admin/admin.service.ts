@@ -39,6 +39,7 @@ import {
   SearchQueryDto,
   SetVerifiedDto,
 } from './dto/admin.dto';
+import { parseDateOnly, toDateOnly } from '../common/date-only';
 
 /// Единственный обязательный документ компании на пилоте — свидетельство о
 /// регистрации (营业执照 / справка с БИН), см. decisions.md «Компания:
@@ -502,7 +503,7 @@ export class AdminService {
       price: Number(cargo.price),
       currency: cargo.currency,
       priceInKzt: kztRate != null ? Number(cargo.price) * kztRate : null,
-      readyDate: cargo.readyDate,
+      readyDate: toDateOnly(cargo.readyDate),
       description: cargo.description,
       status: cargo.status,
       publishedAt: cargo.publishedAt,
@@ -535,7 +536,7 @@ export class AdminService {
     const existing = await this.prisma.cargo.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Cargo not found');
 
-    const readyDate = dto.readyDate ? new Date(dto.readyDate) : existing.readyDate;
+    const readyDate = dto.readyDate ? parseDateOnly(dto.readyDate) : existing.readyDate;
     const expiresAt = dto.readyDate != null ? new Date(readyDate.getTime() + 48 * 60 * 60 * 1000) : existing.expiresAt;
 
     const fields: Array<[keyof AdminUpdateCargoDto, unknown, unknown]> = [
@@ -547,7 +548,7 @@ export class AdminService {
       ['photoUrls', existing.photoUrls, dto.photoUrls],
       ['price', Number(existing.price), dto.price],
       ['currency', existing.currency, dto.currency],
-      ['readyDate', existing.readyDate.toISOString(), dto.readyDate],
+      ['readyDate', toDateOnly(existing.readyDate), dto.readyDate ? dto.readyDate.slice(0, 10) : dto.readyDate],
       ['description', existing.description, dto.description],
     ];
     const changes = Object.fromEntries(

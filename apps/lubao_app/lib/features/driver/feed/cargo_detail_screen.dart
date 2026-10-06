@@ -265,7 +265,7 @@ class _CargoDetailBody extends StatelessWidget {
                 _RoutePoint(
                   color: AppColors.primary,
                   title: point.name.forLanguageCode(locale),
-                  subtitle: formatDateTime(cargo.readyDate),
+                  subtitle: formatDate(cargo.readyDate),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(left: 4),

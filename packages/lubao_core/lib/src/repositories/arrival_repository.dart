@@ -1,5 +1,6 @@
 import '../api/api_client.dart';
 import '../models/arrival.dart';
+import '../utils/date_only.dart';
 
 class ArrivalRepository {
   ArrivalRepository(this._client);
@@ -40,6 +41,8 @@ class ArrivalRepository {
     final res = await _client.dio.post('/arrivals', data: {
       'pointId': pointId,
       'plannedAt': plannedAt.toUtc().toIso8601String(),
+      // День — календарная дата как её выбрал водитель, без часового пояса.
+      'plannedDay': ymd(plannedAt),
       'anyCountry': anyCountry,
       'countryIds': countryIds,
       'waitDays': waitDays,
@@ -72,7 +75,8 @@ class ArrivalRepository {
     bool verifiedOnly = false,
   }) async {
     final res = await _client.dio.get('/arrivals', queryParameters: {
-      if (date != null) 'date': date.toUtc().toIso8601String(),
+      if (date != null) 'date': ymd(date),
+      'today': ymd(DateTime.now()),
       if (pointId != null) 'pointId': pointId,
       if (countryId != null) 'countryId': countryId,
       if (bodyTypeId != null) 'bodyTypeId': bodyTypeId,
@@ -85,6 +89,7 @@ class ArrivalRepository {
   Future<List<ArrivalSummaryDay>> summary({int days = 7, String? pointId}) async {
     final res = await _client.dio.get('/arrivals/summary', queryParameters: {
       'days': days.toString(),
+      'from': ymd(DateTime.now()),
       if (pointId != null) 'pointId': pointId,
     });
     return (res.data as List<dynamic>).map((e) => ArrivalSummaryDay.fromJson(e as Map<String, dynamic>)).toList();

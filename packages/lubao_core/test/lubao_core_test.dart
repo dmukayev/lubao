@@ -46,4 +46,9 @@ void main() {
       CargoFeedSection.other,
     ]);
   });
+
+  test('ymd: календарная дата без времени и часового пояса (041, п.5)', () {
+    expect(ymd(DateTime(2026, 10, 6, 23, 59)), '2026-10-06');
+    expect(ymd(DateTime.utc(2026, 1, 5, 0, 0)), '2026-01-05');
+  });
 }

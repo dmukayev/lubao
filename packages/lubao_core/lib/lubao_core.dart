@@ -32,6 +32,7 @@ export 'src/widgets/step_progress.dart';
 export 'src/widgets/language_picker_button.dart';
 
 export 'src/utils/city_search.dart';
+export 'src/utils/date_only.dart';
 export 'src/utils/person_name.dart';
 
 export 'src/api/api_client.dart';

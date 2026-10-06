@@ -35,8 +35,18 @@ export class ReviewsService {
     });
     if (existing) throw new ConflictException('You have already reviewed this deal');
 
-    const review = await this.prisma.review.create({
-      data: { dealId, authorUserId, authorRole, rating, comment },
+    // Отзыв и пересчёт рейтинга — в одной транзакции (041, п.4): водителя
+    // оценивает компания, компанию — водитель.
+    const review = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.review.create({ data: { dealId, authorUserId, authorRole, rating, comment } });
+      if (authorRole === 'COMPANY') {
+        const agg = await tx.review.aggregate({ where: { authorRole: 'COMPANY', deal: { driverId: deal.driverId } }, _avg: { rating: true }, _count: { rating: true } });
+        await tx.driver.update({ where: { id: deal.driverId }, data: { ratingAvg: Number((agg._avg.rating ?? 0).toFixed(2)), ratingCount: agg._count.rating } });
+      } else {
+        const agg = await tx.review.aggregate({ where: { authorRole: 'DRIVER', deal: { companyId: deal.companyId } }, _avg: { rating: true }, _count: { rating: true } });
+        await tx.company.update({ where: { id: deal.companyId }, data: { ratingAvg: Number((agg._avg.rating ?? 0).toFixed(2)), ratingCount: agg._count.rating } });
+      }
+      return created;
     });
     return this.toDto(review);
   }

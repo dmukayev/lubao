@@ -36,6 +36,7 @@ class _FakeArrivalRepository extends ArrivalRepository {
         pointId: 'p1',
         status: status,
         plannedAt: DateTime.now(),
+        plannedDay: DateTime.now(),
         arrivedAt: status == ArrivalStatus.onSite ? DateTime.now().subtract(const Duration(minutes: 15)) : null,
         bodyTypeId: 'bt1',
         capacityTons: 20,

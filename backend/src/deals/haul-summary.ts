@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { toDateOnly } from '../common/date-only';
 
 /// «Уже везёт…» для логиста (задача 037, п.7 / 038, п.8) — сводка активных
 /// сделок водителя, считается по ТЕМ ЖЕ правилам, что жёсткая проверка
@@ -16,7 +17,7 @@ export type HaulInfo = {
   /// «Уже везёт: 8 т из 20 т · Алматы · погрузка завтра».
   committedDestinationCountryId: string | null;
   committedDestinationCityId: string | null;
-  committedReadyDate: Date | null;
+  committedReadyDate: string | null;
 };
 
 const EMPTY: HaulInfo = {
@@ -69,7 +70,7 @@ export async function haulInfoByDriver(
       committedHasUnknownWeight: relevant.some((d) => d.cargo?.weightKg == null),
       committedDestinationCountryId: first.cargo?.destinationCountryId ?? null,
       committedDestinationCityId: first.cargo?.destinationCityId ?? null,
-      committedReadyDate: first.cargo?.readyDate ?? null,
+      committedReadyDate: first.cargo?.readyDate ? toDateOnly(first.cargo.readyDate) : null,
     });
   }
   return result;

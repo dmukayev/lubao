@@ -159,7 +159,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                 children: List.generate(5, (i) {
                   final starIndex = i + 1;
                   return IconButton(
-                    icon: Icon(starIndex <= rating ? LucideIcons.star : LucideIcons.star, color: Colors.amber),
+                    icon: Icon(starIndex <= rating ? Icons.star : Icons.star_border, color: Colors.amber),
                     onPressed: () => setDialogState(() => rating = starIndex),
                   );
                 }),
@@ -339,7 +339,7 @@ class _ReviewsSection extends ConsumerWidget {
                   children: [
                     ...List.generate(
                       5,
-                      (i) => Icon(i < review.rating ? LucideIcons.star : LucideIcons.star, size: 16, color: Colors.amber),
+                      (i) => Icon(i < review.rating ? Icons.star : Icons.star_border, size: 16, color: Colors.amber),
                     ),
                     const SizedBox(width: 8),
                     if (review.comment != null) Expanded(child: Text(review.comment!)),

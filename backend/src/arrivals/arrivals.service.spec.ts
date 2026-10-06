@@ -77,6 +77,7 @@ describe('ArrivalsService.announce', () => {
       id: 'arrival-1',
       pointId: 'point-1',
       plannedAt: new Date(),
+      plannedDay: new Date(),
       arrivedAt: null,
       waitDays: 2,
       anyCountry: false,
@@ -109,6 +110,7 @@ describe('ArrivalsService.announce', () => {
       id: 'arrival-1',
       pointId: 'point-2',
       plannedAt: new Date(),
+      plannedDay: new Date(),
       arrivedAt: null,
       waitDays: 2,
       anyCountry: false,
@@ -129,6 +131,7 @@ describe('ArrivalsService.announce', () => {
       id: 'arrival-1',
       pointId: 'point-1',
       plannedAt: new Date(),
+      plannedDay: new Date(),
       arrivedAt: new Date(),
       waitDays: 1,
       anyCountry: true,
@@ -160,6 +163,7 @@ describe('ArrivalsService.checkIn', () => {
       id: 'arrival-1',
       pointId: 'point-1',
       plannedAt: new Date(),
+      plannedDay: new Date(),
       arrivedAt: new Date(),
       waitDays: 2,
       anyCountry: false,
@@ -180,6 +184,7 @@ describe('ArrivalsService.checkIn', () => {
       id: 'arrival-1',
       pointId: 'point-1',
       plannedAt: new Date(),
+      plannedDay: new Date(),
       arrivedAt: new Date(),
       waitDays: 2,
       anyCountry: false,
@@ -238,6 +243,7 @@ describe('ArrivalsService.repeat', () => {
       id: 'new-arrival',
       pointId: 'point-1',
       plannedAt: new Date(),
+      plannedDay: new Date(),
       arrivedAt: null,
       waitDays: 2,
       anyCountry: false,
@@ -260,6 +266,7 @@ describe('ArrivalsService.listForCompany', () => {
   let service: ArrivalsService;
   const today = new Date();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+  const dayOf = (d: Date) => new Date(d.toISOString().slice(0, 10) + 'T00:00:00.000Z');
 
   function driverRow(overrides: Record<string, unknown>) {
     return {
@@ -267,6 +274,7 @@ describe('ArrivalsService.listForCompany', () => {
       pointId: 'point-1',
       status: 'PLANNED',
       plannedAt: today,
+      plannedDay: dayOf(today),
       anyCountry: false,
       directions: [],
       driver: { id: 'driver-1', fullName: 'Ерлан', isVerified: true, ratingAvg: 0, ratingCount: 0, user: { phone: '+7' } },
@@ -293,8 +301,8 @@ describe('ArrivalsService.listForCompany', () => {
   it('for "today" includes ON_SITE regardless of plannedAt, and PLANNED only if planned for today', async () => {
     prisma.arrival.findMany.mockResolvedValue([
       driverRow({ id: 'on-site', status: 'ON_SITE', plannedAt: new Date('2000-01-01') }),
-      driverRow({ id: 'planned-today', status: 'PLANNED', plannedAt: today }),
-      driverRow({ id: 'planned-tomorrow', status: 'PLANNED', plannedAt: tomorrow }),
+      driverRow({ id: 'planned-today', status: 'PLANNED', plannedAt: today, plannedDay: dayOf(today) }),
+      driverRow({ id: 'planned-tomorrow', status: 'PLANNED', plannedAt: tomorrow, plannedDay: dayOf(tomorrow) }),
     ]);
 
     const result = await service.listForCompany('company-1', {});
@@ -305,12 +313,26 @@ describe('ArrivalsService.listForCompany', () => {
 
   it('for a future day only returns PLANNED arrivals for that exact day', async () => {
     prisma.arrival.findMany.mockResolvedValue([
-      driverRow({ id: 'planned-tomorrow', status: 'PLANNED', plannedAt: tomorrow }),
-      driverRow({ id: 'planned-today', status: 'PLANNED', plannedAt: today }),
+      driverRow({ id: 'planned-tomorrow', status: 'PLANNED', plannedAt: tomorrow, plannedDay: dayOf(tomorrow) }),
+      driverRow({ id: 'planned-today', status: 'PLANNED', plannedAt: today, plannedDay: dayOf(today) }),
     ]);
 
-    const result = await service.listForCompany('company-1', { date: tomorrow });
+    const result = await service.listForCompany('company-1', { date: tomorrow.toISOString().slice(0, 10), today: today.toISOString().slice(0, 10) });
     expect(result.map((r) => r.arrivalId)).toEqual(['planned-tomorrow']);
+  });
+
+  it('041, п.5: вторник из Урумчи (UTC+8) и Алматы (UTC+5) — один день, сервер без пересчёта часовых поясов', async () => {
+    const tuesday = new Date('2026-10-06T00:00:00.000Z'); // колонка DATE
+    prisma.arrival.findMany.mockResolvedValue([
+      // 00:30 вторника по Урумчи = 16:30 понедельника UTC; 23:30 вторника по Алматы = 18:30 UTC
+      driverRow({ id: 'urumqi', status: 'PLANNED', plannedAt: new Date('2026-10-05T16:30:00.000Z'), plannedDay: tuesday }),
+      driverRow({ id: 'almaty', status: 'PLANNED', plannedAt: new Date('2026-10-06T18:30:00.000Z'), plannedDay: tuesday }),
+      driverRow({ id: 'wednesday', status: 'PLANNED', plannedAt: new Date('2026-10-06T19:30:00.000Z'), plannedDay: new Date('2026-10-07T00:00:00.000Z') }),
+    ]);
+
+    const result = await service.listForCompany('company-1', { date: '2026-10-06', today: '2026-10-05' });
+
+    expect(result.map((r) => r.arrivalId).sort()).toEqual(['almaty', 'urumqi']);
   });
 
   it('records a view (unique per arrival+company) for every arrival returned', async () => {
@@ -332,8 +354,8 @@ describe('ArrivalsService.summary', () => {
 
     prisma.arrival.findMany.mockResolvedValue([
       { plannedAt: new Date('2000-01-01'), status: 'ON_SITE' },
-      { plannedAt: today, status: 'PLANNED' },
-      { plannedAt: tomorrow, status: 'PLANNED' },
+      { plannedDay: new Date(today.toISOString().slice(0, 10) + 'T00:00:00.000Z'), status: 'PLANNED' },
+      { plannedDay: new Date(tomorrow.toISOString().slice(0, 10) + 'T00:00:00.000Z'), status: 'PLANNED' },
     ]);
 
     const result = await service.summary(2);
@@ -348,7 +370,7 @@ describe('ArrivalsService.summary', () => {
     const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
     // Собирался завтра, но уже на месте сегодня (приехал раньше).
-    prisma.arrival.findMany.mockResolvedValue([{ plannedAt: tomorrow, status: 'ON_SITE' }]);
+    prisma.arrival.findMany.mockResolvedValue([{ plannedDay: new Date(tomorrow.toISOString().slice(0, 10) + 'T00:00:00.000Z'), status: 'ON_SITE' }]);
 
     const result = await service.summary(2);
     expect(result[0].count).toBe(1);
@@ -374,7 +396,7 @@ describe('ArrivalsService.announce — связка «на чём еду» (за
       .mockResolvedValueOnce({ tractorId: 'old-tractor', trailerId: 'old-trailer' }); // last with combo
     // 038: прошлая связка проверяется на архивность — обе машины живы.
     prisma.vehicle.findMany.mockResolvedValue([{ id: 'old-tractor', kind: 'TRACTOR' }, { id: 'old-trailer', kind: 'TRAILER' }]);
-    prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
+    prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), plannedDay: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
 
     await service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString() });
 
@@ -388,7 +410,7 @@ describe('ArrivalsService.announce — связка «на чём еду» (за
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ tractorId: 'old-rigid', trailerId: 'old-trailer' });
     prisma.vehicle.findMany.mockResolvedValue([{ id: 'old-rigid', kind: 'RIGID' }, { id: 'old-trailer', kind: 'TRAILER' }]);
-    prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
+    prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), plannedDay: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
 
     await service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString() });
 
@@ -406,7 +428,7 @@ describe('ArrivalsService.announce — связка «на чём еду» (за
     prisma.vehicle.findFirst = jest.fn().mockImplementation(async ({ where }: any) =>
       where.kind === 'TRAILER' ? { id: 'garage-trailer', kind: 'TRAILER' } : { id: 'garage-tractor', kind: 'TRACTOR' },
     );
-    prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
+    prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), plannedDay: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
 
     await service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString() });
 
@@ -418,7 +440,7 @@ describe('ArrivalsService.announce — связка «на чём еду» (за
   it('uses an explicit combo from the dto after validating it belongs to this driver', async () => {
     prisma.arrival.findFirst.mockResolvedValue(null);
     prisma.vehicle.findMany.mockResolvedValue([{ id: 'tractor-9', kind: 'TRACTOR' }, { id: 'trailer-9', kind: 'TRAILER' }]);
-    prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
+    prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), plannedDay: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
 
     await service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString(), tractorId: 'tractor-9', trailerId: 'trailer-9' });
 

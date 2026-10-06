@@ -1,3 +1,4 @@
+import '../utils/date_only.dart';
 import 'common.dart';
 
 class Cargo {
@@ -153,7 +154,7 @@ class CreateCargoInput {
         if (photoUrls.isNotEmpty) 'photoUrls': photoUrls,
         'price': price,
         'currency': currencyToJson(currency),
-        'readyDate': readyDate.toIso8601String(),
+        'readyDate': ymd(readyDate),
         if (description != null) 'description': description,
       };
 }

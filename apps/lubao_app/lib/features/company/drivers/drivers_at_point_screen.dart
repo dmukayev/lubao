@@ -921,9 +921,10 @@ class _DriverCard extends StatelessWidget {
 
   String _plannedDayLabel(LubaoLocalizations t) {
     final now = DateTime.now();
-    final local = driver.plannedAt.toLocal();
-    final isToday = local.year == now.year && local.month == now.month && local.day == now.day;
-    return isToday ? t.driversAtPointToday : _weekdayLabel(t, local);
+    // День — календарный (plannedDay), без пересчёта часовых поясов.
+    final day = driver.plannedDay;
+    final isToday = day.year == now.year && day.month == now.month && day.day == now.day;
+    return isToday ? t.driversAtPointToday : _weekdayLabel(t, day);
   }
 
   String _timeOf(DateTime date) {

@@ -335,6 +335,7 @@ async function main() {
         driverId: driver.id,
         pointId: khorgos.id,
         plannedAt: daysFromNow(-1),
+        plannedDay: new Date(daysFromNow(-1).toISOString().slice(0, 10) + 'T00:00:00.000Z'),
         arrivedAt: daysFromNow(-1),
         status: 'ON_SITE',
       },

@@ -6,6 +6,7 @@ import { ChatSystemMessagesService } from '../chats/chat-system-messages.service
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
+import { toDateOnly } from '../common/date-only';
 
 const PROGRESSION = ['SELECTED', 'CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED'] as const;
 
@@ -141,7 +142,7 @@ export class DealsService {
     const describe = activeDeals.map((d) => ({
       dealId: d.id,
       weightKg: d.cargo?.weightKg != null ? Number(d.cargo.weightKg) : null,
-      readyDate: d.cargo?.readyDate ?? null,
+      readyDate: d.cargo?.readyDate ? toDateOnly(d.cargo.readyDate) : null,
       destinationCountryId: d.cargo?.destinationCountryId ?? null,
       destinationCityId: d.cargo?.destinationCityId ?? null,
     }));

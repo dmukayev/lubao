@@ -2,20 +2,11 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Arrival } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { haulInfoByDriver } from '../deals/haul-summary';
+import { addDaysDateOnly, parseDateOnly, toDateOnly } from '../common/date-only';
 import { AnnounceArrivalDto } from './dto/arrival.dto';
 
 const MAX_DAYS_AHEAD = 14;
 const STALE_AFTER_HOURS = 24;
-
-function startOfDay(date: Date): Date {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function sameDay(a: Date, b: Date): boolean {
-  return startOfDay(a).getTime() === startOfDay(b).getTime();
-}
 
 @Injectable()
 export class ArrivalsService {
@@ -31,6 +22,7 @@ export class ArrivalsService {
       id: arrival.id,
       pointId: arrival.pointId,
       plannedAt: arrival.plannedAt,
+      plannedDay: toDateOnly(arrival.plannedDay),
       arrivedAt: arrival.arrivedAt,
       waitDays: arrival.waitDays,
       anyCountry: arrival.anyCountry,
@@ -143,6 +135,9 @@ export class ArrivalsService {
     if (!point || !point.isActive) throw new NotFoundException('Point not found');
 
     const plannedAt = new Date(dto.plannedAt);
+    // День приезда — календарная дата от клиента (041, п.5); для старых
+    // клиентов — календарная часть plannedAt.
+    const plannedDay = parseDateOnly(dto.plannedDay ?? dto.plannedAt);
     const maxDate = new Date(Date.now() + MAX_DAYS_AHEAD * 24 * 60 * 60 * 1000);
     if (plannedAt > maxDate) {
       throw new BadRequestException(`plannedAt must be within ${MAX_DAYS_AHEAD} days`);
@@ -193,13 +188,14 @@ export class ArrivalsService {
           : existing
             ? await tx.arrival.update({
                 where: { id: existing.id },
-                data: { pointId: dto.pointId, plannedAt, anyCountry, waitDays, status: 'PLANNED', ...(combo ?? {}) },
+                data: { pointId: dto.pointId, plannedAt, plannedDay, anyCountry, waitDays, status: 'PLANNED', ...(combo ?? {}) },
               })
             : await tx.arrival.create({
                 data: {
                   driverId: driver.id,
                   pointId: dto.pointId,
                   plannedAt,
+                  plannedDay,
                   anyCountry,
                   waitDays,
                   status: 'PLANNED',
@@ -230,6 +226,7 @@ export class ArrivalsService {
     return this.announce(userId, {
       pointId: template.pointId,
       plannedAt: new Date().toISOString(),
+      plannedDay: toDateOnly(new Date()),
       anyCountry: template.anyCountry,
       countryIds: template.countryIds,
     });
@@ -265,6 +262,7 @@ export class ArrivalsService {
           driverId: driver.id,
           pointId: point.id,
           plannedAt: new Date(),
+          plannedDay: parseDateOnly(new Date().toISOString()),
           arrivedAt: new Date(),
           status: 'ON_SITE',
           anyCountry: driver.anyCountry,
@@ -305,7 +303,10 @@ export class ArrivalsService {
   async listForCompany(
     companyId: string,
     filters: {
-      date?: Date;
+      /// `YYYY-MM-DD` — день, который выбрал логист; `today` — его «сегодня»
+      /// (клиент знает свой календарь, сервер часовых поясов не считает).
+      date?: string;
+      today?: string;
       pointId?: string;
       countryId?: string;
       bodyTypeId?: string;
@@ -315,8 +316,9 @@ export class ArrivalsService {
   ) {
     await this.expireStale();
 
-    const targetDate = filters.date ?? new Date();
-    const isToday = sameDay(targetDate, new Date());
+    const todayStr = filters.today ?? toDateOnly(new Date());
+    const targetStr = filters.date ?? todayStr;
+    const isToday = targetStr === todayStr;
 
     const arrivals = await this.prisma.arrival.findMany({
       where: {
@@ -329,7 +331,7 @@ export class ArrivalsService {
 
     const dayFiltered = arrivals.filter((a) => {
       if (isToday && a.status === 'ON_SITE') return true;
-      return sameDay(a.plannedAt, targetDate);
+      return toDateOnly(a.plannedDay) === targetStr;
     });
 
     // Задача 031, этап A, п.6 — кузов/тоннаж связки ЭТОЙ поездки (её прицеп,
@@ -410,6 +412,7 @@ export class ArrivalsService {
       pointId: r.arrival.pointId,
       status: r.arrival.status,
       plannedAt: r.arrival.plannedAt,
+      plannedDay: toDateOnly(r.arrival.plannedDay),
       arrivedAt: r.arrival.arrivedAt,
       bodyTypeId: r.vehicle?.bodyTypeId ?? null,
       capacityTons: r.vehicle?.capacityTons ? Number(r.vehicle.capacityTons) : null,
@@ -433,27 +436,26 @@ export class ArrivalsService {
 
   /// Полоса дней у логиста (п. 9-10) — число водителей по каждому из
   /// ближайших `days` дней, начиная с сегодня.
-  async summary(days: number, pointId?: string) {
+  async summary(days: number, pointId?: string, from?: string) {
     await this.expireStale();
 
-    const today = startOfDay(new Date());
+    const today = from ?? toDateOnly(new Date());
     const arrivals = await this.prisma.arrival.findMany({
       where: { status: { in: ['PLANNED', 'ON_SITE'] }, pointId },
-      select: { plannedAt: true, status: true },
+      select: { plannedDay: true, status: true },
     });
 
     const result: { date: string; count: number }[] = [];
     for (let i = 0; i < days; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() + i);
+      const date = addDaysDateOnly(today, i);
       const isToday = i === 0;
       // ON_SITE считается только в сегодняшний день, даже если plannedAt
       // (когда собирались приехать) приходится на другую дату — водитель
       // физически уже на месте сейчас, а не "планируется" на будущий день.
       const count = arrivals.filter((a) =>
-        isToday ? a.status === 'ON_SITE' || sameDay(a.plannedAt, date) : a.status === 'PLANNED' && sameDay(a.plannedAt, date),
+        isToday ? a.status === 'ON_SITE' || toDateOnly(a.plannedDay) === date : a.status === 'PLANNED' && toDateOnly(a.plannedDay) === date,
       ).length;
-      result.push({ date: date.toISOString(), count });
+      result.push({ date, count });
     }
     return result;
   }

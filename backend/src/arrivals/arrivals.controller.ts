@@ -24,6 +24,7 @@ export class ArrivalsController {
   list(
     @CurrentUser() ctx: RequestContext,
     @Query('date') date?: string,
+    @Query('today') today?: string,
     @Query('pointId') pointId?: string,
     @Query('countryId') countryId?: string,
     @Query('bodyTypeId') bodyTypeId?: string,
@@ -32,7 +33,8 @@ export class ArrivalsController {
   ) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
     return this.arrivals.listForCompany(ctx.companyMember.companyId, {
-      date: date ? new Date(date) : undefined,
+      date: date ? date.slice(0, 10) : undefined,
+      today: today ? today.slice(0, 10) : undefined,
       pointId,
       countryId,
       bodyTypeId,
@@ -42,9 +44,9 @@ export class ArrivalsController {
   }
 
   @Get('summary')
-  summary(@CurrentUser() ctx: RequestContext, @Query('days') days?: string, @Query('pointId') pointId?: string) {
+  summary(@CurrentUser() ctx: RequestContext, @Query('days') days?: string, @Query('pointId') pointId?: string, @Query('from') from?: string) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
-    return this.arrivals.summary(days ? Number(days) : 7, pointId);
+    return this.arrivals.summary(days ? Number(days) : 7, pointId, from ? from.slice(0, 10) : undefined);
   }
 
   @Post()

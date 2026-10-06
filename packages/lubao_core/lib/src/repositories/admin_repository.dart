@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../api/api_client.dart';
 import '../models/admin.dart';
 import '../models/common.dart';
+import '../utils/date_only.dart';
 import '../models/reference_data.dart';
 
 /// Бэкенд отвечает 409 `BLACKLIST_MATCH` (задача 032, п.2), когда среди
@@ -229,7 +230,7 @@ class AdminRepository {
       if (photoUrls != null) 'photoUrls': photoUrls,
       if (price != null) 'price': price,
       if (currency != null) 'currency': currency,
-      if (readyDate != null) 'readyDate': readyDate.toUtc().toIso8601String(),
+      if (readyDate != null) 'readyDate': ymd(readyDate),
       if (description != null) 'description': description,
       'reason': reason,
     });
