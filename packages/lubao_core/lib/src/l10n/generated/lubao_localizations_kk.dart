@@ -569,6 +569,31 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   }
 
   @override
+  String driverAlreadyHaulingOf(String used, String capacity, String unit) {
+    return 'Қазір тасып жүр: $capacity $unit ішінен $used';
+  }
+
+  @override
+  String get driverHaulingBusyNoWeight =>
+      'Көлік бос емес (жүк салмағы көрсетілмеген)';
+
+  @override
+  String driverHaulingLoading(String date) {
+    return 'тиеу $date';
+  }
+
+  @override
+  String get selectDriverVehicleFullTitle => 'Жүргізушінің көлігі толып тұр';
+
+  @override
+  String selectDriverVehicleFullBody(String haul) {
+    return '$haul. Таңдауға болады, бірақ жүргізуші ағымдағы тасымалды аяқтамай немесе тоқтатпай, жаңасын растай алмайды.';
+  }
+
+  @override
+  String get selectDriverAnywayButton => 'Бәрібір таңдау';
+
+  @override
   String driverCancelShare(int cancelled, int total) {
     return '$total мәміленің $cancelled бас тартқан';
   }

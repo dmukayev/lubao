@@ -1140,6 +1140,42 @@ abstract class LubaoLocalizations {
   /// **'Уже везёт: {used} {unit}'**
   String driverAlreadyHauling(String used, String unit);
 
+  /// No description provided for @driverAlreadyHaulingOf.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уже везёт: {used} из {capacity} {unit}'**
+  String driverAlreadyHaulingOf(String used, String capacity, String unit);
+
+  /// No description provided for @driverHaulingBusyNoWeight.
+  ///
+  /// In ru, this message translates to:
+  /// **'Машина занята (груз без веса)'**
+  String get driverHaulingBusyNoWeight;
+
+  /// No description provided for @driverHaulingLoading.
+  ///
+  /// In ru, this message translates to:
+  /// **'погрузка {date}'**
+  String driverHaulingLoading(String date);
+
+  /// No description provided for @selectDriverVehicleFullTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Машина водителя уже заполнена'**
+  String get selectDriverVehicleFullTitle;
+
+  /// No description provided for @selectDriverVehicleFullBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'{haul}. Выбрать можно, но водитель не сможет подтвердить перевозку, пока не завершит или не отменит текущую.'**
+  String selectDriverVehicleFullBody(String haul);
+
+  /// No description provided for @selectDriverAnywayButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выбрать всё равно'**
+  String get selectDriverAnywayButton;
+
   /// No description provided for @driverCancelShare.
   ///
   /// In ru, this message translates to:

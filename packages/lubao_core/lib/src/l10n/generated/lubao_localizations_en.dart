@@ -569,6 +569,32 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   }
 
   @override
+  String driverAlreadyHaulingOf(String used, String capacity, String unit) {
+    return 'Already hauling: $used of $capacity $unit';
+  }
+
+  @override
+  String get driverHaulingBusyNoWeight =>
+      'Vehicle occupied (cargo without weight)';
+
+  @override
+  String driverHaulingLoading(String date) {
+    return 'loading $date';
+  }
+
+  @override
+  String get selectDriverVehicleFullTitle =>
+      'Driver\'s vehicle is already full';
+
+  @override
+  String selectDriverVehicleFullBody(String haul) {
+    return '$haul. You can still select, but the driver will not be able to confirm until the current haul is finished or cancelled.';
+  }
+
+  @override
+  String get selectDriverAnywayButton => 'Select anyway';
+
+  @override
   String driverCancelShare(int cancelled, int total) {
     return 'Cancelled $cancelled of $total deals';
   }

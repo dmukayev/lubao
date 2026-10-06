@@ -553,6 +553,30 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   }
 
   @override
+  String driverAlreadyHaulingOf(String used, String capacity, String unit) {
+    return '正在承运：$used/$capacity $unit';
+  }
+
+  @override
+  String get driverHaulingBusyNoWeight => '车辆已被占用（货物未填重量）';
+
+  @override
+  String driverHaulingLoading(String date) {
+    return '装货 $date';
+  }
+
+  @override
+  String get selectDriverVehicleFullTitle => '司机车辆已满载';
+
+  @override
+  String selectDriverVehicleFullBody(String haul) {
+    return '$haul。可以选择，但司机在完成或取消当前运输前无法确认新运输。';
+  }
+
+  @override
+  String get selectDriverAnywayButton => '仍然选择';
+
+  @override
   String driverCancelShare(int cancelled, int total) {
     return '已取消 $total 笔交易中的 $cancelled 笔';
   }

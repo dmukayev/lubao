@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
+import '../haul_hint.dart';
 import 'cargo_close_dialog.dart';
 
 class CargoResponsesScreen extends ConsumerWidget {
@@ -14,8 +15,15 @@ class CargoResponsesScreen extends ConsumerWidget {
 
   final String cargoId;
 
-  Future<void> _updateStatus(WidgetRef ref, String responseId, String status) async {
-    await ref.read(cargoRepositoryProvider).updateResponseStatus(responseId, status);
+  Future<void> _updateStatus(BuildContext context, WidgetRef ref, String responseId, String status) async {
+    try {
+      await ref.read(cargoRepositoryProvider).updateResponseStatus(responseId, status);
+    } catch (e) {
+      if (context.mounted) {
+        final t = context.l10n;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(responseConflictText(t, e) ?? t.commonError)));
+      }
+    }
     ref.invalidate(cargoResponsesProvider(cargoId));
   }
 
@@ -89,7 +97,9 @@ class CargoResponsesScreen extends ConsumerWidget {
                   for (final response in list) ...[
                     _ResponseCard(
                       response: response,
-                      onUpdateStatus: (status) => _updateStatus(ref, response.id, status),
+                      cargoWeightKg: cargo?.weightKg,
+                      refData: referenceData.valueOrNull,
+                      onUpdateStatus: (status) => _updateStatus(context, ref, response.id, status),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                   ],
@@ -139,9 +149,16 @@ class _CargoSummaryCard extends StatelessWidget {
 }
 
 class _ResponseCard extends ConsumerStatefulWidget {
-  const _ResponseCard({required this.response, required this.onUpdateStatus});
+  const _ResponseCard({
+    required this.response,
+    required this.cargoWeightKg,
+    required this.refData,
+    required this.onUpdateStatus,
+  });
 
   final CargoResponse response;
+  final double? cargoWeightKg;
+  final ReferenceData? refData;
   final ValueChanged<String> onUpdateStatus;
 
   @override
@@ -150,6 +167,25 @@ class _ResponseCard extends ConsumerStatefulWidget {
 
 class _ResponseCardState extends ConsumerState<_ResponseCard> {
   bool _openingChat = false;
+
+  /// Задача 038, п.9 — мягкое предупреждение перед «Выбрать», если по
+  /// сводке «Уже везёт…» груз не помещается (водитель не сможет
+  /// подтвердить, пока не освободит машину).
+  Future<void> _select(String? haulHint) async {
+    final response = widget.response;
+    if (haulHint != null &&
+        haulLooksFull(
+          activeDealsCount: response.activeDealsCount,
+          committedWeightKg: response.committedWeightKg,
+          hasUnknownWeight: response.committedHasUnknownWeight,
+          capacityTons: response.capacityTons,
+          newCargoWeightKg: widget.cargoWeightKg,
+        )) {
+      final proceed = await confirmSelectBusyDriver(context, haulHint);
+      if (!proceed || !mounted) return;
+    }
+    widget.onUpdateStatus('SELECTED');
+  }
 
   Future<void> _chat() async {
     setState(() => _openingChat = true);
@@ -175,8 +211,24 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    final locale = Localizations.localeOf(context).languageCode;
     final response = widget.response;
     final (statusLabel, statusColor) = responseStatusPresentation(t, response.status);
+    // Задача 038, п.8 — занятость водителя видна прямо в отклике.
+    final haulHint = widget.refData == null
+        ? null
+        : haulHintText(
+            t,
+            widget.refData!,
+            locale,
+            activeDealsCount: response.activeDealsCount,
+            committedWeightKg: response.committedWeightKg,
+            hasUnknownWeight: response.committedHasUnknownWeight,
+            capacityTons: response.capacityTons,
+            destinationCountryId: response.committedDestinationCountryId,
+            destinationCityId: response.committedDestinationCityId,
+            readyDate: response.committedReadyDate,
+          );
 
     return AppCard(
       child: Column(
@@ -190,6 +242,10 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
               IconSquareButton(icon: LucideIcons.messageSquare, loading: _openingChat, onPressed: _chat),
             ],
           ),
+          if (haulHint != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(haulHint, style: AppTextStyles.caption.copyWith(color: AppColors.accentText)),
+          ],
           if (response.message != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(response.message!, style: AppTextStyles.body),
@@ -199,7 +255,7 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
             Row(
               children: [
                 Expanded(
-                  child: PrimaryButton(label: t.responseSelect, onPressed: () => widget.onUpdateStatus('SELECTED')),
+                  child: PrimaryButton(label: t.responseSelect, onPressed: () => _select(haulHint)),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(

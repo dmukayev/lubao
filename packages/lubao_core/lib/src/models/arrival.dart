@@ -38,6 +38,10 @@ class ArrivalListing {
     this.palletsEuro,
     this.committedWeightKg = 0,
     this.activeDealsCount = 0,
+    this.committedHasUnknownWeight = false,
+    this.committedDestinationCountryId,
+    this.committedDestinationCityId,
+    this.committedReadyDate,
     required this.anyCountry,
     required this.directionCountryIds,
   });
@@ -64,6 +68,14 @@ class ArrivalListing {
   /// логист видит догруз ДО выбора; 0 — свободен.
   final double committedWeightKg;
   final int activeDealsCount;
+
+  /// Задача 038, п.8 — груз без веса в активной сделке («машина занята»),
+  /// назначение и дата погрузки первого активного груза для строки
+  /// «Уже везёт: 8 т из 20 т · Алматы · погрузка завтра».
+  final bool committedHasUnknownWeight;
+  final String? committedDestinationCountryId;
+  final String? committedDestinationCityId;
+  final DateTime? committedReadyDate;
   final bool anyCountry;
   final List<String> directionCountryIds;
 
@@ -85,6 +97,10 @@ class ArrivalListing {
         palletsEuro: json['palletsEuro'] as int?,
         committedWeightKg: (json['committedWeightKg'] as num?)?.toDouble() ?? 0,
         activeDealsCount: json['activeDealsCount'] as int? ?? 0,
+        committedHasUnknownWeight: json['committedHasUnknownWeight'] as bool? ?? false,
+        committedDestinationCountryId: json['committedDestinationCountryId'] as String?,
+        committedDestinationCityId: json['committedDestinationCityId'] as String?,
+        committedReadyDate: json['committedReadyDate'] == null ? null : DateTime.parse(json['committedReadyDate'] as String),
         anyCountry: json['anyCountry'] as bool? ?? false,
         directionCountryIds:
             (json['directionCountryIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],

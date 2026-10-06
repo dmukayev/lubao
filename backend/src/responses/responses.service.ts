@@ -1,6 +1,7 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Driver, Prisma, Response as CargoResponseEntity } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { haulInfoByDriver } from '../deals/haul-summary';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -25,13 +26,49 @@ export class ResponsesService {
     };
   }
 
+  /// Список откликов для логиста (задача 038, п.8/9) — каждый отклик несёт
+  /// сводку «Уже везёт…» по текущей связке водителя + вместимость прицепа:
+  /// логист видит занятость ДО выбора, клиент мягко предупреждает, если
+  /// груз, похоже, не поместится (водитель всё равно не сможет подтвердить).
   async listForCargo(cargoId: string) {
     const responses = await this.prisma.response.findMany({
       where: { cargoId },
       include: { driver: true },
       orderBy: { createdAt: 'desc' },
     });
-    return responses.map((r) => this.toDto(r));
+    if (responses.length === 0) return [];
+
+    const combos = new Map<string, { tractorId: string | null; trailerId: string | null }>();
+    for (const r of responses) {
+      if (!combos.has(r.driverId)) {
+        combos.set(r.driverId, await this.currentVehicleCombo(this.prisma, r.driverId));
+      }
+    }
+    const haul = await haulInfoByDriver(
+      this.prisma,
+      [...combos.entries()].map(([driverId, combo]) => ({ driverId, tractorId: combo.tractorId })),
+    );
+    const bodyIds = [...combos.values()].map((c) => c.trailerId ?? c.tractorId).filter((id): id is string => id != null);
+    const bodies = bodyIds.length
+      ? await this.prisma.vehicle.findMany({ where: { id: { in: bodyIds } }, select: { id: true, capacityTons: true } })
+      : [];
+    const capacityByVehicle = new Map(bodies.map((v) => [v.id, v.capacityTons != null ? Number(v.capacityTons) : null]));
+
+    return responses.map((r) => {
+      const combo = combos.get(r.driverId);
+      const bodyId = combo ? (combo.trailerId ?? combo.tractorId) : null;
+      const info = haul.get(r.driverId);
+      return {
+        ...this.toDto(r),
+        capacityTons: bodyId != null ? (capacityByVehicle.get(bodyId) ?? null) : null,
+        committedWeightKg: info?.committedWeightKg ?? 0,
+        activeDealsCount: info?.activeDealsCount ?? 0,
+        committedHasUnknownWeight: info?.committedHasUnknownWeight ?? false,
+        committedDestinationCountryId: info?.committedDestinationCountryId ?? null,
+        committedDestinationCityId: info?.committedDestinationCityId ?? null,
+        committedReadyDate: info?.committedReadyDate ?? null,
+      };
+    });
   }
 
   async createForCargo(cargoId: string, driverId: string, message?: string) {

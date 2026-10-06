@@ -11,6 +11,7 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
+import '../haul_hint.dart';
 
 class DriversAtPointScreen extends ConsumerStatefulWidget {
   const DriversAtPointScreen({super.key});
@@ -173,7 +174,41 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     );
     if (selectedCargo == null || !mounted) return;
 
-    await ref.read(cargoRepositoryProvider).inviteDriver(selectedCargo.id, driver.driverId);
+    // Задача 038, п.9 (037, п.3) — водитель уже занят и новый груз, похоже,
+    // не поместится: предупреждаем, но не запрещаем (жёсткая проверка — на
+    // подтверждении водителем).
+    if (refData != null &&
+        haulLooksFull(
+          activeDealsCount: driver.activeDealsCount,
+          committedWeightKg: driver.committedWeightKg,
+          hasUnknownWeight: driver.committedHasUnknownWeight,
+          capacityTons: driver.capacityTons,
+          newCargoWeightKg: selectedCargo.weightKg,
+        )) {
+      final hint = haulHintText(
+        t,
+        refData,
+        locale,
+        activeDealsCount: driver.activeDealsCount,
+        committedWeightKg: driver.committedWeightKg,
+        hasUnknownWeight: driver.committedHasUnknownWeight,
+        capacityTons: driver.capacityTons,
+        destinationCountryId: driver.committedDestinationCountryId,
+        destinationCityId: driver.committedDestinationCityId,
+        readyDate: driver.committedReadyDate,
+      );
+      final proceed = await confirmSelectBusyDriver(context, hint ?? '');
+      if (!proceed || !mounted) return;
+    }
+
+    try {
+      await ref.read(cargoRepositoryProvider).inviteDriver(selectedCargo.id, driver.driverId);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(responseConflictText(t, e) ?? t.commonError)));
+      return;
+    }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.driversAtPointInviteSent)));
   }
@@ -509,12 +544,28 @@ class _DriverCard extends StatelessWidget {
                         ],
                       ],
                     ),
-                    // Задача 037, п.7 — логист видит догруз до выбора.
+                    // Задача 037, п.7 / 038, п.8 — логист видит догруз до
+                    // выбора: «Уже везёт: 8 т из 20 т · Алматы · погрузка …»;
+                    // груз без веса — «машина занята», не «0 т».
                     if (driver.activeDealsCount > 0)
-                      Text(
-                        t.driverAlreadyHauling((driver.committedWeightKg / 1000).toStringAsFixed(0), t.unitTon),
-                        style: AppTextStyles.caption.copyWith(color: AppColors.accentText),
-                      ),
+                      Builder(builder: (context) {
+                        final locale = Localizations.localeOf(context).languageCode;
+                        final hint = haulHintText(
+                          t,
+                          refData,
+                          locale,
+                          activeDealsCount: driver.activeDealsCount,
+                          committedWeightKg: driver.committedWeightKg,
+                          hasUnknownWeight: driver.committedHasUnknownWeight,
+                          capacityTons: driver.capacityTons,
+                          destinationCountryId: driver.committedDestinationCountryId,
+                          destinationCityId: driver.committedDestinationCityId,
+                          readyDate: driver.committedReadyDate,
+                        );
+                        return hint == null
+                            ? const SizedBox.shrink()
+                            : Text(hint, style: AppTextStyles.caption.copyWith(color: AppColors.accentText));
+                      }),
                   ],
                 ),
               ),
