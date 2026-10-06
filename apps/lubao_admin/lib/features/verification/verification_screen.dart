@@ -535,7 +535,10 @@ class _Header extends StatelessWidget {
             children: [
               Text(title, style: Theme.of(context).textTheme.headlineSmall),
               if (isVerified) StatusBadge(label: t.adminVerified, color: StatusBadge.success),
-              if (blacklisted) StatusBadge(label: t.adminVerificationBlacklistedBadge, color: StatusBadge.danger),
+              if (blacklisted) ...[
+                const Icon(LucideIcons.ban, size: 18, color: StatusBadge.danger),
+                StatusBadge(label: t.adminVerificationBlacklistedBadge, color: StatusBadge.danger),
+              ],
             ],
           ),
         ),

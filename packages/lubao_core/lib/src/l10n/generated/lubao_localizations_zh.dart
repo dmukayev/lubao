@@ -1400,7 +1400,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get adminBlockedBadge => '已封禁';
 
   @override
-  String get adminBlockedByPhoneBadge => '⛔ 号码在黑名单中';
+  String get adminBlockedByPhoneBadge => '号码在黑名单中';
 
   @override
   String adminPageOf(int page, int total) {
@@ -1771,7 +1771,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get adminConfirmDriverButton => '确认司机';
 
   @override
-  String get adminVerificationBlacklistedBadge => '⛔ 黑名单';
+  String get adminVerificationBlacklistedBadge => '黑名单';
 
   @override
   String get adminConfirmDespiteBlacklist => '无视匹配仍然确认';

@@ -1421,7 +1421,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get adminBlockedBadge => 'Блокирован';
 
   @override
-  String get adminBlockedByPhoneBadge => '⛔ Номер в чёрном списке';
+  String get adminBlockedByPhoneBadge => 'Номер в чёрном списке';
 
   @override
   String adminPageOf(int page, int total) {
@@ -1797,7 +1797,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get adminConfirmDriverButton => 'Подтвердить водителя';
 
   @override
-  String get adminVerificationBlacklistedBadge => '⛔ Чёрный список';
+  String get adminVerificationBlacklistedBadge => 'Чёрный список';
 
   @override
   String get adminConfirmDespiteBlacklist => 'Подтвердить вопреки совпадению';

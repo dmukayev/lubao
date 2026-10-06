@@ -460,7 +460,7 @@
   "adminColCity": "城市",
   "adminColVehicle": "车辆",
   "adminBlockedBadge": "已封禁",
-  "adminBlockedByPhoneBadge": "⛔ 号码在黑名单中",
+  "adminBlockedByPhoneBadge": "号码在黑名单中",
   "adminPageOf": "第 {page} / {total} 页",
   "@adminPageOf": {
     "placeholders": {
@@ -663,7 +663,7 @@
   "adminCrossCheckMatch": "一致",
   "adminCrossCheckMismatch": "不一致",
   "adminConfirmDriverButton": "确认司机",
-  "adminVerificationBlacklistedBadge": "⛔ 黑名单",
+  "adminVerificationBlacklistedBadge": "黑名单",
   "adminConfirmDespiteBlacklist": "无视匹配仍然确认",
   "adminConfirmCompanyButton": "确认公司",
   "adminReturnForReworkButton": "退回修改",

@@ -1425,7 +1425,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get adminBlockedBadge => 'Бұғатталған';
 
   @override
-  String get adminBlockedByPhoneBadge => '⛔ Нөмір қара тізімде';
+  String get adminBlockedByPhoneBadge => 'Нөмір қара тізімде';
 
   @override
   String adminPageOf(int page, int total) {
@@ -1801,7 +1801,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get adminConfirmDriverButton => 'Жүргізушіні растау';
 
   @override
-  String get adminVerificationBlacklistedBadge => '⛔ Қара тізім';
+  String get adminVerificationBlacklistedBadge => 'Қара тізім';
 
   @override
   String get adminConfirmDespiteBlacklist => 'Сәйкестікке қарамастан растау';

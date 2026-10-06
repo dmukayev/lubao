@@ -55,6 +55,8 @@ class AdminShell extends ConsumerWidget {
       return Scaffold(
         body: child,
         bottomNavigationBar: NavigationBar(
+          // «Верификация» на 390 px переносилась по слогам — мельче и в одну строку.
+          labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
           selectedIndex: currentIndex,
           onDestinationSelected: (index) => context.go(index < _mobileTabs.length ? _mobileTabs[index] : '/more'),
           destinations: [

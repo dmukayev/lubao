@@ -585,7 +585,7 @@
   "adminColCity": "City",
   "adminColVehicle": "Vehicle",
   "adminBlockedBadge": "Blocked",
-  "adminBlockedByPhoneBadge": "⛔ Phone is blacklisted",
+  "adminBlockedByPhoneBadge": "Phone is blacklisted",
   "adminPageOf": "Page {page} of {total}",
   "@adminPageOf": {
     "placeholders": {
@@ -788,7 +788,7 @@
   "adminCrossCheckMatch": "Matches",
   "adminCrossCheckMismatch": "Mismatch",
   "adminConfirmDriverButton": "Confirm driver",
-  "adminVerificationBlacklistedBadge": "⛔ Blacklist",
+  "adminVerificationBlacklistedBadge": "Blacklist",
   "adminConfirmDespiteBlacklist": "Confirm despite the match",
   "adminConfirmCompanyButton": "Confirm company",
   "adminReturnForReworkButton": "Return for rework",

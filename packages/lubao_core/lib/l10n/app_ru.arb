@@ -585,7 +585,7 @@
   "adminColCity": "Город",
   "adminColVehicle": "Машина",
   "adminBlockedBadge": "Блокирован",
-  "adminBlockedByPhoneBadge": "⛔ Номер в чёрном списке",
+  "adminBlockedByPhoneBadge": "Номер в чёрном списке",
   "adminPageOf": "Страница {page} из {total}",
   "@adminPageOf": {
     "placeholders": {
@@ -788,7 +788,7 @@
   "adminCrossCheckMatch": "Совпадает",
   "adminCrossCheckMismatch": "Не совпадает",
   "adminConfirmDriverButton": "Подтвердить водителя",
-  "adminVerificationBlacklistedBadge": "⛔ Чёрный список",
+  "adminVerificationBlacklistedBadge": "Чёрный список",
   "adminConfirmDespiteBlacklist": "Подтвердить вопреки совпадению",
   "adminConfirmCompanyButton": "Подтвердить компанию",
   "adminReturnForReworkButton": "Вернуть на доработку",

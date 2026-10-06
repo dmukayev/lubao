@@ -2745,7 +2745,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @adminBlockedByPhoneBadge.
   ///
   /// In ru, this message translates to:
-  /// **'⛔ Номер в чёрном списке'**
+  /// **'Номер в чёрном списке'**
   String get adminBlockedByPhoneBadge;
 
   /// No description provided for @adminPageOf.
@@ -3435,7 +3435,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @adminVerificationBlacklistedBadge.
   ///
   /// In ru, this message translates to:
-  /// **'⛔ Чёрный список'**
+  /// **'Чёрный список'**
   String get adminVerificationBlacklistedBadge;
 
   /// No description provided for @adminConfirmDespiteBlacklist.

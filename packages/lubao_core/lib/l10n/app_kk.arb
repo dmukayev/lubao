@@ -460,7 +460,7 @@
   "adminColCity": "Қала",
   "adminColVehicle": "Көлік",
   "adminBlockedBadge": "Бұғатталған",
-  "adminBlockedByPhoneBadge": "⛔ Нөмір қара тізімде",
+  "adminBlockedByPhoneBadge": "Нөмір қара тізімде",
   "adminPageOf": "{page} / {total} бет",
   "@adminPageOf": {
     "placeholders": {
@@ -663,7 +663,7 @@
   "adminCrossCheckMatch": "Сәйкес келеді",
   "adminCrossCheckMismatch": "Сәйкес келмейді",
   "adminConfirmDriverButton": "Жүргізушіні растау",
-  "adminVerificationBlacklistedBadge": "⛔ Қара тізім",
+  "adminVerificationBlacklistedBadge": "Қара тізім",
   "adminConfirmDespiteBlacklist": "Сәйкестікке қарамастан растау",
   "adminConfirmCompanyButton": "Компанияны растау",
   "adminReturnForReworkButton": "Қайта өңдеуге қайтару",
