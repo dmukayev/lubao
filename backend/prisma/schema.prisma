@@ -35,6 +35,16 @@ enum ArrivalStatus {
   ON_SITE
   COMPLETED
   CANCELLED
+  /// Угас сам по правилу свежести (задача 040): не доехал в день приезда /
+  /// не ответил на «Ещё ищете груз?» / вышел срок ожидания.
+  EXPIRED
+}
+
+/// Вид точки погрузки (задача 040): CITY — обычный город (на месте — по
+/// нажатию), TERMINAL — терминал/сухой порт с геозоной (Хоргос).
+enum PointKind {
+  CITY
+  TERMINAL
 }
 
 /// Гараж водителя (задача 031, этап A): тягач и прицеп проверяются и
@@ -241,6 +251,9 @@ model Point {
   name      Json
   lat       Decimal? @db.Decimal(9, 6)
   lng       Decimal? @db.Decimal(9, 6)
+  kind      PointKind @default(CITY)
+  /// Радиус геозоны, м — только для TERMINAL с координатами (задача 040).
+  radiusM   Int?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -578,6 +591,12 @@ model Arrival {
   /// без времени и часового пояса — группировка «Кто свободен» идёт по нему.
   plannedDay DateTime      @db.Date
   arrivedAt  DateTime?
+  /// Правило свежести (задача 040): когда водитель последний раз ответил
+  /// «Да, ищу» / «Я на месте»; когда ему отправили напоминание «Доехали?»
+  /// (день приезда) и «Ещё ищете груз?» (каждые 12 ч на месте).
+  lastConfirmedAt DateTime?
+  dayAskedAt      DateTime?
+  staleAskedAt    DateTime?
   waitDays   Int           @default(2)
   anyCountry Boolean       @default(false)
   status     ArrivalStatus @default(PLANNED)
@@ -768,6 +787,8 @@ model Cargo {
   price                 Decimal     @db.Decimal(12, 2)
   currency              Currency
   readyDate             DateTime @db.Date
+  /// «Можно догрузом» (задача 040, п.6): груз не на всю машину, сборный.
+  allowPartial          Boolean     @default(false)
   description           String?
   status                CargoStatus @default(PUBLISHED)
   publishedAt           DateTime    @default(now())
@@ -1031,6 +1052,8 @@ enum NotificationEventGroup {
   DEAL_STATUS
   VERIFICATION
   AGREED_CHECK
+  /// Напоминания о свежести анонса «Доехали?» / «Ещё ищете груз?» (задача 040).
+  ARRIVAL_CHECK
   /// Снятие груза/решение по жалобе админом (задача 029, п.7) — раньше
   /// только NOTIFICATION_QUEUED в audit_log без реальной отправки.
   ADMIN_ACTION

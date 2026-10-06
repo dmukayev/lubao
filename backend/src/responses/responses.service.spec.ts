@@ -15,7 +15,7 @@ function txMock() {
     // Задача 031 — снимок связки тягач/прицеп при создании сделки; задача
     // 032, п.5 — источник связки теперь активный анонс водителя, гараж
     // (vehicle.findFirst) — только фолбэк, когда анонса нет.
-    arrival: { findFirst: jest.fn().mockResolvedValue(null) },
+    arrival: { findMany: jest.fn().mockResolvedValue([]) },
     vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
   };
 }
@@ -204,7 +204,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
   it('задача 032, п.5 — the deal combo comes from the driver\'s active arrival, not the first-by-date vehicles in the garage', async () => {
     const tx = txMock();
     tx.response.findUniqueOrThrow.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', driver: { userId: 'user-d1' } });
-    tx.arrival.findFirst.mockResolvedValue({ tractorId: 'announced-tractor', trailerId: 'announced-trailer' });
+    tx.arrival.findMany.mockResolvedValue([{ status: 'PLANNED', tractorId: 'announced-tractor', trailerId: 'announced-trailer' }]);
     // Гараж вернул бы ДРУГУЮ, первую по дате машину — не должна попасть в сделку.
     tx.vehicle.findFirst.mockResolvedValue({ id: 'garage-first-tractor' });
     tx.deal.create.mockResolvedValue({ id: 'deal1', cargoId: 'cargo1', driverId: 'd1', companyId: 'c1' });
@@ -225,7 +225,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
   it('задача 032, п.5 — falls back to the garage only when there is no active arrival at all', async () => {
     const tx = txMock();
     tx.response.findUniqueOrThrow.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', driver: { userId: 'user-d1' } });
-    tx.arrival.findFirst.mockResolvedValue(null);
+    tx.arrival.findMany.mockResolvedValue([]);
     tx.vehicle.findFirst.mockResolvedValueOnce({ id: 'garage-tractor' }).mockResolvedValueOnce({ id: 'garage-trailer' });
     tx.deal.create.mockResolvedValue({ id: 'deal1', cargoId: 'cargo1', driverId: 'd1', companyId: 'c1' });
     const prisma: any = {

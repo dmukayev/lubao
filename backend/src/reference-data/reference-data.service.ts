@@ -60,7 +60,8 @@ export class ReferenceDataService {
         volumeM3: p.volumeM3 != null ? Number(p.volumeM3) : null,
       })),
       permits,
-      points,
+      // Decimal сериализуется строкой — клиенту нужны числа (задача 040).
+      points: points.map((p) => ({ ...p, lat: p.lat != null ? Number(p.lat) : null, lng: p.lng != null ? Number(p.lng) : null })),
       exchangeRates,
       defaultPointCityId,
       supportWhatsapp,

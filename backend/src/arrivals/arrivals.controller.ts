@@ -2,7 +2,7 @@ import { Body, Controller, ForbiddenException, Get, Post, Query } from '@nestjs/
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
 import { ArrivalsService } from './arrivals.service';
-import { AnnounceArrivalDto } from './dto/arrival.dto';
+import { AnnounceArrivalDto, ArrivalActionDto } from './dto/arrival.dto';
 
 @Controller('arrivals')
 export class ArrivalsController {
@@ -62,15 +62,22 @@ export class ArrivalsController {
   }
 
   @Post('checkin')
-  checkIn(@CurrentUser() ctx: RequestContext) {
+  checkIn(@CurrentUser() ctx: RequestContext, @Body() dto: ArrivalActionDto) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');
-    return this.arrivals.checkIn(ctx.user.id);
+    return this.arrivals.checkIn(ctx.user.id, dto?.arrivalId, dto?.pointId);
+  }
+
+  /// «Да, ещё ищу» на вопрос «Ещё ищете груз?» (задача 040, п.4).
+  @Post('still-looking')
+  stillLooking(@CurrentUser() ctx: RequestContext, @Body() dto: ArrivalActionDto) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.arrivals.confirmStillLooking(ctx.user.id, dto?.arrivalId);
   }
 
   @Post('cancel')
-  async cancel(@CurrentUser() ctx: RequestContext) {
+  async cancel(@CurrentUser() ctx: RequestContext, @Body() dto: ArrivalActionDto) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');
-    await this.arrivals.cancel(ctx.user.id);
+    await this.arrivals.cancel(ctx.user.id, dto?.arrivalId);
     return { success: true };
   }
 }

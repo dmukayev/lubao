@@ -1,16 +1,25 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Arrival } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { haulInfoByDriver } from '../deals/haul-summary';
-import { addDaysDateOnly, parseDateOnly, toDateOnly } from '../common/date-only';
+import { addDaysDateOnly, localDateOnly, parseDateOnly, toDateOnly } from '../common/date-only';
 import { AnnounceArrivalDto } from './dto/arrival.dto';
+import { decideFreshness } from './arrival-freshness';
 
 const MAX_DAYS_AHEAD = 14;
-const STALE_AFTER_HOURS = 24;
+/// Несколько анонсов подряд разрешены («в Алматы до чт, потом в Астане»),
+/// но не бесконечно.
+const MAX_ACTIVE_ARRIVALS = 5;
 
 @Injectable()
 export class ArrivalsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(ArrivalsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications?: NotificationsService,
+  ) {}
 
   private async toDto(arrival: Arrival) {
     const [directions, viewsCount] = await Promise.all([
@@ -31,19 +40,76 @@ export class ArrivalsService {
       viewsCount,
       tractorId: arrival.tractorId,
       trailerId: arrival.trailerId,
+      lastConfirmedAt: arrival.lastConfirmedAt,
+      // Что приложению спросить у водителя сейчас (040, п.4): «Доехали?» в
+      // день приезда либо «Ещё ищете груз?» после напоминания.
+      ask: this.pendingQuestion(arrival),
     };
   }
 
-  /// PLANNED, чей plannedAt прошёл больше чем на 24 ч без перехода в
-  /// ON_SITE, сам угасает (п. 4 задачи 015). Полноценный фоновый cron —
-  /// задача 018; здесь — ленивая проверка при каждом чтении, достаточная
-  /// для текущего масштаба.
-  private async expireStale(where: { driverId: string } | Record<string, never> = {}) {
-    const staleBefore = new Date(Date.now() - STALE_AFTER_HOURS * 60 * 60 * 1000);
-    await this.prisma.arrival.updateMany({
-      where: { ...where, status: 'PLANNED', plannedAt: { lt: staleBefore } },
-      data: { status: 'CANCELLED' },
+  private pendingQuestion(a: Arrival): 'DAY' | 'STILL_LOOKING' | null {
+    if (a.status === 'PLANNED') return a.dayAskedAt ? 'DAY' : null;
+    if (a.status === 'ON_SITE' && a.staleAskedAt) {
+      const lastAnswer = a.lastConfirmedAt ?? a.arrivedAt ?? a.plannedAt;
+      return a.staleAskedAt.getTime() >= lastAnswer.getTime() ? 'STILL_LOOKING' : null;
+    }
+    return null;
+  }
+
+  /// Правила свежести (задача 040) применяются так: фоновый планировщик
+  /// раз в 5 минут (`ArrivalsScheduler` → `sweep` с уведомлениями) и ленивая
+  /// проверка при чтении (только гашение, без push) — чтобы выдача не
+  /// зависела от того, жив ли планировщик.
+  async sweep(opts: { now?: Date; notify: boolean; driverId?: string }): Promise<{ expired: number; asked: number }> {
+    const now = opts.now ?? new Date();
+    const rows = await this.prisma.arrival.findMany({
+      where: { status: { in: ['PLANNED', 'ON_SITE'] }, ...(opts.driverId ? { driverId: opts.driverId } : {}) },
+      include: { point: { select: { name: true } }, driver: { select: { userId: true } } },
     });
+
+    let expired = 0;
+    let asked = 0;
+    for (const row of rows) {
+      const action = decideFreshness(row, now);
+      if (action === 'EXPIRE') {
+        const res = await this.prisma.arrival.updateMany({ where: { id: row.id, status: row.status }, data: { status: 'EXPIRED' } });
+        expired += res.count;
+      } else if (opts.notify && (action === 'ASK_DAY' || action === 'ASK_STILL_LOOKING')) {
+        const data = action === 'ASK_DAY' ? { dayAskedAt: now } : { staleAskedAt: now };
+        // Условный апдейт: два тика/инстанса не пришлют push дважды.
+        const res = await this.prisma.arrival.updateMany({
+          where: { id: row.id, status: row.status, ...(action === 'ASK_DAY' ? { dayAskedAt: null } : { staleAskedAt: row.staleAskedAt }) },
+          data,
+        });
+        if (res.count === 0) continue;
+        asked += 1;
+        await this.notifications?.notify(
+          { userIds: [row.driver.userId] },
+          action === 'ASK_DAY' ? 'ARRIVAL_DAY_CHECK' : 'ARRIVAL_STILL_LOOKING',
+          { pointName: row.point.name },
+        );
+      }
+    }
+    if (expired || asked) this.logger.log(`arrivals sweep: expired=${expired}, asked=${asked}`);
+    return { expired, asked };
+  }
+
+  private async expireStale(where: { driverId?: string } = {}) {
+    await this.sweep({ notify: false, driverId: where.driverId });
+  }
+
+  /// Текущий анонс — тот, где водитель на месте; иначе ближайший по дате.
+  private static current<T extends { status: string; plannedDay: Date }>(active: T[]): T | undefined {
+    return active.find((a) => a.status === 'ON_SITE') ?? active[0];
+  }
+
+  private async activeFor(driverId: string) {
+    const active = await this.prisma.arrival.findMany({
+      where: { driverId, status: { in: ['PLANNED', 'ON_SITE'] } },
+      orderBy: [{ plannedDay: 'asc' }, { createdAt: 'asc' }],
+    });
+    // ON_SITE первым, остальные — по дате приезда.
+    return [...active.filter((a) => a.status === 'ON_SITE'), ...active.filter((a) => a.status !== 'ON_SITE')];
   }
 
   async getMine(userId: string) {
@@ -52,14 +118,15 @@ export class ArrivalsService {
 
     await this.expireStale({ driverId: driver.id });
 
-    const arrival = await this.prisma.arrival.findFirst({
-      where: { driverId: driver.id, status: { in: ['PLANNED', 'ON_SITE'] } },
-      orderBy: { createdAt: 'desc' },
-    });
+    const active = await this.activeFor(driver.id);
+    const current = ArrivalsService.current(active);
     // Обёртка в объект, а не голый null (задача 027): NestJS отдаёт bare
     // null пустым телом без Content-Type, и Dio кладёт в res.data пустую
     // строку '' вместо null — `'' as Map` падает на клиенте.
-    return { arrival: arrival ? await this.toDto(arrival) : null };
+    return {
+      arrival: current ? await this.toDto(current) : null,
+      arrivals: await Promise.all(active.map((a) => this.toDto(a))),
+    };
   }
 
   /// Шаблон для «Повторить прошлый анонс» (п. 6) — последний отменённый
@@ -69,7 +136,7 @@ export class ArrivalsService {
     if (!driver) throw new NotFoundException('Driver profile not found');
 
     const last = await this.prisma.arrival.findFirst({
-      where: { driverId: driver.id, status: { in: ['COMPLETED', 'CANCELLED'] } },
+      where: { driverId: driver.id, status: { in: ['COMPLETED', 'CANCELLED', 'EXPIRED'] } },
       orderBy: { updatedAt: 'desc' },
     });
     if (!last) return { template: null };
@@ -123,10 +190,11 @@ export class ArrivalsService {
     return { tractorId: tractor?.id ?? null, trailerId: carriedTrailer ?? trailer?.id ?? null };
   }
 
-  /// Анонс «буду на точке» — создаёт новый активный анонс или обновляет уже
-  /// существующий PLANNED (один активный анонс на водителя, п. 2). Если
-  /// водитель уже ON_SITE, дата/точка не трогаются — меняются только
-  /// направления/срок ожидания на эту поездку.
+  /// Анонс «свободен в <город> с <даты>» (задача 040, п.3). Анонсов может
+  /// быть несколько подряд — разные города/даты; повторный анонс на тот же
+  /// город и тот же день обновляет существующий, а не плодит дубли. С
+  /// `arrivalId` правится конкретный анонс. Водитель уже ON_SITE — дата и
+  /// город не трогаются, меняются только направления/срок/связка.
   async announce(userId: string, dto: AnnounceArrivalDto) {
     const driver = await this.prisma.driver.findUnique({ where: { userId } });
     if (!driver) throw new NotFoundException('Driver profile not found');
@@ -147,16 +215,22 @@ export class ArrivalsService {
     const countryIds = anyCountry ? [] : (dto.countryIds ?? []);
     const waitDays = dto.waitDays ?? 2;
 
-    const existing = await this.prisma.arrival.findFirst({
-      where: { driverId: driver.id, status: { in: ['PLANNED', 'ON_SITE'] } },
-    });
+    await this.expireStale({ driverId: driver.id });
+    const active = await this.activeFor(driver.id);
+    const existing = dto.arrivalId
+      ? active.find((a) => a.id === dto.arrivalId)
+      : active.find((a) => a.status === 'PLANNED' && a.pointId === dto.pointId && toDateOnly(a.plannedDay) === toDateOnly(plannedDay));
+    if (dto.arrivalId && !existing) throw new NotFoundException('Arrival not found');
+    if (!existing && active.length >= MAX_ACTIVE_ARRIVALS) {
+      throw new BadRequestException('TOO_MANY_ARRIVALS');
+    }
 
     // Задача 031, этап B, п.9 — шаг «На чём еду»: явный выбор в dto
     // проверяется (машина должна быть в гараже этого водителя и не в
-    // архиве) и используется; без явного выбора — связка прошлого анонса
-    // по умолчанию (этап A) при создании нового анонса, а у уже
-    // существующего анонса связка остаётся как была (не затирается каждым
-    // мелким редактированием срока/направлений).
+    // архиве) и используется; без явного выбора — связка прошлого анонса по
+    // умолчанию (этап A) при создании нового анонса, а у уже существующего
+    // анонса связка остаётся как была (не затирается каждым мелким
+    // редактированием срока/направлений).
     let combo: { tractorId: string | null; trailerId: string | null } | null = null;
     if (dto.tractorId !== undefined || dto.trailerId !== undefined) {
       const ids = [dto.tractorId, dto.trailerId].filter((v): v is string => v != null);
@@ -188,7 +262,8 @@ export class ArrivalsService {
           : existing
             ? await tx.arrival.update({
                 where: { id: existing.id },
-                data: { pointId: dto.pointId, plannedAt, plannedDay, anyCountry, waitDays, status: 'PLANNED', ...(combo ?? {}) },
+                // Сменили дату/город — вопрос «Доехали?» для нового дня ещё не задавался.
+                data: { pointId: dto.pointId, plannedAt, plannedDay, anyCountry, waitDays, status: 'PLANNED', dayAskedAt: null, ...(combo ?? {}) },
               })
             : await tx.arrival.create({
                 data: {
@@ -217,8 +292,7 @@ export class ArrivalsService {
     return this.toDto(arrival);
   }
 
-  /// «Повторить прошлый анонс» (п. 6) — тот же терминал и страны, дата —
-  /// сегодня.
+  /// «Повторить прошлый анонс» (п. 6) — тот же город и страны, дата — сегодня.
   async repeat(userId: string) {
     const { template } = await this.getLastTemplate(userId);
     if (!template) throw new NotFoundException('No previous announcement to repeat');
@@ -232,26 +306,48 @@ export class ArrivalsService {
     });
   }
 
-  /// «Я уже на месте»: переводит PLANNED в ON_SITE. Если активного анонса
-  /// нет — короткий путь без похода в шторку (как раньше): анонс создаётся
-  /// сразу ON_SITE на первой активной точке с направлениями из профиля.
-  async checkIn(userId: string) {
+  /// «Я на месте»: переводит анонс в ON_SITE. `arrivalId` не задан — берём
+  /// ближайший запланированный на сегодня или раньше (иначе — ближайший по
+  /// дате). Одновременно «на месте» — только один анонс: прежний гаснет
+  /// (водитель переехал в другой город). Если активного анонса нет — короткий
+  /// путь без шторки: анонс создаётся сразу ON_SITE в городе из `pointId`,
+  /// иначе в городе водителя из профиля.
+  async checkIn(userId: string, arrivalId?: string, pointId?: string) {
     const driver = await this.prisma.driver.findUnique({ where: { userId } });
     if (!driver) throw new NotFoundException('Driver profile not found');
 
-    const existing = await this.prisma.arrival.findFirst({
-      where: { driverId: driver.id, status: { in: ['PLANNED', 'ON_SITE'] } },
-    });
+    await this.expireStale({ driverId: driver.id });
+    const active = await this.activeFor(driver.id);
+    const today = localDateOnly(new Date());
 
-    if (existing) {
-      const arrival = await this.prisma.arrival.update({
-        where: { id: existing.id },
-        data: { status: 'ON_SITE', arrivedAt: new Date() },
+    const target = arrivalId
+      ? active.find((a) => a.id === arrivalId)
+      : (active.find((a) => a.status === 'ON_SITE') ??
+        active.find((a) => toDateOnly(a.plannedDay) <= today) ??
+        active[0]);
+    if (arrivalId && !target) throw new NotFoundException('Arrival not found');
+
+    const now = new Date();
+    if (target) {
+      const arrival = await this.prisma.$transaction(async (tx) => {
+        await tx.arrival.updateMany({ where: { driverId: driver.id, status: 'ON_SITE', id: { not: target.id } }, data: { status: 'COMPLETED' } });
+        return tx.arrival.update({
+          where: { id: target.id },
+          data: {
+            status: 'ON_SITE',
+            arrivedAt: target.status === 'ON_SITE' ? target.arrivedAt : now,
+            // «Я на месте» — это и есть ответ на «Доехали?»/«Ещё ищете груз?».
+            lastConfirmedAt: now,
+          },
+        });
       });
       return this.toDto(arrival);
     }
 
-    const point = await this.prisma.point.findFirst({ where: { isActive: true } });
+    const point = pointId
+      ? await this.prisma.point.findFirst({ where: { id: pointId, isActive: true } })
+      : ((await this.prisma.point.findFirst({ where: { cityId: driver.homeCityId, isActive: true } })) ??
+        (await this.prisma.point.findFirst({ where: { isActive: true }, orderBy: { createdAt: 'asc' } })));
     if (!point) throw new NotFoundException('No active loading point configured');
 
     const directions = await this.prisma.driverDirection.findMany({ where: { driverId: driver.id } });
@@ -261,9 +357,10 @@ export class ArrivalsService {
         data: {
           driverId: driver.id,
           pointId: point.id,
-          plannedAt: new Date(),
-          plannedDay: parseDateOnly(new Date().toISOString()),
-          arrivedAt: new Date(),
+          plannedAt: now,
+          plannedDay: parseDateOnly(today),
+          arrivedAt: now,
+          lastConfirmedAt: now,
           status: 'ON_SITE',
           anyCountry: driver.anyCountry,
         },
@@ -280,14 +377,27 @@ export class ArrivalsService {
     return this.toDto(arrival);
   }
 
-  /// «Отменить» (и алиас для старого «Я уехал») — завершает активный анонс.
-  async cancel(userId: string) {
+  /// «Да, ещё ищу» на вопрос «Ещё ищете груз?» — отсчёт 12 ч начинается заново.
+  async confirmStillLooking(userId: string, arrivalId?: string) {
     const driver = await this.prisma.driver.findUnique({ where: { userId } });
     if (!driver) throw new NotFoundException('Driver profile not found');
 
-    const existing = await this.prisma.arrival.findFirst({
-      where: { driverId: driver.id, status: { in: ['PLANNED', 'ON_SITE'] } },
+    const onSite = await this.prisma.arrival.findFirst({
+      where: { driverId: driver.id, status: 'ON_SITE', ...(arrivalId ? { id: arrivalId } : {}) },
     });
+    if (!onSite) throw new NotFoundException('Arrival not found');
+    const arrival = await this.prisma.arrival.update({ where: { id: onSite.id }, data: { lastConfirmedAt: new Date() } });
+    return this.toDto(arrival);
+  }
+
+  /// «Отменить» (и «Я уехал») — завершает анонс: `arrivalId` не задан — тот,
+  /// где водитель на месте, иначе ближайший.
+  async cancel(userId: string, arrivalId?: string) {
+    const driver = await this.prisma.driver.findUnique({ where: { userId } });
+    if (!driver) throw new NotFoundException('Driver profile not found');
+
+    const active = await this.activeFor(driver.id);
+    const existing = arrivalId ? active.find((a) => a.id === arrivalId) : ArrivalsService.current(active);
     if (!existing) return null;
 
     const status = existing.status === 'ON_SITE' ? 'COMPLETED' : 'CANCELLED';

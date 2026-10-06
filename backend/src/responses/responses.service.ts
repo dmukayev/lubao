@@ -191,11 +191,14 @@ export class ResponsesService {
     client: Prisma.TransactionClient | PrismaService,
     driverId: string,
   ): Promise<{ tractorId: string | null; trailerId: string | null }> {
-    const arrival = await client.arrival.findFirst({
+    // Анонсов может быть несколько (040): берём тот, где водитель на месте,
+    // иначе ближайший по дате приезда.
+    const arrivals = await client.arrival.findMany({
       where: { driverId, status: { in: ['PLANNED', 'ON_SITE'] } },
-      orderBy: { createdAt: 'desc' },
-      select: { tractorId: true, trailerId: true },
+      orderBy: [{ plannedDay: 'asc' }, { createdAt: 'desc' }],
+      select: { status: true, tractorId: true, trailerId: true },
     });
+    const arrival = arrivals.find((a) => a.status === 'ON_SITE') ?? arrivals[0];
     if (arrival?.tractorId) return { tractorId: arrival.tractorId, trailerId: arrival.trailerId };
 
     // Нет активного анонса (отклик без анонса — теоретически возможно,

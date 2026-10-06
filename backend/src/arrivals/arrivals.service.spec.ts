@@ -5,6 +5,7 @@ function makeTxPrisma() {
   const arrival = {
     create: jest.fn(),
     update: jest.fn(),
+    updateMany: jest.fn().mockResolvedValue({ count: 0 }),
   };
   const arrivalDirection = {
     deleteMany: jest.fn().mockResolvedValue(undefined),
@@ -104,18 +105,23 @@ describe('ArrivalsService.announce', () => {
     );
   });
 
-  it('replaces the existing PLANNED arrival instead of creating a duplicate', async () => {
-    prisma.arrival.findFirst.mockResolvedValue({ id: 'arrival-1', status: 'PLANNED' });
-    prisma.__tx.arrival.update.mockResolvedValue({
-      id: 'arrival-1',
-      pointId: 'point-2',
-      plannedAt: new Date(),
-      plannedDay: new Date(),
-      arrivedAt: null,
-      waitDays: 2,
-      anyCountry: false,
-      status: 'PLANNED',
-    });
+  const todayDay = () => new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z');
+  const savedRow = (over: Record<string, unknown> = {}) => ({
+    id: 'arrival-1',
+    pointId: 'point-1',
+    plannedAt: new Date(),
+    plannedDay: todayDay(),
+    arrivedAt: null,
+    waitDays: 2,
+    anyCountry: false,
+    status: 'PLANNED',
+    ...over,
+  });
+
+  it('040: повторный анонс на тот же город и день обновляет существующий, а не плодит дубль', async () => {
+    prisma.arrival.findMany.mockResolvedValue([{ id: 'arrival-1', status: 'PLANNED', pointId: 'point-2', plannedDay: todayDay() }]);
+    prisma.point.findUnique.mockResolvedValue({ id: 'point-2', isActive: true });
+    prisma.__tx.arrival.update.mockResolvedValue(savedRow({ pointId: 'point-2' }));
 
     await service.announce('user-1', { pointId: 'point-2', plannedAt: new Date().toISOString() });
 
@@ -125,8 +131,42 @@ describe('ArrivalsService.announce', () => {
     );
   });
 
+  it('040: анонс на другой город создаётся рядом с существующим (несколько анонсов подряд)', async () => {
+    prisma.arrival.findMany.mockResolvedValue([{ id: 'arrival-1', status: 'PLANNED', pointId: 'point-1', plannedDay: todayDay() }]);
+    prisma.point.findUnique.mockResolvedValue({ id: 'point-2', isActive: true });
+    prisma.__tx.arrival.create.mockResolvedValue(savedRow({ id: 'arrival-2', pointId: 'point-2' }));
+
+    await service.announce('user-1', { pointId: 'point-2', plannedAt: new Date().toISOString() });
+
+    expect(prisma.__tx.arrival.update).not.toHaveBeenCalled();
+    expect(prisma.__tx.arrival.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ pointId: 'point-2' }) }));
+  });
+
+  it('040: больше пяти активных анонсов не заводится', async () => {
+    prisma.arrival.findMany.mockResolvedValue(
+      Array.from({ length: 5 }, (_, i) => ({ id: `a${i}`, status: 'PLANNED', pointId: `p${i}`, plannedDay: todayDay() })),
+    );
+    await expect(service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString() })).rejects.toThrow('TOO_MANY_ARRIVALS');
+  });
+
+  it('040: правка по arrivalId меняет город и день и сбрасывает вопрос «Доехали?»', async () => {
+    prisma.arrival.findMany.mockResolvedValue([{ id: 'arrival-7', status: 'PLANNED', pointId: 'point-1', plannedDay: todayDay() }]);
+    prisma.__tx.arrival.update.mockResolvedValue(savedRow({ id: 'arrival-7' }));
+
+    await service.announce('user-1', { arrivalId: 'arrival-7', pointId: 'point-1', plannedAt: new Date().toISOString() });
+
+    expect(prisma.__tx.arrival.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'arrival-7' }, data: expect.objectContaining({ dayAskedAt: null }) }),
+    );
+  });
+
+  it('040: arrivalId чужого/угасшего анонса — 404', async () => {
+    prisma.arrival.findMany.mockResolvedValue([]);
+    await expect(service.announce('user-1', { arrivalId: 'nope', pointId: 'point-1', plannedAt: new Date().toISOString() })).rejects.toThrow(NotFoundException);
+  });
+
   it('does not move an ON_SITE arrival back to PLANNED or change its point — only trip details', async () => {
-    prisma.arrival.findFirst.mockResolvedValue({ id: 'arrival-1', status: 'ON_SITE' });
+    prisma.arrival.findMany.mockResolvedValue([{ id: 'arrival-1', status: 'ON_SITE', pointId: 'point-1', plannedDay: new Date() }]);
     prisma.__tx.arrival.update.mockResolvedValue({
       id: 'arrival-1',
       pointId: 'point-1',
@@ -138,7 +178,7 @@ describe('ArrivalsService.announce', () => {
       status: 'ON_SITE',
     });
 
-    await service.announce('user-1', { pointId: 'point-99', plannedAt: new Date().toISOString(), anyCountry: true, waitDays: 1 });
+    await service.announce('user-1', { arrivalId: 'arrival-1', pointId: 'point-99', plannedAt: new Date().toISOString(), anyCountry: true, waitDays: 1 });
 
     const call = prisma.__tx.arrival.update.mock.calls[0][0];
     expect(call.data.status).toBeUndefined();
@@ -157,28 +197,52 @@ describe('ArrivalsService.checkIn', () => {
     prisma.driver.findUnique.mockResolvedValue({ id: 'driver-1', anyCountry: false });
   });
 
-  it('transitions an existing PLANNED arrival to ON_SITE', async () => {
-    prisma.arrival.findFirst.mockResolvedValue({ id: 'arrival-1', status: 'PLANNED' });
-    prisma.arrival.update.mockResolvedValue({
-      id: 'arrival-1',
-      pointId: 'point-1',
-      plannedAt: new Date(),
-      plannedDay: new Date(),
-      arrivedAt: new Date(),
-      waitDays: 2,
-      anyCountry: false,
-      status: 'ON_SITE',
-    });
+  const row = (over: Record<string, unknown> = {}) => ({
+    id: 'arrival-1',
+    pointId: 'point-1',
+    plannedAt: new Date(),
+    plannedDay: new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z'),
+    arrivedAt: null,
+    waitDays: 2,
+    anyCountry: false,
+    status: 'PLANNED',
+    ...over,
+  });
+
+  it('transitions an existing PLANNED arrival to ON_SITE and records the confirmation', async () => {
+    prisma.arrival.findMany.mockResolvedValue([row()]);
+    prisma.__tx.arrival.update.mockResolvedValue(row({ status: 'ON_SITE', arrivedAt: new Date() }));
 
     const result = await service.checkIn('user-1');
-    expect(prisma.arrival.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'arrival-1' }, data: expect.objectContaining({ status: 'ON_SITE' }) }),
+    expect(prisma.__tx.arrival.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'arrival-1' }, data: expect.objectContaining({ status: 'ON_SITE', lastConfirmedAt: expect.any(Date) }) }),
     );
     expect(result.status).toBe('ON_SITE');
   });
 
+  it('040: одновременно «на месте» только один анонс — прежний гаснет, когда водитель переехал', async () => {
+    prisma.arrival.findMany.mockResolvedValue([
+      row({ id: 'old', status: 'ON_SITE', arrivedAt: new Date() }),
+      row({ id: 'astana', pointId: 'point-2' }),
+    ]);
+    prisma.__tx.arrival.update.mockResolvedValue(row({ id: 'astana', pointId: 'point-2', status: 'ON_SITE', arrivedAt: new Date() }));
+
+    await service.checkIn('user-1', 'astana');
+
+    expect(prisma.__tx.arrival.updateMany).toHaveBeenCalledWith({
+      where: { driverId: 'driver-1', status: 'ON_SITE', id: { not: 'astana' } },
+      data: { status: 'COMPLETED' },
+    });
+    expect(prisma.__tx.arrival.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'astana' } }));
+  });
+
+  it('040: arrivalId чужого анонса — 404', async () => {
+    prisma.arrival.findMany.mockResolvedValue([row()]);
+    await expect(service.checkIn('user-1', 'someone-elses')).rejects.toThrow(NotFoundException);
+  });
+
   it('creates a fresh ON_SITE arrival when there is none active (quick check-in)', async () => {
-    prisma.arrival.findFirst.mockResolvedValue(null);
+    prisma.arrival.findMany.mockResolvedValue([]);
     prisma.point.findFirst.mockResolvedValue({ id: 'point-1', isActive: true });
     prisma.__tx.arrival.create.mockResolvedValue({
       id: 'arrival-1',
@@ -200,21 +264,148 @@ describe('ArrivalsService.checkIn', () => {
 });
 
 describe('ArrivalsService.getMine — lazy expiry', () => {
-  it('cancels a stale PLANNED arrival (plannedAt > 24h in the past) and returns null', async () => {
+  it('040: запланированный анонс, день которого прошёл, гаснет в EXPIRED и не отдаётся', async () => {
+    const prisma = makePrisma();
+    const service = new ArrivalsService(prisma);
+    prisma.driver.findUnique.mockResolvedValue({ id: 'driver-1' });
+    const stale = {
+      id: 'a-old',
+      status: 'PLANNED',
+      plannedDay: new Date('2020-01-01T00:00:00.000Z'),
+      arrivedAt: null,
+      lastConfirmedAt: null,
+      dayAskedAt: null,
+      staleAskedAt: null,
+      waitDays: 2,
+      point: { name: {} },
+      driver: { userId: 'u1' },
+    };
+    prisma.arrival.findMany.mockResolvedValueOnce([stale]).mockResolvedValue([]);
+
+    const result = await service.getMine('user-1');
+
+    expect(prisma.arrival.updateMany).toHaveBeenCalledWith({ where: { id: 'a-old', status: 'PLANNED' }, data: { status: 'EXPIRED' } });
+    expect(result).toEqual({ arrival: null, arrivals: [] });
+  });
+
+  it('040: текущий анонс — тот, где водитель на месте, остальные — по дате', async () => {
+    const prisma = makePrisma();
+    const service = new ArrivalsService(prisma);
+    prisma.driver.findUnique.mockResolvedValue({ id: 'driver-1' });
+    const base = { pointId: 'p', plannedAt: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, tractorId: null, trailerId: null, lastConfirmedAt: null, dayAskedAt: null, staleAskedAt: null };
+    prisma.arrival.findMany
+      .mockResolvedValueOnce([]) // sweep
+      .mockResolvedValue([
+        { ...base, id: 'planned-soon', status: 'PLANNED', plannedDay: new Date('2999-01-01') },
+        { ...base, id: 'here', status: 'ON_SITE', plannedDay: new Date('2999-01-02') },
+      ]);
+
+    const result = await service.getMine('user-1');
+
+    expect(result.arrival?.id).toBe('here');
+    expect(result.arrivals.map((a) => a.id)).toEqual(['here', 'planned-soon']);
+  });
+});
+
+describe('ArrivalsService.sweep — правило свежести (задача 040, п.4)', () => {
+  const base = { arrivedAt: null, lastConfirmedAt: null, dayAskedAt: null, staleAskedAt: null, waitDays: 3, point: { name: { ru: 'Алматы' } }, driver: { userId: 'u1' } };
+  const notifications = { notify: jest.fn().mockResolvedValue(undefined) };
+  beforeEach(() => {
+    notifications.notify.mockClear();
+  });
+
+  it('в день приезда шлёт один «Доехали?» и помечает dayAskedAt (повторный тик молчит)', async () => {
+    const prisma = makePrisma();
+    const service = new ArrivalsService(prisma, notifications as any);
+    const now = new Date('2026-10-08T07:00:00.000Z'); // 12:00 по Алматы
+    prisma.arrival.findMany.mockResolvedValue([{ ...base, id: 'a1', status: 'PLANNED', plannedDay: new Date('2026-10-08T00:00:00.000Z') }]);
+    prisma.arrival.updateMany.mockResolvedValueOnce({ count: 1 });
+
+    const res = await service.sweep({ now, notify: true });
+
+    expect(res).toEqual({ expired: 0, asked: 1 });
+    expect(prisma.arrival.updateMany).toHaveBeenCalledWith({ where: { id: 'a1', status: 'PLANNED', dayAskedAt: null }, data: { dayAskedAt: now } });
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u1'] }, 'ARRIVAL_DAY_CHECK', { pointName: { ru: 'Алматы' } });
+  });
+
+  it('второй инстанс/тик, проигравший условный апдейт, push не шлёт', async () => {
+    const prisma = makePrisma();
+    const service = new ArrivalsService(prisma, notifications as any);
+    prisma.arrival.findMany.mockResolvedValue([{ ...base, id: 'a1', status: 'PLANNED', plannedDay: new Date('2026-10-08T00:00:00.000Z') }]);
+    prisma.arrival.updateMany.mockResolvedValue({ count: 0 });
+
+    const res = await service.sweep({ now: new Date('2026-10-08T07:00:00.000Z'), notify: true });
+
+    expect(res.asked).toBe(0);
+    expect(notifications.notify).not.toHaveBeenCalled();
+  });
+
+  it('ленивая проверка при чтении (notify=false) гасит, но push не шлёт', async () => {
+    const prisma = makePrisma();
+    const service = new ArrivalsService(prisma, notifications as any);
+    prisma.arrival.findMany.mockResolvedValue([
+      { ...base, id: 'late', status: 'PLANNED', plannedDay: new Date('2026-10-07T00:00:00.000Z') },
+      { ...base, id: 'today', status: 'PLANNED', plannedDay: new Date('2026-10-08T00:00:00.000Z') },
+    ]);
+    prisma.arrival.updateMany.mockResolvedValue({ count: 1 });
+
+    const res = await service.sweep({ now: new Date('2026-10-08T07:00:00.000Z'), notify: false });
+
+    expect(res).toEqual({ expired: 1, asked: 0 });
+    expect(notifications.notify).not.toHaveBeenCalled();
+  });
+
+  it('на месте 12 ч без ответа — «Ещё ищете груз?»', async () => {
+    const prisma = makePrisma();
+    const service = new ArrivalsService(prisma, notifications as any);
+    const now = new Date('2026-10-08T12:00:00.000Z');
+    prisma.arrival.findMany.mockResolvedValue([
+      { ...base, id: 'a1', status: 'ON_SITE', plannedDay: new Date('2026-10-08T00:00:00.000Z'), arrivedAt: new Date('2026-10-07T23:00:00.000Z') },
+    ]);
+    prisma.arrival.updateMany.mockResolvedValue({ count: 1 });
+
+    const res = await service.sweep({ now, notify: true });
+
+    expect(res.asked).toBe(1);
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u1'] }, 'ARRIVAL_STILL_LOOKING', { pointName: { ru: 'Алматы' } });
+  });
+});
+
+describe('ArrivalsService.confirmStillLooking / cancel', () => {
+  it('«Да, ещё ищу» обновляет lastConfirmedAt у анонса «на месте»', async () => {
+    const prisma = makePrisma();
+    const service = new ArrivalsService(prisma);
+    prisma.driver.findUnique.mockResolvedValue({ id: 'driver-1' });
+    prisma.arrival.findFirst.mockResolvedValue({ id: 'a1', status: 'ON_SITE' });
+    prisma.arrival.update.mockResolvedValue({ id: 'a1', pointId: 'p', plannedAt: new Date(), plannedDay: new Date(), arrivedAt: new Date(), waitDays: 2, anyCountry: false, status: 'ON_SITE' });
+
+    await service.confirmStillLooking('user-1');
+
+    expect(prisma.arrival.update).toHaveBeenCalledWith({ where: { id: 'a1' }, data: { lastConfirmedAt: expect.any(Date) } });
+  });
+
+  it('без анонса «на месте» — 404', async () => {
     const prisma = makePrisma();
     const service = new ArrivalsService(prisma);
     prisma.driver.findUnique.mockResolvedValue({ id: 'driver-1' });
     prisma.arrival.findFirst.mockResolvedValue(null);
+    await expect(service.confirmStillLooking('user-1')).rejects.toThrow(NotFoundException);
+  });
 
-    const result = await service.getMine('user-1');
+  it('отмена по arrivalId гасит именно его: запланированный — CANCELLED, «на месте» — COMPLETED', async () => {
+    const prisma = makePrisma();
+    const service = new ArrivalsService(prisma);
+    prisma.driver.findUnique.mockResolvedValue({ id: 'driver-1' });
+    const plannedDay = new Date('2999-01-01');
+    prisma.arrival.findMany.mockResolvedValue([
+      { id: 'here', status: 'ON_SITE', plannedDay },
+      { id: 'later', status: 'PLANNED', plannedDay },
+    ]);
+    prisma.arrival.update.mockResolvedValue({ id: 'later', pointId: 'p', plannedAt: new Date(), plannedDay, arrivedAt: null, waitDays: 2, anyCountry: false, status: 'CANCELLED' });
 
-    expect(prisma.arrival.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ driverId: 'driver-1', status: 'PLANNED' }),
-        data: { status: 'CANCELLED' },
-      }),
-    );
-    expect(result).toEqual({ arrival: null });
+    await service.cancel('user-1', 'later');
+
+    expect(prisma.arrival.update).toHaveBeenCalledWith({ where: { id: 'later' }, data: { status: 'CANCELLED' } });
   });
 });
 
@@ -352,7 +543,7 @@ describe('ArrivalsService.summary', () => {
     const today = new Date();
     const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
-    prisma.arrival.findMany.mockResolvedValue([
+    prisma.arrival.findMany.mockResolvedValueOnce([]).mockResolvedValue([
       { plannedAt: new Date('2000-01-01'), status: 'ON_SITE' },
       { plannedDay: new Date(today.toISOString().slice(0, 10) + 'T00:00:00.000Z'), status: 'PLANNED' },
       { plannedDay: new Date(tomorrow.toISOString().slice(0, 10) + 'T00:00:00.000Z'), status: 'PLANNED' },
@@ -370,7 +561,7 @@ describe('ArrivalsService.summary', () => {
     const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
     // Собирался завтра, но уже на месте сегодня (приехал раньше).
-    prisma.arrival.findMany.mockResolvedValue([{ plannedDay: new Date(tomorrow.toISOString().slice(0, 10) + 'T00:00:00.000Z'), status: 'ON_SITE' }]);
+    prisma.arrival.findMany.mockResolvedValueOnce([]).mockResolvedValue([{ plannedDay: new Date(tomorrow.toISOString().slice(0, 10) + 'T00:00:00.000Z'), status: 'ON_SITE' }]);
 
     const result = await service.summary(2);
     expect(result[0].count).toBe(1);
@@ -391,9 +582,7 @@ describe('ArrivalsService.announce — связка «на чём еду» (за
   });
 
   it('defaults a brand-new arrival to the combo of the last announcement that had one', async () => {
-    prisma.arrival.findFirst
-      .mockResolvedValueOnce(null) // no active arrival
-      .mockResolvedValueOnce({ tractorId: 'old-tractor', trailerId: 'old-trailer' }); // last with combo
+    prisma.arrival.findFirst.mockResolvedValueOnce({ tractorId: 'old-tractor', trailerId: 'old-trailer' }); // last with combo
     // 038: прошлая связка проверяется на архивность — обе машины живы.
     prisma.vehicle.findMany.mockResolvedValue([{ id: 'old-tractor', kind: 'TRACTOR' }, { id: 'old-trailer', kind: 'TRAILER' }]);
     prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), plannedDay: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
@@ -406,9 +595,7 @@ describe('ArrivalsService.announce — связка «на чём еду» (за
   });
 
   it('039 п.5: у прошлой связки RIGID прицеп не подставляется, прицеп вместо тягача отбрасывается', async () => {
-    prisma.arrival.findFirst
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ tractorId: 'old-rigid', trailerId: 'old-trailer' });
+    prisma.arrival.findFirst.mockResolvedValueOnce({ tractorId: 'old-rigid', trailerId: 'old-trailer' });
     prisma.vehicle.findMany.mockResolvedValue([{ id: 'old-rigid', kind: 'RIGID' }, { id: 'old-trailer', kind: 'TRAILER' }]);
     prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), plannedDay: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
 
@@ -420,9 +607,7 @@ describe('ArrivalsService.announce — связка «на чём еду» (за
   });
 
   it('039 п.5: тягач прошлой связки в архиве — её прицеп не подставляется, берём из гаража', async () => {
-    prisma.arrival.findFirst
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ tractorId: 'old-tractor', trailerId: 'old-trailer' });
+    prisma.arrival.findFirst.mockResolvedValueOnce({ tractorId: 'old-tractor', trailerId: 'old-trailer' });
     // В живых остался только старый прицеп; тягач заархивирован.
     prisma.vehicle.findMany.mockResolvedValue([{ id: 'old-trailer', kind: 'TRAILER' }]);
     prisma.vehicle.findFirst = jest.fn().mockImplementation(async ({ where }: any) =>

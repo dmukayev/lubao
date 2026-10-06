@@ -20,6 +20,7 @@ import { RedisModule } from './redis/redis.module';
 import { SmsModule } from './sms/sms.module';
 import { TokenModule } from './token/token.module';
 import { AppSettingsModule } from './app-settings/app-settings.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { TranslationModule } from './translation/translation.module';
@@ -33,6 +34,7 @@ import { IdentifiersModule } from './identifiers/identifiers.module';
     SmsModule,
     TokenModule,
     AppSettingsModule,
+    ScheduleModule.forRoot(),
     NotificationsModule,
     RealtimeModule,
     TranslationModule,

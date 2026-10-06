@@ -1,6 +1,14 @@
-import { IsArray, IsIn, IsISO8601, IsNumber, IsOptional, IsString, Min, IsInt } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsISO8601, IsNumber, IsOptional, IsString, Min, IsInt } from 'class-validator';
 
 export class UpdateCargoDto {
+  @IsOptional()
+  @IsString()
+  pointId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  allowPartial?: boolean;
+
   @IsOptional()
   @IsString()
   destinationCountryId?: string;

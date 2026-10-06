@@ -6,6 +6,17 @@ import { CreateCargoDto } from './dto/create-cargo.dto';
 import { UpdateCargoDto } from './dto/update-cargo.dto';
 import { CloseCargoDto } from './dto/close-cargo.dto';
 import { parseDateOnly, toDateOnly } from '../common/date-only';
+import { haversineKm } from '../common/geo';
+import { evaluateVehicleLoad } from '../deals/vehicle-load';
+
+/// Лента: «рядом» с городом водителя — та же область либо ≤200 км (040, п.5).
+export const NEARBY_KM = 200;
+const FEED_DEFAULT_LIMIT = 30;
+const FEED_MAX_LIMIT = 100;
+
+type GeoCity = { id: string; regionId: string | null; lat: unknown; lng: unknown };
+type GeoPoint = { cityId: string; lat: unknown; lng: unknown; city: GeoCity };
+export type FeedOrigin = { cityId: string; regionId: string | null; lat: number | null; lng: number | null };
 
 type CargoWithCompany = Cargo & { company: Company & { country: { code: string } }; publishedBy?: { id: string; name: string | null; phone: string | null } | null };
 
@@ -87,6 +98,7 @@ export class CargosService {
       price: Number(cargo.price),
       currency: cargo.currency,
       readyDate: toDateOnly(cargo.readyDate),
+      allowPartial: cargo.allowPartial,
       description: cargo.description,
       status: cargo.status,
       publishedAt: cargo.publishedAt,
@@ -137,18 +149,137 @@ export class CargosService {
     return true;
   }
 
-  async feed(driverId?: string) {
+  private static num(v: unknown): number | null {
+    return v == null ? null : Number(v);
+  }
+
+  /// 0 — груз грузится в городе водителя; 1 — в той же области или ≤200 км;
+  /// 2 — остальные (задача 040, п.5).
+  static pickupRank(point: GeoPoint, origin: FeedOrigin): 0 | 1 | 2 {
+    if (point.cityId === origin.cityId) return 0;
+    if (origin.regionId && point.city.regionId === origin.regionId) return 1;
+    const lat = CargosService.num(point.lat) ?? CargosService.num(point.city.lat);
+    const lng = CargosService.num(point.lng) ?? CargosService.num(point.city.lng);
+    if (origin.lat != null && origin.lng != null && lat != null && lng != null) {
+      if (haversineKm({ lat: origin.lat, lng: origin.lng }, { lat, lng }) <= NEARBY_KM) return 1;
+    }
+    return 2;
+  }
+
+  /// Откуда водитель смотрит на ленту: город его анонса (на месте, иначе
+  /// ближайший запланированный), фолбэк — домашний город (040, п.5).
+  private async feedOrigin(driverId: string) {
+    const arrivals = await this.prisma.arrival.findMany({
+      where: { driverId, status: { in: ['PLANNED', 'ON_SITE'] } },
+      include: { point: { include: { city: true } } },
+      orderBy: { plannedDay: 'asc' },
+    });
+    const arrival = arrivals.find((a) => a.status === 'ON_SITE') ?? arrivals[0];
+    if (arrival) {
+      const { point } = arrival;
+      const origin: FeedOrigin = {
+        cityId: point.cityId,
+        regionId: point.city.regionId,
+        lat: CargosService.num(point.lat) ?? CargosService.num(point.city.lat),
+        lng: CargosService.num(point.lng) ?? CargosService.num(point.city.lng),
+      };
+      return { origin, source: 'arrival' as const };
+    }
+    const driver = await this.prisma.driver.findUnique({ where: { id: driverId }, include: { homeCity: true } });
+    if (!driver?.homeCity) return { origin: null, source: null };
+    const c = driver.homeCity;
+    return {
+      origin: { cityId: c.id, regionId: c.regionId, lat: CargosService.num(c.lat), lng: CargosService.num(c.lng) } as FeedOrigin,
+      source: 'home' as const,
+    };
+  }
+
+  /// Лента водителя — отсев и порядок на сервере (задача 040, п.5): город
+  /// погрузки = город анонса → та же область / ≤200 км → остальные; внутри
+  /// — «домой» → выбранные страны → остальные, затем по дате готовности.
+  /// Страница `limit/offset`; весь отсортированный набор считается в памяти
+  /// (на старте — сотни грузов), `total` нужен клиенту для «показать ещё».
+  async feed(driverId?: string, page: { limit?: number; offset?: number } = {}) {
+    const limit = Math.min(Math.max(page.limit ?? FEED_DEFAULT_LIMIT, 1), FEED_MAX_LIMIT);
+    const offset = Math.max(page.offset ?? 0, 0);
+
     // company.isBlocked (задача 026, п.5) — груз блокированной компании не
     // трогаем (статус/история не меняются), просто скрываем из ленты
     // водителя, пока компанию не разблокируют.
     const cargos = await this.prisma.cargo.findMany({
       where: { status: 'PUBLISHED', company: { isBlocked: false } },
-      include: this.includeForDto,
+      include: { ...this.includeForDto, point: { include: { city: true } } },
       orderBy: { readyDate: 'asc' },
     });
     const body = driverId ? await this.driverCargoBody(driverId) : null;
-    const visible = body ? cargos.filter((c) => CargosService.cargoFitsVehicle(c, body)) : cargos;
-    return Promise.all(visible.map((c) => this.toDto(c)));
+    const fitting = body ? cargos.filter((c) => CargosService.cargoFitsVehicle(c, body)) : cargos;
+
+    const [{ origin, source }, driver] = driverId
+      ? await Promise.all([
+          this.feedOrigin(driverId),
+          this.prisma.driver.findUnique({ where: { id: driverId }, include: { homeCity: true, directions: true } }),
+        ])
+      : [{ origin: null, source: null }, null];
+    const homeCountryId = driver?.homeCity?.countryId ?? null;
+    const selected = new Set(driver?.directions?.map((d) => d.countryId) ?? []);
+
+    const ranked = fitting.map((cargo) => {
+      const pickupRank = origin ? CargosService.pickupRank(cargo.point, origin) : 2;
+      const section: 'home' | 'selected' | 'other' =
+        homeCountryId && cargo.destinationCountryId === homeCountryId
+          ? 'home'
+          : (driver?.anyCountry ?? true) || selected.has(cargo.destinationCountryId)
+            ? 'selected'
+            : 'other';
+      return { cargo, pickupRank, section };
+    });
+    const sectionOrder = { home: 0, selected: 1, other: 2 } as const;
+    ranked.sort(
+      (a, b) =>
+        a.pickupRank - b.pickupRank ||
+        sectionOrder[a.section] - sectionOrder[b.section] ||
+        a.cargo.readyDate.getTime() - b.cargo.readyDate.getTime(),
+    );
+
+    const items = await Promise.all(
+      ranked.slice(offset, offset + limit).map(async ({ cargo, pickupRank, section }) => ({
+        ...(await this.toDto(cargo)),
+        pickupRank,
+        feedSection: section,
+      })),
+    );
+    return { items, total: ranked.length, offset, limit, originCityId: origin?.cityId ?? null, originSource: source };
+  }
+
+  /// «Помещается к текущему: 8 т + 10 т из 20 т» (задача 040, п.6) — для
+  /// водителя с активной сделкой; расчёт тот же, что при подтверждении
+  /// (`evaluateVehicleLoad`). Без активной сделки подсказки нет.
+  async partialHint(driverId: string, cargoId: string) {
+    const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId } });
+    if (!cargo) throw new NotFoundException('Cargo not found');
+
+    const lastDeal = await this.prisma.deal.findFirst({
+      where: { driverId, status: { in: ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT'] } },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!lastDeal) return { hint: null };
+
+    const load = await evaluateVehicleLoad(this.prisma, {
+      driverId,
+      tractorId: lastDeal.tractorId,
+      trailerId: lastDeal.trailerId,
+      cargo,
+    });
+    if (load.verdict === 'NONE') return { hint: null };
+    return {
+      hint: {
+        fits: load.verdict === 'OK',
+        reason: load.verdict === 'OK' ? null : load.verdict,
+        committedWeightKg: load.usedWeightKg,
+        cargoWeightKg: cargo.weightKg != null ? Number(cargo.weightKg) : null,
+        capacityKg: load.capacityKg,
+      },
+    };
   }
 
   async mine(companyId: string) {
@@ -163,9 +294,9 @@ export class CargosService {
   /// Задача 033, п.10 — подсказка при публикации: «подходит N водителям на
   /// точке». Простой счётчик по активным анонсам, те же правила отсева,
   /// что у ленты (cargoFitsVehicle).
-  async fitCount(params: { weightKg?: number; volumeM3?: number; palletCount?: number }) {
+  async fitCount(params: { weightKg?: number; volumeM3?: number; palletCount?: number; pointId?: string }) {
     const arrivals = await this.prisma.arrival.findMany({
-      where: { status: { in: ['PLANNED', 'ON_SITE'] } },
+      where: { status: { in: ['PLANNED', 'ON_SITE'] }, ...(params.pointId ? { pointId: params.pointId } : {}) },
       include: { trailer: true, tractor: true },
     });
     const cargoLike = {
@@ -204,7 +335,9 @@ export class CargosService {
     // проверка, роли, контакты»).
     if (!companyIsVerified) throw new ForbiddenException('COMPANY_NOT_VERIFIED');
 
-    const point = await this.prisma.point.findFirstOrThrow({ where: { isActive: true } });
+    // Город погрузки обязателен (задача 040, п.7).
+    const point = await this.prisma.point.findUnique({ where: { id: dto.pointId } });
+    if (!point || !point.isActive) throw new BadRequestException('POINT_REQUIRED');
     const readyDate = parseDateOnly(dto.readyDate);
     const expiresAt = new Date(readyDate.getTime() + 48 * 60 * 60 * 1000);
 
@@ -223,6 +356,7 @@ export class CargosService {
         price: dto.price,
         currency: dto.currency,
         readyDate,
+        allowPartial: dto.allowPartial ?? false,
         description: dto.description,
         status: 'PUBLISHED',
         publishedAt: new Date(),
@@ -259,9 +393,16 @@ export class CargosService {
     const expiresAt =
       dto.readyDate != null ? new Date(readyDate.getTime() + 48 * 60 * 60 * 1000) : existing.expiresAt;
 
+    if (dto.pointId) {
+      const point = await this.prisma.point.findUnique({ where: { id: dto.pointId } });
+      if (!point || !point.isActive) throw new BadRequestException('POINT_REQUIRED');
+    }
+
     const cargo = await this.prisma.cargo.update({
       where: { id },
       data: {
+        pointId: dto.pointId,
+        allowPartial: dto.allowPartial,
         destinationCountryId: dto.destinationCountryId,
         destinationCityId: dto.destinationCityId,
         bodyTypeId: dto.bodyTypeId,

@@ -69,6 +69,12 @@ export class AdminController {
     return this.admin.stats(query.period);
   }
 
+  @Get('stats/by-city')
+  statsByCity(@CurrentUser() ctx: RequestContext) {
+    assertAdmin(ctx);
+    return this.admin.statsByCity();
+  }
+
   @Get('attention')
   attention(@CurrentUser() ctx: RequestContext) {
     assertAdmin(ctx);

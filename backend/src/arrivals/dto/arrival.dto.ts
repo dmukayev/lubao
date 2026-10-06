@@ -1,6 +1,11 @@
 import { IsArray, IsBoolean, IsDateString, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class AnnounceArrivalDto {
+  /// Правка конкретного анонса (задача 040: анонсов может быть несколько).
+  @IsOptional()
+  @IsString()
+  arrivalId?: string;
+
   @IsString()
   pointId!: string;
 
@@ -39,4 +44,15 @@ export class AnnounceArrivalDto {
   @IsOptional()
   @IsString()
   trailerId?: string;
+}
+
+export class ArrivalActionDto {
+  @IsOptional()
+  @IsString()
+  arrivalId?: string;
+
+  /// Только для «Я на месте» без анонса: в каком городе.
+  @IsOptional()
+  @IsString()
+  pointId?: string;
 }

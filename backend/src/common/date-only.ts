@@ -18,3 +18,15 @@ export function addDaysDateOnly(value: string, days: number): string {
   d.setUTCDate(d.getUTCDate() + days);
   return toDateOnly(d);
 }
+
+/// «Сегодня» как календарная дата в часовом поясе приложения (по умолчанию
+/// Казахстан, UTC+5) — для правил свежести анонса, которые срабатывают без
+/// клиента.
+export function localDateOnly(now: Date, timeZone = process.env.APP_TIMEZONE || 'Asia/Almaty'): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+}
+
+/// Час (0–23) в часовом поясе приложения.
+export function localHour(now: Date, timeZone = process.env.APP_TIMEZONE || 'Asia/Almaty'): number {
+  return Number(new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', hour12: false }).format(now)) % 24;
+}

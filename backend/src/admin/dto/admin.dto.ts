@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, MaxLength, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { BooleanQuery } from '../../common/boolean-query.decorator';
 import { IsPersonName } from '../../common/validators/person-name.validator';
@@ -239,6 +239,26 @@ export class AdminUpdateBodySizePresetDto {
 export class CreatePointDto {
   @IsString()
   cityId!: string;
+
+  /// Вид точки (задача 040): CITY — обычный город; TERMINAL — терминал с
+  /// геозоной (нужны lat/lng/radiusM).
+  @IsOptional()
+  @IsIn(['CITY', 'TERMINAL'])
+  kind?: 'CITY' | 'TERMINAL';
+
+  @IsOptional()
+  @IsLatitude()
+  lat?: number;
+
+  @IsOptional()
+  @IsLongitude()
+  lng?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(100)
+  @Max(50000)
+  radiusM?: number;
 
   @IsObject()
   @ValidateNested()
@@ -583,6 +603,16 @@ export class AdminUpdateReferenceItemDto {
 }
 
 export class AdminUpdatePointDto {
+  @IsOptional()
+  @IsIn(['CITY', 'TERMINAL'])
+  kind?: 'CITY' | 'TERMINAL';
+
+  @IsOptional()
+  @IsInt()
+  @Min(100)
+  @Max(50000)
+  radiusM?: number;
+
   @IsOptional()
   @IsObject()
   @ValidateNested()

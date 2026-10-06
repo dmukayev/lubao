@@ -170,6 +170,40 @@ export class AdminService {
     };
   }
 
+  /// Разрез сводки по городам (задача 040, п.9): сколько активных анонсов,
+  /// опубликованных грузов и сделок по каждому городу/точке погрузки.
+  async statsByCity() {
+    const [points, arrivals, cargos, deals] = await Promise.all([
+      this.prisma.point.findMany({ select: { id: true, name: true, kind: true, isActive: true } }),
+      this.prisma.arrival.groupBy({ by: ['pointId'], where: { status: { in: ['PLANNED', 'ON_SITE'] } }, _count: true }),
+      this.prisma.cargo.groupBy({ by: ['pointId'], where: { status: 'PUBLISHED' }, _count: true }),
+      this.prisma.deal.findMany({ select: { status: true, cargo: { select: { pointId: true } } } }),
+    ]);
+    const arrivalsBy = new Map(arrivals.map((g) => [g.pointId, g._count as unknown as number]));
+    const cargosBy = new Map(cargos.map((g) => [g.pointId, g._count as unknown as number]));
+    const dealsBy = new Map<string, { active: number; delivered: number }>();
+    for (const d of deals) {
+      const pointId = d.cargo?.pointId;
+      if (!pointId) continue;
+      const row = dealsBy.get(pointId) ?? { active: 0, delivered: 0 };
+      if (d.status === 'DELIVERED') row.delivered += 1;
+      else if (d.status !== 'CANCELLED') row.active += 1;
+      dealsBy.set(pointId, row);
+    }
+    return points
+      .map((p) => ({
+        pointId: p.id,
+        name: p.name,
+        kind: p.kind,
+        arrivals: arrivalsBy.get(p.id) ?? 0,
+        cargos: cargosBy.get(p.id) ?? 0,
+        dealsActive: dealsBy.get(p.id)?.active ?? 0,
+        dealsDelivered: dealsBy.get(p.id)?.delivered ?? 0,
+      }))
+      .filter((r) => r.arrivals + r.cargos + r.dealsActive + r.dealsDelivered > 0)
+      .sort((a, b) => b.arrivals + b.cargos + b.dealsActive - (a.arrivals + a.cargos + a.dealsActive));
+  }
+
   /// Блок «Требует внимания» (задача 028, п.4) — с него админ начинает
   /// день: документы на проверке (людей, не документов — считаем
   /// distinct водителей/компаний с хотя бы одним PENDING), открытые
@@ -2614,9 +2648,30 @@ export class AdminService {
     return { id };
   }
 
+  /// Терминал без координат и радиуса геозоны бессмысленен: «уехал» по
+  /// геозоне считать не от чего (задача 040, п.1).
+  private assertPointGeofence(kind: string, lat: unknown, lng: unknown, radiusM: unknown) {
+    if (kind === 'TERMINAL' && (lat == null || lng == null || radiusM == null)) {
+      throw new BadRequestException('TERMINAL_NEEDS_GEOFENCE');
+    }
+  }
+
   async createPoint(dto: CreatePointDto) {
+    const kind = dto.kind ?? 'CITY';
+    this.assertPointGeofence(kind, dto.lat, dto.lng, dto.radiusM);
+    const city = await this.prisma.city.findUnique({ where: { id: dto.cityId } });
+    if (!city) throw new NotFoundException('City not found');
     return this.prisma.point.create({
-      data: { cityId: dto.cityId, name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en }, isActive: true },
+      data: {
+        cityId: dto.cityId,
+        name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en },
+        kind,
+        // Координаты точки-города по умолчанию — координаты самого города.
+        lat: dto.lat ?? city.lat,
+        lng: dto.lng ?? city.lng,
+        radiusM: kind === 'TERMINAL' ? dto.radiusM : null,
+        isActive: true,
+      },
     });
   }
 
@@ -2675,6 +2730,11 @@ export class AdminService {
     if (dto.isActive !== undefined && dto.isActive !== existing.isActive) changes.isActive = { old: existing.isActive, new: dto.isActive };
     if (dto.lat !== undefined) changes.lat = { old: existing.lat ? Number(existing.lat) : null, new: dto.lat };
     if (dto.lng !== undefined) changes.lng = { old: existing.lng ? Number(existing.lng) : null, new: dto.lng };
+    if (dto.kind !== undefined && dto.kind !== existing.kind) changes.kind = { old: existing.kind, new: dto.kind };
+    if (dto.radiusM !== undefined && dto.radiusM !== existing.radiusM) changes.radiusM = { old: existing.radiusM, new: dto.radiusM };
+
+    const nextKind = dto.kind ?? existing.kind;
+    this.assertPointGeofence(nextKind, dto.lat ?? existing.lat, dto.lng ?? existing.lng, dto.radiusM ?? existing.radiusM);
 
     await this.prisma.point.update({
       where: { id },
@@ -2683,6 +2743,9 @@ export class AdminService {
         cityId: dto.cityId,
         lat: dto.lat,
         lng: dto.lng,
+        kind: dto.kind,
+        // Город больше не терминал — геозона не нужна.
+        radiusM: nextKind === 'CITY' ? null : dto.radiusM,
         isActive: dto.isActive,
       },
     });

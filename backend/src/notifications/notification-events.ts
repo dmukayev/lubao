@@ -60,6 +60,8 @@ export type NotificationEvent =
   | 'VERIFICATION_RETURNED'
   | 'VERIFICATION_APPROVED'
   | 'AGREED_CHECK'
+  | 'ARRIVAL_DAY_CHECK'
+  | 'ARRIVAL_STILL_LOOKING'
   | 'CARGO_UNPUBLISHED'
   | 'COMPLAINT_RESOLVED'
   | 'COMPLAINT_WARNED';
@@ -143,6 +145,21 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
     zh: (p) => ({ title: '谈妥了吗？', body: `与 ${p.counterpartName} 关于货物？` }),
     en: (p) => ({ title: 'Agreed?', body: `With ${p.counterpartName} about the cargo?` }),
   },
+  /// Задача 040 — правило свежести анонса: в день приезда и каждые 12 ч
+  /// на месте. Город — из справочника (`p.pointName`
+  /// — `Point.name` целиком (JSON {kk,ru,zh,en}), язык выбирается здесь).
+  ARRIVAL_DAY_CHECK: {
+    ru: (p) => ({ title: 'Доехали?', body: `Нажмите «Я на месте» — ${pickLocaleText(p.pointName, 'ru')}` }),
+    kk: (p) => ({ title: 'Жеттіңіз бе?', body: `«Мен осындамын» түймесін басыңыз — ${pickLocaleText(p.pointName, 'kk')}` }),
+    zh: (p) => ({ title: '到了吗？', body: `请点击“我已到达” — ${pickLocaleText(p.pointName, 'zh')}` }),
+    en: (p) => ({ title: 'Arrived?', body: `Tap “I'm here” — ${pickLocaleText(p.pointName, 'en')}` }),
+  },
+  ARRIVAL_STILL_LOOKING: {
+    ru: (p) => ({ title: 'Ещё ищете груз?', body: `${pickLocaleText(p.pointName, 'ru')} — подтвердите, что вы ещё на месте` }),
+    kk: (p) => ({ title: 'Әлі жүк іздеп жүрсіз бе?', body: `${pickLocaleText(p.pointName, 'kk')} — әлі осында екеніңізді растаңыз` }),
+    zh: (p) => ({ title: '还在找货吗？', body: `${pickLocaleText(p.pointName, 'zh')} — 请确认您仍在当地` }),
+    en: (p) => ({ title: 'Still looking for cargo?', body: `${pickLocaleText(p.pointName, 'en')} — confirm you are still there` }),
+  },
   CARGO_UNPUBLISHED: {
     ru: (p) => ({ title: 'Груз снят с публикации', body: p.reason || 'Администратор снял груз с витрины' }),
     kk: (p) => ({ title: 'Жүк жарияланымнан алынды', body: p.reason || 'Әкімші жүкті витринадан алып тастады' }),
@@ -219,6 +236,18 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
     channels: ['PUSH'],
     render: (locale, p) => T.AGREED_CHECK[locale](p),
     deepLink: (p) => `lubao://chat/${p.chatId}`,
+  },
+  ARRIVAL_DAY_CHECK: {
+    eventGroup: 'ARRIVAL_CHECK',
+    channels: ['PUSH'],
+    render: (locale, p) => T.ARRIVAL_DAY_CHECK[locale](p),
+    deepLink: () => 'lubao://arrival',
+  },
+  ARRIVAL_STILL_LOOKING: {
+    eventGroup: 'ARRIVAL_CHECK',
+    channels: ['PUSH'],
+    render: (locale, p) => T.ARRIVAL_STILL_LOOKING[locale](p),
+    deepLink: () => 'lubao://arrival',
   },
   CARGO_UNPUBLISHED: {
     eventGroup: 'ADMIN_ACTION',

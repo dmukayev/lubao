@@ -1980,7 +1980,7 @@ describe('AdminService reference-data edits (задача 028, п.21)', () => {
 
   it('updatePoint writes coordinates and city change', async () => {
     const prisma: any = {
-      point: { findUnique: jest.fn().mockResolvedValue({ name: {}, cityId: 'city1', isActive: true, lat: null, lng: null }), update: jest.fn() },
+      point: { findUnique: jest.fn().mockResolvedValue({ name: {}, cityId: 'city1', isActive: true, lat: null, lng: null, kind: 'CITY', radiusM: null }), update: jest.fn() },
       auditLog: { create: jest.fn() },
     };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
@@ -1988,6 +1988,78 @@ describe('AdminService reference-data edits (задача 028, п.21)', () => {
     await service.updatePoint('p1', 'admin-1', { lat: 44.2, lng: 80.4, reason: 'Уточнили координаты' } as any);
 
     expect(prisma.point.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ lat: 44.2, lng: 80.4 }) }));
+  });
+
+  it('040: терминал без координат и радиуса не заводится (создание)', async () => {
+    const prisma: any = { city: { findUnique: jest.fn().mockResolvedValue({ id: 'c1', lat: null, lng: null }) }, point: { create: jest.fn() } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await expect(service.createPoint({ cityId: 'c1', kind: 'TERMINAL', name: { kk: 'a', ru: 'a', zh: 'a', en: 'a' } } as any)).rejects.toThrow('TERMINAL_NEEDS_GEOFENCE');
+    expect(prisma.point.create).not.toHaveBeenCalled();
+  });
+
+  it('040: точка-город создаётся без геозоны, с координатами города по умолчанию', async () => {
+    const prisma: any = { city: { findUnique: jest.fn().mockResolvedValue({ id: 'c1', lat: 43.2, lng: 76.9 }) }, point: { create: jest.fn() } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.createPoint({ cityId: 'c1', name: { kk: 'a', ru: 'a', zh: 'a', en: 'a' }, radiusM: 5000 } as any);
+
+    expect(prisma.point.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ kind: 'CITY', lat: 43.2, lng: 76.9, radiusM: null }),
+    });
+  });
+
+  it('040: терминал с геозоной создаётся с радиусом', async () => {
+    const prisma: any = { city: { findUnique: jest.fn().mockResolvedValue({ id: 'c1', lat: null, lng: null }) }, point: { create: jest.fn() } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.createPoint({ cityId: 'c1', kind: 'TERMINAL', lat: 44.2, lng: 80.4, radiusM: 3000, name: { kk: 'a', ru: 'a', zh: 'a', en: 'a' } } as any);
+
+    expect(prisma.point.create).toHaveBeenCalledWith({ data: expect.objectContaining({ kind: 'TERMINAL', radiusM: 3000, lat: 44.2, lng: 80.4 }) });
+  });
+
+  it('040: перевод города в терминал без радиуса отклоняется, возврат в город сбрасывает геозону', async () => {
+    const prisma: any = {
+      point: {
+        findUnique: jest.fn().mockResolvedValue({ name: {}, cityId: 'c1', isActive: true, lat: 44.2, lng: 80.4, kind: 'CITY', radiusM: null }),
+        update: jest.fn(),
+      },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    await expect(service.updatePoint('p1', 'admin-1', { kind: 'TERMINAL', reason: 'x' } as any)).rejects.toThrow('TERMINAL_NEEDS_GEOFENCE');
+
+    prisma.point.findUnique.mockResolvedValue({ name: {}, cityId: 'c1', isActive: true, lat: 44.2, lng: 80.4, kind: 'TERMINAL', radiusM: 3000 });
+    await service.updatePoint('p1', 'admin-1', { kind: 'CITY', reason: 'не терминал' } as any);
+    expect(prisma.point.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ kind: 'CITY', radiusM: null }) }));
+  });
+
+  it('040, п.9: разрез по городам — анонсы/грузы/сделки по каждой точке, пустые точки не показываются', async () => {
+    const prisma: any = {
+      point: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'almaty', name: { ru: 'Алматы' }, kind: 'CITY', isActive: true },
+          { id: 'astana', name: { ru: 'Астана' }, kind: 'CITY', isActive: true },
+          { id: 'empty', name: { ru: 'Пусто' }, kind: 'CITY', isActive: true },
+        ]),
+      },
+      arrival: { groupBy: jest.fn().mockResolvedValue([{ pointId: 'almaty', _count: 3 }]) },
+      cargo: { groupBy: jest.fn().mockResolvedValue([{ pointId: 'almaty', _count: 2 }, { pointId: 'astana', _count: 1 }]) },
+      deal: {
+        findMany: jest.fn().mockResolvedValue([
+          { status: 'IN_TRANSIT', cargo: { pointId: 'almaty' } },
+          { status: 'DELIVERED', cargo: { pointId: 'almaty' } },
+          { status: 'CANCELLED', cargo: { pointId: 'astana' } },
+        ]),
+      },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const rows = await service.statsByCity();
+
+    expect(rows.map((r) => r.pointId)).toEqual(['almaty', 'astana']);
+    expect(rows[0]).toMatchObject({ arrivals: 3, cargos: 2, dealsActive: 1, dealsDelivered: 1 });
+    expect(rows[1]).toMatchObject({ arrivals: 0, cargos: 1, dealsActive: 0, dealsDelivered: 0 });
   });
 
   it('updateCity writes region/coordinates for an already-approved city (not the PENDING queue)', async () => {

@@ -22,8 +22,11 @@ export class CargosController {
   ) {}
 
   @Get()
-  feed(@CurrentUser() ctx: RequestContext) {
-    return this.cargos.feed(ctx.driver?.id);
+  feed(@CurrentUser() ctx: RequestContext, @Query('limit') limit?: string, @Query('offset') offset?: string) {
+    return this.cargos.feed(ctx.driver?.id, {
+      limit: limit ? Number(limit) : undefined,
+      offset: offset ? Number(offset) : undefined,
+    });
   }
 
   @Get('mine')
@@ -39,12 +42,14 @@ export class CargosController {
     @Query('weightKg') weightKg?: string,
     @Query('volumeM3') volumeM3?: string,
     @Query('palletCount') palletCount?: string,
+    @Query('pointId') pointId?: string,
   ) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
     return this.cargos.fitCount({
       weightKg: weightKg ? Number(weightKg) : undefined,
       volumeM3: volumeM3 ? Number(volumeM3) : undefined,
       palletCount: palletCount ? Number(palletCount) : undefined,
+      pointId,
     });
   }
 
@@ -88,6 +93,13 @@ export class CargosController {
   /// Мой отклик на груз (041): карточка водителя показывает «Откликнуться» /
   /// «Вас приглашают» / «Отклик отправлен» по реальному состоянию, а не по
   /// локальному флагу. Обёртка в объект — не голый null (задача 027).
+  /// «Помещается к текущему: 8 т + 10 т из 20 т» (задача 040, п.6).
+  @Get(':id/partial-hint')
+  partialHint(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.cargos.partialHint(ctx.driver.id, id);
+  }
+
   @Get(':id/my-response')
   async myResponse(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');

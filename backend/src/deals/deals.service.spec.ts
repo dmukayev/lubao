@@ -34,6 +34,7 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
   beforeEach(() => {
     prisma = {
       deal: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+      arrival: { updateMany: jest.fn().mockResolvedValue({ count: 0 }), findFirst: jest.fn().mockResolvedValue(null), update: jest.fn() },
       cargo: { updateMany: jest.fn() },
       companyMember: { findFirst: jest.fn() },
       chat: { findFirst: jest.fn().mockResolvedValue(null) },
@@ -52,6 +53,16 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
     cargos = { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) };
     notifications = { notify: jest.fn() };
     service = new DealsService(prisma, cargos, notifications, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);
+  });
+
+  it('040, п.4: подтверждение сделки гасит анонс водителя («на месте» → COMPLETED)', async () => {
+    prisma.deal.findUnique.mockResolvedValue(dealFixture());
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
+    prisma.arrival.updateMany.mockResolvedValue({ count: 1 });
+
+    await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
+
+    expect(prisma.arrival.updateMany).toHaveBeenCalledWith({ where: { driverId: 'd1', status: 'ON_SITE' }, data: { status: 'COMPLETED' } });
   });
 
   it('advanceStatus notifies the driver and the cargo publisher, plus WeCom to the company', async () => {
@@ -114,6 +125,7 @@ describe('DealsService.advanceStatus — проверка связки маши�
   beforeEach(() => {
     prisma = {
       deal: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+      arrival: { updateMany: jest.fn().mockResolvedValue({ count: 0 }), findFirst: jest.fn().mockResolvedValue(null), update: jest.fn() },
       companyMember: { findFirst: jest.fn() },
       chat: { findFirst: jest.fn().mockResolvedValue(null) },
       vehicle: { findUnique: jest.fn(), findMany: jest.fn() },
@@ -212,6 +224,7 @@ describe('DealsService — догруз разрешён, «бронь всег�
         update: jest.fn(),
         findMany: jest.fn().mockResolvedValue(activeDeals),
       },
+      arrival: { updateMany: jest.fn().mockResolvedValue({ count: 0 }), findFirst: jest.fn().mockResolvedValue(null), update: jest.fn() },
       companyMember: { findFirst: jest.fn() },
       chat: { findFirst: jest.fn().mockResolvedValue(null) },
       vehicle: {

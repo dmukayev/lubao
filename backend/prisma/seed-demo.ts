@@ -45,7 +45,8 @@ async function permit(code: string) {
 }
 
 async function khorgosPoint() {
-  return prisma.point.findFirstOrThrow({});
+  // Хоргос — терминал, остальные точки (города РК) заведены сидом справочника (задача 040).
+  return prisma.point.findFirstOrThrow({ where: { city: { code: 'KZ-ZHETYSU-KHORGOS' } } });
 }
 
 async function main() {

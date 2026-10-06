@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Driver } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { leaveTerminalIfOutside } from '../arrivals/arrival-lifecycle';
 import { IdentifiersService } from '../identifiers/identifiers.service';
 import { RecognitionService } from '../recognition/recognition.service';
 import { UploadsService } from '../uploads/uploads.service';
@@ -290,6 +291,8 @@ export class DriversService {
       where: { id: existing.id },
       data: { currentLat: lat, currentLng: lng, locationUpdatedAt: new Date() },
     });
+    // Терминал с геозоной: вышел за радиус — анонс «на месте» гаснет (040, п.4).
+    await leaveTerminalIfOutside(this.prisma, existing.id, { lat, lng });
     return this.toDto(updated);
   }
 

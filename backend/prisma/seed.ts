@@ -220,6 +220,54 @@ const messageTemplates: { code: string; category: string; text: I18n }[] = [
   },
 ];
 
+// Координаты городов-точек погрузки (задача 040): областные центры, города
+// республиканского значения, Хоргос/Жаркент — для сортировки ленты «≤200 км»
+// и геозоны терминала.
+const pointCoords: Record<string, { lat: number; lng: number }> = {
+  'KZ-ABAI-ADMIN': { lat: 50.4111, lng: 80.2275 },
+  'KZ-AKMOLA-ADMIN': { lat: 53.2948, lng: 69.4048 },
+  'KZ-AKTOBE-ADMIN': { lat: 50.2839, lng: 57.167 },
+  'KZ-ALMATY_REGION-ADMIN': { lat: 43.8667, lng: 77.0667 },
+  'KZ-ATYRAU-ADMIN': { lat: 47.1164, lng: 51.883 },
+  'KZ-EAST_KZ-ADMIN': { lat: 49.9487, lng: 82.628 },
+  'KZ-ZHAMBYL-ADMIN': { lat: 42.9, lng: 71.3667 },
+  'KZ-ZHETYSU-ADMIN': { lat: 45.0156, lng: 78.3739 },
+  'KZ-WEST_KZ-ADMIN': { lat: 51.2333, lng: 51.3667 },
+  'KZ-KARAGANDY-ADMIN': { lat: 49.8061, lng: 73.0856 },
+  'KZ-KOSTANAY-ADMIN': { lat: 53.2144, lng: 63.6246 },
+  'KZ-KYZYLORDA-ADMIN': { lat: 44.8528, lng: 65.5092 },
+  'KZ-MANGYSTAU-ADMIN': { lat: 43.6532, lng: 51.1975 },
+  'KZ-PAVLODAR-ADMIN': { lat: 52.2873, lng: 76.9674 },
+  'KZ-NORTH_KZ-ADMIN': { lat: 54.8667, lng: 69.15 },
+  'KZ-TURKISTAN-ADMIN': { lat: 43.2973, lng: 68.2518 },
+  'KZ-ULYTAU-ADMIN': { lat: 47.7833, lng: 67.7667 },
+  'KZ-ASTANA': { lat: 51.1694, lng: 71.4491 },
+  'KZ-ALMATY': { lat: 43.2389, lng: 76.8897 },
+  'KZ-SHYMKENT': { lat: 42.3417, lng: 69.5901 },
+  'KZ-ZHETYSU-KHORGOS': { lat: 44.2167, lng: 80.4167 },
+  'KZ-ZHETYSU-ZHARKENT': { lat: 44.1667, lng: 79.9833 },
+};
+const terminalPointCodes = new Set(['KZ-ZHETYSU-KHORGOS']);
+const TERMINAL_RADIUS_M = 3000;
+
+async function seedPoints() {
+  for (const [code, coords] of Object.entries(pointCoords)) {
+    const city = await prisma.city.findUnique({ where: { code } });
+    if (!city) continue;
+    await prisma.city.update({ where: { id: city.id }, data: coords });
+    const kind = terminalPointCodes.has(code) ? 'TERMINAL' : 'CITY';
+    const radiusM = kind === 'TERMINAL' ? TERMINAL_RADIUS_M : null;
+    const existing = await prisma.point.findFirst({ where: { cityId: city.id } });
+    if (existing) {
+      await prisma.point.update({ where: { id: existing.id }, data: { ...coords, kind, radiusM } });
+    } else {
+      // Жаркент — не точка погрузки, координаты нужны только городу.
+      if (code === 'KZ-ZHETYSU-ZHARKENT') continue;
+      await prisma.point.create({ data: { cityId: city.id, name: city.name as object, ...coords, kind, radiusM, isActive: true } });
+    }
+  }
+}
+
 async function main() {
   const countryByCode = new Map<string, string>();
   for (const c of countries) {
@@ -302,6 +350,8 @@ async function main() {
       });
     }
   }
+
+  await seedPoints();
 
   for (const bt of bodyTypes) {
     await prisma.bodyType.upsert({
