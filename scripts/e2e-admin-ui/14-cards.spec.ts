@@ -19,9 +19,9 @@ test('карточки открываются; правка имени не тр
 
   await steps.step('карточка-водителя', async () => {
     await openRoute(page, '/drivers');
-    await openFirst(page, desktop, /Эдуард Тестов/, /Эдуард Тестов/);
+    await openFirst(page, desktop, /Эдуард (Тестов|Переименованный)/, /Эдуард (Тестов|Переименованный)/);
     await expect(page.getByRole('button', { name: 'Назад' })).toBeVisible();
-    await expect(page.getByRole('group', { name: /Эдуард Тестов/ }).first()).toBeVisible();
+    await expect(page.getByRole('group', { name: /Эдуард (Тестов|Переименованный)/ }).first()).toBeVisible();
     await expect(page.locator('body')).toContainText(/E2E001KZ/);
     await expect(page.getByText('Что-то пошло не так')).toHaveCount(0);
   });
