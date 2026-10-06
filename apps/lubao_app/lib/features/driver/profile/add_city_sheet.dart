@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../../providers/api_providers.dart';
+import '../../shared/error_feedback.dart';
 
 /// «Нет моего города» (задача 021): свободный текст + обязательная область.
 /// Регионы в справочнике сегодня есть только для Казахстана — ровно тот
@@ -54,10 +55,8 @@ class _AddCitySheetState extends ConsumerState<_AddCitySheet> {
           .read(referenceDataRepositoryProvider)
           .submitCity(settlementName: settlement, regionId: _regionId!);
       if (mounted) Navigator.of(context).pop(city);
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.commonError)));
-      }
+    } catch (e) {
+      if (mounted) showApiError(context, e);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

@@ -13,6 +13,7 @@ import '../../providers/api_providers.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/data_providers.dart';
 import 'status_helpers.dart';
+import 'error_feedback.dart';
 
 const _languageNames = {'ru': 'русском', 'kk': 'қазақском', 'zh': 'китайском'};
 
@@ -136,6 +137,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       // стирать черновик, который пользователь набирает в поле ввода.
       if (text == null) _controller.clear();
       ref.invalidate(chatMessagesProvider(widget.chatId));
+    } catch (e) {
+      // Сообщение не ушло — текст остаётся в поле, пользователь видит причину.
+      if (mounted) showApiError(context, e, onRetry: () => _send(text));
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -146,8 +150,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     try {
       await ref.read(chatRepositoryProvider).retryTranslation(widget.chatId, message.id);
       ref.invalidate(chatMessagesProvider(widget.chatId));
-    } catch (_) {
-      // остаётся FAILED — пользователь может попробовать снова
+    } catch (e) {
+      // Перевод остаётся FAILED — пользователь может повторить; причину показываем.
+      if (mounted) showApiError(context, e);
     }
   }
 
@@ -162,6 +167,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     try {
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
+        // Сначала объясняем, зачем нужна геопозиция (041, п.8), потом системный запрос.
+        final agreed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(t.locationRationaleTitle),
+            content: Text(t.locationRationaleBody),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.commonCancel)),
+              FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(t.locationRationaleContinue)),
+            ],
+          ),
+        );
+        if (agreed != true) return;
         permission = await Geolocator.requestPermission();
       }
       if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
@@ -179,7 +197,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               '&coordinate=wgs84&src=lubao&callnative=1'
           : 'https://2gis.kz/geo/${position.longitude},${position.latitude}';
       await _send('📍 ${t.chatLocationMessagePrefix}: $link');
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ChatScreen: location failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.chatLocationError)));
       }
@@ -570,8 +589,7 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
   void _showError(Object error) {
     if (!mounted) return;
     final t = context.l10n;
-    final text = responseConflictText(t, error) ?? t.commonError;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage(t, error))));
     _reload();
   }
 

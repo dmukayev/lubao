@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:lubao_core/lubao_core.dart';
@@ -36,12 +37,20 @@ class LocationReporter {
     _timer = null;
   }
 
+  /// Решение «два уровня» (008): координаты уходят только пока у водителя
+  /// есть активная сделка в статусе «Загружен»/«В пути»; без неё трекинга нет.
+  Future<bool> _hasTrackedDeal() async {
+    final deals = await _ref.read(dealRepositoryProvider).mine();
+    return deals.any((d) => d.status == DealStatus.loaded || d.status == DealStatus.inTransit);
+  }
+
   Future<void> _tick() async {
     try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
+      if (!await _hasTrackedDeal()) return;
+      // Разрешение здесь НЕ запрашиваем (041, п.8): его просят с объяснением
+      // в момент первого осознанного действия (📍 в чате); нет разрешения —
+      // просто не шлём.
+      final permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
         return;
       }
@@ -51,8 +60,9 @@ class LocationReporter {
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
       );
       await _ref.read(driverRepositoryProvider).updateLocation(lat: position.latitude, lng: position.longitude);
-    } catch (_) {
-      // best-effort: нет разрешения/GPS выключен/сеть недоступна — просто пробуем в следующий тик
+    } catch (e) {
+      // best-effort: GPS выключен/сеть недоступна — пробуем в следующий тик
+      debugPrint('LocationReporter: tick failed: $e');
     }
   }
 

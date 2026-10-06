@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/data_providers.dart';
 import 'status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'error_feedback.dart';
 
 class DealDetailScreen extends ConsumerStatefulWidget {
   const DealDetailScreen({super.key, required this.dealId});
@@ -136,6 +137,8 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
       await ref.read(dealRepositoryProvider).cancel(widget.dealId, reason: reason.trim(), reasonCode: presetCode);
       ref.invalidate(dealByIdProvider(widget.dealId));
       ref.invalidate(dealsMineProvider);
+    } catch (e) {
+      if (mounted) showApiError(context, e);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -176,8 +179,12 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
     );
 
     if (submitted != true) return;
-    await ref.read(reviewRepositoryProvider).submit(widget.dealId, rating: rating, comment: commentController.text);
-    ref.invalidate(reviewsForDealProvider(widget.dealId));
+    try {
+      await ref.read(reviewRepositoryProvider).submit(widget.dealId, rating: rating, comment: commentController.text);
+      ref.invalidate(reviewsForDealProvider(widget.dealId));
+    } catch (e) {
+      if (mounted) showApiError(context, e);
+    }
   }
 
   @override

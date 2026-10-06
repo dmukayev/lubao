@@ -8,6 +8,7 @@ import '../../providers/api_providers.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../shared/status_helpers.dart';
+import '../shared/error_feedback.dart';
 
 const _codeLength = 4;
 
@@ -92,8 +93,9 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
       }
       _startCooldown();
       _codeFocusNodes.first.requestFocus();
-    } catch (_) {
-      // лимит/сеть — просто не перезапускаем отсчёт
+    } catch (e) {
+      // лимит/сеть — отсчёт не перезапускаем, но причину показываем
+      if (mounted) showApiError(context, e);
     } finally {
       if (mounted) setState(() => _resending = false);
     }

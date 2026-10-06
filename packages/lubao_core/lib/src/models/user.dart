@@ -47,21 +47,21 @@ class CompanyInviteInfo {
 class Vehicle {
   const Vehicle({
     required this.id,
-    required this.bodyTypeId,
+    this.bodyTypeId,
     this.plateNumber,
     this.brand,
     this.capacityTons,
   });
 
   final String id;
-  final String bodyTypeId;
+  final String? bodyTypeId;
   final String? plateNumber;
   final String? brand;
   final double? capacityTons;
 
   factory Vehicle.fromJson(Map<String, dynamic> json) => Vehicle(
         id: json['id'] as String,
-        bodyTypeId: json['bodyTypeId'] as String,
+        bodyTypeId: json['bodyTypeId'] as String?,
         plateNumber: json['plateNumber'] as String?,
         brand: json['brand'] as String?,
         capacityTons: (json['capacityTons'] as num?)?.toDouble(),
@@ -92,6 +92,7 @@ class GarageVehicle {
     required this.isVerified,
     required this.isArchived,
     required this.createdAt,
+    this.hasDocument = true,
   });
 
   final String id;
@@ -114,6 +115,9 @@ class GarageVehicle {
   final bool isArchived;
   final DateTime createdAt;
 
+  /// Загружен ли техпаспорт (на проверке/одобрен); false — кнопка «Добавить документ» (041, п.6).
+  final bool hasDocument;
+
   factory GarageVehicle.fromJson(Map<String, dynamic> json) => GarageVehicle(
         id: json['id'] as String,
         kind: vehicleKindFromJson(json['kind'] as String),
@@ -132,6 +136,7 @@ class GarageVehicle {
         isOwner: json['isOwner'] as bool? ?? true,
         isVerified: json['isVerified'] as bool? ?? false,
         isArchived: json['isArchived'] as bool? ?? false,
+        hasDocument: json['hasDocument'] as bool? ?? true,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 }

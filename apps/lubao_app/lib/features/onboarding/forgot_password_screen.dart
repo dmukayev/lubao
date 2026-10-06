@@ -7,6 +7,7 @@ import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/api_providers.dart';
 import '../shared/status_helpers.dart';
+import '../shared/error_feedback.dart';
 
 /// «Забыли пароль» (задача 025, п. 9): email → код на почту → новый
 /// пароль. Успешная смена пароля разлогинивает все остальные устройства
@@ -78,8 +79,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     try {
       await ref.read(authRepositoryProvider).requestPasswordReset(email: _emailController.text.trim());
       _startCooldown();
-    } catch (_) {
-      // лимит/сеть — просто не перезапускаем отсчёт
+    } catch (e) {
+      // лимит/сеть — отсчёт не перезапускаем, но причину показываем
+      if (mounted) showApiError(context, e);
     } finally {
       if (mounted) setState(() => _resending = false);
     }

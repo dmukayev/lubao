@@ -10,7 +10,7 @@ class DriverSetupInput {
     required this.anyCountry,
     required this.directionCountryIds,
     required this.permitIds,
-    required this.bodyTypeId,
+    this.bodyTypeId,
     this.plateNumber,
     this.capacityTons,
   });
@@ -20,7 +20,8 @@ class DriverSetupInput {
   final bool anyCountry;
   final List<String> directionCountryIds;
   final List<String> permitIds;
-  final String bodyTypeId;
+  /// Кузов и тоннаж нужны только при регистрации (041, п.6) — дальше машины в гараже.
+  final String? bodyTypeId;
   final String? plateNumber;
   final double? capacityTons;
 
@@ -30,7 +31,7 @@ class DriverSetupInput {
         'anyCountry': anyCountry,
         'directionCountryIds': directionCountryIds,
         'permitIds': permitIds,
-        'bodyTypeId': bodyTypeId,
+        if (bodyTypeId != null) 'bodyTypeId': bodyTypeId,
         if (plateNumber != null) 'plateNumber': plateNumber,
         if (capacityTons != null) 'capacityTons': capacityTons,
       };

@@ -6,8 +6,8 @@ class ApiClient {
   /// [refreshDio] — только для тестов (024 п.1): подменить сетевой слой
   /// только для /auth/refresh, не трогая основной [dio].
   ApiClient({required String baseUrl, TokenStorage? tokenStorage, Dio? refreshDio})
-      : dio = Dio(BaseOptions(baseUrl: baseUrl, connectTimeout: const Duration(seconds: 10))),
-        _refreshDio = refreshDio ?? Dio(BaseOptions(baseUrl: baseUrl, connectTimeout: const Duration(seconds: 10))),
+      : dio = Dio(BaseOptions(baseUrl: baseUrl, connectTimeout: const Duration(seconds: 10), receiveTimeout: const Duration(seconds: 20))),
+        _refreshDio = refreshDio ?? Dio(BaseOptions(baseUrl: baseUrl, connectTimeout: const Duration(seconds: 10), receiveTimeout: const Duration(seconds: 20))),
         tokenStorage = tokenStorage ?? TokenStorage() {
     dio.interceptors.add(InterceptorsWrapper(onRequest: _onRequest, onError: _onError));
   }

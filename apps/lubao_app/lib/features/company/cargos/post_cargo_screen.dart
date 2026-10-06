@@ -8,6 +8,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../shared/photo_picker.dart';
+import '../../shared/error_feedback.dart';
 
 class PostCargoScreen extends ConsumerStatefulWidget {
   const PostCargoScreen({super.key, this.cargo});
@@ -35,6 +36,9 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   String? _bodyTypeId;
   Currency _currency = Currency.usd;
   DateTime _readyDate = DateTime.now();
+  String? _destinationError;
+  String? _bodyTypeError;
+  String? _priceError;
   bool _saving = false;
   final List<String> _photoUrls = [];
   bool _uploadingPhoto = false;
@@ -81,10 +85,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       final bytes = await picked.readAsBytes();
       final url = await ref.read(uploadsRepositoryProvider).uploadImage(bytes, filename: picked.name);
       setState(() => _photoUrls.add(url));
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.postCargoPhotoUploadFailed)));
-      }
+    } catch (e) {
+      if (mounted) showApiError(context, e, fallback: context.l10n.postCargoPhotoUploadFailed);
     } finally {
       if (mounted) setState(() => _uploadingPhoto = false);
     }
@@ -104,8 +106,9 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     try {
       final count = await ref.read(cargoRepositoryProvider).fitCount(weightKg: weightKg, volumeM3: volumeM3, palletCount: palletCount);
       if (mounted) setState(() => _fitCount = count);
-    } catch (_) {
-      // Подсказка best-effort — молча не показываем при сбое.
+    } catch (e) {
+      // Подсказка best-effort: при сбое просто не показываем (но в лог пишем).
+      debugPrint('PostCargoScreen: fitCount failed: $e');
       if (mounted) setState(() => _fitCount = null);
     } finally {
       if (mounted) setState(() => _fitCountLoading = false);
@@ -124,7 +127,14 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
 
   Future<void> _submit() async {
     if (!_isEditing && !(ref.read(sessionProvider)?.company?.isVerified ?? false)) return;
-    if (_countryId == null || _bodyTypeId == null || _priceController.text.isEmpty) return;
+    final t = context.l10n;
+    final price = double.tryParse(_priceController.text.trim().replaceAll(',', '.'));
+    setState(() {
+      _destinationError = _countryId == null ? t.postCargoDestinationError : null;
+      _bodyTypeError = _bodyTypeId == null ? t.postCargoBodyTypeError : null;
+      _priceError = price == null ? t.postCargoPriceError : null;
+    });
+    if (_destinationError != null || _bodyTypeError != null || _priceError != null) return;
     setState(() => _saving = true);
     try {
       final input = CreateCargoInput(
@@ -135,7 +145,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         volumeM3: double.tryParse(_volumeController.text),
         palletCount: int.tryParse(_palletController.text),
         photoUrls: _photoUrls,
-        price: double.parse(_priceController.text),
+        price: price!,
         currency: _currency,
         readyDate: _readyDate,
         description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
@@ -148,6 +158,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       }
       ref.invalidate(myCargosProvider);
       if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) showApiError(context, e, onRetry: _submit);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -216,6 +228,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 fieldViewBuilder: (context, controller, focusNode, onSubmitted) => AppTextField(
                   key: const Key('postCargoDestination'),
                   label: t.cargoDestination,
+                  errorText: _destinationError,
                   hintText: t.searchCityCountryHint,
                   controller: controller,
                   focusNode: focusNode,
@@ -226,7 +239,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
               DropdownButtonFormField<String>(
                 key: const Key('postCargoBodyType'),
                 initialValue: _bodyTypeId,
-                decoration: InputDecoration(labelText: t.postCargoBodyType, border: const OutlineInputBorder()),
+                decoration: InputDecoration(labelText: t.postCargoBodyType, border: const OutlineInputBorder(), errorText: _bodyTypeError),
                 items: refData.bodyTypes
                     .map((b) => DropdownMenuItem(value: b.id, child: Text(b.name.forLanguageCode(locale))))
                     .toList(),
@@ -271,7 +284,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: AppTextField(key: const Key('postCargoPrice'), label: t.postCargoPrice, controller: _priceController, keyboardType: TextInputType.number),
+                    child: AppTextField(key: const Key('postCargoPrice'), label: t.postCargoPrice, errorText: _priceError, controller: _priceController, keyboardType: TextInputType.number),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

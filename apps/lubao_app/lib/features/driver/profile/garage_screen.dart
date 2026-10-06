@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
+import '../../shared/photo_picker.dart';
 import 'add_vehicle_sheet.dart';
 
 /// «Мой гараж» (задача 031, этап B, макет 26) — тягачи и прицепы по
@@ -141,6 +143,28 @@ class GarageScreen extends ConsumerWidget {
     }
   }
 
+  /// «Добавить документ» (041, п.6): машина из мастера регистрации создана
+  /// без техпаспорта — прикладываем фото здесь, оно уходит на проверку.
+  Future<void> _addDocument(BuildContext context, WidgetRef ref, GarageVehicle vehicle) async {
+    final t = context.l10n;
+    final picked = await pickPhoto(ImageSource.gallery);
+    if (picked == null) return;
+    try {
+      final bytes = await picked.readAsBytes();
+      final key = await ref.read(uploadsRepositoryProvider).uploadDocument(bytes, filename: picked.name);
+      await ref.read(driverRepositoryProvider).submitVerificationDocument(
+            type: vehicle.kind == VehicleKind.trailer ? VerificationDocType.trailerPassport : VerificationDocType.vehiclePassport,
+            fileUrl: key,
+            vehicleId: vehicle.id,
+          );
+      ref.invalidate(garageVehiclesProvider);
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.garageDocumentSent)));
+    } catch (e) {
+      debugPrint('GarageScreen: failed to add document: $e');
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.driverVerificationUploadFailed)));
+    }
+  }
+
   Future<void> _archive(BuildContext context, WidgetRef ref, GarageVehicle vehicle) async {
     final t = context.l10n;
     try {
@@ -183,7 +207,7 @@ class GarageScreen extends ConsumerWidget {
                 _EmptyRow(t.garageEmptyTractors)
               else
                 for (final v in tractors) ...[
-                  _VehicleCard(vehicle: v, onArchive: () => _archive(context, ref, v)),
+                  _VehicleCard(vehicle: v, onArchive: () => _archive(context, ref, v), onAddDocument: () => _addDocument(context, ref, v)),
                   const SizedBox(height: AppSpacing.sm),
                 ],
               const SizedBox(height: AppSpacing.lg),
@@ -196,6 +220,7 @@ class GarageScreen extends ConsumerWidget {
                   _VehicleCard(
                     vehicle: v,
                     onArchive: () => _archive(context, ref, v),
+                    onAddDocument: () => _addDocument(context, ref, v),
                     // Размер можно сменить и позже (033 п.6 / 038 п.14).
                     onSetSize: () => _setSize(context, ref, v),
                   ),
@@ -251,10 +276,11 @@ class _EmptyRow extends StatelessWidget {
 }
 
 class _VehicleCard extends StatelessWidget {
-  const _VehicleCard({required this.vehicle, required this.onArchive, this.onSetSize});
+  const _VehicleCard({required this.vehicle, required this.onArchive, required this.onAddDocument, this.onSetSize});
 
   final GarageVehicle vehicle;
   final VoidCallback onArchive;
+  final VoidCallback onAddDocument;
 
   /// Не-null только у прицепа/одиночки без размера (задача 033, п.5) —
   /// мягкая подсказка, тап открывает выбор шаблона.
@@ -317,6 +343,14 @@ class _VehicleCard extends StatelessWidget {
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
                   Text(subtitle, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                ],
+                if (!vehicle.isVerified && !vehicle.hasDocument) ...[
+                  const SizedBox(height: 2),
+                  GestureDetector(
+                    key: Key('garageAddDocument-${vehicle.id}'),
+                    onTap: onAddDocument,
+                    child: Text(context.l10n.garageAddDocument, style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
+                  ),
                 ],
                 if (onSetSize != null) ...[
                   const SizedBox(height: 2),

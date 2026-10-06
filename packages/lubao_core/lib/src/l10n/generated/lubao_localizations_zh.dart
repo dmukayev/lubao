@@ -36,6 +36,21 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get commonError => '出错了';
 
   @override
+  String get errorNetwork => '无法连接服务器，请检查网络后重试';
+
+  @override
+  String get errorServer => '服务器暂时不可用，请稍后重试';
+
+  @override
+  String get errorForbidden => '您无法执行此操作';
+
+  @override
+  String get errorInvalidData => '请检查填写的内容';
+
+  @override
+  String get errorSessionExpired => '登录已过期，请重新登录';
+
+  @override
   String get chatOpenFailed => '无法打开聊天';
 
   @override
@@ -769,6 +784,15 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoTitle => '发布货源';
 
   @override
+  String get postCargoDestinationError => '请选择目的地';
+
+  @override
+  String get postCargoBodyTypeError => '请选择车厢类型';
+
+  @override
+  String get postCargoPriceError => '请填写价格（数字）';
+
+  @override
   String get postCargoDestinationCountry => '目的国家';
 
   @override
@@ -848,6 +872,15 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get chatLocationError => '无法获取位置';
+
+  @override
+  String get locationRationaleTitle => '位置';
+
+  @override
+  String get locationRationaleBody => '应用将一次性获取您当前的位置并把地图链接发到聊天中，不会后台跟踪。';
+
+  @override
+  String get locationRationaleContinue => '继续';
 
   @override
   String get chatLoadingPlaceTooltip => '装货地点';
@@ -2487,6 +2520,12 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get garageTitle => '我的车库';
+
+  @override
+  String get garageAddDocument => '添加证件';
+
+  @override
+  String get garageDocumentSent => '行驶证已提交审核';
 
   @override
   String get garageTractorsSection => '牵引车';

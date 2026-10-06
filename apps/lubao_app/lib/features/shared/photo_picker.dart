@@ -9,5 +9,5 @@ Future<XFile?> Function(ImageSource source)? debugPhotoPicker;
 Future<XFile?> pickPhoto(ImageSource source) {
   final override = debugPhotoPicker;
   if (override != null) return override(source);
-  return ImagePicker().pickImage(source: source, imageQuality: 85);
+  return ImagePicker().pickImage(source: source, maxWidth: 1600, imageQuality: 80);
 }

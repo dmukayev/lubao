@@ -36,6 +36,23 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get commonError => 'Something went wrong';
 
   @override
+  String get errorNetwork =>
+      'No connection to the server. Check your internet and retry';
+
+  @override
+  String get errorServer =>
+      'The server is temporarily unavailable. Try again later';
+
+  @override
+  String get errorForbidden => 'This action is not available to you';
+
+  @override
+  String get errorInvalidData => 'Check the data you entered';
+
+  @override
+  String get errorSessionExpired => 'Session expired — sign in again';
+
+  @override
   String get chatOpenFailed => 'Couldn\'t open chat';
 
   @override
@@ -789,6 +806,15 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get postCargoTitle => 'New cargo';
 
   @override
+  String get postCargoDestinationError => 'Choose a destination';
+
+  @override
+  String get postCargoBodyTypeError => 'Choose a body type';
+
+  @override
+  String get postCargoPriceError => 'Enter the price as a number';
+
+  @override
   String get postCargoDestinationCountry => 'Destination country';
 
   @override
@@ -869,6 +895,16 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get chatLocationError => 'Couldn\'t determine the location';
+
+  @override
+  String get locationRationaleTitle => 'Location';
+
+  @override
+  String get locationRationaleBody =>
+      'The app will take your current location once and send a map link to the chat. There is no background tracking.';
+
+  @override
+  String get locationRationaleContinue => 'Continue';
 
   @override
   String get chatLoadingPlaceTooltip => 'Loading place';
@@ -2537,6 +2573,12 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get garageTitle => 'My garage';
+
+  @override
+  String get garageAddDocument => 'Add document';
+
+  @override
+  String get garageDocumentSent => 'Registration document sent for review';
 
   @override
   String get garageTractorsSection => 'TRACTORS';

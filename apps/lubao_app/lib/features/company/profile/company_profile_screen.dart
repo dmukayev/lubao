@@ -11,6 +11,7 @@ import '../../../providers/data_providers.dart';
 import '../../../providers/locale_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../shared/photo_picker.dart';
+import '../../shared/error_feedback.dart';
 
 /// Плашка-напоминание о неподтверждённом email (задача 025, п. 7) — не
 /// блокирует ничего, просто предлагает подтвердить. «Отправить код» зовёт
@@ -30,8 +31,9 @@ class _EmailVerifyBannerState extends ConsumerState<_EmailVerifyBanner> {
     setState(() => _sending = true);
     try {
       await ref.read(authRepositoryProvider).resendEmailVerification();
-    } catch (_) {
+    } catch (e) {
       // лимит писем — код мог уже быть отправлен раньше, диалог всё равно полезен
+      debugPrint('CompanyProfile: resend email verification failed: $e');
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -60,7 +62,8 @@ class _EmailVerifyBannerState extends ConsumerState<_EmailVerifyBanner> {
                       try {
                         await ref.read(sessionProvider.notifier).verifyEmail(codeController.text.trim());
                         if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-                      } catch (_) {
+                      } catch (e) {
+                        debugPrint('CompanyProfile: verifyEmail failed: $e');
                         setDialogState(() {
                           verifying = false;
                           error = t.forgotPasswordInvalidCode;
@@ -166,10 +169,10 @@ Future<void> _showInviteDialog(BuildContext context, WidgetRef ref) async {
                               saving = false;
                               resultLink = 'lubao://invite/$token';
                             });
-                          } catch (_) {
+                          } catch (e) {
                             setState(() {
                               saving = false;
-                              error = t.commonError;
+                              error = errorMessage(t, e);
                             });
                           }
                         },
@@ -219,10 +222,10 @@ Future<void> _showSetPasswordDialog(BuildContext context, WidgetRef ref) async {
                     try {
                       await ref.read(companyRepositoryProvider).setPassword(controller.text);
                       if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-                    } catch (_) {
+                    } catch (e) {
                       setState(() {
                         saving = false;
-                        error = t.commonError;
+                        error = errorMessage(t, e);
                       });
                     }
                   },
@@ -283,7 +286,8 @@ Future<void> _showWeComDialog(BuildContext context, WidgetRef ref, String? curre
                         saving = false;
                         info = t.companyWecomTestSuccess;
                       });
-                    } catch (_) {
+                    } catch (e) {
+                      debugPrint('CompanyProfile: wecom test failed: $e');
                       setState(() {
                         saving = false;
                         error = t.companyWecomTestError;
@@ -302,10 +306,10 @@ Future<void> _showWeComDialog(BuildContext context, WidgetRef ref, String? curre
                             controller.text.trim().isEmpty ? null : controller.text.trim(),
                           );
                       if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-                    } catch (_) {
+                    } catch (e) {
                       setState(() {
                         saving = false;
-                        error = t.commonError;
+                        error = errorMessage(t, e);
                       });
                     }
                   },
@@ -360,7 +364,8 @@ Future<void> _showCompanyEditDialog(BuildContext context, WidgetRef ref, Company
                         ref.read(sessionProvider.notifier).updateCompany(updated, session!.companyMember!);
                       }
                       if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-                    } catch (_) {
+                    } catch (e) {
+                      debugPrint('CompanyProfile: tax id update failed: $e');
                       setState(() {
                         saving = false;
                         error = t.companyEditTaxIdError;
@@ -427,10 +432,10 @@ Future<void> _showMyContactDialog(BuildContext context, WidgetRef ref, CompanyMe
                         ref.read(sessionProvider.notifier).updateCompany(session!.company!, updated);
                       }
                       if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-                    } catch (_) {
+                    } catch (e) {
                       setState(() {
                         saving = false;
-                        error = t.commonError;
+                        error = errorMessage(t, e);
                       });
                     }
                   },
@@ -467,8 +472,8 @@ class _CompanyVerificationCardState extends ConsumerState<_CompanyVerificationCa
       final key = await ref.read(uploadsRepositoryProvider).uploadDocument(bytes, filename: picked.name);
       await ref.read(companyRepositoryProvider).submitVerificationDocument(fileUrl: key);
       ref.invalidate(companyVerificationDocumentsProvider);
-    } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.driverVerificationUploadFailed)));
+    } catch (e) {
+      if (mounted) showApiError(context, e, fallback: t.driverVerificationUploadFailed);
     } finally {
       if (mounted) setState(() => _uploading = false);
     }

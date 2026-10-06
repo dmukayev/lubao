@@ -156,6 +156,36 @@ abstract class LubaoLocalizations {
   /// **'Что-то пошло не так'**
   String get commonError;
 
+  /// No description provided for @errorNetwork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет связи с сервером. Проверьте интернет и повторите'**
+  String get errorNetwork;
+
+  /// No description provided for @errorServer.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сервер временно недоступен. Попробуйте позже'**
+  String get errorServer;
+
+  /// No description provided for @errorForbidden.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это действие вам недоступно'**
+  String get errorForbidden;
+
+  /// No description provided for @errorInvalidData.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверьте введённые данные'**
+  String get errorInvalidData;
+
+  /// No description provided for @errorSessionExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сессия истекла — войдите снова'**
+  String get errorSessionExpired;
+
   /// No description provided for @chatOpenFailed.
   ///
   /// In ru, this message translates to:
@@ -1548,6 +1578,24 @@ abstract class LubaoLocalizations {
   /// **'Новый груз'**
   String get postCargoTitle;
 
+  /// No description provided for @postCargoDestinationError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите направление'**
+  String get postCargoDestinationError;
+
+  /// No description provided for @postCargoBodyTypeError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите тип кузова'**
+  String get postCargoBodyTypeError;
+
+  /// No description provided for @postCargoPriceError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите цену числом'**
+  String get postCargoPriceError;
+
   /// No description provided for @postCargoDestinationCountry.
   ///
   /// In ru, this message translates to:
@@ -1709,6 +1757,24 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Не удалось определить местоположение'**
   String get chatLocationError;
+
+  /// No description provided for @locationRationaleTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Геопозиция'**
+  String get locationRationaleTitle;
+
+  /// No description provided for @locationRationaleBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приложение один раз возьмёт ваше текущее место и отправит ссылку на карту в чат. Фоновой слежки нет.'**
+  String get locationRationaleBody;
+
+  /// No description provided for @locationRationaleContinue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Продолжить'**
+  String get locationRationaleContinue;
 
   /// No description provided for @chatLoadingPlaceTooltip.
   ///
@@ -4841,6 +4907,18 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Мой гараж'**
   String get garageTitle;
+
+  /// No description provided for @garageAddDocument.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить документ'**
+  String get garageAddDocument;
+
+  /// No description provided for @garageDocumentSent.
+  ///
+  /// In ru, this message translates to:
+  /// **'Техпаспорт отправлен на проверку'**
+  String get garageDocumentSent;
 
   /// No description provided for @garageTractorsSection.
   ///

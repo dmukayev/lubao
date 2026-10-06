@@ -36,6 +36,22 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get commonError => 'Бірдеңе дұрыс болмады';
 
   @override
+  String get errorNetwork =>
+      'Сервермен байланыс жоқ. Интернетті тексеріп, қайталаңыз';
+
+  @override
+  String get errorServer => 'Сервер уақытша қолжетімсіз. Кейінірек қайталаңыз';
+
+  @override
+  String get errorForbidden => 'Бұл әрекет сізге қолжетімсіз';
+
+  @override
+  String get errorInvalidData => 'Енгізілген деректерді тексеріңіз';
+
+  @override
+  String get errorSessionExpired => 'Сессия аяқталды — қайта кіріңіз';
+
+  @override
   String get chatOpenFailed => 'Чатты ашу мүмкін болмады';
 
   @override
@@ -787,6 +803,15 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get postCargoTitle => 'Жаңа жүк';
 
   @override
+  String get postCargoDestinationError => 'Бағытты таңдаңыз';
+
+  @override
+  String get postCargoBodyTypeError => 'Кузов түрін таңдаңыз';
+
+  @override
+  String get postCargoPriceError => 'Бағаны санмен көрсетіңіз';
+
+  @override
   String get postCargoDestinationCountry => 'Межелі ел';
 
   @override
@@ -867,6 +892,16 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get chatLocationError => 'Орналасқан жерді анықтау мүмкін болмады';
+
+  @override
+  String get locationRationaleTitle => 'Геопозиция';
+
+  @override
+  String get locationRationaleBody =>
+      'Қолданба қазіргі орныңызды бір рет алып, чатқа карта сілтемесін жібереді. Фондық бақылау жоқ.';
+
+  @override
+  String get locationRationaleContinue => 'Жалғастыру';
 
   @override
   String get chatLoadingPlaceTooltip => 'Тиеу орны';
@@ -2537,6 +2572,12 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get garageTitle => 'Менің гаражым';
+
+  @override
+  String get garageAddDocument => 'Құжат қосу';
+
+  @override
+  String get garageDocumentSent => 'Техпаспорт тексеруге жіберілді';
 
   @override
   String get garageTractorsSection => 'ТЯГАЧТАР';

@@ -36,6 +36,22 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get commonError => 'Что-то пошло не так';
 
   @override
+  String get errorNetwork =>
+      'Нет связи с сервером. Проверьте интернет и повторите';
+
+  @override
+  String get errorServer => 'Сервер временно недоступен. Попробуйте позже';
+
+  @override
+  String get errorForbidden => 'Это действие вам недоступно';
+
+  @override
+  String get errorInvalidData => 'Проверьте введённые данные';
+
+  @override
+  String get errorSessionExpired => 'Сессия истекла — войдите снова';
+
+  @override
   String get chatOpenFailed => 'Не удалось открыть чат';
 
   @override
@@ -783,6 +799,15 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get postCargoTitle => 'Новый груз';
 
   @override
+  String get postCargoDestinationError => 'Выберите направление';
+
+  @override
+  String get postCargoBodyTypeError => 'Выберите тип кузова';
+
+  @override
+  String get postCargoPriceError => 'Укажите цену числом';
+
+  @override
   String get postCargoDestinationCountry => 'Страна назначения';
 
   @override
@@ -863,6 +888,16 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get chatLocationError => 'Не удалось определить местоположение';
+
+  @override
+  String get locationRationaleTitle => 'Геопозиция';
+
+  @override
+  String get locationRationaleBody =>
+      'Приложение один раз возьмёт ваше текущее место и отправит ссылку на карту в чат. Фоновой слежки нет.';
+
+  @override
+  String get locationRationaleContinue => 'Продолжить';
 
   @override
   String get chatLoadingPlaceTooltip => 'Место погрузки';
@@ -2527,6 +2562,12 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get garageTitle => 'Мой гараж';
+
+  @override
+  String get garageAddDocument => 'Добавить документ';
+
+  @override
+  String get garageDocumentSent => 'Техпаспорт отправлен на проверку';
 
   @override
   String get garageTractorsSection => 'ТЯГАЧИ';

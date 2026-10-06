@@ -36,7 +36,7 @@ describe('DriversService — гараж (задача 031, этап B)', () => {
   let service: DriversService;
 
   beforeEach(() => {
-    prisma = { vehicle: { findMany: jest.fn(), create: jest.fn(), findUnique: jest.fn(), update: jest.fn() } };
+    prisma = { vehicle: { findMany: jest.fn(), create: jest.fn(), findUnique: jest.fn(), update: jest.fn() }, verificationDocument: { findMany: jest.fn().mockResolvedValue([]) } };
     // 032 п.12 (038) — машина+документ создаются одной транзакцией.
     prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     service = new DriversService(prisma);
@@ -262,5 +262,41 @@ describe('DriversService.submitVerificationDocument — машина (039, п.5)
   it('отклоняет паспорт тягача для прицепа', async () => {
     const service = make({ driverId: 'd1', isArchived: false, kind: 'TRAILER' });
     await expect(service.submitVerificationDocument('u1', 'd1', dto('VEHICLE_PASSPORT'))).rejects.toThrow('does not match');
+  });
+});
+
+describe('DriversService.updateProfile — машины только при регистрации (задача 041, п.6)', () => {
+  function setup(existingDriver: any) {
+    const tx = {
+      driver: { create: jest.fn().mockResolvedValue({ id: 'd1' }), update: jest.fn().mockResolvedValue({ id: 'd1' }) },
+      driverDirection: { deleteMany: jest.fn(), createMany: jest.fn() },
+      driverPermit: { deleteMany: jest.fn(), createMany: jest.fn() },
+      vehicle: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
+    };
+    const prisma: any = {
+      city: { findUnique: jest.fn().mockResolvedValue({ id: 'city-1' }) },
+      driver: { findUnique: jest.fn().mockResolvedValue(existingDriver), findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'd1', userId: 'u1', isVerified: false, ratingAvg: 0, ratingCount: 0 }) },
+      driverDirection: { findMany: jest.fn().mockResolvedValue([]) },
+      driverPermit: { findMany: jest.fn().mockResolvedValue([]) },
+      vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
+      verificationDocument: { findFirst: jest.fn().mockResolvedValue(null) },
+      user: { findUnique: jest.fn().mockResolvedValue({ phone: null }) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+    };
+    return { tx, service: new DriversService(prisma) };
+  }
+  const input: any = { fullName: 'Ерлан Қасымов', homeCityId: 'city-1', anyCountry: true, directionCountryIds: [], permitIds: [], bodyTypeId: 'b1', plateNumber: '123ABC02', capacityTons: 20 };
+
+  it('регистрация создаёт тягач и прицеп', async () => {
+    const { tx, service } = setup(null);
+    await service.updateProfile('u1', input);
+    expect(tx.vehicle.create).toHaveBeenCalledTimes(2);
+  });
+
+  it('правка профиля существующего водителя НЕ трогает машины гаража', async () => {
+    const { tx, service } = setup({ id: 'd1', userId: 'u1' });
+    await service.updateProfile('u1', input);
+    expect(tx.vehicle.create).not.toHaveBeenCalled();
+    expect(tx.vehicle.update).not.toHaveBeenCalled();
   });
 });

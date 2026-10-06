@@ -133,24 +133,14 @@ export class DriversService {
         });
       }
 
-      // Задача 031 — форма регистрации всё ещё редактирует «одну машину»
-      // (настоящий гараж с несколькими тягачами/прицепами — Stage B), но
-      // под капотом это теперь пара TRACTOR (госномер) + TRAILER (кузов/
-      // тоннаж), как и у остальных водителей после миграции.
-      const tractor = await tx.vehicle.findFirst({ where: { driverId: driver.id, kind: 'TRACTOR' } });
-      if (tractor) {
-        await tx.vehicle.update({ where: { id: tractor.id }, data: { plateNumber: input.plateNumber } });
-      } else {
+      // Задача 041, п.6 — машины создаются ТОЛЬКО при регистрации (кузов и
+      // тоннаж из мастера → пара тягач + прицеп без документов; техпаспорт
+      // добавляется в гараже кнопкой «Добавить документ»). Дальнейшая правка
+      // профиля машины не трогает: раньше «Сохранить» затирал первые машины
+      // гаража, включая архивные, данными из формы.
+      if (!existing) {
+        if (!input.bodyTypeId) throw new BadRequestException('bodyTypeId is required for registration');
         await tx.vehicle.create({ data: { driverId: driver.id, kind: 'TRACTOR', plateNumber: input.plateNumber } });
-      }
-
-      const trailer = await tx.vehicle.findFirst({ where: { driverId: driver.id, kind: 'TRAILER' } });
-      if (trailer) {
-        await tx.vehicle.update({
-          where: { id: trailer.id },
-          data: { bodyTypeId: input.bodyTypeId, capacityTons: input.capacityTons },
-        });
-      } else {
         await tx.vehicle.create({
           data: { driverId: driver.id, kind: 'TRAILER', bodyTypeId: input.bodyTypeId, capacityTons: input.capacityTons },
         });
@@ -381,7 +371,16 @@ export class DriversService {
       where: { driverId, isArchived: false },
       orderBy: { createdAt: 'asc' },
     });
-    return vehicles.map((v) => this.vehicleToDto(v));
+    // «Нужен документ» (041, п.6): машина без загруженного техпаспорта
+    // (создана мастером регистрации) — в гараже у неё кнопка «Добавить документ».
+    const withDocs = vehicles.length
+      ? await this.prisma.verificationDocument.findMany({
+          where: { vehicleId: { in: vehicles.map((v) => v.id) }, status: { in: ['PENDING', 'APPROVED'] } },
+          select: { vehicleId: true },
+        })
+      : [];
+    const documented = new Set(withDocs.map((d) => d.vehicleId));
+    return vehicles.map((v) => ({ ...this.vehicleToDto(v), hasDocument: documented.has(v.id) }));
   }
 
   async createVehicle(userId: string, driverId: string, dto: CreateVehicleDto) {

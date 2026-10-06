@@ -21,8 +21,10 @@ export class UpdateDriverDto {
   @IsString({ each: true })
   permitIds!: string[];
 
+  /// Нужен при регистрации (мастер создаёт машины); при правке профиля игнорируется (041, п.6).
+  @IsOptional()
   @IsString()
-  bodyTypeId!: string;
+  bodyTypeId?: string;
 
   @IsOptional()
   @IsString()

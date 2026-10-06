@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import 'add_city_sheet.dart';
+import '../../shared/error_feedback.dart';
 
 const _capacityPresets = [10.0, 15.0, 20.0, 25.0];
 
@@ -101,22 +102,27 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
     setState(() {
       _fullNameError = isValidPersonName(fullName) ? null : t.driverSetupFullNameError;
       _homeCityError = _homeCityId == null ? t.driverSetupHomeCityError : null;
-      _bodyTypeError = _bodyTypeId == null ? t.driverSetupBodyTypeError : null;
+      // Кузов — только в регистрации; при правке профиля машины не меняются (041, п.6).
+      _bodyTypeError = widget.isRegistration && _bodyTypeId == null ? t.driverSetupBodyTypeError : null;
     });
     if (_fullNameError != null || _homeCityError != null || _bodyTypeError != null) return;
 
     setState(() => _saving = true);
     try {
-      final updated = await ref.read(driverRepositoryProvider).updateProfile(DriverSetupInput(
-            fullName: fullName,
-            homeCityId: _homeCityId!,
-            anyCountry: _anyCountry,
-            directionCountryIds: _anyCountry ? [] : _selectedCountries.toList(),
-            permitIds: _selectedPermits.toList(),
-            bodyTypeId: _bodyTypeId!,
-            plateNumber: widget.isRegistration ? null : _plateController.text.trim(),
-            capacityTons: _capacityTons,
-          ));
+      final updated = await ref
+          .read(driverRepositoryProvider)
+          .updateProfile(
+            DriverSetupInput(
+              fullName: fullName,
+              homeCityId: _homeCityId!,
+              anyCountry: _anyCountry,
+              directionCountryIds: _anyCountry ? [] : _selectedCountries.toList(),
+              permitIds: _selectedPermits.toList(),
+              bodyTypeId: widget.isRegistration ? _bodyTypeId : null,
+              plateNumber: null,
+              capacityTons: _capacityTons,
+            ),
+          );
       ref.read(sessionProvider.notifier).updateDriver(updated);
       if (mounted) {
         if (widget.isRegistration) {
@@ -125,6 +131,9 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
           Navigator.of(context).pop();
         }
       }
+    } catch (e) {
+      // Регистрация/сохранение не должны молча «ничего не делать» (041, п.7).
+      if (mounted) showApiError(context, e, onRetry: _submit);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -139,9 +148,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: widget.isRegistration
-            ? IconButton(icon: const Icon(LucideIcons.arrowLeft), onPressed: _goBack)
-            : null,
+        leading: widget.isRegistration ? IconButton(icon: const Icon(LucideIcons.arrowLeft), onPressed: _goBack) : null,
         title: Text(widget.isRegistration ? t.driverRegisterTitle : t.driverSetupTitle),
       ),
       body: referenceData.when(
@@ -157,70 +164,73 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
           final initialCity = refData.cityById(_homeCityId);
           final initialCityLabel = initialCity == null
               ? ''
-              : homeCityOptions.firstWhere((o) => o.cityId == initialCity.id, orElse: () => homeCityOptions.first).label;
+              : homeCityOptions
+                    .firstWhere((o) => o.cityId == initialCity.id, orElse: () => homeCityOptions.first)
+                    .label;
 
           final step0Fields = [
-              AppTextField(
-                key: const Key('driverSetupFullName'),
-                label: t.driverSetupFullName,
-                controller: _fullNameController,
-                errorText: _fullNameError,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Autocomplete<CountryCityOption>(
-                initialValue: TextEditingValue(text: initialCityLabel),
-                displayStringForOption: (o) => o.label,
-                optionsBuilder: (value) {
-                  final addCityOption = CountryCityOption(label: t.cityNotListed, countryId: '', isAddCityAction: true);
-                  if (value.text.trim().isEmpty) return [...homeCityOptions, addCityOption];
-                  final matches = searchCities(refData.cities, refData.countries, value.text);
-                  final matchedOptions = <CountryCityOption>[];
-                  for (final city in matches) {
-                    for (final option in homeCityOptions) {
-                      if (option.cityId == city.id) {
-                        matchedOptions.add(option);
-                        break;
-                      }
+            AppTextField(
+              key: const Key('driverSetupFullName'),
+              label: t.driverSetupFullName,
+              controller: _fullNameController,
+              errorText: _fullNameError,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Autocomplete<CountryCityOption>(
+              initialValue: TextEditingValue(text: initialCityLabel),
+              displayStringForOption: (o) => o.label,
+              optionsBuilder: (value) {
+                final addCityOption = CountryCityOption(label: t.cityNotListed, countryId: '', isAddCityAction: true);
+                if (value.text.trim().isEmpty) return [...homeCityOptions, addCityOption];
+                final matches = searchCities(refData.cities, refData.countries, value.text);
+                final matchedOptions = <CountryCityOption>[];
+                for (final city in matches) {
+                  for (final option in homeCityOptions) {
+                    if (option.cityId == city.id) {
+                      matchedOptions.add(option);
+                      break;
                     }
                   }
-                  return [...matchedOptions, addCityOption];
-                },
-                onSelected: (option) async {
-                  if (option.isAddCityAction) {
-                    final city = await showAddCitySheet(context, ref, refData);
-                    if (city != null) {
-                      final countryName = refData.countryById(city.countryId).name.forLanguageCode(locale);
-                      _cityFieldController?.text = '${city.name.forLanguageCode(locale)}, $countryName';
-                      setState(() {
-                        _homeCityId = city.id;
-                        _homeCityError = null;
-                      });
-                    } else {
-                      _cityFieldController?.text = '';
-                    }
-                    return;
+                }
+                return [...matchedOptions, addCityOption];
+              },
+              onSelected: (option) async {
+                if (option.isAddCityAction) {
+                  final city = await showAddCitySheet(context, ref, refData);
+                  if (city != null) {
+                    final countryName = refData.countryById(city.countryId).name.forLanguageCode(locale);
+                    _cityFieldController?.text = '${city.name.forLanguageCode(locale)}, $countryName';
+                    setState(() {
+                      _homeCityId = city.id;
+                      _homeCityError = null;
+                    });
+                  } else {
+                    _cityFieldController?.text = '';
                   }
-                  setState(() {
-                    _homeCityId = option.cityId;
-                    _homeCityError = null;
-                  });
-                },
-                fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
-                  _cityFieldController = controller;
-                  return AppTextField(
-                    key: const Key('driverSetupHomeCity'),
-                    label: t.driverSetupHomeCity,
-                    hintText: t.searchCityCountryHint,
-                    controller: controller,
-                    focusNode: focusNode,
-                    onSubmitted: (_) => onSubmitted(),
-                    errorText: _homeCityError,
-                  );
-                },
-              ),
+                  return;
+                }
+                setState(() {
+                  _homeCityId = option.cityId;
+                  _homeCityError = null;
+                });
+              },
+              fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
+                _cityFieldController = controller;
+                return AppTextField(
+                  key: const Key('driverSetupHomeCity'),
+                  label: t.driverSetupHomeCity,
+                  hintText: t.searchCityCountryHint,
+                  controller: controller,
+                  focusNode: focusNode,
+                  onSubmitted: (_) => onSubmitted(),
+                  errorText: _homeCityError,
+                );
+              },
+            ),
           ];
 
           final step1Fields = [
+            if (widget.isRegistration) ...[
               Text(t.driverSetupVehicleTitle, style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.xs),
               Text(t.driverSetupVehicleSubtitle, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
@@ -281,77 +291,85 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                     ),
                 ],
               ),
-              if (!widget.isRegistration) ...[
-                const SizedBox(height: AppSpacing.md),
-                AppTextField(label: t.driverSetupVehiclePlate, controller: _plateController),
-                const SizedBox(height: AppSpacing.md),
-                Text(t.driverSetupDocuments, style: AppTextStyles.bodyStrong),
-                const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: refData.permits.map((permit) {
-                    final selected = _selectedPermits.contains(permit.id);
-                    return SelectableTile(
-                      label: permit.name.forLanguageCode(locale),
-                      selected: selected,
-                      leading: selected ? const Icon(LucideIcons.check, size: 16, color: AppColors.primary) : null,
-                      onTap: () => setState(() {
-                        if (selected) {
-                          _selectedPermits.remove(permit.id);
-                        } else {
-                          _selectedPermits.add(permit.id);
-                        }
-                      }),
-                    );
-                  }).toList(),
-                ),
-              ],
+            ],
+            if (!widget.isRegistration) ...[
+              // Машины правятся в гараже (041, п.6) — здесь только допуски.
+              ListTile(
+                key: const Key('driverSetupGarageLink'),
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(LucideIcons.truck),
+                title: Text(t.garageGoToGarage),
+                trailing: const Icon(LucideIcons.chevronRight),
+                onTap: () => context.push('/driver/garage'),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(t.driverSetupDocuments, style: AppTextStyles.bodyStrong),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: refData.permits.map((permit) {
+                  final selected = _selectedPermits.contains(permit.id);
+                  return SelectableTile(
+                    label: permit.name.forLanguageCode(locale),
+                    selected: selected,
+                    leading: selected ? const Icon(LucideIcons.check, size: 16, color: AppColors.primary) : null,
+                    onTap: () => setState(() {
+                      if (selected) {
+                        _selectedPermits.remove(permit.id);
+                      } else {
+                        _selectedPermits.add(permit.id);
+                      }
+                    }),
+                  );
+                }).toList(),
+              ),
+            ],
           ];
 
           final step2Fields = [
-              Text(t.driverSetupDirectionsTitle, style: AppTextStyles.headline),
-              const SizedBox(height: AppSpacing.xs),
-              Text(t.driverSetupDirectionsSubtitle, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
-              const SizedBox(height: AppSpacing.lg),
+            Text(t.driverSetupDirectionsTitle, style: AppTextStyles.headline),
+            const SizedBox(height: AppSpacing.xs),
+            Text(t.driverSetupDirectionsSubtitle, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: AppSpacing.lg),
+            AppCard(
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.globe, color: AppColors.textSecondary),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(child: Text(t.driverSetupAnyCountry, style: AppTextStyles.bodyStrong)),
+                  Switch(
+                    value: _anyCountry,
+                    onChanged: (value) => setState(() => _anyCountry = value),
+                    activeTrackColor: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+            if (!_anyCountry) ...[
+              const SizedBox(height: AppSpacing.md),
               AppCard(
-                child: Row(
+                padding: EdgeInsets.zero,
+                child: Column(
                   children: [
-                    const Icon(LucideIcons.globe, color: AppColors.textSecondary),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(child: Text(t.driverSetupAnyCountry, style: AppTextStyles.bodyStrong)),
-                    Switch(
-                      value: _anyCountry,
-                      onChanged: (value) => setState(() => _anyCountry = value),
-                      activeTrackColor: AppColors.primary,
-                    ),
+                    for (final country in refData.countries)
+                      _CountryRow(
+                        code: country.code,
+                        label: country.name.forLanguageCode(locale),
+                        selected: _selectedCountries.contains(country.id),
+                        showDivider: country != refData.countries.last,
+                        onTap: () => setState(() {
+                          if (_selectedCountries.contains(country.id)) {
+                            _selectedCountries.remove(country.id);
+                          } else {
+                            _selectedCountries.add(country.id);
+                          }
+                        }),
+                      ),
                   ],
                 ),
               ),
-              if (!_anyCountry) ...[
-                const SizedBox(height: AppSpacing.md),
-                AppCard(
-                  padding: EdgeInsets.zero,
-                  child: Column(
-                    children: [
-                      for (final country in refData.countries)
-                        _CountryRow(
-                          code: country.code,
-                          label: country.name.forLanguageCode(locale),
-                          selected: _selectedCountries.contains(country.id),
-                          showDivider: country != refData.countries.last,
-                          onTap: () => setState(() {
-                            if (_selectedCountries.contains(country.id)) {
-                              _selectedCountries.remove(country.id);
-                            } else {
-                              _selectedCountries.add(country.id);
-                            }
-                          }),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
+            ],
           ];
 
           if (!widget.isRegistration) {
@@ -406,8 +424,8 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                   key: const Key('driverSetupNext'),
                   label: isLastStep
                       ? (_anyCountry || _selectedCountries.isEmpty
-                          ? t.driverSetupSubmit
-                          : t.driverSetupCountriesSelected(_selectedCountries.length))
+                            ? t.driverSetupSubmit
+                            : t.driverSetupCountriesSelected(_selectedCountries.length))
                       : t.commonNext,
                   loading: _saving,
                   onPressed: isLastStep ? _submit : _goNext,
@@ -511,7 +529,11 @@ class _CountryRow extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-        decoration: showDivider ? const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.divider))) : null,
+        decoration: showDivider
+            ? const BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.divider)),
+              )
+            : null,
         child: Row(
           children: [
             CountryCode(code: code),

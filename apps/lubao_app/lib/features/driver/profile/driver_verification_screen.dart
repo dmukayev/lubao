@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/photo_picker.dart';
+import '../../shared/error_feedback.dart';
 
 const _requiredDocs = [
   // Задача 032, п.13 (038) — техпаспорта убраны: они загружаются в гараже
@@ -94,10 +95,8 @@ class _DocSlotState extends ConsumerState<_DocSlot> {
       final key = await ref.read(uploadsRepositoryProvider).uploadDocument(bytes, filename: picked.name);
       await ref.read(driverRepositoryProvider).submitVerificationDocument(type: widget.type, fileUrl: key);
       ref.invalidate(driverVerificationDocumentsProvider);
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.driverVerificationUploadFailed)));
-      }
+    } catch (e) {
+      if (mounted) showApiError(context, e, fallback: t.driverVerificationUploadFailed);
     } finally {
       if (mounted) setState(() => _uploading = false);
     }

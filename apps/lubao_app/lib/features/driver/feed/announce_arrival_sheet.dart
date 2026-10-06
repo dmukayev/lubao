@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
+import '../../shared/error_feedback.dart';
 
 const _waitDaysOptions = [1, 2, 3];
 
@@ -131,8 +132,11 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
             trailerId: _trailerId,
           );
       if (mounted) Navigator.of(context).pop(true);
-    } catch (_) {
-      if (mounted) setState(() => _saving = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        showApiError(context, e);
+      }
     }
   }
 

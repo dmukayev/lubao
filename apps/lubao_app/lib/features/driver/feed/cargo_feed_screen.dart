@@ -9,6 +9,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
 import 'announce_arrival_sheet.dart';
+import '../../shared/error_feedback.dart';
 
 class CargoFeedScreen extends ConsumerWidget {
   const CargoFeedScreen({super.key});
@@ -182,19 +183,31 @@ class _AnonsCard extends ConsumerWidget {
     final arrivalAsync = ref.watch(myArrivalProvider);
 
     Future<void> checkIn() async {
-      await ref.read(arrivalRepositoryProvider).checkIn();
-      ref.invalidate(myArrivalProvider);
+      try {
+        await ref.read(arrivalRepositoryProvider).checkIn();
+        ref.invalidate(myArrivalProvider);
+      } catch (e) {
+        if (context.mounted) showApiError(context, e, onRetry: checkIn);
+      }
     }
 
     Future<void> cancel() async {
-      await ref.read(arrivalRepositoryProvider).cancel();
-      ref.invalidate(myArrivalProvider);
-      ref.invalidate(arrivalTemplateProvider);
+      try {
+        await ref.read(arrivalRepositoryProvider).cancel();
+        ref.invalidate(myArrivalProvider);
+        ref.invalidate(arrivalTemplateProvider);
+      } catch (e) {
+        if (context.mounted) showApiError(context, e, onRetry: cancel);
+      }
     }
 
     Future<void> repeat() async {
-      await ref.read(arrivalRepositoryProvider).repeat();
-      ref.invalidate(myArrivalProvider);
+      try {
+        await ref.read(arrivalRepositoryProvider).repeat();
+        ref.invalidate(myArrivalProvider);
+      } catch (e) {
+        if (context.mounted) showApiError(context, e, onRetry: repeat);
+      }
     }
 
     return Container(
