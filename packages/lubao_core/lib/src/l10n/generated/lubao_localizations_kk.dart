@@ -893,6 +893,12 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get chatOfferCargoButton => 'Жүк ұсыну';
 
   @override
+  String get chatResponseClosed => 'Өтінім жабылды';
+
+  @override
+  String get chatCargoAlreadyHasDeal => 'Бұл жүкке жүргізуші таңдалып қойған';
+
+  @override
   String get chatOfferCargoSheetTitle => 'Жүкті таңдаңыз';
 
   @override

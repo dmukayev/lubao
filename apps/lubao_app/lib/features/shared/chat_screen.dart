@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -487,6 +488,18 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
 
   void _reload() => ref.invalidate(chatThreadProvider(widget.chatId));
 
+  /// Ошибки действий карточки — не молчать (задача 038, п.2): 409 с кодом
+  /// переводится в понятный текст, остальное — commonError. После ошибки
+  /// карточка перезагружается: статус на сервере мог уйти вперёд (другая
+  /// вкладка/логист), и кнопки должны отразить реальность.
+  void _showError(Object error) {
+    if (!mounted) return;
+    final t = context.l10n;
+    final text = responseConflictText(t, error) ?? t.commonError;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+    _reload();
+  }
+
   Future<void> _respond(String cargoId) async {
     final t = context.l10n;
     setState(() => _busy = true);
@@ -495,6 +508,8 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
       final name = ref.read(sessionProvider)?.driver?.fullName ?? '';
       await widget.onSystemMessage(t.chatSystemDriverReady(name));
       _reload();
+    } catch (e) {
+      _showError(e);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -505,6 +520,8 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
     try {
       await ref.read(cargoRepositoryProvider).withdrawResponse(responseId);
       _reload();
+    } catch (e) {
+      _showError(e);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -521,6 +538,8 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
       }
       await widget.onSystemMessage(t.chatSystemDriverSelected);
       _reload();
+    } catch (e) {
+      _showError(e);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -535,8 +554,18 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
     if (cargo == null || !mounted) return;
     setState(() => _busy = true);
     try {
-      await ref.read(chatRepositoryProvider).attachCargo(widget.chatId, cargo.id);
+      final result = await ref.read(chatRepositoryProvider).attachCargo(widget.chatId, cargo.id);
+      // Сервер мог вернуть ДРУГОЙ чат (пара водитель+компания+этот груз уже
+      // существует — attach-or-navigate, задача 035/038 п.3): переходим в
+      // него, а не перезагружаем текущий без груза.
+      if (!mounted) return;
+      if (result.id != widget.chatId) {
+        context.pushReplacement('/chat/${result.id}');
+        return;
+      }
       _reload();
+    } catch (e) {
+      _showError(e);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -585,8 +614,9 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
     // более крупная задача, не в рамках этого захода.
     Widget? actionRow;
     if (deal == null) {
+      final responseStatus = thread.cargoResponseStatus;
       if (widget.isDriver) {
-        if (thread.cargoResponseStatus == 'PENDING') {
+        if (responseStatus == 'PENDING') {
           actionRow = Row(
             children: [
               Expanded(child: OutlinedButton(onPressed: null, child: Text(t.chatResponseSentLabel))),
@@ -599,15 +629,26 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
               ),
             ],
           );
+        } else if (responseStatus == 'REJECTED') {
+          // Логист отклонил — повторный отклик сервер не примет (038, п.1).
+          actionRow = OutlinedButton(onPressed: null, child: Text(t.chatResponseClosed));
         } else {
+          // null (ещё не откликался) или CANCELLED (отозвал и передумал —
+          // сервер переоткрывает тот же отклик, 038 п.2).
           actionRow = PrimaryButton(label: t.chatCargoReadyButton, loading: _busy, onPressed: () => _respond(thread.cargoId!));
         }
-      } else if (thread.cargoResponseStatus != 'SELECTED') {
-        actionRow = PrimaryButton(
-          label: t.responseSelect,
-          loading: _busy,
-          onPressed: () => _selectDriver(thread.cargoId!, thread.driverId, thread.cargoResponseId),
-        );
+      } else {
+        if (responseStatus == null || responseStatus == 'PENDING') {
+          actionRow = PrimaryButton(
+            label: t.responseSelect,
+            loading: _busy,
+            onPressed: () => _selectDriver(thread.cargoId!, thread.driverId, thread.cargoResponseId),
+          );
+        } else if (responseStatus == 'REJECTED' || responseStatus == 'CANCELLED') {
+          // Выбор только из PENDING (038, п.1) — решённый отклик из чата
+          // не воскресить; SELECTED без сделки — сделка ещё грузится.
+          actionRow = OutlinedButton(onPressed: null, child: Text(t.chatResponseClosed));
+        }
       }
     }
 

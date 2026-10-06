@@ -281,6 +281,8 @@
   "chatResponseSentLabel": "Өтінім жіберілді",
   "chatWithdrawButton": "Қайтарып алу",
   "chatOfferCargoButton": "Жүк ұсыну",
+  "chatResponseClosed": "Өтінім жабылды",
+  "chatCargoAlreadyHasDeal": "Бұл жүкке жүргізуші таңдалып қойған",
   "chatOfferCargoSheetTitle": "Жүкті таңдаңыз",
   "chatSystemDriverReady": "{name} жүкті алуға дайын",
   "@chatSystemDriverReady": {

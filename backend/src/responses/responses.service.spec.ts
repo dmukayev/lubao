@@ -4,7 +4,8 @@ import { ResponsesService } from './responses.service';
 function txMock() {
   return {
     response: { updateMany: jest.fn(), update: jest.fn(), create: jest.fn() },
-    deal: { create: jest.fn() },
+    // findFirst — проверка «на груз нет активной сделки» (задача 038, п.1).
+    deal: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
     chat: { updateMany: jest.fn() },
     // Задача 031 — снимок связки тягач/прицеп при создании сделки; задача
     // 032, п.5 — источник связки теперь активный анонс водителя, гараж
@@ -67,7 +68,7 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
 
   it('rejects a duplicate response before touching notifications', async () => {
     const prisma: any = {
-      response: { findUnique: jest.fn().mockResolvedValue({ id: 'existing' }) },
+      response: { findUnique: jest.fn().mockResolvedValue({ id: 'existing', status: 'PENDING' }) },
     };
     const notifications = { notify: jest.fn() };
     const service = new ResponsesService(prisma, notifications as any);
@@ -75,12 +76,35 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
     await expect(service.createForCargo('cargo1', 'd1', 'hi')).rejects.toThrow(ConflictException);
     expect(notifications.notify).not.toHaveBeenCalled();
   });
+
+  it('задача 038, п.2 — reopens a CANCELLED response instead of 409 (withdraw → changed mind)', async () => {
+    const prisma: any = {
+      response: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'r1', status: 'CANCELLED', message: 'старое' }),
+        update: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', driver: { fullName: 'Ерлан' } }),
+        create: jest.fn(),
+      },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', publishedByUserId: 'logist-1' }) },
+    };
+    const notifications = { notify: jest.fn() };
+    const service = new ResponsesService(prisma, notifications as any);
+
+    const result = await service.createForCargo('cargo1', 'd1', undefined);
+
+    expect(prisma.response.create).not.toHaveBeenCalled();
+    expect(prisma.response.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'r1' }, data: { status: 'PENDING', message: 'старое' } }),
+    );
+    expect(result.status).toBe('PENDING');
+    // Логист снова получает уведомление — для него это новый отклик.
+    expect(notifications.notify).toHaveBeenCalled();
+  });
 });
 
 describe('ResponsesService.updateStatus — attaches the pre-deal chat (задача 017, п.3) + DEAL_STATUS (011)', () => {
   it('REJECTED does not touch deal/chat/notifications', async () => {
     const prisma: any = {
-      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', cargo: { companyId: 'c1' } }), update: jest.fn().mockResolvedValue({ driver: {} }) },
+      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }), update: jest.fn().mockResolvedValue({ driver: {} }) },
     };
     const notifications = { notify: jest.fn() };
     const service = new ResponsesService(prisma, notifications as any);
@@ -98,7 +122,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
   });
 
   it('refuses to act on another company\'s cargo', async () => {
-    const prisma: any = { response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', cargo: { companyId: 'other' } }) } };
+    const prisma: any = { response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'other' } }) } };
     const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
     await expect(service.updateStatus('r1', 'c1', 'REJECTED')).rejects.toThrow(ForbiddenException);
   });
@@ -108,7 +132,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
     tx.response.update.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', driver: { userId: 'user-d1' } });
     tx.deal.create.mockResolvedValue({ id: 'deal1', cargoId: 'cargo1', driverId: 'd1', companyId: 'c1' });
     const prisma: any = {
-      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', cargo: { companyId: 'c1' } }) },
+      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }) },
       $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
     const notifications = { notify: jest.fn() };
@@ -127,6 +151,47 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
     );
   });
 
+  it('задача 038, п.1 — SELECTED only from PENDING: a REJECTED response cannot be resurrected into a deal', async () => {
+    const prisma: any = {
+      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'REJECTED', cargo: { companyId: 'c1' } }) },
+      $transaction: jest.fn(),
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+
+    await expect(service.updateStatus('r1', 'c1', 'SELECTED')).rejects.toThrow(ConflictException);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('задача 038, п.1 — 409 CARGO_ALREADY_HAS_DEAL when the cargo already has an active deal', async () => {
+    const tx = txMock();
+    tx.deal.findFirst.mockResolvedValue({ id: 'existing-deal' });
+    const prisma: any = {
+      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+
+    await expect(service.updateStatus('r1', 'c1', 'SELECTED')).rejects.toThrow(ConflictException);
+    expect(tx.deal.findFirst).toHaveBeenCalledWith({
+      where: { cargoId: 'cargo1', status: { not: 'CANCELLED' } },
+      select: { id: true },
+    });
+    expect(tx.deal.create).not.toHaveBeenCalled();
+  });
+
+  it('задача 038, п.1 — REJECTED is idempotent but refuses to reject a SELECTED response', async () => {
+    const prisma: any = {
+      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'SELECTED', cargo: { companyId: 'c1' }, driver: { fullName: 'X' } }), update: jest.fn() },
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    await expect(service.updateStatus('r1', 'c1', 'REJECTED')).rejects.toThrow(ConflictException);
+
+    prisma.response.findUnique.mockResolvedValue({ cargoId: 'cargo1', status: 'REJECTED', cargo: { companyId: 'c1' }, driver: { fullName: 'X' } });
+    const result = await service.updateStatus('r1', 'c1', 'REJECTED');
+    expect(result.status).toBe('REJECTED');
+    expect(prisma.response.update).not.toHaveBeenCalled();
+  });
+
   it('задача 032, п.5 — the deal combo comes from the driver\'s active arrival, not the first-by-date vehicles in the garage', async () => {
     const tx = txMock();
     tx.response.update.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', driver: { userId: 'user-d1' } });
@@ -135,7 +200,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
     tx.vehicle.findFirst.mockResolvedValue({ id: 'garage-first-tractor' });
     tx.deal.create.mockResolvedValue({ id: 'deal1', cargoId: 'cargo1', driverId: 'd1', companyId: 'c1' });
     const prisma: any = {
-      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', cargo: { companyId: 'c1' } }) },
+      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }) },
       $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
     const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
@@ -155,7 +220,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
     tx.vehicle.findFirst.mockResolvedValueOnce({ id: 'garage-tractor' }).mockResolvedValueOnce({ id: 'garage-trailer' });
     tx.deal.create.mockResolvedValue({ id: 'deal1', cargoId: 'cargo1', driverId: 'd1', companyId: 'c1' });
     const prisma: any = {
-      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', cargo: { companyId: 'c1' } }) },
+      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }) },
       $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
     const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
@@ -236,5 +301,38 @@ describe('ResponsesService.inviteDriver — attaches the pre-deal chat too (за
       'CARGO_INVITE',
       { cargoId: 'cargo1', companyName: 'Acme' },
     );
+  });
+
+  it('задача 038, п.2 — a CANCELLED response can be re-invited (reopened as SELECTED)', async () => {
+    const tx = txMock();
+    tx.response.update.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'SELECTED', driver: { userId: 'user-d1' } });
+    tx.deal.create.mockResolvedValue({ id: 'deal1', cargoId: 'cargo1', driverId: 'd1', companyId: 'c1' });
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', company: { name: 'Acme' } }) },
+      response: { findUnique: jest.fn().mockResolvedValue({ id: 'r1', status: 'CANCELLED' }) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+
+    await service.inviteDriver('cargo1', 'd1', 'c1');
+
+    expect(tx.response.create).not.toHaveBeenCalled();
+    expect(tx.response.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'r1' }, data: { status: 'SELECTED' } }),
+    );
+  });
+
+  it('задача 038, п.1 — invite refuses when the cargo already has an active deal', async () => {
+    const tx = txMock();
+    tx.deal.findFirst.mockResolvedValue({ id: 'existing-deal' });
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', company: { name: 'Acme' } }) },
+      response: { findUnique: jest.fn().mockResolvedValue(null) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+
+    await expect(service.inviteDriver('cargo1', 'd1', 'c1')).rejects.toThrow(ConflictException);
+    expect(tx.deal.create).not.toHaveBeenCalled();
   });
 });

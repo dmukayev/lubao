@@ -115,6 +115,25 @@ class VehicleFullError {
   final List<String> dealIds;
 }
 
+/// Понятный текст для 409-ошибок действий с откликом/выбором водителя
+/// (задача 038, п.1–2) — `null`, если ошибка не из этого семейства
+/// (вызывающий показывает `commonError`).
+String? responseConflictText(LubaoLocalizations t, Object error) {
+  if (error is! DioException) return null;
+  final data = error.response?.data;
+  if (data is! Map) return null;
+  switch (data['code']) {
+    case 'CARGO_ALREADY_HAS_DEAL':
+      return t.chatCargoAlreadyHasDeal;
+    case 'RESPONSE_NOT_PENDING':
+      return t.chatResponseClosed;
+    case 'RESPONSE_ALREADY_EXISTS':
+      return t.cargoAlreadyResponded;
+    default:
+      return null;
+  }
+}
+
 /// true, если SMS-код сгорел после 6-й неверной попытки (см. sms.service.ts) —
 /// в отличие от просто неверного кода, повторный ввод того же кода никогда
 /// не пройдёт, нужен новый код через «Отправить код ещё раз».

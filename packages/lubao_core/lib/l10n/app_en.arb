@@ -371,6 +371,8 @@
   "chatResponseSentLabel": "Response sent",
   "chatWithdrawButton": "Withdraw",
   "chatOfferCargoButton": "Offer a cargo",
+  "chatResponseClosed": "Response closed",
+  "chatCargoAlreadyHasDeal": "A driver has already been selected for this cargo",
   "chatOfferCargoSheetTitle": "Choose a cargo",
   "chatSystemDriverReady": "{name} is ready to take the cargo",
   "@chatSystemDriverReady": {

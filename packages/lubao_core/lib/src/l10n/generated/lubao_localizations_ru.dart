@@ -889,6 +889,12 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get chatOfferCargoButton => 'Предложить груз';
 
   @override
+  String get chatResponseClosed => 'Отклик закрыт';
+
+  @override
+  String get chatCargoAlreadyHasDeal => 'На этот груз уже выбран водитель';
+
+  @override
   String get chatOfferCargoSheetTitle => 'Выберите груз';
 
   @override

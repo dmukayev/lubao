@@ -873,6 +873,12 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get chatOfferCargoButton => '推荐货物';
 
   @override
+  String get chatResponseClosed => '响应已关闭';
+
+  @override
+  String get chatCargoAlreadyHasDeal => '该货物已选定司机';
+
+  @override
   String get chatOfferCargoSheetTitle => '选择货物';
 
   @override

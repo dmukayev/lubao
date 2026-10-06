@@ -118,6 +118,9 @@ export class CreateBodyTypeDto {
   @IsString()
   code!: string;
 
+  @IsObject()
+  @ValidateNested()
+  @Type(() => UpsertI18nNameDto)
   name!: UpsertI18nNameDto;
 }
 
@@ -125,6 +128,9 @@ export class CreatePermitDto {
   @IsString()
   code!: string;
 
+  @IsObject()
+  @ValidateNested()
+  @Type(() => UpsertI18nNameDto)
   name!: UpsertI18nNameDto;
 }
 
@@ -133,6 +139,9 @@ export class CreateBodySizePresetDto {
   @IsString()
   code!: string;
 
+  @IsObject()
+  @ValidateNested()
+  @Type(() => UpsertI18nNameDto)
   name!: UpsertI18nNameDto;
 
   @IsOptional()
@@ -171,6 +180,9 @@ export class CreateBodySizePresetDto {
 
 export class AdminUpdateBodySizePresetDto {
   @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => UpsertI18nNameDto)
   name?: UpsertI18nNameDto;
 
   @IsOptional()
@@ -220,6 +232,9 @@ export class CreatePointDto {
   @IsString()
   cityId!: string;
 
+  @IsObject()
+  @ValidateNested()
+  @Type(() => UpsertI18nNameDto)
   name!: UpsertI18nNameDto;
 }
 
@@ -540,6 +555,9 @@ export class AdminChangeMemberEmailDto {
 /// в справочниках.
 export class AdminUpdateReferenceItemDto {
   @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => UpsertI18nNameDto)
   name?: UpsertI18nNameDto;
 
   @IsOptional()
@@ -558,6 +576,9 @@ export class AdminUpdateReferenceItemDto {
 
 export class AdminUpdatePointDto {
   @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => UpsertI18nNameDto)
   name?: UpsertI18nNameDto;
 
   @IsOptional()
@@ -587,6 +608,9 @@ export class AdminUpdatePointDto {
 /// PENDING-городов.
 export class AdminUpdateCityDto {
   @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => UpsertI18nNameDto)
   name?: UpsertI18nNameDto;
 
   @IsOptional()
@@ -612,6 +636,9 @@ export class ModerateCityDto {
   action!: 'APPROVE' | 'MERGE' | 'REJECT';
 
   @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => UpsertI18nNameDto)
   name?: UpsertI18nNameDto;
 
   @IsOptional()

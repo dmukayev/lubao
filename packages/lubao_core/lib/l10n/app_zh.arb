@@ -281,6 +281,8 @@
   "chatResponseSentLabel": "已发送响应",
   "chatWithdrawButton": "撤回",
   "chatOfferCargoButton": "推荐货物",
+  "chatResponseClosed": "响应已关闭",
+  "chatCargoAlreadyHasDeal": "该货物已选定司机",
   "chatOfferCargoSheetTitle": "选择货物",
   "chatSystemDriverReady": "{name} 已准备好承运该货物",
   "@chatSystemDriverReady": {

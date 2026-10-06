@@ -36,16 +36,25 @@ export class ResponsesService {
 
   async createForCargo(cargoId: string, driverId: string, message?: string) {
     const existing = await this.prisma.response.findUnique({ where: { cargoId_driverId: { cargoId, driverId } } });
-    if (existing) {
-      throw new ConflictException('You have already responded to this cargo');
+    // Отозвал → передумал → снова «Готов взять» (задача 038, п.2): НЕ 409,
+    // а переоткрытие того же отклика (уникальный ключ cargoId+driverId не
+    // даёт создать второй). 409 — только для реально решённых откликов.
+    if (existing && existing.status !== 'CANCELLED') {
+      throw new ConflictException({ code: 'RESPONSE_ALREADY_EXISTS', message: 'You have already responded to this cargo' });
     }
     const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId } });
     if (!cargo) throw new NotFoundException('Cargo not found');
 
-    const response = await this.prisma.response.create({
-      data: { cargoId, driverId, message, status: 'PENDING' },
-      include: { driver: true },
-    });
+    const response = existing
+      ? await this.prisma.response.update({
+          where: { id: existing.id },
+          data: { status: 'PENDING', message: message ?? existing.message },
+          include: { driver: true },
+        })
+      : await this.prisma.response.create({
+          data: { cargoId, driverId, message, status: 'PENDING' },
+          include: { driver: true },
+        });
 
     const contactUserId = await resolveCargoContactUserId(this.prisma, cargo);
     await this.notifications.notify(
@@ -99,6 +108,20 @@ export class ResponsesService {
     return this.toDto(updated);
   }
 
+  /// Активная сделка на груз уже есть → вторую создавать нельзя (задача
+  /// 038, п.1): раньше `deal.responseId @unique` защищал только от второй
+  /// сделки на ТОТ ЖЕ отклик, а «Выбрать» в чате с другим водителем
+  /// спокойно создавал параллельную сделку на тот же груз.
+  private async assertNoActiveDeal(tx: Prisma.TransactionClient, cargoId: string) {
+    const activeDeal = await tx.deal.findFirst({
+      where: { cargoId, status: { not: 'CANCELLED' } },
+      select: { id: true },
+    });
+    if (activeDeal) {
+      throw new ConflictException({ code: 'CARGO_ALREADY_HAS_DEAL', message: 'Cargo already has an active deal' });
+    }
+  }
+
   async updateStatus(responseId: string, companyId: string, status: 'SELECTED' | 'REJECTED') {
     const response = await this.prisma.response.findUnique({
       where: { id: responseId },
@@ -108,6 +131,12 @@ export class ResponsesService {
     if (response.cargo.companyId !== companyId) throw new ForbiddenException('Not your cargo');
 
     if (status === 'REJECTED') {
+      // Повторное «Отклонить» — идемпотентно; но SELECTED/CANCELLED
+      // отклонять нельзя: у SELECTED уже есть сделка, у CANCELLED нечего.
+      if (response.status === 'REJECTED') return this.toDto(response);
+      if (response.status !== 'PENDING') {
+        throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
+      }
       const updated = await this.prisma.response.update({
         where: { id: responseId },
         data: { status: 'REJECTED' },
@@ -116,7 +145,14 @@ export class ResponsesService {
       return this.toDto(updated);
     }
 
+    // Выбор — только из PENDING (задача 038, п.1): REJECTED/CANCELLED
+    // отклик «Выбрать» в чате больше не воскрешает в сделку.
+    if (response.status !== 'PENDING') {
+      throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
+    }
+
     const updated = await this.prisma.$transaction(async (tx) => {
+      await this.assertNoActiveDeal(tx, response.cargoId);
       await tx.response.updateMany({
         where: { cargoId: response.cargoId, status: 'PENDING', id: { not: responseId } },
         data: { status: 'REJECTED' },
@@ -158,11 +194,14 @@ export class ResponsesService {
     if (cargo.companyId !== companyId) throw new ForbiddenException('Not your cargo');
 
     const existing = await this.prisma.response.findUnique({ where: { cargoId_driverId: { cargoId, driverId } } });
-    if (existing && existing.status !== 'PENDING') {
-      throw new ConflictException('Driver already has a decided response for this cargo');
+    // CANCELLED (водитель отзывал) приглашать можно — переоткрывается тот
+    // же отклик (задача 038, п.2); REJECTED/SELECTED — решённые, нельзя.
+    if (existing && existing.status !== 'PENDING' && existing.status !== 'CANCELLED') {
+      throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Driver already has a decided response for this cargo' });
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
+      await this.assertNoActiveDeal(tx, cargoId);
       await tx.response.updateMany({
         where: { cargoId, status: 'PENDING' },
         data: { status: 'REJECTED' },

@@ -1764,6 +1764,18 @@ abstract class LubaoLocalizations {
   /// **'Предложить груз'**
   String get chatOfferCargoButton;
 
+  /// No description provided for @chatResponseClosed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отклик закрыт'**
+  String get chatResponseClosed;
+
+  /// No description provided for @chatCargoAlreadyHasDeal.
+  ///
+  /// In ru, this message translates to:
+  /// **'На этот груз уже выбран водитель'**
+  String get chatCargoAlreadyHasDeal;
+
   /// No description provided for @chatOfferCargoSheetTitle.
   ///
   /// In ru, this message translates to:

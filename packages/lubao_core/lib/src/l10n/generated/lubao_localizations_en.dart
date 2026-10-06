@@ -893,6 +893,13 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get chatOfferCargoButton => 'Offer a cargo';
 
   @override
+  String get chatResponseClosed => 'Response closed';
+
+  @override
+  String get chatCargoAlreadyHasDeal =>
+      'A driver has already been selected for this cargo';
+
+  @override
   String get chatOfferCargoSheetTitle => 'Choose a cargo';
 
   @override
