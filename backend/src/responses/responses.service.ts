@@ -185,6 +185,11 @@ export class ResponsesService {
   /// сделки на ТОТ ЖЕ отклик, а «Выбрать» в чате с другим водителем
   /// спокойно создавал параллельную сделку на тот же груз.
   private async assertNoActiveDeal(tx: Prisma.TransactionClient, cargoId: string) {
+    // Задача 038, п.22 — проверка «нет активной сделки» без блокировки
+    // гонялась: два логиста одновременно видели «свободно» и создавали две
+    // сделки. Замок по грузу до проверки сериализует выбор (освобождается на
+    // commit/rollback); `::text` — Prisma не десериализует void.
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${cargoId}))::text`;
     const activeDeal = await tx.deal.findFirst({
       where: { cargoId, status: { not: 'CANCELLED' } },
       select: { id: true },
@@ -229,11 +234,13 @@ export class ResponsesService {
         where: { cargoId: response.cargoId, status: 'PENDING', id: { not: responseId } },
         data: { status: 'REJECTED' },
       });
-      const selected = await tx.response.update({
-        where: { id: responseId },
-        data: { status: 'SELECTED' },
-        include: { driver: true },
-      });
+      // Условный апдейт (п.22): статус мог уйти из PENDING между чтением
+      // снаружи транзакции и замком — 0 затронутых = отклик уже решён.
+      const claimed = await tx.response.updateMany({ where: { id: responseId, status: 'PENDING' }, data: { status: 'SELECTED' } });
+      if (claimed.count === 0) {
+        throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
+      }
+      const selected = await tx.response.findUniqueOrThrow({ where: { id: responseId }, include: { driver: true } });
       const combo = await this.currentVehicleCombo(tx, selected.driverId);
       const deal = await tx.deal.create({
         data: {
@@ -287,12 +294,24 @@ export class ResponsesService {
         where: { cargoId, status: 'PENDING' },
         data: { status: 'REJECTED' },
       });
-      const selected = existing
-        ? await tx.response.update({ where: { id: existing.id }, data: { status: 'SELECTED' }, include: { driver: true } })
-        : await tx.response.create({
-            data: { cargoId, driverId, status: 'SELECTED' },
-            include: { driver: true },
-          });
+      let selected;
+      if (existing) {
+        // Условный апдейт (п.22): решённый между проверкой и замком отклик
+        // не воскрешается.
+        const claimed = await tx.response.updateMany({
+          where: { id: existing.id, status: { in: ['PENDING', 'CANCELLED'] } },
+          data: { status: 'SELECTED' },
+        });
+        if (claimed.count === 0) {
+          throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Driver already has a decided response for this cargo' });
+        }
+        selected = await tx.response.findUniqueOrThrow({ where: { id: existing.id }, include: { driver: true } });
+      } else {
+        selected = await tx.response.create({
+          data: { cargoId, driverId, status: 'SELECTED' },
+          include: { driver: true },
+        });
+      }
       const combo = await this.currentVehicleCombo(tx, selected.driverId);
       const deal = await tx.deal.create({
         data: {
