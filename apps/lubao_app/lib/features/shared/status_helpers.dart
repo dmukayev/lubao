@@ -329,3 +329,19 @@ class _VerificationBullet extends StatelessWidget {
     );
   }
 }
+
+/// Текст системной строки чата на языке читателя (задача 038, п.11/25) —
+/// общий для плашки в переписке и превью в списке чатов. Неизвестный код
+/// (новый сервер + старый клиент) — русский фолбэк.
+String systemMessageText(LubaoLocalizations t, String? code, Map<String, String> params, String fallback) {
+  final name = params['driverName'] ?? '';
+  return switch (code) {
+    'DRIVER_READY' => t.chatSystemDriverReady(name),
+    'DRIVER_SELECTED' => t.chatSystemDriverSelected(name),
+    'DEAL_CONFIRMED' => t.chatSystemDealConfirmed,
+    'RESPONSE_WITHDRAWN' => t.chatSystemResponseWithdrawn(name),
+    'RESPONSE_REJECTED' => t.chatSystemResponseRejected,
+    'CARGO_OFFERED' => t.chatSystemCargoOffered,
+    _ => fallback,
+  };
+}

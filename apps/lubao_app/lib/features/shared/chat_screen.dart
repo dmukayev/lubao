@@ -483,15 +483,7 @@ class _SystemMessageChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    final name = message.systemParams['driverName'] ?? '';
-    final text = switch (message.systemCode) {
-      'DRIVER_READY' => t.chatSystemDriverReady(name),
-      'DRIVER_SELECTED' => t.chatSystemDriverSelected,
-      'DEAL_CONFIRMED' => t.chatSystemDealConfirmed,
-      'RESPONSE_WITHDRAWN' => t.chatSystemResponseWithdrawn(name),
-      'CARGO_OFFERED' => t.chatSystemCargoOffered,
-      _ => message.originalText,
-    };
+    final text = systemMessageText(t, message.systemCode, message.systemParams, message.originalText);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
       decoration: BoxDecoration(color: AppColors.divider, borderRadius: BorderRadius.circular(999)),
@@ -733,6 +725,10 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
         } else if (responseStatus == 'REJECTED') {
           // Логист отклонил — повторный отклик сервер не примет (038, п.1).
           actionRow = OutlinedButton(onPressed: null, child: Text(t.chatResponseClosed));
+        } else if (responseStatus == 'SELECTED') {
+          // Выбран, а сделка в карточке ещё не подгрузилась (038, п.27) —
+          // не «Готов взять» (отклик уже есть), а лоадер до обновления.
+          actionRow = const Center(child: Padding(padding: EdgeInsets.all(AppSpacing.sm), child: CircularProgressIndicator(strokeWidth: 2)));
         } else {
           // null (ещё не откликался) или CANCELLED (отозвал и передумал —
           // сервер переоткрывает тот же отклик, 038 п.2).
@@ -740,8 +736,10 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
         }
       } else {
         if (responseStatus == null || responseStatus == 'PENDING') {
+          // Нет отклика — это приглашение («Пригласить к грузу»), есть —
+          // выбор из откликов (038, п.27).
           actionRow = PrimaryButton(
-            label: t.responseSelect,
+            label: responseStatus == null ? t.driversAtPointInvite : t.responseSelect,
             loading: _busy,
             onPressed: () => _selectDriver(thread.cargoId!, thread.driverId, thread.cargoResponseId),
           );

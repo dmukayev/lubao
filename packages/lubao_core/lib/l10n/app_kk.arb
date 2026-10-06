@@ -299,7 +299,9 @@
   "@chatSystemDriverReady": {
     "placeholders": { "name": { "type": "String" } }
   },
-  "chatSystemDriverSelected": "Логист сізді тасымалдауға таңдады",
+  "chatSystemDriverSelected": "{name} жүргізушісі тасымалдауға таңдалды",
+  "@chatSystemDriverSelected": { "placeholders": { "name": { "type": "String" } } },
+  "chatSystemResponseRejected": "Логист өтінімді қабылдамады",
   "chatSystemDealConfirmed": "Жүргізуші тасымалды растады",
   "chatSystemResponseWithdrawn": "{name} өтінімін қайтарып алды",
   "@chatSystemResponseWithdrawn": { "placeholders": { "name": { "type": "String" } } },

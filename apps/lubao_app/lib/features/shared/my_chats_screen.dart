@@ -82,7 +82,7 @@ class _MyChatsScreenState extends ConsumerState<MyChatsScreen> {
                   ),
                   title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text(
-                    [if (entry.cargoPointName != null) entry.cargoPointName!.forLanguageCode(locale), if (entry.lastMessageText != null) entry.lastMessageText!]
+                    [if (entry.cargoPointName != null) entry.cargoPointName!.forLanguageCode(locale), if (entry.lastMessageText != null) systemMessageText(t, entry.lastMessageSystemCode, entry.lastMessageSystemParams, entry.lastMessageText!)]
                         .join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

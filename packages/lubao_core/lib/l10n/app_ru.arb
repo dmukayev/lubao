@@ -389,7 +389,9 @@
   "@chatSystemDriverReady": {
     "placeholders": { "name": { "type": "String" } }
   },
-  "chatSystemDriverSelected": "Логист выбрал вас для перевозки",
+  "chatSystemDriverSelected": "Водитель {name} выбран для перевозки",
+  "@chatSystemDriverSelected": { "placeholders": { "name": { "type": "String" } } },
+  "chatSystemResponseRejected": "Логист отклонил отклик",
   "chatSystemDealConfirmed": "Перевозка подтверждена водителем",
   "chatSystemResponseWithdrawn": "{name} отозвал(а) отклик",
   "@chatSystemResponseWithdrawn": { "placeholders": { "name": { "type": "String" } } },

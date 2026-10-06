@@ -54,11 +54,24 @@ class ChatThread {
 /// Строка списка «Мои чаты» (задача 017, п.1) — `ChatThread` + превью
 /// последнего сообщения и счётчик непрочитанных.
 class MyChatEntry {
-  const MyChatEntry({required this.thread, this.cargoPointName, this.lastMessageText, required this.lastMessageAt, required this.unreadCount});
+  const MyChatEntry({
+    required this.thread,
+    this.cargoPointName,
+    this.lastMessageText,
+    this.lastMessageSystemCode,
+    this.lastMessageSystemParams = const {},
+    required this.lastMessageAt,
+    required this.unreadCount,
+  });
 
   final ChatThread thread;
   final I18nText? cargoPointName;
   final String? lastMessageText;
+
+  /// Превью системной строки (038, п.25) — текст строится из ARB на языке
+  /// читателя; null — последнее сообщение обычное.
+  final String? lastMessageSystemCode;
+  final Map<String, String> lastMessageSystemParams;
   final DateTime lastMessageAt;
   final int unreadCount;
 
@@ -66,6 +79,8 @@ class MyChatEntry {
         thread: ChatThread.fromJson(json),
         cargoPointName: json['cargoPointName'] == null ? null : I18nText.fromJson(json['cargoPointName'] as Map<String, dynamic>),
         lastMessageText: json['lastMessageText'] as String?,
+        lastMessageSystemCode: json['lastMessageKind'] == 'SYSTEM' ? json['lastMessageSystemCode'] as String? : null,
+        lastMessageSystemParams: ChatMessage.systemParamsFromJson(json['lastMessageSystemParams']),
         lastMessageAt: DateTime.parse(json['lastMessageAt'] as String),
         unreadCount: json['unreadCount'] as int? ?? 0,
       );
@@ -134,7 +149,7 @@ class ChatMessage {
         createdAt: DateTime.parse(json['createdAt'] as String),
         isSystem: json['kind'] == 'SYSTEM',
         systemCode: json['systemCode'] as String?,
-        systemParams: _systemParamsFromJson(json['systemParams']),
+        systemParams: systemParamsFromJson(json['systemParams']),
       );
 
   /// `message:new` с сокета не содержит `isMine` (сервер шлёт одно и то же
@@ -152,10 +167,10 @@ class ChatMessage {
         createdAt: DateTime.parse(json['createdAt'] as String),
         isSystem: json['kind'] == 'SYSTEM',
         systemCode: json['systemCode'] as String?,
-        systemParams: _systemParamsFromJson(json['systemParams']),
+        systemParams: systemParamsFromJson(json['systemParams']),
       );
 
-  static Map<String, String> _systemParamsFromJson(Object? raw) =>
+  static Map<String, String> systemParamsFromJson(Object? raw) =>
       raw is Map ? raw.map((k, v) => MapEntry(k.toString(), v.toString())) : const {};
 
   String displayText(String languageCode) {

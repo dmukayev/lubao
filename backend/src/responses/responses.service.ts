@@ -219,6 +219,15 @@ export class ResponsesService {
         data: { status: 'REJECTED' },
         include: { driver: true },
       });
+      // Задача 038, п.27 — водитель с открытым чатом сразу видит «отклонён»
+      // (системная строка + chat:updated из неё), а не вечный «Отклик отправлен».
+      await this.chatSystem.post({
+        driverId: updated.driverId,
+        companyId,
+        cargoId: updated.cargoId,
+        actorUserId: actorUserId ?? updated.driver.userId,
+        code: 'RESPONSE_REJECTED',
+      });
       return this.toDto(updated);
     }
 
@@ -269,6 +278,7 @@ export class ResponsesService {
       cargoId: updated.selected.cargoId,
       actorUserId: actorUserId ?? updated.selected.driver.userId,
       code: 'DRIVER_SELECTED',
+      systemParams: { driverName: updated.selected.driver.fullName },
     });
 
     return this.toDto(updated.selected);
@@ -340,6 +350,7 @@ export class ResponsesService {
       cargoId,
       actorUserId: actorUserId ?? updated.driver.userId,
       code: 'DRIVER_SELECTED',
+      systemParams: { driverName: updated.driver.fullName },
     });
 
     return this.toDto(updated);

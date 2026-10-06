@@ -369,3 +369,40 @@ describe('ResponsesService — гонка двух сделок на груз (�
     expect(tx.deal.create).not.toHaveBeenCalled();
   });
 });
+
+describe('ResponsesService.updateStatus REJECTED — системная строка водителю (задача 038, п.27)', () => {
+  it('постит RESPONSE_REJECTED в чат пары', async () => {
+    const chatSystem = { post: jest.fn(), postToChat: jest.fn() };
+    const prisma: any = {
+      response: {
+        findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }),
+        update: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'REJECTED', driver: { userId: 'u-d1', fullName: 'Ерлан' } }),
+      },
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, chatSystem as any);
+
+    await service.updateStatus('r1', 'c1', 'REJECTED', 'logist-1');
+
+    expect(chatSystem.post).toHaveBeenCalledWith(
+      expect.objectContaining({ driverId: 'd1', companyId: 'c1', cargoId: 'cargo1', actorUserId: 'logist-1', code: 'RESPONSE_REJECTED' }),
+    );
+  });
+
+  it('DRIVER_SELECTED несёт имя водителя (нейтральный текст для обеих сторон)', async () => {
+    const chatSystem = { post: jest.fn(), postToChat: jest.fn() };
+    const tx = txMock();
+    tx.response.findUniqueOrThrow.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', driver: { userId: 'u-d1', fullName: 'Ерлан Тохтаров' } });
+    tx.deal.create.mockResolvedValue({ id: 'deal1', cargoId: 'cargo1', driverId: 'd1', companyId: 'c1' });
+    const prisma: any = {
+      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, chatSystem as any);
+
+    await service.updateStatus('r1', 'c1', 'SELECTED', 'logist-1');
+
+    expect(chatSystem.post).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'DRIVER_SELECTED', systemParams: { driverName: 'Ерлан Тохтаров' } }),
+    );
+  });
+});

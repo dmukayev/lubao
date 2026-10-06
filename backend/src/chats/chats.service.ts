@@ -220,6 +220,10 @@ export class ChatsService {
           ...thread,
           cargoPointName: chat.cargo?.point.name ?? null,
           lastMessageText: lastMessage?.originalText ?? null,
+          // п.25 (038): превью системной строки строится на клиенте из ARB.
+          lastMessageKind: lastMessage?.kind ?? null,
+          lastMessageSystemCode: lastMessage?.systemCode ?? null,
+          lastMessageSystemParams: lastMessage?.systemParams ?? null,
           lastMessageAt: lastMessage?.createdAt ?? chat.createdAt,
           unreadCount,
         };

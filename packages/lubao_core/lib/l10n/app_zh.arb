@@ -299,7 +299,9 @@
   "@chatSystemDriverReady": {
     "placeholders": { "name": { "type": "String" } }
   },
-  "chatSystemDriverSelected": "物流专员已选择您承运",
+  "chatSystemDriverSelected": "已选定司机 {name} 承运",
+  "@chatSystemDriverSelected": { "placeholders": { "name": { "type": "String" } } },
+  "chatSystemResponseRejected": "物流专员拒绝了该响应",
   "chatSystemDealConfirmed": "司机已确认运输",
   "chatSystemResponseWithdrawn": "{name} 已撤回响应",
   "@chatSystemResponseWithdrawn": { "placeholders": { "name": { "type": "String" } } },

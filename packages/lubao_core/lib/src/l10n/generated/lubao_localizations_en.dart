@@ -941,8 +941,12 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   }
 
   @override
-  String get chatSystemDriverSelected =>
-      'The logist selected you for this haul';
+  String chatSystemDriverSelected(String name) {
+    return 'Driver $name was selected for the haul';
+  }
+
+  @override
+  String get chatSystemResponseRejected => 'The logist declined the response';
 
   @override
   String get chatSystemDealConfirmed => 'The driver confirmed the haul';

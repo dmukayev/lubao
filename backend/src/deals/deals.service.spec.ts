@@ -327,7 +327,8 @@ describe('DealsService — догруз разрешён, «бронь всег�
     });
     // В where нет trailerId — фильтр только по тягачу.
     const where = prisma.deal.findMany.mock.calls[0][0].where;
-    expect(where.tractorId).toBe('tractor1');
+    // п.26 (038): тягач ИЛИ сделки без снимка тягача (legacy) — консервативно.
+    expect(where.OR).toEqual([{ tractorId: 'tractor1' }, { tractorId: null }]);
     expect('trailerId' in where).toBe(false);
   });
 
@@ -376,5 +377,27 @@ describe('DealsService — догруз разрешён, «бронь всег�
 
     await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toThrow('Cannot move deal');
     expect(prisma.deal.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('DealsService.cancel — код причины только от водителя (задача 038, п.28)', () => {
+  function setup() {
+    const prisma: any = { deal: { findUnique: jest.fn(), update: jest.fn() }, companyMember: { findFirst: jest.fn() }, chat: { findFirst: jest.fn().mockResolvedValue(null) } };
+    prisma.deal.findUnique.mockResolvedValue(dealFixture());
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CANCELLED' }));
+    const service = new DealsService(prisma, { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) } as any, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);
+    return { prisma, service };
+  }
+
+  it('водитель: TOOK_OTHER_CARGO сохраняется', async () => {
+    const { prisma, service } = setup();
+    await service.cancel('deal1', { driverId: 'd1' }, 'Взял другой груз', 'TOOK_OTHER_CARGO');
+    expect(prisma.deal.update.mock.calls[0][0].data.cancelReasonCode).toBe('TOOK_OTHER_CARGO');
+  });
+
+  it('компания: тот же код игнорируется (не искажает статистику водителя)', async () => {
+    const { prisma, service } = setup();
+    await service.cancel('deal1', { companyId: 'c1' }, 'Взял другой груз', 'TOOK_OTHER_CARGO');
+    expect(prisma.deal.update.mock.calls[0][0].data.cancelReasonCode).toBeNull();
   });
 });

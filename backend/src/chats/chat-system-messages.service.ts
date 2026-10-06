@@ -13,11 +13,13 @@ export type ChatSystemCode =
   | 'DRIVER_SELECTED'
   | 'DEAL_CONFIRMED'
   | 'RESPONSE_WITHDRAWN'
+  | 'RESPONSE_REJECTED'
   | 'CARGO_OFFERED';
 
 const RU_FALLBACK: Record<ChatSystemCode, (params: Record<string, string>) => string> = {
   DRIVER_READY: (p) => `${p.driverName ?? 'Водитель'} готов взять груз`,
-  DRIVER_SELECTED: () => 'Водитель выбран на груз',
+  DRIVER_SELECTED: (p) => `Водитель ${p.driverName ?? ''} выбран для перевозки`.replace('  ', ' '),
+  RESPONSE_REJECTED: () => 'Логист отклонил отклик',
   DEAL_CONFIRMED: () => 'Перевозка подтверждена водителем',
   RESPONSE_WITHDRAWN: (p) => `${p.driverName ?? 'Водитель'} отозвал отклик`,
   CARGO_OFFERED: () => 'Логист предложил груз',

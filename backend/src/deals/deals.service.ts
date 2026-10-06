@@ -123,7 +123,10 @@ export class DealsService {
       where: {
         driverId: deal.driverId,
         status: { in: ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT'] },
-        tractorId: deal.tractorId,
+        // п.26 (038): при tractorId == null консервативно считаем ВСЕ
+        // активные сделки водителя (как haul-summary.ts), а не только
+        // сделки с tractorId IS NULL; сделки без снимка тягача — к любой связке.
+        ...(deal.tractorId ? { OR: [{ tractorId: deal.tractorId }, { tractorId: null }] } : {}),
         id: { not: deal.id },
       },
       include: { cargo: true },
@@ -277,7 +280,8 @@ export class DealsService {
         cancelReason: reason,
         // Код причины (038, п.15) — «взял другой груз» и т.п. считаются
         // в статистике по коду, не по переведённой строке.
-        cancelReasonCode: reasonCode ?? null,
+        // п.28 (038): код «взял другой груз» — признак ВОДИТЕЛЯ; от компании/админа игнорируется.
+        cancelReasonCode: ctx.driverId ? (reasonCode ?? null) : null,
         cancelledByRole: ctx.driverId ? 'DRIVER' : 'COMPANY',
       },
       include: this.include,

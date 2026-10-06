@@ -389,7 +389,9 @@
   "@chatSystemDriverReady": {
     "placeholders": { "name": { "type": "String" } }
   },
-  "chatSystemDriverSelected": "The logist selected you for this haul",
+  "chatSystemDriverSelected": "Driver {name} was selected for the haul",
+  "@chatSystemDriverSelected": { "placeholders": { "name": { "type": "String" } } },
+  "chatSystemResponseRejected": "The logist declined the response",
   "chatSystemDealConfirmed": "The driver confirmed the haul",
   "chatSystemResponseWithdrawn": "{name} withdrew the response",
   "@chatSystemResponseWithdrawn": { "placeholders": { "name": { "type": "String" } } },

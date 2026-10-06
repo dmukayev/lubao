@@ -917,7 +917,12 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   }
 
   @override
-  String get chatSystemDriverSelected => '物流专员已选择您承运';
+  String chatSystemDriverSelected(String name) {
+    return '已选定司机 $name 承运';
+  }
+
+  @override
+  String get chatSystemResponseRejected => '物流专员拒绝了该响应';
 
   @override
   String get chatSystemDealConfirmed => '司机已确认运输';
