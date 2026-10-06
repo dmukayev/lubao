@@ -87,6 +87,8 @@ export class AuthService {
     }
     assertNotBlocked(user);
 
+    // Телефон в чёрном списке → снять «Проверен», завести идентификатор (039, п.2).
+    await this.drivers.applyPhoneBlacklist(user.id);
     const driver = await this.drivers.findByUserId(user.id);
     const tokens = await this.sessions.createSession(user.id, user.role, deviceName, platform);
     return { user: toUserDto(user), driver, company: null, companyMember: null, ...tokens };

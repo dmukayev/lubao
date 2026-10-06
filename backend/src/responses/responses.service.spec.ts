@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ResponsesService } from './responses.service';
 
@@ -106,15 +107,18 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
 
 describe('ResponsesService.updateStatus — attaches the pre-deal chat (задача 017, п.3) + DEAL_STATUS (011)', () => {
   it('REJECTED does not touch deal/chat/notifications', async () => {
+    const tx = txMock();
+    tx.response.findUniqueOrThrow.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'REJECTED', driver: { userId: 'u1' } });
     const prisma: any = {
-      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }), update: jest.fn().mockResolvedValue({ driver: {} }) },
+      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
     const notifications = { notify: jest.fn() };
     const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
 
     await service.updateStatus('r1', 'c1', 'REJECTED');
 
-    expect(prisma.response.update).toHaveBeenCalledWith(expect.objectContaining({ data: { status: 'REJECTED' } }));
+    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: 'PENDING' }, data: { status: 'REJECTED' } });
     expect(notifications.notify).not.toHaveBeenCalled();
   });
 
@@ -238,17 +242,19 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
 
 describe('ResponsesService.withdraw — «Отозвать» (задача 035)', () => {
   it('cancels a PENDING response belonging to this driver', async () => {
+    const tx = txMock();
+    tx.response.findUniqueOrThrow.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'CANCELLED', driver: { fullName: 'Ерлан', userId: 'user-d1' } });
     const prisma: any = {
       response: {
         findUnique: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', driver: { fullName: 'Ерлан' }, cargo: { companyId: 'c1' } }),
-        update: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'CANCELLED', driver: { fullName: 'Ерлан', userId: 'user-d1' } }),
       },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
     const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
 
     const result = await service.withdraw('r1', 'd1');
 
-    expect(prisma.response.update).toHaveBeenCalledWith({ where: { id: 'r1' }, data: { status: 'CANCELLED' }, include: { driver: true } });
+    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: 'PENDING' }, data: { status: 'CANCELLED' } });
     expect(result.status).toBe('CANCELLED');
   });
 
@@ -276,6 +282,18 @@ describe('ResponsesService.inviteDriver — attaches the pre-deal chat too (за
     const prisma: any = {
       cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', company: { name: 'Acme' } }) },
       response: { findUnique: jest.fn().mockResolvedValue({ status: 'REJECTED' }) },
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
+    await expect(service.inviteDriver('cargo1', 'd1', 'c1')).rejects.toThrow(ConflictException);
+  });
+
+  it('039 п.3: P2002 от уникального индекса при приглашении — 409, а не 500', async () => {
+    const tx = txMock();
+    tx.response.create.mockRejectedValue(new Prisma.PrismaClientKnownRequestError('dup', { code: 'P2002', clientVersion: 'x' }));
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', company: { name: 'Acme' } }) },
+      response: { findUnique: jest.fn().mockResolvedValue(null) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
     const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
     await expect(service.inviteDriver('cargo1', 'd1', 'c1')).rejects.toThrow(ConflictException);
@@ -373,11 +391,11 @@ describe('ResponsesService — гонка двух сделок на груз (�
 describe('ResponsesService.updateStatus REJECTED — системная строка водителю (задача 038, п.27)', () => {
   it('постит RESPONSE_REJECTED в чат пары', async () => {
     const chatSystem = { post: jest.fn(), postToChat: jest.fn() };
+    const tx = txMock();
+    tx.response.findUniqueOrThrow.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'REJECTED', driver: { userId: 'u-d1', fullName: 'Ерлан' } });
     const prisma: any = {
-      response: {
-        findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }),
-        update: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'REJECTED', driver: { userId: 'u-d1', fullName: 'Ерлан' } }),
-      },
+      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
     const service = new ResponsesService(prisma, { notify: jest.fn() } as any, chatSystem as any);
 
@@ -404,5 +422,34 @@ describe('ResponsesService.updateStatus REJECTED — системная стро
     expect(chatSystem.post).toHaveBeenCalledWith(
       expect.objectContaining({ code: 'DRIVER_SELECTED', systemParams: { driverName: 'Ерлан Тохтаров' } }),
     );
+  });
+});
+
+describe('ResponsesService — «Отклонить»/«Отозвать» под замком груза (задача 039, п.1)', () => {
+  function setup(claimCount: number) {
+    const tx = txMock();
+    tx.response.updateMany.mockResolvedValue({ count: claimCount });
+    tx.response.findUniqueOrThrow.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', driver: { userId: 'u', fullName: 'Е' } });
+    const prisma: any = {
+      response: { findUnique: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', cargo: { companyId: 'c1' }, driver: { userId: 'u', fullName: 'Е' } }) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+    };
+    return { tx, service: new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any) };
+  }
+
+  it('замок по грузу берётся до условного апдейта (reject)', async () => {
+    const { tx, service } = setup(1);
+    await service.updateStatus('r1', 'c1', 'REJECTED');
+    expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(tx.response.updateMany.mock.invocationCallOrder[0]);
+  });
+
+  it('параллельный «Выбрать» успел раньше: reject → 409, статус не перезаписан', async () => {
+    const { service } = setup(0);
+    await expect(service.updateStatus('r1', 'c1', 'REJECTED')).rejects.toThrow(ConflictException);
+  });
+
+  it('параллельный «Выбрать» успел раньше: withdraw → 409', async () => {
+    const { service } = setup(0);
+    await expect(service.withdraw('r1', 'd1')).rejects.toThrow(ConflictException);
   });
 });

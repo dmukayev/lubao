@@ -335,11 +335,13 @@ class _VerificationBullet extends StatelessWidget {
 /// (новый сервер + старый клиент) — русский фолбэк.
 String systemMessageText(LubaoLocalizations t, String? code, Map<String, String> params, String fallback) {
   final name = params['driverName'] ?? '';
+  // Старые строки без имени (до 038): без имени «Водитель  выбран» — схлопываем двойной пробел.
+  String tidy(String v) => v.replaceAll(RegExp(r'\s{2,}'), ' ').trim();
   return switch (code) {
-    'DRIVER_READY' => t.chatSystemDriverReady(name),
-    'DRIVER_SELECTED' => t.chatSystemDriverSelected(name),
+    'DRIVER_READY' => tidy(t.chatSystemDriverReady(name)),
+    'DRIVER_SELECTED' => tidy(t.chatSystemDriverSelected(name)),
     'DEAL_CONFIRMED' => t.chatSystemDealConfirmed,
-    'RESPONSE_WITHDRAWN' => t.chatSystemResponseWithdrawn(name),
+    'RESPONSE_WITHDRAWN' => tidy(t.chatSystemResponseWithdrawn(name)),
     'RESPONSE_REJECTED' => t.chatSystemResponseRejected,
     'CARGO_OFFERED' => t.chatSystemCargoOffered,
     _ => fallback,

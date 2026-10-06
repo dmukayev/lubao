@@ -175,10 +175,32 @@ export class DriversService {
           confirmedByUserId: userId,
         });
       }
+      await this.applyPhoneBlacklist(userId);
     }
 
     const updated = await this.prisma.driver.findUniqueOrThrow({ where: { id: driverId } });
     return this.toDto(updated);
+  }
+
+  /// Задача 039, п.2 (032 п.11) — телефон водителя сверяется с чёрным
+  /// списком при КАЖДОМ входе по SMS и при регистрации: совпал → у профиля
+  /// гарантированно есть подтверждённый PHONE-идентификатор (его видит
+  /// «Требует внимания» и проверка ⛔) и снят «Проверен» — без него
+  /// откликаться и подтверждать перевозку нельзя (гейт DRIVER_NOT_VERIFIED).
+  /// Вход сам не блокируем (решение 2026-10-05): аккаунт не теряет доступ к
+  /// просмотру, но не может действовать, пока админ не решит иначе.
+  async applyPhoneBlacklist(userId: string): Promise<boolean> {
+    if (!this.identifiers) return false;
+    const driver = await this.prisma.driver.findUnique({ where: { userId }, include: { user: { select: { phone: true } } } });
+    const phone = driver?.user.phone;
+    if (!driver || !phone) return false;
+
+    const match = await this.identifiers.checkMatches('PHONE', phone, { ownerType: 'DRIVER', ownerId: driver.id });
+    if (!match.blocked) return false;
+
+    await this.identifiers.confirmIdentifier({ type: 'PHONE', rawValue: phone, ownerType: 'DRIVER', ownerId: driver.id, confirmedByUserId: userId });
+    if (driver.isVerified) await this.prisma.driver.update({ where: { id: driver.id }, data: { isVerified: false } });
+    return true;
   }
 
   async submitVerificationDocument(userId: string, driverId: string, dto: CreateVerificationDocumentDto) {
@@ -195,9 +217,14 @@ export class DriversService {
     // верифицировало чужой транспорт.
     let vehicleId = dto.vehicleId ?? null;
     if (vehicleId) {
-      const vehicle = await this.prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { driverId: true } });
+      const vehicle = await this.prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { driverId: true, isArchived: true, kind: true } });
       if (!vehicle || vehicle.driverId !== driverId) {
         throw new BadRequestException('vehicleId does not belong to this driver');
+      }
+      // 039, п.5: не к архивной машине и тип документа = тип машины.
+      if (vehicle.isArchived) throw new BadRequestException('vehicle is archived');
+      if (requiredVehicleDocType(vehicle.kind) !== dto.type && (dto.type === 'VEHICLE_PASSPORT' || dto.type === 'TRAILER_PASSPORT')) {
+        throw new BadRequestException(`document type ${dto.type} does not match vehicle kind ${vehicle.kind}`);
       }
     }
     if (!vehicleId && (dto.type === 'VEHICLE_PASSPORT' || dto.type === 'TRAILER_PASSPORT')) {

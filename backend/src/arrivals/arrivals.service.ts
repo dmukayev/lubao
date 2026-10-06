@@ -107,12 +107,15 @@ export class ArrivalsService {
     let fromLast: { tractorId: string | null; trailerId: string | null } | null = null;
     if (lastWithCombo) {
       const ids = [lastWithCombo.tractorId, lastWithCombo.trailerId].filter((v): v is string => v != null);
-      const alive = await this.prisma.vehicle.findMany({ where: { id: { in: ids }, isArchived: false }, select: { id: true } });
-      const aliveIds = new Set(alive.map((v) => v.id));
-      fromLast = {
-        tractorId: lastWithCombo.tractorId && aliveIds.has(lastWithCombo.tractorId) ? lastWithCombo.tractorId : null,
-        trailerId: lastWithCombo.trailerId && aliveIds.has(lastWithCombo.trailerId) ? lastWithCombo.trailerId : null,
-      };
+      const alive = await this.prisma.vehicle.findMany({ where: { id: { in: ids }, isArchived: false }, select: { id: true, kind: true } });
+      const byId = new Map(alive.map((v) => [v.id, v]));
+      const tractor = lastWithCombo.tractorId ? byId.get(lastWithCombo.tractorId) : undefined;
+      const trailer = lastWithCombo.trailerId ? byId.get(lastWithCombo.trailerId) : undefined;
+      // Типы проверяем так же, как при явном выборе: в «тягаче» не прицеп,
+      // в «прицепе» не тягач, у RIGID-одиночки прицепа нет (039, п.5).
+      const tractorOk = tractor && tractor.kind !== 'TRAILER' ? tractor : undefined;
+      const trailerOk = trailer && trailer.kind === 'TRAILER' && tractorOk?.kind !== 'RIGID' ? trailer : undefined;
+      fromLast = { tractorId: tractorOk?.id ?? null, trailerId: trailerOk?.id ?? null };
       if (fromLast.tractorId) return fromLast;
     }
 
@@ -120,6 +123,8 @@ export class ArrivalsService {
       this.prisma.vehicle.findFirst({ where: { driverId, kind: { in: ['TRACTOR', 'RIGID'] }, isArchived: false }, orderBy: { createdAt: 'asc' } }),
       this.prisma.vehicle.findFirst({ where: { driverId, kind: 'TRAILER', isArchived: false }, orderBy: { createdAt: 'asc' } }),
     ]);
+    // RIGID-одиночка — без прицепа (039, п.5).
+    if (tractor?.kind === 'RIGID') return { tractorId: tractor.id, trailerId: null };
     return { tractorId: tractor?.id ?? null, trailerId: fromLast?.trailerId ?? trailer?.id ?? null };
   }
 

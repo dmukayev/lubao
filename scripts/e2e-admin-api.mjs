@@ -67,6 +67,33 @@ assert(
   'плитка «Документы на проверке» = сумма очереди проверки',
 );
 
+// ---- Чёрный список: телефон при регистрации (039, п.2) ----------------------
+const attentionBefore = (await get('/admin/attention')).json.blacklistMatches;
+const BLOCKED_PHONE = '+77010000099';
+const refData = (await api('GET', '/reference-data')).json;
+await api('POST', '/auth/phone/request-code', { body: { phone: BLOCKED_PHONE } });
+const reg = await api('POST', '/auth/phone/verify', { body: { phone: BLOCKED_PHONE, code: '1111', deviceName: 'e2e', platform: 'ios' } });
+assert(reg.status < 300, 'номер из чёрного списка проходит SMS-вход (аккаунт не блокируется молча)', `status=${reg.status} ${reg.text.slice(0, 120)}`);
+const newDriverToken = reg.json.accessToken;
+const setup = await api('PATCH', '/drivers/me', {
+  token: newDriverToken,
+  body: {
+    fullName: 'Нурлан Блоков',
+    homeCityId: refData.cities[0].id,
+    anyCountry: true,
+    directionCountryIds: [],
+    permitIds: [],
+    bodyTypeId: refData.bodyTypes[0].id,
+    plateNumber: '999ZZZ99',
+    capacityTons: 20,
+  },
+});
+assert(setup.status < 300, 'профиль водителя с заблокированным номером создаётся', `status=${setup.status} ${setup.text.slice(0, 160)}`);
+const attentionAfter = (await get('/admin/attention')).json.blacklistMatches;
+assert(attentionAfter === attentionBefore + 1, '«Требует внимания»: совпадение с чёрным списком появилось', `${attentionBefore} → ${attentionAfter}`);
+const respond = await api('POST', `/cargos/11111111-1111-4111-8111-111111111001/responses`, { token: newDriverToken, body: {} });
+assert(respond.status === 403, 'водитель с заблокированным номером не может откликаться (403)', `status=${respond.status}`);
+
 // ---- 13. Жалоба: Новые → В работе (не исчезает) → решение → Закрытые --------
 const findE2e = (list) => list.find((c) => String(c.reason).startsWith('E2E:'));
 const fresh = findE2e((await get('/admin/complaints?tab=NEW')).json);

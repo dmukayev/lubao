@@ -211,7 +211,8 @@ export class AdminService {
       FROM identifiers i
       JOIN blocked_identifiers b
         ON b.type = i.type AND b."valueHash" = i."valueHash" AND b."liftedAt" IS NULL
-      WHERE NOT (b."sourceOwnerType" = i."ownerType" AND b."sourceOwnerId" = i."ownerId")`;
+      WHERE b."sourceOwnerId" IS DISTINCT FROM i."ownerId"
+         OR b."sourceOwnerType"::text IS DISTINCT FROM i."ownerType"::text`;
     const blacklistMatches = Number(blacklistMatchRows[0]?.count ?? 0);
 
     const pendingPeopleCount = pendingDriverDocs.length + pendingCompanyDocs.length;

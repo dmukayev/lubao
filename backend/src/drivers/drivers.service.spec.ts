@@ -189,3 +189,57 @@ describe('DriversService#documentRecognition — блок «Распознано
     await expect(service.documentRecognition('d1', 'doc1')).rejects.toThrow('Document not found');
   });
 });
+
+describe('DriversService.applyPhoneBlacklist — ⛔ по телефону при входе/регистрации (задача 039, п.2)', () => {
+  function setup(blocked: boolean, isVerified: boolean) {
+    const prisma: any = {
+      driver: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'd1', isVerified, user: { phone: '+77010000009' } }),
+        update: jest.fn(),
+      },
+    };
+    const identifiers: any = {
+      checkMatches: jest.fn().mockResolvedValue({ blocked: blocked ? { reason: 'мошенничество', blockedAt: new Date() } : null, duplicateOwner: null }),
+      confirmIdentifier: jest.fn(),
+    };
+    return { prisma, identifiers, service: new DriversService(prisma, identifiers) };
+  }
+
+  it('номер в чёрном списке: заводит PHONE-идентификатор и снимает «Проверен»', async () => {
+    const { prisma, identifiers, service } = setup(true, true);
+    expect(await service.applyPhoneBlacklist('u1')).toBe(true);
+    expect(identifiers.confirmIdentifier).toHaveBeenCalledWith(expect.objectContaining({ type: 'PHONE', ownerType: 'DRIVER', ownerId: 'd1' }));
+    expect(prisma.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { isVerified: false } });
+  });
+
+  it('чистый номер: ничего не меняет', async () => {
+    const { prisma, identifiers, service } = setup(false, true);
+    expect(await service.applyPhoneBlacklist('u1')).toBe(false);
+    expect(identifiers.confirmIdentifier).not.toHaveBeenCalled();
+    expect(prisma.driver.update).not.toHaveBeenCalled();
+  });
+
+  it('нет анкеты водителя (только что вошёл по SMS) — тихо false', async () => {
+    const { prisma, service } = setup(true, false);
+    prisma.driver.findUnique.mockResolvedValue(null);
+    expect(await service.applyPhoneBlacklist('u1')).toBe(false);
+  });
+});
+
+describe('DriversService.submitVerificationDocument — машина (039, п.5)', () => {
+  const dto = (type: string) => ({ type, fileUrl: 'k', vehicleId: 'v1' }) as any;
+  const make = (vehicle: any) => {
+    const prisma: any = { vehicle: { findUnique: jest.fn().mockResolvedValue(vehicle) }, verificationDocument: { create: jest.fn() } };
+    return new DriversService(prisma);
+  };
+
+  it('отклоняет техпаспорт для архивной машины', async () => {
+    const service = make({ driverId: 'd1', isArchived: true, kind: 'TRACTOR' });
+    await expect(service.submitVerificationDocument('u1', 'd1', dto('VEHICLE_PASSPORT'))).rejects.toThrow('archived');
+  });
+
+  it('отклоняет паспорт тягача для прицепа', async () => {
+    const service = make({ driverId: 'd1', isArchived: false, kind: 'TRAILER' });
+    await expect(service.submitVerificationDocument('u1', 'd1', dto('VEHICLE_PASSPORT'))).rejects.toThrow('does not match');
+  });
+});

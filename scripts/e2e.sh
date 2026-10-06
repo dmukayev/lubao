@@ -102,6 +102,9 @@ for svc in postgres redis minio; do
   done
 done
 
+# Ключи идентификаторов нужны сиду (хеш номера в чёрном списке) и backend.
+set -a; source .env; set +a
+
 echo "== 2/6: БД lubao_e2e + миграции + сид =="
 docker exec lubao-postgres-1 psql -U lubao -d lubao -tc "SELECT 1 FROM pg_database WHERE datname = 'lubao_e2e'" | grep -q 1 || \
   docker exec lubao-postgres-1 createdb -U lubao lubao_e2e

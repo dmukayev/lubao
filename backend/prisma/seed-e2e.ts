@@ -1,5 +1,7 @@
 import { PrismaClient, Currency } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { hashIdentifier, maskIdentifier } from '../src/identifiers/crypto';
+import { normalizeIdentifier } from '../src/identifiers/normalize';
 
 if (process.env.NODE_ENV === 'production') {
   console.error('prisma:seed:e2e is blocked when NODE_ENV=production');
@@ -21,6 +23,8 @@ export const E2E_FIXTURES = {
   // Три водителя: SMS-лимит 1 код/мин на номер — сценарии не должны делить
   // один телефон. D1 — сценарий «лента→чат», D2 — «сделка и догруз»,
   // D3 — виден логисту (анонс на точке уже есть).
+  /// Номер в чёрном списке (нет аккаунта) — сценарий «регистрируется заново».
+  blacklistedPhone: '+77010000099',
   driverPhone2: '+77010000002',
   driverPhone3: '+77010000003',
   driverPhone: '+77010000001',
@@ -216,6 +220,39 @@ async function main() {
       },
     });
   }
+
+  // -----------------------------------------------------------------
+  // Чёрный список по телефону без аккаунта (039, п.2): тот, кто
+  // зарегистрируется с этим номером, должен попасть в «Требует внимания».
+  // Чистим следы прошлого прогона (аккаунт и его идентификатор).
+  // -----------------------------------------------------------------
+  const adminForBlock = await prisma.user.findFirstOrThrow({ where: { email: E2E_FIXTURES.adminEmail } });
+  const blockedNorm = normalizeIdentifier('PHONE', E2E_FIXTURES.blacklistedPhone);
+  const blockedHash = hashIdentifier(blockedNorm);
+  const oldUser = await prisma.user.findUnique({ where: { phone: E2E_FIXTURES.blacklistedPhone }, include: { driver: true } });
+  if (oldUser?.driver) {
+    await prisma.identifier.deleteMany({ where: { ownerType: 'DRIVER', ownerId: oldUser.driver.id } });
+    await prisma.vehicle.deleteMany({ where: { driverId: oldUser.driver.id } });
+    await prisma.driverDirection.deleteMany({ where: { driverId: oldUser.driver.id } });
+    await prisma.driverPermit.deleteMany({ where: { driverId: oldUser.driver.id } });
+    await prisma.notificationSetting.deleteMany({ where: { userId: oldUser.id } });
+    await prisma.driver.delete({ where: { id: oldUser.driver.id } });
+  }
+  if (oldUser) {
+    await prisma.session.deleteMany({ where: { userId: oldUser.id } });
+    await prisma.notificationSetting.deleteMany({ where: { userId: oldUser.id } });
+    await prisma.user.delete({ where: { id: oldUser.id } });
+  }
+  await prisma.blockedIdentifier.deleteMany({ where: { type: 'PHONE', valueHash: blockedHash } });
+  await prisma.blockedIdentifier.create({
+    data: {
+      type: 'PHONE',
+      valueHash: blockedHash,
+      valueMasked: maskIdentifier('PHONE', blockedNorm),
+      reason: 'E2E: номер в чёрном списке',
+      blockedByUserId: adminForBlock.id,
+    },
+  });
 
   // -----------------------------------------------------------------
   // Жалоба для сценария админки (13): новая → «в работе» → закрыта.

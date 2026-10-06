@@ -164,7 +164,7 @@ export class ResponsesService {
       throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
     }
 
-    const updated = await this.prisma.response.update({ where: { id: responseId }, data: { status: 'CANCELLED' }, include: { driver: true } });
+    const updated = await this.closePending(responseId, response.cargoId, 'CANCELLED');
 
     // «Водитель отозвал отклик» — системно в чат (задача 038, п.11/12),
     // логист с открытым чатом видит смену кнопок сразу.
@@ -184,12 +184,42 @@ export class ResponsesService {
   /// 038, п.1): раньше `deal.responseId @unique` защищал только от второй
   /// сделки на ТОТ ЖЕ отклик, а «Выбрать» в чате с другим водителем
   /// спокойно создавал параллельную сделку на тот же груз.
+  /// Замок по грузу (освобождается на commit/rollback); `::text` — Prisma
+  /// не десериализует void. Берут ВСЕ переходы статуса откликов груза
+  /// (выбор, отклонение, отзыв): иначе «Отклонить»/«Отозвать» затирали
+  /// `SELECTED`, выставленный параллельным «Выбрать» (039, п.1).
+  private async lockCargo(tx: Prisma.TransactionClient, cargoId: string) {
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${cargoId}))::text`;
+  }
+
+  /// PENDING → REJECTED/CANCELLED под замком груза, условным апдейтом: если
+  /// отклик за это время уже выбран/отозван/отклонён — 409, а не молчаливая
+  /// перезапись (039, п.1).
+  private async closePending(responseId: string, cargoId: string, to: 'REJECTED' | 'CANCELLED') {
+    return this.prisma.$transaction(async (tx) => {
+      await this.lockCargo(tx, cargoId);
+      const res = await tx.response.updateMany({ where: { id: responseId, status: 'PENDING' }, data: { status: to } });
+      if (res.count === 0) {
+        throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
+      }
+      return tx.response.findUniqueOrThrow({ where: { id: responseId }, include: { driver: true } });
+    });
+  }
+
+  /// Уникальный индекс «одна активная сделка на груз» / responseId @unique
+  /// (039, п.3): гонка, дошедшая до БД, — это 409, а не 500.
+  private rethrowUnique(e: unknown): never {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+      throw new ConflictException({ code: 'CARGO_ALREADY_HAS_DEAL', message: 'Cargo already has an active deal' });
+    }
+    throw e;
+  }
+
   private async assertNoActiveDeal(tx: Prisma.TransactionClient, cargoId: string) {
     // Задача 038, п.22 — проверка «нет активной сделки» без блокировки
     // гонялась: два логиста одновременно видели «свободно» и создавали две
-    // сделки. Замок по грузу до проверки сериализует выбор (освобождается на
-    // commit/rollback); `::text` — Prisma не десериализует void.
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${cargoId}))::text`;
+    // сделки. Замок по грузу до проверки сериализует выбор.
+    await this.lockCargo(tx, cargoId);
     const activeDeal = await tx.deal.findFirst({
       where: { cargoId, status: { not: 'CANCELLED' } },
       select: { id: true },
@@ -214,11 +244,7 @@ export class ResponsesService {
       if (response.status !== 'PENDING') {
         throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
       }
-      const updated = await this.prisma.response.update({
-        where: { id: responseId },
-        data: { status: 'REJECTED' },
-        include: { driver: true },
-      });
+      const updated = await this.closePending(responseId, response.cargoId, 'REJECTED');
       // Задача 038, п.27 — водитель с открытым чатом сразу видит «отклонён»
       // (системная строка + chat:updated из неё), а не вечный «Отклик отправлен».
       await this.chatSystem.post({
@@ -264,7 +290,7 @@ export class ResponsesService {
       });
       await this.attachChatToDeal(tx, deal);
       return { selected, deal };
-    });
+    }).catch((e) => this.rethrowUnique(e));
 
     await this.notifications.notify({ userIds: [updated.selected.driver.userId] }, 'DEAL_STATUS', {
       dealId: updated.deal.id,
@@ -336,7 +362,7 @@ export class ResponsesService {
       });
       await this.attachChatToDeal(tx, deal);
       return selected;
-    });
+    }).catch((e) => this.rethrowUnique(e));
 
     await this.notifications.notify({ userIds: [updated.driver.userId] }, 'CARGO_INVITE', {
       cargoId,

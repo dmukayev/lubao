@@ -13,6 +13,11 @@ const prisma = new PrismaClient();
 const DRY = process.argv.includes('--dry');
 const TYPES: IdentifierTypeValue[] = ['VIN', 'DRIVER_LICENSE_NO'];
 
+/// VIN в логе — только последние 4 знака (039, п.6): полный VIN не светим.
+function maskForLog(type: IdentifierTypeValue, value: string): string {
+  return type === 'VIN' && value.length > 4 ? `…${value.slice(-4)}` : value;
+}
+
 async function main() {
   const rows = await prisma.identifier.findMany({ where: { type: { in: TYPES } } });
   let changed = 0;
@@ -36,7 +41,7 @@ async function main() {
     if (newHash === row.valueHash && newMask === row.valueMasked) continue;
 
     changed++;
-    console.log(`${DRY ? '[dry] ' : ''}${type} ${row.id}: ${row.valueMasked} → ${newMask}${newHash !== row.valueHash ? ' (хеш обновлён)' : ''}`);
+    console.log(`${DRY ? '[dry] ' : ''}${type} ${row.id}: ${maskForLog(type, row.valueMasked)} → ${maskForLog(type, newMask)}${newHash !== row.valueHash ? ' (хеш обновлён)' : ''}`);
     if (DRY) continue;
 
     await prisma.$transaction(async (tx) => {
@@ -45,14 +50,13 @@ async function main() {
         data: { valueHash: newHash, valueMasked: newMask, valueEncrypted: isSensitiveIdentifierType(type) ? encryptIdentifier(normalized) : null },
       });
       // Блокировки по старому хешу переезжают на новый — иначе чёрный
-      // список «осиротеет».
-      if (newHash !== row.valueHash) {
-        const res = await tx.blockedIdentifier.updateMany({
-          where: { type: row.type, valueHash: row.valueHash },
-          data: { valueHash: newHash, valueMasked: newMask },
-        });
-        blockedUpdated += res.count;
-      }
+      // список «осиротеет»; маска в `blocked_identifiers` обновляется и
+      // тогда, когда хеш прежний (прав: 4+4 → 2+2).
+      const res = await tx.blockedIdentifier.updateMany({
+        where: { type: row.type, valueHash: row.valueHash },
+        data: { valueHash: newHash, valueMasked: newMask },
+      });
+      blockedUpdated += res.count;
     });
   }
   console.log(`Готово: изменено identifiers — ${changed}, блокировок перенесено — ${blockedUpdated}${DRY ? ' (dry run)' : ''}.`);

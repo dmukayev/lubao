@@ -373,13 +373,27 @@ describe('ArrivalsService.announce — связка «на чём еду» (за
       .mockResolvedValueOnce(null) // no active arrival
       .mockResolvedValueOnce({ tractorId: 'old-tractor', trailerId: 'old-trailer' }); // last with combo
     // 038: прошлая связка проверяется на архивность — обе машины живы.
-    prisma.vehicle.findMany.mockResolvedValue([{ id: 'old-tractor' }, { id: 'old-trailer' }]);
+    prisma.vehicle.findMany.mockResolvedValue([{ id: 'old-tractor', kind: 'TRACTOR' }, { id: 'old-trailer', kind: 'TRAILER' }]);
     prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
 
     await service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString() });
 
     expect(prisma.__tx.arrival.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ tractorId: 'old-tractor', trailerId: 'old-trailer' }) }),
+    );
+  });
+
+  it('039 п.5: у прошлой связки RIGID прицеп не подставляется, прицеп вместо тягача отбрасывается', async () => {
+    prisma.arrival.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ tractorId: 'old-rigid', trailerId: 'old-trailer' });
+    prisma.vehicle.findMany.mockResolvedValue([{ id: 'old-rigid', kind: 'RIGID' }, { id: 'old-trailer', kind: 'TRAILER' }]);
+    prisma.__tx.arrival.create.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
+
+    await service.announce('user-1', { pointId: 'point-1', plannedAt: new Date().toISOString() });
+
+    expect(prisma.__tx.arrival.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ tractorId: 'old-rigid', trailerId: null }) }),
     );
   });
 
