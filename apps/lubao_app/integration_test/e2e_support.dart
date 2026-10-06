@@ -301,6 +301,9 @@ Future<void> goTab(WidgetTester tester, String label) async {
 /// Выход из аккаунта через «Профиль» (водитель или логист).
 Future<void> logoutViaProfile(WidgetTester tester, {required bool driver}) async {
   final t = tester.element(find.byType(Scaffold).first).l10n;
+  // SnackBar прошлого действия (например «Приглашение отправлено») перекрывал бы кнопку выхода.
+  ScaffoldMessenger.of(tester.element(find.byType(Scaffold).first)).clearSnackBars();
+  await tester.pump(const Duration(milliseconds: 400));
   await goTab(tester, t.profileTitle);
   final key = Key(driver ? 'driverProfileLogoutButton' : 'companyProfileLogoutButton');
   await waitFor(tester, find.byType(Scrollable));
