@@ -27,7 +27,11 @@ Future<LoadingPoint?> pickCity(
     recentIds: recent,
     title: title,
     onFindNearby: () async {
-      final position = await currentPositionWithRationale(context, accuracy: LocationAccuracy.low);
+      final position = await currentPositionWithRationale(
+        context,
+        accuracy: LocationAccuracy.low,
+        rationaleBody: context.l10n.locationRationaleNearbyBody,
+      );
       if (position == null) return null;
       return nearestPoint(refData.points, position.latitude, position.longitude);
     },

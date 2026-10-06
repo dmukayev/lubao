@@ -10,6 +10,7 @@ import '../../providers/data_providers.dart';
 import 'status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'error_feedback.dart';
+import 'tracking_consent_sheet.dart';
 
 class DealDetailScreen extends ConsumerStatefulWidget {
   const DealDetailScreen({super.key, required this.dealId});
@@ -51,6 +52,10 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
   }
 
   Future<void> _advance(DealStatus next) async {
+    // «Загружен» — начало рейса: отдельное согласие на передачу местоположения
+    // (041, п.11). Закрыли шторку — сделка всё равно двигается, координаты не уйдут.
+    if (next == DealStatus.loaded) await ensureTripTrackingConsent(context, ref);
+    if (!mounted) return;
     setState(() => _busy = true);
     try {
       await ref.read(dealRepositoryProvider).advanceStatus(widget.dealId, next);
@@ -256,6 +261,10 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                     Text(t.dealLocationNoData, style: TextStyle(color: Theme.of(context).disabledColor)),
                 ],
                 const SizedBox(height: 24),
+                if (isDriver && (deal.status == DealStatus.loaded || deal.status == DealStatus.inTransit)) ...[
+                  const TripTrackingSwitch(),
+                  const SizedBox(height: 8),
+                ],
                 if (isDriver && deal.nextStatus != null) ...[
                   PrimaryButton(
                     key: const Key('dealNextStatusButton'),

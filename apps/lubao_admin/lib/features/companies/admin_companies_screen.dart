@@ -223,7 +223,7 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
                                               DataCell(Text('${c.employeeCount}')),
                                               DataCell(Text('${c.activeCargoCount}')),
                                               DataCell(_StatusCell(isVerified: c.isVerified, isBlocked: c.isBlocked, pendingDocsCount: c.pendingDocsCount)),
-                                              DataCell(Text('★ ${c.ratingAvg.toStringAsFixed(1)} (${c.ratingCount})')),
+                                              DataCell(Text('★ ${formatRating(c.ratingAvg, c.ratingCount)} (${c.ratingCount})')),
                                               DataCell(Text('${c.dealCount}')),
                                             ],
                                           ),

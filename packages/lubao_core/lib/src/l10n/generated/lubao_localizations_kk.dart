@@ -895,7 +895,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get locationRationaleBody =>
-      'Қолданба қазіргі орныңызды бір рет алып, чатқа карта сілтемесін жібереді. Фондық бақылау жоқ.';
+      'Қолданба ағымдағы орныңызды бір рет алып, картаға сілтемені осы чатқа ғана жібереді — тек қазір. Бақылау жоқ: рейсте болмағанда орналасқан жер еш жерге жіберілмейді.';
 
   @override
   String get locationRationaleContinue => 'Жалғастыру';
@@ -2803,4 +2803,36 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminCityStatsEmpty => 'Қалалар бойынша белсенділік жоқ';
+
+  @override
+  String get consentUnderstood => 'Түсінікті';
+
+  @override
+  String get tripTrackingConsentTitle => 'Рейс уақытындағы орналасқан жер';
+
+  @override
+  String get tripTrackingConsentBody =>
+      'Рейс кезінде қолданба орналасқан жеріңізді логистке жібереді. Мұны мәміле картасында үзіліске қоюға болады.';
+
+  @override
+  String get tripTrackingSwitchTitle => 'Орналасқан жерді логистке жіберу';
+
+  @override
+  String get tripTrackingSwitchOn => 'Рейс уақытында қосулы';
+
+  @override
+  String get tripTrackingSwitchPaused =>
+      'Үзілісте — логист сіздің қайда екеніңізді көрмейді';
+
+  @override
+  String get terminalWatchConsentTitle =>
+      'Орналасқан жер бойынша «кеттім» белгісі';
+
+  @override
+  String get terminalWatchConsentBody =>
+      'Сіз терминалда «осындамын» кезіңде қолданба кетпегеніңізді тексеріп, хабарландыруды өзі жабады. Орналасқан жер логистке жіберілмейді.';
+
+  @override
+  String get locationRationaleNearbyBody =>
+      'Қолданба ең жақын қаланы табу үшін орналасқан жеріңізді бір рет анықтайды. Ол еш жерде сақталмайды, бақылау жоқ.';
 }

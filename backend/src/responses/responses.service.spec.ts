@@ -483,49 +483,82 @@ describe('ResponsesService — приглашение с согласием, г�
     expect(result.status).toBe('PENDING');
   });
 
-  it('inviteDriver: создаёт отклик INVITED, НЕ сделку и НЕ отклоняет чужие отклики', async () => {
-    const prisma: any = {
-      cargo: { findUnique: jest.fn().mockResolvedValue(cargoPublished) },
+  /// inviteDriver работает в $transaction под замком груза (041, п.13).
+  function inviteSetup(opts: { freshCargoStatus?: string; existing?: Record<string, unknown> | null } = {}) {
+    const tx: any = {
+      $queryRaw: jest.fn().mockResolvedValue([]),
+      cargo: { findUnique: jest.fn().mockResolvedValue({ status: opts.freshCargoStatus ?? 'PUBLISHED' }) },
       response: {
-        findUnique: jest.fn().mockResolvedValue(null),
+        findUnique: jest.fn().mockResolvedValue(opts.existing ?? null),
         create: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'INVITED', driver: { fullName: 'Ерлан', userId: 'u1' } }),
+        update: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'INVITED', driver: { fullName: 'Ерлан', userId: 'u1' } }),
         updateMany: jest.fn(),
       },
       deal: { create: jest.fn() },
-      $transaction: jest.fn(),
+    };
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue(cargoPublished) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
     const notifications = { notify: jest.fn() };
     const chat = { post: jest.fn(), postToChat: jest.fn() };
-    const service = new ResponsesService(prisma, notifications as any, chat as any);
+    return { service: new ResponsesService(prisma, notifications as any, chat as any), prisma, tx, notifications, chat };
+  }
+
+  it('inviteDriver: создаёт отклик INVITED, НЕ сделку и НЕ отклоняет чужие отклики', async () => {
+    const { service, tx, notifications, chat } = inviteSetup();
 
     const result = await service.inviteDriver('cargo1', 'd1', 'c1', 'logist-1');
 
     expect(result.status).toBe('INVITED');
-    expect(prisma.response.create).toHaveBeenCalledWith(expect.objectContaining({ data: { cargoId: 'cargo1', driverId: 'd1', status: 'INVITED' } }));
-    expect(prisma.deal.create).not.toHaveBeenCalled();
-    expect(prisma.response.updateMany).not.toHaveBeenCalled();
+    expect(tx.response.create).toHaveBeenCalledWith(expect.objectContaining({ data: { cargoId: 'cargo1', driverId: 'd1', status: 'INVITED' } }));
+    expect(tx.deal.create).not.toHaveBeenCalled();
+    expect(tx.response.updateMany).not.toHaveBeenCalled();
     expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u1'] }, 'CARGO_INVITE', { cargoId: 'cargo1', companyName: 'Acme' });
     expect(chat.post).toHaveBeenCalledWith(expect.objectContaining({ code: 'DRIVER_INVITED' }));
   });
 
-  it('inviteDriver: повторное приглашение того, кто уже в игре, идемпотентно', async () => {
-    const prisma: any = {
-      cargo: { findUnique: jest.fn().mockResolvedValue(cargoPublished) },
-      response: {
-        findUnique: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', driver: { fullName: 'Ерлан' } }),
-        create: jest.fn(),
-      },
-    };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
+  it('041, п.13: статус груза проверяется ПОД замком — ушёл в сделку между проверкой и записью → 409 и никакого «висячего» INVITED', async () => {
+    const { service, tx, notifications } = inviteSetup({ freshCargoStatus: 'IN_DEAL' });
+
+    await expect(service.inviteDriver('cargo1', 'd1', 'c1')).rejects.toMatchObject({ response: { code: 'CARGO_NOT_AVAILABLE' } });
+
+    expect(tx.$queryRaw).toHaveBeenCalled(); // advisory-замок взят
+    expect(tx.response.create).not.toHaveBeenCalled();
+    expect(tx.response.update).not.toHaveBeenCalled();
+    expect(notifications.notify).not.toHaveBeenCalled();
+  });
+
+  it('inviteDriver: отозванный отклик (CANCELLED) переоткрывается как INVITED, тот же id', async () => {
+    const { service, tx } = inviteSetup({ existing: { id: 'r1', status: 'CANCELLED', driver: { fullName: 'Ерлан', userId: 'u1' } } });
+    await service.inviteDriver('cargo1', 'd1', 'c1');
+    expect(tx.response.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'r1' }, data: { status: 'INVITED' } }));
+    expect(tx.response.create).not.toHaveBeenCalled();
+  });
+
+  it('inviteDriver: повторное приглашение того, кто уже в игре, идемпотентно — без повторных уведомлений', async () => {
+    const { service, tx, notifications, chat } = inviteSetup({
+      existing: { id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', driver: { fullName: 'Ерлан' } },
+    });
     const result = await service.inviteDriver('cargo1', 'd1', 'c1');
     expect(result.status).toBe('PENDING');
-    expect(prisma.response.create).not.toHaveBeenCalled();
+    expect(tx.response.create).not.toHaveBeenCalled();
+    expect(notifications.notify).not.toHaveBeenCalled();
+    expect(chat.post).not.toHaveBeenCalled();
   });
 
   it('inviteDriver: груз не опубликован (IN_DEAL) — 409', async () => {
-    const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue({ ...cargoPublished, status: 'IN_DEAL' }) } };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
+    const { service } = inviteSetup({ freshCargoStatus: 'IN_DEAL' });
     await expect(service.inviteDriver('cargo1', 'd1', 'c1')).rejects.toThrow(ConflictException);
+  });
+
+  it('inviteDriver: чужой груз — 403, неизвестный — 404, транзакция не открывается', async () => {
+    const { service, prisma } = inviteSetup();
+    prisma.cargo.findUnique.mockResolvedValue({ ...cargoPublished, companyId: 'other' });
+    await expect(service.inviteDriver('cargo1', 'd1', 'c1')).rejects.toThrow(ForbiddenException);
+    prisma.cargo.findUnique.mockResolvedValue(null);
+    await expect(service.inviteDriver('cargo1', 'd1', 'c1')).rejects.toThrow(NotFoundException);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
   it('«Выбрать»: груз → IN_DEAL, остальные PENDING/INVITED → REJECTED и им «Груз ушёл другому»', async () => {

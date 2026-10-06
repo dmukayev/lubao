@@ -891,7 +891,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get locationRationaleBody =>
-      'Приложение один раз возьмёт ваше текущее место и отправит ссылку на карту в чат. Фоновой слежки нет.';
+      'Приложение один раз возьмёт ваше текущее место и отправит ссылку на карту в чат — только в этот чат и только сейчас. Слежки нет: пока вы не в рейсе, местоположение нигде не передаётся.';
 
   @override
   String get locationRationaleContinue => 'Продолжить';
@@ -2792,4 +2792,34 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminCityStatsEmpty => 'Пока нет активности по городам';
+
+  @override
+  String get consentUnderstood => 'Понятно';
+
+  @override
+  String get tripTrackingConsentTitle => 'Местоположение на время рейса';
+
+  @override
+  String get tripTrackingConsentBody =>
+      'На время рейса приложение будет передавать ваше местоположение логисту. Это можно поставить на паузу в карточке сделки.';
+
+  @override
+  String get tripTrackingSwitchTitle => 'Передавать местоположение логисту';
+
+  @override
+  String get tripTrackingSwitchOn => 'Включено на время рейса';
+
+  @override
+  String get tripTrackingSwitchPaused => 'На паузе — логист не видит, где вы';
+
+  @override
+  String get terminalWatchConsentTitle => 'Отметка «уехал» по местоположению';
+
+  @override
+  String get terminalWatchConsentBody =>
+      'Пока вы «на месте» на терминале, приложение будет проверять, не уехали ли вы, и закроет анонс само. Местоположение логисту при этом не передаётся.';
+
+  @override
+  String get locationRationaleNearbyBody =>
+      'Приложение один раз определит ваше местоположение, чтобы найти ближайший город. Оно нигде не сохраняется, слежки нет.';
 }

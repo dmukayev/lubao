@@ -399,21 +399,32 @@ export class ResponsesService {
     const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId }, include: { company: true } });
     if (!cargo) throw new NotFoundException('Cargo not found');
     if (cargo.companyId !== companyId) throw new ForbiddenException('Not your cargo');
-    if (cargo.status !== 'PUBLISHED') {
-      throw new ConflictException({ code: 'CARGO_NOT_AVAILABLE', message: 'Cargo is no longer available' });
-    }
 
-    const existing = await this.prisma.response.findUnique({ where: { cargoId_driverId: { cargoId, driverId } }, include: { driver: true } });
-    if (existing && (existing.status === 'INVITED' || existing.status === 'PENDING' || existing.status === 'SELECTED')) {
-      return this.toDto(existing);
-    }
-    if (existing && existing.status !== 'CANCELLED') {
-      throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Driver already has a decided response for this cargo' });
-    }
+    // Проверка статуса груза и запись приглашения — в одной транзакции под
+    // замком груза (041, п.13): иначе параллельный выбор другого водителя
+    // успевал уйти между проверкой и записью, и на ушедший груз оставался
+    // «висячий» INVITED.
+    const { response, created } = await this.prisma.$transaction(async (tx) => {
+      await this.lockCargo(tx, cargoId);
+      const fresh = await tx.cargo.findUnique({ where: { id: cargoId }, select: { status: true } });
+      if (fresh?.status !== 'PUBLISHED') {
+        throw new ConflictException({ code: 'CARGO_NOT_AVAILABLE', message: 'Cargo is no longer available' });
+      }
 
-    const response = existing
-      ? await this.prisma.response.update({ where: { id: existing.id }, data: { status: 'INVITED' }, include: { driver: true } })
-      : await this.prisma.response.create({ data: { cargoId, driverId, status: 'INVITED' }, include: { driver: true } });
+      const existing = await tx.response.findUnique({ where: { cargoId_driverId: { cargoId, driverId } }, include: { driver: true } });
+      if (existing && (existing.status === 'INVITED' || existing.status === 'PENDING' || existing.status === 'SELECTED')) {
+        return { response: existing, created: false };
+      }
+      if (existing && existing.status !== 'CANCELLED') {
+        throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Driver already has a decided response for this cargo' });
+      }
+
+      const saved = existing
+        ? await tx.response.update({ where: { id: existing.id }, data: { status: 'INVITED' }, include: { driver: true } })
+        : await tx.response.create({ data: { cargoId, driverId, status: 'INVITED' }, include: { driver: true } });
+      return { response: saved, created: true };
+    });
+    if (!created) return this.toDto(response);
 
     await this.notifications.notify({ userIds: [response.driver.userId] }, 'CARGO_INVITE', {
       cargoId,

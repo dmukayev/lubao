@@ -112,6 +112,16 @@ export class ArrivalsService {
     return [...active.filter((a) => a.status === 'ON_SITE'), ...active.filter((a) => a.status !== 'ON_SITE')];
   }
 
+  /// «Сегодня» — по календарю клиента (041, п.13): день, который видит
+  /// водитель, не зависит от серверного часового пояса. Мусор или значение
+  /// дальше чем на ±2 суток от серверного — игнорируется (серверное «сегодня»).
+  static resolveToday(clientToday: string | undefined, now = new Date()): string {
+    const server = localDateOnly(now);
+    if (!clientToday || !/^\d{4}-\d{2}-\d{2}$/.test(clientToday)) return server;
+    const diffDays = Math.abs(parseDateOnly(clientToday).getTime() - parseDateOnly(server).getTime()) / (24 * 60 * 60 * 1000);
+    return Number.isFinite(diffDays) && diffDays <= 2 ? clientToday : server;
+  }
+
   async getMine(userId: string) {
     const driver = await this.prisma.driver.findUnique({ where: { userId } });
     if (!driver) throw new NotFoundException('Driver profile not found');
@@ -293,14 +303,14 @@ export class ArrivalsService {
   }
 
   /// «Повторить прошлый анонс» (п. 6) — тот же город и страны, дата — сегодня.
-  async repeat(userId: string) {
+  async repeat(userId: string, clientToday?: string) {
     const { template } = await this.getLastTemplate(userId);
     if (!template) throw new NotFoundException('No previous announcement to repeat');
 
     return this.announce(userId, {
       pointId: template.pointId,
       plannedAt: new Date().toISOString(),
-      plannedDay: toDateOnly(new Date()),
+      plannedDay: ArrivalsService.resolveToday(clientToday),
       anyCountry: template.anyCountry,
       countryIds: template.countryIds,
     });
@@ -312,13 +322,13 @@ export class ArrivalsService {
   /// (водитель переехал в другой город). Если активного анонса нет — короткий
   /// путь без шторки: анонс создаётся сразу ON_SITE в городе из `pointId`,
   /// иначе в городе водителя из профиля.
-  async checkIn(userId: string, arrivalId?: string, pointId?: string) {
+  async checkIn(userId: string, arrivalId?: string, pointId?: string, clientToday?: string) {
     const driver = await this.prisma.driver.findUnique({ where: { userId } });
     if (!driver) throw new NotFoundException('Driver profile not found');
 
     await this.expireStale({ driverId: driver.id });
     const active = await this.activeFor(driver.id);
-    const today = localDateOnly(new Date());
+    const today = ArrivalsService.resolveToday(clientToday);
 
     const target = arrivalId
       ? active.find((a) => a.id === arrivalId)

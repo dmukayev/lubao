@@ -874,7 +874,8 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get locationRationaleTitle => '位置';
 
   @override
-  String get locationRationaleBody => '应用将一次性获取您当前的位置并把地图链接发到聊天中，不会后台跟踪。';
+  String get locationRationaleBody =>
+      '应用仅获取一次您当前的位置，并将地图链接发送到此聊天——仅此一次。没有跟踪：不在行程中时，位置不会被共享。';
 
   @override
   String get locationRationaleContinue => '继续';
@@ -2743,4 +2744,32 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminCityStatsEmpty => '暂无城市活动';
+
+  @override
+  String get consentUnderstood => '明白了';
+
+  @override
+  String get tripTrackingConsentTitle => '行程期间的位置';
+
+  @override
+  String get tripTrackingConsentBody => '行程期间，应用会向物流方共享您的位置。您可以在交易卡片中随时暂停。';
+
+  @override
+  String get tripTrackingSwitchTitle => '向物流方共享位置';
+
+  @override
+  String get tripTrackingSwitchOn => '行程期间已开启';
+
+  @override
+  String get tripTrackingSwitchPaused => '已暂停——物流方看不到您的位置';
+
+  @override
+  String get terminalWatchConsentTitle => '按位置自动标记“已离开”';
+
+  @override
+  String get terminalWatchConsentBody =>
+      '当您在码头“已到达”期间，应用会检查您是否离开，并自动关闭公告。位置不会共享给物流方。';
+
+  @override
+  String get locationRationaleNearbyBody => '应用仅会定位一次，以查找最近的城市。位置不会被保存，也没有跟踪。';
 }

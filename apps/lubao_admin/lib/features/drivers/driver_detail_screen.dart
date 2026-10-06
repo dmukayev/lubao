@@ -369,7 +369,7 @@ class _StatsRow extends StatelessWidget {
       child: Row(
         children: [
           _Stat(label: t.adminStatDealsActive, value: '$totalDeals'),
-          _Stat(label: t.adminColRating, value: '★ ${driver.stats.ratingAvg.toStringAsFixed(1)} (${driver.stats.ratingCount})'),
+          _Stat(label: t.adminColRating, value: '★ ${formatRating(driver.stats.ratingAvg, driver.stats.ratingCount)} (${driver.stats.ratingCount})'),
           _Stat(
             label: t.adminStatCancellations,
             // Задача 037, п.8 — «отменил 1 из 15 сделок»: доля, а не голое

@@ -674,3 +674,55 @@ describe('ArrivalsService.announce — типы связки (задача 032, 
     await expect(service.announce('u1', { ...base, tractorId: 'r1', trailerId: 'tr1' })).rejects.toThrow('rigid truck has no trailer');
   });
 });
+
+describe('ArrivalsService — «сегодня» от клиента (041, п.13)', () => {
+  const NOW = new Date('2026-10-07T19:30:00.000Z'); // сервер в Алматы: уже 8 октября, 00:30
+
+  it('resolveToday берёт календарь клиента (водитель в UTC+5 и логист в UTC+8 видят свой день)', () => {
+    expect(ArrivalsService.resolveToday('2026-10-07', NOW)).toBe('2026-10-07');
+    expect(ArrivalsService.resolveToday('2026-10-08', NOW)).toBe('2026-10-08');
+  });
+
+  it('нет значения, мусор или дальше ±2 суток — серверное «сегодня» по Алматы', () => {
+    expect(ArrivalsService.resolveToday(undefined, NOW)).toBe('2026-10-08');
+    expect(ArrivalsService.resolveToday('вчера', NOW)).toBe('2026-10-08');
+    expect(ArrivalsService.resolveToday('2020-01-01', NOW)).toBe('2026-10-08');
+    expect(ArrivalsService.resolveToday('2026-10-20', NOW)).toBe('2026-10-08');
+  });
+
+  it('repeat(): анонс создаётся на день клиента, а не на серверную дату', async () => {
+    const prisma = makePrisma();
+    const service = new ArrivalsService(prisma);
+    prisma.driver.findUnique.mockResolvedValue({ id: 'driver-1', anyCountry: false });
+    prisma.point.findUnique.mockResolvedValue({ id: 'point-1', isActive: true });
+    prisma.arrival.findFirst.mockResolvedValueOnce({ id: 'old', pointId: 'point-1', anyCountry: false });
+    prisma.arrival.findFirst.mockResolvedValueOnce(null);
+    const clientDay = new Date();
+    clientDay.setDate(clientDay.getDate() + 1);
+    const clientToday = clientDay.toISOString().slice(0, 10);
+    prisma.__tx.arrival.create.mockResolvedValue({ id: 'new', pointId: 'point-1', plannedAt: new Date(), plannedDay: new Date(), arrivedAt: null, waitDays: 2, anyCountry: false, status: 'PLANNED' });
+
+    await service.repeat('user-1', clientToday);
+
+    expect(prisma.__tx.arrival.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ plannedDay: new Date(`${clientToday}T00:00:00.000Z`) }) }),
+    );
+  });
+
+  it('checkIn() без анонса: ON_SITE на календарный день клиента', async () => {
+    const prisma = makePrisma();
+    const service = new ArrivalsService(prisma);
+    prisma.driver.findUnique.mockResolvedValue({ id: 'driver-1', anyCountry: true, homeCityId: 'c1' });
+    prisma.point.findFirst.mockResolvedValue({ id: 'point-1', isActive: true });
+    const clientDay = new Date();
+    clientDay.setDate(clientDay.getDate() - 1);
+    const clientToday = clientDay.toISOString().slice(0, 10);
+    prisma.__tx.arrival.create.mockResolvedValue({ id: 'a', pointId: 'point-1', plannedAt: new Date(), plannedDay: new Date(), arrivedAt: new Date(), waitDays: 2, anyCountry: true, status: 'ON_SITE' });
+
+    await service.checkIn('user-1', undefined, undefined, clientToday);
+
+    expect(prisma.__tx.arrival.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ plannedDay: new Date(`${clientToday}T00:00:00.000Z`), status: 'ON_SITE' }) }),
+    );
+  });
+});

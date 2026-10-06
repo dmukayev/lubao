@@ -56,7 +56,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
           Row(
             children: [
               const Icon(LucideIcons.star, size: 16, color: Colors.amber),
-              Text(' ${driver?.ratingAvg.toStringAsFixed(1) ?? '-'} (${driver?.ratingCount ?? 0})'),
+              Text(driver == null ? ' —' : ' ${formatRating(driver.ratingAvg, driver.ratingCount)}${driver.ratingCount == 0 ? '' : ' (${driver.ratingCount})'}'),
               const SizedBox(width: 12),
               StatusBadge(
                 label: (driver?.isVerified ?? false) ? t.profileVerified : t.profileNotVerified,

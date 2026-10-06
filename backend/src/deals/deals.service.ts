@@ -41,6 +41,11 @@ export class DealsService {
     );
     const chat = await this.prisma.chat.findFirst({ where: { dealId: deal.id }, select: { id: true } });
     if (chat) this.realtime.emitDealUpdated(chat.id, { dealId: deal.id, status });
+    // Личные комнаты участников: водителю — чтобы трекинг рейса стартовал/
+    // останавливался по событию, логисту — чтобы список сделок обновлялся.
+    for (const userId of new Set([deal.driver.userId, ...(contactUserId ? [contactUserId] : [])])) {
+      this.realtime.emitDealUpdatedToUser(userId, { dealId: deal.id, status });
+    }
   }
 
   private readonly include = {

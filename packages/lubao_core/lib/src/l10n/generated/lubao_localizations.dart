@@ -1761,7 +1761,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @locationRationaleBody.
   ///
   /// In ru, this message translates to:
-  /// **'Приложение один раз возьмёт ваше текущее место и отправит ссылку на карту в чат. Фоновой слежки нет.'**
+  /// **'Приложение один раз возьмёт ваше текущее место и отправит ссылку на карту в чат — только в этот чат и только сейчас. Слежки нет: пока вы не в рейсе, местоположение нигде не передаётся.'**
   String get locationRationaleBody;
 
   /// No description provided for @locationRationaleContinue.
@@ -5345,6 +5345,60 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Пока нет активности по городам'**
   String get adminCityStatsEmpty;
+
+  /// No description provided for @consentUnderstood.
+  ///
+  /// In ru, this message translates to:
+  /// **'Понятно'**
+  String get consentUnderstood;
+
+  /// No description provided for @tripTrackingConsentTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Местоположение на время рейса'**
+  String get tripTrackingConsentTitle;
+
+  /// No description provided for @tripTrackingConsentBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'На время рейса приложение будет передавать ваше местоположение логисту. Это можно поставить на паузу в карточке сделки.'**
+  String get tripTrackingConsentBody;
+
+  /// No description provided for @tripTrackingSwitchTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Передавать местоположение логисту'**
+  String get tripTrackingSwitchTitle;
+
+  /// No description provided for @tripTrackingSwitchOn.
+  ///
+  /// In ru, this message translates to:
+  /// **'Включено на время рейса'**
+  String get tripTrackingSwitchOn;
+
+  /// No description provided for @tripTrackingSwitchPaused.
+  ///
+  /// In ru, this message translates to:
+  /// **'На паузе — логист не видит, где вы'**
+  String get tripTrackingSwitchPaused;
+
+  /// No description provided for @terminalWatchConsentTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отметка «уехал» по местоположению'**
+  String get terminalWatchConsentTitle;
+
+  /// No description provided for @terminalWatchConsentBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пока вы «на месте» на терминале, приложение будет проверять, не уехали ли вы, и закроет анонс само. Местоположение логисту при этом не передаётся.'**
+  String get terminalWatchConsentBody;
+
+  /// No description provided for @locationRationaleNearbyBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приложение один раз определит ваше местоположение, чтобы найти ближайший город. Оно нигде не сохраняется, слежки нет.'**
+  String get locationRationaleNearbyBody;
 }
 
 class _LubaoLocalizationsDelegate

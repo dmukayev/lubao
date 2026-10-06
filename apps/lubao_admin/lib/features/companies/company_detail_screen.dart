@@ -359,7 +359,7 @@ class _StatsRow extends StatelessWidget {
           _Stat(label: t.adminStatCargosPublished, value: '${company.cargos.length}'),
           _Stat(label: t.adminStatDealsActive, value: '${company.deals.length}'),
           _Stat(label: t.adminColEmployees, value: '${company.employees.length}'),
-          _Stat(label: t.adminColRating, value: '★ ${company.ratingAvg.toStringAsFixed(1)} (${company.ratingCount})'),
+          _Stat(label: t.adminColRating, value: '★ ${formatRating(company.ratingAvg, company.ratingCount)} (${company.ratingCount})'),
           _Stat(label: t.adminStatComplaints, value: '${company.complaintsAgainst}'),
         ],
       ),

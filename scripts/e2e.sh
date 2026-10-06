@@ -210,7 +210,7 @@ start_backend() {
   (
     cd backend
     DATABASE_URL="$E2E_DB_URL" REDIS_URL="redis://localhost:${REDIS_PORT:-6379}/1" PORT="$E2E_PORT" \
-      SMS_PROVIDER=console EMAIL_PROVIDER=console TRANSLATION_PROVIDER=noop NODE_ENV=development JOBS_DISABLED=true \
+      SMS_PROVIDER=console EMAIL_PROVIDER=console TRANSLATION_PROVIDER=noop NODE_ENV=development JOBS_DISABLED=true SMS_MINUTE_LOCK_SECONDS=0 \
       OCR_SERVICE_URL="http://localhost:${OCR_PORT}" \
       exec node dist/src/main.js >"$RESULTS/backend.log" 2>&1
   ) &

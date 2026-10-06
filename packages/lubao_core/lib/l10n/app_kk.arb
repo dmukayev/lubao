@@ -283,7 +283,7 @@
   "chatLocationMessagePrefix": "Картадағы нүкте",
   "chatLocationError": "Орналасқан жерді анықтау мүмкін болмады",
   "locationRationaleTitle": "Геопозиция",
-  "locationRationaleBody": "Қолданба қазіргі орныңызды бір рет алып, чатқа карта сілтемесін жібереді. Фондық бақылау жоқ.",
+  "locationRationaleBody": "Қолданба ағымдағы орныңызды бір рет алып, картаға сілтемені осы чатқа ғана жібереді — тек қазір. Бақылау жоқ: рейсте болмағанда орналасқан жер еш жерге жіберілмейді.",
   "locationRationaleContinue": "Жалғастыру",
   "chatLoadingPlaceTooltip": "Тиеу орны",
   "chatLoadingPlaceDialogTitle": "Тиеу орнына сілтеме қойыңыз",
@@ -1015,5 +1015,14 @@
   "adminCityStatsArrivals": "Жарияланымдар",
   "adminCityStatsCargos": "Жүктер",
   "adminCityStatsDeals": "Мәмілелер",
-  "adminCityStatsEmpty": "Қалалар бойынша белсенділік жоқ"
+  "adminCityStatsEmpty": "Қалалар бойынша белсенділік жоқ",
+  "consentUnderstood": "Түсінікті",
+  "tripTrackingConsentTitle": "Рейс уақытындағы орналасқан жер",
+  "tripTrackingConsentBody": "Рейс кезінде қолданба орналасқан жеріңізді логистке жібереді. Мұны мәміле картасында үзіліске қоюға болады.",
+  "tripTrackingSwitchTitle": "Орналасқан жерді логистке жіберу",
+  "tripTrackingSwitchOn": "Рейс уақытында қосулы",
+  "tripTrackingSwitchPaused": "Үзілісте — логист сіздің қайда екеніңізді көрмейді",
+  "terminalWatchConsentTitle": "Орналасқан жер бойынша «кеттім» белгісі",
+  "terminalWatchConsentBody": "Сіз терминалда «осындамын» кезіңде қолданба кетпегеніңізді тексеріп, хабарландыруды өзі жабады. Орналасқан жер логистке жіберілмейді.",
+  "locationRationaleNearbyBody": "Қолданба ең жақын қаланы табу үшін орналасқан жеріңізді бір рет анықтайды. Ол еш жерде сақталмайды, бақылау жоқ."
 }

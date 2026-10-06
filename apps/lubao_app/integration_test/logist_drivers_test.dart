@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lubao_app/app.dart';
+import 'package:lubao_app/providers/tracking_provider.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import 'e2e_support.dart';
@@ -23,7 +24,11 @@ void main() {
   testWidgets('логист: «Водители» → фильтр → чат → пригласить → водитель подтверждает и грузит', (tester) async {
     final run = E2eRun(binding, 'logist_drivers');
     await clearPersistedSession();
-    await tester.pumpWidget(const ProviderScope(child: LubaoApp()));
+    // Системный диалог геолокации робот нажать не может — подменяем запрос ОС (041, п.11).
+    await tester.pumpWidget(ProviderScope(
+      overrides: [osLocationPermissionRequestProvider.overrideWithValue(() async {})],
+      child: const LubaoApp(),
+    ));
     await waitFor(tester, find.byKey(const Key('roleSelectCompanyButton')));
     final t = tester.element(find.byType(Scaffold).first).l10n;
 
@@ -130,7 +135,6 @@ void main() {
       await logoutViaProfile(tester, driver: false);
     });
 
-    final d3FirstLogin = DateTime.now();
     await run.step(tester, 'вход-водителя-D3', () async {
       await loginDriver(tester, '7010000003');
       await waitFor(tester, find.byType(NavigationBar));
@@ -177,9 +181,6 @@ void main() {
     });
 
     await run.step(tester, 'вход-водителя-D3-снова', () async {
-      // Лимит SMS — 1 код в минуту на номер: ждём реальным временем, не кадрами.
-      final wait = const Duration(seconds: 62) - DateTime.now().difference(d3FirstLogin);
-      if (!wait.isNegative) await tester.runAsync(() => Future<void>.delayed(wait));
       await loginDriver(tester, '7010000003');
       await waitFor(tester, find.byType(NavigationBar));
     });
@@ -197,6 +198,9 @@ void main() {
 
     await run.step(tester, 'загружен-в-карточке-чата', () async {
       await tester.tap(find.byKey(const Key('chatCardNextStatusButton')));
+      // 041, п.11: начало рейса — отдельная шторка согласия на местоположение.
+      await waitFor(tester, find.byKey(const Key('tripTrackingConsentSheet')));
+      await tester.tap(find.byKey(const Key('consentUnderstoodButton')));
       await waitFor(
         tester,
         find.descendant(of: find.byKey(const Key('chatCardNextStatusButton')), matching: find.text(t.dealMarkInTransit)),

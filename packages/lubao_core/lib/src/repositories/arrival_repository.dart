@@ -57,7 +57,8 @@ class ArrivalRepository {
   }
 
   Future<Arrival> repeat() async {
-    final res = await _client.dio.post('/arrivals/repeat');
+    // Календарный «сегодня» — по часам устройства водителя (041, п.13).
+    final res = await _client.dio.post('/arrivals/repeat', data: {'today': ymd(DateTime.now())});
     return Arrival.fromJson(res.data as Map<String, dynamic>);
   }
 
@@ -65,6 +66,7 @@ class ArrivalRepository {
   /// ближайший на сегодня.
   Future<Arrival> checkIn({String? arrivalId, String? pointId}) async {
     final res = await _client.dio.post('/arrivals/checkin', data: {
+      'today': ymd(DateTime.now()),
       if (arrivalId != null) 'arrivalId': arrivalId,
       if (pointId != null) 'pointId': pointId,
     });

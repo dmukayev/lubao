@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lubao_app/app.dart';
+import 'package:lubao_app/providers/tracking_provider.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import 'e2e_support.dart';
@@ -18,7 +19,12 @@ void main() {
   testWidgets('водитель: отклик → выбор → подтверждение → статусы; догруз; «Машина заполнена»', (tester) async {
     final run = E2eRun(binding, 'driver_deal');
     await clearPersistedSession();
-    await tester.pumpWidget(const ProviderScope(child: LubaoApp()));
+    // Системный диалог геолокации робот нажать не может — подменяем запрос ОС
+    // (041, п.11); сама шторка согласия и логика приложения — настоящие.
+    await tester.pumpWidget(ProviderScope(
+      overrides: [osLocationPermissionRequestProvider.overrideWithValue(() async {})],
+      child: const LubaoApp(),
+    ));
 
     await waitFor(tester, find.byKey(const Key('roleSelectDriverButton')));
     final t = tester.element(find.byType(Scaffold).first).l10n;
@@ -76,17 +82,53 @@ void main() {
       await waitFor(tester, find.descendant(of: find.byKey(const Key('dealNextStatusButton')), matching: find.text(toLabel)));
     }
 
-    await run.step(tester, 'сделка1-загружен-в-пути', () async {
+    TrackingConsent consent() => ProviderScope.containerOf(tester.element(find.byType(LubaoApp))).read(trackingConsentProvider);
+
+    // 041, п.11: «Загружен» — отдельное согласие на местоположение в рейсе.
+    // Закрыли шторку, не нажав «Понятно» — сделка двигается, согласия нет, координаты не уйдут.
+    await run.step(tester, 'сделка1-загружен-без-согласия-на-трекинг', () async {
       await openDeal(deal1);
       await advance(t.dealConfirm, t.dealMarkLoaded);
-      await advance(t.dealMarkLoaded, t.dealMarkInTransit);
+      expect(consent().trip, isFalse);
+      await tester.tap(find.byKey(const Key('dealNextStatusButton')));
+      await waitFor(tester, find.byKey(const Key('tripTrackingConsentSheet')));
+      expect(find.text(t.tripTrackingConsentTitle), findsOneWidget);
+      expect(find.text(t.tripTrackingConsentBody), findsOneWidget);
+      expectInsideSafeZone(tester);
+      // Закрываем шторку касанием по затемнению.
+      await tester.tapAt(const Offset(20, 80));
+      await waitFor(tester, find.descendant(of: find.byKey(const Key('dealNextStatusButton')), matching: find.text(t.dealMarkInTransit)));
+      expect(consent().trip, isFalse, reason: 'без «Понятно» согласия на рейс нет, репортер не стартует');
+      // Переключатель в карточке на паузе: логист не видит местоположение.
+      expect(tester.widget<SwitchListTile>(find.byKey(const Key('tripTrackingSwitch'))).value, isFalse);
+      await advance(t.dealMarkInTransit, t.dealMarkDelivered);
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
     });
 
-    await run.step(tester, 'сделка2-догруз', () async {
+    // Второй рейс: «Понятно» → согласие дано, переключатель включён, пауза работает.
+    await run.step(tester, 'сделка2-согласие-на-трекинг-и-пауза', () async {
       await openDeal(deal2);
       await advance(t.dealConfirm, t.dealMarkLoaded);
+      await tester.tap(find.byKey(const Key('dealNextStatusButton')));
+      await waitFor(tester, find.byKey(const Key('consentUnderstoodButton')));
+      await tester.tap(find.byKey(const Key('consentUnderstoodButton')));
+      await waitFor(tester, find.descendant(of: find.byKey(const Key('dealNextStatusButton')), matching: find.text(t.dealMarkInTransit)));
+      expect(consent().trip, isTrue);
+      expect(consent().tripSharingActive, isTrue);
+      final switchTile = find.byKey(const Key('tripTrackingSwitch'));
+      await reveal(tester, switchTile);
+      expect(tester.widget<SwitchListTile>(switchTile).value, isTrue);
+      expect(find.text(t.tripTrackingSwitchOn), findsOneWidget);
+      // Пауза: согласие остаётся, передача выключена.
+      await tester.tap(switchTile);
+      await tester.pumpAndSettle();
+      expect(consent().trip, isTrue);
+      expect(consent().tripPaused, isTrue);
+      expect(find.text(t.tripTrackingSwitchPaused), findsOneWidget);
+      await tester.tap(switchTile);
+      await tester.pumpAndSettle();
+      expect(consent().tripSharingActive, isTrue);
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
     });

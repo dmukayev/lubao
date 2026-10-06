@@ -366,7 +366,7 @@
   "chatLocationMessagePrefix": "Точка на карте",
   "chatLocationError": "Не удалось определить местоположение",
   "locationRationaleTitle": "Геопозиция",
-  "locationRationaleBody": "Приложение один раз возьмёт ваше текущее место и отправит ссылку на карту в чат. Фоновой слежки нет.",
+  "locationRationaleBody": "Приложение один раз возьмёт ваше текущее место и отправит ссылку на карту в чат — только в этот чат и только сейчас. Слежки нет: пока вы не в рейсе, местоположение нигде не передаётся.",
   "locationRationaleContinue": "Продолжить",
   "chatLoadingPlaceTooltip": "Место погрузки",
   "chatLoadingPlaceDialogTitle": "Вставьте ссылку на место погрузки",
@@ -1140,5 +1140,14 @@
   "adminCityStatsArrivals": "Анонсы",
   "adminCityStatsCargos": "Грузы",
   "adminCityStatsDeals": "Сделки",
-  "adminCityStatsEmpty": "Пока нет активности по городам"
+  "adminCityStatsEmpty": "Пока нет активности по городам",
+  "consentUnderstood": "Понятно",
+  "tripTrackingConsentTitle": "Местоположение на время рейса",
+  "tripTrackingConsentBody": "На время рейса приложение будет передавать ваше местоположение логисту. Это можно поставить на паузу в карточке сделки.",
+  "tripTrackingSwitchTitle": "Передавать местоположение логисту",
+  "tripTrackingSwitchOn": "Включено на время рейса",
+  "tripTrackingSwitchPaused": "На паузе — логист не видит, где вы",
+  "terminalWatchConsentTitle": "Отметка «уехал» по местоположению",
+  "terminalWatchConsentBody": "Пока вы «на месте» на терминале, приложение будет проверять, не уехали ли вы, и закроет анонс само. Местоположение логисту при этом не передаётся.",
+  "locationRationaleNearbyBody": "Приложение один раз определит ваше местоположение, чтобы найти ближайший город. Оно нигде не сохраняется, слежки нет."
 }

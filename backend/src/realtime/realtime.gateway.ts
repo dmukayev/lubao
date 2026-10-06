@@ -155,4 +155,11 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   emitDealUpdated(chatId: string, payload: { dealId: string; status: string }): void {
     this.server.to(chatRoom(chatId)).emit('deal:updated', payload);
   }
+
+  /// То же событие — в личную комнату участника сделки (041, п.13): приложение
+  /// водителя узнаёт о начале/конце рейса («Загружен» → «Доставлено») и без
+  /// открытого чата, и ему не нужно опрашивать /deals/mine каждые 45 секунд.
+  emitDealUpdatedToUser(userId: string, payload: { dealId: string; status: string }): void {
+    this.server.to(userRoom(userId)).emit('deal:updated', payload);
+  }
 }

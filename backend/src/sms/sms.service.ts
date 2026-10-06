@@ -6,6 +6,18 @@ import { WhatsappCodeSender } from './whatsapp-code.sender';
 
 const CODE_TTL_SECONDS = 5 * 60;
 const MINUTE_LOCK_SECONDS = 60;
+
+/// Пауза между кодами на один номер. Для тестовых окружений с консольным
+/// SMS (e2e, 041 п.12) её можно сократить/отключить (`SMS_MINUTE_LOCK_SECONDS=0`),
+/// чтобы сценарии не ждали минуту между двумя входами одного номера. С
+/// реальным провайдером и в production переменная игнорируется.
+function minuteLockSeconds(): number {
+  const override = process.env.SMS_MINUTE_LOCK_SECONDS;
+  if (override === undefined || override === '') return MINUTE_LOCK_SECONDS;
+  if (process.env.NODE_ENV === 'production' || process.env.SMS_PROVIDER === 'mobizon') return MINUTE_LOCK_SECONDS;
+  const seconds = Number(override);
+  return Number.isInteger(seconds) && seconds >= 0 ? seconds : MINUTE_LOCK_SECONDS;
+}
 const HOUR_WINDOW_SECONDS = 60 * 60;
 const MAX_PER_HOUR = 5;
 const MAX_PER_HOUR_PER_IP = 20;
@@ -80,7 +92,7 @@ export class SmsService {
     await Promise.all([
       resendAsSms ? Promise.resolve() : client.set(this.codeKey(phone), code, 'EX', CODE_TTL_SECONDS),
       resendAsSms ? Promise.resolve() : client.del(this.attemptsKey(phone)),
-      client.set(this.minuteKey(phone), '1', 'EX', MINUTE_LOCK_SECONDS),
+      minuteLockSeconds() > 0 ? client.set(this.minuteKey(phone), '1', 'EX', minuteLockSeconds()) : Promise.resolve(),
       hourCount === 0 ? client.set(this.hourKey(phone), '1', 'EX', HOUR_WINDOW_SECONDS) : client.incr(this.hourKey(phone)),
       ipHourCount === 0 ? client.set(this.ipHourKey(ip), '1', 'EX', HOUR_WINDOW_SECONDS) : client.incr(this.ipHourKey(ip)),
     ]);

@@ -14,6 +14,7 @@ import '../../providers/data_providers.dart';
 import 'status_helpers.dart';
 import 'error_feedback.dart';
 import 'location_permission.dart';
+import 'tracking_consent_sheet.dart';
 
 /// Название языка для «Пишет на …» — из ARB на языке читателя (041, п.9).
 String? _languageName(LubaoLocalizations t, String? code) => switch (code) {
@@ -646,6 +647,9 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
   /// Следующий статус сделки из карточки чата (038, п.13) — тот же
   /// advanceStatus, что в карточке сделки, без дублирующей логики.
   Future<void> _advanceDeal(String dealId, DealStatus next) async {
+    // «Загружен» — начало рейса: отдельное согласие на передачу местоположения (041, п.11).
+    if (next == DealStatus.loaded) await ensureTripTrackingConsent(context, ref);
+    if (!mounted) return;
     setState(() => _busy = true);
     try {
       await ref.read(dealRepositoryProvider).advanceStatus(dealId, next);

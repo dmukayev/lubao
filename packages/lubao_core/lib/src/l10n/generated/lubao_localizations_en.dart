@@ -898,7 +898,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get locationRationaleBody =>
-      'The app will take your current location once and send a map link to the chat. There is no background tracking.';
+      'The app will take your current location once and send a map link to this chat only — right now, once. There is no tracking: outside a trip your location is not shared anywhere.';
 
   @override
   String get locationRationaleContinue => 'Continue';
@@ -2805,4 +2805,35 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminCityStatsEmpty => 'No city activity yet';
+
+  @override
+  String get consentUnderstood => 'Got it';
+
+  @override
+  String get tripTrackingConsentTitle => 'Location during the trip';
+
+  @override
+  String get tripTrackingConsentBody =>
+      'During the trip the app will share your location with the logist. You can pause it in the deal card.';
+
+  @override
+  String get tripTrackingSwitchTitle => 'Share location with the logist';
+
+  @override
+  String get tripTrackingSwitchOn => 'On for the duration of the trip';
+
+  @override
+  String get tripTrackingSwitchPaused =>
+      'Paused — the logist cannot see where you are';
+
+  @override
+  String get terminalWatchConsentTitle => 'Automatic “left” by location';
+
+  @override
+  String get terminalWatchConsentBody =>
+      'While you are “here” at a terminal, the app will check whether you have left and close the announcement by itself. Your location is not shared with the logist.';
+
+  @override
+  String get locationRationaleNearbyBody =>
+      'The app will determine your location once to find the nearest city. It is not stored anywhere and there is no tracking.';
 }

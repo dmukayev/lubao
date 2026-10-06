@@ -222,3 +222,56 @@ describe('SmsService — WhatsApp → SMS (задача 042, п.3)', () => {
     await expect(service.requestCode('+77010000009', '1.1.1.1', { channel: 'sms' })).rejects.toBeInstanceOf(HttpException);
   });
 });
+
+describe('SmsService — SMS_MINUTE_LOCK_SECONDS для тестовых окружений (041, п.12)', () => {
+  const OLD = { ...process.env };
+  afterEach(() => {
+    process.env = { ...OLD };
+  });
+
+  function make() {
+    const client = new FakeRedisClient();
+    const provider = new FakeSmsProvider();
+    return { service: new SmsService({ client } as any, provider), provider };
+  }
+
+  it('SMS_MINUTE_LOCK_SECONDS=0 с консольным провайдером: второй код тому же номеру сразу, без минуты', async () => {
+    process.env.SMS_MINUTE_LOCK_SECONDS = '0';
+    delete process.env.SMS_PROVIDER;
+    process.env.NODE_ENV = 'development';
+    const { service, provider } = make();
+    await service.requestCode('+77010000003', '1.1.1.1');
+    await service.requestCode('+77010000003', '1.1.1.1');
+    expect(provider.sendCode).toHaveBeenCalledTimes(2);
+  });
+
+  it('часовой лимит на номер при этом остаётся (5 в час)', async () => {
+    process.env.SMS_MINUTE_LOCK_SECONDS = '0';
+    process.env.NODE_ENV = 'development';
+    const { service } = make();
+    for (let i = 0; i < 5; i++) await service.requestCode('+77010000003', '1.1.1.1');
+    await expect(service.requestCode('+77010000003', '1.1.1.1')).rejects.toThrow('Превышен лимит SMS за час');
+  });
+
+  it('в production и с реальным провайдером переменная игнорируется — минутный лимит действует', async () => {
+    process.env.SMS_MINUTE_LOCK_SECONDS = '0';
+    process.env.NODE_ENV = 'production';
+    let { service } = make();
+    await service.requestCode('+77010000003', '1.1.1.1');
+    await expect(service.requestCode('+77010000003', '1.1.1.1')).rejects.toBeInstanceOf(HttpException);
+
+    process.env.NODE_ENV = 'development';
+    process.env.SMS_PROVIDER = 'mobizon';
+    ({ service } = make());
+    await service.requestCode('+77010000004', '1.1.1.1');
+    await expect(service.requestCode('+77010000004', '1.1.1.1')).rejects.toBeInstanceOf(HttpException);
+  });
+
+  it('мусорное значение — обычная минута', async () => {
+    process.env.SMS_MINUTE_LOCK_SECONDS = 'abc';
+    process.env.NODE_ENV = 'development';
+    const { service } = make();
+    await service.requestCode('+77010000005', '1.1.1.1');
+    await expect(service.requestCode('+77010000005', '1.1.1.1')).rejects.toBeInstanceOf(HttpException);
+  });
+});

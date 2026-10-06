@@ -1,7 +1,7 @@
 import { DealsService } from './deals.service';
 
 const FAKE_CHAT_SYSTEM = { post: jest.fn(), postToChat: jest.fn() };
-const FAKE_REALTIME = { emitDealUpdated: jest.fn() };
+const FAKE_REALTIME = { emitDealUpdated: jest.fn(), emitDealUpdatedToUser: jest.fn() };
 
 function dealFixture(overrides: Record<string, unknown> = {}) {
   return {
@@ -53,6 +53,19 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
     cargos = { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) };
     notifications = { notify: jest.fn() };
     service = new DealsService(prisma, cargos, notifications, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);
+  });
+
+  it('041, п.13: смена статуса сделки уходит в личные комнаты водителя и логиста (трекинг рейса без опроса)', async () => {
+    FAKE_REALTIME.emitDealUpdatedToUser.mockClear();
+    prisma.deal.findUnique.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'LOADED' }));
+    prisma.companyMember.findFirst.mockResolvedValue({ userId: 'logist-1' });
+
+    await service.advanceStatus('deal1', 'd1', 'LOADED');
+
+    const users = FAKE_REALTIME.emitDealUpdatedToUser.mock.calls.map((c) => c[0]).sort();
+    expect(users).toEqual(['logist-1', 'user-d1']);
+    expect(FAKE_REALTIME.emitDealUpdatedToUser).toHaveBeenCalledWith('user-d1', { dealId: 'deal1', status: expect.any(String) });
   });
 
   it('040, п.4: подтверждение сделки гасит анонс водителя («на месте» → COMPLETED)', async () => {

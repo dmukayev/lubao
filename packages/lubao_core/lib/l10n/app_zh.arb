@@ -283,7 +283,7 @@
   "chatLocationMessagePrefix": "地图位置",
   "chatLocationError": "无法获取位置",
   "locationRationaleTitle": "位置",
-  "locationRationaleBody": "应用将一次性获取您当前的位置并把地图链接发到聊天中，不会后台跟踪。",
+  "locationRationaleBody": "应用仅获取一次您当前的位置，并将地图链接发送到此聊天——仅此一次。没有跟踪：不在行程中时，位置不会被共享。",
   "locationRationaleContinue": "继续",
   "chatLoadingPlaceTooltip": "装货地点",
   "chatLoadingPlaceDialogTitle": "粘贴装货地点的链接",
@@ -1015,5 +1015,14 @@
   "adminCityStatsArrivals": "公告",
   "adminCityStatsCargos": "货物",
   "adminCityStatsDeals": "交易",
-  "adminCityStatsEmpty": "暂无城市活动"
+  "adminCityStatsEmpty": "暂无城市活动",
+  "consentUnderstood": "明白了",
+  "tripTrackingConsentTitle": "行程期间的位置",
+  "tripTrackingConsentBody": "行程期间，应用会向物流方共享您的位置。您可以在交易卡片中随时暂停。",
+  "tripTrackingSwitchTitle": "向物流方共享位置",
+  "tripTrackingSwitchOn": "行程期间已开启",
+  "tripTrackingSwitchPaused": "已暂停——物流方看不到您的位置",
+  "terminalWatchConsentTitle": "按位置自动标记“已离开”",
+  "terminalWatchConsentBody": "当您在码头“已到达”期间，应用会检查您是否离开，并自动关闭公告。位置不会共享给物流方。",
+  "locationRationaleNearbyBody": "应用仅会定位一次，以查找最近的城市。位置不会被保存，也没有跟踪。"
 }

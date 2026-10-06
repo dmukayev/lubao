@@ -610,7 +610,7 @@ class CompanyProfileScreen extends ConsumerWidget {
           Row(
             children: [
               const Icon(LucideIcons.star, size: 16, color: Colors.amber),
-              Text(' ${company?.ratingAvg.toStringAsFixed(1) ?? '-'} (${company?.ratingCount ?? 0})'),
+              Text(company == null ? ' —' : ' ${formatRating(company.ratingAvg, company.ratingCount)}${company.ratingCount == 0 ? '' : ' (${company.ratingCount})'}'),
               const SizedBox(width: 12),
               StatusBadge(
                 label: (company?.isVerified ?? false) ? t.profileVerified : t.profileNotVerified,

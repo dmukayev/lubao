@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 import 'api_providers.dart';
 import 'locale_provider.dart';
+import 'tracking_provider.dart';
 
 /// true, пока идёт попытка восстановить сессию из secure storage при
 /// старте приложения (см. SessionController._restore) — роутер показывает
@@ -14,6 +15,7 @@ class SessionController extends StateNotifier<Session?> {
   SessionController(this._ref) : super(null) {
     _sessionExpiredSub = _ref.read(apiClientProvider).onSessionExpired.listen((_) {
       state = null;
+      _ref.read(trackingConsentProvider.notifier).reset();
     });
     _restore();
   }
@@ -148,6 +150,8 @@ class SessionController extends StateNotifier<Session?> {
   Future<void> logout() async {
     await _ref.read(authRepositoryProvider).logout();
     state = null;
+    // Согласия на геопозицию относятся к человеку, а не к устройству (041, п.11).
+    await _ref.read(trackingConsentProvider.notifier).reset();
   }
 
   @override

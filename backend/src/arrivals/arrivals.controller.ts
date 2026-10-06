@@ -56,15 +56,15 @@ export class ArrivalsController {
   }
 
   @Post('repeat')
-  repeat(@CurrentUser() ctx: RequestContext) {
+  repeat(@CurrentUser() ctx: RequestContext, @Body() dto: ArrivalActionDto) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');
-    return this.arrivals.repeat(ctx.user.id);
+    return this.arrivals.repeat(ctx.user.id, dto?.today);
   }
 
   @Post('checkin')
   checkIn(@CurrentUser() ctx: RequestContext, @Body() dto: ArrivalActionDto) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');
-    return this.arrivals.checkIn(ctx.user.id, dto?.arrivalId, dto?.pointId);
+    return this.arrivals.checkIn(ctx.user.id, dto?.arrivalId, dto?.pointId, dto?.today);
   }
 
   /// «Да, ещё ищу» на вопрос «Ещё ищете груз?» (задача 040, п.4).

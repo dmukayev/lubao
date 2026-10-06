@@ -47,6 +47,11 @@ export class AnnounceArrivalDto {
 }
 
 export class ArrivalActionDto {
+  /// Календарный «сегодня» клиента `YYYY-MM-DD` (041, п.13).
+  @IsOptional()
+  @IsString()
+  today?: string;
+
   @IsOptional()
   @IsString()
   arrivalId?: string;

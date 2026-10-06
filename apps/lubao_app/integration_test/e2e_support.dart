@@ -91,6 +91,9 @@ Future<void> clearPersistedSession() async {
   } finally {
     container.dispose();
   }
+  // Согласия на геопозицию тоже в Keychain и переживают `uninstall` (041, п.11):
+  // без чистки согласие прошлого сценария скрыло бы шторку в следующем.
+  await TrackingConsentStore().clear();
 }
 
 /// Роль «водитель» → телефон → код 1111 → ждём главного экрана (кнопка

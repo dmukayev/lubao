@@ -10,6 +10,7 @@ import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
 import 'announce_arrival_sheet.dart';
 import '../../shared/error_feedback.dart';
+import '../../shared/tracking_consent_sheet.dart';
 
 class CargoFeedScreen extends ConsumerStatefulWidget {
   const CargoFeedScreen({super.key});
@@ -233,6 +234,15 @@ class _AnonsCard extends ConsumerWidget {
     }
   }
 
+  /// «Я на месте»: в городе-терминале сначала согласие на проверку отъезда
+  /// (040, п.4 / 041, п.11); отказ от шторки не мешает отметке.
+  Future<void> _checkIn(BuildContext context, WidgetRef ref, Arrival arrival) async {
+    final isTerminal = refData.pointOrNull(arrival.pointId)?.kind == PointKind.terminal;
+    if (isTerminal) await ensureTerminalWatchConsent(context, ref);
+    if (!context.mounted) return;
+    await _run(context, ref, () => ref.read(arrivalRepositoryProvider).checkIn(arrivalId: arrival.id));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
@@ -357,7 +367,7 @@ class _AnonsCard extends ConsumerWidget {
                   key: const Key('driverCheckInButton'),
                   label: t.driverHomeCheckInButton,
                   icon: LucideIcons.mapPin,
-                  onPressed: () => _run(context, ref, () => repo.checkIn(arrivalId: arrival.id)),
+                  onPressed: () => _checkIn(context, ref, arrival),
                 ),
                 const SizedBox(height: AppSpacing.sm),
               ],
@@ -383,7 +393,7 @@ class _AnonsCard extends ConsumerWidget {
                   key: Key('otherArrival-${other.id}'),
                   arrival: other,
                   cityName: refData.pointOrNull(other.pointId)?.name.forLanguageCode(locale) ?? '',
-                  onCheckIn: () => _run(context, ref, () => repo.checkIn(arrivalId: other.id)),
+                  onCheckIn: () => _checkIn(context, ref, other),
                   onCancel: () => _run(context, ref, () => repo.cancel(arrivalId: other.id)),
                   onStillLooking: () => _run(context, ref, () => repo.stillLooking(arrivalId: other.id)),
                 ),

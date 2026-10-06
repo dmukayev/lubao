@@ -254,7 +254,7 @@ class _AdminDriversScreenState extends ConsumerState<AdminDriversScreen> {
                                               DataCell(Text(d.homeCityName.forLanguageCode(locale))),
                                               DataCell(Text(d.vehicleBodyTypeName?.forLanguageCode(locale) ?? '—')),
                                               DataCell(_StatusCell(isVerified: d.isVerified, isBlocked: d.isBlocked, pendingDocsCount: d.pendingDocsCount)),
-                                              DataCell(Text('★ ${d.ratingAvg.toStringAsFixed(1)} (${d.ratingCount})')),
+                                              DataCell(Text('★ ${formatRating(d.ratingAvg, d.ratingCount)} (${d.ratingCount})')),
                                               DataCell(Text('${d.completedDeals}')),
                                             ],
                                           ),
