@@ -6,7 +6,8 @@ export abstract class EmailProvider {
   /// (чтобы разработчику не нужно было лезть в лог), для прод — случайный.
   abstract generateCode(): string;
 
-  abstract sendCode(email: string, code: string): Promise<void>;
+  /// `locale` — язык письма (kk/ru/zh/en); не задан — ru.
+  abstract sendCode(email: string, code: string, locale?: 'kk' | 'ru' | 'zh' | 'en'): Promise<void>;
 
   /// Произвольное письмо (задача 025: приглашение сотрудника — ссылка, а не
   /// код). `bodyText` — простой текст, без вёрстки (решение 022, п. 14).

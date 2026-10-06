@@ -1,0 +1,32 @@
+# Прод-образ бэкенда (задача 043, п.6): сборка отдельно от запуска, без
+# исходников и dev-хот-релоада. Миграции применяются при старте контейнера
+# (`prisma migrate deploy`), затем — `node dist/src/main.js`.
+
+FROM node:20-alpine AS build
+WORKDIR /app
+RUN apk add --no-cache openssl
+RUN corepack enable && corepack prepare pnpm@9 --activate
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+COPY . .
+RUN pnpm prisma:generate && pnpm build
+
+FROM node:20-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+RUN apk add --no-cache openssl tini
+RUN corepack enable && corepack prepare pnpm@9 --activate
+
+# node_modules целиком (вместе с prisma CLI): `migrate deploy` и `admin:create`
+# запускаются из этого же образа.
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/package.json ./package.json
+
+USER node
+EXPOSE 3000
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]

@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import { inviteLink } from '../email/email-messages';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Company, CompanyMember, Prisma } from '@prisma/client';
@@ -180,13 +181,13 @@ export class CompaniesService {
     });
 
     try {
-      await this.email.sendMessage(
-        email,
-        `Приглашение в ${invite.company.name} на Lubao`,
-        `Вас пригласили в компанию «${invite.company.name}» на Lubao.\n` +
-          `Перейдите по ссылке, чтобы принять приглашение (действует 7 дней):\n` +
-          `lubao://invite/${token}`,
-      );
+      const inviter = await this.prisma.user.findUnique({ where: { id: invitedByUserId }, select: { locale: true } });
+      // https-ссылка (042, п.2): на вебе открывает экран принятия, в приложении — universal/app link.
+      await this.email.sendTemplate(email, 'INVITE', inviter?.locale, {
+        company: invite.company.name,
+        days: INVITE_TTL_DAYS,
+        link: inviteLink(token),
+      });
     } catch {
       // Письмо не блокирует создание приглашения — ссылку можно переслать
       // вручную (п. 11 задачи 025: «Скопировать ссылку» / «Поделиться»).

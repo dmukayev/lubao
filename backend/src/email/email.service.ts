@@ -1,7 +1,9 @@
 import * as crypto from 'crypto';
 import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
+import { Locale } from '@prisma/client';
 import { EmailProvider } from './email-provider';
+import { EmailKind, renderEmail } from './email-messages';
 
 const CODE_TTL_SECONDS = 10 * 60;
 const MINUTE_LOCK_SECONDS = 60;
@@ -40,7 +42,7 @@ export class EmailService {
     return `email:verify-ip:${ip}`;
   }
 
-  async requestCode(email: string, ip: string): Promise<void> {
+  async requestCode(email: string, ip: string, locale?: Locale): Promise<void> {
     const client = this.redis.client;
 
     const locked = await client.get(this.minuteKey(email));
@@ -67,7 +69,7 @@ export class EmailService {
       ipHourCount === 0 ? client.set(this.ipHourKey(ip), '1', 'EX', HOUR_WINDOW_SECONDS) : client.incr(this.ipHourKey(ip)),
     ]);
 
-    await this.provider.sendCode(email, code);
+    await this.provider.sendCode(email, code, locale);
   }
 
   /// Максимум 5 неверных попыток на код — на 6-й код сгорает, как у SMS.
@@ -115,5 +117,11 @@ export class EmailService {
   /// requestCode: отправляется владельцем вручную, не по вводу пользователя.
   async sendMessage(email: string, subject: string, bodyText: string): Promise<void> {
     await this.provider.sendMessage(email, subject, bodyText);
+  }
+
+  /// Письмо из шаблона на языке получателя (задача 042, п.2).
+  async sendTemplate(email: string, kind: EmailKind, locale: Locale | undefined, params: Record<string, string | number>): Promise<void> {
+    const { subject, text } = renderEmail(kind, locale, params);
+    await this.provider.sendMessage(email, subject, text);
   }
 }

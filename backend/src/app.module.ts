@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { AppThrottlerGuard, THROTTLE_TTL_MS, defaultLimit } from './common/app-throttler.guard';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthController } from './health/health.controller';
 import { JwtAuthGuard } from './common/jwt-auth.guard';
@@ -21,6 +23,8 @@ import { SmsModule } from './sms/sms.module';
 import { TokenModule } from './token/token.module';
 import { AppSettingsModule } from './app-settings/app-settings.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { JobsModule } from './jobs/jobs.module';
+import { AdminBootstrapService } from './cli/admin-bootstrap.service';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { TranslationModule } from './translation/translation.module';
@@ -29,12 +33,14 @@ import { IdentifiersModule } from './identifiers/identifiers.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([{ name: 'default', ttl: THROTTLE_TTL_MS, limit: defaultLimit() }]),
     PrismaModule,
     RedisModule,
     SmsModule,
     TokenModule,
     AppSettingsModule,
     ScheduleModule.forRoot(),
+    JobsModule,
     NotificationsModule,
     RealtimeModule,
     TranslationModule,
@@ -53,6 +59,10 @@ import { IdentifiersModule } from './identifiers/identifiers.module';
     UploadsModule,
   ],
   controllers: [HealthController],
-  providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
+  providers: [
+    AdminBootstrapService,
+    { provide: APP_GUARD, useClass: AppThrottlerGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AppModule {}

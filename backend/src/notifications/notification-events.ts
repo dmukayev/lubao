@@ -195,7 +195,8 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
   },
   CHAT_MESSAGE: {
     eventGroup: 'CHAT_MESSAGE',
-    channels: ['PUSH'],
+    // WeCom — сообщения водителя тоже уходят в бот компании (задача 042, п.5).
+    channels: ['PUSH', 'WECOM'],
     render: (locale, p) => T.CHAT_MESSAGE[locale](p),
     deepLink: (p) => `lubao://chat/${p.chatId}`,
     throttleSeconds: 60,
@@ -235,7 +236,7 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
     eventGroup: 'AGREED_CHECK',
     channels: ['PUSH'],
     render: (locale, p) => T.AGREED_CHECK[locale](p),
-    deepLink: (p) => `lubao://chat/${p.chatId}`,
+    deepLink: (p) => (p.chatId ? `lubao://chat/${p.chatId}` : `lubao://cargo/${p.cargoId}`),
   },
   ARRIVAL_DAY_CHECK: {
     eventGroup: 'ARRIVAL_CHECK',

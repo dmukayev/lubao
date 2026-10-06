@@ -308,7 +308,9 @@ export class ChatsService {
     // идёт мгновенно через Socket.IO (realtime.gateway), push — запасной
     // канал на случай закрытого приложения.
     if (recipientUserId) {
-      await this.notifications.notify({ userIds: [recipientUserId] }, 'CHAT_MESSAGE', {
+      // Получатель — компания (пишет водитель): то же сообщение уходит и в
+      // WeCom-бот компании (задача 042, п.5); `companyId` включает этот канал.
+      await this.notifications.notify({ userIds: [recipientUserId], ...(ctx.driver ? { companyId: chat.companyId } : {}) }, 'CHAT_MESSAGE', {
         chatId: chat.id,
         senderName,
         // needsTranslation=true → перевод ещё не готов (он асинхронный,

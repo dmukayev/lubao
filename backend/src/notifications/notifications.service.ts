@@ -58,16 +58,7 @@ export class NotificationsService {
     if (eventSetting?.enabled === false) return;
     if (channelSetting?.enabled === false) return;
 
-    if (def.throttleSeconds && def.throttleKey) {
-      const key = `notif:throttle:${def.throttleKey({ ...payload, recipientUserId: userId })}`;
-      try {
-        const set = await withTimeout(this.redis.client.set(key, '1', 'EX', def.throttleSeconds, 'NX'), QUEUE_ADD_TIMEOUT_MS, 'throttle check timed out');
-        if (set === null) return;
-      } catch (e) {
-        // Redis недоступен — лучше продублировать push, чем молчать (задача 029, п.8).
-        this.logger.error(`Throttle check failed, sending anyway: ${(e as Error).message}`);
-      }
-    }
+    if (await this.throttled(def, payload, userId)) return;
 
     const tokens = await this.prisma.deviceToken.findMany({ where: { userId } });
     if (tokens.length === 0) return;
@@ -103,10 +94,27 @@ export class NotificationsService {
     );
   }
 
+  /// Не чаще одного уведомления в `throttleSeconds` на ключ (чат + получатель).
+  /// Для WeCom получатель — компания: в групповой чат бота иначе сыпалось бы
+  /// по сообщению на каждую реплику (задача 042, п.5).
+  private async throttled(def: (typeof NOTIFICATION_EVENTS)[NotificationEvent], payload: NotificationPayload, recipient: string): Promise<boolean> {
+    if (!def.throttleSeconds || !def.throttleKey) return false;
+    const key = `notif:throttle:${def.throttleKey({ ...payload, recipientUserId: recipient })}`;
+    try {
+      const set = await withTimeout(this.redis.client.set(key, '1', 'EX', def.throttleSeconds, 'NX'), QUEUE_ADD_TIMEOUT_MS, 'throttle check timed out');
+      return set === null;
+    } catch (e) {
+      // Redis недоступен — лучше продублировать, чем молчать (задача 029, п.8).
+      this.logger.error(`Throttle check failed, sending anyway: ${(e as Error).message}`);
+      return false;
+    }
+  }
+
   private async wecomToCompany(companyId: string, event: NotificationEvent, payload: NotificationPayload): Promise<void> {
     const def = NOTIFICATION_EVENTS[event];
     const company = await this.prisma.company.findUnique({ where: { id: companyId } });
     if (!company?.wecomWebhookUrl) return;
+    if (await this.throttled(def, payload, `company:${companyId}`)) return;
 
     const owner = await this.prisma.companyMember.findFirst({
       where: { companyId, role: 'OWNER' },

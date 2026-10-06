@@ -33,7 +33,11 @@ function userRoom(userId: string): string {
 /// typing. Клиент переподключается сам (socket.io-client делает это из
 /// коробки); если сокет недоступен совсем — клиентский фоллбэк на polling
 /// каждые 10с (см. packages/lubao_core/lib/src/realtime).
-@WebSocketGateway({ cors: { origin: '*' } })
+/// CORS шлюза — тот же список, что у HTTP (CORS_ALLOWED_ORIGINS, задача 043,
+/// п.4); не задан — как раньше, открыто (локальная разработка).
+const wsAllowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean);
+
+@WebSocketGateway({ cors: { origin: wsAllowedOrigins?.length ? wsAllowedOrigins : '*' } })
 export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;

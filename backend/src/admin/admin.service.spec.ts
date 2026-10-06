@@ -841,32 +841,44 @@ describe('AdminService.documentFileSource — proxy instead of presigned link (�
     const prisma: any = { verificationDocument: { findUnique: jest.fn().mockResolvedValue(null) } };
     prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
-    await expect(service.documentFileSource('missing')).rejects.toThrow(NotFoundException);
+    await expect(service.documentFileSource('missing', 'admin-1')).rejects.toThrow(NotFoundException);
   });
 
   it('returns a redirect for legacy http(s) fileUrl without touching MinIO', async () => {
     const uploads = fakeUploads();
     const prisma: any = {
-      verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1', fileUrl: 'https://legacy.example/a.jpg' }) },
+      verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1', fileUrl: 'https://legacy.example/a.jpg', type: 'SELFIE', driverId: 'd1', companyId: null }) },
+      auditLog: { create: jest.fn() },
     };
     prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, uploads as any);
 
-    const result = await service.documentFileSource('doc1');
+    const result = await service.documentFileSource('doc1', 'admin-1');
 
     expect(result).toEqual({ redirectUrl: 'https://legacy.example/a.jpg' });
+    // 043, п.4: каждый просмотр файла документа — запись в журнале (кто, что, чей).
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        actorUserId: 'admin-1',
+        action: 'DOCUMENT_FILE_VIEWED',
+        entityType: 'VerificationDocument',
+        entityId: 'doc1',
+        metadata: { type: 'SELFIE', driverId: 'd1', companyId: null },
+      }),
+    });
     expect(uploads.getDocumentStream).not.toHaveBeenCalled();
   });
 
   it('streams from MinIO for an object-key fileUrl', async () => {
     const uploads = fakeUploads();
     const prisma: any = {
-      verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1', fileUrl: 'abc123.jpg' }) },
+      verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1', fileUrl: 'abc123.jpg', type: 'DRIVER_LICENSE', driverId: 'd1' }) },
+      auditLog: { create: jest.fn() },
     };
     prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, uploads as any);
 
-    const result = await service.documentFileSource('doc1');
+    const result = await service.documentFileSource('doc1', 'admin-1');
 
     expect(uploads.getDocumentStream).toHaveBeenCalledWith('abc123.jpg');
     expect(result).toEqual({ stream: 'stream:abc123.jpg', contentType: 'image/jpeg' });
@@ -1990,6 +2002,23 @@ describe('AdminService reference-data edits (задача 028, п.21)', () => {
     expect(prisma.point.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ lat: 44.2, lng: 80.4 }) }));
   });
 
+  it('042: ручной курс на сегодня пишется как manual и попадает в audit_log (старое → новое)', async () => {
+    const prisma: any = {
+      exchangeRate: { findUnique: jest.fn().mockResolvedValue({ rateToKzt: 478 }), upsert: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    await service.setExchangeRate('admin-1', { currency: 'USD', rateToKzt: 481.5, reason: 'НБ РК ещё не опубликовал' });
+
+    expect(prisma.exchangeRate.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ update: { rateToKzt: 481.5, source: 'manual' }, create: expect.objectContaining({ currency: 'USD', rateToKzt: 481.5, source: 'manual' }) }),
+    );
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ action: 'EXCHANGE_RATE_SET', metadata: expect.objectContaining({ old: 478, new: 481.5 }) }) }),
+    );
+  });
+
   it('040: терминал без координат и радиуса не заводится (создание)', async () => {
     const prisma: any = { city: { findUnique: jest.fn().mockResolvedValue({ id: 'c1', lat: null, lng: null }) }, point: { create: jest.fn() } };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
@@ -2087,6 +2116,45 @@ describe('AdminService.setAppSetting (задача 028, п.22)', () => {
     expect(prisma.auditLog.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ action: 'SETTING_CHANGED', metadata: expect.objectContaining({ old: '200', new: '250' }) }) }),
     );
+  });
+});
+
+describe('AdminService.setAppSetting — белый список ключей (задача 043, п.4)', () => {
+  function setup() {
+    const appSettings = { get: jest.fn().mockResolvedValue(null), set: jest.fn() };
+    const prisma: any = { auditLog: { create: jest.fn() } };
+    return { service: new AdminService(prisma, {} as any, fakeUploads() as any, appSettings as any), appSettings, prisma };
+  }
+
+  it('неизвестный ключ — 400, в таблицу ничего не пишется и журнала нет', async () => {
+    const { service, appSettings, prisma } = setup();
+    await expect(service.setAppSetting('admin-1', 'jwtSecret', 'x')).rejects.toThrow('Unknown setting');
+    await expect(service.setAppSetting('admin-1', '__proto__', 'x')).rejects.toThrow('Unknown setting');
+    expect(appSettings.set).not.toHaveBeenCalled();
+    expect(prisma.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['translationEnabled', 'yes'],
+    ['minAppVersion', '1.2'],
+    ['minAppVersion', 'latest'],
+    ['homeRadiusKm', '-5'],
+    ['homeRadiusKm', '12345'],
+  ])('значение не по формату: %s = %s — 400', async (key, value) => {
+    const { service, appSettings } = setup();
+    await expect(service.setAppSetting('admin-1', key, value)).rejects.toThrow('Invalid value');
+    expect(appSettings.set).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['translationEnabled', 'false'],
+    ['minAppVersion', '1.4.0'],
+    ['minAppVersion', ''],
+    ['supportEmail', 'help@lubao.kz'],
+  ])('допустимое значение: %s = %s', async (key, value) => {
+    const { service, appSettings } = setup();
+    await service.setAppSetting('admin-1', key, value);
+    expect(appSettings.set).toHaveBeenCalledWith(key, value);
   });
 });
 

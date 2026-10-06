@@ -1,7 +1,8 @@
 import * as crypto from 'crypto';
-import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { SmsProvider } from './sms-provider';
+import { WhatsappCodeSender } from './whatsapp-code.sender';
 
 const CODE_TTL_SECONDS = 5 * 60;
 const MINUTE_LOCK_SECONDS = 60;
@@ -13,10 +14,17 @@ const MAX_VERIFY_PER_HOUR_PER_IP = 30;
 
 @Injectable()
 export class SmsService {
+  private readonly logger = new Logger(SmsService.name);
+
   constructor(
     private readonly redis: RedisService,
     private readonly provider: SmsProvider,
+    private readonly whatsapp?: WhatsappCodeSender,
   ) {}
+
+  private channelKey(phone: string) {
+    return `sms:channel:${phone}`;
+  }
 
   private minuteKey(phone: string) {
     return `sms:lock:${phone}`;
@@ -40,11 +48,21 @@ export class SmsService {
   /// Генерирует и отправляет код, предварительно проверив лимиты:
   /// не больше 1 SMS в минуту и 5 в час на номер, не больше 20 запросов
   /// в час на IP (защита от массового перебора номеров с одного источника).
-  async requestCode(phone: string, ip: string): Promise<void> {
+  ///
+  /// Канал (задача 042, п.3): если настроен WhatsApp — код сначала уходит
+  /// туда; нет WhatsApp у номера / отказ API / таймаут 10 с — автоматически
+  /// SMS. Кнопка «Не пришло? Отправить SMS» — `channel: 'sms'`: тот же код
+  /// уходит SMS сразу, не дожидаясь минутного лимита (если первым каналом
+  /// был WhatsApp); часовые лимиты при этом действуют как обычно.
+  async requestCode(phone: string, ip: string, opts: { channel?: 'sms' } = {}): Promise<{ channel: 'whatsapp' | 'sms' }> {
     const client = this.redis.client;
 
+    const lastChannel = await client.get(this.channelKey(phone));
+    const storedCode = await client.get(this.codeKey(phone));
+    const resendAsSms = opts.channel === 'sms' && lastChannel === 'whatsapp' && !!storedCode;
+
     const locked = await client.get(this.minuteKey(phone));
-    if (locked) {
+    if (locked && !resendAsSms) {
       throw new HttpException('Слишком частые запросы кода, попробуйте через минуту', HttpStatus.TOO_MANY_REQUESTS);
     }
 
@@ -58,16 +76,28 @@ export class SmsService {
       throw new HttpException('Превышен лимит запросов кода с вашего адреса, попробуйте позже', HttpStatus.TOO_MANY_REQUESTS);
     }
 
-    const code = this.provider.generateCode();
+    const code = resendAsSms ? storedCode! : this.provider.generateCode();
     await Promise.all([
-      client.set(this.codeKey(phone), code, 'EX', CODE_TTL_SECONDS),
-      client.del(this.attemptsKey(phone)),
+      resendAsSms ? Promise.resolve() : client.set(this.codeKey(phone), code, 'EX', CODE_TTL_SECONDS),
+      resendAsSms ? Promise.resolve() : client.del(this.attemptsKey(phone)),
       client.set(this.minuteKey(phone), '1', 'EX', MINUTE_LOCK_SECONDS),
       hourCount === 0 ? client.set(this.hourKey(phone), '1', 'EX', HOUR_WINDOW_SECONDS) : client.incr(this.hourKey(phone)),
       ipHourCount === 0 ? client.set(this.ipHourKey(ip), '1', 'EX', HOUR_WINDOW_SECONDS) : client.incr(this.ipHourKey(ip)),
     ]);
 
-    await this.provider.sendCode(phone, code);
+    let channel: 'whatsapp' | 'sms' = 'sms';
+    if (!resendAsSms && opts.channel !== 'sms' && this.whatsapp?.enabled()) {
+      try {
+        await this.whatsapp.sendCode(phone, code);
+        channel = 'whatsapp';
+      } catch (e) {
+        this.logger.warn(`WhatsApp не сработал, отправляю SMS: ${(e as Error).message}`);
+      }
+    }
+    if (channel === 'sms') await this.provider.sendCode(phone, code);
+
+    await client.set(this.channelKey(phone), channel, 'EX', CODE_TTL_SECONDS);
+    return { channel };
   }
 
   /// Сверяет код и удаляет его (одноразовый). true — код верный и ещё

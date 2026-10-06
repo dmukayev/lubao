@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Put, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
@@ -29,6 +29,7 @@ import {
   ReviewVerificationDocumentDto,
   SearchQueryDto,
   SetAppSettingDto,
+  SetExchangeRateDto,
   SetVerifiedDto,
   StatsQueryDto,
 } from './dto/admin.dto';
@@ -55,6 +56,12 @@ export class AdminController {
     assertAdmin(ctx);
     await this.admin.setAppSetting(ctx.user.id, key, dto.value, dto.reason);
     return { success: true };
+  }
+
+  @Put('exchange-rates')
+  async setExchangeRate(@CurrentUser() ctx: RequestContext, @Body() dto: SetExchangeRateDto) {
+    assertAdmin(ctx);
+    return this.admin.setExchangeRate(ctx.user.id, dto);
   }
 
   @Get('translation-stats')
@@ -201,7 +208,7 @@ export class AdminController {
   @Get('documents/:id/file')
   async documentFile(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Res() res: Response) {
     assertAdmin(ctx);
-    const source = await this.admin.documentFileSource(id);
+    const source = await this.admin.documentFileSource(id, ctx.user.id);
     if ('redirectUrl' in source) {
       res.redirect(source.redirectUrl);
       return;

@@ -2,16 +2,18 @@ import { Module } from '@nestjs/common';
 import { ConsoleEmailProvider } from './console-email.provider';
 import { EmailProvider } from './email-provider';
 import { EmailService } from './email.service';
+import { SmtpEmailProvider } from './smtp-email.provider';
 
-/// Прод-провайдер (Alibaba DirectMail или аналог для qq.com/163.com — задача
-/// 022, п. 14-15) подключается здесь же по образцу SmsModule, когда появятся
-/// учётные данные; пока EMAIL_PROVIDER не 'console' — используем dev-заглушку.
+/// EMAIL_PROVIDER=smtp — боевая отправка (задача 042, п.2); иначе dev-заглушка
+/// с кодом 111111. Без SMTP прод не стартует (предохранитель, задача 043).
 @Module({
   providers: [
     ConsoleEmailProvider,
+    SmtpEmailProvider,
     {
       provide: EmailProvider,
-      useExisting: ConsoleEmailProvider,
+      useFactory: (console: ConsoleEmailProvider, smtp: SmtpEmailProvider) => (process.env.EMAIL_PROVIDER === 'smtp' ? smtp : console),
+      inject: [ConsoleEmailProvider, SmtpEmailProvider],
     },
     EmailService,
   ],

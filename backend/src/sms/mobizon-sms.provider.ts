@@ -1,5 +1,6 @@
 import * as crypto from 'crypto';
 import { Injectable, Logger } from '@nestjs/common';
+import { maskPhone } from '../common/mask';
 import { SmsProvider } from './sms-provider';
 
 /// Прод: реальная отправка через Mobizon.kz (https://mobizon.kz).
@@ -33,7 +34,7 @@ export class MobizonSmsProvider extends SmsProvider {
 
     const body = (await res.json()) as { code?: number; message?: string };
     if (body.code !== 0) {
-      this.logger.error(`Mobizon error for ${phone}: ${JSON.stringify(body)}`);
+      this.logger.error(`Mobizon error for ${maskPhone(phone)}: code=${body.code}`);
       throw new Error(`Mobizon error: ${body.message ?? 'unknown'}`);
     }
   }

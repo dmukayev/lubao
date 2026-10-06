@@ -41,6 +41,13 @@ export class UploadsService implements OnModuleInit {
     });
   }
 
+  /// Для /health/ready: хранилище отвечает и бакеты на месте.
+  async ping(): Promise<void> {
+    if (!(await this.client.bucketExists(this.bucket)) || !(await this.client.bucketExists(this.documentsBucket))) {
+      throw new Error('bucket missing');
+    }
+  }
+
   async onModuleInit() {
     try {
       const exists = await this.client.bucketExists(this.bucket);
@@ -74,8 +81,8 @@ export class UploadsService implements OnModuleInit {
     }
   }
 
-  async uploadImage(buffer: Buffer, originalName: string, mimetype: string): Promise<string> {
-    const ext = originalName.includes('.') ? originalName.split('.').pop() : 'jpg';
+  /// `ext` — расширение распознанного по байтам типа (image-type.ts), не имя от клиента.
+  async uploadImage(buffer: Buffer, ext: string, mimetype: string): Promise<string> {
     const objectName = `${randomUUID()}.${ext}`;
     await this.client.putObject(this.bucket, objectName, buffer, buffer.length, {
       'Content-Type': mimetype,
@@ -90,8 +97,7 @@ export class UploadsService implements OnModuleInit {
   /// единственный способ позже проверить, что ключ, который клиент
   /// присылает в `POST .../verification-documents`, действительно
   /// загружен этим же пользователем, а не угадан/скопирован у другого.
-  async uploadDocument(buffer: Buffer, originalName: string, mimetype: string, uploaderUserId: string): Promise<string> {
-    const ext = originalName.includes('.') ? originalName.split('.').pop() : 'jpg';
+  async uploadDocument(buffer: Buffer, ext: string, mimetype: string, uploaderUserId: string): Promise<string> {
     const objectName = `${randomUUID()}.${ext}`;
     await this.client.putObject(this.documentsBucket, objectName, buffer, buffer.length, {
       'Content-Type': mimetype,

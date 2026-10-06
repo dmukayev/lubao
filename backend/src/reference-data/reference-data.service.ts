@@ -73,12 +73,15 @@ export class ReferenceDataService {
   /// Чужой непроверенный/мусорный город не должен сразу светиться всем в
   /// поиске (024 п.6) — только подтверждённые видны всем, PENDING видит
   /// только тот, кто его создал, отклонённые не видит никто.
-  private visibleCities(requestingUserId?: string) {
-    return this.prisma.city.findMany({
+  private async visibleCities(requestingUserId?: string) {
+    const cities = await this.prisma.city.findMany({
       where: {
         OR: [{ cityStatus: 'APPROVED' }, ...(requestingUserId ? [{ cityStatus: 'PENDING' as const, submittedByUserId: requestingUserId }] : [])],
       },
     });
+    // Decimal сериализуется строкой — клиенту нужны числа (у городов с
+    // координатами «рядом со мной» и ≤200 км, задача 040).
+    return cities.map((c) => ({ ...c, lat: c.lat != null ? Number(c.lat) : null, lng: c.lng != null ? Number(c.lng) : null }));
   }
 
   /// Водитель/логист не нашёл свой город в справочнике — создаём его сразу

@@ -149,7 +149,76 @@ describe('SmsService', () => {
       for (let i = 0; i < 20; i++) {
         await service.requestCode(`+7700111${String(i).padStart(4, '0')}`, '2.2.2.2');
       }
-      await expect(service.requestCode('+77009999999', '3.3.3.3')).resolves.toBeUndefined();
+      await expect(service.requestCode('+77009999999', '3.3.3.3')).resolves.toEqual({ channel: 'sms' });
     });
+  });
+});
+
+describe('SmsService — WhatsApp → SMS (задача 042, п.3)', () => {
+  let client: FakeRedisClient;
+  let provider: FakeSmsProvider;
+  let whatsapp: { enabled: jest.Mock; sendCode: jest.Mock };
+  let service: SmsService;
+
+  beforeEach(() => {
+    client = new FakeRedisClient();
+    provider = new FakeSmsProvider();
+    whatsapp = { enabled: jest.fn().mockReturnValue(true), sendCode: jest.fn().mockResolvedValue(undefined) };
+    service = new SmsService({ client } as any, provider, whatsapp as any);
+    jest.spyOn((service as any).logger, 'warn').mockImplementation(() => undefined);
+  });
+
+  it('WhatsApp настроен и отвечает — код уходит туда, SMS не тратится', async () => {
+    const res = await service.requestCode('+77010000001', '1.1.1.1');
+    expect(res).toEqual({ channel: 'whatsapp' });
+    expect(whatsapp.sendCode).toHaveBeenCalledWith('+77010000001', '1234');
+    expect(provider.sendCode).not.toHaveBeenCalled();
+  });
+
+  it('у номера нет WhatsApp / отказ API / таймаут — код тут же уходит SMS (фолбэк)', async () => {
+    whatsapp.sendCode.mockRejectedValue(new Error('WhatsApp request failed: 400'));
+    const res = await service.requestCode('+77010000001', '1.1.1.1');
+    expect(res).toEqual({ channel: 'sms' });
+    expect(provider.sendCode).toHaveBeenCalledWith('+77010000001', '1234');
+    // Код один и тот же — какой бы канал ни сработал, ввести можно его.
+    expect(await service.verifyCode('+77010000001', '1234')).toBe(true);
+  });
+
+  it('без ключей WhatsApp канал выключен — работает обычный SMS, WhatsApp даже не вызывается', async () => {
+    whatsapp.enabled.mockReturnValue(false);
+    expect(await service.requestCode('+77010000001', '1.1.1.1')).toEqual({ channel: 'sms' });
+    expect(whatsapp.sendCode).not.toHaveBeenCalled();
+  });
+
+  it('«Не пришло? Отправить SMS»: тот же код SMS-ом сразу, без ожидания минуты', async () => {
+    await service.requestCode('+77010000001', '1.1.1.1'); // → WhatsApp, минутный замок взведён
+    await expect(service.requestCode('+77010000001', '1.1.1.1')).rejects.toBeInstanceOf(HttpException); // обычный повтор — по-прежнему 1/мин
+
+    const res = await service.requestCode('+77010000001', '1.1.1.1', { channel: 'sms' });
+
+    expect(res).toEqual({ channel: 'sms' });
+    expect(provider.sendCode).toHaveBeenCalledTimes(1);
+    expect(provider.sendCode).toHaveBeenCalledWith('+77010000001', '1234');
+    expect(whatsapp.sendCode).toHaveBeenCalledTimes(1);
+    expect(await service.verifyCode('+77010000001', '1234')).toBe(true);
+  });
+
+  it('SMS-повтор разрешён один раз: после SMS обычный минутный лимит снова действует', async () => {
+    await service.requestCode('+77010000001', '1.1.1.1');
+    await service.requestCode('+77010000001', '1.1.1.1', { channel: 'sms' });
+    await expect(service.requestCode('+77010000001', '1.1.1.1', { channel: 'sms' })).rejects.toBeInstanceOf(HttpException);
+  });
+
+  it('SMS-повтор не обходит часовой лимит на номер', async () => {
+    await service.requestCode('+77010000001', '1.1.1.1');
+    await client.set('sms:count:+77010000001', 5, 'EX', 3600);
+    await expect(service.requestCode('+77010000001', '1.1.1.1', { channel: 'sms' })).rejects.toThrow('Превышен лимит SMS за час');
+  });
+
+  it('channel=sms без предшествующего кода в WhatsApp — обычный запрос (SMS), без обхода лимитов', async () => {
+    const res = await service.requestCode('+77010000009', '1.1.1.1', { channel: 'sms' });
+    expect(res).toEqual({ channel: 'sms' });
+    expect(whatsapp.sendCode).not.toHaveBeenCalled();
+    await expect(service.requestCode('+77010000009', '1.1.1.1', { channel: 'sms' })).rejects.toBeInstanceOf(HttpException);
   });
 });

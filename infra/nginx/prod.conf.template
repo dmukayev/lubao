@@ -1,0 +1,103 @@
+# Прод-nginx (задача 043, п.6). Шаблон: официальный образ nginx подставляет
+# ${APP_HOST} и ${ADMIN_LISTEN} из окружения (docker-compose.prod.yml).
+
+# --- 80: проверка домена Let's Encrypt + редирект на https ---------------------
+server {
+    listen 80;
+    server_name ${APP_HOST};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# --- 443: приложение (веб логиста/водителя), API, файлы ------------------------
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${APP_HOST};
+
+    ssl_certificate     /etc/letsencrypt/live/${APP_HOST}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${APP_HOST}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    client_max_body_size 10m;   # загрузки: 8 МБ на файл (uploads.controller)
+
+    # API и WebSocket
+    location /api/ {
+        proxy_pass http://backend:3000/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location /socket.io/ {
+        proxy_pass http://backend:3000/socket.io/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Публичные фото грузов (бакет lubao-uploads). Бакет документов (персональные
+    # данные) наружу НЕ публикуется — его отдаёт только бэкенд админу.
+    location /files/lubao-uploads/ {
+        proxy_pass http://minio:9000/lubao-uploads/;
+        proxy_set_header Host minio:9000;
+        proxy_hide_header Set-Cookie;
+        limit_except GET HEAD { deny all; }
+    }
+
+    # Юридические страницы (тексты-заготовки на 4 языках, юрист правит).
+    location /legal/ {
+        root /srv/site;
+        try_files $uri $uri.html =404;
+        default_type text/html;
+        add_header Cache-Control "public, max-age=300";
+    }
+
+    # Страница обновления «Скачать приложение» (force-update, задача 043, п.7).
+    location = /app {
+        root /srv/site;
+        try_files /app.html =404;
+        default_type text/html;
+    }
+
+    # Веб логиста: путь без «#» (usePathUrlStrategy) → любой неизвестный путь,
+    # в том числе /invite/<токен>, отдаёт index.html, дальше маршрутизирует Flutter.
+    # CanvasKit и шрифты — свои, из сборки (--no-web-resources-cdn), без gstatic.
+    location / {
+        root /srv/app;
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache";
+    }
+    location ~* \.(js|wasm|ttf|otf|png|jpg|ico)$ {
+        root /srv/app;
+        expires 7d;
+        add_header Cache-Control "public";
+    }
+}
+
+# --- Админка: слушает ТОЛЬКО адрес Tailscale (задача 030, п.11) ----------------
+# Снаружи (с публичного IP) не открывается; доступ — через tailnet. Транспорт
+# уже зашифрован WireGuard, поэтому здесь без отдельного TLS.
+server {
+    listen ${ADMIN_LISTEN};
+    server_name _;
+
+    location /api/ {
+        proxy_pass http://backend:3000/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+    location / {
+        root /srv/admin;
+        try_files $uri $uri/ /index.html;
+    }
+}

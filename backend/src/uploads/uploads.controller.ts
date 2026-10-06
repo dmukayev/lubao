@@ -8,22 +8,36 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
+import { RedisService } from '../redis/redis.service';
+import { detectImageType } from './image-type';
+import { consumeUploadQuota } from './upload-quota';
 import { UploadsService } from './uploads.service';
 
 const MAX_SIZE_BYTES = 8 * 1024 * 1024;
 
 @Controller('uploads')
 export class UploadsController {
-  constructor(private readonly uploads: UploadsService) {}
+  constructor(
+    private readonly uploads: UploadsService,
+    private readonly redis: RedisService,
+  ) {}
+
+  /// Файл должен реально быть картинкой (по байтам, не по заявленному типу),
+  /// расширение и Content-Type берутся из распознанного типа, а не от клиента;
+  /// на пользователя — 50 загрузок в сутки (задача 043, п.4).
+  private async checkedImage(ctx: RequestContext, file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    const detected = detectImageType(file.buffer);
+    if (!detected) throw new BadRequestException('Only image files are allowed');
+    await consumeUploadQuota(this.redis, ctx.user.id);
+    return detected;
+  }
 
   @Post('image')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_SIZE_BYTES } }))
-  async uploadImage(@UploadedFile() file?: Express.Multer.File) {
-    if (!file) throw new BadRequestException('No file uploaded');
-    if (!file.mimetype.startsWith('image/')) {
-      throw new BadRequestException('Only image files are allowed');
-    }
-    const url = await this.uploads.uploadImage(file.buffer, file.originalname, file.mimetype);
+  async uploadImage(@CurrentUser() ctx: RequestContext, @UploadedFile() file?: Express.Multer.File) {
+    const detected = await this.checkedImage(ctx, file);
+    const url = await this.uploads.uploadImage(file!.buffer, detected.ext, detected.mime);
     return { url };
   }
 
@@ -33,11 +47,8 @@ export class UploadsController {
   @Post('document')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_SIZE_BYTES } }))
   async uploadDocument(@CurrentUser() ctx: RequestContext, @UploadedFile() file?: Express.Multer.File) {
-    if (!file) throw new BadRequestException('No file uploaded');
-    if (!file.mimetype.startsWith('image/')) {
-      throw new BadRequestException('Only image files are allowed');
-    }
-    const key = await this.uploads.uploadDocument(file.buffer, file.originalname, file.mimetype, ctx.user.id);
+    const detected = await this.checkedImage(ctx, file);
+    const key = await this.uploads.uploadDocument(file!.buffer, detected.ext, detected.mime, ctx.user.id);
     return { key };
   }
 }

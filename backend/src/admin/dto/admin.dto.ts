@@ -266,6 +266,22 @@ export class CreatePointDto {
   name!: UpsertI18nNameDto;
 }
 
+/// Ручная правка курса на сегодня (задача 042, п.4): автоматика НБ РК её не
+/// перезаписывает.
+export class SetExchangeRateDto {
+  @IsIn(['USD', 'CNY'])
+  currency!: 'USD' | 'CNY';
+
+  @IsNumber()
+  @Min(0.0001)
+  rateToKzt!: number;
+
+  @IsNotEmpty()
+  @MaxLength(1000)
+  @IsString()
+  reason!: string;
+}
+
 export class SetAppSettingDto {
   @IsString()
   value!: string;

@@ -79,4 +79,17 @@ describe('ReferenceDataService#getAll (видимость городов, 024 п
       where: { OR: [{ cityStatus: 'APPROVED' }, { cityStatus: 'PENDING', submittedByUserId: 'user-1' }] },
     });
   });
+
+  it('040: координаты городов и точек уходят числами, не строками Decimal (иначе клиент падает на разборе справочника)', async () => {
+    prisma.city.findMany.mockResolvedValue([
+      { id: 'c1', lat: '43.238900', lng: '76.889700' },
+      { id: 'c2', lat: null, lng: null },
+    ]);
+    prisma.point.findMany.mockResolvedValue([{ id: 'p1', kind: 'TERMINAL', radiusM: 3000, lat: '44.216700', lng: '80.416700' }]);
+
+    const data = await service.getAll(undefined);
+
+    expect(data.cities.map((c: any) => [c.lat, c.lng])).toEqual([[43.2389, 76.8897], [null, null]]);
+    expect(data.points[0]).toMatchObject({ kind: 'TERMINAL', radiusM: 3000, lat: 44.2167, lng: 80.4167 });
+  });
 });

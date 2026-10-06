@@ -41,6 +41,31 @@ describe('NotificationsService.notify', () => {
     );
   });
 
+  it('042, п.5: сообщение водителя уходит и в WeCom-бот компании, на языке компании (zh)', async () => {
+    prisma.deviceToken.findMany.mockResolvedValue([]);
+
+    await service.notify({ userIds: ['logist-1'], companyId: 'co-1' }, 'CHAT_MESSAGE', { chatId: 'chat-1', senderName: 'Ерлан', preview: null });
+
+    const wecomJobs = queue.add.mock.calls.map(([, job]: any) => job).filter((j: any) => j.channel === 'WECOM');
+    expect(wecomJobs).toHaveLength(1);
+    expect(wecomJobs[0].text).toContain('新消息');
+    expect(wecomJobs[0].text).toContain('Ерлан');
+  });
+
+  it('042, п.5: в WeCom — не чаще одного сообщения в минуту на чат (иначе групповой чат бота завалит)', async () => {
+    redis.client.set.mockResolvedValueOnce('OK').mockResolvedValueOnce(null);
+    prisma.deviceToken.findMany.mockResolvedValue([]);
+
+    await service.notify({ userIds: ['logist-1'], companyId: 'co-1' }, 'CHAT_MESSAGE', { chatId: 'chat-1', senderName: 'Ерлан', preview: 'раз' });
+    await service.notify({ userIds: ['logist-1'], companyId: 'co-1' }, 'CHAT_MESSAGE', { chatId: 'chat-1', senderName: 'Ерлан', preview: 'два' });
+
+    const wecomJobs = queue.add.mock.calls.map(([, job]: any) => job).filter((j: any) => j.channel === 'WECOM');
+    expect(wecomJobs).toHaveLength(1);
+    // Ключи WeCom и push разные: push логисту не гасит WeCom компании.
+    const keys = redis.client.set.mock.calls.map((c: any[]) => c[0]);
+    expect(keys.some((k: string) => k.includes('company:co-1'))).toBe(true);
+  });
+
   it('skips the user entirely when the event group is disabled', async () => {
     prisma.notificationEventSetting.findUnique.mockResolvedValue({ enabled: false });
 

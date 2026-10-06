@@ -39,7 +39,7 @@ import {
   SearchQueryDto,
   SetVerifiedDto,
 } from './dto/admin.dto';
-import { parseDateOnly, toDateOnly } from '../common/date-only';
+import { localDateOnly, parseDateOnly, toDateOnly } from '../common/date-only';
 
 /// Единственный обязательный документ компании на пилоте — свидетельство о
 /// регистрации (营业执照 / справка с БИН), см. decisions.md «Компания:
@@ -47,6 +47,19 @@ import { parseDateOnly, toDateOnly } from '../common/date-only';
 const REQUIRED_COMPANY_DOC_TYPES = ['COMPANY_REGISTRATION'] as const;
 
 const DEFAULT_PAGE_SIZE = 50;
+
+const isBool = (v: string) => v === 'true' || v === 'false';
+/// Допустимые ключи app_settings и проверка значения (задача 043, п.4).
+export const APP_SETTING_KEYS: Record<string, (value: string) => boolean> = {
+  defaultPointCityId: (v) => v.length > 0 && v.length <= 64,
+  supportWhatsapp: (v) => v.length <= 64,
+  supportWechat: (v) => v.length <= 64,
+  supportEmail: (v) => v.length <= 254,
+  translationEnabled: isBool,
+  homeRadiusKm: (v) => /^\d{1,4}$/.test(v),
+  /// Минимальная версия приложения (задача 043, п.7): ниже — экран «Обновите приложение».
+  minAppVersion: (v) => v === '' || /^\d+\.\d+\.\d+$/.test(v),
+};
 
 @Injectable()
 export class AdminService {
@@ -64,10 +77,36 @@ export class AdminService {
     await this.prisma.auditLog.create({ data: { actorUserId, action, entityType, entityId, metadata } });
   }
 
+  /// Ручной курс на сегодня (задача 042, п.4): source='manual' — автоматика
+  /// НБ РК такую строку не трогает; каждое изменение в audit_log.
+  async setExchangeRate(adminUserId: string, dto: { currency: 'USD' | 'CNY'; rateToKzt: number; reason: string }) {
+    const effectiveDate = parseDateOnly(localDateOnly(new Date()));
+    const where = { currency_effectiveDate: { currency: dto.currency, effectiveDate } };
+    const existing = await this.prisma.exchangeRate.findUnique({ where });
+    await this.prisma.exchangeRate.upsert({
+      where,
+      update: { rateToKzt: dto.rateToKzt, source: 'manual' },
+      create: { currency: dto.currency, rateToKzt: dto.rateToKzt, effectiveDate, source: 'manual' },
+    });
+    await this.logAudit(adminUserId, 'EXCHANGE_RATE_SET', 'ExchangeRate', dto.currency, {
+      reason: dto.reason,
+      old: existing ? Number(existing.rateToKzt) : null,
+      new: dto.rateToKzt,
+    });
+    return { success: true };
+  }
+
   /// Настройки (п.22) — каждое изменение в audit_log со старым/новым
   /// значением, даже без причины (settings — не карточка конкретного
   /// человека/компании, где причина обязательна по общему паттерну, п.18).
   async setAppSetting(adminUserId: string, key: string, value: string, reason?: string) {
+    // Только известные ключи (задача 043, п.4): произвольный ключ — это
+    // способ записать в таблицу настроек что угодно (и «подсунуть» значение,
+    // которое потом прочитает код).
+    // Именно собственные ключи: `__proto__`/`constructor` не должны проходить как «известные».
+    if (!Object.prototype.hasOwnProperty.call(APP_SETTING_KEYS, key)) throw new BadRequestException(`Unknown setting: ${key}`);
+    const validate = APP_SETTING_KEYS[key];
+    if (!validate(value)) throw new BadRequestException(`Invalid value for setting ${key}`);
     const oldValue = await this.appSettings!.get(key);
     await this.appSettings!.set(key, value);
     await this.logAudit(adminUserId, 'SETTING_CHANGED', 'AppSetting', key, { reason, old: oldValue, new: value });
@@ -1207,9 +1246,17 @@ export class AdminService {
   /// Прокси вместо presigned-ссылки (задача 028, п.12) — см. комментарий
   /// у [UploadsService.getDocumentStream]. Легаси-документы (сид/старые
   /// загрузки) хранят готовый http(s)-URL — для них просто редирект.
-  async documentFileSource(id: string): Promise<{ redirectUrl: string } | { stream: NodeJS.ReadableStream; contentType: string }> {
+  ///
+  /// Просмотр файла документа — это доступ админа к персональным данным: он
+  /// пишется в audit_log (задача 043, п.4) — кто, какой документ, чей.
+  async documentFileSource(id: string, adminUserId: string): Promise<{ redirectUrl: string } | { stream: NodeJS.ReadableStream; contentType: string }> {
     const doc = await this.prisma.verificationDocument.findUnique({ where: { id } });
     if (!doc) throw new NotFoundException('Document not found');
+    await this.logAudit(adminUserId, 'DOCUMENT_FILE_VIEWED', 'VerificationDocument', id, {
+      type: doc.type,
+      driverId: doc.driverId ?? null,
+      companyId: doc.companyId ?? null,
+    });
     if (/^https?:\/\//.test(doc.fileUrl)) return { redirectUrl: doc.fileUrl };
     return this.uploads.getDocumentStream(doc.fileUrl);
   }

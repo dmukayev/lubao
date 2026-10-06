@@ -96,7 +96,7 @@ describe('CompaniesService.registerOwnedCompany', () => {
 
 describe('CompaniesService invites (задача 025, «Путь Б» из 022)', () => {
   let prisma: any;
-  let email: { sendMessage: jest.Mock };
+  let email: { sendMessage: jest.Mock; sendTemplate: jest.Mock };
   let service: CompaniesService;
 
   beforeEach(() => {
@@ -119,7 +119,7 @@ describe('CompaniesService invites (задача 025, «Путь Б» из 022)'
         }),
       ),
     };
-    email = { sendMessage: jest.fn().mockResolvedValue(undefined) };
+    email = { sendMessage: jest.fn().mockResolvedValue(undefined), sendTemplate: jest.fn().mockResolvedValue(undefined) };
     service = new CompaniesService(prisma, email as any, { send: jest.fn() } as any);
   });
 
@@ -132,6 +132,7 @@ describe('CompaniesService invites (задача 025, «Путь Б» из 022)'
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       company: { name: 'Yidao' },
     });
+    prisma.user.findUnique.mockResolvedValue({ locale: 'zh' });
 
     const result = await service.createInvite('company-1', 'owner-1', { email: 'Colleague@Example.com', role: 'LOGIST' });
 
@@ -140,11 +141,12 @@ describe('CompaniesService invites (задача 025, «Путь Б» из 022)'
         data: expect.objectContaining({ companyId: 'company-1', invitedByUserId: 'owner-1', email: 'colleague@example.com', role: 'LOGIST' }),
       }),
     );
-    expect(email.sendMessage).toHaveBeenCalledWith(
-      'colleague@example.com',
-      expect.any(String),
-      expect.stringContaining('lubao://invite/'),
-    );
+    // 042, п.2: https-ссылка вместо lubao://, письмо на языке пригласившего.
+    expect(email.sendTemplate).toHaveBeenCalledWith('colleague@example.com', 'INVITE', 'zh', {
+      company: 'Yidao',
+      days: 7,
+      link: expect.stringMatching(/^https:\/\/app\.lubao\.kz\/invite\/[0-9a-f]{48}$/),
+    });
     expect(result.token).toBe('abc123');
   });
 
@@ -157,7 +159,7 @@ describe('CompaniesService invites (задача 025, «Путь Б» из 022)'
       expiresAt: new Date(),
       company: { name: 'Yidao' },
     });
-    email.sendMessage.mockRejectedValue(new Error('smtp down'));
+    email.sendTemplate.mockRejectedValue(new Error('smtp down'));
 
     await expect(service.createInvite('company-1', 'owner-1', { email: 'colleague@example.com', role: 'LOGIST' })).resolves.toEqual(
       expect.objectContaining({ token: 'abc123' }),

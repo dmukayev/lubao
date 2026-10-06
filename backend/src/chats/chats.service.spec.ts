@@ -385,7 +385,7 @@ describe('ChatsService.thread/messages/send — ForbiddenException for a non-par
 
     expect(prisma.chat.update).toHaveBeenCalledWith({ where: { id: 'chat1' }, data: { updatedAt: expect.any(Date) } });
     expect(notifications.notify).toHaveBeenCalledWith(
-      { userIds: ['u-company'] },
+      { userIds: ['u-company'], companyId: 'c1' },
       'CHAT_MESSAGE',
       expect.objectContaining({ chatId: 'chat1', senderName: 'Ерлан', preview: 'hi' }),
     );
@@ -592,7 +592,7 @@ describe('ChatsService.send — автоперевод (задача 010; в ф�
     // поэтому оригинал на русском получателю, читающему по-китайски, не
     // показываем: preview уходит null, нейтральный текст рисует render().
     expect(notifications.notify).toHaveBeenCalledWith(
-      { userIds: ['u-company'] },
+      { userIds: ['u-company'], companyId: 'c1' },
       'CHAT_MESSAGE',
       expect.objectContaining({ preview: null }),
     );
@@ -609,7 +609,7 @@ describe('ChatsService.send — автоперевод (задача 010; в ф�
     await service.send('chat1', driverCtx(), 'привет');
 
     expect(notifications.notify).toHaveBeenCalledWith(
-      { userIds: ['u-company'] },
+      { userIds: ['u-company'], companyId: 'c1' },
       'CHAT_MESSAGE',
       expect.objectContaining({ preview: 'привет' }),
     );

@@ -1,3 +1,5 @@
+import { Throttle } from '@nestjs/throttler';
+import { THROTTLE_TTL_MS, authLimit } from '../common/app-throttler.guard';
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import { ClientIp } from '../common/client-ip.decorator';
 import { CurrentUser } from '../common/current-user.decorator';
@@ -28,37 +30,43 @@ export class AuthController {
   ) {}
 
   @Public()
+  @Throttle({ default: { limit: authLimit(), ttl: THROTTLE_TTL_MS } })
   @Post('phone/request-code')
   async requestCode(@Body() dto: RequestCodeDto, @ClientIp() ip: string) {
-    await this.auth.requestDriverCode(dto.phone, ip);
-    return { success: true };
+    const { channel } = await this.auth.requestDriverCode(dto.phone, ip, dto.channel);
+    return { success: true, channel };
   }
 
   @Public()
+  @Throttle({ default: { limit: authLimit(), ttl: THROTTLE_TTL_MS } })
   @Post('phone/verify')
   verifyCode(@Body() dto: VerifyCodeDto, @ClientIp() ip: string) {
     return this.auth.verifyDriverCode(dto.phone, dto.code, ip, dto.deviceName, dto.platform);
   }
 
   @Public()
+  @Throttle({ default: { limit: authLimit(), ttl: THROTTLE_TTL_MS } })
   @Post('company/login')
   loginCompany(@Body() dto: CompanyPasswordLoginDto, @ClientIp() ip: string) {
     return this.auth.loginCompany(dto.email, dto.password, ip, dto.deviceName, dto.platform);
   }
 
   @Public()
+  @Throttle({ default: { limit: authLimit(), ttl: THROTTLE_TTL_MS } })
   @Post('company/register')
   registerCompany(@Body() dto: RegisterCompanyAuthDto, @ClientIp() ip: string) {
     return this.auth.registerCompany(dto, ip);
   }
 
   @Public()
+  @Throttle({ default: { limit: authLimit(), ttl: THROTTLE_TTL_MS } })
   @Post('company/invites/:token/accept')
   acceptInvite(@Param('token') token: string, @Body() dto: AcceptInviteDto) {
     return this.auth.acceptInvite(token, dto);
   }
 
   @Public()
+  @Throttle({ default: { limit: authLimit(), ttl: THROTTLE_TTL_MS } })
   @Post('company/forgot-password')
   async requestPasswordReset(@Body() dto: RequestPasswordResetDto, @ClientIp() ip: string) {
     await this.auth.requestPasswordReset(dto.email, ip);
@@ -66,18 +74,21 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: authLimit(), ttl: THROTTLE_TTL_MS } })
   @Post('company/reset-password')
   async resetPassword(@Body() dto: ResetPasswordDto, @ClientIp() ip: string) {
     await this.auth.resetPassword(dto.email, dto.code, dto.newPassword, ip);
     return { success: true };
   }
 
+  @Throttle({ default: { limit: authLimit(), ttl: THROTTLE_TTL_MS } })
   @Post('company/resend-verification')
   async resendVerification(@CurrentUser() ctx: RequestContext, @ClientIp() ip: string) {
     await this.auth.requestEmailVerification(ctx.user.id, ip);
     return { success: true };
   }
 
+  @Throttle({ default: { limit: authLimit(), ttl: THROTTLE_TTL_MS } })
   @Post('company/verify-email')
   async verifyEmail(@CurrentUser() ctx: RequestContext, @Body() dto: VerifyEmailDto, @ClientIp() ip: string) {
     await this.auth.verifyEmail(ctx.user.id, dto.code, ip);
@@ -85,6 +96,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: authLimit(), ttl: THROTTLE_TTL_MS } })
   @Post('admin/login')
   loginAdmin(@Body() dto: AdminLoginDto, @ClientIp() ip: string) {
     return this.auth.loginAdmin(dto.email, dto.password, ip, dto.deviceName, dto.platform);

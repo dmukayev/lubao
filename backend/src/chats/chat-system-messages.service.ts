@@ -17,7 +17,8 @@ export type ChatSystemCode =
   | 'CARGO_OFFERED'
   | 'DRIVER_INVITED'
   | 'INVITATION_DECLINED'
-  | 'CARGO_TAKEN';
+  | 'CARGO_TAKEN'
+  | 'INVITATION_EXPIRED';
 
 const RU_FALLBACK: Record<ChatSystemCode, (params: Record<string, string>) => string> = {
   DRIVER_READY: (p) => `${p.driverName ?? 'Водитель'} готов взять груз`,
@@ -29,6 +30,7 @@ const RU_FALLBACK: Record<ChatSystemCode, (params: Record<string, string>) => st
   DRIVER_INVITED: () => 'Логист приглашает водителя на груз',
   INVITATION_DECLINED: (p) => `${p.driverName ?? 'Водитель'} отказался от приглашения`,
   CARGO_TAKEN: () => 'Груз ушёл другому водителю',
+  INVITATION_EXPIRED: () => 'Приглашение истекло: водитель не ответил за 24 часа',
 };
 
 @Injectable()

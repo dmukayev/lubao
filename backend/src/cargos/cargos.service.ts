@@ -7,6 +7,7 @@ import { UpdateCargoDto } from './dto/update-cargo.dto';
 import { CloseCargoDto } from './dto/close-cargo.dto';
 import { parseDateOnly, toDateOnly } from '../common/date-only';
 import { haversineKm } from '../common/geo';
+import { CARGO_ARCHIVE_AFTER_MS } from './cargo-lifecycle';
 import { evaluateVehicleLoad } from '../deals/vehicle-load';
 
 /// Лента: «рядом» с городом водителя — та же область либо ≤200 км (040, п.5).
@@ -339,7 +340,7 @@ export class CargosService {
     const point = await this.prisma.point.findUnique({ where: { id: dto.pointId } });
     if (!point || !point.isActive) throw new BadRequestException('POINT_REQUIRED');
     const readyDate = parseDateOnly(dto.readyDate);
-    const expiresAt = new Date(readyDate.getTime() + 48 * 60 * 60 * 1000);
+    const expiresAt = new Date(readyDate.getTime() + CARGO_ARCHIVE_AFTER_MS);
 
     const cargo = await this.prisma.cargo.create({
       data: {
@@ -391,7 +392,7 @@ export class CargosService {
 
     const readyDate = dto.readyDate ? parseDateOnly(dto.readyDate) : existing.readyDate;
     const expiresAt =
-      dto.readyDate != null ? new Date(readyDate.getTime() + 48 * 60 * 60 * 1000) : existing.expiresAt;
+      dto.readyDate != null ? new Date(readyDate.getTime() + CARGO_ARCHIVE_AFTER_MS) : existing.expiresAt;
 
     if (dto.pointId) {
       const point = await this.prisma.point.findUnique({ where: { id: dto.pointId } });

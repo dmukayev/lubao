@@ -3,6 +3,11 @@ import { IsEmail, IsIn, IsOptional, IsString, Length } from 'class-validator';
 export class RequestCodeDto {
   @IsString()
   phone!: string;
+
+  /// «Не пришло? Отправить SMS» — тот же код SMS-ом, если первым был WhatsApp (042, п.3).
+  @IsOptional()
+  @IsIn(['sms'])
+  channel?: 'sms';
 }
 
 export class VerifyCodeDto {
