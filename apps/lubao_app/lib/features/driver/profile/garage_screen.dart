@@ -19,6 +19,53 @@ class GarageScreen extends ConsumerWidget {
 
   /// Мягкая подсказка (задача 033, п.5) — прицепам/одиночкам, созданным до
   /// шаблонов, размер проставляется здесь, одним касанием чипа.
+  /// Сентинел «Свой размер» в шторке выбора шаблона (033 п.6 / 038 п.14).
+  static const _customSizeMarker = BodySizePreset(
+    id: '__custom__',
+    code: '__custom__',
+    name: I18nText(kk: '', ru: '', zh: ''),
+  );
+
+  /// Диалог ввода Д/Ш/В для «Свой размер» — то же, что в шторке добавления
+  /// машины; ввод с запятой («13,6») принимается.
+  Future<(double, double, double)?> _askCustomSize(BuildContext context, LubaoLocalizations t) async {
+    final lengthController = TextEditingController();
+    final widthController = TextEditingController();
+    final heightController = TextEditingController();
+    double? parse(String raw) => double.tryParse(raw.trim().replaceAll(',', '.'));
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          final l = parse(lengthController.text);
+          final w = parse(widthController.text);
+          final h = parse(heightController.text);
+          final valid = l != null && l > 0 && l <= 20 && w != null && w > 0 && w <= 3 && h != null && h > 0 && h <= 4.5;
+          return AlertDialog(
+            title: Text(t.garageSizeCustom),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppTextField(label: t.garageSizeLength, controller: lengthController, keyboardType: TextInputType.number, onChanged: (_) => setDialogState(() {})),
+                const SizedBox(height: AppSpacing.sm),
+                AppTextField(label: t.garageSizeWidth, controller: widthController, keyboardType: TextInputType.number, onChanged: (_) => setDialogState(() {})),
+                const SizedBox(height: AppSpacing.sm),
+                AppTextField(label: t.garageSizeHeight, controller: heightController, keyboardType: TextInputType.number, onChanged: (_) => setDialogState(() {})),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.commonCancel)),
+              FilledButton(onPressed: valid ? () => Navigator.pop(dialogContext, true) : null, child: Text(t.commonDone)),
+            ],
+          );
+        },
+      ),
+    );
+    if (ok != true) return null;
+    return (parse(lengthController.text)!, parse(widthController.text)!, parse(heightController.text)!);
+  }
+
   Future<void> _setSize(BuildContext context, WidgetRef ref, GarageVehicle vehicle) async {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
@@ -48,6 +95,14 @@ class GarageScreen extends ConsumerWidget {
                       selected: vehicle.sizePresetId == preset.id,
                       onTap: () => Navigator.pop(sheetContext, preset),
                     ),
+                  // 033 п.6 (хвост, задача 038 п.14) — «Свой размер» был
+                  // только при добавлении машины, в подсказке для уже
+                  // существующего прицепа его не было.
+                  SelectableTile(
+                    label: t.garageSizeCustom,
+                    selected: vehicle.sizePresetId == null && vehicle.volumeM3 != null,
+                    onTap: () => Navigator.pop(sheetContext, _customSizeMarker),
+                  ),
                 ],
               ),
             ],
@@ -56,8 +111,27 @@ class GarageScreen extends ConsumerWidget {
       ),
     );
     if (chosen == null) return;
+    if (!context.mounted) return;
+
+    double? lengthM;
+    double? widthM;
+    double? heightM;
+    if (identical(chosen, _customSizeMarker)) {
+      final dims = await _askCustomSize(context, t);
+      if (dims == null) return;
+      (lengthM, widthM, heightM) = dims;
+    }
     try {
-      await ref.read(driverRepositoryProvider).setVehicleSize(vehicle.id, sizePresetId: chosen.id);
+      if (lengthM != null) {
+        await ref.read(driverRepositoryProvider).setVehicleSize(
+              vehicle.id,
+              innerLengthM: lengthM,
+              innerWidthM: widthM,
+              innerHeightM: heightM,
+            );
+      } else {
+        await ref.read(driverRepositoryProvider).setVehicleSize(vehicle.id, sizePresetId: chosen.id);
+      }
       ref.invalidate(garageVehiclesProvider);
     } catch (e) {
       debugPrint('GarageScreen: failed to set vehicle size: $e');
@@ -122,7 +196,8 @@ class GarageScreen extends ConsumerWidget {
                   _VehicleCard(
                     vehicle: v,
                     onArchive: () => _archive(context, ref, v),
-                    onSetSize: v.volumeM3 == null ? () => _setSize(context, ref, v) : null,
+                    // Размер можно сменить и позже (033 п.6 / 038 п.14).
+                    onSetSize: () => _setSize(context, ref, v),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                 ],
@@ -247,7 +322,8 @@ class _VehicleCard extends StatelessWidget {
                   GestureDetector(
                     onTap: onSetSize,
                     child: Text(
-                      context.l10n.garageSizePrompt,
+                      // Размер можно менять и позже (033 п.6 / 038 п.14).
+                      vehicle.volumeM3 == null ? context.l10n.garageSizePrompt : context.l10n.garageSizeChange,
                       style: AppTextStyles.caption.copyWith(color: AppColors.primary),
                     ),
                   ),

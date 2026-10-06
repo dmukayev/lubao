@@ -242,6 +242,19 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
               IconSquareButton(icon: LucideIcons.messageSquare, loading: _openingChat, onPressed: _chat),
             ],
           ),
+          // 033 п.9 / 038 п.14 — вместимость связки водителя в отклике:
+          // «20 т · 90 м³ · 33 пал.».
+          if (response.capacityTons != null || response.volumeM3 != null || response.palletsEuro != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              [
+                if (response.capacityTons != null) '${response.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
+                if (response.volumeM3 != null) '${response.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+                if (response.palletsEuro != null) '${response.palletsEuro} ${t.unitPallets}',
+              ].join(' · '),
+              style: AppTextStyles.caption,
+            ),
+          ],
           if (haulHint != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(haulHint, style: AppTextStyles.caption.copyWith(color: AppColors.accentText)),

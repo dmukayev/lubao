@@ -600,6 +600,9 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get garageSizePrompt => '填写车厢尺寸 — 货源匹配更精准';
 
   @override
+  String get garageSizeChange => '修改尺寸';
+
+  @override
   String get postCargoPallets => '托盘数（个）';
 
   @override

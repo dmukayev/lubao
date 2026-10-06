@@ -268,6 +268,7 @@
   "garageSizeWidth": "Ширина внутри, м",
   "garageSizeHeight": "Высота внутри, м",
   "garageSizePrompt": "Укажите размер кузова — грузы подберутся точнее",
+  "garageSizeChange": "Изменить размер",
   "postCargoPallets": "Паллеты (шт.)",
   "postCargoFitCount": "Подходит {count} водителям на точке",
   "@postCargoFitCount": { "placeholders": { "count": { "type": "int" } } },

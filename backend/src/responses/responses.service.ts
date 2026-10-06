@@ -52,17 +52,24 @@ export class ResponsesService {
     );
     const bodyIds = [...combos.values()].map((c) => c.trailerId ?? c.tractorId).filter((id): id is string => id != null);
     const bodies = bodyIds.length
-      ? await this.prisma.vehicle.findMany({ where: { id: { in: bodyIds } }, select: { id: true, capacityTons: true } })
+      ? await this.prisma.vehicle.findMany({
+          where: { id: { in: bodyIds } },
+          select: { id: true, capacityTons: true, volumeM3: true, palletsEuro: true },
+        })
       : [];
-    const capacityByVehicle = new Map(bodies.map((v) => [v.id, v.capacityTons != null ? Number(v.capacityTons) : null]));
+    const bodyByVehicle = new Map(bodies.map((v) => [v.id, v]));
 
     return responses.map((r) => {
       const combo = combos.get(r.driverId);
       const bodyId = combo ? (combo.trailerId ?? combo.tractorId) : null;
+      const body = bodyId != null ? bodyByVehicle.get(bodyId) : undefined;
       const info = haul.get(r.driverId);
       return {
         ...this.toDto(r),
-        capacityTons: bodyId != null ? (capacityByVehicle.get(bodyId) ?? null) : null,
+        capacityTons: body?.capacityTons != null ? Number(body.capacityTons) : null,
+        // 033 п.9 (хвост, 038 п.14) — объём/паллеты связки в отклике.
+        volumeM3: body?.volumeM3 != null ? Number(body.volumeM3) : null,
+        palletsEuro: body?.palletsEuro ?? null,
         committedWeightKg: info?.committedWeightKg ?? 0,
         activeDealsCount: info?.activeDealsCount ?? 0,
         committedHasUnknownWeight: info?.committedHasUnknownWeight ?? false,

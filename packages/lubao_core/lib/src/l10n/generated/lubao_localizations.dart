@@ -1218,6 +1218,12 @@ abstract class LubaoLocalizations {
   /// **'Укажите размер кузова — грузы подберутся точнее'**
   String get garageSizePrompt;
 
+  /// No description provided for @garageSizeChange.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменить размер'**
+  String get garageSizeChange;
+
   /// No description provided for @postCargoPallets.
   ///
   /// In ru, this message translates to:

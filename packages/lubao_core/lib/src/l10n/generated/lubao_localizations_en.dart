@@ -619,6 +619,9 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
       'Set the body size — cargo matching gets more accurate';
 
   @override
+  String get garageSizeChange => 'Change size';
+
+  @override
   String get postCargoPallets => 'Pallets (pcs)';
 
   @override

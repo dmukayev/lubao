@@ -192,6 +192,7 @@
   "garageSizeWidth": "内部宽度（米）",
   "garageSizeHeight": "内部高度（米）",
   "garageSizePrompt": "填写车厢尺寸 — 货源匹配更精准",
+  "garageSizeChange": "修改尺寸",
   "postCargoPallets": "托盘数（个）",
   "postCargoFitCount": "适合点上 {count} 位司机",
   "@postCargoFitCount": { "placeholders": { "count": { "type": "int" } } },

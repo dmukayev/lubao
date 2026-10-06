@@ -613,6 +613,9 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
       'Укажите размер кузова — грузы подберутся точнее';
 
   @override
+  String get garageSizeChange => 'Изменить размер';
+
+  @override
   String get postCargoPallets => 'Паллеты (шт.)';
 
   @override

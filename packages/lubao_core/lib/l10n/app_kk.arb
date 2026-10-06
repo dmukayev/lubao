@@ -192,6 +192,7 @@
   "garageSizeWidth": "Іші ені, м",
   "garageSizeHeight": "Іші биіктігі, м",
   "garageSizePrompt": "Шанақ өлшемін көрсетіңіз — жүктер дәлірек іріктеледі",
+  "garageSizeChange": "Өлшемді өзгерту",
   "postCargoPallets": "Паллеттер (дана)",
   "postCargoFitCount": "Нүктедегі {count} жүргізушіге сай келеді",
   "@postCargoFitCount": { "placeholders": { "count": { "type": "int" } } },

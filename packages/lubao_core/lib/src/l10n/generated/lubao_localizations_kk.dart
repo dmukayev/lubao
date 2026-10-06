@@ -618,6 +618,9 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
       'Шанақ өлшемін көрсетіңіз — жүктер дәлірек іріктеледі';
 
   @override
+  String get garageSizeChange => 'Өлшемді өзгерту';
+
+  @override
   String get postCargoPallets => 'Паллеттер (дана)';
 
   @override
