@@ -219,8 +219,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       await ref.read(dealRepositoryProvider).advanceStatus(dealId, status);
       ref.invalidate(dealByIdProvider(dealId));
     } on DioException catch (e) {
+      final full = asVehicleFullError(e);
       if (isDriverNotVerifiedError(e)) {
         if (mounted) await showVerificationRequiredSheet(context);
+      } else if (full != null) {
+        // Задача 038, п.10 — та же шторка «Машина заполнена», что в
+        // карточке сделки, с переходом к занимающей машину сделке.
+        if (mounted) await showVehicleFullSheet(context, full);
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.commonError)));
       }

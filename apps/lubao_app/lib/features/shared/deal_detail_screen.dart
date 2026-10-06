@@ -71,45 +71,9 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
     }
   }
 
-  Future<void> _showVehicleFullSheet(VehicleFullError full) async {
-    final t = context.l10n;
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(t.dealVehicleFullTitle, style: AppTextStyles.title),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                full.isNextTrip
-                    ? t.dealVehicleFullNextTrip
-                    : t.dealVehicleFullBody(
-                        ((full.usedWeightKg ?? 0) / 1000).toStringAsFixed(0),
-                        ((full.capacityKg ?? 0) / 1000).toStringAsFixed(0),
-                        t.unitTon,
-                      ),
-                style: AppTextStyles.body,
-              ),
-              if (full.dealIds.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.lg),
-                OutlinedButton(
-                  onPressed: () {
-                    Navigator.pop(sheetContext);
-                    context.push('/deals/${full.dealIds.first}');
-                  },
-                  child: Text(t.dealVehicleFullOpenCurrent),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // Шторка «Машина заполнена» общая с чатом (задача 038, п.10) —
+  // см. showVehicleFullSheet в status_helpers.dart.
+  Future<void> _showVehicleFullSheet(VehicleFullError full) => showVehicleFullSheet(context, full);
 
   Future<void> _cancel() async {
     final t = context.l10n;

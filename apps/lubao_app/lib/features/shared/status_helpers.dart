@@ -115,6 +115,49 @@ class VehicleFullError {
   final List<String> dealIds;
 }
 
+/// Шторка «Машина заполнена» (задача 037, п.4 / 038, п.10) — общая для
+/// карточки сделки и чата: объяснение вместо «Ошибка» + переход к сделке,
+/// которая занимает машину.
+Future<void> showVehicleFullSheet(BuildContext context, VehicleFullError full) async {
+  final t = context.l10n;
+  await showModalBottomSheet<void>(
+    context: context,
+    builder: (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.dealVehicleFullTitle, style: AppTextStyles.title),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              full.isNextTrip
+                  ? t.dealVehicleFullNextTrip
+                  : t.dealVehicleFullBody(
+                      ((full.usedWeightKg ?? 0) / 1000).toStringAsFixed(0),
+                      ((full.capacityKg ?? 0) / 1000).toStringAsFixed(0),
+                      t.unitTon,
+                    ),
+              style: AppTextStyles.body,
+            ),
+            if (full.dealIds.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.lg),
+              OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  context.push('/deals/${full.dealIds.first}');
+                },
+                child: Text(t.dealVehicleFullOpenCurrent),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 /// Понятный текст для 409-ошибок действий с откликом/выбором водителя
 /// (задача 038, п.1–2) — `null`, если ошибка не из этого семейства
 /// (вызывающий показывает `commonError`).
