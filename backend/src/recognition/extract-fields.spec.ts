@@ -135,3 +135,15 @@ describe('extractFields — задача 031, этап D, п.20 (фикстур�
     expect(() => extractFields('DRIVER_LICENSE', [])).not.toThrow();
   });
 });
+
+describe('кириллические двойники до сопоставления с шаблоном (задача 032, п.9 / 038)', () => {
+  it('госномер «123 АВС 02» кириллицей распознаётся в техпаспорте', () => {
+    const fields = extractFields('VEHICLE_PASSPORT', ['Марка: КАМАЗ', '123 АВС 02']);
+    expect(fields.plateNumber?.value).toBe('123ABC02');
+  });
+
+  it('VIN «ХТА…» кириллицей распознаётся', () => {
+    const fields = extractFields('VEHICLE_PASSPORT', ['ХТА212130M1234567']);
+    expect(fields.vin?.value).toBe('XTA212130M1234567');
+  });
+});

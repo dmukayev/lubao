@@ -141,6 +141,7 @@ describe('AdminService.searchDrivers (задача 026, п.1)', () => {
         ]),
       },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     const result = await service.searchDrivers({});
@@ -396,6 +397,7 @@ describe('AdminService.setDriverVerified / setCompanyVerified — force gate (з
       driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1' }) },
       verificationDocument: { findMany: jest.fn().mockResolvedValue([{ type: 'SELFIE' }]) }, // missing the other 3 required types
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     await expect(service.setDriverVerified('d1', 'admin-1', { isVerified: true, reason: 'проверил' })).rejects.toThrow(
@@ -456,6 +458,7 @@ describe('AdminService.setDriverVerified / setCompanyVerified — force gate (з
       company: { findUnique: jest.fn().mockResolvedValue({ id: 'c1' }) },
       verificationDocument: { findMany: jest.fn().mockResolvedValue([]) },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     await expect(service.setCompanyVerified('c1', 'admin-1', { isVerified: true, reason: 'x' })).rejects.toThrow(
@@ -543,6 +546,7 @@ describe('AdminService.setDriverVerified / setCompanyVerified — force gate (з
       verificationDocument: { findMany: jest.fn().mockResolvedValue([]) },
       auditLog: { create: jest.fn().mockResolvedValue({}) },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const identifiers = {
       findActiveBlocksForOwner: jest.fn().mockResolvedValue([{ type: 'IIN', valueMasked: '••••••••5678', reason: 'В розыске' }]),
     };
@@ -639,6 +643,7 @@ describe('AdminService.stats — growth and on-site counters (задача 028, 
       complaint: { count: countMock },
       arrival: { count: countMock },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     const result = await service.stats();
@@ -658,6 +663,7 @@ describe('AdminService.stats — growth and on-site counters (задача 028, 
       complaint: { count: jest.fn().mockResolvedValue(0) },
       arrival: { count: jest.fn().mockResolvedValue(0) },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     const result = await service.stats();
@@ -678,6 +684,7 @@ describe('AdminService.stats — growth and on-site counters (задача 028, 
       complaint: { count: countZero },
       arrival: { count: countZero },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     const result = await service.stats();
@@ -701,6 +708,7 @@ describe('AdminService.attention (задача 028, п.4)', () => {
       company: { count: jest.fn().mockResolvedValue(3) },
       city: { count: jest.fn().mockResolvedValue(0) },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     const result = await service.attention();
@@ -824,6 +832,7 @@ describe('AdminService.searchCargos / searchDeals (задача 028, п.14/16)',
 describe('AdminService.documentFileSource — proxy instead of presigned link (задача 028, п.12)', () => {
   it('throws NotFoundException for an unknown document', async () => {
     const prisma: any = { verificationDocument: { findUnique: jest.fn().mockResolvedValue(null) } };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
     await expect(service.documentFileSource('missing')).rejects.toThrow(NotFoundException);
   });
@@ -833,6 +842,7 @@ describe('AdminService.documentFileSource — proxy instead of presigned link (�
     const prisma: any = {
       verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1', fileUrl: 'https://legacy.example/a.jpg' }) },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, uploads as any);
 
     const result = await service.documentFileSource('doc1');
@@ -846,6 +856,7 @@ describe('AdminService.documentFileSource — proxy instead of presigned link (�
     const prisma: any = {
       verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1', fileUrl: 'abc123.jpg' }) },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, uploads as any);
 
     const result = await service.documentFileSource('doc1');
@@ -879,6 +890,7 @@ describe('AdminService.verificationQueue — by subject, not by document (зад
         ]),
       },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     const result = await service.verificationQueue('driver');
@@ -898,6 +910,7 @@ describe('AdminService.verificationQueue — by subject, not by document (зад
       },
       driver: { findMany: jest.fn().mockResolvedValue([{ id: 'd1', fullName: 'Ерлан', isVerified: true }]) },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     const result = await service.verificationQueue('driver');
@@ -919,6 +932,7 @@ describe('AdminService.verificationQueue — by subject, not by document (зад
       },
       driver: { findMany: jest.fn().mockResolvedValue([{ id: 'd1', fullName: 'Ерлан', isVerified: false }]) },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     const result = await service.verificationQueue('driver');
@@ -929,6 +943,7 @@ describe('AdminService.verificationQueue — by subject, not by document (зад
 
   it('returns an empty queue when nothing is pending, without querying drivers', async () => {
     const prisma: any = { verificationDocument: { findMany: jest.fn().mockResolvedValue([]) }, driver: { findMany: jest.fn() } };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     const result = await service.verificationQueue('driver');
@@ -948,6 +963,7 @@ describe('AdminService.verificationQueue — by subject, not by document (зад
       },
       company: { findMany: jest.fn().mockResolvedValue([{ id: 'c1', name: 'Acme', isVerified: false }]) },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     const result = await service.verificationQueue('company');
@@ -976,6 +992,7 @@ describe('AdminService.verificationDriverProfile / verificationCompanyProfile (�
         ]),
       },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, uploads as any);
 
     const result = await service.verificationDriverProfile('d1');
@@ -1053,6 +1070,7 @@ describe('AdminService.returnDriverForRework / returnCompanyForRework — one de
       driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1' }) },
       verificationDocument: { findMany: jest.fn().mockResolvedValue([]) }, // doc belongs to someone else
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     await expect(
@@ -1493,6 +1511,7 @@ describe('AdminService.reviewVerificationDocument — водитель и маш
       auditLog: { create: jest.fn() },
       country: { findUnique: jest.fn() },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     await service.reviewVerificationDocument('doc1', 'admin-1', { status: 'APPROVED' } as any);
@@ -1522,6 +1541,7 @@ describe('AdminService.reviewVerificationDocument — водитель и маш
       vehicle: { update: jest.fn() },
       auditLog: { create: jest.fn() },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     await service.reviewVerificationDocument('doc2', 'admin-1', { status: 'APPROVED' } as any);
@@ -1536,6 +1556,7 @@ describe('AdminService.documentRecognition — блок «Распознано»
     const prisma: any = {
       verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1', recognition: null }) },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     const result = await service.documentRecognition('doc1');
@@ -1665,6 +1686,7 @@ describe('AdminService.reviewVerificationDocument — правка полей б
       vehicle: { update: jest.fn() },
       auditLog: { create: jest.fn() },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const identifiers = {
       checkMatches: jest.fn().mockResolvedValue({ blocked: null, duplicateOwner: null }),
       confirmIdentifier: jest.fn(),
@@ -1685,6 +1707,7 @@ describe('AdminService.reviewVerificationDocument — правка полей б
     });
     expect(identifiers.confirmIdentifier).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'IIN', rawValue: '850712345611', ownerType: 'DRIVER', ownerId: 'd1' }),
+      expect.anything(),
     );
   });
 
@@ -1708,6 +1731,7 @@ describe('AdminService.reviewVerificationDocument — правка полей б
       vehicle: { update: jest.fn() },
       auditLog: { create: jest.fn() },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const identifiers = {
       checkMatches: jest.fn().mockResolvedValue({ blocked: null, duplicateOwner: null }),
       confirmIdentifier: jest.fn(),
@@ -1720,6 +1744,7 @@ describe('AdminService.reviewVerificationDocument — правка полей б
 
     expect(identifiers.confirmIdentifier).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'IIN', rawValue: '850712345600', ownerType: 'DRIVER', ownerId: 'd1', sourceDocumentId: 'doc1' }),
+      expect.anything(),
     );
     // Молчаливое согласие — не правка, DOCUMENT_FIELD_CORRECTED не пишется.
     expect(prisma.auditLog.create).not.toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: 'DOCUMENT_FIELD_CORRECTED' }) }));
@@ -1751,6 +1776,7 @@ describe('AdminService.reviewVerificationDocument — правка полей б
       vehicle: { update: jest.fn() },
       auditLog: { create: jest.fn() },
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const identifiers = {
       checkMatches: jest.fn().mockResolvedValue({ blocked: null, duplicateOwner: null }),
       confirmIdentifier: jest.fn(),
@@ -1761,6 +1787,7 @@ describe('AdminService.reviewVerificationDocument — правка полей б
 
     expect(identifiers.confirmIdentifier).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'DRIVER_LICENSE_NO', rawValue: 'AB1234567', ownerType: 'DRIVER', ownerId: 'd1', sourceDocumentId: 'doc-old' }),
+      expect.anything(),
     );
   });
 });

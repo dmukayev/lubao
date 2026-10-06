@@ -919,6 +919,7 @@ export class AdminService {
     driverId: string,
     sourceDocumentId: string,
     adminUserId: string,
+    tx?: Prisma.TransactionClient,
   ): Promise<{ reason: string } | null> {
     if (!this.identifiers) return null;
     let blacklistHit: { reason: string } | null = null;
@@ -927,14 +928,17 @@ export class AdminService {
       if (!value) continue;
       const match = await this.identifiers.checkMatches(type, value, { ownerType: 'DRIVER', ownerId: driverId });
       if (match.blocked) blacklistHit = match.blocked;
-      await this.identifiers.confirmIdentifier({
-        type,
-        rawValue: value,
-        ownerType: 'DRIVER',
-        ownerId: driverId,
-        sourceDocumentId,
-        confirmedByUserId: adminUserId,
-      });
+      await this.identifiers.confirmIdentifier(
+        {
+          type,
+          rawValue: value,
+          ownerType: 'DRIVER',
+          ownerId: driverId,
+          sourceDocumentId,
+          confirmedByUserId: adminUserId,
+        },
+        tx,
+      );
     }
     return blacklistHit;
   }
@@ -943,29 +947,165 @@ export class AdminService {
     const doc = await this.prisma.verificationDocument.findUnique({ where: { id } });
     if (!doc) throw new NotFoundException('Document not found');
 
-    const updated = await this.prisma.verificationDocument.update({
-      where: { id },
-      data: {
-        status: dto.status,
-        rejectReason: dto.status === 'REJECTED' ? dto.rejectReason : null,
-        reviewedByUserId: adminUserId,
-        reviewedAt: new Date(),
-      },
-      include: {
-        driver: { include: { user: true } },
-        company: true,
-        vehicle: true,
-        recognition: true,
-        reviewedBy: { select: { id: true, name: true, email: true } },
-      },
+    // Задача 032, п.10 (закрыт в 038) — одобрение документа и запись его
+    // идентификаторов идут в ОДНОЙ транзакции: упавший между ними процесс
+    // раньше оставлял документ APPROVED без подтверждённых идентификаторов
+    // (и чёрный список по ним молчал). Аудит-записи — после коммита, они
+    // информационные и не должны держать транзакцию.
+    const { updated, blacklistHit } = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.verificationDocument.update({
+        where: { id },
+        data: {
+          status: dto.status,
+          rejectReason: dto.status === 'REJECTED' ? dto.rejectReason : null,
+          reviewedByUserId: adminUserId,
+          reviewedAt: new Date(),
+        },
+        include: {
+          driver: { include: { user: true } },
+          company: true,
+          vehicle: true,
+          recognition: true,
+          reviewedBy: { select: { id: true, name: true, email: true } },
+        },
+      });
+
+      // Задача 031, этап C, п.15 — совпадение с чёрным списком останавливает
+      // автоматическое подтверждение: ниже `isVerified` выставляется только
+      // когда `!blacklistHit`, явного решения админа это не требует — сам
+      // документ может быть одобрен (это оценка его подлинности), а вот
+      // субъект (водитель/машина/компания) ⛔ не верифицируется молча.
+      // Дубль у другого активного владельца — только предупреждение,
+      // подтверждению не мешает.
+      let blacklistHit: { reason: string } | null = null;
+      const recognizedFields = (updated.recognition?.fields ?? {}) as Record<string, { value?: string; valueEncrypted?: string } | undefined>;
+
+      if (dto.status === 'APPROVED') {
+        if (updated.driverId && updated.driver) {
+          const phone = updated.driver.user.phone;
+          if (phone && this.identifiers) {
+            const match = await this.identifiers.checkMatches('PHONE', phone, { ownerType: 'DRIVER', ownerId: updated.driverId });
+            if (match.blocked) blacklistHit = match.blocked;
+            await this.identifiers.confirmIdentifier(
+              {
+                type: 'PHONE',
+                rawValue: phone,
+                ownerType: 'DRIVER',
+                ownerId: updated.driverId,
+                sourceDocumentId: id,
+                confirmedByUserId: adminUserId,
+              },
+              tx,
+            );
+          }
+
+          // Задача 032, п.3 — другие уже одобренные документы этого водителя
+          // могли быть проверены ДО того, как это подтверждение появилось
+          // (или без правки — п.23 раньше сохранял ИИН/номер прав только
+          // когда админ их редактировал, молчаливое согласие терялось).
+          // Добираем их здесь же — confirmIdentifier делает upsert по
+          // (ownerType, ownerId, type), повторный вызов безопасен.
+          const otherApprovedDocs = await tx.verificationDocument.findMany({
+            where: { driverId: updated.driverId, status: 'APPROVED', id: { not: id }, recognition: { isNot: null } },
+            include: { recognition: true },
+          });
+          for (const otherDoc of otherApprovedDocs) {
+            const otherFields = (otherDoc.recognition?.fields ?? {}) as Record<string, { value: string } | undefined>;
+            const hit = await this.confirmFieldlessDriverIdentifiers(otherFields, undefined, updated.driverId, otherDoc.id, adminUserId, tx);
+            if (hit) blacklistHit = hit;
+          }
+
+          // ИИН/номер прав (задача 031, п.23) — без своей колонки на Driver,
+          // живут только в identifiers; подтверждаются значением, с которым
+          // согласился админ: правкой (dto.confirmedFields), а если он просто
+          // согласился молча — тем, что распознал OCR (задача 032, п.3).
+          const hit = await this.confirmFieldlessDriverIdentifiers(recognizedFields, dto.confirmedFields, updated.driverId, id, adminUserId, tx);
+          if (hit) blacklistHit = hit;
+
+          // Верифицирован, только когда одобрены ВСЕ обязательные документы
+          // личности (селфи + права) — задача 031, этап A: машины (техпаспорта
+          // тягача/прицепа) проверяются отдельно, см. блок ниже.
+          const approved = await tx.verificationDocument.findMany({
+            where: { driverId: updated.driverId, status: 'APPROVED' },
+            select: { type: true },
+          });
+          const approvedTypes = new Set(approved.map((d) => d.type));
+          const allRequiredApproved = REQUIRED_DRIVER_DOC_TYPES.every((type) => approvedTypes.has(type));
+          if (allRequiredApproved && !blacklistHit) {
+            await tx.driver.update({ where: { id: updated.driverId }, data: { isVerified: true } });
+          }
+        }
+        // Задача 031, этап A, п.3-4 — техпаспорт принадлежит конкретной машине
+        // гаража; её одобрение подтверждает именно эту машину, не всего
+        // водителя и не остальные машины в гараже.
+        if (updated.vehicleId && updated.vehicle && (updated.type === 'VEHICLE_PASSPORT' || updated.type === 'TRAILER_PASSPORT')) {
+          const vehicle = updated.vehicle;
+          if (this.identifiers) {
+            const checks: Array<{ type: 'PLATE' | 'VIN'; value: string }> = [
+              ...(vehicle.plateNumber ? [{ type: 'PLATE' as const, value: vehicle.plateNumber }] : []),
+              ...(vehicle.vin ? [{ type: 'VIN' as const, value: vehicle.vin }] : []),
+            ];
+            for (const check of checks) {
+              const match = await this.identifiers.checkMatches(check.type, check.value, { ownerType: 'VEHICLE', ownerId: vehicle.id });
+              // Госномер меняет владельца при перепродаже машины — дубль там
+              // не блокирует; только настоящий чёрный список.
+              if (match.blocked) blacklistHit = match.blocked;
+              await this.identifiers.confirmIdentifier(
+                {
+                  type: check.type,
+                  rawValue: check.value,
+                  ownerType: 'VEHICLE',
+                  ownerId: vehicle.id,
+                  sourceDocumentId: id,
+                  confirmedByUserId: adminUserId,
+                },
+                tx,
+              );
+            }
+          }
+          if (!blacklistHit) {
+            await tx.vehicle.update({ where: { id: updated.vehicleId }, data: { isVerified: true } });
+          }
+        }
+        if (updated.companyId && updated.company) {
+          if (updated.company.taxId && this.identifiers) {
+            const country = await tx.country.findUnique({ where: { id: updated.company.countryId }, select: { code: true } });
+            const type = country?.code === 'CN' ? 'USCC' : 'BIN';
+            const match = await this.identifiers.checkMatches(type, updated.company.taxId, { ownerType: 'COMPANY', ownerId: updated.companyId });
+            if (match.blocked) blacklistHit = match.blocked;
+            await this.identifiers.confirmIdentifier(
+              {
+                type,
+                rawValue: updated.company.taxId,
+                ownerType: 'COMPANY',
+                ownerId: updated.companyId,
+                sourceDocumentId: id,
+                confirmedByUserId: adminUserId,
+              },
+              tx,
+            );
+          }
+
+          const approved = await tx.verificationDocument.findMany({
+            where: { companyId: updated.companyId, status: 'APPROVED' },
+            select: { type: true },
+          });
+          const approvedTypes = new Set(approved.map((d) => d.type));
+          const allRequiredApproved = REQUIRED_COMPANY_DOC_TYPES.every((type) => approvedTypes.has(type));
+          if (allRequiredApproved && !blacklistHit) {
+            await tx.company.update({ where: { id: updated.companyId }, data: { isVerified: true } });
+          }
+        }
+      }
+
+      return { updated, blacklistHit };
     });
 
     // Задача 031, п.23 — правка админа (поле без своей колонки в БД — ИИН,
     // номер прав) по сравнению с тем, что распознал OCR, идёт в audit_log
-    // отдельной записью «распознано X → исправлено Y», до записи самого
-    // подтверждённого значения. Задача 032, п.4 — в сам журнал полные
-    // значения не пишем, только маски (audit_log не настолько защищён,
-    // как identifiers.valueEncrypted).
+    // отдельной записью «распознано X → исправлено Y». Задача 032, п.4 —
+    // полные значения в журнал не пишем, только маски. Аудит — после
+    // коммита: журнал не должен откатывать одобрение.
     const recognizedFields = (updated.recognition?.fields ?? {}) as Record<string, { value?: string; valueEncrypted?: string } | undefined>;
     for (const [field, confirmedValue] of Object.entries(dto.confirmedFields ?? {})) {
       const recognizedValue = this.resolveRecognizedValue(recognizedFields[field]);
@@ -982,124 +1122,6 @@ export class AdminService {
     await this.logAudit(adminUserId, dto.status === 'APPROVED' ? 'DOCUMENT_APPROVED' : 'DOCUMENT_REJECTED', 'VerificationDocument', id, {
       rejectReason: dto.rejectReason,
     });
-
-    // Задача 031, этап C, п.15 — совпадение с чёрным списком останавливает
-    // автоматическое подтверждение: ниже `isVerified` выставляется только
-    // когда `!blacklistHit`, явного решения админа это не требует — сам
-    // документ может быть одобрен (это оценка его подлинности), а вот
-    // субъект (водитель/машина/компания) ⛔ не верифицируется молча.
-    // Дубль у другого активного владельца — только предупреждение,
-    // подтверждению не мешает.
-    let blacklistHit: { reason: string } | null = null;
-
-    if (dto.status === 'APPROVED') {
-      if (updated.driverId && updated.driver) {
-        const phone = updated.driver.user.phone;
-        if (phone && this.identifiers) {
-          const match = await this.identifiers.checkMatches('PHONE', phone, { ownerType: 'DRIVER', ownerId: updated.driverId });
-          if (match.blocked) blacklistHit = match.blocked;
-          await this.identifiers.confirmIdentifier({
-            type: 'PHONE',
-            rawValue: phone,
-            ownerType: 'DRIVER',
-            ownerId: updated.driverId,
-            sourceDocumentId: id,
-            confirmedByUserId: adminUserId,
-          });
-        }
-
-        // Задача 032, п.3 — другие уже одобренные документы этого водителя
-        // могли быть проверены ДО того, как это подтверждение появилось
-        // (или без правки — п.23 раньше сохранял ИИН/номер прав только
-        // когда админ их редактировал, молчаливое согласие терялось).
-        // Добираем их здесь же — confirmIdentifier делает upsert по
-        // (ownerType, ownerId, type), повторный вызов безопасен.
-        const otherApprovedDocs = await this.prisma.verificationDocument.findMany({
-          where: { driverId: updated.driverId, status: 'APPROVED', id: { not: id }, recognition: { isNot: null } },
-          include: { recognition: true },
-        });
-        for (const otherDoc of otherApprovedDocs) {
-          const otherFields = (otherDoc.recognition?.fields ?? {}) as Record<string, { value: string } | undefined>;
-          const hit = await this.confirmFieldlessDriverIdentifiers(otherFields, undefined, updated.driverId, otherDoc.id, adminUserId);
-          if (hit) blacklistHit = hit;
-        }
-
-        // ИИН/номер прав (задача 031, п.23) — без своей колонки на Driver,
-        // живут только в identifiers; подтверждаются значением, с которым
-        // согласился админ: правкой (dto.confirmedFields), а если он просто
-        // согласился молча — тем, что распознал OCR (задача 032, п.3).
-        const hit = await this.confirmFieldlessDriverIdentifiers(recognizedFields, dto.confirmedFields, updated.driverId, id, adminUserId);
-        if (hit) blacklistHit = hit;
-
-        // Верифицирован, только когда одобрены ВСЕ обязательные документы
-        // личности (селфи + права) — задача 031, этап A: машины (техпаспорта
-        // тягача/прицепа) проверяются отдельно, см. блок ниже.
-        const approved = await this.prisma.verificationDocument.findMany({
-          where: { driverId: updated.driverId, status: 'APPROVED' },
-          select: { type: true },
-        });
-        const approvedTypes = new Set(approved.map((d) => d.type));
-        const allRequiredApproved = REQUIRED_DRIVER_DOC_TYPES.every((type) => approvedTypes.has(type));
-        if (allRequiredApproved && !blacklistHit) {
-          await this.prisma.driver.update({ where: { id: updated.driverId }, data: { isVerified: true } });
-        }
-      }
-      // Задача 031, этап A, п.3-4 — техпаспорт принадлежит конкретной машине
-      // гаража; её одобрение подтверждает именно эту машину, не всего
-      // водителя и не остальные машины в гараже.
-      if (updated.vehicleId && updated.vehicle && (updated.type === 'VEHICLE_PASSPORT' || updated.type === 'TRAILER_PASSPORT')) {
-        const vehicle = updated.vehicle;
-        if (this.identifiers) {
-          const checks: Array<{ type: 'PLATE' | 'VIN'; value: string }> = [
-            ...(vehicle.plateNumber ? [{ type: 'PLATE' as const, value: vehicle.plateNumber }] : []),
-            ...(vehicle.vin ? [{ type: 'VIN' as const, value: vehicle.vin }] : []),
-          ];
-          for (const check of checks) {
-            const match = await this.identifiers.checkMatches(check.type, check.value, { ownerType: 'VEHICLE', ownerId: vehicle.id });
-            // Госномер меняет владельца при перепродаже машины — дубль там
-            // не блокирует; только настоящий чёрный список.
-            if (match.blocked) blacklistHit = match.blocked;
-            await this.identifiers.confirmIdentifier({
-              type: check.type,
-              rawValue: check.value,
-              ownerType: 'VEHICLE',
-              ownerId: vehicle.id,
-              sourceDocumentId: id,
-              confirmedByUserId: adminUserId,
-            });
-          }
-        }
-        if (!blacklistHit) {
-          await this.prisma.vehicle.update({ where: { id: updated.vehicleId }, data: { isVerified: true } });
-        }
-      }
-      if (updated.companyId && updated.company) {
-        if (updated.company.taxId && this.identifiers) {
-          const country = await this.prisma.country.findUnique({ where: { id: updated.company.countryId }, select: { code: true } });
-          const type = country?.code === 'CN' ? 'USCC' : 'BIN';
-          const match = await this.identifiers.checkMatches(type, updated.company.taxId, { ownerType: 'COMPANY', ownerId: updated.companyId });
-          if (match.blocked) blacklistHit = match.blocked;
-          await this.identifiers.confirmIdentifier({
-            type,
-            rawValue: updated.company.taxId,
-            ownerType: 'COMPANY',
-            ownerId: updated.companyId,
-            sourceDocumentId: id,
-            confirmedByUserId: adminUserId,
-          });
-        }
-
-        const approved = await this.prisma.verificationDocument.findMany({
-          where: { companyId: updated.companyId, status: 'APPROVED' },
-          select: { type: true },
-        });
-        const approvedTypes = new Set(approved.map((d) => d.type));
-        const allRequiredApproved = REQUIRED_COMPANY_DOC_TYPES.every((type) => approvedTypes.has(type));
-        if (allRequiredApproved && !blacklistHit) {
-          await this.prisma.company.update({ where: { id: updated.companyId }, data: { isVerified: true } });
-        }
-      }
-    }
 
     return { ...(await this.docToDto(updated)), blacklistHit };
   }

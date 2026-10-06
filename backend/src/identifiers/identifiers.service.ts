@@ -56,20 +56,25 @@ export class IdentifiersService {
   /// Подтверждение значения админом (при одобрении документа — этап A/E —
   /// или вручную): перезаписывает предыдущее подтверждённое значение этого
   /// типа у этого владельца.
-  async confirmIdentifier(params: {
-    type: IdentifierTypeValue;
-    rawValue: string;
-    ownerType: OwnerType;
-    ownerId: string;
-    sourceDocumentId?: string | null;
-    confirmedByUserId: string;
-  }) {
+  /// `tx` — задача 032, п.10 (038): при одобрении документа запись
+  /// идентификатора идёт в той же транзакции, что и сам документ.
+  async confirmIdentifier(
+    params: {
+      type: IdentifierTypeValue;
+      rawValue: string;
+      ownerType: OwnerType;
+      ownerId: string;
+      sourceDocumentId?: string | null;
+      confirmedByUserId: string;
+    },
+    tx?: Prisma.TransactionClient,
+  ) {
     const normalized = normalizeIdentifier(params.type, params.rawValue);
     const valueHash = hashIdentifier(normalized);
     const valueMasked = maskIdentifier(params.type, normalized);
     const valueEncrypted = isSensitiveIdentifierType(params.type) ? encryptIdentifier(normalized) : null;
 
-    return this.prisma.identifier.upsert({
+    return (tx ?? this.prisma).identifier.upsert({
       where: { ownerType_ownerId_type: { ownerType: params.ownerType, ownerId: params.ownerId, type: params.type } },
       update: {
         valueHash,

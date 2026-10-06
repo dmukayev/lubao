@@ -44,3 +44,18 @@ describe('normalizeIdentifier dispatch', () => {
     expect(normalizeIdentifier('IIN', '850712300123')).toBe('850712300123');
   });
 });
+
+describe('кириллические двойники в VIN и номере прав (задача 032, п.9 / 038)', () => {
+  it('VIN «ХТА…» кириллицей нормализуется в ту же латиницу, что и латинский VIN', () => {
+    // Х, Т, А — кириллица; остальное — латиница/цифры.
+    expect(normalizeIdentifier('VIN', 'ХТА212130М1234567')).toBe(normalizeIdentifier('VIN', 'XTA212130M1234567'));
+  });
+
+  it('номер прав с кириллическими буквами даёт тот же хеш-вход, что латинский', () => {
+    expect(normalizeIdentifier('DRIVER_LICENSE_NO', 'АВ 1234567')).toBe(normalizeIdentifier('DRIVER_LICENSE_NO', 'AB1234567'));
+  });
+
+  it('госномер «123 АВС 02» кириллицей → 123ABC02', () => {
+    expect(normalizeIdentifier('PLATE', '123 АВС 02')).toBe('123ABC02');
+  });
+});

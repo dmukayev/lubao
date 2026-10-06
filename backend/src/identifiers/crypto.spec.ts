@@ -1,4 +1,4 @@
-import { decryptIdentifier, encryptIdentifier, hashIdentifier, maskIdentifier } from './crypto';
+import { assertIdentifierCryptoConfigured, decryptIdentifier, encryptIdentifier, hashIdentifier, maskIdentifier } from './crypto';
 
 const OLD_ENV = process.env;
 
@@ -6,7 +6,7 @@ describe('identifiers crypto — задача 031, этап C, п.11/16', () => 
   beforeEach(() => {
     process.env = {
       ...OLD_ENV,
-      IDENTIFIER_PEPPER: 'test-pepper',
+      IDENTIFIER_PEPPER: 'test-pepper-0123456789-0123456789-xx',
       IDENTIFIER_KEY: 'a'.repeat(64), // 32 bytes hex
     };
   });
@@ -65,5 +65,29 @@ describe('identifiers crypto — задача 031, этап C, п.11/16', () => 
       expect(maskIdentifier('PLATE', '123ABC02')).toBe('123ABC02');
       expect(maskIdentifier('PHONE', '+77011234501')).toBe('+77011234501');
     });
+  });
+});
+
+describe('задача 032, п.10 (038) — маска прав и валидация ключей при старте', () => {
+  beforeEach(() => {
+    process.env.IDENTIFIER_PEPPER = 'test-pepper-0123456789-0123456789-xx';
+    process.env.IDENTIFIER_KEY = 'a'.repeat(64);
+  });
+
+  it('номер прав маскируется первые 2 + последние 2, ИИН — по-прежнему 4+4', () => {
+    expect(maskIdentifier('DRIVER_LICENSE_NO', 'AB1234567')).toBe('AB•••••67');
+    expect(maskIdentifier('IIN', '850701123456')).toBe('8507••••3456');
+  });
+
+  it('короткий IDENTIFIER_PEPPER отклоняется при старте', () => {
+    process.env.IDENTIFIER_PEPPER = 'short';
+    expect(() => assertIdentifierCryptoConfigured()).toThrow('at least 32');
+  });
+
+  it('IDENTIFIER_KEY не из 64 hex-символов отклоняется при старте', () => {
+    process.env.IDENTIFIER_KEY = 'zz'.repeat(32);
+    expect(() => assertIdentifierCryptoConfigured()).toThrow('64 hex');
+    process.env.IDENTIFIER_KEY = 'a'.repeat(32);
+    expect(() => assertIdentifierCryptoConfigured()).toThrow('64 hex');
   });
 });

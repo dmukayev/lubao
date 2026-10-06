@@ -1,6 +1,6 @@
 import { isValidIinOrBin, isValidUscc, isValidVinFormat, matchesKzPlateFormat, vinCheckDigitOk } from './checksums';
 import { namesLikelyMatch } from './name-match';
-import { IdentifierTypeValue } from '../identifiers/normalize';
+import { IdentifierTypeValue, transliterateCyrillicLookalikes } from '../identifiers/normalize';
 
 /// Какие ключи распознанных полей соответствуют типу идентификатора из
 /// чёрного списка (задача 031, п.22) — используется и для живой проверки
@@ -64,7 +64,9 @@ function extractUscc(lines: string[]): RecognizedField | null {
 }
 
 function extractVin(lines: string[]): RecognizedField | null {
-  const candidates = joinedText(lines).toUpperCase().match(/[A-HJ-NPR-Z0-9]{17}/g) ?? [];
+  // Кириллические двойники → латиница ДО шаблона (032, п.9): OCR на VIN
+  // ВАЗа часто отдаёт «ХТА…» кириллицей, и [A-HJ-NPR-Z0-9] его не ловил.
+  const candidates = transliterateCyrillicLookalikes(joinedText(lines).toUpperCase()).match(/[A-HJ-NPR-Z0-9]{17}/g) ?? [];
   for (const candidate of candidates) {
     if (!isValidVinFormat(candidate)) continue;
     // Контрольная цифра — подсказка, не отказ (п.19: необязательна вне
@@ -83,7 +85,8 @@ const PLATE_TRAILER_RE = /\d{2}[A-Z]{3}\d{2}/;
 
 function extractPlate(lines: string[]): RecognizedField | null {
   for (const rawLine of lines) {
-    const compact = rawLine.toUpperCase().replace(/[\s-]+/g, '');
+    // Транслитерация до шаблона (032, п.9): «123 АВС 02» кириллицей.
+    const compact = transliterateCyrillicLookalikes(rawLine.toUpperCase()).replace(/[\s-]+/g, '');
     const match = compact.match(PLATE_STANDARD_RE) ?? compact.match(PLATE_TRAILER_RE);
     if (!match) continue;
     const kind = matchesKzPlateFormat(match[0]);
@@ -131,8 +134,7 @@ function extractLicenseNumber(lines: string[]): RecognizedField | null {
   // Номер прав РК/РФ/КНР — довольно разные форматы; берём общий паттерн
   // «буквы+цифры, 6-12 символов» и полагаемся на needsReview по умолчанию
   // (confidence ниже порога) — контрольной суммы для этого поля нет.
-  const match = joinedText(lines)
-    .toUpperCase()
+  const match = transliterateCyrillicLookalikes(joinedText(lines).toUpperCase())
     .match(/\b[A-Z0-9]{2}\s?\d{6,9}\b/);
   if (!match) return null;
   return field(match[0].replace(/\s+/g, ''), 0.5, null);

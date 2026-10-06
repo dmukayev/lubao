@@ -18,8 +18,18 @@ function requiredEnv(name: string): string {
 /// (тот же принцип, что и у JWT_ACCESS_SECRET в TokenService): дешевле
 /// упасть при деплое, чем молча хранить идентификаторы без защиты.
 export function assertIdentifierCryptoConfigured(): void {
-  requiredEnv('IDENTIFIER_PEPPER');
-  requiredEnv('IDENTIFIER_KEY');
+  // Задача 032, п.10 (закрыт в 038) — не только «есть», но и валидны:
+  // короткий pepper ослабляет HMAC, а ключ не из 32 байт hex уронит
+  // encryptIdentifier только при ПЕРВОМ одобрении документа — на проде,
+  // а не при деплое.
+  const pepper = requiredEnv('IDENTIFIER_PEPPER');
+  if (pepper.length < 32) {
+    throw new Error('IDENTIFIER_PEPPER must be at least 32 characters');
+  }
+  const key = requiredEnv('IDENTIFIER_KEY');
+  if (!/^[0-9a-fA-F]{64}$/.test(key)) {
+    throw new Error('IDENTIFIER_KEY must be 64 hex characters (32 bytes)');
+  }
 }
 
 export function isSensitiveIdentifierType(type: IdentifierTypeValue): boolean {
@@ -54,15 +64,17 @@ export function decryptIdentifier(packed: string): string {
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
 }
 
-/// ИИН/номер прав — первые и последние 4 символа, середина скрыта
-/// («8507••••1234»); остальные типы (госномер, VIN, БИН/统一社会信用代码,
-/// телефон) не настолько чувствительны и показываются полностью — они и
-/// так публичны (номер на борту машины, телефон уже виден в профиле).
+/// ИИН — первые и последние 4 символа, середина скрыта («8507••••1234»);
+/// номер прав короче (обычно 9 знаков), 4+4 открывал бы 8 из 9 — для него
+/// первые 2 + последние 2 (задача 032, п.10). Остальные типы (госномер,
+/// VIN, БИН/统一社会信用代码, телефон) не настолько чувствительны и
+/// показываются полностью — они и так публичны (номер на борту машины,
+/// телефон уже виден в профиле).
 export function maskIdentifier(type: IdentifierTypeValue, normalizedValue: string): string {
   if (!isSensitiveIdentifierType(type)) return normalizedValue;
   const len = normalizedValue.length;
-  if (len <= 6) return '•'.repeat(len);
-  const visible = 4;
+  const visible = type === 'DRIVER_LICENSE_NO' ? 2 : 4;
+  if (len <= visible * 2 + 2) return '•'.repeat(len);
   const head = normalizedValue.slice(0, visible);
   const tail = normalizedValue.slice(len - visible);
   const maskedLen = Math.max(len - visible * 2, 4);

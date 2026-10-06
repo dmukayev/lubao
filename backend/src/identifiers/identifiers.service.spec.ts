@@ -38,7 +38,7 @@ describe('IdentifiersService — задача 031, этап C', () => {
   let service: IdentifiersService;
 
   beforeEach(() => {
-    process.env = { ...OLD_ENV, IDENTIFIER_PEPPER: 'test-pepper', IDENTIFIER_KEY: 'a'.repeat(64) };
+    process.env = { ...OLD_ENV, IDENTIFIER_PEPPER: 'test-pepper-0123456789-0123456789-xx', IDENTIFIER_KEY: 'a'.repeat(64) };
     prisma = prismaMock();
     service = new IdentifiersService(prisma as any);
   });

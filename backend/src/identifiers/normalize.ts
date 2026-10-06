@@ -20,9 +20,19 @@ function stripSpacesAndHyphens(value: string): string {
   return value.replace(/[\s-]+/g, '');
 }
 
+/// Задача 032, п.9 (хвост, закрыт в 038) — кириллические двойники сводятся
+/// к латинице не только в госномере, но и в VIN («ХТА…» у ВАЗа OCR часто
+/// отдаёт кириллицей) и номере прав: иначе «тот же» идентификатор,
+/// набранный в другом алфавите, давал другой хеш и проходил мимо чёрного
+/// списка. Экспортируется для extract-fields (сопоставление с шаблоном —
+/// тоже ПОСЛЕ транслитерации).
+export function transliterateCyrillicLookalikes(value: string): string {
+  return value.replace(/[АВЕКМНОРСТХ]/g, (ch) => CYRILLIC_TO_LATIN_PLATE[ch] ?? ch);
+}
+
 export function normalizePlate(value: string): string {
   const upper = stripSpacesAndHyphens(value).toUpperCase();
-  return upper.replace(/[АВЕКМНОРСТХ]/g, (ch) => CYRILLIC_TO_LATIN_PLATE[ch] ?? ch);
+  return transliterateCyrillicLookalikes(upper);
 }
 
 export function normalizePhone(value: string): string {
@@ -40,6 +50,10 @@ export function normalizeIdentifier(type: IdentifierTypeValue, rawValue: string)
   switch (type) {
     case 'PLATE':
       return normalizePlate(rawValue);
+    case 'VIN':
+    case 'DRIVER_LICENSE_NO':
+      // Те же двойники, что на госномерах (032, п.9).
+      return transliterateCyrillicLookalikes(normalizeGeneric(rawValue));
     case 'PHONE':
       return normalizePhone(rawValue);
     default:
