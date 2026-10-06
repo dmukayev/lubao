@@ -96,6 +96,6 @@ export class CargosController {
   async invite(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: InviteDriverDto) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
     await this.cargos.assertCanEdit(id, ctx.companyMember.companyId, ctx.user.id, ctx.companyMember.role);
-    return this.responses.inviteDriver(id, dto.driverId, ctx.companyMember.companyId);
+    return this.responses.inviteDriver(id, dto.driverId, ctx.companyMember.companyId, ctx.user.id);
   }
 }

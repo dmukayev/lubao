@@ -2,6 +2,8 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { Company, Deal, Driver, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CargosService } from '../cargos/cargos.service';
+import { ChatSystemMessagesService } from '../chats/chat-system-messages.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -19,10 +21,14 @@ export class DealsService {
     private readonly prisma: PrismaService,
     private readonly cargos: CargosService,
     private readonly notifications: NotificationsService,
+    private readonly chatSystem: ChatSystemMessagesService,
+    private readonly realtime: RealtimeGateway,
   ) {}
 
   /// Push обеим сторонам + WeCom компании при смене статуса сделки
-  /// (задача 011, таблица событий «Смена статуса сделки»).
+  /// (задача 011, таблица событий «Смена статуса сделки»). Задача 038,
+  /// п.12 — плюс deal:updated в комнату чата сделки: собеседник с
+  /// открытым чатом видит новый статус без перезахода.
   private async notifyStatusChange(deal: DealWithRelations, status: string) {
     const contactUserId = await resolveCargoContactUserId(this.prisma, deal.cargo);
     await this.notifications.notify(
@@ -30,6 +36,8 @@ export class DealsService {
       'DEAL_STATUS',
       { dealId: deal.id, status },
     );
+    const chat = await this.prisma.chat.findFirst({ where: { dealId: deal.id }, select: { id: true } });
+    if (chat) this.realtime.emitDealUpdated(chat.id, { dealId: deal.id, status });
   }
 
   private readonly include = {
@@ -238,6 +246,16 @@ export class DealsService {
         where: { id },
         data: { status: nextStatus as Deal['status'], [timestampField]: now },
         include: this.include,
+      });
+    }
+    // «Перевозка подтверждена» — системная строка в чат (задача 038, п.11).
+    if (nextStatus === 'CONFIRMED_BY_DRIVER') {
+      await this.chatSystem.post({
+        driverId: updated.driverId,
+        companyId: updated.companyId,
+        cargoId: updated.cargoId,
+        actorUserId: updated.driver.userId,
+        code: 'DEAL_CONFIRMED',
       });
     }
     await this.notifyStatusChange(updated, nextStatus);

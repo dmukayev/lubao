@@ -388,6 +388,10 @@
     "placeholders": { "name": { "type": "String" } }
   },
   "chatSystemDriverSelected": "The logist selected you for this haul",
+  "chatSystemDealConfirmed": "The driver confirmed the haul",
+  "chatSystemResponseWithdrawn": "{name} withdrew the response",
+  "@chatSystemResponseWithdrawn": { "placeholders": { "name": { "type": "String" } } },
+  "chatSystemCargoOffered": "The logist offered a cargo",
   "chatQuickReplyAtPlace": "I'm on site",
   "chatQuickReplyLoaded": "Loaded",
   "chatQuickReplyLate1h": "Running 1 hour late",

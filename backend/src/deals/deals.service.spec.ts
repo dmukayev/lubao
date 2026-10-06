@@ -1,5 +1,8 @@
 import { DealsService } from './deals.service';
 
+const FAKE_CHAT_SYSTEM = { post: jest.fn(), postToChat: jest.fn() };
+const FAKE_REALTIME = { emitDealUpdated: jest.fn() };
+
 function dealFixture(overrides: Record<string, unknown> = {}) {
   return {
     id: 'deal1',
@@ -32,6 +35,7 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
     prisma = {
       deal: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn() },
+      chat: { findFirst: jest.fn().mockResolvedValue(null) },
       vehicle: {
         findUnique: jest.fn().mockResolvedValue({ isVerified: true, kind: 'TRACTOR' }),
         findMany: jest.fn().mockResolvedValue([
@@ -46,7 +50,7 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
     prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     cargos = { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) };
     notifications = { notify: jest.fn() };
-    service = new DealsService(prisma, cargos, notifications);
+    service = new DealsService(prisma, cargos, notifications, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);
   });
 
   it('advanceStatus notifies the driver and the cargo publisher, plus WeCom to the company', async () => {
@@ -101,13 +105,14 @@ describe('DealsService.advanceStatus — проверка связки маши�
     prisma = {
       deal: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn() },
+      chat: { findFirst: jest.fn().mockResolvedValue(null) },
       vehicle: { findUnique: jest.fn(), findMany: jest.fn() },
       $queryRaw: jest.fn().mockResolvedValue([]),
     };
     prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const cargos = { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) };
     const notifications = { notify: jest.fn() };
-    service = new DealsService(prisma, cargos as any, notifications as any);
+    service = new DealsService(prisma, cargos as any, notifications as any, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);
   });
 
   it('rejects when the tractor of the deal combo is not verified', async () => {
@@ -198,6 +203,7 @@ describe('DealsService — догруз разрешён, «бронь всег�
         findMany: jest.fn().mockResolvedValue(activeDeals),
       },
       companyMember: { findFirst: jest.fn() },
+      chat: { findFirst: jest.fn().mockResolvedValue(null) },
       vehicle: {
         // Первый findUnique — проверка тягача (kind), второй — кузов связки.
         findUnique: jest.fn().mockImplementation(({ where }: any) =>
@@ -211,7 +217,7 @@ describe('DealsService — догруз разрешён, «бронь всег�
       $queryRaw: jest.fn().mockResolvedValue([]),
     };
     prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
-    const service = new DealsService(prisma, { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) } as any, { notify: jest.fn() } as any);
+    const service = new DealsService(prisma, { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) } as any, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);
     return { prisma, service };
   }
 

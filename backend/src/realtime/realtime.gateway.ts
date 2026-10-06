@@ -138,4 +138,17 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   emitChatUpdated(userId: string, payload: { chatId: string }): void {
     this.server.to(userRoom(userId)).emit('chat:updated', payload);
   }
+
+  /// Задача 038, п.12 — закреплённая карточка/кнопки у ВТОРОЙ стороны
+  /// обновляются сразу после отзыва отклика, привязки груза, выбора:
+  /// комнатное событие тем, у кого чат открыт.
+  emitThreadUpdated(chatId: string): void {
+    this.server.to(chatRoom(chatId)).emit('chat:updated', { chatId });
+  }
+
+  /// Задача 038, п.12 — смена статуса сделки видна собеседнику в чате без
+  /// перезахода (клиент инвалидирует dealByIdProvider).
+  emitDealUpdated(chatId: string, payload: { dealId: string; status: string }): void {
+    this.server.to(chatRoom(chatId)).emit('deal:updated', payload);
+  }
 }

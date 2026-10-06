@@ -388,6 +388,10 @@
     "placeholders": { "name": { "type": "String" } }
   },
   "chatSystemDriverSelected": "Логист выбрал вас для перевозки",
+  "chatSystemDealConfirmed": "Перевозка подтверждена водителем",
+  "chatSystemResponseWithdrawn": "{name} отозвал(а) отклик",
+  "@chatSystemResponseWithdrawn": { "placeholders": { "name": { "type": "String" } } },
+  "chatSystemCargoOffered": "Логист предложил груз",
   "chatQuickReplyAtPlace": "Я на месте",
   "chatQuickReplyLoaded": "Загрузился",
   "chatQuickReplyLate1h": "Опаздываю на 1 час",

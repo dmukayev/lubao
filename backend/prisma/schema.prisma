@@ -895,12 +895,26 @@ enum TranslationStatus {
   FAILED
 }
 
+/// Системные сообщения (задача 038, п.11) — события «водитель готов
+/// взять», «выбран водитель», «перевозка подтверждена» и т.п. не идут от
+/// имени нажавшего: kind=SYSTEM, текст строится НА КЛИЕНТЕ из ARB по
+/// systemCode+systemParams на языке читателя (моделью не переводится,
+/// translationStatus=SKIPPED). originalText — русский фолбэк для админки
+/// и старых клиентов.
+enum MessageKind {
+  USER
+  SYSTEM
+}
+
 model Message {
   id                String            @id @default(uuid())
   chatId            String
   chat              Chat              @relation(fields: [chatId], references: [id])
   senderUserId      String
   sender            User              @relation(fields: [senderUserId], references: [id])
+  kind              MessageKind       @default(USER)
+  systemCode        String?
+  systemParams      Json?
   originalText      String
   originalLang      Locale
   translations      Json?

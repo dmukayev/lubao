@@ -11,7 +11,7 @@ export class ResponsesController {
   @Patch(':id')
   update(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: UpdateResponseDto) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
-    return this.responses.updateStatus(id, ctx.companyMember.companyId, dto.status);
+    return this.responses.updateStatus(id, ctx.companyMember.companyId, dto.status, ctx.user.id);
   }
 
   /// Задача 035 — «Отозвать» в чате (и в списке откликов тоже доступно

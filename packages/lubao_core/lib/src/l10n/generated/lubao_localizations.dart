@@ -1830,6 +1830,24 @@ abstract class LubaoLocalizations {
   /// **'Логист выбрал вас для перевозки'**
   String get chatSystemDriverSelected;
 
+  /// No description provided for @chatSystemDealConfirmed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перевозка подтверждена водителем'**
+  String get chatSystemDealConfirmed;
+
+  /// No description provided for @chatSystemResponseWithdrawn.
+  ///
+  /// In ru, this message translates to:
+  /// **'{name} отозвал(а) отклик'**
+  String chatSystemResponseWithdrawn(String name);
+
+  /// No description provided for @chatSystemCargoOffered.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логист предложил груз'**
+  String get chatSystemCargoOffered;
+
   /// No description provided for @chatQuickReplyAtPlace.
   ///
   /// In ru, this message translates to:

@@ -935,6 +935,17 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get chatSystemDriverSelected => 'Логист сізді тасымалдауға таңдады';
 
   @override
+  String get chatSystemDealConfirmed => 'Жүргізуші тасымалды растады';
+
+  @override
+  String chatSystemResponseWithdrawn(String name) {
+    return '$name өтінімін қайтарып алды';
+  }
+
+  @override
+  String get chatSystemCargoOffered => 'Логист жүк ұсынды';
+
+  @override
   String get chatQuickReplyAtPlace => 'Мен орындамын';
 
   @override

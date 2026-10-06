@@ -37,6 +37,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   StreamSubscription<Map<String, dynamic>>? _messageNewSub;
   StreamSubscription<Map<String, dynamic>>? _messageReadSub;
   StreamSubscription<Map<String, dynamic>>? _messageTranslatedSub;
+  StreamSubscription<Map<String, dynamic>>? _chatUpdatedSub;
+  StreamSubscription<Map<String, dynamic>>? _dealUpdatedSub;
   StreamSubscription<void>? _reconnectedSub;
   Timer? _pollTimer;
   // `ref` недоступен в dispose() у ConsumerStatefulElement (риверпод
@@ -78,6 +80,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _reconnectedSub = realtime.onReconnected.listen((_) {
       ref.invalidate(chatMessagesProvider(widget.chatId));
     });
+    // Задача 038, п.12 — вторая сторона видит отзыв отклика/привязку
+    // груза/смену статуса сделки сразу: карточка и кнопки обновляются по
+    // комнатным событиям, а не при следующем заходе в чат.
+    _chatUpdatedSub = realtime.onChatUpdated.listen((data) {
+      if (data['chatId'] == widget.chatId) {
+        ref.invalidate(chatThreadProvider(widget.chatId));
+      }
+    });
+    _dealUpdatedSub = realtime.onDealUpdated.listen((data) {
+      final dealId = data['dealId'];
+      if (dealId is String) {
+        ref.invalidate(dealByIdProvider(dealId));
+        ref.invalidate(chatThreadProvider(widget.chatId));
+      }
+    });
     _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (!realtime.isConnected) ref.invalidate(chatMessagesProvider(widget.chatId));
     });
@@ -90,6 +107,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _messageNewSub?.cancel();
     _messageReadSub?.cancel();
     _messageTranslatedSub?.cancel();
+    _chatUpdatedSub?.cancel();
+    _dealUpdatedSub?.cancel();
     _reconnectedSub?.cancel();
     _pollTimer?.cancel();
     _controller.dispose();
@@ -102,7 +121,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     setState(() => _sending = true);
     try {
       await ref.read(chatRepositoryProvider).send(widget.chatId, message);
-      _controller.clear();
+      // Задача 038, п.11 — быстрый ответ/📍 (готовый text) не должен
+      // стирать черновик, который пользователь набирает в поле ввода.
+      if (text == null) _controller.clear();
       ref.invalidate(chatMessagesProvider(widget.chatId));
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -301,7 +322,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               deal: deal,
               refData: referenceData,
               isDriver: isDriver,
-              onSystemMessage: _send,
             ),
           Expanded(
             child: messagesAsync.when(
@@ -324,6 +344,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   final isFirstOfDay = i == 0 || !_isSameDay(list[i - 1].createdAt, message.createdAt);
                   if (isFirstOfDay) {
                     rows.add(Center(child: _DateDivider(date: message.createdAt)));
+                  }
+                  // Системные сообщения (задача 038, п.11) — по центру,
+                  // нейтрально, текст из ARB на языке читателя.
+                  if (message.isSystem) {
+                    rows.add(Center(child: _SystemMessageChip(message: message)));
+                    continue;
                   }
                   rows.add(Column(
                     crossAxisAlignment: message.isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -433,6 +459,36 @@ String _formatTime(DateTime date) {
   return '${two(local.hour)}:${two(local.minute)}';
 }
 
+/// Системная строка чата (задача 038, п.11) — «водитель готов взять»,
+/// «выбран водитель», «перевозка подтверждена», «отклик отозван»,
+/// «предложен груз»: нейтральная плашка по центру, текст строится из ARB
+/// на языке ЧИТАТЕЛЯ (модель перевода не участвует). Неизвестный код
+/// (новый сервер + старый клиент) — русский фолбэк originalText.
+class _SystemMessageChip extends StatelessWidget {
+  const _SystemMessageChip({required this.message});
+
+  final ChatMessage message;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final name = message.systemParams['driverName'] ?? '';
+    final text = switch (message.systemCode) {
+      'DRIVER_READY' => t.chatSystemDriverReady(name),
+      'DRIVER_SELECTED' => t.chatSystemDriverSelected,
+      'DEAL_CONFIRMED' => t.chatSystemDealConfirmed,
+      'RESPONSE_WITHDRAWN' => t.chatSystemResponseWithdrawn(name),
+      'CARGO_OFFERED' => t.chatSystemCargoOffered,
+      _ => message.originalText,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+      decoration: BoxDecoration(color: AppColors.divider, borderRadius: BorderRadius.circular(999)),
+      child: Text(text, style: AppTextStyles.caption, textAlign: TextAlign.center),
+    );
+  }
+}
+
 class _DateDivider extends StatelessWidget {
   const _DateDivider({required this.date});
 
@@ -474,7 +530,6 @@ class _CargoActionBar extends ConsumerStatefulWidget {
     required this.deal,
     required this.refData,
     required this.isDriver,
-    required this.onSystemMessage,
   });
 
   final String chatId;
@@ -482,7 +537,6 @@ class _CargoActionBar extends ConsumerStatefulWidget {
   final Deal? deal;
   final ReferenceData refData;
   final bool isDriver;
-  final Future<void> Function(String text) onSystemMessage;
 
   @override
   ConsumerState<_CargoActionBar> createState() => _CargoActionBarState();
@@ -506,12 +560,11 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
   }
 
   Future<void> _respond(String cargoId) async {
-    final t = context.l10n;
     setState(() => _busy = true);
     try {
       await ref.read(cargoRepositoryProvider).respond(cargoId);
-      final name = ref.read(sessionProvider)?.driver?.fullName ?? '';
-      await widget.onSystemMessage(t.chatSystemDriverReady(name));
+      // Системную строку «готов взять» постит сервер (задача 038, п.11).
+      ref.invalidate(chatMessagesProvider(widget.chatId));
       _reload();
     } catch (e) {
       _showError(e);
@@ -533,7 +586,6 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
   }
 
   Future<void> _selectDriver(String cargoId, String driverId, String? responseId) async {
-    final t = context.l10n;
     setState(() => _busy = true);
     try {
       if (responseId != null) {
@@ -541,7 +593,8 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
       } else {
         await ref.read(cargoRepositoryProvider).inviteDriver(cargoId, driverId);
       }
-      await widget.onSystemMessage(t.chatSystemDriverSelected);
+      // Системную строку «выбран водитель» постит сервер (038, п.11).
+      ref.invalidate(chatMessagesProvider(widget.chatId));
       _reload();
     } catch (e) {
       _showError(e);

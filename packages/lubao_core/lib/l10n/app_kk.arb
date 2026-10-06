@@ -298,6 +298,10 @@
     "placeholders": { "name": { "type": "String" } }
   },
   "chatSystemDriverSelected": "Логист сізді тасымалдауға таңдады",
+  "chatSystemDealConfirmed": "Жүргізуші тасымалды растады",
+  "chatSystemResponseWithdrawn": "{name} өтінімін қайтарып алды",
+  "@chatSystemResponseWithdrawn": { "placeholders": { "name": { "type": "String" } } },
+  "chatSystemCargoOffered": "Логист жүк ұсынды",
   "chatQuickReplyAtPlace": "Мен орындамын",
   "chatQuickReplyLoaded": "Тиедім",
   "chatQuickReplyLate1h": "1 сағатқа кешігемін",

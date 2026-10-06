@@ -930,6 +930,17 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get chatSystemDriverSelected => 'Логист выбрал вас для перевозки';
 
   @override
+  String get chatSystemDealConfirmed => 'Перевозка подтверждена водителем';
+
+  @override
+  String chatSystemResponseWithdrawn(String name) {
+    return '$name отозвал(а) отклик';
+  }
+
+  @override
+  String get chatSystemCargoOffered => 'Логист предложил груз';
+
+  @override
   String get chatQuickReplyAtPlace => 'Я на месте';
 
   @override

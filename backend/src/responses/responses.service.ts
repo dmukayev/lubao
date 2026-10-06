@@ -1,6 +1,7 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Driver, Prisma, Response as CargoResponseEntity } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { ChatSystemMessagesService } from '../chats/chat-system-messages.service';
 import { haulInfoByDriver } from '../deals/haul-summary';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -12,6 +13,7 @@ export class ResponsesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly chatSystem: ChatSystemMessagesService,
   ) {}
 
   toDto(response: ResponseWithDriver) {
@@ -100,6 +102,18 @@ export class ResponsesService {
       { cargoId, driverName: response.driver.fullName },
     );
 
+    // Системная строка «готов взять» в чат пары (задача 038, п.11) —
+    // сервером, не клиентом: раньше клиент слал обычное сообщение от
+    // имени водителя, и оно переводилось моделью.
+    await this.chatSystem.post({
+      driverId,
+      companyId: cargo.companyId,
+      cargoId,
+      actorUserId: response.driver.userId,
+      code: 'DRIVER_READY',
+      systemParams: { driverName: response.driver.fullName },
+    });
+
     return this.toDto(response);
   }
 
@@ -136,12 +150,26 @@ export class ResponsesService {
   /// `CANCELLED` — значение уже было в схеме (задача 017), просто не
   /// использовалось ни одним путём до этой задачи.
   async withdraw(responseId: string, driverId: string) {
-    const response = await this.prisma.response.findUnique({ where: { id: responseId }, include: { driver: true } });
+    const response = await this.prisma.response.findUnique({ where: { id: responseId }, include: { driver: true, cargo: { select: { companyId: true } } } });
     if (!response) throw new NotFoundException('Response not found');
     if (response.driverId !== driverId) throw new ForbiddenException('Not your response');
-    if (response.status !== 'PENDING') throw new ConflictException('Response is no longer pending');
+    if (response.status !== 'PENDING') {
+      throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
+    }
 
     const updated = await this.prisma.response.update({ where: { id: responseId }, data: { status: 'CANCELLED' }, include: { driver: true } });
+
+    // «Водитель отозвал отклик» — системно в чат (задача 038, п.11/12),
+    // логист с открытым чатом видит смену кнопок сразу.
+    await this.chatSystem.post({
+      driverId,
+      companyId: response.cargo.companyId,
+      cargoId: response.cargoId,
+      actorUserId: updated.driver.userId,
+      code: 'RESPONSE_WITHDRAWN',
+      systemParams: { driverName: updated.driver.fullName },
+    });
+
     return this.toDto(updated);
   }
 
@@ -159,7 +187,7 @@ export class ResponsesService {
     }
   }
 
-  async updateStatus(responseId: string, companyId: string, status: 'SELECTED' | 'REJECTED') {
+  async updateStatus(responseId: string, companyId: string, status: 'SELECTED' | 'REJECTED', actorUserId?: string) {
     const response = await this.prisma.response.findUnique({
       where: { id: responseId },
       include: { driver: true, cargo: true },
@@ -220,12 +248,21 @@ export class ResponsesService {
       status: 'SELECTED',
     });
 
+    // «Выбран водитель» — системно в чат пары (задача 038, п.11/12).
+    await this.chatSystem.post({
+      driverId: updated.selected.driverId,
+      companyId,
+      cargoId: updated.selected.cargoId,
+      actorUserId: actorUserId ?? updated.selected.driver.userId,
+      code: 'DRIVER_SELECTED',
+    });
+
     return this.toDto(updated.selected);
   }
 
   /// Логист приглашает конкретного водителя на груз напрямую (со страницы
   /// "Кто будет на Хоргосе"), без предварительного отклика водителя.
-  async inviteDriver(cargoId: string, driverId: string, companyId: string) {
+  async inviteDriver(cargoId: string, driverId: string, companyId: string, actorUserId?: string) {
     const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId }, include: { company: true } });
     if (!cargo) throw new NotFoundException('Cargo not found');
     if (cargo.companyId !== companyId) throw new ForbiddenException('Not your cargo');
@@ -268,6 +305,15 @@ export class ResponsesService {
     await this.notifications.notify({ userIds: [updated.driver.userId] }, 'CARGO_INVITE', {
       cargoId,
       companyName: cargo.company.name,
+    });
+
+    // «Выбран водитель» — системно в чат пары (задача 038, п.11/12).
+    await this.chatSystem.post({
+      driverId,
+      companyId,
+      cargoId,
+      actorUserId: actorUserId ?? updated.driver.userId,
+      code: 'DRIVER_SELECTED',
     });
 
     return this.toDto(updated);

@@ -45,6 +45,7 @@ class RealtimeService {
   final _chatUpdatedController = StreamController<Map<String, dynamic>>.broadcast();
   final _reconnectedController = StreamController<void>.broadcast();
   final _messageTranslatedController = StreamController<Map<String, dynamic>>.broadcast();
+  final _dealUpdatedController = StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Map<String, dynamic>> get onMessageNew => _messageNewController.stream;
   Stream<Map<String, dynamic>> get onMessageRead => _messageReadController.stream;
@@ -57,6 +58,9 @@ class RealtimeService {
   /// п.3) — сервер шлёт это в личную комнату пользователя. Экран «Мои
   /// чаты» слушает именно это, не [onMessageNew].
   Stream<Map<String, dynamic>> get onChatUpdated => _chatUpdatedController.stream;
+  /// Статус сделки сменился (задача 038, п.12) — шлётся в комнату чата
+  /// сделки, собеседник обновляет карточку без перезахода.
+  Stream<Map<String, dynamic>> get onDealUpdated => _dealUpdatedController.stream;
   /// Сокет (пере)подключился — после первого раза это сигнал «могли
   /// пропустить сообщения, догоните рефетчем».
   Stream<void> get onReconnected => _reconnectedController.stream;
@@ -97,6 +101,7 @@ class RealtimeService {
     socket.on('typing', (data) => _typingController.add(Map<String, dynamic>.from(data as Map)));
     socket.on('chat:updated', (data) => _chatUpdatedController.add(Map<String, dynamic>.from(data as Map)));
     socket.on('message:translated', (data) => _messageTranslatedController.add(Map<String, dynamic>.from(data as Map)));
+    socket.on('deal:updated', (data) => _dealUpdatedController.add(Map<String, dynamic>.from(data as Map)));
     _socket = socket;
   }
 

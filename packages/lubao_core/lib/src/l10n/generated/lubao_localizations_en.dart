@@ -938,6 +938,17 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
       'The logist selected you for this haul';
 
   @override
+  String get chatSystemDealConfirmed => 'The driver confirmed the haul';
+
+  @override
+  String chatSystemResponseWithdrawn(String name) {
+    return '$name withdrew the response';
+  }
+
+  @override
+  String get chatSystemCargoOffered => 'The logist offered a cargo';
+
+  @override
   String get chatQuickReplyAtPlace => 'I\'m on site';
 
   @override

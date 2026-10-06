@@ -97,6 +97,9 @@ class ChatMessage {
     this.translationStatus = ChatMessageTranslationStatus.skipped,
     required this.isRead,
     required this.createdAt,
+    this.isSystem = false,
+    this.systemCode,
+    this.systemParams = const {},
   });
 
   final String id;
@@ -110,6 +113,14 @@ class ChatMessage {
   final bool isRead;
   final DateTime createdAt;
 
+  /// Системное сообщение (задача 038, п.11) — «водитель готов взять»,
+  /// «выбран водитель» и т.п.: показывается по центру нейтральной плашкой,
+  /// текст строится на клиенте из ARB по systemCode+systemParams на языке
+  /// читателя; originalText — лишь русский фолбэк для неизвестных кодов.
+  final bool isSystem;
+  final String? systemCode;
+  final Map<String, String> systemParams;
+
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
         id: json['id'] as String,
         chatId: json['chatId'] as String,
@@ -121,6 +132,9 @@ class ChatMessage {
         translationStatus: _translationStatusFromJson(json['translationStatus'] as String?),
         isRead: json['isRead'] as bool? ?? false,
         createdAt: DateTime.parse(json['createdAt'] as String),
+        isSystem: json['kind'] == 'SYSTEM',
+        systemCode: json['systemCode'] as String?,
+        systemParams: _systemParamsFromJson(json['systemParams']),
       );
 
   /// `message:new` с сокета не содержит `isMine` (сервер шлёт одно и то же
@@ -136,7 +150,13 @@ class ChatMessage {
         translationStatus: _translationStatusFromJson(json['translationStatus'] as String?),
         isRead: json['isRead'] as bool? ?? false,
         createdAt: DateTime.parse(json['createdAt'] as String),
+        isSystem: json['kind'] == 'SYSTEM',
+        systemCode: json['systemCode'] as String?,
+        systemParams: _systemParamsFromJson(json['systemParams']),
       );
+
+  static Map<String, String> _systemParamsFromJson(Object? raw) =>
+      raw is Map ? raw.map((k, v) => MapEntry(k.toString(), v.toString())) : const {};
 
   String displayText(String languageCode) {
     if (languageCode == originalLang) return originalText;

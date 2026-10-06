@@ -1,6 +1,8 @@
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ResponsesService } from './responses.service';
 
+const FAKE_CHAT_SYSTEM = { post: jest.fn(), postToChat: jest.fn() };
+
 function txMock() {
   return {
     response: { updateMany: jest.fn(), update: jest.fn(), create: jest.fn() },
@@ -21,7 +23,7 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
       response: { findUnique: jest.fn().mockResolvedValue(null) },
       cargo: { findUnique: jest.fn().mockResolvedValue(null) },
     };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
     await expect(service.createForCargo('cargo1', 'd1', 'hi')).rejects.toThrow(NotFoundException);
   });
 
@@ -34,7 +36,7 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
       cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', publishedByUserId: 'logist-1' }) },
     };
     const notifications = { notify: jest.fn() };
-    const service = new ResponsesService(prisma, notifications as any);
+    const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
 
     await service.createForCargo('cargo1', 'd1', 'hi');
 
@@ -55,7 +57,7 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
       companyMember: { findFirst: jest.fn().mockResolvedValue({ userId: 'owner-1' }) },
     };
     const notifications = { notify: jest.fn() };
-    const service = new ResponsesService(prisma, notifications as any);
+    const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
 
     await service.createForCargo('cargo1', 'd1', 'hi');
 
@@ -71,7 +73,7 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
       response: { findUnique: jest.fn().mockResolvedValue({ id: 'existing', status: 'PENDING' }) },
     };
     const notifications = { notify: jest.fn() };
-    const service = new ResponsesService(prisma, notifications as any);
+    const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
 
     await expect(service.createForCargo('cargo1', 'd1', 'hi')).rejects.toThrow(ConflictException);
     expect(notifications.notify).not.toHaveBeenCalled();
@@ -87,7 +89,7 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
       cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', publishedByUserId: 'logist-1' }) },
     };
     const notifications = { notify: jest.fn() };
-    const service = new ResponsesService(prisma, notifications as any);
+    const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
 
     const result = await service.createForCargo('cargo1', 'd1', undefined);
 
@@ -107,7 +109,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
       response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }), update: jest.fn().mockResolvedValue({ driver: {} }) },
     };
     const notifications = { notify: jest.fn() };
-    const service = new ResponsesService(prisma, notifications as any);
+    const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
 
     await service.updateStatus('r1', 'c1', 'REJECTED');
 
@@ -117,13 +119,13 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
 
   it('throws NotFoundException for an unknown response', async () => {
     const prisma: any = { response: { findUnique: jest.fn().mockResolvedValue(null) } };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
     await expect(service.updateStatus('missing', 'c1', 'REJECTED')).rejects.toThrow(NotFoundException);
   });
 
   it('refuses to act on another company\'s cargo', async () => {
     const prisma: any = { response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'other' } }) } };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
     await expect(service.updateStatus('r1', 'c1', 'REJECTED')).rejects.toThrow(ForbiddenException);
   });
 
@@ -136,7 +138,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
       $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
     const notifications = { notify: jest.fn() };
-    const service = new ResponsesService(prisma, notifications as any);
+    const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
 
     await service.updateStatus('r1', 'c1', 'SELECTED');
 
@@ -156,7 +158,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
       response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'REJECTED', cargo: { companyId: 'c1' } }) },
       $transaction: jest.fn(),
     };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
 
     await expect(service.updateStatus('r1', 'c1', 'SELECTED')).rejects.toThrow(ConflictException);
     expect(prisma.$transaction).not.toHaveBeenCalled();
@@ -169,7 +171,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
       response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }) },
       $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
 
     await expect(service.updateStatus('r1', 'c1', 'SELECTED')).rejects.toThrow(ConflictException);
     expect(tx.deal.findFirst).toHaveBeenCalledWith({
@@ -183,7 +185,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
     const prisma: any = {
       response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'SELECTED', cargo: { companyId: 'c1' }, driver: { fullName: 'X' } }), update: jest.fn() },
     };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
     await expect(service.updateStatus('r1', 'c1', 'REJECTED')).rejects.toThrow(ConflictException);
 
     prisma.response.findUnique.mockResolvedValue({ cargoId: 'cargo1', status: 'REJECTED', cargo: { companyId: 'c1' }, driver: { fullName: 'X' } });
@@ -203,7 +205,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
       response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }) },
       $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
 
     await service.updateStatus('r1', 'c1', 'SELECTED');
 
@@ -223,7 +225,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
       response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }) },
       $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
 
     await service.updateStatus('r1', 'c1', 'SELECTED');
 
@@ -237,11 +239,11 @@ describe('ResponsesService.withdraw — «Отозвать» (задача 035)'
   it('cancels a PENDING response belonging to this driver', async () => {
     const prisma: any = {
       response: {
-        findUnique: jest.fn().mockResolvedValue({ id: 'r1', driverId: 'd1', status: 'PENDING', driver: { fullName: 'Ерлан' } }),
-        update: jest.fn().mockResolvedValue({ id: 'r1', driverId: 'd1', status: 'CANCELLED', driver: { fullName: 'Ерлан' } }),
+        findUnique: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', driver: { fullName: 'Ерлан' }, cargo: { companyId: 'c1' } }),
+        update: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'CANCELLED', driver: { fullName: 'Ерлан', userId: 'user-d1' } }),
       },
     };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
 
     const result = await service.withdraw('r1', 'd1');
 
@@ -251,19 +253,19 @@ describe('ResponsesService.withdraw — «Отозвать» (задача 035)'
 
   it('throws NotFoundException for an unknown response', async () => {
     const prisma: any = { response: { findUnique: jest.fn().mockResolvedValue(null) } };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
     await expect(service.withdraw('missing', 'd1')).rejects.toThrow(NotFoundException);
   });
 
   it('refuses to withdraw another driver\'s response', async () => {
     const prisma: any = { response: { findUnique: jest.fn().mockResolvedValue({ id: 'r1', driverId: 'someone-else', status: 'PENDING' }) } };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
     await expect(service.withdraw('r1', 'd1')).rejects.toThrow(ForbiddenException);
   });
 
   it('refuses to withdraw a response that is no longer PENDING (logist already acted on it)', async () => {
     const prisma: any = { response: { findUnique: jest.fn().mockResolvedValue({ id: 'r1', driverId: 'd1', status: 'SELECTED' }) } };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
     await expect(service.withdraw('r1', 'd1')).rejects.toThrow(ConflictException);
   });
 });
@@ -274,7 +276,7 @@ describe('ResponsesService.inviteDriver — attaches the pre-deal chat too (за
       cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', company: { name: 'Acme' } }) },
       response: { findUnique: jest.fn().mockResolvedValue({ status: 'REJECTED' }) },
     };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
     await expect(service.inviteDriver('cargo1', 'd1', 'c1')).rejects.toThrow(ConflictException);
   });
 
@@ -288,7 +290,7 @@ describe('ResponsesService.inviteDriver — attaches the pre-deal chat too (за
       $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
     const notifications = { notify: jest.fn() };
-    const service = new ResponsesService(prisma, notifications as any);
+    const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
 
     await service.inviteDriver('cargo1', 'd1', 'c1');
 
@@ -312,7 +314,7 @@ describe('ResponsesService.inviteDriver — attaches the pre-deal chat too (за
       response: { findUnique: jest.fn().mockResolvedValue({ id: 'r1', status: 'CANCELLED' }) },
       $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
 
     await service.inviteDriver('cargo1', 'd1', 'c1');
 
@@ -330,7 +332,7 @@ describe('ResponsesService.inviteDriver — attaches the pre-deal chat too (за
       response: { findUnique: jest.fn().mockResolvedValue(null) },
       $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
-    const service = new ResponsesService(prisma, { notify: jest.fn() } as any);
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
 
     await expect(service.inviteDriver('cargo1', 'd1', 'c1')).rejects.toThrow(ConflictException);
     expect(tx.deal.create).not.toHaveBeenCalled();

@@ -5,6 +5,7 @@ import { RequestContext } from '../common/request-context';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { ChatSystemMessagesService } from './chat-system-messages.service';
 import { TranslationService } from '../translation/translation.service';
 
 const CHAT_PREVIEW_LENGTH = 80;
@@ -17,6 +18,7 @@ export class ChatsService {
     private readonly realtime: RealtimeGateway,
     private readonly translation: TranslationService,
     private readonly appSettings: AppSettingsService,
+    private readonly chatSystem: ChatSystemMessagesService,
   ) {}
 
   private assertParty(chat: { driverId: string; companyId: string }, ctx: RequestContext) {
@@ -105,6 +107,9 @@ export class ChatsService {
 
     const existing = await this.prisma.chat.findFirst({ where: { driverId: chat.driverId, companyId: chat.companyId, cargoId } });
     const result = existing ?? (await this.prisma.chat.update({ where: { id: chat.id }, data: { cargoId } }));
+    // «Логист предложил груз» — системно (задача 038, п.11/12), водитель с
+    // открытым чатом видит карточку груза сразу.
+    await this.chatSystem.postToChat(result.id, ctx.user.id, 'CARGO_OFFERED');
     return this.toThreadDto(result, ctx);
   }
 
@@ -230,6 +235,9 @@ export class ChatsService {
       chatId: m.chatId,
       senderUserId: m.senderUserId,
       isMine: m.senderUserId === ctx.user.id,
+      kind: m.kind,
+      systemCode: m.systemCode,
+      systemParams: m.systemParams,
       originalText: m.originalText,
       originalLang: m.originalLang,
       translations: m.translations,
@@ -302,6 +310,9 @@ export class ChatsService {
       id: message.id,
       chatId: message.chatId,
       senderUserId: message.senderUserId,
+      kind: message.kind,
+      systemCode: message.systemCode,
+      systemParams: message.systemParams,
       originalText: message.originalText,
       originalLang: message.originalLang,
       translations: message.translations,
@@ -321,6 +332,9 @@ export class ChatsService {
       chatId: message.chatId,
       senderUserId: message.senderUserId,
       isMine: true,
+      kind: message.kind,
+      systemCode: message.systemCode,
+      systemParams: message.systemParams,
       originalText: message.originalText,
       originalLang: message.originalLang,
       translations: message.translations,
