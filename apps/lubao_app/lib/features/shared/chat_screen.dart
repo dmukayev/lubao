@@ -33,6 +33,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _sending = false;
   bool _sharingLocation = false;
   bool _confirming = false;
+  // Задача 038, п.13 — карточка груза сворачивается при прокрутке истории
+  // вверх (reverse-список: pixels растут от нижнего края).
+  bool _cardCollapsed = false;
 
   StreamSubscription<Map<String, dynamic>>? _messageNewSub;
   StreamSubscription<Map<String, dynamic>>? _messageReadSub;
@@ -322,6 +325,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               deal: deal,
               refData: referenceData,
               isDriver: isDriver,
+              collapsed: _cardCollapsed,
             ),
           Expanded(
             child: messagesAsync.when(
@@ -385,12 +389,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   rows.add(_ConfirmCard(confirming: _confirming, onConfirm: () => _confirm(DealStatus.confirmedByDriver)));
                 }
 
-                return ListView.separated(
-                  reverse: true,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen, vertical: AppSpacing.md),
-                  itemCount: rows.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
-                  itemBuilder: (context, index) => rows[rows.length - 1 - index],
+                return NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    final collapsed = notification.metrics.pixels > 120;
+                    if (collapsed != _cardCollapsed) setState(() => _cardCollapsed = collapsed);
+                    return false;
+                  },
+                  child: ListView.separated(
+                    reverse: true,
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen, vertical: AppSpacing.md),
+                    itemCount: rows.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+                    itemBuilder: (context, index) => rows[rows.length - 1 - index],
+                  ),
                 );
               },
             ),
@@ -530,6 +541,7 @@ class _CargoActionBar extends ConsumerStatefulWidget {
     required this.deal,
     required this.refData,
     required this.isDriver,
+    required this.collapsed,
   });
 
   final String chatId;
@@ -537,6 +549,10 @@ class _CargoActionBar extends ConsumerStatefulWidget {
   final Deal? deal;
   final ReferenceData refData;
   final bool isDriver;
+
+  /// Свёрнута при прокрутке истории (038, п.13) — остаётся одна строка
+  /// маршрут+цена+статус, детали и кнопки скрываются.
+  final bool collapsed;
 
   @override
   ConsumerState<_CargoActionBar> createState() => _CargoActionBarState();
@@ -596,6 +612,20 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
       // Системную строку «выбран водитель» постит сервер (038, п.11).
       ref.invalidate(chatMessagesProvider(widget.chatId));
       _reload();
+    } catch (e) {
+      _showError(e);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Следующий статус сделки из карточки чата (038, п.13) — тот же
+  /// advanceStatus, что в карточке сделки, без дублирующей логики.
+  Future<void> _advanceDeal(String dealId, DealStatus next) async {
+    setState(() => _busy = true);
+    try {
+      await ref.read(dealRepositoryProvider).advanceStatus(dealId, next);
+      ref.invalidate(dealByIdProvider(dealId));
     } catch (e) {
       _showError(e);
     } finally {
@@ -666,12 +696,25 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
     final deal = widget.deal;
     final (statusLabel, statusColor) = deal != null ? dealStatusPresentation(t, deal.status) : cargoStatusPresentation(t, cargo.status);
 
-    // Как только сделка есть, прогресс (загружен/в пути/доставлено) и его
-    // следующий шаг — зона карточки сделки/`_ConfirmCard`, здесь только
-    // статус-бейдж; дублировать всю карточку сделки в чате — отдельная,
-    // более крупная задача, не в рамках этого захода.
     Widget? actionRow;
-    if (deal == null) {
+    if (deal != null) {
+      // Задача 038, п.13 — кнопки следующих статусов прямо в карточке
+      // чата: водитель двигает «Загружен»/«В пути»/«Доставлено» не выходя
+      // из переписки (подтверждение — отдельная _ConfirmCard в ленте).
+      final next = deal.nextStatus;
+      if (widget.isDriver && next != null && next != DealStatus.confirmedByDriver) {
+        actionRow = PrimaryButton(
+          label: switch (next) {
+            DealStatus.loaded => t.dealMarkLoaded,
+            DealStatus.inTransit => t.dealMarkInTransit,
+            DealStatus.delivered => t.dealMarkDelivered,
+            _ => t.commonNext,
+          },
+          loading: _busy,
+          onPressed: () => _advanceDeal(deal.id, next),
+        );
+      }
+    } else {
       final responseStatus = thread.cargoResponseStatus;
       if (widget.isDriver) {
         if (responseStatus == 'PENDING') {
@@ -710,37 +753,68 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
       }
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen, vertical: AppSpacing.sm),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.divider)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    // Задача 038, п.13 — детали: кузов/вес/объём + пересчёт цены в тенге.
+    final bodyType = widget.refData.bodyTypeById(cargo.bodyTypeId);
+    final detailParts = <String>[
+      bodyType.name.forLanguageCode(locale),
+      if (cargo.weightKg != null) '${(cargo.weightKg! / 1000).toStringAsFixed(0)} ${t.unitTon}',
+      if (cargo.volumeM3 != null) '${cargo.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+    ];
+    final kztLabel = formatKztConversion(widget.refData.convertToKzt(cargo.price, cargo.currency));
+    if (kztLabel != null) detailParts.add(kztLabel);
+
+    return Material(
+      color: AppColors.surface,
+      child: InkWell(
+        // Тап по карточке — к самой карточке груза (038, п.13): водителю —
+        // его экран груза, логисту — свои отклики по грузу.
+        onTap: () => widget.isDriver
+            ? context.push('/driver/cargo/${cargo.id}')
+            : context.push('/company/cargos/${cargo.id}/responses'),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen, vertical: AppSpacing.sm),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: AppColors.divider)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(LucideIcons.package, size: 18, color: AppColors.textSecondary),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  '${point.name.forLanguageCode(locale)} → $destinationLabel · ${formatMoney(cargo.price, cargo.currency)}',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.text),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Row(
+                children: [
+                  const Icon(LucideIcons.package, size: 18, color: AppColors.textSecondary),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      '${point.name.forLanguageCode(locale)} → $destinationLabel · ${formatMoney(cargo.price, cargo.currency)}',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.text),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  StatusBadge(label: statusLabel, color: statusColor),
+                ],
               ),
-              const SizedBox(width: AppSpacing.sm),
-              StatusBadge(label: statusLabel, color: statusColor),
+              // Свёрнута при прокрутке (038, п.13) — только строка выше.
+              if (!widget.collapsed) ...[
+                if (detailParts.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    detailParts.join(' · '),
+                    style: AppTextStyles.caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                if (actionRow != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  actionRow,
+                ],
+              ],
             ],
           ),
-          if (actionRow != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            actionRow,
-          ],
-        ],
+        ),
       ),
     );
   }
