@@ -81,6 +81,11 @@ describe('extractFields — задача 031, этап D, п.20 (фикстур�
   });
 
   describe('VEHICLE_PASSPORT', () => {
+    it('чинит «O» вместо нуля в цифровых позициях госномера (OCR: «123АВСО2»)', () => {
+      const fields = extractFields('VEHICLE_PASSPORT', ['Plate 123\u0410\u0412\u0421\u041e2']);
+      expect(fields.plateNumber.value).toBe('123ABC02');
+    });
+
     it('extracts plate, vin and brand', () => {
       const fields = run('vehicle_passport_valid.json');
       expect(fields.plateNumber.value).toBe('123ABC02');

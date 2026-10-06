@@ -184,6 +184,8 @@ fi
 ADMIN_WEB="$RESULTS/admin-web"
 if [[ -z "${E2E_SKIP_ADMIN_UI:-}" && -z "${E2E_SKIP_ADMIN_BUILD:-}" ]]; then
   echo "== сборка админки (web, семантика включена) =="
+  # Только в чистый каталог: поверх старой сборки Flutter теряет часть assets.
+  rm -rf "$ADMIN_WEB"
   if ! RWT_DIR=apps/lubao_admin run_with_timeout 900 "$RESULTS/admin-build.log" \
         flutter build web --release --no-web-resources-cdn --dart-define=E2E=true --dart-define=API_BASE_URL="http://localhost:${E2E_PORT}" \
         --output "$ADMIN_WEB"; then

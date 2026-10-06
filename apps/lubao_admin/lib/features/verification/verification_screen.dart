@@ -15,7 +15,11 @@ import '../shared/responsive.dart';
 /// Совпадает с REQUIRED_DRIVER_DOC_TYPES / REQUIRED_COMPANY_DOC_TYPES на
 /// бэкенде (`backend/src/drivers/drivers.service.ts`, `admin.service.ts`) —
 /// от кого требуем полный комплект, прежде чем включать «Подтвердить».
-const _requiredDriverDocTypes = ['SELFIE', 'VEHICLE_PASSPORT', 'TRAILER_PASSPORT', 'DRIVER_LICENSE'];
+// Личность водителя — селфи и права (решение 2026-10-05); техпаспорта
+// принадлежат машинам и одобряются отдельно (задача 034: раньше сюда ещё
+// входили VEHICLE_PASSPORT/TRAILER_PASSPORT, и новичка без машины в очереди
+// нельзя было подтвердить).
+const _requiredDriverDocTypes = ['SELFIE', 'DRIVER_LICENSE'];
 const _requiredCompanyDocTypes = ['COMPANY_REGISTRATION'];
 
 /// Проверка целиком — очередь по субъектам (не по документам), сверка
@@ -44,8 +48,8 @@ class VerificationScreen extends ConsumerWidget {
         detail: selectedId == null
             ? EmptyState(message: t.adminVerificationNoSelection, icon: LucideIcons.userCheck)
             : type == 'company'
-                ? _CompanyDetailPane(key: ValueKey('company:$selectedId'), id: selectedId)
-                : _DriverDetailPane(key: ValueKey('driver:$selectedId'), id: selectedId),
+            ? _CompanyDetailPane(key: ValueKey('company:$selectedId'), id: selectedId)
+            : _DriverDetailPane(key: ValueKey('driver:$selectedId'), id: selectedId),
       ),
     );
   }
@@ -161,6 +165,7 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
   final _DocDecisions _decisions = {};
   final Map<String, String> _reasons = {};
   final Map<String, bool?> _crossChecks = {};
+
   /// Правки админа к распознанным ИИН/номеру прав (задача 031, п.23) —
   /// уходят только вместе с одобрением DRIVER_LICENSE/IDENTITY, не на
   /// каждый документ, иначе задвоится audit_log «распознано → исправлено».
@@ -182,10 +187,18 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
       ),
       data: (driver) {
         final selfie = driver.documents.where((d) => d.type == 'SELFIE').firstOrNull;
-        final selectedDoc = driver.documents.where((d) => d.id == _selectedDocId).firstOrNull ?? driver.documents.firstOrNull;
-        final allRequiredOk = _requiredDriverDocTypes.every(
-          (type) => driver.documents.any((d) => d.type == type && _effectiveOk(_decisions, d) == true),
+        final selectedDoc =
+            driver.documents.where((d) => d.id == _selectedDocId).firstOrNull ?? driver.documents.firstOrNull;
+        // Уже проверенный водитель (сменил машину) — достаточно одобрить
+        // новые документы, повторно «подтверждать водителя» не нужно.
+        final hasNewApprovals = driver.documents.any(
+          (d) => _decisions[d.id] == true && d.status != VerificationStatus.approved,
         );
+        final allRequiredOk = driver.isVerified
+            ? hasNewApprovals
+            : _requiredDriverDocTypes.every(
+                (type) => driver.documents.any((d) => d.type == type && _effectiveOk(_decisions, d) == true),
+              );
         final anyProblem = driver.documents.any((d) => _effectiveOk(_decisions, d) == false);
         final blacklisted = _anyBlacklisted(ref, driver.documents);
 
@@ -215,13 +228,18 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
                     extra: driver.vehicles.isEmpty
                         ? null
                         : driver.vehicles
-                            .map((v) => [
+                              .map(
+                                (v) => [
                                   // Тип кузова есть только у прицепа — у
                                   // тягача bodyTypeName всегда null.
-                                  if (v.bodyTypeName != null) v.bodyTypeName!.forLanguageCode(Localizations.localeOf(context).languageCode) else if (v.brand != null) v.brand!,
+                                  if (v.bodyTypeName != null)
+                                    v.bodyTypeName!.forLanguageCode(Localizations.localeOf(context).languageCode)
+                                  else if (v.brand != null)
+                                    v.brand!,
                                   if (v.plateNumber != null) v.plateNumber!,
-                                ].join(' · '))
-                            .join(', '),
+                                ].join(' · '),
+                              )
+                              .join(', '),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   if (selectedDoc != null) ...[
@@ -275,18 +293,33 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
   }
 
   Future<void> _confirm(AdminVerificationDriverProfile driver, {bool force = false}) async {
-    final reason = await showReasonDialog(context, title: context.l10n.adminVerifyDialogTitle, confirmLabel: context.l10n.commonDone);
+    final alreadyVerified = driver.isVerified;
+    final reason = alreadyVerified
+        ? ''
+        : await showReasonDialog(
+            context,
+            title: context.l10n.adminVerifyDialogTitle,
+            confirmLabel: context.l10n.commonDone,
+          );
     if (reason == null || !mounted) return;
     setState(() => _submitting = true);
     try {
       final repo = ref.read(adminRepositoryProvider);
-      final toApprove = driver.documents.where((d) => _decisions[d.id] == true && d.status != VerificationStatus.approved);
-      await Future.wait(toApprove.map((d) => repo.reviewDocument(
+      final toApprove = driver.documents.where(
+        (d) => _decisions[d.id] == true && d.status != VerificationStatus.approved,
+      );
+      await Future.wait(
+        toApprove.map(
+          (d) => repo.reviewDocument(
             d.id,
             approve: true,
             confirmedFields: (d.type == 'DRIVER_LICENSE' || d.type == 'IDENTITY') ? _confirmedFields : null,
-          )));
-      await repo.setDriverVerified(driver.id, true, reason: reason, force: force, crossChecks: _crossChecks);
+          ),
+        ),
+      );
+      if (!alreadyVerified) {
+        await repo.setDriverVerified(driver.id, true, reason: reason, force: force, crossChecks: _crossChecks);
+      }
       ref.invalidate(adminVerificationQueueProvider('driver'));
       ref.invalidate(adminVerificationDriverProfileProvider(driver.id));
       ref.read(adminVerificationSelectedIdProvider.notifier).state = null;
@@ -304,12 +337,16 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
     if (note == null || !mounted) return;
     final decisions = driver.documents
         .where((d) => _effectiveOk(_decisions, d) == false)
-        .map((d) => VerificationReworkDecision(documentId: d.id, rejectReason: _reasons[d.id] ?? d.rejectReason ?? note))
+        .map(
+          (d) => VerificationReworkDecision(documentId: d.id, rejectReason: _reasons[d.id] ?? d.rejectReason ?? note),
+        )
         .toList();
     if (decisions.isEmpty) return;
     setState(() => _submitting = true);
     try {
-      await ref.read(adminRepositoryProvider).returnDriverForRework(driver.id, decisions: decisions, note: note, crossChecks: _crossChecks);
+      await ref
+          .read(adminRepositoryProvider)
+          .returnDriverForRework(driver.id, decisions: decisions, note: note, crossChecks: _crossChecks);
       ref.invalidate(adminVerificationQueueProvider('driver'));
       ref.invalidate(adminVerificationDriverProfileProvider(driver.id));
       ref.read(adminVerificationSelectedIdProvider.notifier).state = null;
@@ -348,7 +385,8 @@ class _CompanyDetailPaneState extends ConsumerState<_CompanyDetailPane> {
         onRetry: () => ref.invalidate(adminVerificationCompanyProfileProvider(widget.id)),
       ),
       data: (company) {
-        final selectedDoc = company.documents.where((d) => d.id == _selectedDocId).firstOrNull ?? company.documents.firstOrNull;
+        final selectedDoc =
+            company.documents.where((d) => d.id == _selectedDocId).firstOrNull ?? company.documents.firstOrNull;
         final allRequiredOk = _requiredCompanyDocTypes.every(
           (type) => company.documents.any((d) => d.type == type && _effectiveOk(_decisions, d) == true),
         );
@@ -423,12 +461,18 @@ class _CompanyDetailPaneState extends ConsumerState<_CompanyDetailPane> {
   }
 
   Future<void> _confirm(AdminVerificationCompanyProfile company, {bool force = false}) async {
-    final reason = await showReasonDialog(context, title: context.l10n.adminVerifyDialogTitle, confirmLabel: context.l10n.commonDone);
+    final reason = await showReasonDialog(
+      context,
+      title: context.l10n.adminVerifyDialogTitle,
+      confirmLabel: context.l10n.commonDone,
+    );
     if (reason == null || !mounted) return;
     setState(() => _submitting = true);
     try {
       final repo = ref.read(adminRepositoryProvider);
-      final toApprove = company.documents.where((d) => _decisions[d.id] == true && d.status != VerificationStatus.approved);
+      final toApprove = company.documents.where(
+        (d) => _decisions[d.id] == true && d.status != VerificationStatus.approved,
+      );
       await Future.wait(toApprove.map((d) => repo.reviewDocument(d.id, approve: true)));
       await repo.setCompanyVerified(company.id, true, reason: reason, force: force, crossChecks: _crossChecks);
       ref.invalidate(adminVerificationQueueProvider('company'));
@@ -448,12 +492,16 @@ class _CompanyDetailPaneState extends ConsumerState<_CompanyDetailPane> {
     if (note == null || !mounted) return;
     final decisions = company.documents
         .where((d) => _effectiveOk(_decisions, d) == false)
-        .map((d) => VerificationReworkDecision(documentId: d.id, rejectReason: _reasons[d.id] ?? d.rejectReason ?? note))
+        .map(
+          (d) => VerificationReworkDecision(documentId: d.id, rejectReason: _reasons[d.id] ?? d.rejectReason ?? note),
+        )
         .toList();
     if (decisions.isEmpty) return;
     setState(() => _submitting = true);
     try {
-      await ref.read(adminRepositoryProvider).returnCompanyForRework(company.id, decisions: decisions, note: note, crossChecks: _crossChecks);
+      await ref
+          .read(adminRepositoryProvider)
+          .returnCompanyForRework(company.id, decisions: decisions, note: note, crossChecks: _crossChecks);
       ref.invalidate(adminVerificationQueueProvider('company'));
       ref.invalidate(adminVerificationCompanyProfileProvider(company.id));
       ref.read(adminVerificationSelectedIdProvider.notifier).state = null;
@@ -482,7 +530,9 @@ class _Header extends StatelessWidget {
         Expanded(
           child: Row(
             children: [
-              Flexible(child: Text(title, style: Theme.of(context).textTheme.headlineSmall, overflow: TextOverflow.ellipsis)),
+              Flexible(
+                child: Text(title, style: Theme.of(context).textTheme.headlineSmall, overflow: TextOverflow.ellipsis),
+              ),
               const SizedBox(width: 12),
               if (isVerified) StatusBadge(label: t.adminVerified, color: StatusBadge.success),
               if (blacklisted) StatusBadge(label: t.adminVerificationBlacklistedBadge, color: StatusBadge.danger),
@@ -511,7 +561,11 @@ class _CrossCheckCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(t.adminVerificationCrossCheckTitle, style: Theme.of(context).textTheme.titleMedium),
-          if (extra != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(extra!, style: Theme.of(context).textTheme.bodySmall)),
+          if (extra != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(extra!, style: Theme.of(context).textTheme.bodySmall),
+            ),
           const SizedBox(height: 8),
           for (final row in rows)
             Padding(
@@ -546,7 +600,13 @@ class _CrossCheckCard extends StatelessWidget {
 }
 
 class _BigViewer extends StatelessWidget {
-  const _BigViewer({required this.doc, required this.compareUrl, required this.ok, required this.onOk, required this.onProblem});
+  const _BigViewer({
+    required this.doc,
+    required this.compareUrl,
+    required this.ok,
+    required this.onOk,
+    required this.onProblem,
+  });
 
   final AdminCardDocument doc;
   final String? compareUrl;
@@ -565,16 +625,27 @@ class _BigViewer extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text(verificationDocTypeLabel(t, doc.type), style: Theme.of(context).textTheme.titleMedium)),
+              Expanded(
+                child: Text(verificationDocTypeLabel(t, doc.type), style: Theme.of(context).textTheme.titleMedium),
+              ),
               StatusBadge(label: statusLabel, color: statusColor),
               IconButton(
                 icon: const Icon(LucideIcons.maximize2),
                 tooltip: t.adminVerificationCompareWithSelfie,
-                onPressed: () => openDocumentViewer(context, doc.fileUrl, compareUrl: compareUrl, compareLabel: t.adminVerificationCompareWithSelfie),
+                onPressed: () => openDocumentViewer(
+                  context,
+                  doc.fileUrl,
+                  compareUrl: compareUrl,
+                  compareLabel: t.adminVerificationCompareWithSelfie,
+                ),
               ),
             ],
           ),
-          if (doc.rejectReason != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(doc.rejectReason!, style: const TextStyle(color: StatusBadge.danger))),
+          if (doc.rejectReason != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(doc.rejectReason!, style: const TextStyle(color: StatusBadge.danger)),
+            ),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: SizedBox(
@@ -604,7 +675,12 @@ class _BigViewer extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton(
-                  style: ok == false ? OutlinedButton.styleFrom(foregroundColor: StatusBadge.danger, side: const BorderSide(color: StatusBadge.danger)) : null,
+                  style: ok == false
+                      ? OutlinedButton.styleFrom(
+                          foregroundColor: StatusBadge.danger,
+                          side: const BorderSide(color: StatusBadge.danger),
+                        )
+                      : null,
                   onPressed: onProblem,
                   child: Text(t.adminReject),
                 ),
@@ -624,26 +700,31 @@ class _BigViewer extends StatelessWidget {
 const _editableRecognitionFields = {'iin', 'licenseNumber'};
 
 String _recognitionFieldLabel(LubaoLocalizations t, String key) => switch (key) {
-      'fullName' => t.adminRecognitionFieldFullName,
-      'iin' => t.adminRecognitionFieldIin,
-      'licenseNumber' => t.adminRecognitionFieldLicenseNumber,
-      'expiryDate' => t.adminRecognitionFieldExpiryDate,
-      'plateNumber' => t.adminRecognitionFieldPlateNumber,
-      'vin' => t.adminRecognitionFieldVin,
-      'brand' => t.adminRecognitionFieldBrand,
-      'capacityTons' => t.adminRecognitionFieldCapacityTons,
-      'companyName' => t.adminRecognitionFieldCompanyName,
-      'bin' => t.adminRecognitionFieldBin,
-      'uscc' => t.adminRecognitionFieldUscc,
-      _ => key,
-    };
+  'fullName' => t.adminRecognitionFieldFullName,
+  'iin' => t.adminRecognitionFieldIin,
+  'licenseNumber' => t.adminRecognitionFieldLicenseNumber,
+  'expiryDate' => t.adminRecognitionFieldExpiryDate,
+  'plateNumber' => t.adminRecognitionFieldPlateNumber,
+  'vin' => t.adminRecognitionFieldVin,
+  'brand' => t.adminRecognitionFieldBrand,
+  'capacityTons' => t.adminRecognitionFieldCapacityTons,
+  'companyName' => t.adminRecognitionFieldCompanyName,
+  'bin' => t.adminRecognitionFieldBin,
+  'uscc' => t.adminRecognitionFieldUscc,
+  _ => key,
+};
 
 /// Блок «Распознано» (задача 031, п.22, макет 25) — поля, извлечённые OCR
 /// из текущего документа, со статусом по каждому и итогом по чёрному
 /// списку внизу. Подгружается отдельным запросом на документ (не часть
 /// общего профиля — см. комментарий у [AdminRepository.documentRecognition]).
 class _RecognitionPanel extends ConsumerWidget {
-  const _RecognitionPanel({super.key, required this.documentId, required this.confirmedValues, required this.onFieldEdited});
+  const _RecognitionPanel({
+    super.key,
+    required this.documentId,
+    required this.confirmedValues,
+    required this.onFieldEdited,
+  });
 
   final String documentId;
   final Map<String, String> confirmedValues;
@@ -719,12 +800,20 @@ class _RecognitionPanel extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: StatusBadge.danger.withAlpha(20), borderRadius: BorderRadius.circular(8)),
+                    decoration: BoxDecoration(
+                      color: StatusBadge.danger.withAlpha(20),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     child: Row(
                       children: [
                         const Icon(LucideIcons.shieldAlert, color: StatusBadge.danger, size: 18),
                         const SizedBox(width: 8),
-                        Expanded(child: Text(t.adminRecognitionBlacklistBanner, style: const TextStyle(color: StatusBadge.danger))),
+                        Expanded(
+                          child: Text(
+                            t.adminRecognitionBlacklistBanner,
+                            style: const TextStyle(color: StatusBadge.danger),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -778,7 +867,9 @@ class _RecognitionFieldRow extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text(label, style: Theme.of(context).textTheme.bodySmall, overflow: TextOverflow.ellipsis)),
+              Expanded(
+                child: Text(label, style: Theme.of(context).textTheme.bodySmall, overflow: TextOverflow.ellipsis),
+              ),
               const SizedBox(width: 8),
               StatusBadge(label: badgeLabel, color: badgeColor),
             ],
@@ -789,7 +880,8 @@ class _RecognitionFieldRow extends StatelessWidget {
             child: Row(
               children: [
                 Flexible(child: Text(displayValue, overflow: TextOverflow.ellipsis)),
-                if (editable) const Padding(padding: EdgeInsets.only(left: 4), child: Icon(LucideIcons.pencil, size: 14)),
+                if (editable)
+                  const Padding(padding: EdgeInsets.only(left: 4), child: Icon(LucideIcons.pencil, size: 14)),
               ],
             ),
           ),
@@ -824,7 +916,12 @@ class _RecognitionFieldRow extends StatelessWidget {
 }
 
 class _ThumbnailStrip extends StatelessWidget {
-  const _ThumbnailStrip({required this.documents, required this.selectedId, required this.decisions, required this.onSelect});
+  const _ThumbnailStrip({
+    required this.documents,
+    required this.selectedId,
+    required this.decisions,
+    required this.onSelect,
+  });
 
   final List<AdminCardDocument> documents;
   final String? selectedId;
@@ -842,31 +939,47 @@ class _ThumbnailStrip extends StatelessWidget {
         itemBuilder: (context, index) {
           final doc = documents[index];
           final ok = _effectiveOk(decisions, doc);
-          final dotColor = ok == true ? StatusBadge.success : ok == false ? StatusBadge.danger : StatusBadge.warning;
-          return GestureDetector(
-            onTap: () => onSelect(doc.id),
-            child: Container(
-              width: 72,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: doc.id == selectedId ? Theme.of(context).colorScheme.primary : Colors.transparent, width: 2),
-              ),
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: SizedBox(width: 72, height: 72, child: AdminDocumentImage(url: doc.fileUrl)),
+          final dotColor = ok == true
+              ? StatusBadge.success
+              : ok == false
+              ? StatusBadge.danger
+              : StatusBadge.warning;
+          return Semantics(
+            button: true,
+            selected: doc.id == selectedId,
+            label: verificationDocTypeLabel(context.l10n, doc.type),
+            child: GestureDetector(
+              onTap: () => onSelect(doc.id),
+              child: Container(
+                width: 72,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: doc.id == selectedId ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                    width: 2,
                   ),
-                  Positioned(
-                    right: 4,
-                    top: 4,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
+                ),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: SizedBox(width: 72, height: 72, child: AdminDocumentImage(url: doc.fileUrl)),
                     ),
-                  ),
-                ],
+                    Positioned(
+                      right: 4,
+                      top: 4,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: dotColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -915,9 +1028,16 @@ class _ActionBar extends StatelessWidget {
             if (blacklisted)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Text(t.adminRecognitionBlacklistBanner, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: StatusBadge.danger)),
+                child: Text(
+                  t.adminRecognitionBlacklistBanner,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: StatusBadge.danger),
+                ),
               ),
-            if (hint != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(hint!, style: Theme.of(context).textTheme.bodySmall)),
+            if (hint != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(hint!, style: Theme.of(context).textTheme.bodySmall),
+              ),
             Row(
               children: [
                 Expanded(
@@ -930,7 +1050,9 @@ class _ActionBar extends StatelessWidget {
                 Expanded(
                   child: FilledButton(
                     onPressed: submitting || !confirmEnabled ? null : onConfirm,
-                    child: submitting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Text(confirmLabel),
+                    child: submitting
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : Text(confirmLabel),
                   ),
                 ),
               ],

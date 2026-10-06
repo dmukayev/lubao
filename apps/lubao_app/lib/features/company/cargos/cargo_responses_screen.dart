@@ -83,7 +83,7 @@ class CargoResponsesScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(cargoResponsesProvider(cargoId)),
             child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.screen),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.screen),
               children: [
                 if (cargo != null && referenceData.valueOrNull != null)
                   _CargoSummaryCard(cargo: cargo, refData: referenceData.valueOrNull!, locale: locale),
@@ -239,6 +239,7 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
             children: [
               Expanded(child: Text(response.driverName, style: AppTextStyles.bodyStrong)),
               StatusBadge(label: statusLabel, color: statusColor),
+              const SizedBox(width: AppSpacing.sm),
               IconSquareButton(icon: LucideIcons.messageSquare, loading: _openingChat, onPressed: _chat),
             ],
           ),

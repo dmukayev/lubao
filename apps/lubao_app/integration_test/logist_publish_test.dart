@@ -31,7 +31,7 @@ void main() {
       await tester.tap(find.byKey(const Key('companyLoginSubmitButton')));
       await waitFor(tester, find.text(t.navDrivers));
       await goTab(tester, t.profileTitle);
-      await waitFor(tester, find.text(t.profileLogout).first);
+      await waitFor(tester, find.text('Urumqi Test Logistics'));
       expect(find.byKey(const Key('companyNotVerifiedBanner')), findsNothing, reason: 'после одобрения баннера быть не должно');
       expectInsideSafeZone(tester);
     });

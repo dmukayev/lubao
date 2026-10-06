@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lubao_app/app.dart';
+import 'package:lubao_app/providers/api_providers.dart';
 import 'package:lubao_app/router/app_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 
@@ -52,9 +53,11 @@ void main() {
       await loginDriver(tester, '7010000002');
       await waitFor(tester, find.byKey(const Key('driverAnnounceArrivalButton')));
     });
-    final logist = await LogistApi.login();
-    final dealIds = await logist.ids('/deals/mine');
-    final chatIds = await logist.ids('/chats');
+    Future<(List<String>, List<String>)> myIds() async => (
+          (await container.read(dealRepositoryProvider).mine()).map((d) => d.id).toList(),
+          (await container.read(chatRepositoryProvider).myChats()).map((c) => c.thread.id).toList(),
+        );
+    var (dealIds, chatIds) = await myIds();
     await visit('driver-feed', '/driver/feed', expectFinder: find.byKey(const Key('driverAnnounceArrivalButton')));
     await visit('driver-chats', '/driver/chats');
     await visit('driver-deals', '/driver/deals');
@@ -70,7 +73,7 @@ void main() {
     if (chatIds.isNotEmpty) await visit('chat', '/chat/${chatIds.first}', expectFinder: find.byKey(const Key('chatMessageInput')));
     await run.step(tester, 'выход-водителя', () async {
       router.go('/driver/profile');
-      await tester.pump(const Duration(seconds: 1));
+      await waitFor(tester, find.byType(NavigationBar));
       await logoutViaProfile(tester, driver: true);
     });
 
@@ -78,6 +81,7 @@ void main() {
     await run.step(tester, 'вход-логиста', () async {
       await loginLogist(tester);
       await waitFor(tester, find.text(tester.element(find.byType(Scaffold).first).l10n.navDrivers));
+      (dealIds, chatIds) = await myIds();
     });
     await visit('company-cargos', '/company/cargos');
     await visit('company-drivers', '/company/drivers');

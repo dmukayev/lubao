@@ -261,7 +261,17 @@ export class DriversService {
     if (!doc || doc.driverId !== driverId) throw new NotFoundException('Document not found');
     if (!doc.recognition) return { status: 'PENDING' as const, fields: {} };
 
-    return { status: doc.recognition.status, fields: doc.recognition.fields ?? {} };
+    // ИИН/номер прав хранятся как valueMasked + valueEncrypted (задача 032):
+    // водителю — маска, шифртекст наружу не отдаём (и клиенту нужен `value`).
+    const raw = (doc.recognition.fields ?? {}) as Record<
+      string,
+      { value?: string; valueMasked?: string; confidence: number; checksumOk: boolean | null; needsReview: boolean }
+    >;
+    const fields: Record<string, unknown> = {};
+    for (const [key, f] of Object.entries(raw)) {
+      fields[key] = { value: f.value ?? f.valueMasked ?? '', confidence: f.confidence, checksumOk: f.checksumOk, needsReview: f.needsReview };
+    }
+    return { status: doc.recognition.status, fields };
   }
 
   private docToDto(doc: {

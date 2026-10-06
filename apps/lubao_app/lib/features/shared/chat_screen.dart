@@ -65,7 +65,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (data['chatId'] == widget.chatId) {
         ref.invalidate(chatMessagesProvider(widget.chatId));
         ref.invalidate(chatThreadProvider(widget.chatId));
-        unawaited(ref.read(chatRepositoryProvider).markRead(widget.chatId));
+        _markRead();
       }
     });
     _messageReadSub = realtime.onMessageRead.listen((data) {
@@ -101,7 +101,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (!realtime.isConnected) ref.invalidate(chatMessagesProvider(widget.chatId));
     });
-    unawaited(ref.read(chatRepositoryProvider).markRead(widget.chatId));
+    _markRead();
+  }
+
+  /// Фоновая отметка «прочитано»: сбой (нет сети, чужой чат) не должен
+  /// превращаться в необработанное исключение.
+  void _markRead() {
+    ref.read(chatRepositoryProvider).markRead(widget.chatId).catchError((Object e) {
+      debugPrint('ChatScreen: markRead failed: $e');
+    });
   }
 
   @override

@@ -23,7 +23,7 @@ void main() {
 
     await run.step(tester, 'вход-водителя', () async {
       await loginDriver(tester, '7010000001');
-      await waitFor(tester, find.byKey(const Key('driverAnnounceArrivalButton')));
+      await waitFor(tester, find.byType(NavigationBar));
     });
 
     await run.step(tester, 'гараж', () async {

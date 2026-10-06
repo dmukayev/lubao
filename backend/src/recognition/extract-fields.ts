@@ -79,9 +79,18 @@ function extractVin(lines: string[]): RecognizedField | null {
 }
 
 // Сначала «стандартный» формат (3 цифры) — иначе его хвост сам случайно
-// подойдёт под формат прицепа (2 цифры + 3 буквы + 2 региона).
-const PLATE_STANDARD_RE = /\d{3}[A-Z]{3}\d{2}/;
-const PLATE_TRAILER_RE = /\d{2}[A-Z]{3}\d{2}/;
+// подойдёт под формат прицепа (2 цифры + 3 буквы + 2 региона). В позициях
+// цифр допускаем «O» (OCR путает нуль с буквой): после матча чиним на «0».
+const PLATE_STANDARD_RE = /[\dO]{3}[A-Z]{3}[\dO]{2}/;
+const PLATE_TRAILER_RE = /[\dO]{2}[A-Z]{3}[\dO]{2}/;
+
+function fixPlateDigits(plate: string): string {
+  const letters = plate.length === 8 ? [3, 6] : [2, 5];
+  return plate
+    .split('')
+    .map((ch, i) => (i < letters[0] || i >= letters[1] ? (ch === 'O' ? '0' : ch) : ch))
+    .join('');
+}
 
 function extractPlate(lines: string[]): RecognizedField | null {
   for (const rawLine of lines) {
@@ -89,8 +98,9 @@ function extractPlate(lines: string[]): RecognizedField | null {
     const compact = transliterateCyrillicLookalikes(rawLine.toUpperCase()).replace(/[\s-]+/g, '');
     const match = compact.match(PLATE_STANDARD_RE) ?? compact.match(PLATE_TRAILER_RE);
     if (!match) continue;
-    const kind = matchesKzPlateFormat(match[0]);
-    if (kind) return field(match[0], 0.9, true);
+    const plate = fixPlateDigits(match[0]);
+    const kind = matchesKzPlateFormat(plate);
+    if (kind) return field(plate, 0.9, true);
   }
   return null;
 }

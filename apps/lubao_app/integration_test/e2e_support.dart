@@ -213,6 +213,7 @@ void expectInsideSafeZone(WidgetTester tester) {
 /// Бросает, если на экране красная полоса переполнения (RenderFlex).
 void expectNoOverflow(WidgetTester tester) {
   final error = tester.takeException();
+  if (error is FlutterError) debugPrint('E2E: ${error.toStringDeep()}');
   expect(error, isNull, reason: 'исключение/переполнение на экране: $error');
 }
 
@@ -236,6 +237,13 @@ class E2eRun {
     final id = '${_n.toString().padLeft(2, '0')}-$name';
     try {
       await body();
+      // Любое необработанное исключение кадра (переполнение и т. п.) за шаг —
+      // это падение именно этого шага.
+      final pending = tester.takeException();
+      if (pending != null) {
+        debugPrint('E2E: исключение в шаге $id: ${pending is FlutterError ? pending.toStringDeep() : pending}');
+        fail('исключение/переполнение на экране в шаге $id: ${pending is FlutterError ? pending.message : pending}');
+      }
     } catch (error) {
       final shot = await _shoot(tester, '$id-FAIL');
       _record(id, ok: false, shot: shot, error: error.toString().split('\n').take(3).join(' '));

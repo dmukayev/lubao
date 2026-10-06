@@ -171,6 +171,27 @@ describe('DriversService#documentRecognition — блок «Распознано
     expect(result).toEqual({ status: 'DONE', fields: { iin: { value: '850712345611', confidence: 0.95, checksumOk: true, needsReview: false } } });
   });
 
+  it('отдаёт маску вместо valueMasked/valueEncrypted — шифртекст водителю не нужен и клиенту нужен `value`', async () => {
+    const prisma: any = {
+      verificationDocument: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'doc1',
+          driverId: 'd1',
+          recognition: {
+            status: 'DONE',
+            fields: { iin: { valueMasked: '9503••••2008', valueEncrypted: 'SECRET', confidence: 0.95, checksumOk: true, needsReview: false } },
+          },
+        }),
+      },
+    };
+    const service = new DriversService(prisma);
+
+    const result: any = await service.documentRecognition('d1', 'doc1');
+
+    expect(result.fields.iin).toEqual({ value: '9503••••2008', confidence: 0.95, checksumOk: true, needsReview: false });
+    expect(JSON.stringify(result)).not.toContain('SECRET');
+  });
+
   it('returns PENDING with empty fields when no DocumentRecognition row exists yet', async () => {
     const prisma: any = {
       verificationDocument: { findUnique: jest.fn().mockResolvedValue({ id: 'doc1', driverId: 'd1', recognition: null }) },

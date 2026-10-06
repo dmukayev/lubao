@@ -91,12 +91,15 @@ void main() {
           await Future<void>.delayed(const Duration(seconds: 2));
         }
         expect(recognition?.status, 'DONE', reason: 'OCR не отработал');
-        expect(recognition!.fields['iin']?.value, iin);
+        // Водителю — маска (ИИН целиком в ответ не отдаётся).
+        expect(recognition!.fields['iin']?.value, '${iin.substring(0, 4)}••••${iin.substring(8)}');
       });
     }
 
     await register('A', '7010000006', 'Сергей Новиков', e2eIinDriverA, 'AB1234567');
     await run.step(tester, 'выход-A', () async {
+      await tester.tap(find.byType(BackButton).first);
+      await waitFor(tester, find.byType(NavigationBar));
       await logoutViaProfile(tester, driver: true);
     });
     await register('B', '7010000007', 'Руслан Дублёров', e2eIinBlockedDriver, 'CD7654321');
