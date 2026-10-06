@@ -31,6 +31,7 @@ import '../features/shared/my_chats_screen.dart';
 import '../features/shared/devices_screen.dart';
 import '../features/shared/notification_settings_screen.dart';
 import '../features/shared/splash_screen.dart';
+import '../features/driver/deals/my_responses_screen.dart';
 
 class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
@@ -144,6 +145,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/driver/garage',
         builder: (context, state) => const GarageScreen(),
+      ),
+      GoRoute(
+        path: '/driver/responses',
+        builder: (context, state) => const MyResponsesScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => CompanyShell(child: child),

@@ -805,7 +805,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoVolume => '体积(m³)';
 
   @override
-  String get postCargoWeight => '重量(kg)';
+  String get postCargoWeight => '重量(吨)';
 
   @override
   String get postCargoPhotos => '照片';
@@ -984,6 +984,12 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get cargoStatusInDeal => '交易中';
 
   @override
+  String get myResponsesTitle => '我的意向';
+
+  @override
+  String get myResponsesEmpty => '暂无意向';
+
+  @override
   String get responseStatusInvited => '已邀请';
 
   @override
@@ -1026,6 +1032,15 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get chatQuickReplyLate1h => '将晚到1小时';
+
+  @override
+  String get chatQuickReplyCargoReady => '货物已备好，可以装车';
+
+  @override
+  String get chatQuickReplyWhenArrive => '您什么时候能到？';
+
+  @override
+  String get chatQuickReplySendLocation => '请发一下您的位置';
 
   @override
   String get wholeCountrySuffix => '整个国家';

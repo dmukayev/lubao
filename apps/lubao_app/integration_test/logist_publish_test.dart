@@ -50,7 +50,7 @@ void main() {
       await tester.tap(find.text('Тентованный').last);
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const Key('postCargoVolume')), '90');
-      await tester.enterText(find.byKey(const Key('postCargoWeight')), '12000');
+      await tester.enterText(find.byKey(const Key('postCargoWeight')), '12');
       await tester.enterText(find.byKey(const Key('postCargoPrice')), '1500');
       await tester.pumpAndSettle();
       expectInsideSafeZone(tester);

@@ -57,6 +57,20 @@ void main() {
         await tester.tap(find.byKey(const Key('driverSetupNext')));
         await waitFor(tester, find.byType(NavigationBar));
       });
+      if (tag == 'A') {
+        // Новичок без проверки откликается (041, п.1): гейт — только на «Подтверждаю».
+        await run.step(tester, '$tag-новичок-откликается-без-проверки', () async {
+          final card = find.byKey(const Key('feedCargoCard-$e2eCargo5'));
+          await reveal(tester, card);
+          await tester.tap(card);
+          await waitFor(tester, find.byKey(const Key('cargoDetailRespondButton')));
+          expect(find.byKey(const Key('cargoVerifyHint')), findsOneWidget, reason: 'мягкая подсказка про проверку');
+          await tester.tap(find.byKey(const Key('cargoDetailRespondButton')));
+          await waitFor(tester, find.text(t.cargoAlreadyResponded));
+          await tester.tap(find.byType(BackButton).first);
+          await tester.pumpAndSettle();
+        });
+      }
       await run.step(tester, '$tag-селфи-и-права', () async {
         await goTab(tester, t.profileTitle);
         final verify = find.byKey(const Key('driverProfileVerifyButton'));

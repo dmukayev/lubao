@@ -52,6 +52,16 @@ void main() {
       expectInsideSafeZone(tester);
     });
 
+    // Груз с активной сделкой исчезает из ленты (041, п.2).
+    await run.step(tester, 'груз-со-сделкой-исчез-из-ленты', () async {
+      await goTab(tester, t.navCargos);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('feedCargoCard-$e2eCargo1')), findsNothing);
+      expect(find.byKey(const Key('feedCargoCard-$e2eCargo2')), findsNothing);
+      await goTab(tester, t.navDeals);
+      await waitFor(tester, find.byKey(Key('driverDealCard-$deal1')));
+    });
+
     Future<void> openDeal(String dealId) async {
       final card = find.byKey(Key('driverDealCard-$dealId'));
       await reveal(tester, card);

@@ -310,7 +310,7 @@ class _CargoDetailBody extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
                 if (cargo.weightKg != null)
                   Expanded(
-                    child: _DetailChip(label: t.cargoWeight, value: '${cargo.weightKg} ${t.unitKg}'),
+                    child: _DetailChip(label: t.cargoWeight, value: '${_tons(cargo.weightKg!)} ${t.unitTon}'),
                   ),
                 if (cargo.weightKg != null) const SizedBox(width: AppSpacing.sm),
                 if (cargo.volumeM3 != null)
@@ -515,4 +515,11 @@ class _DetailChip extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 12000 кг → «12», 12500 кг → «12,5» (041, п.9).
+String _tons(double kg) {
+  final tons = kg / 1000;
+  final text = tons == tons.roundToDouble() ? tons.toStringAsFixed(0) : tons.toStringAsFixed(1);
+  return text.replaceAll('.', ',');
 }

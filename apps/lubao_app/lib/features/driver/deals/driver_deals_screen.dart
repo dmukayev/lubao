@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
@@ -17,7 +18,17 @@ class DriverDealsScreen extends ConsumerWidget {
     final referenceData = ref.watch(referenceDataProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(t.dealsTitle)),
+      appBar: AppBar(
+        title: Text(t.dealsTitle),
+        actions: [
+          IconButton(
+            key: const Key('driverMyResponsesButton'),
+            tooltip: t.myResponsesTitle,
+            icon: const Icon(LucideIcons.listChecks),
+            onPressed: () => context.push('/driver/responses'),
+          ),
+        ],
+      ),
       body: deals.when(
         loading: () => const LoadingView(),
         error: (e, st) {

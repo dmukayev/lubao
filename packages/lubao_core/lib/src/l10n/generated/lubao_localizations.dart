@@ -1623,7 +1623,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @postCargoWeight.
   ///
   /// In ru, this message translates to:
-  /// **'Вес, кг'**
+  /// **'Вес, т'**
   String get postCargoWeight;
 
   /// No description provided for @postCargoPhotos.
@@ -1962,6 +1962,18 @@ abstract class LubaoLocalizations {
   /// **'В сделке'**
   String get cargoStatusInDeal;
 
+  /// No description provided for @myResponsesTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мои отклики'**
+  String get myResponsesTitle;
+
+  /// No description provided for @myResponsesEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откликов пока нет'**
+  String get myResponsesEmpty;
+
   /// No description provided for @responseStatusInvited.
   ///
   /// In ru, this message translates to:
@@ -2045,6 +2057,24 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Опаздываю на 1 час'**
   String get chatQuickReplyLate1h;
+
+  /// No description provided for @chatQuickReplyCargoReady.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз готов к погрузке'**
+  String get chatQuickReplyCargoReady;
+
+  /// No description provided for @chatQuickReplyWhenArrive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Когда сможете подъехать?'**
+  String get chatQuickReplyWhenArrive;
+
+  /// No description provided for @chatQuickReplySendLocation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пришлите, пожалуйста, ваше место'**
+  String get chatQuickReplySendLocation;
 
   /// No description provided for @wholeCountrySuffix.
   ///

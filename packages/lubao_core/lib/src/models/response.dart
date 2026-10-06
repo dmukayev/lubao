@@ -74,3 +74,47 @@ class MyCargoResponse {
   factory MyCargoResponse.fromJson(Map<String, dynamic> json) =>
       MyCargoResponse(id: json['id'] as String, status: responseStatusFromJson(json['status'] as String));
 }
+
+
+/// Строка «Моих откликов» (041, п.9): статус отклика + краткая сводка груза.
+class MyResponseEntry {
+  const MyResponseEntry({
+    required this.id,
+    required this.cargoId,
+    required this.status,
+    required this.cargoStatus,
+    required this.destinationCountryId,
+    this.destinationCityId,
+    required this.bodyTypeId,
+    required this.price,
+    required this.currency,
+    required this.readyDate,
+  });
+
+  final String id;
+  final String cargoId;
+  final ResponseStatus status;
+  final CargoStatus cargoStatus;
+  final String destinationCountryId;
+  final String? destinationCityId;
+  final String bodyTypeId;
+  final double price;
+  final Currency currency;
+  final DateTime readyDate;
+
+  factory MyResponseEntry.fromJson(Map<String, dynamic> json) {
+    final cargo = json['cargo'] as Map<String, dynamic>;
+    return MyResponseEntry(
+      id: json['id'] as String,
+      cargoId: json['cargoId'] as String,
+      status: responseStatusFromJson(json['status'] as String),
+      cargoStatus: cargoStatusFromJson(cargo['status'] as String),
+      destinationCountryId: cargo['destinationCountryId'] as String,
+      destinationCityId: cargo['destinationCityId'] as String?,
+      bodyTypeId: cargo['bodyTypeId'] as String,
+      price: (cargo['price'] as num).toDouble(),
+      currency: currencyFromJson(cargo['currency'] as String),
+      readyDate: DateTime.parse(cargo['readyDate'] as String),
+    );
+  }
+}

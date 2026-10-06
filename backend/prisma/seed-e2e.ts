@@ -19,6 +19,7 @@ const E2E_CARGO_ID = '11111111-1111-4111-8111-111111111001';
 const E2E_CARGO_2_ID = '11111111-1111-4111-8111-111111111002';
 const E2E_CARGO_3_ID = '11111111-1111-4111-8111-111111111003';
 const E2E_CARGO_4_ID = '11111111-1111-4111-8111-111111111004';
+const E2E_CARGO_5_ID = '11111111-1111-4111-8111-111111111005';
 
 export const E2E_FIXTURES = {
   // Три водителя: SMS-лимит 1 код/мин на номер — сценарии не должны делить
@@ -48,6 +49,8 @@ export const E2E_FIXTURES = {
   cargo3Id: E2E_CARGO_3_ID,
   /// Груз 4 — только для приглашения логистом из чата (сценарий «цепочка 035»).
   cargo4Id: E2E_CARGO_4_ID,
+  /// Груз 5 — свободный до конца прогона: на него откликается НЕПРОВЕРЕННЫЙ новичок (041, п.1).
+  cargo5Id: E2E_CARGO_5_ID,
 };
 
 function daysFromNow(days: number): Date {
@@ -218,6 +221,7 @@ async function main() {
     { id: E2E_FIXTURES.cargo2Id, weightKg: 8000, price: 800, note: 'E2E — груз 2 (8 т, догруз)' },
     { id: E2E_FIXTURES.cargo3Id, weightKg: 10000, price: 900, note: 'E2E — груз 3 (10 т, не поместится)' },
     { id: E2E_FIXTURES.cargo4Id, weightKg: 5000, price: 700, note: 'E2E — груз 4 (5 т, приглашение из чата)' },
+    { id: E2E_FIXTURES.cargo5Id, weightKg: 3000, price: 600, note: 'E2E — груз 5 (3 т, отклик новичка)' },
   ];
   const cargoIds = cargoDefs.map((c) => c.id);
   await prisma.deal.deleteMany({ where: { cargoId: { in: cargoIds } } });

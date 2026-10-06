@@ -560,3 +560,18 @@ describe('ResponsesService — приглашение с согласием, г�
     expect(chat.post).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVITATION_DECLINED' }));
   });
 });
+
+
+describe('ResponsesService.createForCargo — чёрный список по телефону (задача 041)', () => {
+  it('водитель с заблокированным номером откликаться не может (403 DRIVER_BLACKLISTED), даже без гейта верификации', async () => {
+    const prisma: any = {
+      driver: { findUnique: jest.fn().mockResolvedValue({ user: { phone: '+77010000099' } }) },
+      cargo: { findUnique: jest.fn() },
+      response: { findUnique: jest.fn(), create: jest.fn() },
+    };
+    const identifiers: any = { checkMatches: jest.fn().mockResolvedValue({ blocked: { reason: 'E2E' }, duplicateOwner: null }) };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any, identifiers);
+    await expect(service.createForCargo('cargo1', 'd1')).rejects.toMatchObject({ response: { code: 'DRIVER_BLACKLISTED' } });
+    expect(prisma.response.create).not.toHaveBeenCalled();
+  });
+});

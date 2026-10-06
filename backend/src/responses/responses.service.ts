@@ -1,10 +1,12 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { Driver, Prisma, Response as CargoResponseEntity } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChatSystemMessagesService } from '../chats/chat-system-messages.service';
 import { haulInfoByDriver } from '../deals/haul-summary';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
+import { IdentifiersService } from '../identifiers/identifiers.service';
+import { toDateOnly } from '../common/date-only';
 
 type ResponseWithDriver = CargoResponseEntity & { driver: Driver };
 
@@ -14,6 +16,7 @@ export class ResponsesService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly chatSystem: ChatSystemMessagesService,
+    @Optional() private readonly identifiers?: IdentifiersService,
   ) {}
 
   toDto(response: ResponseWithDriver) {
@@ -26,6 +29,34 @@ export class ResponsesService {
       status: response.status,
       createdAt: response.createdAt,
     };
+  }
+
+  /// «Мои отклики» водителя (041, п.9): все его отклики со статусом и краткой
+  /// сводкой груза — одним списком, чтобы видеть, куда откликался и что с этим.
+  async listMine(driverId: string) {
+    const responses = await this.prisma.response.findMany({
+      where: { driverId },
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        cargo: { select: { id: true, status: true, destinationCountryId: true, destinationCityId: true, bodyTypeId: true, price: true, currency: true, readyDate: true } },
+      },
+    });
+    return responses.map((r) => ({
+      id: r.id,
+      cargoId: r.cargoId,
+      status: r.status,
+      updatedAt: r.updatedAt,
+      cargo: {
+        id: r.cargo.id,
+        status: r.cargo.status,
+        destinationCountryId: r.cargo.destinationCountryId,
+        destinationCityId: r.cargo.destinationCityId,
+        bodyTypeId: r.cargo.bodyTypeId,
+        price: Number(r.cargo.price),
+        currency: r.cargo.currency,
+        readyDate: toDateOnly(r.cargo.readyDate),
+      },
+    }));
   }
 
   async findMine(cargoId: string, driverId: string) {
@@ -88,7 +119,19 @@ export class ResponsesService {
     });
   }
 
+  /// Телефон в чёрном списке (039 п.2 / 041): после снятия гейта верификации
+  /// с «Готов взять» заблокированному по номеру откликаться всё равно нельзя.
+  private async assertNotBlacklisted(driverId: string) {
+    if (!this.identifiers) return;
+    const driver = await this.prisma.driver.findUnique({ where: { id: driverId }, include: { user: { select: { phone: true } } } });
+    const phone = driver?.user.phone;
+    if (!phone) return;
+    const match = await this.identifiers.checkMatches('PHONE', phone, { ownerType: 'DRIVER', ownerId: driverId });
+    if (match.blocked) throw new ForbiddenException({ code: 'DRIVER_BLACKLISTED', message: 'This account is blocked' });
+  }
+
   async createForCargo(cargoId: string, driverId: string, message?: string) {
+    await this.assertNotBlacklisted(driverId);
     const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId } });
     if (!cargo) throw new NotFoundException('Cargo not found');
     // Груз с активной сделкой (IN_DEAL) и закрытый — для откликов закрыт (041, п.2).

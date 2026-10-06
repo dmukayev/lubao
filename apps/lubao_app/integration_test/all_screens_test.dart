@@ -67,6 +67,7 @@ void main() {
     await visit('driver-register', '/driver/register');
     await visit('driver-verification', '/driver/verification');
     await visit('driver-garage', '/driver/garage', expectFinder: find.byKey(const Key('garageAddVehicle')));
+    await visit('driver-responses', '/driver/responses');
     await visit('devices', '/devices');
     await visit('notification-settings', '/notifications/settings');
     if (dealIds.isNotEmpty) await visit('deal-detail', '/deal/${dealIds.first}');

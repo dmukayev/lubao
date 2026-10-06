@@ -827,7 +827,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get postCargoVolume => 'Volume, m³';
 
   @override
-  String get postCargoWeight => 'Weight, kg';
+  String get postCargoWeight => 'Weight, t';
 
   @override
   String get postCargoPhotos => 'Photos';
@@ -1011,6 +1011,12 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get cargoStatusInDeal => 'In a deal';
 
   @override
+  String get myResponsesTitle => 'My responses';
+
+  @override
+  String get myResponsesEmpty => 'No responses yet';
+
+  @override
   String get responseStatusInvited => 'Invited';
 
   @override
@@ -1055,6 +1061,15 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get chatQuickReplyLate1h => 'Running 1 hour late';
+
+  @override
+  String get chatQuickReplyCargoReady => 'The cargo is ready for loading';
+
+  @override
+  String get chatQuickReplyWhenArrive => 'When can you arrive?';
+
+  @override
+  String get chatQuickReplySendLocation => 'Please send your location';
 
   @override
   String get wholeCountrySuffix => 'whole country';

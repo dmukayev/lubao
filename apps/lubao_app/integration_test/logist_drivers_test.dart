@@ -92,14 +92,11 @@ void main() {
       expect(find.text(t.driversAtPointInvite), findsWidgets);
     });
 
-    await run.step(tester, 'пригласить-сделка', () async {
+    // Приглашение с согласием (041, п.3): «Пригласить» создаёт INVITED, не сделку.
+    await run.step(tester, 'пригласить-ждём-согласия', () async {
       await tester.tap(find.byKey(const Key('chatCardActionButton')));
-      // После приглашения кнопка «Пригласить» исчезает: сделка создана.
-      final deadline = DateTime.now().add(const Duration(seconds: 20));
-      while (find.byKey(const Key('chatCardActionButton')).evaluate().isNotEmpty) {
-        if (DateTime.now().isAfter(deadline)) fail('Приглашение не создало сделку за 20 с');
-        await tester.pump(const Duration(milliseconds: 300));
-      }
+      await waitFor(tester, find.byKey(const Key('chatInvitedWaiting')));
+      expect(find.byKey(const Key('chatCardActionButton')), findsNothing, reason: 'сделки нет: «Выбрать» из INVITED недоступно');
       expectNoOverflow(tester);
     });
 
@@ -110,6 +107,51 @@ void main() {
     });
 
     await run.step(tester, 'вход-водителя-D3', () async {
+      await loginDriver(tester, '7010000003');
+      await waitFor(tester, find.byType(NavigationBar));
+    });
+
+    await run.step(tester, 'водитель-видит-приглашение-и-соглашается', () async {
+      await goTab(tester, t.navChats);
+      await waitFor(tester, find.textContaining('E2E Test Logistics'));
+      await tester.tap(find.textContaining('E2E Test Logistics').first);
+      await waitFor(tester, find.byKey(const Key('chatDeclineInvitationButton')));
+      expectInsideSafeZone(tester);
+      await tester.tap(find.byKey(const Key('chatCargoReadyButton')));
+      // «Готов взять» → отклик PENDING: теперь ждёт выбора логиста.
+      await waitFor(tester, find.text(t.chatResponseSentLabel));
+    });
+
+    await run.step(tester, 'выход-водителя', () async {
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+      await logoutViaProfile(tester, driver: true);
+    });
+
+    await run.step(tester, 'логист-выбирает-согласившегося', () async {
+      await loginLogist(tester);
+      await waitFor(tester, find.text(t.navDrivers));
+      await goTab(tester, t.navChats);
+      await waitFor(tester, find.textContaining('Борис'));
+      await tester.tap(find.textContaining('Борис').first);
+      await waitFor(tester, find.byKey(const Key('chatCardActionButton')));
+      expect(find.descendant(of: find.byKey(const Key('chatCardActionButton')), matching: find.text(t.responseSelect)), findsOneWidget);
+      await tester.tap(find.byKey(const Key('chatCardActionButton')));
+      final deadline = DateTime.now().add(const Duration(seconds: 20));
+      while (find.byKey(const Key('chatCardActionButton')).evaluate().isNotEmpty) {
+        if (DateTime.now().isAfter(deadline)) fail('Выбор водителя не создал сделку за 20 с');
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+      expectNoOverflow(tester);
+    });
+
+    await run.step(tester, 'выход-логиста-2', () async {
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+      await logoutViaProfile(tester, driver: false);
+    });
+
+    await run.step(tester, 'вход-водителя-D3-снова', () async {
       await loginDriver(tester, '7010000003');
       await waitFor(tester, find.byType(NavigationBar));
     });

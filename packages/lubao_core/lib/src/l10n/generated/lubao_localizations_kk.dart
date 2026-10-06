@@ -824,7 +824,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get postCargoVolume => 'Көлемі, м³';
 
   @override
-  String get postCargoWeight => 'Салмағы, кг';
+  String get postCargoWeight => 'Салмағы, т';
 
   @override
   String get postCargoPhotos => 'Фотосуреттер';
@@ -1007,6 +1007,12 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get cargoStatusInDeal => 'Мәміледе';
 
   @override
+  String get myResponsesTitle => 'Менің өтінімдерім';
+
+  @override
+  String get myResponsesEmpty => 'Әзірге өтінім жоқ';
+
+  @override
   String get responseStatusInvited => 'Шақырылды';
 
   @override
@@ -1050,6 +1056,15 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get chatQuickReplyLate1h => '1 сағатқа кешігемін';
+
+  @override
+  String get chatQuickReplyCargoReady => 'Жүк тиеуге дайын';
+
+  @override
+  String get chatQuickReplyWhenArrive => 'Қашан жете аласыз?';
+
+  @override
+  String get chatQuickReplySendLocation => 'Орныңызды жіберіңізші';
 
   @override
   String get wholeCountrySuffix => 'бүкіл ел';

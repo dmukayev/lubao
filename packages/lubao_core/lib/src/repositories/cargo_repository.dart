@@ -75,6 +75,12 @@ class CargoRepository {
     return CargoResponse.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// «Мои отклики» водителя (041, п.9).
+  Future<List<MyResponseEntry>> myResponses() async {
+    final res = await _client.dio.get('/responses/mine');
+    return (res.data as List<dynamic>).map((e) => MyResponseEntry.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
   /// Мой отклик на груз (null — ещё не откликался).
   Future<MyCargoResponse?> myResponse(String cargoId) async {
     final res = await _client.dio.get('/cargos/$cargoId/my-response');

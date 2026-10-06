@@ -57,7 +57,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       _readyDate = cargo.readyDate;
       _photoUrls.addAll(cargo.photoUrls);
       if (cargo.volumeM3 != null) _volumeController.text = _trimNum(cargo.volumeM3!);
-      if (cargo.weightKg != null) _weightController.text = _trimNum(cargo.weightKg!);
+      // Вес вводится в тоннах (можно 12,5), хранится в кг (041, п.9).
+      if (cargo.weightKg != null) _weightController.text = _trimNum(cargo.weightKg! / 1000);
       if (cargo.palletCount != null) _palletController.text = cargo.palletCount.toString();
       _priceController.text = _trimNum(cargo.price);
       _descriptionController.text = cargo.description ?? '';
@@ -94,8 +95,14 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
 
   void _removePhoto(String url) => setState(() => _photoUrls.remove(url));
 
+  /// Тонны из поля → кг (запятая как разделитель допускается).
+  double? _weightKg() {
+    final tons = double.tryParse(_weightController.text.trim().replaceAll(',', '.'));
+    return tons == null ? null : (tons * 1000).roundToDouble();
+  }
+
   Future<void> _refreshFitCount() async {
-    final weightKg = double.tryParse(_weightController.text);
+    final weightKg = _weightKg();
     final volumeM3 = double.tryParse(_volumeController.text);
     final palletCount = int.tryParse(_palletController.text);
     if (volumeM3 == null && palletCount == null) {
@@ -141,7 +148,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         destinationCountryId: _countryId!,
         destinationCityId: _cityId,
         bodyTypeId: _bodyTypeId!,
-        weightKg: double.tryParse(_weightController.text),
+        weightKg: _weightKg(),
         volumeM3: double.tryParse(_volumeController.text),
         palletCount: int.tryParse(_palletController.text),
         photoUrls: _photoUrls,
