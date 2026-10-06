@@ -22,8 +22,13 @@ class DealRepository {
     return Deal.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<Deal> cancel(String id, {required String reason}) async {
-    final res = await _client.dio.patch('/deals/$id/cancel', data: {'reason': reason});
+  /// `reasonCode` — код пресета причины (038, п.15): «взял другой груз» и
+  /// т.п. считаются в статистике по коду, не по переведённой строке.
+  Future<Deal> cancel(String id, {required String reason, String? reasonCode}) async {
+    final res = await _client.dio.patch('/deals/$id/cancel', data: {
+      'reason': reason,
+      if (reasonCode != null) 'reasonCode': reasonCode,
+    });
     return Deal.fromJson(res.data as Map<String, dynamic>);
   }
 }

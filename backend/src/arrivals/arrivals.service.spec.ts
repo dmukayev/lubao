@@ -36,7 +36,7 @@ function makePrisma() {
     },
     vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
     // Задача 037, п.7 — «Уже везёт…» в «Кто будет на точке».
-    deal: { findMany: jest.fn().mockResolvedValue([]) },
+    deal: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
     driverDirection: { findMany: jest.fn().mockResolvedValue([]) },
     $transaction: jest.fn(async (fn: any) => fn(tx)),
     __tx: tx,

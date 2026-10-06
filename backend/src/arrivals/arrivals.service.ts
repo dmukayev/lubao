@@ -352,6 +352,23 @@ export class ArrivalsService {
       filtered.map((r) => ({ driverId: r.arrival.driver.id, tractorId: r.arrival.tractorId })),
     );
 
+    // Задача 038, п.15 (037, п.8) — доля отмен в карточке водителя для
+    // логиста: «отменил 1 из 15 сделок». Два groupBy на весь список, не
+    // по запросу на водителя.
+    const driverIds = [...new Set(filtered.map((r) => r.arrival.driver.id))];
+    const [totalsByDriver, cancelledByDriver] = driverIds.length
+      ? await Promise.all([
+          this.prisma.deal.groupBy({ by: ['driverId'], where: { driverId: { in: driverIds } }, _count: true }),
+          this.prisma.deal.groupBy({
+            by: ['driverId'],
+            where: { driverId: { in: driverIds }, status: 'CANCELLED', cancelledByRole: 'DRIVER' },
+            _count: true,
+          }),
+        ])
+      : [[], []];
+    const dealsTotalMap = new Map(totalsByDriver.map((g) => [g.driverId, g._count as unknown as number]));
+    const dealsCancelledMap = new Map(cancelledByDriver.map((g) => [g.driverId, g._count as unknown as number]));
+
     return filtered.map((r) => ({
       arrivalId: r.arrival.id,
       driverId: r.arrival.driver.id,
@@ -376,6 +393,9 @@ export class ArrivalsService {
       committedDestinationCountryId: committedByDriver.get(r.arrival.driver.id)?.committedDestinationCountryId ?? null,
       committedDestinationCityId: committedByDriver.get(r.arrival.driver.id)?.committedDestinationCityId ?? null,
       committedReadyDate: committedByDriver.get(r.arrival.driver.id)?.committedReadyDate ?? null,
+      // Задача 038, п.15 — «отменил 1 из 15 сделок» прямо в карточке.
+      dealsTotal: dealsTotalMap.get(r.arrival.driver.id) ?? 0,
+      dealsCancelledByDriver: dealsCancelledMap.get(r.arrival.driver.id) ?? 0,
       anyCountry: r.arrival.anyCountry,
       directionCountryIds: r.arrival.directions.map((d) => d.countryId),
     }));

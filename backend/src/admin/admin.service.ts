@@ -1819,7 +1819,7 @@ export class AdminService {
     });
     if (!driver) throw new NotFoundException('Driver not found');
 
-    const [documents, lastSession, dealsByStatus, cancellations, reviews, calls, whatsapp, complaintsAgainst, complaintsBy, arrivals, deals, sessions, auditLog, driverIdentifiers, vehicleIdentifiers] =
+    const [documents, lastSession, dealsByStatus, cancellations, cancellationsTookOtherCargo, reviews, calls, whatsapp, complaintsAgainst, complaintsBy, arrivals, deals, sessions, auditLog, driverIdentifiers, vehicleIdentifiers] =
       await Promise.all([
         this.prisma.verificationDocument.findMany({
           where: { driverId: id },
@@ -1829,6 +1829,7 @@ export class AdminService {
         this.prisma.session.findFirst({ where: { userId: driver.userId }, orderBy: { lastUsedAt: 'desc' } }),
         this.prisma.deal.groupBy({ by: ['status'], where: { driverId: id }, _count: true }),
         this.prisma.deal.count({ where: { driverId: id, status: 'CANCELLED' } }),
+        this.prisma.deal.count({ where: { driverId: id, status: 'CANCELLED', cancelReasonCode: 'TOOK_OTHER_CARGO' } }),
         this.prisma.review.findMany({
           where: { deal: { driverId: id }, authorRole: 'COMPANY' },
           orderBy: { createdAt: 'desc' },
@@ -1913,6 +1914,9 @@ export class AdminService {
         // Задача 037, п.8 — «отменил 1 из 15 сделок»: знаменатель, чтобы
         // доля отмен считалась без суммирования dealsByStatus на клиенте.
         dealsTotal: dealsByStatus.reduce((sum, g) => sum + (g._count as unknown as number), 0),
+        // Задача 038, п.15 — отмены «взял другой груз» (по коду причины)
+        // считаются отдельно: это сигнал перегретой брони, а не форс-мажора.
+        cancellationsTookOtherCargo,
         ratingAvg: Number(driver.ratingAvg),
         ratingCount: driver.ratingCount,
         reviews,

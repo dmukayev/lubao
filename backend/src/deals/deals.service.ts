@@ -57,6 +57,7 @@ export class DealsService {
       companyName: deal.company.name,
       status: deal.status,
       cancelReason: deal.cancelReason,
+      cancelReasonCode: deal.cancelReasonCode,
       cancelledByRole: deal.cancelledByRole,
       confirmedAt: deal.confirmedAt,
       loadedAt: deal.loadedAt,
@@ -262,7 +263,7 @@ export class DealsService {
     return this.toDto(updated);
   }
 
-  async cancel(id: string, ctx: { driverId?: string; companyId?: string }, reason: string) {
+  async cancel(id: string, ctx: { driverId?: string; companyId?: string }, reason: string, reasonCode?: string) {
     const deal = await this.findEntity(id);
     this.assertParty(deal, ctx);
     if (deal.status === 'DELIVERED' || deal.status === 'CANCELLED') {
@@ -274,6 +275,9 @@ export class DealsService {
       data: {
         status: 'CANCELLED',
         cancelReason: reason,
+        // Код причины (038, п.15) — «взял другой груз» и т.п. считаются
+        // в статистике по коду, не по переведённой строке.
+        cancelReasonCode: reasonCode ?? null,
         cancelledByRole: ctx.driverId ? 'DRIVER' : 'COMPANY',
       },
       include: this.include,

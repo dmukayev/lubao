@@ -566,6 +566,13 @@ class _DriverCard extends StatelessWidget {
                             ? const SizedBox.shrink()
                             : Text(hint, style: AppTextStyles.caption.copyWith(color: AppColors.accentText));
                       }),
+                    // Задача 038, п.15 (037, п.8) — доля отмен водителем,
+                    // только когда отмены были: «Отменил 1 из 15 сделок».
+                    if (driver.dealsCancelledByDriver > 0)
+                      Text(
+                        t.driverCancelShare(driver.dealsCancelledByDriver, driver.dealsTotal),
+                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                      ),
                   ],
                 ),
               ),

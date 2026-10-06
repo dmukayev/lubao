@@ -821,6 +821,10 @@ model Deal {
   trailer            Vehicle?   @relation("DealTrailer", fields: [trailerId], references: [id])
   status             DealStatus @default(SELECTED)
   cancelReason       String?
+  /// Код причины отмены (задача 038, п.15) — «Взял другой груз» и т.п.
+  /// хранится кодом (TOOK_OTHER_CARGO), не переведённой строкой — иначе
+  /// статистику по причинам не посчитать.
+  cancelReasonCode   String?
   cancelledByRole    ReviewAuthorRole?
   confirmedAt        DateTime?
   loadedAt           DateTime?

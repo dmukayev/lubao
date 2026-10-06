@@ -42,6 +42,8 @@ class ArrivalListing {
     this.committedDestinationCountryId,
     this.committedDestinationCityId,
     this.committedReadyDate,
+    this.dealsTotal = 0,
+    this.dealsCancelledByDriver = 0,
     required this.anyCountry,
     required this.directionCountryIds,
   });
@@ -76,6 +78,10 @@ class ArrivalListing {
   final String? committedDestinationCountryId;
   final String? committedDestinationCityId;
   final DateTime? committedReadyDate;
+
+  /// «Отменил 1 из 15 сделок» (задача 038, п.15) — доля отмен водителем.
+  final int dealsTotal;
+  final int dealsCancelledByDriver;
   final bool anyCountry;
   final List<String> directionCountryIds;
 
@@ -101,6 +107,8 @@ class ArrivalListing {
         committedDestinationCountryId: json['committedDestinationCountryId'] as String?,
         committedDestinationCityId: json['committedDestinationCityId'] as String?,
         committedReadyDate: json['committedReadyDate'] == null ? null : DateTime.parse(json['committedReadyDate'] as String),
+        dealsTotal: json['dealsTotal'] as int? ?? 0,
+        dealsCancelledByDriver: json['dealsCancelledByDriver'] as int? ?? 0,
         anyCountry: json['anyCountry'] as bool? ?? false,
         directionCountryIds:
             (json['directionCountryIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],

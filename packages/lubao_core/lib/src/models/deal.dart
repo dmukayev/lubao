@@ -12,6 +12,7 @@ class Deal {
     required this.companyName,
     required this.status,
     this.cancelReason,
+    this.cancelReasonCode,
     this.cancelledByRole,
     this.confirmedAt,
     this.loadedAt,
@@ -31,6 +32,9 @@ class Deal {
   final String companyName;
   final DealStatus status;
   final String? cancelReason;
+
+  /// Код причины отмены (038, п.15) — для статистики, текст остаётся в cancelReason.
+  final String? cancelReasonCode;
   final UserRole? cancelledByRole;
   final DateTime? confirmedAt;
   final DateTime? loadedAt;
@@ -50,6 +54,7 @@ class Deal {
         companyName: json['companyName'] as String? ?? '',
         status: dealStatusFromJson(json['status'] as String),
         cancelReason: json['cancelReason'] as String?,
+        cancelReasonCode: json['cancelReasonCode'] as String?,
         cancelledByRole: json['cancelledByRole'] == null ? null : userRoleFromJson(json['cancelledByRole'] as String),
         confirmedAt: json['confirmedAt'] == null ? null : DateTime.parse(json['confirmedAt'] as String),
         loadedAt: json['loadedAt'] == null ? null : DateTime.parse(json['loadedAt'] as String),

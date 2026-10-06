@@ -78,6 +78,10 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
   Future<void> _cancel() async {
     final t = context.l10n;
     final controller = TextEditingController();
+    // Код причины (038, п.15): пресет «Взял другой груз» уходит на сервер
+    // кодом TOOK_OTHER_CARGO — статистика не зависит от языка интерфейса.
+    // Ручная правка текста после нажатия пресета сбрасывает код.
+    var presetCode = null as String?;
     final reason = await showDialog<String>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -87,13 +91,25 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppTextField(label: t.dealCancelReasonLabel, controller: controller, maxLines: 3),
+              AppTextField(
+                label: t.dealCancelReasonLabel,
+                controller: controller,
+                maxLines: 3,
+                onChanged: (value) {
+                  if (presetCode != null && value != t.dealCancelReasonTookAnother) {
+                    setDialogState(() => presetCode = null);
+                  }
+                },
+              ),
               const SizedBox(height: AppSpacing.sm),
               // Задача 037, п.8 — частая причина отмены после подтверждения;
               // пресет заполняет поле, админ видит её отдельно в статистике.
               ActionChip(
                 label: Text(t.dealCancelReasonTookAnother),
-                onPressed: () => setDialogState(() => controller.text = t.dealCancelReasonTookAnother),
+                onPressed: () => setDialogState(() {
+                  controller.text = t.dealCancelReasonTookAnother;
+                  presetCode = 'TOOK_OTHER_CARGO';
+                }),
               ),
             ],
           ),
@@ -108,7 +124,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
 
     setState(() => _busy = true);
     try {
-      await ref.read(dealRepositoryProvider).cancel(widget.dealId, reason: reason.trim());
+      await ref.read(dealRepositoryProvider).cancel(widget.dealId, reason: reason.trim(), reasonCode: presetCode);
       ref.invalidate(dealByIdProvider(widget.dealId));
       ref.invalidate(dealsMineProvider);
     } finally {

@@ -39,7 +39,7 @@ export class DealsController {
 
   @Patch(':id/cancel')
   cancel(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: CancelDealDto) {
-    return this.deals.cancel(id, partyContext(ctx), dto.reason);
+    return this.deals.cancel(id, partyContext(ctx), dto.reason, dto.reasonCode);
   }
 
   @Get(':id/reviews')
