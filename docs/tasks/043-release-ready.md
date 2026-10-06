@@ -11,8 +11,9 @@
 5. **Админ в проде:** CLI `pnpm admin:create --email --password` (bcrypt) + env `ADMIN_BOOTSTRAP_EMAIL/PASSWORD_HASH` при первом старте, если админов нет.
 6. **Прод-инфраструктура:** multi-stage `Dockerfile` (`prisma migrate deploy` → `node dist/main.js`), `docker-compose.prod.yml`: Postgres/Redis/MinIO только во внутренней сети, nginx с TLS (Let's Encrypt), админка за Tailscale (030); `pg_dump` ежедневно + копия бакета в отдельное хранилище, проверка восстановления описана в `infra/README.md`; `/health` проверяет Postgres/Redis/MinIO; Sentry (или аналог) в бэкенде и Flutter; логи без ПДн (маска телефонов/ИИН).
 7. **Выпуск:** `minAppVersion` в `app_settings`, при старте приложения экран «Обновите приложение» с кнопкой (ссылка `https://<APP_HOST>/app` → APK / Google Play / TestFlight); Android — подпись релизным ключом (keystore вне репозитория, инструкция), `applicationId`/`bundleId` финальные, название «Lubao», иконка; TestFlight-сборка (инструкция в `docs/release.md`); веб логиста — CanvasKit и шрифты (Onest + Noto Sans SC) с своего сервера (020 часть А) — нужно и для КЗ: без gstatic быстрее и стабильнее.
-8. Скрипт `prisma/backfill-identifiers.ts` — в чек-лист первого деплоя (`docs/release.md`).
-9. Тесты: предохранитель (стартует/не стартует), удаление аккаунта (анонимизация, сессии), throttler; e2e: согласие перед загрузкой, экран force-update по моку `minAppVersion`.
+8. **Сессия водителя — 180 дней бездействия** (сейчас 90, `token.service.ts: REFRESH_TTL_MS.DRIVER`), продление при каждом открытии остаётся; логист 30 дней, админ 12 ч — без изменений. Решение 2026-10-07.
+9. Скрипт `prisma/backfill-identifiers.ts` — в чек-лист первого деплоя (`docs/release.md`).
+10. Тесты: предохранитель (стартует/не стартует), удаление аккаунта (анонимизация, сессии), throttler; e2e: согласие перед загрузкой, экран force-update по моку `minAppVersion`.
 
 ## Готово, когда
 - Прод-compose поднимается на чистом сервере по `docs/release.md`, админ создан CLI, бэкап снимается и восстанавливается.
