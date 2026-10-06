@@ -483,6 +483,13 @@
     }
   },
   "driversAtPointToday": "Today",
+  "driversAtPointTodayShort": "Tod",
+  "driversAtPointInviteShort": "Invite",
+  "driversAtPointFilterAll": "All",
+  "driversAtPointFilterMinCapacityTitle": "Capacity",
+  "driversAtPointMinCapacityLabel": "from {n} t",
+  "@driversAtPointMinCapacityLabel": { "placeholders": { "n": { "type": "int" } } },
+  "driversAtPointPickPoint": "Loading point",
   "driversAtPointTitleShort": "Drivers",
   "driversAtPointFilterVerifiedChip": "Verified",
   "driversAtPointNowAtPlace": "On site now · {count}",

@@ -1,3 +1,4 @@
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,9 @@ class _FakeArrivalRepository extends ArrivalRepository {
   _FakeArrivalRepository() : super(ApiClient(baseUrl: 'http://localhost'));
 
   final calls = <bool>[];
+  String? lastPointId;
+  double? lastMinCapacity;
+  String? lastBodyTypeId;
 
   ArrivalListing _driver(String id, String name, {required bool verified, required ArrivalStatus status}) => ArrivalListing(
         arrivalId: 'a-$id',
@@ -51,6 +55,9 @@ class _FakeArrivalRepository extends ArrivalRepository {
     bool verifiedOnly = false,
   }) async {
     calls.add(verifiedOnly);
+    lastPointId = pointId;
+    lastMinCapacity = minCapacityTons;
+    lastBodyTypeId = bodyTypeId;
     final all = [
       _driver('d1', 'Ерлан Сагынбаев Очень Длинное Имя', verified: true, status: ArrivalStatus.onSite),
       _driver('d2', 'Асет Нурланов', verified: false, status: ArrivalStatus.planned),
@@ -63,7 +70,7 @@ class _FakeArrivalRepository extends ArrivalRepository {
       [for (var i = 0; i < days; i++) ArrivalSummaryDay(date: DateTime.now().add(Duration(days: i)), count: i == 0 ? 2 : (i == 2 ? 3 : 0))];
 }
 
-ReferenceData _refData() => ReferenceData(
+ReferenceData _refData({bool twoPoints = false}) => ReferenceData(
       countries: [
         for (final c in ['kz', 'uz', 'kg'])
           Country(id: c, code: c.toUpperCase(), name: I18nText(kk: c, ru: c, zh: c), isCisMember: true),
@@ -71,10 +78,13 @@ ReferenceData _refData() => ReferenceData(
       cities: const [],
       bodyTypes: const [BodyType(id: 'bt1', code: 'TENT', name: I18nText(kk: 'Тент', ru: 'Тент', zh: '篷布'))],
       permits: const [],
-      points: const [LoadingPoint(id: 'p1', cityId: 'c1', name: I18nText(kk: 'Хоргос', ru: 'Хоргос', zh: '霍尔果斯'), isActive: true)],
+      points: [
+        const LoadingPoint(id: 'p1', cityId: 'c1', name: I18nText(kk: 'Хоргос', ru: 'Хоргос', zh: '霍尔果斯'), isActive: true),
+        if (twoPoints) const LoadingPoint(id: 'p2', cityId: 'c2', name: I18nText(kk: 'Алтынколь', ru: 'Алтынколь', zh: '阿拉山口'), isActive: true),
+      ],
     );
 
-Future<_FakeArrivalRepository> _pump(WidgetTester tester, {required Size size, double textScale = 1.0}) async {
+Future<_FakeArrivalRepository> _pump(WidgetTester tester, {required Size size, double textScale = 1.0, String locale = 'ru', bool twoPoints = false}) async {
   tester.view.physicalSize = size * 3;
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
@@ -83,10 +93,10 @@ Future<_FakeArrivalRepository> _pump(WidgetTester tester, {required Size size, d
     overrides: [
       authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
       arrivalRepositoryProvider.overrideWithValue(arrivals),
-      referenceDataProvider.overrideWith((ref) async => _refData()),
+      referenceDataProvider.overrideWith((ref) async => _refData(twoPoints: twoPoints)),
     ],
     child: MaterialApp(
-      locale: const Locale('ru'),
+      locale: Locale(locale),
       supportedLocales: supportedLocales,
       localizationsDelegates: LubaoLocalizations.localizationsDelegates,
       builder: (context, child) => MediaQuery(
@@ -145,5 +155,71 @@ void main() {
     await _pump(tester, size: const Size(390, 844));
     final firstCard = tester.getTopLeft(find.text('На месте сейчас · 1')).dy;
     expect(firstCard / 844, lessThan(0.4));
+  });
+
+  testWidgets('п.7: чип точки при двух точках открывает шторку и перезапрашивает с pointId', (tester) async {
+    final arrivals = await _pump(tester, size: const Size(390, 844), twoPoints: true);
+    expect(find.byKey(const Key('driversPointChip')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('driversPointChip')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Алтынколь'));
+    await tester.pumpAndSettle();
+    expect(arrivals.lastPointId, 'p2');
+    expect(find.text('Алтынколь'), findsOneWidget);
+  });
+
+  testWidgets('п.8: в полосе дней — «Сег», а не «Сегодня»', (tester) async {
+    await _pump(tester, size: const Size(390, 844));
+    expect(find.text('Сег'), findsOneWidget);
+  });
+
+  testWidgets('п.10: «от N т» — шторка тоннажа, «Все» сбрасывает; «Кузов» сбрасывается на «Все»', (tester) async {
+    final arrivals = await _pump(tester, size: const Size(390, 844));
+    await tester.tap(find.text('Кузов'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Тент'));
+    await tester.pumpAndSettle();
+    expect(arrivals.lastBodyTypeId, 'bt1');
+    await tester.tap(find.text('Тент'));
+    await tester.pumpAndSettle();
+    expect(find.text('Все'), findsOneWidget);
+    await tester.tap(find.text('Все'));
+    await tester.pumpAndSettle();
+    expect(arrivals.lastBodyTypeId, isNull);
+
+    await tester.ensureVisible(find.byKey(const Key('driversFilterCapacity')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('driversFilterCapacity')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('от 20 т'));
+    await tester.pumpAndSettle();
+    expect(arrivals.lastMinCapacity, 20);
+    expect(find.text('от 20 т'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('driversFilterCapacity')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('driversFilterCapacity')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Все'));
+    await tester.pumpAndSettle();
+    expect(arrivals.lastMinCapacity, isNull);
+  });
+
+  testWidgets('п.10: месяц в календаре — из локали, в том числе en', (tester) async {
+    await _pump(tester, size: const Size(390, 844), locale: 'en');
+    await tester.tap(find.byIcon(LucideIcons.calendar));
+    await tester.pumpAndSettle();
+    final now = DateTime.now();
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    expect(find.text('${months[now.month - 1]} ${now.year}'), findsOneWidget);
+  });
+
+  testWidgets('п.9: статус и кнопки в одной строке, «Проверен» — плашка', (tester) async {
+    await _pump(tester, size: const Size(390, 844));
+    expect(find.byKey(const Key('driverVerifiedPill-d1')), findsOneWidget);
+    final invite = tester.getCenter(find.text('Пригласить').first).dy;
+    final status = tester.getCenter(find.textContaining('На месте ·')).dy;
+    expect((invite - status).abs(), lessThan(24));
+    expect(tester.takeException(), isNull);
   });
 }

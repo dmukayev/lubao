@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -22,6 +23,8 @@ class DriversAtPointScreen extends ConsumerStatefulWidget {
 
 const _dayStripLength = 7;
 
+const _capacityOptions = [10, 15, 20, 22, 25];
+
 /// Диапазон для календаря — с запасом: водитель анонсирует прибытие максимум
 /// на +14 дней (задача 015), остальное в календаре честно покажет 0.
 const _calendarRangeDays = 90;
@@ -29,7 +32,8 @@ const _calendarRangeDays = 90;
 class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   String? _countryId;
   String? _bodyTypeId;
-  bool _minCapacity = false;
+  String? _pointId;
+  int? _minCapacityTons;
   bool _verifiedOnly = false;
   int _dayOffset = 0;
   Future<List<ArrivalListing>>? _future;
@@ -39,19 +43,26 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   @override
   void initState() {
     super.initState();
-    _summaryFuture = ref.read(arrivalRepositoryProvider).summary(days: _dayStripLength);
+    _loadSummary();
     _reload();
+  }
+
+  void _loadSummary() {
+    _summaryFuture = ref.read(arrivalRepositoryProvider).summary(days: _dayStripLength, pointId: _pointId);
   }
 
   DateTime get _selectedDate => DateTime.now().add(Duration(days: _dayOffset));
 
   void _reload() {
     setState(() {
-      _future = ref.read(arrivalRepositoryProvider).listForCompany(
+      _future = ref
+          .read(arrivalRepositoryProvider)
+          .listForCompany(
             date: _selectedDate,
+            pointId: _pointId,
             countryId: _countryId,
             bodyTypeId: _bodyTypeId,
-            minCapacityTons: _minCapacity ? 20 : null,
+            minCapacityTons: _minCapacityTons?.toDouble(),
             verifiedOnly: _verifiedOnly,
           );
     });
@@ -67,12 +78,14 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   /// выбор дня в полосе и в календаре ведут к одному и тому же состоянию.
   Future<void> _openCalendar(BuildContext context) async {
     final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-    final summaryFuture = ref.read(arrivalRepositoryProvider).summary(days: _calendarRangeDays);
+    final summaryFuture = ref.read(arrivalRepositoryProvider).summary(days: _calendarRangeDays, pointId: _pointId);
     final picked = await showModalBottomSheet<DateTime>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
+      ),
       builder: (sheetContext) => _ArrivalsCalendarSheet(
         summaryFuture: summaryFuture,
         firstSelectable: today,
@@ -113,10 +126,12 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
       debugPrint('DriversAtPointScreen: failed to open chat: $e');
       if (mounted) {
         final t = context.l10n;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(t.chatOpenFailed),
-          action: SnackBarAction(label: t.commonRetry, onPressed: () => _chat(driver)),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(t.chatOpenFailed),
+            action: SnackBarAction(label: t.commonRetry, onPressed: () => _chat(driver)),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _openingChatDriverId = null);
@@ -138,7 +153,9 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     final selectedCargo = await showModalBottomSheet<Cargo>(
       context: context,
       backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
+      ),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -205,8 +222,7 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
       await ref.read(cargoRepositoryProvider).inviteDriver(selectedCargo.id, driver.driverId);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(responseConflictText(t, e) ?? t.commonError)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(responseConflictText(t, e) ?? t.commonError)));
       return;
     }
     if (!mounted) return;
@@ -219,7 +235,7 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   Future<Object?> _pickFromSheet(
     BuildContext context, {
     required String title,
-    required String anyLabel,
+    String? anyLabel,
     required List<(String id, String label)> options,
     required String? current,
   }) {
@@ -227,7 +243,9 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
+      ),
       builder: (sheetContext) => SafeArea(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: MediaQuery.of(sheetContext).size.height * 0.7),
@@ -243,11 +261,12 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                 child: ListView(
                   shrinkWrap: true,
                   children: [
-                    ListTile(
-                      title: Text(anyLabel),
-                      trailing: current == null ? const Icon(LucideIcons.check, color: AppColors.primary) : null,
-                      onTap: () => Navigator.pop(sheetContext, _clearFilter),
-                    ),
+                    if (anyLabel != null)
+                      ListTile(
+                        title: Text(anyLabel),
+                        trailing: current == null ? const Icon(LucideIcons.check, color: AppColors.primary) : null,
+                        onTap: () => Navigator.pop(sheetContext, _clearFilter),
+                      ),
                     for (final option in options)
                       ListTile(
                         title: Text(option.$2),
@@ -276,11 +295,13 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     // Чип точки (задача 036, п.1) — только когда активных точек больше
     // одной; единственную точку показывать незачем.
     final activePoints = referenceData.valueOrNull?.points.where((p) => p.isActive).toList() ?? const [];
-    final primaryPointName = activePoints.firstOrNull?.name.forLanguageCode(locale) ?? '';
+    final selectedPoint = activePoints.where((p) => p.id == _pointId).firstOrNull ?? activePoints.firstOrNull;
+    final primaryPointName = selectedPoint?.name.forLanguageCode(locale) ?? '';
     // WhatsApp заблокирован в Китае — логисту оттуда вместо него только чат
     // Lubao (decisions.md «Звонки — обычные, через телефон», задача 017).
     final companyCountryId = ref.watch(sessionProvider)?.company?.countryId;
-    final isChinaCompany = referenceData.valueOrNull?.countries.where((c) => c.id == companyCountryId).firstOrNull?.code == 'CN';
+    final isChinaCompany =
+        referenceData.valueOrNull?.countries.where((c) => c.id == companyCountryId).firstOrNull?.code == 'CN';
 
     return Scaffold(
       // AppBar сам отступает от выреза/строки статуса (задача 036, п.9) —
@@ -291,11 +312,28 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
           if (activePoints.length > 1)
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.xs),
-              child: Chip(
-                label: Text(primaryPointName, style: AppTextStyles.bodyStrong),
-                avatar: const Icon(LucideIcons.chevronDown, size: 16),
-                backgroundColor: AppColors.surface,
-                side: BorderSide.none,
+              child: SizedBox(
+                height: 40,
+                child: _FilterChip(
+                  key: const Key('driversPointChip'),
+                  label: primaryPointName,
+                  active: false,
+                  dropdown: true,
+                  onTap: () async {
+                    final picked = await _pickFromSheet(
+                      context,
+                      title: t.driversAtPointPickPoint,
+                      options: [for (final p in activePoints) (p.id, p.name.forLanguageCode(locale))],
+                      current: selectedPoint?.id,
+                    );
+                    if (picked == null || picked == _clearFilter) return;
+                    setState(() {
+                      _pointId = picked as String;
+                      _loadSummary();
+                    });
+                    _reload();
+                  },
+                ),
               ),
             ),
           IconButton(
@@ -333,7 +371,7 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                         final date = DateTime.now().add(Duration(days: index));
                         final count = counts == null || index >= counts.length ? null : counts[index].count;
                         return _DayChip(
-                          label: index == 0 ? t.driversAtPointToday : _weekdayLabel(t, date),
+                          label: index == 0 ? t.driversAtPointTodayShort : _weekdayLabel(t, date),
                           count: count,
                           selected: _dayOffset == index,
                           onTap: () => _selectDay(index),
@@ -378,7 +416,7 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                         final picked = await _pickFromSheet(
                           context,
                           title: t.driversAtPointFilterBodyType,
-                          anyLabel: t.driversAtPointFilterBodyType,
+                          anyLabel: t.driversAtPointFilterAll,
                           options: [for (final b in refData.bodyTypes) (b.id, b.name.forLanguageCode(locale))],
                           current: _bodyTypeId,
                         );
@@ -389,10 +427,22 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     _FilterChip(
-                      label: t.driversAtPointFilterMinCapacity,
-                      active: _minCapacity,
-                      onTap: () {
-                        _minCapacity = !_minCapacity;
+                      key: const Key('driversFilterCapacity'),
+                      label: _minCapacityTons == null
+                          ? t.driversAtPointFilterMinCapacityTitle
+                          : t.driversAtPointMinCapacityLabel(_minCapacityTons!),
+                      active: _minCapacityTons != null,
+                      dropdown: _minCapacityTons == null,
+                      onTap: () async {
+                        final picked = await _pickFromSheet(
+                          context,
+                          title: t.driversAtPointFilterMinCapacityTitle,
+                          anyLabel: t.driversAtPointFilterAll,
+                          options: [for (final n in _capacityOptions) ('$n', t.driversAtPointMinCapacityLabel(n))],
+                          current: _minCapacityTons?.toString(),
+                        );
+                        if (picked == null) return;
+                        _minCapacityTons = picked == _clearFilter ? null : int.parse(picked as String);
                         _reload();
                       },
                     ),
@@ -439,7 +489,14 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
                             child: Row(
                               children: [
-                                Expanded(child: Text(summaryLeft, style: AppTextStyles.bodyStrong, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                Expanded(
+                                  child: Text(
+                                    summaryLeft,
+                                    style: AppTextStyles.bodyStrong,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                                 if (summaryRight != null) ...[
                                   const SizedBox(width: AppSpacing.sm),
                                   Flexible(
@@ -489,14 +546,14 @@ String _shortDate(DateTime d) {
 /// Короткое имя дня недели из ARB (задача 036, п.3) — раньше было
 /// захардкожено и без английского.
 List<String> _weekdayNames(LubaoLocalizations t) => [
-      t.weekdayShort1,
-      t.weekdayShort2,
-      t.weekdayShort3,
-      t.weekdayShort4,
-      t.weekdayShort5,
-      t.weekdayShort6,
-      t.weekdayShort7,
-    ];
+  t.weekdayShort1,
+  t.weekdayShort2,
+  t.weekdayShort3,
+  t.weekdayShort4,
+  t.weekdayShort5,
+  t.weekdayShort6,
+  t.weekdayShort7,
+];
 
 String _weekdayLabel(LubaoLocalizations t, DateTime date) => _weekdayNames(t)[date.weekday - 1];
 
@@ -540,7 +597,9 @@ class _DayChip extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   count?.toString() ?? '–',
-                  style: AppTextStyles.bodyStrong.copyWith(color: isZero && !selected ? AppColors.textSecondary.withAlpha(150) : fg),
+                  style: AppTextStyles.bodyStrong.copyWith(
+                    color: isZero && !selected ? AppColors.textSecondary.withAlpha(150) : fg,
+                  ),
                   maxLines: 1,
                 ),
               ),
@@ -587,9 +646,15 @@ class _FilterChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (leadingCheck) ...[Icon(LucideIcons.check, size: 16, color: color), const SizedBox(width: AppSpacing.xs)],
+              if (leadingCheck) ...[
+                Icon(LucideIcons.check, size: 16, color: color),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               Text(label, style: AppTextStyles.bodyStrong.copyWith(color: color)),
-              if (dropdown) ...[const SizedBox(width: AppSpacing.xs), Icon(LucideIcons.chevronDown, size: 16, color: color)],
+              if (dropdown) ...[
+                const SizedBox(width: AppSpacing.xs),
+                Icon(LucideIcons.chevronDown, size: 16, color: color),
+              ],
             ],
           ),
         ),
@@ -604,6 +669,18 @@ String _shortName(String full) {
   if (parts.length < 2 || parts[1].isEmpty) return full.trim();
   return '${parts[0]} ${parts[1].substring(0, 1).toUpperCase()}.';
 }
+
+/// Цвет аватара по водителю — стабильный, из палитры эталона 27.
+const _avatarColors = [
+  AppColors.primary,
+  Color(0xFF2DA05A),
+  Color(0xFF8B5CF6),
+  Color(0xFFF08A24),
+  Color(0xFF0EA5B7),
+  Color(0xFFE5484D),
+];
+
+Color _avatarColor(String seed) => _avatarColors[seed.codeUnits.fold<int>(0, (a, b) => a + b) % _avatarColors.length];
 
 String _initials(String full) {
   final parts = full.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
@@ -670,7 +747,7 @@ class _DriverCard extends StatelessWidget {
     final status = Text(
       onSite ? '📍 $statusText' : statusText,
       style: AppTextStyles.caption.copyWith(color: statusColor, fontWeight: FontWeight.w600),
-      maxLines: 2,
+      maxLines: 3,
       overflow: TextOverflow.ellipsis,
     );
 
@@ -690,26 +767,37 @@ class _DriverCard extends StatelessWidget {
         : null;
 
     final buttons = <Widget>[
-      IconSquareButton(size: 40, icon: LucideIcons.phone, onPressed: driver.phone == null ? null : () => onCall(driver)),
+      IconSquareButton(
+        size: 36,
+        icon: LucideIcons.phone,
+        onPressed: driver.phone == null ? null : () => onCall(driver),
+      ),
       const SizedBox(width: AppSpacing.sm),
       IconSquareButton(
         key: Key('driversAtPointChat-${driver.driverId}'),
-        size: 40,
+        size: 36,
         icon: LucideIcons.messageSquare,
         loading: openingChat,
         onPressed: () => onChat(driver),
       ),
       if (!isChinaCompany) ...[
         const SizedBox(width: AppSpacing.sm),
-        IconSquareButton(size: 40, icon: LucideIcons.messageCircle, onPressed: driver.phone == null ? null : () => onWhatsapp(driver)),
+        IconSquareButton(
+          size: 36,
+          icon: LucideIcons.messageCircle,
+          onPressed: driver.phone == null ? null : () => onWhatsapp(driver),
+        ),
       ],
     ];
     final invite = SizedBox(
-      height: 40,
+      height: 36,
       child: FilledButton(
         onPressed: () => onInvite(driver),
-        style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg), minimumSize: const Size(0, 40)),
-        child: Text(t.driversAtPointInvite, maxLines: 1, overflow: TextOverflow.ellipsis),
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          minimumSize: const Size(0, 36),
+        ),
+        child: Text(t.driversAtPointInviteShort, maxLines: 1, overflow: TextOverflow.ellipsis),
       ),
     );
 
@@ -721,8 +809,11 @@ class _DriverCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundColor: AppColors.primarySoft,
-                child: Text(_initials(driver.driverName), style: AppTextStyles.bodyStrong.copyWith(color: AppColors.primary)),
+                backgroundColor: _avatarColor(driver.driverId),
+                child: Text(
+                  _initials(driver.driverName),
+                  style: AppTextStyles.bodyStrong.copyWith(color: Colors.white),
+                ),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -732,16 +823,32 @@ class _DriverCard extends StatelessWidget {
                     Row(
                       children: [
                         Flexible(
-                          child: Text(_shortName(driver.driverName), style: AppTextStyles.bodyStrong, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            _shortName(driver.driverName),
+                            style: AppTextStyles.bodyStrong,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         if (driver.isVerified) ...[
-                          const SizedBox(width: AppSpacing.xs),
-                          const Icon(LucideIcons.badgeCheck, size: 16, color: AppColors.success),
+                          const SizedBox(width: AppSpacing.sm),
+                          Container(
+                            key: Key('driverVerifiedPill-${driver.driverId}'),
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.successSoft,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Icon(LucideIcons.check, size: 16, color: AppColors.success),
+                          ),
                         ],
                         const SizedBox(width: AppSpacing.sm),
                         const Icon(LucideIcons.star, size: 13, color: AppColors.accent),
                         const SizedBox(width: 2),
-                        Text(driver.ratingCount > 0 ? driver.ratingAvg.toStringAsFixed(1) : '–', style: AppTextStyles.caption),
+                        Text(
+                          driver.ratingCount > 0 ? driver.ratingAvg.toStringAsFixed(1) : '–',
+                          style: AppTextStyles.caption,
+                        ),
                       ],
                     ),
                     if (spec.isNotEmpty)
@@ -753,7 +860,12 @@ class _DriverCard extends StatelessWidget {
           ),
           if (haulHint != null) ...[
             const SizedBox(height: AppSpacing.xs),
-            Text(haulHint, style: AppTextStyles.caption.copyWith(color: AppColors.accentText), maxLines: 2, overflow: TextOverflow.ellipsis),
+            Text(
+              haulHint,
+              style: AppTextStyles.caption.copyWith(color: AppColors.accentText),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
           if (driver.dealsCancelledByDriver > 0)
             Text(
@@ -765,15 +877,16 @@ class _DriverCard extends StatelessWidget {
             builder: (context, constraints) {
               // Статус и кнопки в одну строку, если хватает места (эталон
               // 27); иначе статус — отдельной строкой, ничего не переполняется.
-              final sameRow = isChinaCompany && constraints.maxWidth >= 300;
+              final sameRow = constraints.maxWidth >= (isChinaCompany ? 260 : 300);
               if (sameRow) {
                 return Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(child: status),
                     const SizedBox(width: AppSpacing.sm),
                     ...buttons,
                     const SizedBox(width: AppSpacing.sm),
-                    Flexible(child: invite),
+                    invite,
                   ],
                 );
               }
@@ -817,7 +930,11 @@ class _DriverCard extends StatelessWidget {
 /// полоса дней). Свой грид вместо showDatePicker — стандартный пикер не
 /// даёт подписать ячейки числом машин.
 class _ArrivalsCalendarSheet extends StatefulWidget {
-  const _ArrivalsCalendarSheet({required this.summaryFuture, required this.firstSelectable, required this.lastSelectable});
+  const _ArrivalsCalendarSheet({
+    required this.summaryFuture,
+    required this.firstSelectable,
+    required this.lastSelectable,
+  });
 
   final Future<List<ArrivalSummaryDay>> summaryFuture;
   final DateTime firstSelectable;
@@ -892,13 +1009,18 @@ class _ArrivalsCalendarSheetState extends State<_ArrivalsCalendarSheet> {
                   children: [
                     for (final name in weekdayNames)
                       Expanded(
-                        child: Center(child: Text(name, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary))),
+                        child: Center(
+                          child: Text(name, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                        ),
                       ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 if (snapshot.connectionState == ConnectionState.waiting)
-                  const Padding(padding: EdgeInsets.all(AppSpacing.xl), child: Center(child: CircularProgressIndicator()))
+                  const Padding(
+                    padding: EdgeInsets.all(AppSpacing.xl),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
                 else
                   GridView.count(
                     crossAxisCount: 7,
@@ -953,22 +1075,9 @@ class _ArrivalsCalendarSheetState extends State<_ArrivalsCalendarSheet> {
   }
 }
 
-const _monthNames = {
-  'ru': [
-    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
-  ],
-  'kk': [
-    'Қаңтар', 'Ақпан', 'Наурыз', 'Сәуір', 'Мамыр', 'Маусым',
-    'Шілде', 'Тамыз', 'Қыркүйек', 'Қазан', 'Қараша', 'Желтоқсан',
-  ],
-  'zh': ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
-};
-
 String _monthLabel(String locale, DateTime month) {
-  final names = _monthNames[locale] ?? _monthNames['ru']!;
-  final name = names[month.month - 1];
-  return locale == 'zh' ? '${month.year}年$name' : '$name ${month.year}';
+  final text = DateFormat.yMMMM(locale).format(month);
+  return text.isEmpty ? text : '${text[0].toUpperCase()}${text.substring(1)}';
 }
 
 extension _FirstOrNull<T> on Iterable<T> {

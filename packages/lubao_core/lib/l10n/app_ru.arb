@@ -483,6 +483,13 @@
     }
   },
   "driversAtPointToday": "Сегодня",
+  "driversAtPointTodayShort": "Сег",
+  "driversAtPointInviteShort": "Пригласить",
+  "driversAtPointFilterAll": "Все",
+  "driversAtPointFilterMinCapacityTitle": "Грузоподъёмность",
+  "driversAtPointMinCapacityLabel": "от {n} т",
+  "@driversAtPointMinCapacityLabel": { "placeholders": { "n": { "type": "int" } } },
+  "driversAtPointPickPoint": "Точка загрузки",
   "driversAtPointTitleShort": "Водители",
   "driversAtPointFilterVerifiedChip": "Проверенные",
   "driversAtPointNowAtPlace": "На месте сейчас · {count}",

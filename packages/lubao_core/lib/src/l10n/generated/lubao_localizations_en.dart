@@ -1129,6 +1129,26 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get driversAtPointToday => 'Today';
 
   @override
+  String get driversAtPointTodayShort => 'Tod';
+
+  @override
+  String get driversAtPointInviteShort => 'Invite';
+
+  @override
+  String get driversAtPointFilterAll => 'All';
+
+  @override
+  String get driversAtPointFilterMinCapacityTitle => 'Capacity';
+
+  @override
+  String driversAtPointMinCapacityLabel(int n) {
+    return 'from $n t';
+  }
+
+  @override
+  String get driversAtPointPickPoint => 'Loading point';
+
+  @override
   String get driversAtPointTitleShort => 'Drivers';
 
   @override

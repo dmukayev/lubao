@@ -2178,6 +2178,42 @@ abstract class LubaoLocalizations {
   /// **'Сегодня'**
   String get driversAtPointToday;
 
+  /// No description provided for @driversAtPointTodayShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сег'**
+  String get driversAtPointTodayShort;
+
+  /// No description provided for @driversAtPointInviteShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пригласить'**
+  String get driversAtPointInviteShort;
+
+  /// No description provided for @driversAtPointFilterAll.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все'**
+  String get driversAtPointFilterAll;
+
+  /// No description provided for @driversAtPointFilterMinCapacityTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грузоподъёмность'**
+  String get driversAtPointFilterMinCapacityTitle;
+
+  /// No description provided for @driversAtPointMinCapacityLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'от {n} т'**
+  String driversAtPointMinCapacityLabel(int n);
+
+  /// No description provided for @driversAtPointPickPoint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Точка загрузки'**
+  String get driversAtPointPickPoint;
+
   /// No description provided for @driversAtPointTitleShort.
   ///
   /// In ru, this message translates to:

@@ -1102,6 +1102,26 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get driversAtPointToday => '今天';
 
   @override
+  String get driversAtPointTodayShort => '今';
+
+  @override
+  String get driversAtPointInviteShort => '邀请';
+
+  @override
+  String get driversAtPointFilterAll => '全部';
+
+  @override
+  String get driversAtPointFilterMinCapacityTitle => '载重';
+
+  @override
+  String driversAtPointMinCapacityLabel(int n) {
+    return '$n吨以上';
+  }
+
+  @override
+  String get driversAtPointPickPoint => '装货点';
+
+  @override
   String get driversAtPointTitleShort => '司机';
 
   @override

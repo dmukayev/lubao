@@ -1126,6 +1126,26 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get driversAtPointToday => 'Бүгін';
 
   @override
+  String get driversAtPointTodayShort => 'Бүг';
+
+  @override
+  String get driversAtPointInviteShort => 'Шақыру';
+
+  @override
+  String get driversAtPointFilterAll => 'Барлығы';
+
+  @override
+  String get driversAtPointFilterMinCapacityTitle => 'Көтеру қабілеті';
+
+  @override
+  String driversAtPointMinCapacityLabel(int n) {
+    return '$n т-дан';
+  }
+
+  @override
+  String get driversAtPointPickPoint => 'Тиеу нүктесі';
+
+  @override
   String get driversAtPointTitleShort => 'Жүргізушілер';
 
   @override
