@@ -1866,6 +1866,78 @@ abstract class LubaoLocalizations {
   /// **'Логист предложил груз'**
   String get chatSystemCargoOffered;
 
+  /// No description provided for @cargoStatusInDeal.
+  ///
+  /// In ru, this message translates to:
+  /// **'В сделке'**
+  String get cargoStatusInDeal;
+
+  /// No description provided for @responseStatusInvited.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приглашён'**
+  String get responseStatusInvited;
+
+  /// No description provided for @chatSystemDriverInvited.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логист приглашает водителя на груз'**
+  String get chatSystemDriverInvited;
+
+  /// No description provided for @chatSystemInvitationDeclined.
+  ///
+  /// In ru, this message translates to:
+  /// **'{name} отказался от приглашения'**
+  String chatSystemInvitationDeclined(String name);
+
+  /// No description provided for @chatSystemCargoTaken.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз ушёл другому водителю'**
+  String get chatSystemCargoTaken;
+
+  /// No description provided for @cargoInvitedTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вас приглашают на этот груз'**
+  String get cargoInvitedTitle;
+
+  /// No description provided for @cargoDecline.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отказаться'**
+  String get cargoDecline;
+
+  /// No description provided for @cargoNotAvailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз уже занят'**
+  String get cargoNotAvailable;
+
+  /// No description provided for @cargoVerifyHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Чтобы подтвердить перевозку, пройдите проверку в профиле'**
+  String get cargoVerifyHint;
+
+  /// No description provided for @chatWaitingDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ждём ответа водителя'**
+  String get chatWaitingDriver;
+
+  /// No description provided for @cargoResponseSent.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отклик отправлен'**
+  String get cargoResponseSent;
+
+  /// No description provided for @cargoYouAreSelected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вас выбрали'**
+  String get cargoYouAreSelected;
+
   /// No description provided for @chatQuickReplyAtPlace.
   ///
   /// In ru, this message translates to:

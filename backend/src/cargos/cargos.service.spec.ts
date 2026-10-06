@@ -116,12 +116,12 @@ describe('CargosService.closeCargo — закрытие только с исхо
       cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo()), update: jest.fn() },
       response: { findUnique: jest.fn().mockResolvedValue(null) },
     };
-    const responses = { inviteDriver: jest.fn() };
+    const responses = { createDealDirect: jest.fn() };
     const service = new CargosService(prisma, responses as any);
 
     await service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_IN_APP', driverId: 'd1' } as any);
 
-    expect(responses.inviteDriver).toHaveBeenCalledWith('cargo1', 'd1', 'c1');
+    expect(responses.createDealDirect).toHaveBeenCalledWith('cargo1', 'd1', 'c1');
     expect(prisma.cargo.update).toHaveBeenCalledWith({
       where: { id: 'cargo1' },
       data: { status: 'CANCELLED', closeOutcome: 'FOUND_IN_APP', closedAt: expect.any(Date) },
@@ -133,23 +133,23 @@ describe('CargosService.closeCargo — закрытие только с исхо
       cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo()), update: jest.fn() },
       response: { findUnique: jest.fn().mockResolvedValue({ status: 'SELECTED' }) },
     };
-    const responses = { inviteDriver: jest.fn() };
+    const responses = { createDealDirect: jest.fn() };
     const service = new CargosService(prisma, responses as any);
 
     await service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_IN_APP', driverId: 'd1' } as any);
 
-    expect(responses.inviteDriver).not.toHaveBeenCalled();
+    expect(responses.createDealDirect).not.toHaveBeenCalled();
     expect(prisma.cargo.update).toHaveBeenCalled();
   });
 
   it('FOUND_OUTSIDE and CARGO_CANCELLED just close the cargo, no invite', async () => {
     const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo()), update: jest.fn() } };
-    const responses = { inviteDriver: jest.fn() };
+    const responses = { createDealDirect: jest.fn() };
     const service = new CargosService(prisma, responses as any);
 
     await service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_OUTSIDE' } as any);
 
-    expect(responses.inviteDriver).not.toHaveBeenCalled();
+    expect(responses.createDealDirect).not.toHaveBeenCalled();
     expect(prisma.cargo.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ closeOutcome: 'FOUND_OUTSIDE' }) }));
   });
 });

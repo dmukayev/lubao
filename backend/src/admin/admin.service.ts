@@ -711,6 +711,18 @@ export class AdminService {
     }
 
     await this.prisma.deal.update({ where: { id }, data });
+    // Статус груза следует за сделкой (041): доставлено → груз закрыт, назад — снова в сделке.
+    if (dto.status === 'DELIVERED') {
+      await this.prisma.cargo.updateMany({
+        where: { id: deal.cargoId, status: 'IN_DEAL' },
+        data: { status: 'ARCHIVED', closeOutcome: 'FOUND_IN_APP', closedAt: new Date() },
+      });
+    } else if (deal.status === 'DELIVERED') {
+      await this.prisma.cargo.updateMany({
+        where: { id: deal.cargoId, status: 'ARCHIVED', closeOutcome: 'FOUND_IN_APP' },
+        data: { status: 'IN_DEAL', closedAt: null },
+      });
+    }
     await this.logAudit(adminUserId, 'DEAL_STATUS_FIXED', 'Deal', id, { reason: dto.reason, from: deal.status, to: dto.status });
     await this.notifyDealStatusChange(deal, dto.status);
 
@@ -750,6 +762,7 @@ export class AdminService {
       where: { id },
       data: { status: 'CANCELLED', cancelReason: reason, cancelledByRole: 'ADMIN' },
     });
+    await this.prisma.cargo.updateMany({ where: { id: deal.cargoId, status: 'IN_DEAL' }, data: { status: 'PUBLISHED' } });
     await this.logAudit(adminUserId, 'DEAL_CANCELLED_BY_ADMIN', 'Deal', id, { reason });
     await this.notifyDealStatusChange(deal, 'CANCELLED');
 

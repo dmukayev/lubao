@@ -313,7 +313,7 @@ export class CargosService {
       // inviteDriver только упадёт конфликтом. Закрываем груз без повтора.
       const existingResponse = await this.prisma.response.findUnique({ where: { cargoId_driverId: { cargoId: id, driverId: dto.driverId } } });
       if (existingResponse?.status !== 'SELECTED') {
-        await this.responses.inviteDriver(id, dto.driverId, companyId);
+        await this.responses.createDealDirect(id, dto.driverId, companyId);
       }
     }
 

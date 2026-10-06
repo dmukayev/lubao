@@ -6,7 +6,8 @@ const FAKE_CHAT_SYSTEM = { post: jest.fn(), postToChat: jest.fn() };
 
 function txMock() {
   return {
-    response: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), update: jest.fn(), create: jest.fn(), findUniqueOrThrow: jest.fn() },
+    response: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), update: jest.fn(), create: jest.fn(), findUniqueOrThrow: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+    cargo: { updateMany: jest.fn() },
     // findFirst — проверка «на груз нет активной сделки» (задача 038, п.1).
     deal: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
     chat: { updateMany: jest.fn() },
@@ -35,7 +36,7 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
         findUnique: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', driver: { fullName: 'Ерлан' } }),
       },
-      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', publishedByUserId: 'logist-1' }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', publishedByUserId: 'logist-1', status: 'PUBLISHED' }) },
     };
     const notifications = { notify: jest.fn() };
     const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
@@ -55,7 +56,7 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
         findUnique: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', driver: { fullName: 'Ерлан' } }),
       },
-      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', publishedByUserId: null }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', publishedByUserId: null, status: 'PUBLISHED' }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ userId: 'owner-1' }) },
     };
     const notifications = { notify: jest.fn() };
@@ -73,6 +74,7 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
   it('rejects a duplicate response before touching notifications', async () => {
     const prisma: any = {
       response: { findUnique: jest.fn().mockResolvedValue({ id: 'existing', status: 'PENDING' }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', status: 'PUBLISHED' }) },
     };
     const notifications = { notify: jest.fn() };
     const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
@@ -88,7 +90,7 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
         update: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', driver: { fullName: 'Ерлан' } }),
         create: jest.fn(),
       },
-      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', publishedByUserId: 'logist-1' }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', publishedByUserId: 'logist-1', status: 'PUBLISHED' }) },
     };
     const notifications = { notify: jest.fn() };
     const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
@@ -118,7 +120,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
 
     await service.updateStatus('r1', 'c1', 'REJECTED');
 
-    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: 'PENDING' }, data: { status: 'REJECTED' } });
+    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: { in: ['PENDING', 'INVITED'] } }, data: { status: 'REJECTED' } });
     expect(notifications.notify).not.toHaveBeenCalled();
   });
 
@@ -254,7 +256,7 @@ describe('ResponsesService.withdraw — «Отозвать» (задача 035)'
 
     const result = await service.withdraw('r1', 'd1');
 
-    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: 'PENDING' }, data: { status: 'CANCELLED' } });
+    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: { in: ['PENDING', 'INVITED'] } }, data: { status: 'CANCELLED' } });
     expect(result.status).toBe('CANCELLED');
   });
 
@@ -277,14 +279,14 @@ describe('ResponsesService.withdraw — «Отозвать» (задача 035)'
   });
 });
 
-describe('ResponsesService.inviteDriver — attaches the pre-deal chat too (задача 017, п.3) + CARGO_INVITE (011)', () => {
+describe('ResponsesService.createDealDirect — attaches the pre-deal chat too (задача 017, п.3) + CARGO_INVITE (011)', () => {
   it('rejects a driver whose response is already decided', async () => {
     const prisma: any = {
       cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', company: { name: 'Acme' } }) },
       response: { findUnique: jest.fn().mockResolvedValue({ status: 'REJECTED' }) },
     };
     const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
-    await expect(service.inviteDriver('cargo1', 'd1', 'c1')).rejects.toThrow(ConflictException);
+    await expect(service.createDealDirect('cargo1', 'd1', 'c1')).rejects.toThrow(ConflictException);
   });
 
   it('039 п.3: P2002 от уникального индекса при приглашении — 409, а не 500', async () => {
@@ -296,7 +298,7 @@ describe('ResponsesService.inviteDriver — attaches the pre-deal chat too (за
       $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
     const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
-    await expect(service.inviteDriver('cargo1', 'd1', 'c1')).rejects.toThrow(ConflictException);
+    await expect(service.createDealDirect('cargo1', 'd1', 'c1')).rejects.toThrow(ConflictException);
   });
 
   it('creates a SELECTED response + deal, attaches the chat, and notifies the invited driver', async () => {
@@ -311,7 +313,7 @@ describe('ResponsesService.inviteDriver — attaches the pre-deal chat too (за
     const notifications = { notify: jest.fn() };
     const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
 
-    await service.inviteDriver('cargo1', 'd1', 'c1');
+    await service.createDealDirect('cargo1', 'd1', 'c1');
 
     expect(tx.chat.updateMany).toHaveBeenCalledWith({
       where: { driverId: 'd1', companyId: 'c1', cargoId: 'cargo1' },
@@ -335,11 +337,11 @@ describe('ResponsesService.inviteDriver — attaches the pre-deal chat too (за
     };
     const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
 
-    await service.inviteDriver('cargo1', 'd1', 'c1');
+    await service.createDealDirect('cargo1', 'd1', 'c1');
 
     expect(tx.response.create).not.toHaveBeenCalled();
     expect(tx.response.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'r1', status: { in: ['PENDING', 'CANCELLED'] } }, data: { status: 'SELECTED' } }),
+      expect.objectContaining({ where: { id: 'r1', status: { in: ['PENDING', 'INVITED', 'CANCELLED'] } }, data: { status: 'SELECTED' } }),
     );
   });
 
@@ -353,7 +355,7 @@ describe('ResponsesService.inviteDriver — attaches the pre-deal chat too (за
     };
     const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
 
-    await expect(service.inviteDriver('cargo1', 'd1', 'c1')).rejects.toThrow(ConflictException);
+    await expect(service.createDealDirect('cargo1', 'd1', 'c1')).rejects.toThrow(ConflictException);
     expect(tx.deal.create).not.toHaveBeenCalled();
   });
 });
@@ -451,5 +453,110 @@ describe('ResponsesService — «Отклонить»/«Отозвать» по�
   it('параллельный «Выбрать» успел раньше: withdraw → 409', async () => {
     const { service } = setup(0);
     await expect(service.withdraw('r1', 'd1')).rejects.toThrow(ConflictException);
+  });
+});
+
+
+describe('ResponsesService — приглашение с согласием, груз в сделке (задача 041)', () => {
+  const cargoPublished = { id: 'cargo1', companyId: 'c1', status: 'PUBLISHED', company: { name: 'Acme' } };
+
+  it('createForCargo: груз IN_DEAL — 409 CARGO_NOT_AVAILABLE, отклик не создаётся', async () => {
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue({ ...cargoPublished, status: 'IN_DEAL' }) },
+      response: { findUnique: jest.fn(), create: jest.fn() },
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
+    await expect(service.createForCargo('cargo1', 'd1', undefined)).rejects.toMatchObject({ response: { code: 'CARGO_NOT_AVAILABLE' } });
+    expect(prisma.response.create).not.toHaveBeenCalled();
+  });
+
+  it('createForCargo: приглашённый водитель жмёт «Готов взять» — INVITED → PENDING (не 409)', async () => {
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue({ ...cargoPublished, publishedByUserId: 'l1' }) },
+      response: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'r1', status: 'INVITED', message: null }),
+        update: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', driver: { fullName: 'Ерлан', userId: 'u1' } }),
+      },
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
+    const result = await service.createForCargo('cargo1', 'd1', undefined);
+    expect(result.status).toBe('PENDING');
+  });
+
+  it('inviteDriver: создаёт отклик INVITED, НЕ сделку и НЕ отклоняет чужие отклики', async () => {
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue(cargoPublished) },
+      response: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'INVITED', driver: { fullName: 'Ерлан', userId: 'u1' } }),
+        updateMany: jest.fn(),
+      },
+      deal: { create: jest.fn() },
+      $transaction: jest.fn(),
+    };
+    const notifications = { notify: jest.fn() };
+    const chat = { post: jest.fn(), postToChat: jest.fn() };
+    const service = new ResponsesService(prisma, notifications as any, chat as any);
+
+    const result = await service.inviteDriver('cargo1', 'd1', 'c1', 'logist-1');
+
+    expect(result.status).toBe('INVITED');
+    expect(prisma.response.create).toHaveBeenCalledWith(expect.objectContaining({ data: { cargoId: 'cargo1', driverId: 'd1', status: 'INVITED' } }));
+    expect(prisma.deal.create).not.toHaveBeenCalled();
+    expect(prisma.response.updateMany).not.toHaveBeenCalled();
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u1'] }, 'CARGO_INVITE', { cargoId: 'cargo1', companyName: 'Acme' });
+    expect(chat.post).toHaveBeenCalledWith(expect.objectContaining({ code: 'DRIVER_INVITED' }));
+  });
+
+  it('inviteDriver: повторное приглашение того, кто уже в игре, идемпотентно', async () => {
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue(cargoPublished) },
+      response: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', driver: { fullName: 'Ерлан' } }),
+        create: jest.fn(),
+      },
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
+    const result = await service.inviteDriver('cargo1', 'd1', 'c1');
+    expect(result.status).toBe('PENDING');
+    expect(prisma.response.create).not.toHaveBeenCalled();
+  });
+
+  it('inviteDriver: груз не опубликован (IN_DEAL) — 409', async () => {
+    const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue({ ...cargoPublished, status: 'IN_DEAL' }) } };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
+    await expect(service.inviteDriver('cargo1', 'd1', 'c1')).rejects.toThrow(ConflictException);
+  });
+
+  it('«Выбрать»: груз → IN_DEAL, остальные PENDING/INVITED → REJECTED и им «Груз ушёл другому»', async () => {
+    const tx = txMock();
+    tx.response.findMany.mockResolvedValue([{ id: 'r2', driverId: 'd2', driver: { userId: 'u2' } }]);
+    tx.response.findUniqueOrThrow.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', driver: { userId: 'u1', fullName: 'Ерлан' } });
+    tx.deal.create.mockResolvedValue({ id: 'deal1', cargoId: 'cargo1', driverId: 'd1', companyId: 'c1' });
+    const prisma: any = {
+      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', cargo: { companyId: 'c1' }, driver: { userId: 'u1' } }) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+    };
+    const chat = { post: jest.fn(), postToChat: jest.fn() };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, chat as any);
+
+    await service.updateStatus('r1', 'c1', 'SELECTED');
+
+    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: { in: ['r2'] } }, data: { status: 'REJECTED' } });
+    expect(tx.cargo.updateMany).toHaveBeenCalledWith({ where: { id: 'cargo1', status: 'PUBLISHED' }, data: { status: 'IN_DEAL' } });
+    expect(chat.post).toHaveBeenCalledWith(expect.objectContaining({ driverId: 'd2', code: 'CARGO_TAKEN' }));
+  });
+
+  it('водитель отказывается от приглашения: INVITED → CANCELLED, системная строка «отказался от приглашения»', async () => {
+    const tx = txMock();
+    tx.response.findUniqueOrThrow.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'CANCELLED', driver: { userId: 'u1', fullName: 'Ерлан' } });
+    const prisma: any = {
+      response: { findUnique: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'INVITED', driver: { userId: 'u1' }, cargo: { companyId: 'c1' } }) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+    };
+    const chat = { post: jest.fn(), postToChat: jest.fn() };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, chat as any);
+    await service.withdraw('r1', 'd1');
+    expect(chat.post).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVITATION_DECLINED' }));
   });
 });

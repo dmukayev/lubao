@@ -936,6 +936,44 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get chatSystemCargoOffered => '物流专员推荐了货物';
 
   @override
+  String get cargoStatusInDeal => '交易中';
+
+  @override
+  String get responseStatusInvited => '已邀请';
+
+  @override
+  String get chatSystemDriverInvited => '物流方邀请司机承运此货';
+
+  @override
+  String chatSystemInvitationDeclined(String name) {
+    return '$name拒绝了邀请';
+  }
+
+  @override
+  String get chatSystemCargoTaken => '该货物已由其他司机承运';
+
+  @override
+  String get cargoInvitedTitle => '邀请您承运此货';
+
+  @override
+  String get cargoDecline => '拒绝';
+
+  @override
+  String get cargoNotAvailable => '货物已被占用';
+
+  @override
+  String get cargoVerifyHint => '确认运输前，请先在个人资料中完成审核';
+
+  @override
+  String get chatWaitingDriver => '等待司机回复';
+
+  @override
+  String get cargoResponseSent => '已提交意向';
+
+  @override
+  String get cargoYouAreSelected => '您已被选中';
+
+  @override
   String get chatQuickReplyAtPlace => '我已到达';
 
   @override

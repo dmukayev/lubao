@@ -953,6 +953,45 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get chatSystemCargoOffered => 'Логист предложил груз';
 
   @override
+  String get cargoStatusInDeal => 'В сделке';
+
+  @override
+  String get responseStatusInvited => 'Приглашён';
+
+  @override
+  String get chatSystemDriverInvited => 'Логист приглашает водителя на груз';
+
+  @override
+  String chatSystemInvitationDeclined(String name) {
+    return '$name отказался от приглашения';
+  }
+
+  @override
+  String get chatSystemCargoTaken => 'Груз ушёл другому водителю';
+
+  @override
+  String get cargoInvitedTitle => 'Вас приглашают на этот груз';
+
+  @override
+  String get cargoDecline => 'Отказаться';
+
+  @override
+  String get cargoNotAvailable => 'Груз уже занят';
+
+  @override
+  String get cargoVerifyHint =>
+      'Чтобы подтвердить перевозку, пройдите проверку в профиле';
+
+  @override
+  String get chatWaitingDriver => 'Ждём ответа водителя';
+
+  @override
+  String get cargoResponseSent => 'Отклик отправлен';
+
+  @override
+  String get cargoYouAreSelected => 'Вас выбрали';
+
+  @override
   String get chatQuickReplyAtPlace => 'Я на месте';
 
   @override

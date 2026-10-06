@@ -28,6 +28,14 @@ export class ResponsesService {
     };
   }
 
+  async findMine(cargoId: string, driverId: string) {
+    const response = await this.prisma.response.findUnique({
+      where: { cargoId_driverId: { cargoId, driverId } },
+      select: { id: true, status: true },
+    });
+    return response ?? null;
+  }
+
   /// Список откликов для логиста (задача 038, п.8/9) — каждый отклик несёт
   /// сводку «Уже везёт…» по текущей связке водителя + вместимость прицепа:
   /// логист видит занятость ДО выбора, клиент мягко предупреждает, если
@@ -81,15 +89,20 @@ export class ResponsesService {
   }
 
   async createForCargo(cargoId: string, driverId: string, message?: string) {
+    const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId } });
+    if (!cargo) throw new NotFoundException('Cargo not found');
+    // Груз с активной сделкой (IN_DEAL) и закрытый — для откликов закрыт (041, п.2).
+    if (cargo.status !== 'PUBLISHED') {
+      throw new ConflictException({ code: 'CARGO_NOT_AVAILABLE', message: 'Cargo is no longer available' });
+    }
     const existing = await this.prisma.response.findUnique({ where: { cargoId_driverId: { cargoId, driverId } } });
     // Отозвал → передумал → снова «Готов взять» (задача 038, п.2): НЕ 409,
     // а переоткрытие того же отклика (уникальный ключ cargoId+driverId не
-    // даёт создать второй). 409 — только для реально решённых откликов.
-    if (existing && existing.status !== 'CANCELLED') {
+    // даёт создать второй). Приглашён → «Готов взять» — то же переоткрытие
+    // (INVITED → PENDING, задача 041, п.3). 409 — только для решённых.
+    if (existing && existing.status !== 'CANCELLED' && existing.status !== 'INVITED') {
       throw new ConflictException({ code: 'RESPONSE_ALREADY_EXISTS', message: 'You have already responded to this cargo' });
     }
-    const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId } });
-    if (!cargo) throw new NotFoundException('Cargo not found');
 
     const response = existing
       ? await this.prisma.response.update({
@@ -160,20 +173,21 @@ export class ResponsesService {
     const response = await this.prisma.response.findUnique({ where: { id: responseId }, include: { driver: true, cargo: { select: { companyId: true } } } });
     if (!response) throw new NotFoundException('Response not found');
     if (response.driverId !== driverId) throw new ForbiddenException('Not your response');
-    if (response.status !== 'PENDING') {
+    if (response.status !== 'PENDING' && response.status !== 'INVITED') {
       throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
     }
+    const wasInvited = response.status === 'INVITED';
 
     const updated = await this.closePending(responseId, response.cargoId, 'CANCELLED');
 
-    // «Водитель отозвал отклик» — системно в чат (задача 038, п.11/12),
-    // логист с открытым чатом видит смену кнопок сразу.
+    // «Водитель отозвал отклик» / «отказался от приглашения» — системно в чат
+    // (задача 038, п.11/12), логист с открытым чатом видит смену кнопок сразу.
     await this.chatSystem.post({
       driverId,
       companyId: response.cargo.companyId,
       cargoId: response.cargoId,
       actorUserId: updated.driver.userId,
-      code: 'RESPONSE_WITHDRAWN',
+      code: wasInvited ? 'INVITATION_DECLINED' : 'RESPONSE_WITHDRAWN',
       systemParams: { driverName: updated.driver.fullName },
     });
 
@@ -198,7 +212,8 @@ export class ResponsesService {
   private async closePending(responseId: string, cargoId: string, to: 'REJECTED' | 'CANCELLED') {
     return this.prisma.$transaction(async (tx) => {
       await this.lockCargo(tx, cargoId);
-      const res = await tx.response.updateMany({ where: { id: responseId, status: 'PENDING' }, data: { status: to } });
+      // PENDING и INVITED: приглашение можно и отозвать (логист), и отклонить (водитель).
+      const res = await tx.response.updateMany({ where: { id: responseId, status: { in: ['PENDING', 'INVITED'] } }, data: { status: to } });
       if (res.count === 0) {
         throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
       }
@@ -241,7 +256,7 @@ export class ResponsesService {
       // Повторное «Отклонить» — идемпотентно; но SELECTED/CANCELLED
       // отклонять нельзя: у SELECTED уже есть сделка, у CANCELLED нечего.
       if (response.status === 'REJECTED') return this.toDto(response);
-      if (response.status !== 'PENDING') {
+      if (response.status !== 'PENDING' && response.status !== 'INVITED') {
         throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
       }
       const updated = await this.closePending(responseId, response.cargoId, 'REJECTED');
@@ -265,10 +280,7 @@ export class ResponsesService {
 
     const updated = await this.prisma.$transaction(async (tx) => {
       await this.assertNoActiveDeal(tx, response.cargoId);
-      await tx.response.updateMany({
-        where: { cargoId: response.cargoId, status: 'PENDING', id: { not: responseId } },
-        data: { status: 'REJECTED' },
-      });
+      const takenFrom = await this.markCargoTaken(tx, response.cargoId, responseId);
       // Условный апдейт (п.22): статус мог уйти из PENDING между чтением
       // снаружи транзакции и замком — 0 затронутых = отклик уже решён.
       const claimed = await tx.response.updateMany({ where: { id: responseId, status: 'PENDING' }, data: { status: 'SELECTED' } });
@@ -289,7 +301,7 @@ export class ResponsesService {
         },
       });
       await this.attachChatToDeal(tx, deal);
-      return { selected, deal };
+      return { selected, deal, takenFrom };
     }).catch((e) => this.rethrowUnique(e));
 
     await this.notifications.notify({ userIds: [updated.selected.driver.userId] }, 'DEAL_STATUS', {
@@ -307,12 +319,74 @@ export class ResponsesService {
       systemParams: { driverName: updated.selected.driver.fullName },
     });
 
+    await this.postCargoTaken(updated.takenFrom, companyId, updated.selected.cargoId, actorUserId ?? updated.selected.driver.userId);
+
     return this.toDto(updated.selected);
   }
 
-  /// Логист приглашает конкретного водителя на груз напрямую (со страницы
-  /// "Кто будет на Хоргосе"), без предварительного отклика водителя.
+  /// Груз ушёл в сделку (041, п.2): статус IN_DEAL (из ленты исчезает),
+  /// остальные PENDING/INVITED отклики — REJECTED. Возвращает тех, кого
+  /// отклонили, чтобы после коммита написать им «Груз ушёл другому».
+  private async markCargoTaken(tx: Prisma.TransactionClient, cargoId: string, exceptResponseId: string | null) {
+    const others = await tx.response.findMany({
+      where: { cargoId, status: { in: ['PENDING', 'INVITED'] }, ...(exceptResponseId ? { id: { not: exceptResponseId } } : {}) },
+      select: { id: true, driverId: true, driver: { select: { userId: true } } },
+    });
+    if (others.length > 0) {
+      await tx.response.updateMany({ where: { id: { in: others.map((o) => o.id) } }, data: { status: 'REJECTED' } });
+    }
+    await tx.cargo.updateMany({ where: { id: cargoId, status: 'PUBLISHED' }, data: { status: 'IN_DEAL' } });
+    return others;
+  }
+
+  private async postCargoTaken(others: Array<{ driverId: string; driver: { userId: string } }>, companyId: string, cargoId: string, actorUserId: string) {
+    for (const other of others) {
+      await this.chatSystem.post({ driverId: other.driverId, companyId, cargoId, actorUserId, code: 'CARGO_TAKEN' });
+    }
+  }
+
+  /// Приглашение с согласием (041, п.3): логист зовёт водителя на груз —
+  /// создаётся отклик INVITED, НЕ сделка и НЕ отклонение чужих откликов.
+  /// Водитель отвечает «Готов взять» (→ PENDING, потом «Выбрать» логиста) или
+  /// «Отказаться». Повторное приглашение того, кто уже в игре, — идемпотентно.
   async inviteDriver(cargoId: string, driverId: string, companyId: string, actorUserId?: string) {
+    const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId }, include: { company: true } });
+    if (!cargo) throw new NotFoundException('Cargo not found');
+    if (cargo.companyId !== companyId) throw new ForbiddenException('Not your cargo');
+    if (cargo.status !== 'PUBLISHED') {
+      throw new ConflictException({ code: 'CARGO_NOT_AVAILABLE', message: 'Cargo is no longer available' });
+    }
+
+    const existing = await this.prisma.response.findUnique({ where: { cargoId_driverId: { cargoId, driverId } }, include: { driver: true } });
+    if (existing && (existing.status === 'INVITED' || existing.status === 'PENDING' || existing.status === 'SELECTED')) {
+      return this.toDto(existing);
+    }
+    if (existing && existing.status !== 'CANCELLED') {
+      throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Driver already has a decided response for this cargo' });
+    }
+
+    const response = existing
+      ? await this.prisma.response.update({ where: { id: existing.id }, data: { status: 'INVITED' }, include: { driver: true } })
+      : await this.prisma.response.create({ data: { cargoId, driverId, status: 'INVITED' }, include: { driver: true } });
+
+    await this.notifications.notify({ userIds: [response.driver.userId] }, 'CARGO_INVITE', {
+      cargoId,
+      companyName: cargo.company.name,
+    });
+    await this.chatSystem.post({
+      driverId,
+      companyId,
+      cargoId,
+      actorUserId: actorUserId ?? response.driver.userId,
+      code: 'DRIVER_INVITED',
+      systemParams: { driverName: response.driver.fullName },
+    });
+    return this.toDto(response);
+  }
+
+  /// «Нашёл в Lubao» при закрытии груза (017, п.6) — сделка сразу, без
+  /// согласия: логист уже договорился. Это прежнее поведение приглашения.
+  async createDealDirect(cargoId: string, driverId: string, companyId: string, actorUserId?: string) {
     const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId }, include: { company: true } });
     if (!cargo) throw new NotFoundException('Cargo not found');
     if (cargo.companyId !== companyId) throw new ForbiddenException('Not your cargo');
@@ -320,22 +394,19 @@ export class ResponsesService {
     const existing = await this.prisma.response.findUnique({ where: { cargoId_driverId: { cargoId, driverId } } });
     // CANCELLED (водитель отзывал) приглашать можно — переоткрывается тот
     // же отклик (задача 038, п.2); REJECTED/SELECTED — решённые, нельзя.
-    if (existing && existing.status !== 'PENDING' && existing.status !== 'CANCELLED') {
+    if (existing && existing.status !== 'PENDING' && existing.status !== 'INVITED' && existing.status !== 'CANCELLED') {
       throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Driver already has a decided response for this cargo' });
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
       await this.assertNoActiveDeal(tx, cargoId);
-      await tx.response.updateMany({
-        where: { cargoId, status: 'PENDING' },
-        data: { status: 'REJECTED' },
-      });
+      const takenFrom = await this.markCargoTaken(tx, cargoId, existing?.id ?? null);
       let selected;
       if (existing) {
         // Условный апдейт (п.22): решённый между проверкой и замком отклик
         // не воскрешается.
         const claimed = await tx.response.updateMany({
-          where: { id: existing.id, status: { in: ['PENDING', 'CANCELLED'] } },
+          where: { id: existing.id, status: { in: ['PENDING', 'INVITED', 'CANCELLED'] } },
           data: { status: 'SELECTED' },
         });
         if (claimed.count === 0) {
@@ -361,10 +432,12 @@ export class ResponsesService {
         },
       });
       await this.attachChatToDeal(tx, deal);
-      return selected;
+      return { selected, takenFrom };
     }).catch((e) => this.rethrowUnique(e));
+    const taken = updated.takenFrom;
+    const selectedResponse = updated.selected;
 
-    await this.notifications.notify({ userIds: [updated.driver.userId] }, 'CARGO_INVITE', {
+    await this.notifications.notify({ userIds: [selectedResponse.driver.userId] }, 'CARGO_INVITE', {
       cargoId,
       companyName: cargo.company.name,
     });
@@ -374,12 +447,13 @@ export class ResponsesService {
       driverId,
       companyId,
       cargoId,
-      actorUserId: actorUserId ?? updated.driver.userId,
+      actorUserId: actorUserId ?? selectedResponse.driver.userId,
       code: 'DRIVER_SELECTED',
-      systemParams: { driverName: updated.driver.fullName },
+      systemParams: { driverName: selectedResponse.driver.fullName },
     });
+    await this.postCargoTaken(taken, companyId, cargoId, actorUserId ?? selectedResponse.driver.userId);
 
-    return this.toDto(updated);
+    return this.toDto(selectedResponse);
   }
 
   /// Чат водитель+логист(+груз), заведённый до сделки (задача 017, п.1/3),

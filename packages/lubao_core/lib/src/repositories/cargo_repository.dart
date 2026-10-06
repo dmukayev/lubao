@@ -75,6 +75,13 @@ class CargoRepository {
     return CargoResponse.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// Мой отклик на груз (null — ещё не откликался).
+  Future<MyCargoResponse?> myResponse(String cargoId) async {
+    final res = await _client.dio.get('/cargos/$cargoId/my-response');
+    final data = (res.data as Map<String, dynamic>)['response'];
+    return data == null ? null : MyCargoResponse.fromJson(data as Map<String, dynamic>);
+  }
+
   /// «Отозвать» (задача 035) — только пока отклик ещё `PENDING`.
   Future<CargoResponse> withdrawResponse(String responseId) async {
     final res = await _client.dio.post('/responses/$responseId/withdraw');

@@ -43,6 +43,8 @@ String cargoStatusLabel(LubaoLocalizations t, String status) {
   switch (status) {
     case 'PUBLISHED':
       return t.cargoStatusPublished;
+    case 'IN_DEAL':
+      return t.cargoStatusInDeal;
     case 'ARCHIVED':
       return t.cargoStatusArchived;
     case 'EXPIRED':

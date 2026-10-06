@@ -608,6 +608,7 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
         await ref.read(cargoRepositoryProvider).updateResponseStatus(responseId, 'SELECTED');
       } else {
         await ref.read(cargoRepositoryProvider).inviteDriver(cargoId, driverId);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.driversAtPointInviteSent)));
       }
       // Системную строку «выбран водитель» постит сервер (038, п.11).
       ref.invalidate(chatMessagesProvider(widget.chatId));
@@ -716,6 +717,11 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
           onPressed: () => _advanceDeal(deal.id, next),
         );
       }
+    } else if (cargo.status != CargoStatus.published &&
+        thread.cargoResponseStatus != 'REJECTED' &&
+        thread.cargoResponseStatus != 'SELECTED') {
+      // Груз уже в сделке с другим (041, п.2): ни «Пригласить», ни «Готов взять».
+      actionRow = OutlinedButton(key: const Key('chatCargoTaken'), onPressed: null, child: Text(t.cargoNotAvailable));
     } else {
       final responseStatus = thread.cargoResponseStatus;
       if (widget.isDriver) {
@@ -728,6 +734,28 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
                 child: OutlinedButton(
                   onPressed: _busy ? null : () => _withdraw(thread.cargoResponseId!),
                   child: Text(t.chatWithdrawButton),
+                ),
+              ),
+            ],
+          );
+        } else if (responseStatus == 'INVITED') {
+          // Приглашение с согласием (041, п.3): «Готов взять» / «Отказаться».
+          actionRow = Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  key: const Key('chatDeclineInvitationButton'),
+                  onPressed: _busy ? null : () => _withdraw(thread.cargoResponseId!),
+                  child: Text(t.cargoDecline),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: PrimaryButton(
+                  key: const Key('chatCargoReadyButton'),
+                  label: t.chatCargoReadyButton,
+                  loading: _busy,
+                  onPressed: () => _respond(thread.cargoId!),
                 ),
               ),
             ],
@@ -754,6 +782,9 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
             loading: _busy,
             onPressed: () => _selectDriver(thread.cargoId!, thread.driverId, thread.cargoResponseId),
           );
+        } else if (responseStatus == 'INVITED') {
+          // Ждём согласия водителя (041, п.3): «Выбрать» из INVITED нельзя.
+          actionRow = OutlinedButton(key: const Key('chatInvitedWaiting'), onPressed: null, child: Text(t.chatWaitingDriver));
         } else if (responseStatus == 'REJECTED' || responseStatus == 'CANCELLED') {
           // Выбор только из PENDING (038, п.1) — решённый отклик из чата
           // не воскресить; SELECTED без сделки — сделка ещё грузится.

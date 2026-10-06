@@ -11,6 +11,8 @@ import '../../providers/api_providers.dart';
   switch (status) {
     case CargoStatus.published:
       return (t.cargoStatusPublished, StatusBadge.success);
+    case CargoStatus.inDeal:
+      return (t.cargoStatusInDeal, StatusBadge.info);
     case CargoStatus.archived:
       return (t.cargoStatusArchived, StatusBadge.neutral);
     case CargoStatus.expired:
@@ -22,6 +24,8 @@ import '../../providers/api_providers.dart';
 
 (String, Color) responseStatusPresentation(LubaoLocalizations t, ResponseStatus status) {
   switch (status) {
+    case ResponseStatus.invited:
+      return (t.responseStatusInvited, StatusBadge.info);
     case ResponseStatus.pending:
       return (t.responseStatusPending, StatusBadge.warning);
     case ResponseStatus.selected:
@@ -182,6 +186,8 @@ String? responseConflictText(LubaoLocalizations t, Object error) {
       return t.chatResponseClosed;
     case 'RESPONSE_ALREADY_EXISTS':
       return t.cargoAlreadyResponded;
+    case 'CARGO_NOT_AVAILABLE':
+      return t.cargoNotAvailable;
     default:
       return null;
   }
@@ -344,6 +350,9 @@ String systemMessageText(LubaoLocalizations t, String? code, Map<String, String>
     'RESPONSE_WITHDRAWN' => tidy(t.chatSystemResponseWithdrawn(name)),
     'RESPONSE_REJECTED' => t.chatSystemResponseRejected,
     'CARGO_OFFERED' => t.chatSystemCargoOffered,
+    'DRIVER_INVITED' => t.chatSystemDriverInvited,
+    'INVITATION_DECLINED' => tidy(t.chatSystemInvitationDeclined(name)),
+    'CARGO_TAKEN' => t.chatSystemCargoTaken,
     _ => fallback,
   };
 }

@@ -84,7 +84,7 @@ class _AdminCargosScreenState extends ConsumerState<AdminCargosScreen> {
     });
   }
 
-  static const _statuses = ['PUBLISHED', 'ARCHIVED', 'EXPIRED', 'CANCELLED'];
+  static const _statuses = ['PUBLISHED', 'IN_DEAL', 'ARCHIVED', 'EXPIRED', 'CANCELLED'];
 
   List<ChoiceChip> _filterChips(BuildContext context) {
     final t = context.l10n;

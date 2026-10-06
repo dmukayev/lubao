@@ -960,6 +960,46 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get chatSystemCargoOffered => 'The logist offered a cargo';
 
   @override
+  String get cargoStatusInDeal => 'In a deal';
+
+  @override
+  String get responseStatusInvited => 'Invited';
+
+  @override
+  String get chatSystemDriverInvited =>
+      'The logist invites the driver to this cargo';
+
+  @override
+  String chatSystemInvitationDeclined(String name) {
+    return '$name declined the invitation';
+  }
+
+  @override
+  String get chatSystemCargoTaken => 'The cargo went to another driver';
+
+  @override
+  String get cargoInvitedTitle => 'You are invited to this cargo';
+
+  @override
+  String get cargoDecline => 'Decline';
+
+  @override
+  String get cargoNotAvailable => 'Cargo is already taken';
+
+  @override
+  String get cargoVerifyHint =>
+      'To confirm the trip, complete verification in your profile';
+
+  @override
+  String get chatWaitingDriver => 'Waiting for the driver reply';
+
+  @override
+  String get cargoResponseSent => 'Response sent';
+
+  @override
+  String get cargoYouAreSelected => 'You were selected';
+
+  @override
   String get chatQuickReplyAtPlace => 'I\'m on site';
 
   @override

@@ -86,17 +86,21 @@ String currencySymbol(Currency currency) {
   }
 }
 
-enum CargoStatus { published, archived, expired, cancelled }
+enum CargoStatus { published, inDeal, archived, expired, cancelled }
+
+/// Сравнение без «_»: серверное IN_DEAL ↔ клиентское inDeal.
+String _enumKey(String value) => value.replaceAll('_', '').toUpperCase();
 
 CargoStatus cargoStatusFromJson(String value) => CargoStatus.values.firstWhere(
-      (e) => e.name.toUpperCase() == value.toUpperCase(),
+      (e) => _enumKey(e.name) == _enumKey(value),
       orElse: () => CargoStatus.published,
     );
 
-enum ResponseStatus { pending, selected, rejected, cancelled }
+/// `invited` — логист пригласил, водитель ещё не согласился (задача 041).
+enum ResponseStatus { invited, pending, selected, rejected, cancelled }
 
 ResponseStatus responseStatusFromJson(String value) => ResponseStatus.values.firstWhere(
-      (e) => e.name.toUpperCase() == value.toUpperCase(),
+      (e) => _enumKey(e.name) == _enumKey(value),
       orElse: () => ResponseStatus.pending,
     );
 

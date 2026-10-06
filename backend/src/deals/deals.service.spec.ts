@@ -34,6 +34,7 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
   beforeEach(() => {
     prisma = {
       deal: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+      cargo: { updateMany: jest.fn() },
       companyMember: { findFirst: jest.fn() },
       chat: { findFirst: jest.fn().mockResolvedValue(null) },
       vehicle: {
@@ -94,6 +95,15 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
       'DEAL_STATUS',
       expect.objectContaining({ status: 'CANCELLED' }),
     );
+  });
+
+  it('041, п.2: отмена сделки возвращает груз IN_DEAL → PUBLISHED (снова в ленте)', async () => {
+    prisma.deal.findUnique.mockResolvedValue(dealFixture());
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CANCELLED' }));
+
+    await service.cancel('deal1', { driverId: 'd1' }, 'Не получилось забрать груз');
+
+    expect(prisma.cargo.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { status: 'PUBLISHED' } }));
   });
 });
 
@@ -382,7 +392,7 @@ describe('DealsService — догруз разрешён, «бронь всег�
 
 describe('DealsService.cancel — код причины только от водителя (задача 038, п.28)', () => {
   function setup() {
-    const prisma: any = { deal: { findUnique: jest.fn(), update: jest.fn() }, companyMember: { findFirst: jest.fn() }, chat: { findFirst: jest.fn().mockResolvedValue(null) } };
+    const prisma: any = { deal: { findUnique: jest.fn(), update: jest.fn() }, cargo: { updateMany: jest.fn() }, companyMember: { findFirst: jest.fn() }, chat: { findFirst: jest.fn().mockResolvedValue(null) } };
     prisma.deal.findUnique.mockResolvedValue(dealFixture());
     prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CANCELLED' }));
     const service = new DealsService(prisma, { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) } as any, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);

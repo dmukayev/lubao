@@ -1343,9 +1343,12 @@ describe('AdminService.dealDetail / dealChat / advanceDealStatusByAdmin / cancel
       auditLog: { create: jest.fn() },
       ...dealNotificationMocks(),
     };
+    prisma.cargo = { ...(prisma.cargo ?? {}), updateMany: jest.fn() };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     await service.cancelDealByAdmin('deal1', 'admin-1', 'Груз утрачен');
+    // 041: груз возвращается в ленту.
+    expect(prisma.cargo.updateMany).toHaveBeenCalledWith({ where: { id: expect.any(String), status: 'IN_DEAL' }, data: { status: 'PUBLISHED' } });
 
     expect(prisma.deal.update).toHaveBeenCalledWith({
       where: { id: 'deal1' },

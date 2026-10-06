@@ -85,10 +85,20 @@ export class CargosController {
     return this.responses.listForCargo(id);
   }
 
+  /// Мой отклик на груз (041): карточка водителя показывает «Откликнуться» /
+  /// «Вас приглашают» / «Отклик отправлен» по реальному состоянию, а не по
+  /// локальному флагу. Обёртка в объект — не голый null (задача 027).
+  @Get(':id/my-response')
+  async myResponse(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return { response: await this.responses.findMine(id, ctx.driver.id) };
+  }
+
   @Post(':id/responses')
   respond(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: CreateResponseDto) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');
-    if (!ctx.driver.isVerified) throw new ForbiddenException('DRIVER_NOT_VERIFIED');
+    // Откликаться может любой водитель с профилем (041, п.1); гейт проверки —
+    // только на «Подтверждаю перевозку» (deals.controller).
     return this.responses.createForCargo(id, ctx.driver.id, dto.message);
   }
 

@@ -62,3 +62,15 @@ class CargoResponse {
         committedReadyDate: json['committedReadyDate'] == null ? null : DateTime.parse(json['committedReadyDate'] as String),
       );
 }
+
+
+/// Мой отклик на груз (041) — для карточки водителя.
+class MyCargoResponse {
+  const MyCargoResponse({required this.id, required this.status});
+
+  final String id;
+  final ResponseStatus status;
+
+  factory MyCargoResponse.fromJson(Map<String, dynamic> json) =>
+      MyCargoResponse(id: json['id'] as String, status: responseStatusFromJson(json['status'] as String));
+}

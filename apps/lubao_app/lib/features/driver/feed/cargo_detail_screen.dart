@@ -24,23 +24,39 @@ class CargoDetailScreen extends ConsumerStatefulWidget {
 
 class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
   bool _responding = false;
-  bool _responded = false;
   bool _openingChat = false;
 
+  /// «Готов взять» — и первый отклик, и согласие на приглашение (INVITED → PENDING).
   Future<void> _respond() async {
     setState(() => _responding = true);
     try {
       await ref.read(cargoRepositoryProvider).respond(widget.cargoId);
-      setState(() => _responded = true);
+      ref.invalidate(myCargoResponseProvider(widget.cargoId));
     } on DioException catch (e) {
-      if (e.response?.statusCode == 409) {
-        setState(() => _responded = true);
-      } else if (isDriverNotVerifiedError(e)) {
-        if (mounted) await showVerificationRequiredSheet(context);
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.commonError)));
+      ref.invalidate(myCargoResponseProvider(widget.cargoId));
+      if (e.response?.statusCode != 409 && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(responseConflictText(context.l10n, e) ?? context.l10n.commonError)));
       }
     } finally {
+      if (mounted) setState(() => _responding = false);
+    }
+  }
+
+  /// «Отказаться» от приглашения.
+  Future<void> _decline(String responseId) async {
+    setState(() => _responding = true);
+    try {
+      await ref.read(cargoRepositoryProvider).withdrawResponse(responseId);
+    } on DioException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(responseConflictText(context.l10n, e) ?? context.l10n.commonError)));
+      }
+    } finally {
+      ref.invalidate(myCargoResponseProvider(widget.cargoId));
       if (mounted) setState(() => _responding = false);
     }
   }
@@ -51,12 +67,11 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
   void _logContact(Cargo cargo, String type) {
     final driverId = ref.read(sessionProvider)?.driver?.id;
     if (driverId == null) return;
-    unawaited(ref.read(cargoRepositoryProvider).logContactEvent(
-          driverId: driverId,
-          companyId: cargo.companyId,
-          cargoId: cargo.id,
-          type: type,
-        ));
+    unawaited(
+      ref
+          .read(cargoRepositoryProvider)
+          .logContactEvent(driverId: driverId, companyId: cargo.companyId, cargoId: cargo.id, type: type),
+    );
   }
 
   Future<void> _call(Cargo cargo) async {
@@ -83,14 +98,58 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
     } catch (e) {
       debugPrint('CargoDetailScreen: failed to open chat: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.l10n.chatOpenFailed),
-          action: SnackBarAction(label: context.l10n.commonRetry, onPressed: () => _chat(cargo)),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.chatOpenFailed),
+            action: SnackBarAction(label: context.l10n.commonRetry, onPressed: () => _chat(cargo)),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _openingChat = false);
     }
+  }
+
+  /// Нижняя кнопка по реальному состоянию отклика (041): «Откликнуться» /
+  /// «Готов взять»+«Отказаться» (приглашение) / «Вы откликнулись» / «Вас
+  /// выбрали» / «Груз уже занят». Непроверенному — мягкая строка над кнопкой.
+  Widget _respondArea(Cargo cargo, LubaoLocalizations t) {
+    final mine = ref.watch(myCargoResponseProvider(widget.cargoId)).valueOrNull;
+    final status = mine?.status;
+    if (status == ResponseStatus.invited) {
+      return Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              key: const Key('cargoDetailDeclineButton'),
+              onPressed: _responding ? null : () => _decline(mine!.id),
+              child: Text(t.cargoDecline),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: PrimaryButton(
+              key: const Key('cargoDetailRespondButton'),
+              label: t.chatCargoReadyButton,
+              loading: _responding,
+              onPressed: _respond,
+            ),
+          ),
+        ],
+      );
+    }
+    final (label, enabled) = switch (status) {
+      ResponseStatus.pending => (t.cargoAlreadyResponded, false),
+      ResponseStatus.selected => (t.cargoYouAreSelected, false),
+      ResponseStatus.rejected => (t.chatResponseClosed, false),
+      _ => cargo.status == CargoStatus.published ? (t.cargoRespond, true) : (t.cargoNotAvailable, false),
+    };
+    return PrimaryButton(
+      key: const Key('cargoDetailRespondButton'),
+      label: label,
+      loading: _responding,
+      onPressed: enabled ? _respond : null,
+    );
   }
 
   @override
@@ -121,37 +180,48 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
           : SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, AppSpacing.sm),
-                child: Row(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconSquareButton(
-                      icon: LucideIcons.phone,
-                      size: AppSizes.buttonHeight,
-                      onPressed: cargoAsync.value!.contactPhone == null ? null : () => _call(cargoAsync.value!),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    IconSquareButton(
-                      key: const Key('cargoDetailChatButton'),
-                      icon: LucideIcons.messageSquare,
-                      size: AppSizes.buttonHeight,
-                      loading: _openingChat,
-                      onPressed: () => _chat(cargoAsync.value!),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    if (!cargoAsync.value!.isWhatsappBlocked) ...[
-                      IconSquareButton(
-                        icon: LucideIcons.messageCircle,
-                        size: AppSizes.buttonHeight,
-                        onPressed: cargoAsync.value!.contactPhone == null ? null : () => _whatsapp(cargoAsync.value!),
+                    // Новичок откликается и без проверки; подтвердить перевозку —
+                    // только после неё (041, п.1) — мягкая подсказка, не запрет.
+                    if (!(ref.watch(sessionProvider)?.driver?.isVerified ?? false))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                        child: Text(
+                          t.cargoVerifyHint,
+                          key: const Key('cargoVerifyHint'),
+                          style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                        ),
                       ),
-                      const SizedBox(width: AppSpacing.sm),
-                    ],
-                    Expanded(
-                      child: PrimaryButton(
-                        key: const Key('cargoDetailRespondButton'),
-                        label: _responded ? t.cargoAlreadyResponded : t.cargoRespond,
-                        loading: _responding,
-                        onPressed: _responded ? null : _respond,
-                      ),
+                    Row(
+                      children: [
+                        IconSquareButton(
+                          icon: LucideIcons.phone,
+                          size: AppSizes.buttonHeight,
+                          onPressed: cargoAsync.value!.contactPhone == null ? null : () => _call(cargoAsync.value!),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        IconSquareButton(
+                          key: const Key('cargoDetailChatButton'),
+                          icon: LucideIcons.messageSquare,
+                          size: AppSizes.buttonHeight,
+                          loading: _openingChat,
+                          onPressed: () => _chat(cargoAsync.value!),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        if (!cargoAsync.value!.isWhatsappBlocked) ...[
+                          IconSquareButton(
+                            icon: LucideIcons.messageCircle,
+                            size: AppSizes.buttonHeight,
+                            onPressed: cargoAsync.value!.contactPhone == null
+                                ? null
+                                : () => _whatsapp(cargoAsync.value!),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                        ],
+                        Expanded(child: _respondArea(cargoAsync.value!, t)),
+                      ],
                     ),
                   ],
                 ),
@@ -175,8 +245,10 @@ class _CargoDetailBody extends StatelessWidget {
     final city = refData.cityById(cargo.destinationCityId);
     final bodyType = refData.bodyTypeById(cargo.bodyTypeId);
     final point = refData.pointById(cargo.pointId);
-    final destinationLabel =
-        [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
+    final destinationLabel = [
+      city?.name.forLanguageCode(locale),
+      country.name.forLanguageCode(locale),
+    ].whereType<String>().join(', ');
 
     final kzt = refData.convertToKzt(cargo.price, cargo.currency);
     final usd = refData.convertToUsd(cargo.price, cargo.currency);
@@ -232,13 +304,19 @@ class _CargoDetailBody extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
             child: Row(
               children: [
-                Expanded(child: _DetailChip(label: t.cargoBodyType, value: bodyType.name.forLanguageCode(locale))),
+                Expanded(
+                  child: _DetailChip(label: t.cargoBodyType, value: bodyType.name.forLanguageCode(locale)),
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 if (cargo.weightKg != null)
-                  Expanded(child: _DetailChip(label: t.cargoWeight, value: '${cargo.weightKg} ${t.unitKg}')),
+                  Expanded(
+                    child: _DetailChip(label: t.cargoWeight, value: '${cargo.weightKg} ${t.unitKg}'),
+                  ),
                 if (cargo.weightKg != null) const SizedBox(width: AppSpacing.sm),
                 if (cargo.volumeM3 != null)
-                  Expanded(child: _DetailChip(label: t.cargoVolume, value: '${cargo.volumeM3} ${t.unitM3}')),
+                  Expanded(
+                    child: _DetailChip(label: t.cargoVolume, value: '${cargo.volumeM3} ${t.unitM3}'),
+                  ),
               ],
             ),
           ),
@@ -307,7 +385,10 @@ class _CargoDetailBody extends StatelessWidget {
                                 Text(t.cargoDetailNoReviews, style: AppTextStyles.caption),
                                 const Text(' · ', style: AppTextStyles.caption),
                               ],
-                              Text(t.cargoDetailCompanyDeals(cargo.companyCompletedDeals), style: AppTextStyles.caption),
+                              Text(
+                                t.cargoDetailCompanyDeals(cargo.companyCompletedDeals),
+                                style: AppTextStyles.caption,
+                              ),
                             ],
                           ),
                         ],
@@ -320,7 +401,10 @@ class _CargoDetailBody extends StatelessWidget {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(AppRadius.field)),
+                    decoration: BoxDecoration(
+                      color: AppColors.bg,
+                      borderRadius: BorderRadius.circular(AppRadius.field),
+                    ),
                     child: Text(cargo.description!, style: AppTextStyles.body),
                   ),
                 ],
@@ -359,19 +443,19 @@ class _CargoDetailBody extends StatelessWidget {
   }
 
   void _openPhoto(BuildContext context, List<String> photoUrls, int initialIndex) {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => Scaffold(
-        backgroundColor: Colors.black,
-        appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
-        body: PageView.builder(
-          controller: PageController(initialPage: initialIndex),
-          itemCount: photoUrls.length,
-          itemBuilder: (context, index) => InteractiveViewer(
-            child: Center(child: Image.network(photoUrls[index])),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
+          body: PageView.builder(
+            controller: PageController(initialPage: initialIndex),
+            itemCount: photoUrls.length,
+            itemBuilder: (context, index) => InteractiveViewer(child: Center(child: Image.network(photoUrls[index]))),
           ),
         ),
       ),
-    ));
+    );
   }
 }
 
@@ -389,7 +473,11 @@ class _RoutePoint extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 6),
-          child: Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          child: Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
@@ -397,10 +485,7 @@ class _RoutePoint extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: AppTextStyles.route),
-              if (subtitle != null) ...[
-                const SizedBox(height: 2),
-                Text(subtitle!, style: AppTextStyles.caption),
-              ],
+              if (subtitle != null) ...[const SizedBox(height: 2), Text(subtitle!, style: AppTextStyles.caption)],
             ],
           ),
         ),

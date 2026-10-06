@@ -48,6 +48,8 @@ enum VehicleKind {
 
 enum CargoStatus {
   PUBLISHED
+  /// Выбран водитель, сделка активна (задача 041): из ленты скрыт, откликаться нельзя.
+  IN_DEAL
   ARCHIVED
   EXPIRED
   CANCELLED
@@ -67,6 +69,8 @@ enum Currency {
 }
 
 enum ResponseStatus {
+  /// Логист пригласил, водитель ещё не согласился (задача 041, п.3).
+  INVITED
   PENDING
   SELECTED
   REJECTED

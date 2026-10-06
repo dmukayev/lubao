@@ -262,6 +262,13 @@ export class DealsService {
         code: 'DEAL_CONFIRMED',
       });
     }
+    // Доставлено → груз закрыт («нашёл в Lubao»), 041.
+    if (nextStatus === 'DELIVERED') {
+      await this.prisma.cargo.updateMany({
+        where: { id: updated.cargoId, status: 'IN_DEAL' },
+        data: { status: 'ARCHIVED', closeOutcome: 'FOUND_IN_APP', closedAt: new Date() },
+      });
+    }
     await this.notifyStatusChange(updated, nextStatus);
     return this.toDto(updated);
   }
@@ -286,6 +293,8 @@ export class DealsService {
       },
       include: this.include,
     });
+    // Сделка отменена → груз снова в ленте, если он не был закрыт (041, п.2).
+    await this.prisma.cargo.updateMany({ where: { id: updated.cargoId, status: 'IN_DEAL' }, data: { status: 'PUBLISHED' } });
     await this.notifyStatusChange(updated, 'CANCELLED');
     return this.toDto(updated);
   }

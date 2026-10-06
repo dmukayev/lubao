@@ -11,6 +11,11 @@ final myCargosProvider = FutureProvider.autoDispose<List<Cargo>>((ref) {
   return ref.watch(cargoRepositoryProvider).mine();
 });
 
+/// Мой отклик на груз — состояние кнопки в карточке водителя (041).
+final myCargoResponseProvider = FutureProvider.autoDispose.family<MyCargoResponse?, String>((ref, cargoId) {
+  return ref.watch(cargoRepositoryProvider).myResponse(cargoId);
+});
+
 final cargoByIdProvider = FutureProvider.autoDispose.family<Cargo, String>((ref, id) {
   return ref.watch(cargoRepositoryProvider).byId(id);
 });
