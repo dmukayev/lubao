@@ -94,9 +94,14 @@ class AccentButton extends StatelessWidget {
 /// Квадратная кнопка-иконка на фоне primarySoft (уведомления, действия в
 /// хедере и т.п.).
 class IconSquareButton extends StatelessWidget {
-  const IconSquareButton({super.key, required this.icon, this.onPressed, this.badge = false, this.size = 48, this.loading = false});
+  const IconSquareButton({super.key, this.icon, this.child, this.background, this.semanticLabel, this.onPressed, this.badge = false, this.size = 48, this.loading = false})
+      : assert(icon != null || child != null);
 
-  final IconData icon;
+  final IconData? icon;
+  /// Готовый значок вместо `icon` (например, WhatsAppIcon).
+  final Widget? child;
+  final Color? background;
+  final String? semanticLabel;
   final VoidCallback? onPressed;
   final bool badge;
   final double size;
@@ -111,7 +116,7 @@ class IconSquareButton extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Material(
-            color: AppColors.primarySoft,
+            color: background ?? AppColors.primarySoft,
             borderRadius: BorderRadius.circular(AppRadius.field),
             child: InkWell(
               borderRadius: BorderRadius.circular(AppRadius.field),
@@ -123,7 +128,11 @@ class IconSquareButton extends StatelessWidget {
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                       )
-                    : Icon(icon, color: AppColors.primary, size: 22),
+                    : Semantics(
+                        label: semanticLabel,
+                        button: true,
+                        child: child ?? Icon(icon, color: AppColors.primary, size: 22),
+                      ),
               ),
             ),
           ),

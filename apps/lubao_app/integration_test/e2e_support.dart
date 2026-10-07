@@ -10,6 +10,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:url_launcher_platform_interface/link.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lubao_app/features/shared/photo_picker.dart';
@@ -33,6 +35,8 @@ const e2eCargo5 = '11111111-1111-4111-8111-111111111005';
 /// Груз из Алматы (можно догрузом) и груз из Астаны — порядок ленты по городу анонса (040).
 const e2eCargo6 = '11111111-1111-4111-8111-111111111006';
 const e2eCargo7 = '11111111-1111-4111-8111-111111111007';
+/// Груз казахстанской компании — с кнопкой WhatsApp.
+const e2eCargoKz = '11111111-1111-4111-8111-111111111008';
 
 /// Ждём виджет реальным временем, а не кадрами: первый сетевой запрос
 /// (сессия, справочники) может идти дольше, чем `pumpAndSettle` считает
@@ -424,4 +428,40 @@ String firstFeedCargoId(WidgetTester tester) {
       .toList();
   if (cards.isEmpty) fail('В ленте нет ни одной карточки груза');
   return (cards.first.widget.key as ValueKey<String>).value.substring('feedCargoCard-'.length);
+}
+
+
+/// Перехват открытия ссылок: WhatsApp/звонилка в тесте не открываются,
+/// адрес запоминается — так проверяем, куда ведёт кнопка.
+class FakeUrlLauncher extends UrlLauncherPlatform {
+  final launched = <String>[];
+
+  @override
+  LinkDelegate? get linkDelegate => null;
+
+  @override
+  Future<bool> canLaunch(String url) async => true;
+
+  @override
+  Future<bool> launchUrl(String url, LaunchOptions options) async {
+    launched.add(url);
+    return true;
+  }
+}
+
+FakeUrlLauncher useFakeUrlLauncher() {
+  final previous = UrlLauncherPlatform.instance;
+  final fake = FakeUrlLauncher();
+  UrlLauncherPlatform.instance = fake;
+  addTearDown(() => UrlLauncherPlatform.instance = previous);
+  return fake;
+}
+
+/// Админ через API — только для проверок в сценариях приложения.
+Future<Dio> adminApi() async {
+  final dio = Dio(BaseOptions(baseUrl: e2eApiBase, validateStatus: (_) => true));
+  final res = await dio.post('/auth/admin/login', data: {'email': 'e2e-admin@lubao-test.kz', 'password': e2ePassword, 'deviceName': 'e2e', 'platform': 'web'});
+  if (res.statusCode! >= 300) fail('Вход админа через API не удался: ${res.statusCode}');
+  dio.options.headers['Authorization'] = 'Bearer ${(res.data as Map)['accessToken']}';
+  return dio;
 }

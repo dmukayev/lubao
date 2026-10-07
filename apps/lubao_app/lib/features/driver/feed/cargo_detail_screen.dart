@@ -212,7 +212,10 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
                         const SizedBox(width: AppSpacing.sm),
                         if (!cargoAsync.value!.isWhatsappBlocked) ...[
                           IconSquareButton(
-                            icon: LucideIcons.messageCircle,
+                            key: const Key('cargoDetailWhatsappButton'),
+                            child: const WhatsAppIcon(),
+                            background: WhatsAppIcon.whatsappSoft,
+                            semanticLabel: t.commonWhatsApp,
                             size: AppSizes.buttonHeight,
                             onPressed: cargoAsync.value!.contactPhone == null
                                 ? null

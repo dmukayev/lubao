@@ -5,8 +5,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lubao_app/app.dart';
+import 'package:lubao_app/providers/auth_provider.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import 'e2e_support.dart';
@@ -73,6 +75,39 @@ void main() {
       await tester.tap(cargoCard);
       await waitFor(tester, find.byKey(const Key('cargoDetailChatButton')));
       expectInsideSafeZone(tester);
+    });
+
+    // Кнопка WhatsApp — свой значок (не облачко чата), ведёт в wa.me и
+    // пишет contact_event (решение «Телефон и чат доступны сразу»).
+    await run.step(tester, 'whatsapp-значок-у-казахстанской-компании', () async {
+      // У китайской компании кнопки нет (Google/WhatsApp на её стороне не
+      // используются) — проверяем на грузе казахстанской.
+      expect(find.byKey(const Key('cargoDetailWhatsappButton')), findsNothing);
+      GoRouter.of(tester.element(find.byKey(const Key('cargoDetailChatButton')))).push('/driver/cargo/$e2eCargoKz');
+      final button = find.byKey(const Key('cargoDetailWhatsappButton'));
+      await waitFor(tester, button);
+      expect(find.descendant(of: button, matching: find.byType(WhatsAppIcon)), findsOneWidget);
+    });
+
+    await run.step(tester, 'whatsapp-переход-и-событие', () async {
+      final button = find.byKey(const Key('cargoDetailWhatsappButton'));
+      final container = ProviderScope.containerOf(tester.element(find.byType(LubaoApp)));
+      final driverId = container.read(sessionProvider)!.driver!.id;
+      final admin = await adminApi();
+      Future<int> whatsappCount() async => ((await admin.get('/admin/drivers/$driverId')).data['stats']['whatsapp'] as num).toInt();
+      final before = await whatsappCount();
+      final launcher = useFakeUrlLauncher();
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      expect(launcher.launched, hasLength(1));
+      expect(launcher.launched.single, matches(RegExp(r'^https://wa\.me/\d{10,15}$')));
+      final deadline = DateTime.now().add(const Duration(seconds: 10));
+      while (await whatsappCount() == before && DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
+      expect(await whatsappCount(), before + 1, reason: 'нажатие WhatsApp записано в contact_events');
+      await tester.tap(find.byType(BackButton).first);
+      await waitFor(tester, find.byKey(const Key('cargoDetailChatButton')));
     });
 
     const messageText = 'E2E: проверка сквозного сценария';

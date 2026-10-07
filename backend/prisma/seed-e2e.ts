@@ -22,6 +22,7 @@ const E2E_CARGO_4_ID = '11111111-1111-4111-8111-111111111004';
 const E2E_CARGO_5_ID = '11111111-1111-4111-8111-111111111005';
 const E2E_CARGO_6_ID = '11111111-1111-4111-8111-111111111006';
 const E2E_CARGO_7_ID = '11111111-1111-4111-8111-111111111007';
+const E2E_CARGO_KZ_ID = '11111111-1111-4111-8111-111111111008';
 
 export const E2E_FIXTURES = {
   // Три водителя: SMS-лимит 1 код/мин на номер — сценарии не должны делить
@@ -56,6 +57,10 @@ export const E2E_FIXTURES = {
   /// Груз 6 — из Алматы, «можно догрузом»; груз 7 — из Астаны (задача 040: порядок ленты по городу анонса).
   cargo6Id: E2E_CARGO_6_ID,
   cargo7Id: E2E_CARGO_7_ID,
+  /// Груз казахстанской компании — у неё есть WhatsApp (у китайской кнопка скрыта).
+  cargoKzId: E2E_CARGO_KZ_ID,
+  kzCompanyOwnerEmail: 'e2e-owner@lubao-test.kz',
+  kzCompanyPhone: '+77010000050',
   /// D6 — анонсировал «свободен в Алматы» на сегодня (040: «Кто свободен» с выбором города).
   driverPhone6: '+77010000008',
 };
@@ -305,6 +310,54 @@ async function main() {
       },
     });
   }
+
+  // -----------------------------------------------------------------
+  // Казахстанская компания с одним грузом: кнопка WhatsApp видна только
+  // у некитайских компаний — её проверяет сценарий «лента→чат».
+  // -----------------------------------------------------------------
+  const kzCompany = await prisma.company.upsert({
+    where: { id: '33333333-3333-4333-8333-333333333002' },
+    update: { isVerified: true },
+    create: { id: '33333333-3333-4333-8333-333333333002', name: 'E2E Казахстан Логистик', countryId: kz.id, city: 'Алматы', isVerified: true },
+  });
+  const kzOwner = await prisma.user.upsert({
+    where: { email: E2E_FIXTURES.kzCompanyOwnerEmail },
+    update: { locale: 'ru', passwordHash, phone: E2E_FIXTURES.kzCompanyPhone },
+    create: { role: 'COMPANY', email: E2E_FIXTURES.kzCompanyOwnerEmail, phone: E2E_FIXTURES.kzCompanyPhone, passwordHash, locale: 'ru' },
+  });
+  await prisma.companyMember.upsert({
+    where: { userId: kzOwner.id },
+    update: { companyId: kzCompany.id, role: 'OWNER', contactPhone: E2E_FIXTURES.kzCompanyPhone },
+    create: { companyId: kzCompany.id, userId: kzOwner.id, role: 'OWNER', contactPhone: E2E_FIXTURES.kzCompanyPhone },
+  });
+  await prisma.contactEvent.deleteMany({ where: { cargoId: E2E_CARGO_KZ_ID } });
+  const kzCargo = {
+    status: 'PUBLISHED' as const,
+    allowPartial: false,
+    pointId: khorgos.id,
+    weightKg: 6000,
+    price: 700,
+    currency: Currency.USD,
+    readyDate,
+    expiresAt: daysFromNow(3),
+    archivedAt: null,
+  };
+  await prisma.cargo.upsert({
+    where: { id: E2E_CARGO_KZ_ID },
+    update: kzCargo,
+    create: {
+      id: E2E_CARGO_KZ_ID,
+      companyId: kzCompany.id,
+      destinationCountryId: kz.id,
+      destinationCityId: almaty.id,
+      bodyTypeId: tent.id,
+      photoUrls: [],
+      description: 'E2E — груз казахстанской компании (WhatsApp)',
+      publishedAt: new Date(),
+      createdAt: new Date(Date.now() - 60_000),
+      ...kzCargo,
+    },
+  });
 
   // -----------------------------------------------------------------
   // Чёрный список по телефону без аккаунта (039, п.2): тот, кто

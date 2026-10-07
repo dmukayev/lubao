@@ -806,8 +806,11 @@ class _DriverCard extends StatelessWidget {
       if (!isChinaCompany) ...[
         const SizedBox(width: AppSpacing.xs + 2),
         IconSquareButton(
+          key: Key('driversAtPointWhatsapp-${driver.driverId}'),
           size: 34,
-          icon: LucideIcons.messageCircle,
+          child: const WhatsAppIcon(size: 18),
+          background: WhatsAppIcon.whatsappSoft,
+          semanticLabel: context.l10n.commonWhatsApp,
           onPressed: driver.phone == null ? null : () => onWhatsapp(driver),
         ),
       ],
