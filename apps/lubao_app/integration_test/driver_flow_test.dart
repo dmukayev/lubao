@@ -36,7 +36,9 @@ void main() {
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const Key('driverLoginPhoneField')), '7010000001');
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('driverLoginSendCodeButton')));
+      final send = find.byKey(const Key('driverLoginSendCodeButton'));
+      await reveal(tester, send);
+      await tester.tap(send);
       await waitFor(tester, find.byKey(const Key('driverLoginSentVia')));
       expect(find.text(t.loginCodeSentVia(t.loginChannelTelegram)), findsOneWidget);
       final viaSms = find.byKey(const Key('driverLoginResendVia-sms'));
@@ -48,6 +50,7 @@ void main() {
 
     await run.step(tester, 'вход', () async {
       for (var i = 0; i < 4; i++) {
+        await reveal(tester, find.byKey(Key('driverLoginCodeDigit$i')));
         await tester.enterText(find.byKey(Key('driverLoginCodeDigit$i')), e2eDevCode[i]);
         await tester.pump(const Duration(milliseconds: 300));
       }

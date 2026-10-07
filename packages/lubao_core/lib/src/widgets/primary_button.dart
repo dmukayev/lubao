@@ -14,9 +14,11 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: AppSizes.buttonHeight,
+    // Высота — не меньше стандартной и растёт с шрифтом, надпись — до двух
+    // строк: с крупным системным шрифтом «Отметить: Доставлено» резалось в
+    // «Отметить: Достав…» (iPhone SE в e2e, Huawei ×1,3).
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: double.infinity, minHeight: AppSizes.buttonHeight),
       child: FilledButton(
         onPressed: loading || onPressed == null
             ? null
@@ -35,7 +37,7 @@ class PrimaryButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (icon != null) ...[Icon(icon, size: 20), const SizedBox(width: AppSpacing.sm)],
-                  Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  Flexible(child: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center)),
                 ],
               ),
       ),

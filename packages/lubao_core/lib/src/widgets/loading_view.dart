@@ -86,16 +86,25 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 40, color: AppColors.textSecondary),
-            const SizedBox(height: AppSpacing.md),
-            Text(message, textAlign: TextAlign.center, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
-          ],
+    // Прокрутка: в маленькой области (чат с клавиатурой, узкий экран с
+    // крупным шрифтом) колонка не помещалась по высоте (iPhone SE в e2e).
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight.isFinite ? constraints.maxHeight : 0),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 40, color: AppColors.textSecondary),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(message, textAlign: TextAlign.center, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

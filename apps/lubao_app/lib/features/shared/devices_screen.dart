@@ -90,13 +90,15 @@ class _DeviceTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                // Название + «это устройство» — с переносом: на узком экране с
+                // крупным шрифтом ряд вылезал вправо (iPhone SE в e2e, +8 px).
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.xs,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(device.deviceName ?? device.platform ?? '—', style: AppTextStyles.bodyStrong),
-                    if (device.isCurrent) ...[
-                      const SizedBox(width: AppSpacing.sm),
-                      StatusBadge(label: t.devicesCurrentBadge, color: StatusBadge.success),
-                    ],
+                    if (device.isCurrent) StatusBadge(label: t.devicesCurrentBadge, color: StatusBadge.success),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xs),
