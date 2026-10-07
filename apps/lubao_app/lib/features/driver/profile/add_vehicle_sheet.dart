@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../providers/api_providers.dart';
 import '../../shared/photo_picker.dart';
 import '../../shared/pd_consent.dart';
+import '../../../providers/auth_provider.dart';
 
 /// Добавление машины в гараж (задача 031, этап B, п.8) — без распознавания
 /// (этап D) поля заполняются вручную, ничего не блокируется. Возвращает
@@ -47,6 +48,16 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   XFile? _photo;
   bool _submitting = false;
   String? _photoError;
+
+  /// 045 п.5: кузов и тоннаж из регистрации подставляются в первую машину.
+  @override
+  void initState() {
+    super.initState();
+    final driver = ref.read(sessionProvider)?.driver;
+    _bodyTypeId = driver?.preferredBodyTypeId;
+    final tons = driver?.preferredCapacityTons;
+    if (tons != null) _capacityController.text = tons == tons.roundToDouble() ? tons.toStringAsFixed(0) : tons.toString();
+  }
 
   @override
   void dispose() {

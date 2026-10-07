@@ -265,7 +265,7 @@ describe('DriversService.submitVerificationDocument — машина (039, п.5)
   });
 });
 
-describe('DriversService.updateProfile — машины только при регистрации (задача 041, п.6)', () => {
+describe('DriversService.updateProfile — машины при регистрации не создаются (045 п.5)', () => {
   function setup(existingDriver: any) {
     const tx = {
       driver: { create: jest.fn().mockResolvedValue({ id: 'd1' }), update: jest.fn().mockResolvedValue({ id: 'd1' }) },
@@ -287,10 +287,16 @@ describe('DriversService.updateProfile — машины только при ре
   }
   const input: any = { fullName: 'Ерлан Қасымов', homeCityId: 'city-1', anyCountry: true, directionCountryIds: [], permitIds: [], bodyTypeId: 'b1', plateNumber: '123ABC02', capacityTons: 20 };
 
-  it('регистрация создаёт тягач и прицеп', async () => {
+  it('регистрация: кузов и тоннаж — в предпочтение водителя, машин-заглушек нет', async () => {
     const { tx, service } = setup(null);
     await service.updateProfile('u1', input);
-    expect(tx.vehicle.create).toHaveBeenCalledTimes(2);
+    expect(tx.vehicle.create).not.toHaveBeenCalled();
+    expect(tx.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { preferredBodyTypeId: 'b1', preferredCapacityTons: 20 } });
+  });
+
+  it('регистрация без кузова — 400', async () => {
+    const { service } = setup(null);
+    await expect(service.updateProfile('u1', { ...input, bodyTypeId: undefined })).rejects.toThrow('bodyTypeId is required');
   });
 
   it('правка профиля существующего водителя НЕ трогает машины гаража', async () => {

@@ -52,8 +52,8 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
     _fullNameController.text = driver.fullName;
     _plateController.text = driver.vehicle?.plateNumber ?? '';
     _homeCityId = driver.homeCityId;
-    _bodyTypeId = driver.vehicle?.bodyTypeId;
-    _capacityTons = driver.vehicle?.capacityTons;
+    _bodyTypeId = driver.vehicle?.bodyTypeId ?? driver.preferredBodyTypeId;
+    _capacityTons = driver.vehicle?.capacityTons ?? driver.preferredCapacityTons;
     _anyCountry = driver.anyCountry;
     _selectedCountries.addAll(driver.directionCountryIds);
     _selectedPermits.addAll(driver.permitIds);

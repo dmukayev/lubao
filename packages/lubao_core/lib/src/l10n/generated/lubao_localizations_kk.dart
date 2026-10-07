@@ -3154,4 +3154,14 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminVehicleRevoke => 'Тексеруді қайтару';
+
+  @override
+  String get garageEmptyTitle => 'Көлік қосыңыз';
+
+  @override
+  String get garageEmptyBody =>
+      'Техпаспортты суретке түсіріңіз — мемлекеттік нөмір мен VIN өздігінен толтырылады.';
+
+  @override
+  String get garageNoPlate => 'Нөмірсіз';
 }

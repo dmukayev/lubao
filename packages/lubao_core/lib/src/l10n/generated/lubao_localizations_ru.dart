@@ -3141,4 +3141,14 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminVehicleRevoke => 'Отозвать проверку';
+
+  @override
+  String get garageEmptyTitle => 'Добавьте машину';
+
+  @override
+  String get garageEmptyBody =>
+      'Сфотографируйте техпаспорт — госномер и VIN заполнятся сами.';
+
+  @override
+  String get garageNoPlate => 'Без номера';
 }

@@ -200,6 +200,36 @@ class GarageScreen extends ConsumerWidget {
           final tractors = vehicles.where((v) => v.kind == VehicleKind.tractor || v.kind == VehicleKind.rigid).toList();
           final trailers = vehicles.where((v) => v.kind == VehicleKind.trailer).toList();
 
+          // 045 п.5: после регистрации гараж пуст — одна карточка-призыв вместо
+          // заглушек «Тягач/Прицеп» без номера.
+          if (vehicles.isEmpty) {
+            return ListView(
+              padding: const EdgeInsets.all(AppSpacing.screen),
+              children: [
+                AppCard(
+                  key: const Key('garageEmptyCta'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(LucideIcons.truck, size: 40, color: AppColors.primary),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(t.garageEmptyTitle, style: AppTextStyles.title),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(t.garageEmptyBody, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+                      const SizedBox(height: AppSpacing.lg),
+                      PrimaryButton(
+                        key: const Key('garageAddVehicle'),
+                        label: t.garageAddVehicle,
+                        icon: LucideIcons.camera,
+                        onPressed: () => _addVehicle(context, ref),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }
+
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.screen),
             children: [
@@ -288,35 +318,26 @@ class _VehicleCard extends StatelessWidget {
   /// мягкая подсказка, тап открывает выбор шаблона.
   final VoidCallback? onSetSize;
 
+  /// 045 п.5: первой строкой — госномер (его водитель и логист ищут глазами).
   String _title(BuildContext context) {
-    final t = context.l10n;
-    if (vehicle.kind == VehicleKind.trailer) {
-      final parts = <String>[
-        if (vehicle.brand != null) vehicle.brand!,
-        if (vehicle.capacityTons != null) '${vehicle.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
-        if (vehicle.lengthM != null) '${vehicle.lengthM!.toStringAsFixed(1)} м',
-        // Задача 033, п.7 — «Тент · 20 т · 90 м³ · 33 пал.».
-        if (vehicle.volumeM3 != null) '${vehicle.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
-        if (vehicle.palletsEuro != null) '${vehicle.palletsEuro} ${t.unitPallets}',
-      ];
-      return parts.isEmpty ? t.garageKindTrailer : parts.join(' · ');
-    }
-    final parts = <String>[
-      if (vehicle.brand != null) vehicle.brand!,
-      if (vehicle.plateNumber != null && vehicle.plateNumber!.isNotEmpty) vehicle.plateNumber!,
-    ];
-    return parts.isEmpty ? t.garageKindTractor : parts.join(' · ');
+    final plate = vehicle.plateNumber;
+    return plate != null && plate.isNotEmpty ? plate : context.l10n.garageNoPlate;
   }
 
+  /// Под номером — тип и параметры: «Тягач · MAN», «Прицеп · 20 т · 90 м³ · 33 пал.».
   String? _subtitle(BuildContext context) {
     final t = context.l10n;
-    if (vehicle.kind == VehicleKind.trailer) {
-      return vehicle.plateNumber;
-    }
-    if (vehicle.vin != null && vehicle.vin!.length > 4) {
-      return '${t.garageVin} …${vehicle.vin!.substring(vehicle.vin!.length - 4)}';
-    }
-    return null;
+    final parts = <String>[
+      vehicle.kind == VehicleKind.trailer ? t.garageKindTrailer : t.garageKindTractor,
+      if (vehicle.brand != null) vehicle.brand!,
+      if (vehicle.kind == VehicleKind.trailer) ...[
+        if (vehicle.capacityTons != null) '${vehicle.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
+        if (vehicle.volumeM3 != null) '${vehicle.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+        if (vehicle.palletsEuro != null) '${vehicle.palletsEuro} ${t.unitPallets}',
+      ] else if (vehicle.vin != null && vehicle.vin!.length > 4)
+        '${t.garageVin} …${vehicle.vin!.substring(vehicle.vin!.length - 4)}',
+    ];
+    return parts.join(' · ');
   }
 
   @override
@@ -341,19 +362,19 @@ class _VehicleCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_title(context), style: AppTextStyles.bodyStrong),
-                // Статус — под названием, а не в строке: на узком экране с
-                // крупным шрифтом (Huawei Y7, 360 dp × 1,3) строка «значок +
-                // текст + статус + меню» сжимала текст до буквы в строке.
+                Text(_title(context), key: Key('garageVehicleTitle-${vehicle.id}'), style: AppTextStyles.bodyStrong),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                ],
+                // Статус — отдельной строкой, а не в ряду: на узком экране с
+                // крупным шрифтом (Huawei Y7, 360 dp × 1,3) ряд «значок + текст
+                // + статус + меню» сжимал текст до буквы в строке.
                 const SizedBox(height: 4),
                 StatusBadge(
                   label: vehicle.isVerified ? t.garageVerified : t.garagePending,
                   color: vehicle.isVerified ? StatusBadge.success : StatusBadge.warning,
                 ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
-                ],
                 if (!vehicle.isVerified && !vehicle.hasDocument) ...[
                   const SizedBox(height: 2),
                   GestureDetector(

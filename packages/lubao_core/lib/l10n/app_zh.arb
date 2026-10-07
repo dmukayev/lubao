@@ -1119,5 +1119,8 @@
   "dealDocsOpenedAt": "物流人员于 {when} 查看了证件",
   "dealDocsAccessTitle": "证件查看记录",
   "adminVehicleAutoVerified": "已自动审核",
-  "adminVehicleRevoke": "撤销审核"
+  "adminVehicleRevoke": "撤销审核",
+  "garageEmptyTitle": "添加车辆",
+  "garageEmptyBody": "拍摄行驶证，车牌号和 VIN 会自动填写。",
+  "garageNoPlate": "无车牌"
 }

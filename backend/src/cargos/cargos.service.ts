@@ -149,7 +149,12 @@ export class CargosService {
         // TRAILER раньше RIGID («kind: desc» — 'TRAILER' > 'RIGID' по алфавиту).
         orderBy: [{ kind: 'desc' }, { createdAt: 'asc' }],
       }));
-    if (!vehicle) return null;
+    if (!vehicle) {
+      // 045 п.5: машины ещё нет — тоннаж из регистрации (предпочтение).
+      const driver = await this.prisma.driver.findUnique({ where: { id: driverId }, select: { preferredCapacityTons: true } });
+      if (driver?.preferredCapacityTons == null) return null;
+      return { capacityTons: Number(driver.preferredCapacityTons), volumeM3: null, palletsEuro: null };
+    }
     return {
       capacityTons: vehicle.capacityTons != null ? Number(vehicle.capacityTons) : null,
       volumeM3: vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null,
@@ -318,7 +323,7 @@ export class CargosService {
   async fitCount(params: { weightKg?: number; volumeM3?: number; palletCount?: number; pointId?: string }) {
     const arrivals = await this.prisma.arrival.findMany({
       where: { status: { in: ['PLANNED', 'ON_SITE'] }, ...(params.pointId ? { pointId: params.pointId } : {}) },
-      include: { trailer: true, tractor: true },
+      include: { trailer: true, tractor: true, driver: { select: { preferredCapacityTons: true } } },
     });
     const cargoLike = {
       weightKg: params.weightKg ?? null,
@@ -328,8 +333,9 @@ export class CargosService {
     const fittingDrivers = new Set<string>();
     for (const arrival of arrivals) {
       const vehicle = arrival.trailer ?? (arrival.tractor?.kind === 'RIGID' ? arrival.tractor : null);
+      const preferred = arrival.driver.preferredCapacityTons;
       const body = {
-        capacityTons: vehicle?.capacityTons != null ? Number(vehicle.capacityTons) : null,
+        capacityTons: vehicle?.capacityTons != null ? Number(vehicle.capacityTons) : preferred != null ? Number(preferred) : null,
         volumeM3: vehicle?.volumeM3 != null ? Number(vehicle.volumeM3) : null,
         palletsEuro: vehicle?.palletsEuro ?? null,
       };

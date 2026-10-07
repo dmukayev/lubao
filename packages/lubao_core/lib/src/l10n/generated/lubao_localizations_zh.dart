@@ -3080,4 +3080,13 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminVehicleRevoke => '撤销审核';
+
+  @override
+  String get garageEmptyTitle => '添加车辆';
+
+  @override
+  String get garageEmptyBody => '拍摄行驶证，车牌号和 VIN 会自动填写。';
+
+  @override
+  String get garageNoPlate => '无车牌';
 }

@@ -468,17 +468,22 @@ export class ArrivalsService {
                 where: { driverId: arrival.driverId, kind: { in: ['TRAILER', 'RIGID'] } },
                 orderBy: { createdAt: 'asc' },
               });
-        return { arrival, vehicle };
+        // 045 п.5: машины ещё нет — кузов и тоннаж из регистрации водителя.
+        const body = {
+          bodyTypeId: vehicle?.bodyTypeId ?? arrival.driver.preferredBodyTypeId ?? null,
+          capacityTons: vehicle?.capacityTons ?? arrival.driver.preferredCapacityTons ?? null,
+        };
+        return { arrival, vehicle, body };
       }),
     );
 
     const filtered = rows
       .filter((r) => !filters.verifiedOnly || r.arrival.driver.isVerified)
-      .filter((r) => !filters.bodyTypeId || r.vehicle?.bodyTypeId === filters.bodyTypeId)
+      .filter((r) => !filters.bodyTypeId || r.body.bodyTypeId === filters.bodyTypeId)
       .filter(
         (r) =>
           !filters.minCapacityTons ||
-          (r.vehicle?.capacityTons != null && Number(r.vehicle.capacityTons) >= filters.minCapacityTons!),
+          (r.body.capacityTons != null && Number(r.body.capacityTons) >= filters.minCapacityTons!),
       )
       .filter(
         (r) =>
@@ -535,8 +540,8 @@ export class ArrivalsService {
       plannedAt: r.arrival.plannedAt,
       plannedDay: toDateOnly(r.arrival.plannedDay),
       arrivedAt: r.arrival.arrivedAt,
-      bodyTypeId: r.vehicle?.bodyTypeId ?? null,
-      capacityTons: r.vehicle?.capacityTons ? Number(r.vehicle.capacityTons) : null,
+      bodyTypeId: r.body.bodyTypeId,
+      capacityTons: r.body.capacityTons != null ? Number(r.body.capacityTons) : null,
       // Задача 033, п.9 — «тент · 20 т · 90 м³ · 33 пал.» в «Кто будет».
       volumeM3: r.vehicle?.volumeM3 != null ? Number(r.vehicle.volumeM3) : null,
       palletsEuro: r.vehicle?.palletsEuro ?? null,

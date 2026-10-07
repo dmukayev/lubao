@@ -1260,5 +1260,8 @@
   "@dealDocsOpenedAt": {"placeholders": {"when": {"type": "String"}}},
   "dealDocsAccessTitle": "Кто открывал документы",
   "adminVehicleAutoVerified": "Проверена автоматически",
-  "adminVehicleRevoke": "Отозвать проверку"
+  "adminVehicleRevoke": "Отозвать проверку",
+  "garageEmptyTitle": "Добавьте машину",
+  "garageEmptyBody": "Сфотографируйте техпаспорт — госномер и VIN заполнятся сами.",
+  "garageNoPlate": "Без номера"
 }

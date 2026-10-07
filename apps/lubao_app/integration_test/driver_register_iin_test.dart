@@ -59,6 +59,23 @@ void main() {
         await waitFor(tester, find.byType(NavigationBar));
       });
       if (tag == 'A') {
+        // 045 п.5: регистрация не создаёт машин-заглушек — гараж пуст, одна
+        // карточка-призыв; лента при этом уже показывает грузы (по предпочтению).
+        await run.step(tester, '$tag-гараж-пуст-после-регистрации', () async {
+          await goTab(tester, t.profileTitle);
+          final garage = find.text(t.garageGoToGarage);
+          await reveal(tester, garage);
+          await tester.tap(garage);
+          await waitFor(tester, find.byKey(const Key('garageEmptyCta')));
+          expect(find.text(t.garageKindTractor), findsNothing, reason: 'нет заглушки «Тягач»');
+          expect(find.text(t.garageNoPlate), findsNothing);
+          expectInsideSafeZone(tester);
+          expectNoOverflow(tester);
+          await tester.tap(find.byType(BackButton).first);
+          await tester.pumpAndSettle();
+          await goTab(tester, t.navFeed);
+          await waitAndReveal(tester, find.byKey(const Key('feedCargoCard-$e2eCargo5')));
+        });
         // Новичок без проверки откликается (041, п.1): гейт — только на «Подтверждаю».
         await run.step(tester, '$tag-новичок-откликается-без-проверки', () async {
           final card = find.byKey(const Key('feedCargoCard-$e2eCargo5'));

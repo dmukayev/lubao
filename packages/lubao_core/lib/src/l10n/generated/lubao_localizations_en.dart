@@ -3155,4 +3155,14 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminVehicleRevoke => 'Revoke verification';
+
+  @override
+  String get garageEmptyTitle => 'Add a vehicle';
+
+  @override
+  String get garageEmptyBody =>
+      'Take a photo of the registration — the plate and VIN fill in automatically.';
+
+  @override
+  String get garageNoPlate => 'No plate';
 }

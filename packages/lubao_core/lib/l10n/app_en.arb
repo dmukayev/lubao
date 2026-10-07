@@ -1244,5 +1244,8 @@
   "dealDocsOpenedAt": "The logist opened the documents {when}",
   "dealDocsAccessTitle": "Who opened the documents",
   "adminVehicleAutoVerified": "Verified automatically",
-  "adminVehicleRevoke": "Revoke verification"
+  "adminVehicleRevoke": "Revoke verification",
+  "garageEmptyTitle": "Add a vehicle",
+  "garageEmptyBody": "Take a photo of the registration — the plate and VIN fill in automatically.",
+  "garageNoPlate": "No plate"
 }

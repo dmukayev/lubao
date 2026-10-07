@@ -285,6 +285,7 @@ model BodyType {
   updatedAt DateTime @updatedAt
 
   vehicles Vehicle[]
+  preferredByDrivers Driver[] @relation("DriverPreferredBodyType")
   cargos   Cargo[]
 
   @@map("body_types")
@@ -416,6 +417,11 @@ model Driver {
   homeCityId   String
   homeCity     City     @relation(fields: [homeCityId], references: [id])
   anyCountry   Boolean  @default(false)
+  /// Кузов и тоннаж из регистрации (045 п.5) — предпочтение для ленты и «Кто
+  /// свободен», пока в гараже нет настоящей машины; машины при регистрации не создаются.
+  preferredBodyTypeId   String?
+  preferredBodyType     BodyType? @relation("DriverPreferredBodyType", fields: [preferredBodyTypeId], references: [id])
+  preferredCapacityTons Decimal?  @db.Decimal(6, 2)
   isVerified   Boolean  @default(false)
   ratingAvg    Decimal  @default(0) @db.Decimal(3, 2)
   ratingCount  Int      @default(0)

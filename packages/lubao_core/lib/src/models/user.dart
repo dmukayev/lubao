@@ -199,6 +199,8 @@ class Driver {
     required this.permitIds,
     this.vehicle,
     this.location,
+    this.preferredBodyTypeId,
+    this.preferredCapacityTons,
   });
 
   final String id;
@@ -215,6 +217,11 @@ class Driver {
   final Vehicle? vehicle;
   final DriverLocation? location;
 
+  /// Кузов и тоннаж из регистрации (045 п.5) — пока в гараже нет машины;
+  /// подставляются при добавлении первой машины.
+  final String? preferredBodyTypeId;
+  final double? preferredCapacityTons;
+
   factory Driver.fromJson(Map<String, dynamic> json) => Driver(
         id: json['id'] as String,
         userId: json['userId'] as String,
@@ -229,6 +236,8 @@ class Driver {
         permitIds: (json['permitIds'] as List<dynamic>? ?? []).cast<String>(),
         vehicle: json['vehicle'] == null ? null : Vehicle.fromJson(json['vehicle'] as Map<String, dynamic>),
         location: json['location'] == null ? null : DriverLocation.fromJson(json['location'] as Map<String, dynamic>),
+        preferredBodyTypeId: json['preferredBodyTypeId'] as String?,
+        preferredCapacityTons: (json['preferredCapacityTons'] as num?)?.toDouble(),
       );
 }
 

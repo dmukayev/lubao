@@ -5969,6 +5969,24 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Отозвать проверку'**
   String get adminVehicleRevoke;
+
+  /// No description provided for @garageEmptyTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавьте машину'**
+  String get garageEmptyTitle;
+
+  /// No description provided for @garageEmptyBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сфотографируйте техпаспорт — госномер и VIN заполнятся сами.'**
+  String get garageEmptyBody;
+
+  /// No description provided for @garageNoPlate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Без номера'**
+  String get garageNoPlate;
 }
 
 class _LubaoLocalizationsDelegate

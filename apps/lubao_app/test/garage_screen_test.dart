@@ -58,12 +58,23 @@ void main() {
     expect(find.text('на проверке'), findsOneWidget);
   });
 
-  testWidgets('shows the empty-state hint for a section with no vehicles', (tester) async {
+  // 045 п.5: пустой гараж — одна карточка-призыв, без разделов-заглушек.
+  testWidgets('пустой гараж: карточка «Добавьте машину» с кнопкой', (tester) async {
     await _pump(tester, []);
 
-    expect(find.text('Нет тягачей'), findsOneWidget);
-    expect(find.text('Нет прицепов'), findsOneWidget);
+    expect(find.byKey(const Key('garageEmptyCta')), findsOneWidget);
+    expect(find.text('Добавьте машину'), findsOneWidget);
     expect(find.text('Добавить машину'), findsOneWidget);
+    expect(find.text('Нет тягачей'), findsNothing);
+  });
+
+  testWidgets('карточка машины: первой строкой госномер, без номера — «Без номера»', (tester) async {
+    await _pump(tester, [
+      _vehicle(id: 't1', kind: VehicleKind.tractor, plateNumber: '123ABC02', isVerified: true, hasDocument: true),
+      _vehicle(id: 'r1', kind: VehicleKind.trailer, plateNumber: null, capacityTons: 20, isVerified: false, hasDocument: true),
+    ]);
+    expect(tester.widget<Text>(find.byKey(const Key('garageVehicleTitle-t1'))).data, '123ABC02');
+    expect(tester.widget<Text>(find.byKey(const Key('garageVehicleTitle-r1'))).data, 'Без номера');
   });
 
   // Huawei Y7: экран 360 dp и системный шрифт ×1,3 — раньше текст карточки

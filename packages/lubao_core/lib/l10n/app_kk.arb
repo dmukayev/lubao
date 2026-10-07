@@ -1119,5 +1119,8 @@
   "dealDocsOpenedAt": "Логист құжаттарды ашты: {when}",
   "dealDocsAccessTitle": "Құжаттарды кім ашты",
   "adminVehicleAutoVerified": "Автоматты түрде тексерілді",
-  "adminVehicleRevoke": "Тексеруді қайтару"
+  "adminVehicleRevoke": "Тексеруді қайтару",
+  "garageEmptyTitle": "Көлік қосыңыз",
+  "garageEmptyBody": "Техпаспортты суретке түсіріңіз — мемлекеттік нөмір мен VIN өздігінен толтырылады.",
+  "garageNoPlate": "Нөмірсіз"
 }

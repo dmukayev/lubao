@@ -72,6 +72,8 @@ export class DriversService {
           : null,
       directionCountryIds: directions.map((d) => d.countryId),
       permitIds: permits.map((p) => p.permitId),
+      preferredBodyTypeId: driver.preferredBodyTypeId,
+      preferredCapacityTons: driver.preferredCapacityTons != null ? Number(driver.preferredCapacityTons) : null,
       vehicle: vehicle
         ? {
             id: vehicle.id,
@@ -134,16 +136,17 @@ export class DriversService {
         });
       }
 
-      // Задача 041, п.6 — машины создаются ТОЛЬКО при регистрации (кузов и
-      // тоннаж из мастера → пара тягач + прицеп без документов; техпаспорт
-      // добавляется в гараже кнопкой «Добавить документ»). Дальнейшая правка
-      // профиля машины не трогает: раньше «Сохранить» затирал первые машины
-      // гаража, включая архивные, данными из формы.
-      if (!existing) {
-        if (!input.bodyTypeId) throw new BadRequestException('bodyTypeId is required for registration');
-        await tx.vehicle.create({ data: { driverId: driver.id, kind: 'TRACTOR', plateNumber: input.plateNumber } });
-        await tx.vehicle.create({
-          data: { driverId: driver.id, kind: 'TRAILER', bodyTypeId: input.bodyTypeId, capacityTons: input.capacityTons },
+      // 045 п.5: машины при регистрации НЕ создаются — заглушки «Тягач/Прицеп»
+      // без номера и документов только путали. Кузов и тоннаж из мастера —
+      // предпочтение водителя (лента, «Кто свободен»), пока нет настоящей машины.
+      if (!existing && !input.bodyTypeId) throw new BadRequestException('bodyTypeId is required for registration');
+      if (input.bodyTypeId !== undefined || input.capacityTons !== undefined) {
+        await tx.driver.update({
+          where: { id: driver.id },
+          data: {
+            ...(input.bodyTypeId !== undefined ? { preferredBodyTypeId: input.bodyTypeId } : {}),
+            ...(input.capacityTons !== undefined ? { preferredCapacityTons: input.capacityTons } : {}),
+          },
         });
       }
 
