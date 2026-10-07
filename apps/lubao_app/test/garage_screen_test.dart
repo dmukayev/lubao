@@ -14,6 +14,7 @@ GarageVehicle _vehicle({
   String? plateNumber,
   double? capacityTons,
   bool isVerified = false,
+  bool hasDocument = true,
 }) =>
     GarageVehicle(
       id: id,
@@ -23,6 +24,7 @@ GarageVehicle _vehicle({
       capacityTons: capacityTons,
       isOwner: true,
       isVerified: isVerified,
+      hasDocument: hasDocument,
       isArchived: false,
       createdAt: DateTime(2026, 10, 1),
     );
@@ -62,5 +64,23 @@ void main() {
     expect(find.text('Нет тягачей'), findsOneWidget);
     expect(find.text('Нет прицепов'), findsOneWidget);
     expect(find.text('Добавить машину'), findsOneWidget);
+  });
+
+  // Huawei Y7: экран 360 dp и системный шрифт ×1,3 — раньше текст карточки
+  // сжимался до буквы в строке и «Добавить документ» было не нажать.
+  testWidgets('узкий экран и крупный шрифт: карточка без переполнения, «Добавить документ» нажимается', (tester) async {
+    tester.view.physicalSize = const Size(720, 1520);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await _pump(tester, [
+      _vehicle(id: 'r1', kind: VehicleKind.trailer, plateNumber: '45 ABC 05', capacityTons: 20, isVerified: false, hasDocument: false),
+    ]);
+    expect(tester.takeException(), isNull);
+    final add = find.byKey(const Key('garageAddDocument-r1'));
+    expect(add, findsOneWidget);
+    // Надпись — в одну-две строки, а не столбиком по букве.
+    expect(tester.getSize(add).width, greaterThan(100));
   });
 }

@@ -340,6 +340,14 @@ class _VehicleCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(_title(context), style: AppTextStyles.bodyStrong),
+                // Статус — под названием, а не в строке: на узком экране с
+                // крупным шрифтом (Huawei Y7, 360 dp × 1,3) строка «значок +
+                // текст + статус + меню» сжимала текст до буквы в строке.
+                const SizedBox(height: 4),
+                StatusBadge(
+                  label: vehicle.isVerified ? t.garageVerified : t.garagePending,
+                  color: vehicle.isVerified ? StatusBadge.success : StatusBadge.warning,
+                ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
                   Text(subtitle, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
@@ -365,11 +373,6 @@ class _VehicleCard extends StatelessWidget {
                 ],
               ],
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          StatusBadge(
-            label: vehicle.isVerified ? t.garageVerified : t.garagePending,
-            color: vehicle.isVerified ? StatusBadge.success : StatusBadge.warning,
           ),
           PopupMenuButton<String>(
             icon: const Icon(LucideIcons.moreVertical, size: 18),
