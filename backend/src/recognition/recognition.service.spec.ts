@@ -204,3 +204,40 @@ describe('RecognitionService#enqueue — п.18', () => {
     expect(queue.add).toHaveBeenCalledWith('recognize', { documentId: 'doc1' }, { attempts: 3, backoff: { type: 'exponential', delay: 5000 } });
   });
 });
+
+// 044 п.6: автопроверка машины после распознавания техпаспорта.
+describe('RecognitionService.tryAutoVerifyVehicle', () => {
+  const GOOD = { vin: { value: '1M8GDM9AXKP042788', confidence: 0.95, checksumOk: true, needsReview: false }, plateNumber: { value: '123ABC02', confidence: 0.9, checksumOk: true, needsReview: false } };
+  function setup({ blocked = null as unknown, isVerified = false } = {}) {
+    const prisma: any = {
+      vehicle: { findUnique: jest.fn().mockResolvedValue({ id: 'v1', isVerified, plateNumber: null, vin: null }), update: jest.fn() },
+      verificationDocument: { findUnique: jest.fn().mockResolvedValue({ status: 'PENDING' }), update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    prisma.$transaction = jest.fn((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
+    const identifiers: any = { checkMatches: jest.fn().mockResolvedValue({ blocked }), confirmIdentifier: jest.fn() };
+    return { prisma, identifiers, service: new RecognitionService(prisma, {} as any, {} as any, identifiers) };
+  }
+
+  it('корректный техпаспорт — документ одобрен, машина проверена AUTO, VIN и госномер записаны', async () => {
+    const { prisma, identifiers, service } = setup();
+    await expect(service.tryAutoVerifyVehicle('doc1', 'VEHICLE_PASSPORT', 'v1', GOOD)).resolves.toBe(true);
+    expect(prisma.verificationDocument.update).toHaveBeenCalledWith({ where: { id: 'doc1' }, data: expect.objectContaining({ status: 'APPROVED' }) });
+    expect(prisma.vehicle.update.mock.calls[0][0].data).toMatchObject({ isVerified: true, verifiedBy: 'AUTO', plateNumber: '123ABC02', vin: '1M8GDM9AXKP042788' });
+    expect(identifiers.confirmIdentifier).toHaveBeenCalledTimes(2);
+    expect(identifiers.confirmIdentifier.mock.calls[0][0]).toMatchObject({ ownerType: 'VEHICLE', confirmedByUserId: null });
+    expect(prisma.auditLog.create.mock.calls[0][0].data).toMatchObject({ action: 'VEHICLE_AUTO_VERIFIED', entityId: 'v1' });
+  });
+
+  it('VIN в чёрном списке — ничего не меняется, документ ждёт админа', async () => {
+    const { prisma, service } = setup({ blocked: { id: 'b1' } });
+    await expect(service.tryAutoVerifyVehicle('doc1', 'VEHICLE_PASSPORT', 'v1', GOOD)).resolves.toBe(false);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('плохой формат VIN — нет; уже проверенная машина — не трогаем', async () => {
+    const bad = { ...GOOD, vin: { ...GOOD.vin, value: '1M8GDM9A1KP042788' } };
+    expect(await setup().service.tryAutoVerifyVehicle('doc1', 'VEHICLE_PASSPORT', 'v1', bad)).toBe(false);
+    expect(await setup({ isVerified: true }).service.tryAutoVerifyVehicle('doc1', 'VEHICLE_PASSPORT', 'v1', GOOD)).toBe(false);
+  });
+});

@@ -1,10 +1,12 @@
-import { Body, Controller, ForbiddenException, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Param, Patch, Post, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
 import { CancelDealDto, UpdateDealStatusDto } from './dto/deal-status.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { DealsService } from './deals.service';
 import { ReviewsService } from './reviews.service';
+import { DriverDocumentsService } from './driver-documents.service';
 
 function partyContext(ctx: RequestContext) {
   return { driverId: ctx.driver?.id, companyId: ctx.companyMember?.companyId };
@@ -15,7 +17,32 @@ export class DealsController {
   constructor(
     private readonly deals: DealsService,
     private readonly reviews: ReviewsService,
+    private readonly driverDocs: DriverDocumentsService,
   ) {}
+
+  /// Пакет документов водителя логисту (044 п.1): только по обоюдной сделке.
+  @Get(':id/driver-documents')
+  driverDocuments(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    return this.driverDocs.package(id, ctx);
+  }
+
+  @Get(':id/driver-documents/files/:documentId')
+  async driverDocumentFile(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Param('documentId') documentId: string, @Res() res: Response) {
+    const source = await this.driverDocs.file(id, documentId, ctx);
+    if ('redirectUrl' in source) {
+      res.redirect(source.redirectUrl);
+      return;
+    }
+    res.setHeader('Content-Type', source.contentType);
+    res.setHeader('Cache-Control', 'private, no-store');
+    source.stream.pipe(res);
+  }
+
+  /// Водителю: «Логист открыл документы <когда>» (044 п.4).
+  @Get(':id/driver-documents/access-log')
+  driverDocumentsAccessLog(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    return this.driverDocs.accessLog(id, ctx);
+  }
 
   @Get('mine')
   mine(@CurrentUser() ctx: RequestContext) {

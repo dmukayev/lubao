@@ -65,7 +65,8 @@ export class IdentifiersService {
       ownerType: OwnerType;
       ownerId: string;
       sourceDocumentId?: string | null;
-      confirmedByUserId: string;
+      /// null — подтверждено автопроверкой (044 п.6), не человеком.
+      confirmedByUserId: string | null;
     },
     tx?: Prisma.TransactionClient,
   ) {

@@ -118,6 +118,16 @@ enum VerificationDocType {
   COMPANY_REGISTRATION
   IDENTITY
   OTHER
+  /// Фото машины спереди с госномером и сбоку (044 п.7) — логисту в карточке
+  /// водителя и в пакете документов на рейс; на проверку не влияют.
+  VEHICLE_PHOTO_FRONT
+  VEHICLE_PHOTO_SIDE
+}
+
+/// Кто подтвердил машину (044 п.6): админ вручную или автопроверка техпаспорта.
+enum VehicleVerifier {
+  ADMIN
+  AUTO
 }
 
 enum VerificationStatus {
@@ -483,6 +493,10 @@ model Vehicle {
   /// Техпаспорт одобрен (ставится при approve соответствующего документа,
   /// см. admin.service.ts) — отдельно от Driver.isVerified (селфи+права).
   isVerified    Boolean     @default(false)
+  /// 044 п.6: ADMIN — одобрил админ, AUTO — автопроверка (VIN/госномер прошли
+  /// формат, контрольную цифру и чёрный список); админ может отозвать.
+  verifiedBy    VehicleVerifier?
+  verifiedAt    DateTime?
   isActive      Boolean     @default(true)
   isArchived    Boolean     @default(false)
   createdAt     DateTime    @default(now())

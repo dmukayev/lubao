@@ -160,17 +160,18 @@ describe('DealsService.advanceStatus — проверка связки маши�
     service = new DealsService(prisma, cargos as any, notifications as any, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);
   });
 
-  it('rejects when the tractor of the deal combo is not verified', async () => {
+  it('044 п.5: машина «на проверке» больше не мешает подтвердить перевозку', async () => {
     const deal = dealFixture({ tractorId: 'tractor1', trailerId: 'trailer1' });
     prisma.deal.findUnique.mockResolvedValue(deal);
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
     prisma.vehicle.findUnique.mockResolvedValue({ isVerified: false, kind: 'TRACTOR' });
     prisma.vehicle.findMany.mockResolvedValue([
       { id: 'tractor1', isVerified: false },
-      { id: 'trailer1', isVerified: true },
+      { id: 'trailer1', isVerified: false },
     ]);
 
-    await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toThrow('VEHICLE_NOT_VERIFIED');
-    expect(prisma.deal.update).not.toHaveBeenCalled();
+    await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
+    expect(prisma.deal.update).toHaveBeenCalled();
   });
 
   it('allows confirmation once both tractor and trailer of the combo are verified', async () => {
@@ -206,7 +207,7 @@ describe('DealsService.advanceStatus — проверка связки маши�
 
     await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
 
-    expect(prisma.vehicle.findMany).toHaveBeenCalledWith({ where: { id: { in: ['rigid1'] } }, select: { id: true, isVerified: true } });
+    expect(prisma.vehicle.findMany).not.toHaveBeenCalled(); // 044 п.5: проверка машины — не гейт
     expect(prisma.deal.update).toHaveBeenCalled();
   });
 

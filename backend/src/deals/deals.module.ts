@@ -4,11 +4,13 @@ import { ChatsModule } from '../chats/chats.module';
 import { DealsController } from './deals.controller';
 import { DealsService } from './deals.service';
 import { ReviewsService } from './reviews.service';
+import { DriverDocumentsService } from './driver-documents.service';
+import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
-  imports: [CargosModule, ChatsModule],
+  imports: [CargosModule, ChatsModule, UploadsModule],
   controllers: [DealsController],
-  providers: [DealsService, ReviewsService],
+  providers: [DealsService, ReviewsService, DriverDocumentsService],
   exports: [DealsService],
 })
 export class DealsModule {}

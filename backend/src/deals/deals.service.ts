@@ -144,26 +144,16 @@ export class DealsService {
       throw new BadRequestException(`Cannot move deal from ${deal.status} to ${nextStatus}`);
     }
 
-    // Задача 031, этап A, п.4 / задача 032, п.5 — подтвердить сделку можно,
-    // только если проверены И водитель (селфи+права, контроллер уже
-    // проверил выше), И машины выбранной на рейс связки (свои техпаспорта).
-    // Раньше сделка без связки (null — до миграции 031 или анонса не было)
-    // тихо пропускала эту проверку — теперь это 409 VEHICLE_REQUIRED, а не
-    // молчаливый пропуск: тягач обязателен всегда, прицеп — если тягач не
-    // RIGID (одиночка без прицепа).
+    // Подтвердить сделку можно, только если проверен водитель (селфи+права —
+    // контроллер проверил выше) и выбрана связка на рейс: тягач всегда, прицеп —
+    // если тягач не RIGID (задача 032, п.5: без связки — 409 VEHICLE_REQUIRED).
+    // Проверка САМОЙ машины больше не гейт (044 п.5, decisions.md 2026-10-07):
+    // логист видит «Машина ещё на проверке» в пакете документов и решает сам.
     if (nextStatus === 'CONFIRMED_BY_DRIVER') {
       if (!deal.tractorId) throw new ConflictException('VEHICLE_REQUIRED');
-      const tractor = await this.prisma.vehicle.findUnique({ where: { id: deal.tractorId }, select: { isVerified: true, kind: true } });
+      const tractor = await this.prisma.vehicle.findUnique({ where: { id: deal.tractorId }, select: { kind: true } });
       if (!tractor) throw new ConflictException('VEHICLE_REQUIRED');
-      const needsTrailer = tractor.kind !== 'RIGID';
-      if (needsTrailer && !deal.trailerId) throw new ConflictException('VEHICLE_REQUIRED');
-
-      const vehicleIds = [deal.tractorId, ...(needsTrailer ? [deal.trailerId as string] : [])];
-      const vehicles = await this.prisma.vehicle.findMany({ where: { id: { in: vehicleIds } }, select: { id: true, isVerified: true } });
-      const notVerified = vehicles.some((v) => !v.isVerified);
-      if (notVerified || vehicles.length !== vehicleIds.length) {
-        throw new BadRequestException('VEHICLE_NOT_VERIFIED');
-      }
+      if (tractor.kind !== 'RIGID' && !deal.trailerId) throw new ConflictException('VEHICLE_REQUIRED');
     }
 
     const now = new Date();

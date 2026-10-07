@@ -60,6 +60,14 @@ export class AdminController {
   }
 
   /// Ручной чёрный список (043 п.4): ИИН / телефон / госномер / VIN… + причина.
+  /// «Отозвать проверку» машины (044 п.6) — с причиной.
+  @Post('vehicles/:id/revoke-verification')
+  @HttpCode(200)
+  revokeVehicleVerification(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminReasonDto) {
+    assertAdmin(ctx);
+    return this.admin.revokeVehicleVerification(ctx.user.id, id, dto.reason);
+  }
+
   /// «Похоже на парсинг» → «Всё в порядке» (043 п.11): скрыть на 7 дней.
   @Post('suspicious-contacts/:userId/dismiss')
   @HttpCode(200)

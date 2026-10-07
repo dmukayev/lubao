@@ -1581,7 +1581,7 @@ describe('AdminService.reviewVerificationDocument — водитель и маш
 
     await service.reviewVerificationDocument('doc1', 'admin-1', { status: 'APPROVED' } as any);
 
-    expect(prisma.vehicle.update).toHaveBeenCalledWith({ where: { id: 'tractor1' }, data: { isVerified: true } });
+    expect(prisma.vehicle.update).toHaveBeenCalledWith({ where: { id: 'tractor1' }, data: { isVerified: true, verifiedBy: 'ADMIN', verifiedAt: expect.any(Date) } });
     // Одобрен только VEHICLE_PASSPORT — у водителя ещё нет SELFIE+DRIVER_LICENSE,
     // поэтому driver.isVerified не трогается.
     expect(prisma.driver.update).not.toHaveBeenCalled();
@@ -2500,5 +2500,22 @@ describe('AdminService.translationStats — «Настройки → Перев�
     expect(prisma.translationLog.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { createdAt: { gte: expect.any(Date) } } }),
     );
+  });
+});
+
+describe('AdminService.revokeVehicleVerification (044 п.6)', () => {
+  it('машина снова «на проверке», техпаспорт — в очередь, причина — в журнал', async () => {
+    const prisma: any = {
+      vehicle: { findUnique: jest.fn().mockResolvedValue({ id: 'v1', isVerified: true, verifiedBy: 'AUTO', kind: 'TRACTOR' }), update: jest.fn() },
+      verificationDocument: { findFirst: jest.fn().mockResolvedValue({ id: 'doc1' }), update: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    await service.revokeVehicleVerification('admin1', 'v1', 'VIN не совпадает с фото');
+    expect(prisma.vehicle.update).toHaveBeenCalledWith({ where: { id: 'v1' }, data: { isVerified: false, verifiedBy: null, verifiedAt: null } });
+    expect(prisma.verificationDocument.findFirst.mock.calls[0][0].where).toMatchObject({ vehicleId: 'v1', type: 'VEHICLE_PASSPORT', status: 'APPROVED' });
+    expect(prisma.verificationDocument.update.mock.calls[0][0].data).toMatchObject({ status: 'PENDING' });
+    expect(prisma.auditLog.create.mock.calls[0][0].data).toMatchObject({ action: 'VEHICLE_VERIFICATION_REVOKED', entityId: 'v1' });
   });
 });

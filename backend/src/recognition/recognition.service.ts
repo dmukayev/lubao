@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { Prisma, VerificationDocType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,6 +8,8 @@ import { encryptIdentifier, isSensitiveIdentifierType, maskIdentifier } from '..
 import { normalizeIdentifier } from '../identifiers/normalize';
 import { recognizeDocument } from './ocr-client';
 import { RECOGNITION_QUEUE, RecognitionJob } from './recognition.queue';
+import { IdentifiersService } from '../identifiers/identifiers.service';
+import { autoVerifyDecision } from './vehicle-auto-verify';
 
 const ENGINE_VERSION = 'rules-v1';
 const RECOGNITION_ATTEMPTS = 3;
@@ -74,6 +76,7 @@ export class RecognitionService {
     private readonly prisma: PrismaService,
     private readonly queue: Queue<RecognitionJob>,
     private readonly uploads: UploadsService,
+    @Optional() private readonly identifiers?: IdentifiersService,
   ) {}
 
   /// Вызывается после создания VerificationDocument (drivers.service.ts/
@@ -138,6 +141,7 @@ export class RecognitionService {
         fields: maskSensitiveFields(fields),
         durationMs: Date.now() - startedAt,
       });
+      if (document.vehicleId) await this.tryAutoVerifyVehicle(document.id, document.type, document.vehicleId, fields);
     } catch (err) {
       if (!isLastAttempt) {
         this.logger.warn(`Recognition attempt ${attempt.attemptsMade + 1}/${attempt.maxAttempts} failed for document ${documentId}, will retry: ${(err as Error).message}`);
@@ -152,6 +156,44 @@ export class RecognitionService {
         errorMessage: unreachable ? undefined : (err as Error).message,
       });
     }
+  }
+
+  /// Автопроверка машины (044 п.6): техпаспорт прочитан уверенно, VIN и
+  /// госномер корректны и не в чёрном списке → документ одобрен, машина
+  /// проверена с пометкой AUTO, идентификаторы записаны как при ручном
+  /// одобрении. Иначе ничего не меняем — документ ждёт админа, как раньше.
+  async tryAutoVerifyVehicle(documentId: string, docType: VerificationDocType, vehicleId: string, fields: RecognizedFields): Promise<boolean> {
+    if (!this.identifiers) return false;
+    const vehicle = await this.prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { id: true, isVerified: true, plateNumber: true, vin: true } });
+    if (!vehicle || vehicle.isVerified) return false;
+    const decision = autoVerifyDecision(docType, fields, vehicle);
+    if (!decision.ok) {
+      this.logger.log(`Vehicle auto-verify skipped for document ${documentId}: ${decision.reason}`);
+      return false;
+    }
+    for (const [type, value] of [['VIN', decision.vin], ['PLATE', decision.plate]] as const) {
+      const match = await this.identifiers.checkMatches(type, value, { ownerType: 'VEHICLE', ownerId: vehicle.id });
+      if (match.blocked) {
+        this.logger.log(`Vehicle auto-verify skipped for document ${documentId}: ${type} is blacklisted`);
+        return false;
+      }
+    }
+    const identifiers = this.identifiers;
+    const now = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      const doc = await tx.verificationDocument.findUnique({ where: { id: documentId }, select: { status: true } });
+      if (doc?.status !== 'PENDING') return;
+      await tx.verificationDocument.update({ where: { id: documentId }, data: { status: 'APPROVED', reviewedAt: now } });
+      await tx.vehicle.update({
+        where: { id: vehicle.id },
+        data: { isVerified: true, verifiedBy: 'AUTO', verifiedAt: now, plateNumber: vehicle.plateNumber ?? decision.plate, vin: vehicle.vin ?? decision.vin },
+      });
+      for (const [type, value] of [['VIN', decision.vin], ['PLATE', decision.plate]] as const) {
+        await identifiers.confirmIdentifier({ type, rawValue: value, ownerType: 'VEHICLE', ownerId: vehicle.id, sourceDocumentId: documentId, confirmedByUserId: null }, tx);
+      }
+      await tx.auditLog.create({ data: { actorUserId: null, action: 'VEHICLE_AUTO_VERIFIED', entityType: 'Vehicle', entityId: vehicle.id, metadata: { documentId } } });
+    });
+    return true;
   }
 
   private async writeResult(

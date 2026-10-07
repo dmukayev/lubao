@@ -403,6 +403,22 @@ export class AdminService {
     return rows.filter((r): r is NonNullable<typeof r> => r !== null).sort((a, b) => b.opens24h - a.opens24h);
   }
 
+  /// «Отозвать проверку» машины (044 п.6) — чаще всего для «проверена
+  /// автоматически»: машина снова «на проверке», техпаспорт — в очередь админу.
+  async revokeVehicleVerification(actorUserId: string, vehicleId: string, reason: string) {
+    const vehicle = await this.prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { id: true, isVerified: true, verifiedBy: true, kind: true } });
+    if (!vehicle) throw new NotFoundException('Vehicle not found');
+    if (!vehicle.isVerified) throw new BadRequestException({ code: 'NOT_VERIFIED', message: 'Vehicle is not verified' });
+    const passportType = vehicle.kind === 'TRAILER' ? 'TRAILER_PASSPORT' : 'VEHICLE_PASSPORT';
+    await this.prisma.$transaction(async (tx) => {
+      await tx.vehicle.update({ where: { id: vehicleId }, data: { isVerified: false, verifiedBy: null, verifiedAt: null } });
+      const latest = await tx.verificationDocument.findFirst({ where: { vehicleId, type: passportType, status: 'APPROVED' }, orderBy: { createdAt: 'desc' } });
+      if (latest) await tx.verificationDocument.update({ where: { id: latest.id }, data: { status: 'PENDING', reviewedAt: null, reviewedByUserId: null } });
+    });
+    await this.logAudit(actorUserId, 'VEHICLE_VERIFICATION_REVOKED', 'Vehicle', vehicleId, { reason, verifiedBy: vehicle.verifiedBy });
+    return { id: vehicleId, isVerified: false };
+  }
+
   async dismissSuspiciousContacts(actorUserId: string, userId: string) {
     await this.logAudit(actorUserId, 'SUSPICIOUS_CONTACTS_DISMISSED', 'User', userId, {});
     return { success: true };
@@ -1278,7 +1294,7 @@ export class AdminService {
             }
           }
           if (!blacklistHit) {
-            await tx.vehicle.update({ where: { id: updated.vehicleId }, data: { isVerified: true } });
+            await tx.vehicle.update({ where: { id: updated.vehicleId }, data: { isVerified: true, verifiedBy: 'ADMIN', verifiedAt: new Date() } });
           }
         }
         if (updated.companyId && updated.company) {
@@ -1501,6 +1517,7 @@ export class AdminService {
         id: v.id,
         kind: v.kind,
         isVerified: v.isVerified,
+        verifiedBy: v.verifiedBy,
         isArchived: v.isArchived,
         plateNumber: v.plateNumber,
         vin: v.vin,
@@ -2133,6 +2150,9 @@ export class AdminService {
         id: v.id,
         kind: v.kind,
         isVerified: v.isVerified,
+        // 044 п.6: «проверена автоматически» — бейдж и «Отозвать проверку».
+        verifiedBy: v.verifiedBy,
+        verifiedAt: v.verifiedAt,
         isArchived: v.isArchived,
         bodyTypeId: v.bodyTypeId,
         bodyTypeName: v.bodyType?.name ?? null,
@@ -2686,7 +2706,7 @@ export class AdminService {
             bodyTypeId: dto.trailerVehicle.bodyTypeId,
             capacityTons: dto.trailerVehicle.capacityTons,
             lengthM: dto.trailerVehicle.lengthM,
-            ...(dto.trailerVehicle.bodyTypeId !== undefined && dto.trailerVehicle.bodyTypeId !== trailer.bodyTypeId ? { isVerified: false } : {}),
+            ...(dto.trailerVehicle.bodyTypeId !== undefined && dto.trailerVehicle.bodyTypeId !== trailer.bodyTypeId ? { isVerified: false, verifiedBy: null, verifiedAt: null } : {}),
           },
         });
       }
@@ -2696,7 +2716,7 @@ export class AdminService {
           data: {
             plateNumber: dto.tractorVehicle.plateNumber,
             brand: dto.tractorVehicle.brand,
-            ...(dto.tractorVehicle.plateNumber !== undefined && dto.tractorVehicle.plateNumber !== tractor.plateNumber ? { isVerified: false } : {}),
+            ...(dto.tractorVehicle.plateNumber !== undefined && dto.tractorVehicle.plateNumber !== tractor.plateNumber ? { isVerified: false, verifiedBy: null, verifiedAt: null } : {}),
           },
         });
       }
