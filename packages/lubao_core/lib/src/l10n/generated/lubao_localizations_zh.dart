@@ -2858,4 +2858,9 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminRateEdit => '修改汇率';
+
+  @override
+  String chatSystemDriverSaysAgreed(String name) {
+    return '$name：已谈妥 — 请选择该司机，交易将按步骤进行';
+  }
 }

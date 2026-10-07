@@ -139,6 +139,42 @@ export class ResponsesService {
     if (match.blocked) throw new ForbiddenException({ code: 'DRIVER_BLACKLISTED', message: 'This account is blocked' });
   }
 
+  /// «Договорились?» → «Да» от водителя (042, decisions.md: договорились мимо
+  /// кнопок — ловит «Договорились?»): отклик (новый или возвращённый в работу,
+  /// даже если раньше отклонён — водитель говорит, что договорились) + push
+  /// логисту «выберите его» + строка в чат. Сделку по-прежнему создаёт выбор логиста.
+  async driverAgreed(cargoId: string, driverId: string) {
+    await this.assertNotBlacklisted(driverId);
+    const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId } });
+    if (!cargo) throw new NotFoundException('Cargo not found');
+    if (cargo.status !== 'PUBLISHED') {
+      throw new ConflictException({ code: 'CARGO_NOT_AVAILABLE', message: 'Cargo is no longer available' });
+    }
+    const existing = await this.prisma.response.findUnique({ where: { cargoId_driverId: { cargoId, driverId } } });
+    const keep = existing && (existing.status === 'PENDING' || existing.status === 'SELECTED');
+    const response = keep
+      ? await this.prisma.response.findUniqueOrThrow({ where: { id: existing!.id }, include: { driver: true } })
+      : existing
+        ? await this.prisma.response.update({ where: { id: existing.id }, data: { status: 'PENDING' }, include: { driver: true } })
+        : await this.prisma.response.create({ data: { cargoId, driverId, status: 'PENDING' }, include: { driver: true } });
+
+    const contactUserId = await resolveCargoContactUserId(this.prisma, cargo);
+    await this.notifications.notify(
+      { userIds: contactUserId ? [contactUserId] : [], companyId: cargo.companyId },
+      'DRIVER_AGREED',
+      { cargoId, driverName: response.driver.fullName },
+    );
+    await this.chatSystem.post({
+      driverId,
+      companyId: cargo.companyId,
+      cargoId,
+      actorUserId: response.driver.userId,
+      code: 'DRIVER_SAYS_AGREED',
+      systemParams: { driverName: response.driver.fullName },
+    });
+    return this.toDto(response);
+  }
+
   async createForCargo(cargoId: string, driverId: string, message?: string) {
     await this.assertNotBlacklisted(driverId);
     const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId } });

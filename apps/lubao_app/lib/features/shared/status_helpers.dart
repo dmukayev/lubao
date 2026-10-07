@@ -353,6 +353,7 @@ String systemMessageText(LubaoLocalizations t, String? code, Map<String, String>
     'DRIVER_INVITED' => t.chatSystemDriverInvited,
     'INVITATION_DECLINED' => tidy(t.chatSystemInvitationDeclined(name)),
     'CARGO_TAKEN' => t.chatSystemCargoTaken,
+    'DRIVER_SAYS_AGREED' => tidy(t.chatSystemDriverSaysAgreed(name)),
     _ => fallback,
   };
 }

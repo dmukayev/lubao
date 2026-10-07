@@ -1184,5 +1184,7 @@
   "mapsCoordinatesCopied": "Координаты скопированы",
   "adminRatesTitle": "Курсы валют (НБ РК)",
   "adminRatesHint": "Обновляются сами каждый день в 10:00 по курсу Нацбанка. Ручная правка автоматически не перезаписывается.",
-  "adminRateEdit": "Изменить курс"
+  "adminRateEdit": "Изменить курс",
+  "chatSystemDriverSaysAgreed": "{name}: договорились — выберите водителя, чтобы сделка пошла по шагам",
+  "@chatSystemDriverSaysAgreed": { "placeholders": { "name": { "type": "String" } } }
 }

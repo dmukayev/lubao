@@ -608,3 +608,46 @@ describe('ResponsesService.createForCargo — чёрный список по т�
     expect(prisma.response.create).not.toHaveBeenCalled();
   });
 });
+
+describe('ResponsesService.driverAgreed — «Договорились?» → «Да» (042)', () => {
+  const cargo = { id: 'cargo1', companyId: 'c1', publishedByUserId: 'logist-1', status: 'PUBLISHED' };
+
+  it('отклонённый ранее отклик возвращается в работу, логисту — «выберите его», в чат — строка', async () => {
+    const chat = { post: jest.fn(), postToChat: jest.fn() };
+    const prisma: any = {
+      response: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'r1', status: 'REJECTED' }),
+        update: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', driver: { fullName: 'Ерлан', userId: 'u-d1' } }),
+      },
+      cargo: { findUnique: jest.fn().mockResolvedValue(cargo) },
+    };
+    const notifications = { notify: jest.fn() };
+    const service = new ResponsesService(prisma, notifications as any, chat as any);
+
+    await service.driverAgreed('cargo1', 'd1');
+
+    expect(prisma.response.update).toHaveBeenCalledWith(expect.objectContaining({ data: { status: 'PENDING' } }));
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['logist-1'], companyId: 'c1' }, 'DRIVER_AGREED', { cargoId: 'cargo1', driverName: 'Ерлан' });
+    expect(chat.post).toHaveBeenCalledWith(expect.objectContaining({ code: 'DRIVER_SAYS_AGREED', cargoId: 'cargo1' }));
+  });
+
+  it('уже ожидающий отклик не трогается, но логист всё равно получает сигнал', async () => {
+    const prisma: any = {
+      response: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'r1', status: 'PENDING' }),
+        findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', driver: { fullName: 'Ерлан', userId: 'u-d1' } }),
+        update: jest.fn(),
+      },
+      cargo: { findUnique: jest.fn().mockResolvedValue(cargo) },
+    };
+    const notifications = { notify: jest.fn() };
+    await new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any).driverAgreed('cargo1', 'd1');
+    expect(prisma.response.update).not.toHaveBeenCalled();
+    expect(notifications.notify).toHaveBeenCalledWith(expect.anything(), 'DRIVER_AGREED', expect.anything());
+  });
+
+  it('груз уже не опубликован — 409', async () => {
+    const prisma: any = { response: { findUnique: jest.fn() }, cargo: { findUnique: jest.fn().mockResolvedValue({ ...cargo, status: 'IN_DEAL' }) } };
+    await expect(new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any).driverAgreed('cargo1', 'd1')).rejects.toThrow(ConflictException);
+  });
+});

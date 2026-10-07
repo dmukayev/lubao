@@ -2924,4 +2924,9 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminRateEdit => 'Change rate';
+
+  @override
+  String chatSystemDriverSaysAgreed(String name) {
+    return '$name: agreed — select the driver so the deal goes step by step';
+  }
 }

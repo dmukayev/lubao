@@ -74,7 +74,9 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
           ),
         ],
       ),
-      body: Padding(
+      // Прокрутка: на узком экране с крупным шрифтом (Huawei Y7 ×1,3, iPhone SE)
+      // колонка не помещалась по высоте — «bottom overflowed».
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
@@ -104,8 +106,10 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
             const SizedBox(height: 8),
             PrimaryButton(key: const Key('companyLoginSubmitButton'), label: t.companyLoginVerify, loading: _loading, onPressed: _submit),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Две ссылки — в строку, а не влезают — переносом (не вылезают вправо).
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              spacing: 8,
               children: [
                 TextButton(
                   key: const Key('companyLoginRegisterLink'),

@@ -1177,5 +1177,6 @@
   "mapsCoordinatesCopied": "Coordinates copied",
   "adminRatesTitle": "Exchange rates (NBK)",
   "adminRatesHint": "Updated automatically every day at 10:00 from the National Bank. A manual change is not overwritten automatically.",
-  "adminRateEdit": "Change rate"
+  "adminRateEdit": "Change rate",
+  "chatSystemDriverSaysAgreed": "{name}: agreed — select the driver so the deal goes step by step"
 }

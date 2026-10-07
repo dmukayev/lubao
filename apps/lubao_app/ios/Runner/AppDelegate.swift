@@ -42,7 +42,11 @@ import UserNotifications
   ) {
     let info = response.notification.request.content.userInfo
     if AppDelegate.actionIds.contains(response.actionIdentifier), info["gcm.message_id"] != nil {
-      let args: [String: Any] = ["action": response.actionIdentifier, "deepLink": info["deepLink"] as? String ?? ""]
+      let args: [String: Any] = [
+        "action": response.actionIdentifier,
+        "deepLink": info["deepLink"] as? String ?? "",
+        "cargoId": info["cargoId"] as? String ?? "",
+      ]
       if let channel = pushActions {
         channel.invokeMethod("action", arguments: args)
       } else {

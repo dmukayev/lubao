@@ -5567,6 +5567,12 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Изменить курс'**
   String get adminRateEdit;
+
+  /// No description provided for @chatSystemDriverSaysAgreed.
+  ///
+  /// In ru, this message translates to:
+  /// **'{name}: договорились — выберите водителя, чтобы сделка пошла по шагам'**
+  String chatSystemDriverSaysAgreed(String name);
 }
 
 class _LubaoLocalizationsDelegate

@@ -81,7 +81,7 @@ export class NotificationsService {
                 title: rendered.title,
                 body: rendered.body,
                 // locale — язык получателя: им же приложение подписывает кнопки push.
-                data: { deepLink, event, locale },
+                data: { deepLink, event, locale, ...(payload.cargoId ? { cargoId: String(payload.cargoId) } : {}) },
                 ...(def.category ? { category: def.category } : {}),
               },
               { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },

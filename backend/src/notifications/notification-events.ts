@@ -55,6 +55,7 @@ export type NotificationEvent =
   | 'CARGO_INVITE'
   | 'CHAT_MESSAGE'
   | 'NEW_RESPONSE'
+  | 'DRIVER_AGREED'
   | 'NEW_DRIVER_DIGEST'
   | 'DEAL_STATUS'
   | 'DEAL_SELECTED'
@@ -121,6 +122,14 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
     kk: (p) => ({ title: 'Жаңа жауап', body: `${p.driverName} сіздің жүгіңізге жауап берді` }),
     zh: (p) => ({ title: '新响应', body: `${p.driverName} 回应了您的货物` }),
     en: (p) => ({ title: 'New response', body: `${p.driverName} responded to your cargo` }),
+  },
+  /// Водитель ответил «Да» на «Договорились?» (договорились мимо кнопок —
+  /// decisions.md): логисту — выбрать его, чтобы сделка пошла в приложении.
+  DRIVER_AGREED: {
+    ru: (p) => ({ title: 'Водитель говорит: договорились', body: `${p.driverName} — выберите его в откликах, чтобы сделка пошла по шагам` }),
+    kk: (p) => ({ title: 'Жүргізуші: келістік', body: `${p.driverName} — мәміле қадамдармен жүруі үшін оны жауаптардан таңдаңыз` }),
+    zh: (p) => ({ title: '司机表示：已谈妥', body: `${p.driverName} — 请在响应中选择他，交易将按步骤进行` }),
+    en: (p) => ({ title: 'Driver says: agreed', body: `${p.driverName} — select them in the responses so the deal goes step by step` }),
   },
   NEW_DRIVER_DIGEST: {
     ru: (p) => ({ title: 'Новые водители на точке', body: `${p.count} новых водителей под ваши фильтры` }),
@@ -216,6 +225,12 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
     deepLink: (p) => `/chat/${p.chatId}`,
     throttleSeconds: 60,
     throttleKey: (p) => `chat:${p.chatId}:${p.recipientUserId}`,
+  },
+  DRIVER_AGREED: {
+    eventGroup: 'NEW_RESPONSE',
+    channels: ['PUSH', 'WECOM'],
+    render: (locale, p) => T.DRIVER_AGREED[locale](p),
+    deepLink: (p) => `/company/cargos/${p.cargoId}/responses`,
   },
   NEW_RESPONSE: {
     eventGroup: 'NEW_RESPONSE',

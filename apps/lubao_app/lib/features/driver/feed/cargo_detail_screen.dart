@@ -438,22 +438,27 @@ class _CargoDetailBody extends ConsumerWidget {
                             ],
                           ),
                           const SizedBox(height: AppSpacing.xs),
-                          Row(
-                            children: [
-                              if (cargo.companyRatingCount > 0) ...[
-                                const Icon(LucideIcons.star, size: 14, color: AppColors.accent),
-                                const SizedBox(width: AppSpacing.xs),
-                                Text(cargo.companyRatingAvg.toStringAsFixed(1), style: AppTextStyles.caption),
-                                const Text(' · ', style: AppTextStyles.caption),
-                              ] else ...[
-                                Text(t.cargoDetailNoReviews, style: AppTextStyles.caption),
-                                const Text(' · ', style: AppTextStyles.caption),
+                          // Один текст с переносом, а не ряд кусков: на узком
+                          // экране с крупным шрифтом ряд вылезал вправо (iPhone SE
+                          // в e2e: «Пока нет отзывов · 0 сделок» — +84 px).
+                          Text.rich(
+                            TextSpan(
+                              style: AppTextStyles.caption,
+                              children: [
+                                if (cargo.companyRatingCount > 0) ...[
+                                  const WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Padding(
+                                      padding: EdgeInsets.only(right: AppSpacing.xs),
+                                      child: Icon(LucideIcons.star, size: 14, color: AppColors.accent),
+                                    ),
+                                  ),
+                                  TextSpan(text: cargo.companyRatingAvg.toStringAsFixed(1)),
+                                ] else
+                                  TextSpan(text: t.cargoDetailNoReviews),
+                                TextSpan(text: ' · ${t.cargoDetailCompanyDeals(cargo.companyCompletedDeals)}'),
                               ],
-                              Text(
-                                t.cargoDetailCompanyDeals(cargo.companyCompletedDeals),
-                                style: AppTextStyles.caption,
-                              ),
-                            ],
+                            ),
                           ),
                         ],
                       ),

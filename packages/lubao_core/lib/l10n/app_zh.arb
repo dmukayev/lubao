@@ -1052,5 +1052,6 @@
   "mapsCoordinatesCopied": "坐标已复制",
   "adminRatesTitle": "汇率（哈萨克斯坦国家银行）",
   "adminRatesHint": "每天 10:00 按国家银行汇率自动更新。手动修改不会被自动覆盖。",
-  "adminRateEdit": "修改汇率"
+  "adminRateEdit": "修改汇率",
+  "chatSystemDriverSaysAgreed": "{name}：已谈妥 — 请选择该司机，交易将按步骤进行"
 }

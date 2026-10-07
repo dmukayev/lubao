@@ -114,6 +114,13 @@ export class CargosController {
     return this.responses.createForCargo(id, ctx.driver.id, dto.message);
   }
 
+  /// «Договорились?» → «Да» (push с кнопками, 042): отклик + сигнал логисту.
+  @Post(':id/agreed')
+  agreed(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.responses.driverAgreed(id, ctx.driver.id);
+  }
+
   @Post(':id/invite')
   async invite(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: InviteDriverDto) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');

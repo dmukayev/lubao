@@ -2910,4 +2910,9 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminRateEdit => 'Изменить курс';
+
+  @override
+  String chatSystemDriverSaysAgreed(String name) {
+    return '$name: договорились — выберите водителя, чтобы сделка пошла по шагам';
+  }
 }

@@ -77,6 +77,11 @@ class CargoRepository {
     return (res.data as List<dynamic>).map((e) => CargoResponse.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  /// «Договорились?» → «Да» (042): отклик + сигнал логисту «выберите его».
+  Future<void> agreed(String cargoId) async {
+    await _client.dio.post('/cargos/$cargoId/agreed');
+  }
+
   Future<CargoResponse> respond(String cargoId, {String? message}) async {
     final res = await _client.dio.post('/cargos/$cargoId/responses', data: {if (message != null) 'message': message});
     return CargoResponse.fromJson(res.data as Map<String, dynamic>);

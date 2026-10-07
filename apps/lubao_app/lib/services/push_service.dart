@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' show Platform;
 import 'dart:ui' show Locale, PlatformDispatcher;
 
@@ -45,7 +46,8 @@ Future<void> _showLocal(FlutterLocalNotificationsPlugin plugin, RemoteMessage me
     id: message.messageId.hashCode,
     title: title,
     body: body,
-    payload: data['deepLink'] as String?,
+    // В payload — и ссылка, и груз: кнопке «Да» у «Договорились?» нужен cargoId.
+    payload: jsonEncode({'deepLink': data['deepLink'], 'cargoId': data['cargoId']}),
     notificationDetails: NotificationDetails(
       android: AndroidNotificationDetails(
         _channelId,
@@ -121,12 +123,12 @@ class PushService {
     _iosActions.setMethodCallHandler((call) async {
       if (call.method != 'action') return;
       final args = (call.arguments as Map?)?.cast<String, Object?>() ?? const {};
-      await _onResponse(args['action'] as String?, args['deepLink'] as String?);
+      await _onResponse(args['action'] as String?, args['deepLink'] as String?, cargoId: args['cargoId'] as String?);
     });
     if (Platform.isIOS) {
       // Приложение запущено нажатием кнопки — AppDelegate придержал его.
       final pending = (await _iosActions.invokeMethod<Map>('pending'))?.cast<String, Object?>();
-      if (pending != null) unawaited(_onResponse(pending['action'] as String?, pending['deepLink'] as String?));
+      if (pending != null) unawaited(_onResponse(pending['action'] as String?, pending['deepLink'] as String?, cargoId: pending['cargoId'] as String?));
     }
 
     FirebaseMessaging.onMessage.listen((m) => unawaited(_showLocal(_plugin, m)));
@@ -193,7 +195,15 @@ class PushService {
     _ref.read(routerProvider).push(resolvePushRoute(deepLink, role));
   }
 
-  Future<void> _onResponse(String? actionId, String? deepLink) async {
+  Future<void> _onResponse(String? actionId, String? payload, {String? cargoId}) async {
+    // Наше локальное уведомление несёт JSON {deepLink, cargoId}; из AppDelegate
+    // и старых уведомлений — просто ссылка.
+    var deepLink = payload;
+    if (payload != null && payload.startsWith('{')) {
+      final map = jsonDecode(payload) as Map<String, dynamic>;
+      deepLink = map['deepLink'] as String?;
+      cargoId ??= map['cargoId'] as String?;
+    }
     final action = pushActionFromId(actionId);
     final arrivals = _ref.read(arrivalRepositoryProvider);
     try {
@@ -205,6 +215,11 @@ class PushService {
         case PushAction.agreedNo:
           return;
         case PushAction.agreedYes:
+          // Договорились мимо кнопок (decisions.md): отклик + сигнал логисту
+          // «выберите его»; сделку по-прежнему создаёт выбор логиста.
+          if (cargoId != null) await _ref.read(cargoRepositoryProvider).agreed(cargoId);
+          _open(deepLink);
+          return;
         case null:
           _open(deepLink);
           return;

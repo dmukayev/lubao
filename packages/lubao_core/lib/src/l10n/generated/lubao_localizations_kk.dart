@@ -2923,4 +2923,9 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminRateEdit => 'Бағамды өзгерту';
+
+  @override
+  String chatSystemDriverSaysAgreed(String name) {
+    return '$name: келістік — мәміле қадамдармен жүруі үшін жүргізушіні таңдаңыз';
+  }
 }
