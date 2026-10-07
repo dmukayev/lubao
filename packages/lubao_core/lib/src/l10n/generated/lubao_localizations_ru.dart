@@ -2873,4 +2873,31 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get companyLoginInvalidCredentials => 'Неверный email или пароль';
+
+  @override
+  String get mapsOpen => 'Открыть в картах';
+
+  @override
+  String get mapsApple => 'Apple Карты';
+
+  @override
+  String get mapsGoogle => 'Google Maps';
+
+  @override
+  String get mapsYandex => 'Яндекс Карты';
+
+  @override
+  String get maps2gis => '2ГИС';
+
+  @override
+  String get mapsAmap => '高德地图 (Amap)';
+
+  @override
+  String get mapsBaidu => '百度地图 (Baidu)';
+
+  @override
+  String get mapsCopyCoordinates => 'Скопировать координаты';
+
+  @override
+  String get mapsCoordinatesCopied => 'Координаты скопированы';
 }

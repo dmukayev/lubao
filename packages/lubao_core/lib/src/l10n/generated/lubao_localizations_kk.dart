@@ -2886,4 +2886,31 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get companyLoginInvalidCredentials => 'Email немесе құпиясөз қате';
+
+  @override
+  String get mapsOpen => 'Картада ашу';
+
+  @override
+  String get mapsApple => 'Apple Карталар';
+
+  @override
+  String get mapsGoogle => 'Google Maps';
+
+  @override
+  String get mapsYandex => 'Яндекс Карталар';
+
+  @override
+  String get maps2gis => '2ГИС';
+
+  @override
+  String get mapsAmap => '高德地图 (Amap)';
+
+  @override
+  String get mapsBaidu => '百度地图 (Baidu)';
+
+  @override
+  String get mapsCopyCoordinates => 'Координаттарды көшіру';
+
+  @override
+  String get mapsCoordinatesCopied => 'Координаттар көшірілді';
 }

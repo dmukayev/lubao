@@ -1040,5 +1040,14 @@
   "adminLoginChannelsSaved": "渠道已保存",
   "pushChannelName": "Lubao 通知",
   "postCargoWeightError": "重量以吨为单位，最多 60，例如 20",
-  "companyLoginInvalidCredentials": "邮箱或密码错误"
+  "companyLoginInvalidCredentials": "邮箱或密码错误",
+  "mapsOpen": "在地图中打开",
+  "mapsApple": "苹果地图",
+  "mapsGoogle": "Google 地图",
+  "mapsYandex": "Yandex 地图",
+  "maps2gis": "2GIS",
+  "mapsAmap": "高德地图",
+  "mapsBaidu": "百度地图",
+  "mapsCopyCoordinates": "复制坐标",
+  "mapsCoordinatesCopied": "坐标已复制"
 }

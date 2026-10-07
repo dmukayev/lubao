@@ -5495,6 +5495,60 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Неверный email или пароль'**
   String get companyLoginInvalidCredentials;
+
+  /// No description provided for @mapsOpen.
+  ///
+  /// In ru, this message translates to:
+  /// **'Открыть в картах'**
+  String get mapsOpen;
+
+  /// No description provided for @mapsApple.
+  ///
+  /// In ru, this message translates to:
+  /// **'Apple Карты'**
+  String get mapsApple;
+
+  /// No description provided for @mapsGoogle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Google Maps'**
+  String get mapsGoogle;
+
+  /// No description provided for @mapsYandex.
+  ///
+  /// In ru, this message translates to:
+  /// **'Яндекс Карты'**
+  String get mapsYandex;
+
+  /// No description provided for @maps2gis.
+  ///
+  /// In ru, this message translates to:
+  /// **'2ГИС'**
+  String get maps2gis;
+
+  /// No description provided for @mapsAmap.
+  ///
+  /// In ru, this message translates to:
+  /// **'高德地图 (Amap)'**
+  String get mapsAmap;
+
+  /// No description provided for @mapsBaidu.
+  ///
+  /// In ru, this message translates to:
+  /// **'百度地图 (Baidu)'**
+  String get mapsBaidu;
+
+  /// No description provided for @mapsCopyCoordinates.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скопировать координаты'**
+  String get mapsCopyCoordinates;
+
+  /// No description provided for @mapsCoordinatesCopied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Координаты скопированы'**
+  String get mapsCoordinatesCopied;
 }
 
 class _LubaoLocalizationsDelegate

@@ -11,6 +11,7 @@ import 'status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'error_feedback.dart';
 import 'tracking_consent_sheet.dart';
+import 'map_links.dart';
 
 class DealDetailScreen extends ConsumerStatefulWidget {
   const DealDetailScreen({super.key, required this.dealId});
@@ -253,9 +254,32 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                   Text(t.dealDriverLocationTitle, style: Theme.of(context).textTheme.titleSmall),
                   const SizedBox(height: 8),
                   if (deal.driverLocation != null)
-                    Text(
-                      '${deal.driverLocation!.lat.toStringAsFixed(5)}, ${deal.driverLocation!.lng.toStringAsFixed(5)}\n'
-                      '${t.dealLocationUpdatedAt}: ${formatDateTime(deal.driverLocation!.updatedAt)}',
+                    // Нажатие — открыть точку в установленной карте или
+                    // скопировать координаты (живая проверка 2026-10-07).
+                    InkWell(
+                      key: const Key('dealDriverLocation'),
+                      onTap: () => showOpenInMaps(
+                        context,
+                        lat: deal.driverLocation!.lat,
+                        lng: deal.driverLocation!.lng,
+                        label: deal.driverName,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            const Icon(LucideIcons.mapPin, size: 18, color: AppColors.primary),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${deal.driverLocation!.lat.toStringAsFixed(5)}, ${deal.driverLocation!.lng.toStringAsFixed(5)}\n'
+                                '${t.dealLocationUpdatedAt}: ${formatDateTime(deal.driverLocation!.updatedAt)}',
+                              ),
+                            ),
+                            Text(t.mapsOpen, style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
+                          ],
+                        ),
+                      ),
                     )
                   else
                     Text(t.dealLocationNoData, style: TextStyle(color: Theme.of(context).disabledColor)),

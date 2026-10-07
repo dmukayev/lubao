@@ -2887,4 +2887,31 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get companyLoginInvalidCredentials => 'Wrong email or password';
+
+  @override
+  String get mapsOpen => 'Open in maps';
+
+  @override
+  String get mapsApple => 'Apple Maps';
+
+  @override
+  String get mapsGoogle => 'Google Maps';
+
+  @override
+  String get mapsYandex => 'Yandex Maps';
+
+  @override
+  String get maps2gis => '2GIS';
+
+  @override
+  String get mapsAmap => 'Amap (高德地图)';
+
+  @override
+  String get mapsBaidu => 'Baidu Maps (百度地图)';
+
+  @override
+  String get mapsCopyCoordinates => 'Copy coordinates';
+
+  @override
+  String get mapsCoordinatesCopied => 'Coordinates copied';
 }

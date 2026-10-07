@@ -2822,4 +2822,31 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get companyLoginInvalidCredentials => '邮箱或密码错误';
+
+  @override
+  String get mapsOpen => '在地图中打开';
+
+  @override
+  String get mapsApple => '苹果地图';
+
+  @override
+  String get mapsGoogle => 'Google 地图';
+
+  @override
+  String get mapsYandex => 'Yandex 地图';
+
+  @override
+  String get maps2gis => '2GIS';
+
+  @override
+  String get mapsAmap => '高德地图';
+
+  @override
+  String get mapsBaidu => '百度地图';
+
+  @override
+  String get mapsCopyCoordinates => '复制坐标';
+
+  @override
+  String get mapsCoordinatesCopied => '坐标已复制';
 }

@@ -1165,5 +1165,14 @@
   "adminLoginChannelsSaved": "Channels saved",
   "pushChannelName": "Lubao notifications",
   "postCargoWeightError": "Weight in tons, up to 60 — e.g. 20",
-  "companyLoginInvalidCredentials": "Wrong email or password"
+  "companyLoginInvalidCredentials": "Wrong email or password",
+  "mapsOpen": "Open in maps",
+  "mapsApple": "Apple Maps",
+  "mapsGoogle": "Google Maps",
+  "mapsYandex": "Yandex Maps",
+  "maps2gis": "2GIS",
+  "mapsAmap": "Amap (高德地图)",
+  "mapsBaidu": "Baidu Maps (百度地图)",
+  "mapsCopyCoordinates": "Copy coordinates",
+  "mapsCoordinatesCopied": "Coordinates copied"
 }

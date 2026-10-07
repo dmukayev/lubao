@@ -1040,5 +1040,14 @@
   "adminLoginChannelsSaved": "Арналар сақталды",
   "pushChannelName": "Lubao хабарландырулары",
   "postCargoWeightError": "Салмақ тоннамен, 60-қа дейін — мысалы 20",
-  "companyLoginInvalidCredentials": "Email немесе құпиясөз қате"
+  "companyLoginInvalidCredentials": "Email немесе құпиясөз қате",
+  "mapsOpen": "Картада ашу",
+  "mapsApple": "Apple Карталар",
+  "mapsGoogle": "Google Maps",
+  "mapsYandex": "Яндекс Карталар",
+  "maps2gis": "2ГИС",
+  "mapsAmap": "高德地图 (Amap)",
+  "mapsBaidu": "百度地图 (Baidu)",
+  "mapsCopyCoordinates": "Координаттарды көшіру",
+  "mapsCoordinatesCopied": "Координаттар көшірілді"
 }

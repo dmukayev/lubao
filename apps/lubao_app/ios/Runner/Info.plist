@@ -43,6 +43,15 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Компания увидит, где сейчас находится ваш груз, пока вы едете и приложение открыто.</string>
+	<!-- Какие карты установлены — «Открыть в картах» у местоположения водителя. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>comgooglemaps</string>
+		<string>yandexmaps</string>
+		<string>dgis</string>
+		<string>iosamap</string>
+		<string>baidumap</string>
+	</array>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Нужно, чтобы связаться с сервером Lubao в вашей сети (тестовые сборки).</string>
 	<key>NSCameraUsageDescription</key>

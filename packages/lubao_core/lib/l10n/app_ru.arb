@@ -1172,5 +1172,14 @@
   "adminLoginChannelsSaved": "Каналы сохранены",
   "pushChannelName": "Уведомления Lubao",
   "postCargoWeightError": "Вес в тоннах, до 60 — например 20",
-  "companyLoginInvalidCredentials": "Неверный email или пароль"
+  "companyLoginInvalidCredentials": "Неверный email или пароль",
+  "mapsOpen": "Открыть в картах",
+  "mapsApple": "Apple Карты",
+  "mapsGoogle": "Google Maps",
+  "mapsYandex": "Яндекс Карты",
+  "maps2gis": "2ГИС",
+  "mapsAmap": "高德地图 (Amap)",
+  "mapsBaidu": "百度地图 (Baidu)",
+  "mapsCopyCoordinates": "Скопировать координаты",
+  "mapsCoordinatesCopied": "Координаты скопированы"
 }
