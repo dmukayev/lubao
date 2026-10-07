@@ -1150,5 +1150,17 @@
   "tripTrackingSwitchPaused": "Paused — the logist cannot see where you are",
   "terminalWatchConsentTitle": "Automatic “left” by location",
   "terminalWatchConsentBody": "While you are “here” at a terminal, the app will check whether you have left and close the announcement by itself. Your location is not shared with the logist.",
-  "locationRationaleNearbyBody": "The app will determine your location once to find the nearest city. It is not stored anywhere and there is no tracking."
+  "locationRationaleNearbyBody": "The app will determine your location once to find the nearest city. It is not stored anywhere and there is no tracking.",
+  "loginChannelTitle": "Where to send the code",
+  "loginChannelWhatsapp": "WhatsApp",
+  "loginChannelTelegram": "Telegram",
+  "loginChannelSms": "SMS",
+  "loginCodeSentVia": "Code sent via {channel}",
+  "loginSendOtherWay": "Didn't get it? Send another way",
+  "adminLoginChannelsTitle": "Login code channels",
+  "adminLoginChannelsHint": "Order is top to bottom: the first enabled channel is offered to drivers by default; if it fails, the code goes via the next one.",
+  "adminLoginChannelsNoKeys": "no keys",
+  "adminMoveUp": "Move up",
+  "adminMoveDown": "Move down",
+  "adminLoginChannelsSaved": "Channels saved"
 }

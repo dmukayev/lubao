@@ -1025,5 +1025,17 @@
   "tripTrackingSwitchPaused": "Үзілісте — логист сіздің қайда екеніңізді көрмейді",
   "terminalWatchConsentTitle": "Орналасқан жер бойынша «кеттім» белгісі",
   "terminalWatchConsentBody": "Сіз терминалда «осындамын» кезіңде қолданба кетпегеніңізді тексеріп, хабарландыруды өзі жабады. Орналасқан жер логистке жіберілмейді.",
-  "locationRationaleNearbyBody": "Қолданба ең жақын қаланы табу үшін орналасқан жеріңізді бір рет анықтайды. Ол еш жерде сақталмайды, бақылау жоқ."
+  "locationRationaleNearbyBody": "Қолданба ең жақын қаланы табу үшін орналасқан жеріңізді бір рет анықтайды. Ол еш жерде сақталмайды, бақылау жоқ.",
+  "loginChannelTitle": "Кодты қайда жіберу",
+  "loginChannelWhatsapp": "WhatsApp",
+  "loginChannelTelegram": "Telegram",
+  "loginChannelSms": "SMS",
+  "loginCodeSentVia": "Код жіберілді: {channel}",
+  "loginSendOtherWay": "Келмеді ме? Басқа жолмен жіберу",
+  "adminLoginChannelsTitle": "Кіру коды арналары",
+  "adminLoginChannelsHint": "Реті — жоғарыдан төмен: бірінші қосылған арна жүргізушіге әдепкі ұсынылады, ақау болса код келесісіне кетеді.",
+  "adminLoginChannelsNoKeys": "кілттер жоқ",
+  "adminMoveUp": "Жоғары",
+  "adminMoveDown": "Төмен",
+  "adminLoginChannelsSaved": "Арналар сақталды"
 }

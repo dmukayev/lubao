@@ -8,8 +8,19 @@ class AuthRepository {
 
   final ApiClient _client;
 
-  Future<void> requestDriverCode({required String phone}) async {
-    await _client.dio.post('/auth/phone/request-code', data: {'phone': phone});
+  /// Каналы кода, включённые в админке, в порядке показа (042 п.3):
+  /// `whatsapp` / `telegram` / `sms`.
+  Future<List<String>> driverCodeChannels() async {
+    final res = await _client.dio.get('/auth/phone/channels');
+    return ((res.data as Map)['channels'] as List).cast<String>();
+  }
+
+  /// Отправляет код; `channel` — куда (выбор водителя или «отправить
+  /// по-другому»). Возвращает канал, куда код ушёл на самом деле: при сбое
+  /// сервер берёт следующий по порядку.
+  Future<String> requestDriverCode({required String phone, String? channel}) async {
+    final res = await _client.dio.post('/auth/phone/request-code', data: {'phone': phone, 'channel': ?channel});
+    return ((res.data as Map?)?['channel'] as String?) ?? 'sms';
   }
 
   /// null, если код неверный/истёк — иначе сессия (с driver==null, если это

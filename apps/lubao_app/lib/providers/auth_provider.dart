@@ -44,8 +44,8 @@ class SessionController extends StateNotifier<Session?> {
     }
   }
 
-  Future<void> requestDriverCode(String phone) async {
-    await _ref.read(authRepositoryProvider).requestDriverCode(phone: phone);
+  Future<String> requestDriverCode(String phone, {String? channel}) {
+    return _ref.read(authRepositoryProvider).requestDriverCode(phone: phone, channel: channel);
   }
 
   Future<void> verifyDriverCode(String phone, String code) async {

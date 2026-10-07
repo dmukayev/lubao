@@ -24,8 +24,33 @@ void main() {
     await waitFor(tester, find.byKey(const Key('roleSelectDriverButton')));
     final t = tester.element(find.byType(Scaffold).first).l10n;
 
+    // 042 п.3: водитель выбирает, куда прислать код; «Не пришло? Отправить
+    // по-другому» — тот же код другим каналом.
+    await run.step(tester, 'вход-выбор-канала-кода', () async {
+      await tester.tap(find.byKey(const Key('roleSelectDriverButton')));
+      await tester.pumpAndSettle();
+      await waitFor(tester, find.byKey(const Key('driverLoginChannel-telegram')));
+      expect(find.byKey(const Key('driverLoginChannel-whatsapp')), findsOneWidget);
+      expect(find.byKey(const Key('driverLoginChannel-sms')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('driverLoginChannel-telegram')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('driverLoginPhoneField')), '7010000001');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('driverLoginSendCodeButton')));
+      await waitFor(tester, find.byKey(const Key('driverLoginSentVia')));
+      expect(find.text(t.loginCodeSentVia(t.loginChannelTelegram)), findsOneWidget);
+      final viaSms = find.byKey(const Key('driverLoginResendVia-sms'));
+      await reveal(tester, viaSms);
+      await tester.tap(viaSms);
+      await waitFor(tester, find.text(t.loginCodeSentVia(t.loginChannelSms)));
+      expectInsideSafeZone(tester);
+    });
+
     await run.step(tester, 'вход', () async {
-      await loginDriver(tester, '7010000001');
+      for (var i = 0; i < 4; i++) {
+        await tester.enterText(find.byKey(Key('driverLoginCodeDigit$i')), e2eDevCode[i]);
+        await tester.pump(const Duration(milliseconds: 300));
+      }
       await waitFor(tester, find.byKey(const Key('driverAnnounceArrivalButton')));
       expectInsideSafeZone(tester);
     });

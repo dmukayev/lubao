@@ -5405,6 +5405,78 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Приложение один раз определит ваше местоположение, чтобы найти ближайший город. Оно нигде не сохраняется, слежки нет.'**
   String get locationRationaleNearbyBody;
+
+  /// No description provided for @loginChannelTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Куда прислать код'**
+  String get loginChannelTitle;
+
+  /// No description provided for @loginChannelWhatsapp.
+  ///
+  /// In ru, this message translates to:
+  /// **'WhatsApp'**
+  String get loginChannelWhatsapp;
+
+  /// No description provided for @loginChannelTelegram.
+  ///
+  /// In ru, this message translates to:
+  /// **'Telegram'**
+  String get loginChannelTelegram;
+
+  /// No description provided for @loginChannelSms.
+  ///
+  /// In ru, this message translates to:
+  /// **'SMS'**
+  String get loginChannelSms;
+
+  /// No description provided for @loginCodeSentVia.
+  ///
+  /// In ru, this message translates to:
+  /// **'Код отправлен: {channel}'**
+  String loginCodeSentVia(String channel);
+
+  /// No description provided for @loginSendOtherWay.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не пришло? Отправить по-другому'**
+  String get loginSendOtherWay;
+
+  /// No description provided for @adminLoginChannelsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Каналы кода входа'**
+  String get adminLoginChannelsTitle;
+
+  /// No description provided for @adminLoginChannelsHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Порядок — сверху вниз: первый включённый предлагается водителю по умолчанию, при сбое код уходит следующим.'**
+  String get adminLoginChannelsHint;
+
+  /// No description provided for @adminLoginChannelsNoKeys.
+  ///
+  /// In ru, this message translates to:
+  /// **'нет ключей'**
+  String get adminLoginChannelsNoKeys;
+
+  /// No description provided for @adminMoveUp.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выше'**
+  String get adminMoveUp;
+
+  /// No description provided for @adminMoveDown.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ниже'**
+  String get adminMoveDown;
+
+  /// No description provided for @adminLoginChannelsSaved.
+  ///
+  /// In ru, this message translates to:
+  /// **'Каналы сохранены'**
+  String get adminLoginChannelsSaved;
 }
 
 class _LubaoLocalizationsDelegate

@@ -1150,5 +1150,24 @@
   "tripTrackingSwitchPaused": "На паузе — логист не видит, где вы",
   "terminalWatchConsentTitle": "Отметка «уехал» по местоположению",
   "terminalWatchConsentBody": "Пока вы «на месте» на терминале, приложение будет проверять, не уехали ли вы, и закроет анонс само. Местоположение логисту при этом не передаётся.",
-  "locationRationaleNearbyBody": "Приложение один раз определит ваше местоположение, чтобы найти ближайший город. Оно нигде не сохраняется, слежки нет."
+  "locationRationaleNearbyBody": "Приложение один раз определит ваше местоположение, чтобы найти ближайший город. Оно нигде не сохраняется, слежки нет.",
+  "loginChannelTitle": "Куда прислать код",
+  "loginChannelWhatsapp": "WhatsApp",
+  "loginChannelTelegram": "Telegram",
+  "loginChannelSms": "SMS",
+  "loginCodeSentVia": "Код отправлен: {channel}",
+  "@loginCodeSentVia": {
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "loginSendOtherWay": "Не пришло? Отправить по-другому",
+  "adminLoginChannelsTitle": "Каналы кода входа",
+  "adminLoginChannelsHint": "Порядок — сверху вниз: первый включённый предлагается водителю по умолчанию, при сбое код уходит следующим.",
+  "adminLoginChannelsNoKeys": "нет ключей",
+  "adminMoveUp": "Выше",
+  "adminMoveDown": "Ниже",
+  "adminLoginChannelsSaved": "Каналы сохранены"
 }

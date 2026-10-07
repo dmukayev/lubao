@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
@@ -60,6 +62,19 @@ class AdminRepository {
 
   Future<void> setSetting(String key, String value, {String? reason}) async {
     await _client.dio.patch('/admin/settings/$key', data: {'value': value, if (reason != null) 'reason': reason});
+  }
+
+  /// Каналы кода входа (042 п.3): порядок, вкл/выкл и есть ли ключи.
+  Future<List<AdminLoginCodeChannel>> loginCodeChannels() async {
+    final res = await _client.dio.get('/admin/login-code-channels');
+    return (res.data as List)
+        .cast<Map<String, dynamic>>()
+        .map((m) => AdminLoginCodeChannel(id: m['id'] as String, enabled: m['enabled'] as bool, configured: m['configured'] as bool))
+        .toList();
+  }
+
+  Future<void> setLoginCodeChannels(List<AdminLoginCodeChannel> channels) {
+    return setSetting('loginCodeChannels', jsonEncode([for (final c in channels) {'id': c.id, 'enabled': c.enabled}]));
   }
 
   /// «Настройки → Перевод» (задача 010, п.8).
@@ -669,4 +684,15 @@ class AdminRepository {
       if (rejectReason != null) 'rejectReason': rejectReason,
     });
   }
+}
+
+/// Канал кода входа в админке: без ключей (`configured=false`) — серый.
+class AdminLoginCodeChannel {
+  const AdminLoginCodeChannel({required this.id, required this.enabled, required this.configured});
+
+  final String id;
+  final bool enabled;
+  final bool configured;
+
+  AdminLoginCodeChannel copyWith({bool? enabled}) => AdminLoginCodeChannel(id: id, enabled: enabled ?? this.enabled, configured: configured);
 }

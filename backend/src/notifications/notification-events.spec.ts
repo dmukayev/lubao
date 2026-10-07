@@ -29,3 +29,29 @@ describe('NOTIFICATION_EVENTS render per-recipient locale (задача 029, п.
     expect(NOTIFICATION_EVENTS.CHAT_MESSAGE.render('en', payload).body).toBe('New message');
   });
 });
+
+/// 042 п.1, п.7: тап по push открывает экран через go_router — ссылка
+/// должна совпадать с маршрутом приложения (app_router.dart) или быть
+/// псевдонимом, который приложение раскрывает по роли.
+describe('deep link push — маршруты приложения (042 п.1)', () => {
+  const APP_ROUTES = [
+    /^\/driver\/cargo\/[^/]+$/,
+    /^\/chat\/[^/]+$/,
+    /^\/deal\/[^/]+$/,
+    /^\/company\/cargos\/[^/]+\/responses$/,
+    /^\/company\/drivers$/,
+    /^\/(verification|arrival|profile)$/,
+  ];
+  const payload = { cargoId: 'c1', chatId: 'ch1', dealId: 'd1', complaintId: 'cp1', status: 'LOADED' };
+
+  it.each(Object.keys(NOTIFICATION_EVENTS))('%s ведёт на известный маршрут', (event) => {
+    const link = NOTIFICATION_EVENTS[event as keyof typeof NOTIFICATION_EVENTS].deepLink(payload);
+    expect(link).not.toContain('lubao://');
+    expect(APP_ROUTES.some((re) => re.test(link))).toBe(true);
+  });
+
+  it('кнопки есть только у «Ещё ищете груз?» и «Договорились?»', () => {
+    const withButtons = Object.entries(NOTIFICATION_EVENTS).filter(([, d]) => d.category).map(([e]) => e).sort();
+    expect(withButtons).toEqual(['AGREED_CHECK', 'ARRIVAL_STILL_LOOKING']);
+  });
+});

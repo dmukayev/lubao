@@ -33,6 +33,15 @@ test('обход экранов админки: ни одного белого �
       await expect(semantic).toBeAttached();
       await expect(page.getByText('Что-то пошло не так')).toHaveCount(0);
       expect(await page.locator('flt-semantics').count()).toBeGreaterThan(3);
+      // 042 п.3: блок «Каналы кода входа» — три канала со стрелками порядка и
+      // переключателями (Flutter склеивает тексты карточки в один узел —
+      // проверяем по кнопкам и переключателям).
+      if (name === 'settings') {
+        await expect(page.getByRole('button', { name: 'Ниже' }).first()).toBeVisible();
+        expect(await page.getByRole('button', { name: 'Ниже' }).count()).toBe(3);
+        expect(await page.getByRole('button', { name: 'Выше' }).count()).toBe(3);
+        expect(await page.getByRole('switch').count()).toBeGreaterThanOrEqual(3);
+      }
     });
   }
 });

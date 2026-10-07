@@ -165,6 +165,10 @@ final adminDealChatProvider = FutureProvider.autoDispose.family<List<AdminChatMe
   return ref.watch(adminRepositoryProvider).dealChat(id);
 });
 
+final adminLoginCodeChannelsProvider = FutureProvider.autoDispose<List<AdminLoginCodeChannel>>((ref) {
+  return ref.watch(adminRepositoryProvider).loginCodeChannels();
+});
+
 final adminSettingsProvider = FutureProvider.autoDispose<Map<String, String>>((ref) {
   return ref.watch(adminRepositoryProvider).settings();
 });

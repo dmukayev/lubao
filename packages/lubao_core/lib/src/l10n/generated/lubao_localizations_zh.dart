@@ -2775,4 +2775,42 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get locationRationaleNearbyBody => '应用仅会定位一次，以查找最近的城市。位置不会被保存，也没有跟踪。';
+
+  @override
+  String get loginChannelTitle => '验证码发送到';
+
+  @override
+  String get loginChannelWhatsapp => 'WhatsApp';
+
+  @override
+  String get loginChannelTelegram => 'Telegram';
+
+  @override
+  String get loginChannelSms => '短信';
+
+  @override
+  String loginCodeSentVia(String channel) {
+    return '验证码已通过$channel发送';
+  }
+
+  @override
+  String get loginSendOtherWay => '没收到？换一种方式发送';
+
+  @override
+  String get adminLoginChannelsTitle => '登录验证码渠道';
+
+  @override
+  String get adminLoginChannelsHint => '顺序从上到下：第一个已启用的渠道默认提供给司机，发送失败时自动改用下一个。';
+
+  @override
+  String get adminLoginChannelsNoKeys => '未配置密钥';
+
+  @override
+  String get adminMoveUp => '上移';
+
+  @override
+  String get adminMoveDown => '下移';
+
+  @override
+  String get adminLoginChannelsSaved => '渠道已保存';
 }

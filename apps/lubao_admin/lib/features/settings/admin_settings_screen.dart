@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
 import '../shared/admin_dialogs.dart';
 
 /// Настройки (задача 028, п.22): точка по умолчанию, радиус «Близко к
-/// дому», срок архива груза. Каждое изменение — с причиной, в audit_log.
+/// дому», каналы кода входа (042 п.3). Каждое изменение — в audit_log.
+/// Срок архива груза не настраивается: 3 дня после даты готовности
+/// (CLAUDE.md), бэкенд такой настройки не читает (042 п.4).
 class AdminSettingsScreen extends ConsumerWidget {
   const AdminSettingsScreen({super.key});
 
@@ -105,7 +108,6 @@ class AdminSettingsScreen extends ConsumerWidget {
         data: (values) {
           final defaultCityId = values['defaultPointCityId'];
           final homeRadiusKm = values['homeRadiusKm'] ?? '200';
-          final cargoArchiveDays = values['cargoArchiveDays'] ?? '3';
           final defaultCity = cities.where((c) => c.id == defaultCityId).firstOrNull;
 
           return ListView(
@@ -145,11 +147,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                 onEdit: () => _saveNumberSetting(context, ref, key: 'homeRadiusKm', title: t.adminSettingHomeRadius, currentValue: homeRadiusKm),
               ),
               const SizedBox(height: 12),
-              _NumberSettingCard(
-                title: t.adminSettingCargoArchiveDays,
-                value: t.adminStaleDays(int.tryParse(cargoArchiveDays) ?? 3),
-                onEdit: () => _saveNumberSetting(context, ref, key: 'cargoArchiveDays', title: t.adminSettingCargoArchiveDays, currentValue: cargoArchiveDays),
-              ),
+              const _LoginCodeChannelsCard(),
               const SizedBox(height: 12),
               translationStats.when(
                 loading: () => const AppCard(child: LoadingView()),
@@ -217,3 +215,92 @@ class _NumberSettingCard extends StatelessWidget {
     );
   }
 }
+
+/// «Каналы кода входа» (042 п.3, решение 2026-10-07): вкл/выкл и порядок
+/// без релиза. Канал без ключей на сервере — серый, включить его нельзя.
+class _LoginCodeChannelsCard extends ConsumerWidget {
+  const _LoginCodeChannelsCard();
+
+  String _label(LubaoLocalizations t, String id) => switch (id) {
+        'whatsapp' => t.loginChannelWhatsapp,
+        'telegram' => t.loginChannelTelegram,
+        _ => t.loginChannelSms,
+      };
+
+  Future<void> _save(BuildContext context, WidgetRef ref, List<AdminLoginCodeChannel> next) async {
+    final t = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(adminRepositoryProvider).setLoginCodeChannels(next);
+      messenger.showSnackBar(SnackBar(content: Text(t.adminLoginChannelsSaved)));
+    } catch (e) {
+      debugPrint('LoginCodeChannelsCard: $e');
+      messenger.showSnackBar(SnackBar(content: Text(t.commonError)));
+    }
+    ref.invalidate(adminLoginCodeChannelsProvider);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.l10n;
+    final channels = ref.watch(adminLoginCodeChannelsProvider);
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(t.adminLoginChannelsTitle, style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Text(t.adminLoginChannelsHint, style: AppTextStyles.caption),
+          const SizedBox(height: 8),
+          channels.when(
+            loading: () => const LoadingView(),
+            error: (e, st) {
+              debugPrint('LoginCodeChannelsCard: $e');
+              return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminLoginCodeChannelsProvider));
+            },
+            data: (list) => Column(
+              children: [
+                for (var i = 0; i < list.length; i++)
+                  Opacity(
+                    opacity: list[i].configured ? 1 : 0.45,
+                    child: Row(
+                      key: Key('adminLoginChannel-${list[i].id}'),
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(_label(t, list[i].id)),
+                              if (!list[i].configured) Text(t.adminLoginChannelsNoKeys, style: AppTextStyles.caption),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: t.adminMoveUp,
+                          icon: const Icon(LucideIcons.arrowUp, size: 18),
+                          onPressed: i == 0 ? null : () => _save(context, ref, [...list]..insert(i - 1, list[i])..removeAt(i + 1)),
+                        ),
+                        IconButton(
+                          tooltip: t.adminMoveDown,
+                          icon: const Icon(LucideIcons.arrowDown, size: 18),
+                          onPressed: i == list.length - 1 ? null : () => _save(context, ref, [...list]..insert(i + 2, list[i])..removeAt(i)),
+                        ),
+                        Switch(
+                          key: Key('adminLoginChannelSwitch-${list[i].id}'),
+                          value: list[i].enabled && list[i].configured,
+                          onChanged: list[i].configured
+                              ? (v) => _save(context, ref, [for (final c in list) c.id == list[i].id ? c.copyWith(enabled: v) : c])
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

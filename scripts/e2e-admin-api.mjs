@@ -236,4 +236,18 @@ assert(cancelSecond.status < 300, 'отмена второго анонса по
 const mineEnd = (await api('GET', '/arrivals/me', { token: d6 })).json;
 assert(mineEnd.arrivals.length === 1 && mineEnd.arrival.status === 'ON_SITE', 'остался один анонс — тот, где водитель на месте (D6 виден логисту в Алматы)');
 
+// 042 п.3: каналы кода входа из админки — порядок/вкл без релиза.
+const channelsAdmin = await get('/admin/login-code-channels');
+assert(channelsAdmin.status === 200 && channelsAdmin.json.map((c) => c.id).join() === 'whatsapp,telegram,sms' && channelsAdmin.json.every((c) => c.configured), 'каналы кода: три, по умолчанию все настроены (e2e — консольные)', JSON.stringify(channelsAdmin.json));
+const setChannels = (value) => api('PATCH', '/admin/settings/loginCodeChannels', { token, body: { value: JSON.stringify(value), reason: 'E2E' } });
+assert((await setChannels([{ id: 'telegram', enabled: true }, { id: 'whatsapp', enabled: false }, { id: 'sms', enabled: true }])).status < 300, 'админ меняет порядок и выключает WhatsApp');
+const publicChannels = await api('GET', '/auth/phone/channels');
+assert(publicChannels.json.channels.join() === 'telegram,sms', 'водитель видит только включённые, в порядке из админки', JSON.stringify(publicChannels.json));
+const viaDefault = await api('POST', '/auth/phone/request-code', { body: { phone: '+77010000060' } });
+assert(viaDefault.status < 300 && viaDefault.json.channel === 'telegram', 'код уходит первым включённым (Telegram)', JSON.stringify(viaDefault.json));
+const viaOff = await api('POST', '/auth/phone/request-code', { body: { phone: '+77010000061', channel: 'whatsapp' } });
+assert(viaOff.status < 300 && viaOff.json.channel === 'telegram', 'выключенный WhatsApp не используется даже по выбору', JSON.stringify(viaOff.json));
+assert((await api('PATCH', '/admin/settings/loginCodeChannels', { token, body: { value: '[{"id":"viber","enabled":true}]', reason: 'E2E' } })).status === 400, 'неизвестный канал админка не сохраняет');
+assert((await setChannels([{ id: 'whatsapp', enabled: true }, { id: 'telegram', enabled: true }, { id: 'sms', enabled: true }])).status < 300, 'настройка каналов возвращена (остальные сценарии)');
+
 console.log(`Готово: ${checks} проверок.`);

@@ -1025,5 +1025,17 @@
   "tripTrackingSwitchPaused": "已暂停——物流方看不到您的位置",
   "terminalWatchConsentTitle": "按位置自动标记“已离开”",
   "terminalWatchConsentBody": "当您在码头“已到达”期间，应用会检查您是否离开，并自动关闭公告。位置不会共享给物流方。",
-  "locationRationaleNearbyBody": "应用仅会定位一次，以查找最近的城市。位置不会被保存，也没有跟踪。"
+  "locationRationaleNearbyBody": "应用仅会定位一次，以查找最近的城市。位置不会被保存，也没有跟踪。",
+  "loginChannelTitle": "验证码发送到",
+  "loginChannelWhatsapp": "WhatsApp",
+  "loginChannelTelegram": "Telegram",
+  "loginChannelSms": "短信",
+  "loginCodeSentVia": "验证码已通过{channel}发送",
+  "loginSendOtherWay": "没收到？换一种方式发送",
+  "adminLoginChannelsTitle": "登录验证码渠道",
+  "adminLoginChannelsHint": "顺序从上到下：第一个已启用的渠道默认提供给司机，发送失败时自动改用下一个。",
+  "adminLoginChannelsNoKeys": "未配置密钥",
+  "adminMoveUp": "上移",
+  "adminMoveDown": "下移",
+  "adminLoginChannelsSaved": "渠道已保存"
 }

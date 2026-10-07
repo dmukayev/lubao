@@ -2825,4 +2825,43 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   @override
   String get locationRationaleNearbyBody =>
       'Приложение один раз определит ваше местоположение, чтобы найти ближайший город. Оно нигде не сохраняется, слежки нет.';
+
+  @override
+  String get loginChannelTitle => 'Куда прислать код';
+
+  @override
+  String get loginChannelWhatsapp => 'WhatsApp';
+
+  @override
+  String get loginChannelTelegram => 'Telegram';
+
+  @override
+  String get loginChannelSms => 'SMS';
+
+  @override
+  String loginCodeSentVia(String channel) {
+    return 'Код отправлен: $channel';
+  }
+
+  @override
+  String get loginSendOtherWay => 'Не пришло? Отправить по-другому';
+
+  @override
+  String get adminLoginChannelsTitle => 'Каналы кода входа';
+
+  @override
+  String get adminLoginChannelsHint =>
+      'Порядок — сверху вниз: первый включённый предлагается водителю по умолчанию, при сбое код уходит следующим.';
+
+  @override
+  String get adminLoginChannelsNoKeys => 'нет ключей';
+
+  @override
+  String get adminMoveUp => 'Выше';
+
+  @override
+  String get adminMoveDown => 'Ниже';
+
+  @override
+  String get adminLoginChannelsSaved => 'Каналы сохранены';
 }

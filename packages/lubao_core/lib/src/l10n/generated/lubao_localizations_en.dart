@@ -2839,4 +2839,43 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   @override
   String get locationRationaleNearbyBody =>
       'The app will determine your location once to find the nearest city. It is not stored anywhere and there is no tracking.';
+
+  @override
+  String get loginChannelTitle => 'Where to send the code';
+
+  @override
+  String get loginChannelWhatsapp => 'WhatsApp';
+
+  @override
+  String get loginChannelTelegram => 'Telegram';
+
+  @override
+  String get loginChannelSms => 'SMS';
+
+  @override
+  String loginCodeSentVia(String channel) {
+    return 'Code sent via $channel';
+  }
+
+  @override
+  String get loginSendOtherWay => 'Didn\'t get it? Send another way';
+
+  @override
+  String get adminLoginChannelsTitle => 'Login code channels';
+
+  @override
+  String get adminLoginChannelsHint =>
+      'Order is top to bottom: the first enabled channel is offered to drivers by default; if it fails, the code goes via the next one.';
+
+  @override
+  String get adminLoginChannelsNoKeys => 'no keys';
+
+  @override
+  String get adminMoveUp => 'Move up';
+
+  @override
+  String get adminMoveDown => 'Move down';
+
+  @override
+  String get adminLoginChannelsSaved => 'Channels saved';
 }

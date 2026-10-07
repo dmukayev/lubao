@@ -2838,4 +2838,43 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   @override
   String get locationRationaleNearbyBody =>
       'Қолданба ең жақын қаланы табу үшін орналасқан жеріңізді бір рет анықтайды. Ол еш жерде сақталмайды, бақылау жоқ.';
+
+  @override
+  String get loginChannelTitle => 'Кодты қайда жіберу';
+
+  @override
+  String get loginChannelWhatsapp => 'WhatsApp';
+
+  @override
+  String get loginChannelTelegram => 'Telegram';
+
+  @override
+  String get loginChannelSms => 'SMS';
+
+  @override
+  String loginCodeSentVia(String channel) {
+    return 'Код жіберілді: $channel';
+  }
+
+  @override
+  String get loginSendOtherWay => 'Келмеді ме? Басқа жолмен жіберу';
+
+  @override
+  String get adminLoginChannelsTitle => 'Кіру коды арналары';
+
+  @override
+  String get adminLoginChannelsHint =>
+      'Реті — жоғарыдан төмен: бірінші қосылған арна жүргізушіге әдепкі ұсынылады, ақау болса код келесісіне кетеді.';
+
+  @override
+  String get adminLoginChannelsNoKeys => 'кілттер жоқ';
+
+  @override
+  String get adminMoveUp => 'Жоғары';
+
+  @override
+  String get adminMoveDown => 'Төмен';
+
+  @override
+  String get adminLoginChannelsSaved => 'Арналар сақталды';
 }

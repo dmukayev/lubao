@@ -36,6 +36,28 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
   int _resendCooldown = 60;
   Timer? _timer;
 
+  /// Каналы кода из админки (042 п.3) и выбор водителя; `_sentVia` — куда
+  /// код ушёл на самом деле (при сбое сервер берёт следующий канал).
+  List<String> _channels = const [];
+  String? _channel;
+  String? _sentVia;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChannels();
+  }
+
+  Future<void> _loadChannels() async {
+    try {
+      final channels = await ref.read(authRepositoryProvider).driverCodeChannels();
+      if (mounted) setState(() => _channels = channels);
+    } catch (e) {
+      // Без списка — обычный запрос: сервер сам возьмёт первый канал.
+      debugPrint('DriverLoginScreen: channels: $e');
+    }
+  }
+
   String get _fullPhone => '${countryDialCodes[_countryCode] ?? '+7'}${_phoneController.text.trim()}';
 
   @override
@@ -70,8 +92,11 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
     if (_phoneController.text.trim().isEmpty) return;
     setState(() => _sendingCode = true);
     try {
-      await ref.read(sessionProvider.notifier).requestDriverCode(_fullPhone);
-      setState(() => _codeRequested = true);
+      final via = await ref.read(sessionProvider.notifier).requestDriverCode(_fullPhone, channel: _channel);
+      setState(() {
+        _codeRequested = true;
+        _sentVia = via;
+      });
       _startCooldown();
       _codeFocusNodes.first.requestFocus();
     } catch (e) {
@@ -83,11 +108,14 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
     }
   }
 
-  Future<void> _resend() async {
-    if (_resendCooldown > 0) return;
+  /// `channel` — «Не пришло? Отправить по-другому»: тот же код другим
+  /// каналом сразу, без ожидания минуты (сервер это разрешает).
+  Future<void> _resend({String? channel}) async {
+    if (_resendCooldown > 0 && channel == null) return;
     setState(() => _resending = true);
     try {
-      await ref.read(sessionProvider.notifier).requestDriverCode(_fullPhone);
+      final via = await ref.read(sessionProvider.notifier).requestDriverCode(_fullPhone, channel: channel ?? _sentVia);
+      if (mounted) setState(() => _sentVia = via);
       for (final c in _codeControllers) {
         c.clear();
       }
@@ -154,7 +182,7 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.screen),
         child: Column(
           children: [
@@ -217,6 +245,23 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
               ],
             ),
             if (!_codeRequested) ...[
+              if (_channels.length > 1) ...[
+                const SizedBox(height: AppSpacing.lg),
+                Text(t.loginChannelTitle, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  children: [
+                    for (final c in _channels)
+                      ChoiceChip(
+                        key: Key('driverLoginChannel-$c'),
+                        label: Text(_channelLabel(t, c)),
+                        selected: (_channel ?? _channels.first) == c,
+                        onSelected: (_) => setState(() => _channel = c),
+                      ),
+                  ],
+                ),
+              ],
               const SizedBox(height: AppSpacing.lg),
               PrimaryButton(
                 key: const Key('driverLoginSendCodeButton'),
@@ -227,6 +272,14 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
             ] else ...[
               const SizedBox(height: AppSpacing.lg),
               Text(t.driverOtpSubtitle(_fullPhone), style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+              if (_sentVia != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  t.loginCodeSentVia(_channelLabel(t, _sentVia!)),
+                  key: const Key('driverLoginSentVia'),
+                  style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -263,6 +316,21 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
                   ),
                 ),
               ),
+              if (_channels.where((c) => c != _sentVia).isNotEmpty && _channels.length > 1) ...[
+                Center(child: Text(t.loginSendOtherWay, style: AppTextStyles.caption)),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: AppSpacing.sm,
+                  children: [
+                    for (final c in _channels.where((c) => c != _sentVia))
+                      TextButton(
+                        key: Key('driverLoginResendVia-$c'),
+                        onPressed: _resending ? null : () => _resend(channel: c),
+                        child: Text(_channelLabel(t, c)),
+                      ),
+                  ],
+                ),
+              ],
             ],
           ],
         ),
@@ -270,3 +338,9 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
     );
   }
 }
+
+String _channelLabel(LubaoLocalizations t, String channel) => switch (channel) {
+      'whatsapp' => t.loginChannelWhatsapp,
+      'telegram' => t.loginChannelTelegram,
+      _ => t.loginChannelSms,
+    };
