@@ -30,6 +30,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Домен ссылок-приглашений (042 п.2): -PappLinkHost=app.example.kz, по
+        // умолчанию — как APP_PUBLIC_URL сервера.
+        manifestPlaceholders["appLinkHost"] = (project.findProperty("appLinkHost") as String?) ?: "app.lubao.kz"
     }
 
     buildTypes {
