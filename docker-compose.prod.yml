@@ -102,8 +102,8 @@ services:
       # Адрес Tailscale-интерфейса сервера, на котором слушает админка (030): 100.x.y.z.
       ADMIN_LISTEN: ${ADMIN_LISTEN:?задайте ADMIN_LISTEN (например 100.64.0.1:8080)}
       # Universal links / App Links для ссылок-приглашений (042 п.2, docs/release.md).
-      IOS_APP_ID: ${IOS_APP_ID:-28Y4B2FLZ7.com.lubao.lubaoApp}
-      ANDROID_PACKAGE: ${ANDROID_PACKAGE:-com.lubao.lubao_app}
+      IOS_APP_ID: ${IOS_APP_ID:-28Y4B2FLZ7.kz.darkhan.lubao}
+      ANDROID_PACKAGE: ${ANDROID_PACKAGE:-kz.darkhan.lubao}
       ANDROID_CERT_SHA256: ${ANDROID_CERT_SHA256:-}
     volumes:
       - ./infra/nginx/prod.conf.template:/etc/nginx/templates/default.conf.template:ro

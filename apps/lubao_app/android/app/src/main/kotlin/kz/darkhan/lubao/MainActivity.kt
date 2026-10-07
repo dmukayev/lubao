@@ -1,4 +1,4 @@
-package com.lubao.lubao_app
+package kz.darkhan.lubao
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -52,8 +52,8 @@ WHATSAPP_TEMPLATE=                    # шаблон authentication с кноп�
 TELEGRAM_GATEWAY_TOKEN=               # gateway.telegram.org → API token
 
 # Ссылки-приглашения https://APP_HOST/invite/... открывают приложение (042 п.2):
-IOS_APP_ID=28Y4B2FLZ7.com.lubao.lubaoApp
-ANDROID_PACKAGE=com.lubao.lubao_app
+IOS_APP_ID=28Y4B2FLZ7.kz.darkhan.lubao
+ANDROID_PACKAGE=kz.darkhan.lubao
 ANDROID_CERT_SHA256=                  # отпечаток релизного ключа: keytool -list -v -keystore … (п. 3.2)
 
 # Push (раздел 5)
@@ -62,7 +62,7 @@ FCM_SERVICE_ACCOUNT_JSON=             # JSON сервисного аккаунт
 APNS_KEY_ID=
 APNS_TEAM_ID=28Y4B2FLZ7
 APNS_PRIVATE_KEY=                     # содержимое .p8, переводы строк — \n
-APNS_BUNDLE_ID=com.lubao.lubaoApp
+APNS_BUNDLE_ID=kz.darkhan.lubao
 APNS_PRODUCTION=true                  # App Store и TestFlight — true; сборки с Mac (flutter run) — false
 
 # необязательно
@@ -119,9 +119,15 @@ docker compose -f docker-compose.prod.yml exec backend npx prisma db seed
 
 ## 3. Приложение (мобильные сборки)
 
-### 3.1 Идентификаторы и название
+### 3.1 Идентификаторы приложения — зафиксированы 2026-10-07, не менять
 
-Текущие значения (заменить до первого релиза, менять после публикации нельзя): Android `applicationId = com.lubao.lubao_app`, iOS `PRODUCT_BUNDLE_IDENTIFIER = com.lubao.lubaoApp`, название на устройстве — «Lubao» (`android:label` / `CFBundleDisplayName`), иконка — `apps/lubao_app/ios/Runner/Assets.xcassets/AppIcon.appiconset` и `android/app/src/main/res/mipmap-*` (заменить на финальную).
+| Платформа | Идентификатор | Где задан |
+|---|---|---|
+| Android | `kz.darkhan.lubao` | `applicationId` и `namespace` в `apps/lubao_app/android/app/build.gradle.kts`, пакет `MainActivity` — `android/app/src/main/kotlin/kz/darkhan/lubao/` |
+| iOS | `kz.darkhan.lubao` (тесты — `kz.darkhan.lubao.RunnerTests`) | `PRODUCT_BUNDLE_IDENTIFIER` во всех конфигурациях `apps/lubao_app/ios/Runner.xcodeproj/project.pbxproj` |
+| Связанное | `APNS_BUNDLE_ID=kz.darkhan.lubao`, `IOS_APP_ID=28Y4B2FLZ7.kz.darkhan.lubao`, `ANDROID_PACKAGE=kz.darkhan.lubao` | `.env.example`, `docker-compose.prod.yml`, раздел 1 |
+
+После публикации в Google Play / App Store идентификатор сменить нельзя (это будет другое приложение): push-ключи, Firebase-приложения, App ID в Apple Developer, `assetlinks.json` и `apple-app-site-association` заводятся на эти значения. Название на устройстве — «Lubao» (`android:label` / `CFBundleDisplayName`), иконка — фирменный знак (043 п.7, `design/brand/`).
 
 ### 3.2 Android: подпись релизным ключом
 
@@ -142,7 +148,7 @@ storeFile=/absolute/path/to/lubao-release.jks
 
 ### 3.3 iOS: TestFlight
 
-1. Apple Developer аккаунт, App ID `com.lubao.lubaoApp` (или финальный), в Capabilities включить **Push Notifications** (и в Xcode → Runner → Signing & Capabilities добавить Push Notifications и Background Modes → Remote notifications).
+1. Apple Developer аккаунт, App ID `kz.darkhan.lubao`, в Capabilities включить **Push Notifications** (и в Xcode → Runner → Signing & Capabilities добавить Push Notifications и Background Modes → Remote notifications).
 2. `flutter build ipa --release --dart-define=...` (те же `--dart-define`, что для Android; для push добавить `--dart-define=PUSH_ENABLED=true`).
 3. Xcode → Organizer → Distribute App → App Store Connect → TestFlight; тестеров добавить по email.
 
@@ -165,8 +171,8 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build bac
 Приложение собирается и работает без Firebase: push включается флагом сборки `--dart-define=PUSH_ENABLED=true` (без флага `PushService` ничего не делает) и файлами, которые не кладутся в репозиторий (они в `.gitignore`):
 
 1. Firebase Console → проект → добавить приложения:
-   - Android `com.lubao.lubao_app` → `google-services.json` в `apps/lubao_app/android/app/` (Gradle-плагин `com.google.gms.google-services` применяется сам, только если файл есть);
-   - iOS `com.lubao.lubaoApp` → `GoogleService-Info.plist` в `apps/lubao_app/ios/Runner/` и добавить в target Runner (Copy Bundle Resources).
+   - Android `kz.darkhan.lubao` → `google-services.json` в `apps/lubao_app/android/app/` (Gradle-плагин `com.google.gms.google-services` применяется сам, только если файл есть);
+   - iOS `kz.darkhan.lubao` → `GoogleService-Info.plist` в `apps/lubao_app/ios/Runner/` и добавить в target Runner (Copy Bundle Resources).
 2. Apple Developer → Keys → ключ APNs (`.p8`) → загрузить в Firebase Console (Project settings → Cloud Messaging → APNs auth key). Обе платформы получают push через FCM; токен регистрируется как `FCM`.
 3. iOS: права `aps-environment` уже в `Runner.entitlements`, фоновый режим `remote-notification` — в Info.plist; при экспорте в App Store/TestFlight Xcode ставит production.
 4. Сервер: `PUSH_PROVIDER=real`, `FCM_SERVICE_ACCOUNT_JSON` (раздел 1). APNs-переменные нужны только для прямой отправки в обход FCM (сейчас не используется).

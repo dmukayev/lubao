@@ -274,7 +274,7 @@ run_ios() {
   fi
   # Сброс установленного приложения: чистое состояние (Keychain сессии
   # чистит сам тест — iOS не стирает его при uninstall).
-  xcrun simctl uninstall "$UDID" com.lubao.lubaoApp >/dev/null 2>&1 || true
+  xcrun simctl uninstall "$UDID" kz.darkhan.lubao >/dev/null 2>&1 || true
   RWT_DIR=apps/lubao_app run_with_timeout 1200 "$log" flutter test "integration_test/${name}.dart" -d "$UDID" \
     --dart-define=API_BASE_URL="$E2E_API_URL" \
     --dart-define=E2E_SHOT_DIR="$SHOTS" \
