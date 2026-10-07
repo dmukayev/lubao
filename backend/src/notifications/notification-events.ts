@@ -57,6 +57,7 @@ export type NotificationEvent =
   | 'NEW_RESPONSE'
   | 'NEW_DRIVER_DIGEST'
   | 'DEAL_STATUS'
+  | 'DEAL_SELECTED'
   | 'VERIFICATION_RETURNED'
   | 'VERIFICATION_APPROVED'
   | 'AGREED_CHECK'
@@ -126,6 +127,14 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
     kk: (p) => ({ title: 'Нүктеде жаңа жүргізушілер', body: `Сүзгілеріңізге сай ${p.count} жаңа жүргізуші` }),
     zh: (p) => ({ title: '该点新司机', body: `符合您筛选条件的新司机 ${p.count} 名` }),
     en: (p) => ({ title: 'New drivers at point', body: `${p.count} new drivers matching your filters` }),
+  },
+  /// Водителю — когда логист выбрал его (042 п.1, «Готово, когда»):
+  /// от его лица, а не общее «Статус сделки: Водитель выбран».
+  DEAL_SELECTED: {
+    ru: () => ({ title: 'Вас выбрали', body: 'Логист выбрал вас на груз. Подтвердите перевозку в приложении.' }),
+    kk: () => ({ title: 'Сізді таңдады', body: 'Логист сізді жүкке таңдады. Тасымалды қолданбада растаңыз.' }),
+    zh: () => ({ title: '您已被选中', body: '物流方已为该货物选择了您。请在应用中确认运输。' }),
+    en: () => ({ title: 'You were selected', body: 'A logistician selected you for the cargo. Confirm the haul in the app.' }),
   },
   DEAL_STATUS: {
     ru: (p) => ({ title: 'Статус сделки изменился', body: DEAL_STATUS_LABEL[p.status]?.ru ?? p.status }),
@@ -219,6 +228,12 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
     channels: ['WECOM'],
     render: (locale, p) => T.NEW_DRIVER_DIGEST[locale](p),
     deepLink: () => '/company/drivers',
+  },
+  DEAL_SELECTED: {
+    eventGroup: 'DEAL_STATUS',
+    channels: ['PUSH'],
+    render: (locale, p) => T.DEAL_SELECTED[locale](p),
+    deepLink: (p) => `/deal/${p.dealId}`,
   },
   DEAL_STATUS: {
     eventGroup: 'DEAL_STATUS',

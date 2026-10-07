@@ -350,9 +350,8 @@ export class ResponsesService {
       return { selected, deal, takenFrom };
     }).catch((e) => this.rethrowUnique(e));
 
-    await this.notifications.notify({ userIds: [updated.selected.driver.userId] }, 'DEAL_STATUS', {
+    await this.notifications.notify({ userIds: [updated.selected.driver.userId] }, 'DEAL_SELECTED', {
       dealId: updated.deal.id,
-      status: 'SELECTED',
     });
 
     // «Выбран водитель» — системно в чат пары (задача 038, п.11/12).

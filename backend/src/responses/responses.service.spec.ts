@@ -155,7 +155,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
     });
     expect(notifications.notify).toHaveBeenCalledWith(
       { userIds: ['user-d1'] },
-      'DEAL_STATUS',
+      'DEAL_SELECTED',
       expect.objectContaining({ dealId: 'deal1' }),
     );
   });
