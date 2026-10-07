@@ -44,10 +44,28 @@ SMTP_FROM="Lubao <no-reply@example.kz>"
 CORS_ALLOWED_ORIGINS=https://app.example.kz
 MINIO_PUBLIC_URL=https://app.example.kz/files
 
-# необязательно
+# Каналы кода входа (042 п.3): включение и порядок — в админке «Настройки → Каналы кода входа»;
+# без ключей канал недоступен (в админке серый). SMS (Mobizon) — всегда страховка.
 WHATSAPP_TOKEN=
 WHATSAPP_PHONE_ID=
-WHATSAPP_TEMPLATE=
+WHATSAPP_TEMPLATE=                    # шаблон authentication с кнопкой «Скопировать код»
+TELEGRAM_GATEWAY_TOKEN=               # gateway.telegram.org → API token
+
+# Ссылки-приглашения https://APP_HOST/invite/... открывают приложение (042 п.2):
+IOS_APP_ID=28Y4B2FLZ7.com.lubao.lubaoApp
+ANDROID_PACKAGE=com.lubao.lubao_app
+ANDROID_CERT_SHA256=                  # отпечаток релизного ключа: keytool -list -v -keystore … (п. 3.2)
+
+# Push (раздел 5)
+PUSH_PROVIDER=real
+FCM_SERVICE_ACCOUNT_JSON=             # JSON сервисного аккаунта Firebase одной строкой
+APNS_KEY_ID=
+APNS_TEAM_ID=28Y4B2FLZ7
+APNS_PRIVATE_KEY=                     # содержимое .p8, переводы строк — \n
+APNS_BUNDLE_ID=com.lubao.lubaoApp
+APNS_PRODUCTION=true                  # App Store и TestFlight — true; сборки с Mac (flutter run) — false
+
+# необязательно
 TRANSLATION_PROVIDER=deepseek
 DEEPSEEK_API_KEY=
 SENTRY_DSN=
