@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 520" width="1800" height="520">
+<g transform="translate(0 0) scale(0.5)">
+  <!-- Lubao app icon: cream tile, orange mark. No fonts except BAO (Onest, fallback Arial). -->
+      <g fill="none" stroke="#E8742E" stroke-width="120" stroke-linecap="round" stroke-linejoin="round">
+    <!-- L -->
+    <path d="M238 190 V 446 Q238 500 292 500 H 392"/>
+    <!-- U -->
+    <path d="M570 190 V 408 a 110 110 0 0 0 220 0 V 190"/>
+  </g>
+  <g fill="#E8742E">
+    <!-- trailer -->
+    <rect x="178" y="622" width="404" height="190" rx="44"/>
+    <!-- cab -->
+    <path d="M598 648 h108 q26 0 42 22 l64 84 v58 h-214 z"/>
+  </g>
+  <!-- window -->
+  <path d="M636 672 h54 q10 0 17 9 l36 46 v8 h-107 z" fill="#FFF3DC"/>
+  <!-- BAO on trailer -->
+  <text x="380" y="738" text-anchor="middle" font-family="Onest, Arial, Helvetica, sans-serif" font-size="96" font-weight="800" letter-spacing="12" fill="#FFF3DC">BAO</text>
+  <!-- wheels -->
+  <circle cx="330" cy="806" r="64" fill="#FFF3DC"/><circle cx="330" cy="806" r="50" fill="#E8742E"/><circle cx="330" cy="806" r="18" fill="#FFF3DC"/>
+  <circle cx="700" cy="806" r="64" fill="#FFF3DC"/><circle cx="700" cy="806" r="50" fill="#E8742E"/><circle cx="700" cy="806" r="18" fill="#FFF3DC"/>
+</g>
+<text x="600" y="372" font-family="Onest, Arial, Helvetica, sans-serif" font-size="330" font-weight="900" letter-spacing="-8" fill="#E8742E">Lubao</text>
+</svg>
