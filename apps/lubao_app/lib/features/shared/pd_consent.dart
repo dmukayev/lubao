@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
@@ -96,19 +97,41 @@ class _PdConsentSheetState extends ConsumerState<_PdConsentSheet> {
   }
 }
 
-/// Ссылки «Условия» · «Политика» — экран входа и профиль (043 п.2).
-class LegalLinks extends StatelessWidget {
-  const LegalLinks({super.key});
+/// «Продолжая, вы принимаете Условия и Политику» со ссылками — экраны входа
+/// (043 п.2). Порядок слов в языках разный, поэтому ссылки встают на места
+/// плейсхолдеров ARB, а не склеиваются из кусков.
+class LegalNotice extends StatelessWidget {
+  const LegalNotice({super.key});
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    return Wrap(
-      alignment: WrapAlignment.center,
-      children: [
-        TextButton(key: const Key('legalTermsLink'), onPressed: () => openLegalPage(context, 'terms'), child: Text(t.legalTerms)),
-        TextButton(key: const Key('legalPrivacyLink'), onPressed: () => openLegalPage(context, 'privacy'), child: Text(t.legalPrivacy)),
-      ],
-    );
+    const termsMark = '\u0001';
+    const privacyMark = '\u0002';
+    final text = t.legalLoginNotice(termsMark, privacyMark);
+    final base = AppTextStyles.caption.copyWith(color: AppColors.textSecondary);
+    final link = base.copyWith(color: AppColors.primary, decoration: TextDecoration.underline);
+    final spans = <InlineSpan>[];
+    final buffer = StringBuffer();
+    void flush() {
+      if (buffer.isNotEmpty) spans.add(TextSpan(text: buffer.toString()));
+      buffer.clear();
+    }
+
+    for (final ch in text.characters) {
+      if (ch == termsMark || ch == privacyMark) {
+        flush();
+        final page = ch == termsMark ? 'terms' : 'privacy';
+        spans.add(TextSpan(
+          text: ch == termsMark ? t.legalTermsLink : t.legalPrivacyLink,
+          style: link,
+          recognizer: TapGestureRecognizer()..onTap = () => openLegalPage(context, page),
+        ));
+      } else {
+        buffer.write(ch);
+      }
+    }
+    flush();
+    return Text.rich(TextSpan(style: base, children: spans), key: const Key('legalLoginNotice'), textAlign: TextAlign.center);
   }
 }

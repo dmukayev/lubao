@@ -271,7 +271,7 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
                 onPressed: _requestCode,
               ),
               const SizedBox(height: AppSpacing.md),
-              const LegalLinks(),
+              const LegalNotice(),
             ] else ...[
               const SizedBox(height: AppSpacing.lg),
               Text(t.driverOtpSubtitle(_fullPhone), style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),

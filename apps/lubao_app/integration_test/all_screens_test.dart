@@ -70,6 +70,7 @@ void main() {
     await visit('driver-responses', '/driver/responses');
     await visit('devices', '/devices');
     await visit('notification-settings', '/notifications/settings');
+    await visit('about', '/about', expectFinder: find.byKey(const Key('profileDeleteAccountButton')));
     if (dealIds.isNotEmpty) await visit('deal-detail', '/deal/${dealIds.first}');
     if (chatIds.isNotEmpty) await visit('chat', '/chat/${chatIds.first}', expectFinder: find.byKey(const Key('chatMessageInput')));
     await run.step(tester, 'выход-водителя', () async {
@@ -95,5 +96,7 @@ void main() {
     if (chatIds.isNotEmpty) await visit('company-chat', '/chat/${chatIds.first}', expectFinder: find.byKey(const Key('chatMessageInput')));
     await visit('company-devices', '/devices');
     await visit('company-notification-settings', '/notifications/settings');
+    // У логиста в «О приложении» есть оферта.
+    await visit('company-about', '/about', expectFinder: find.byKey(const Key('aboutOffer')));
   });
 }

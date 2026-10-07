@@ -5729,6 +5729,48 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Обновить'**
   String get appUpdateButton;
+
+  /// No description provided for @legalOffer.
+  ///
+  /// In ru, this message translates to:
+  /// **'Оферта для компаний'**
+  String get legalOffer;
+
+  /// No description provided for @companyRegisterOfferAccept.
+  ///
+  /// In ru, this message translates to:
+  /// **'Я принимаю оферту: Lubao — информационная площадка, не перевозчик и не сторона договора перевозки'**
+  String get companyRegisterOfferAccept;
+
+  /// No description provided for @legalLoginNotice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Продолжая, вы принимаете {terms} и {privacy}'**
+  String legalLoginNotice(String terms, String privacy);
+
+  /// No description provided for @legalTermsLink.
+  ///
+  /// In ru, this message translates to:
+  /// **'Условия'**
+  String get legalTermsLink;
+
+  /// No description provided for @legalPrivacyLink.
+  ///
+  /// In ru, this message translates to:
+  /// **'Политику конфиденциальности'**
+  String get legalPrivacyLink;
+
+  /// No description provided for @aboutTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'О приложении'**
+  String get aboutTitle;
+
+  /// No description provided for @aboutVersion.
+  ///
+  /// In ru, this message translates to:
+  /// **'Версия {version}'**
+  String aboutVersion(String version);
 }
 
 class _LubaoLocalizationsDelegate

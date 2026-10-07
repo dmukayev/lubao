@@ -113,7 +113,8 @@ docker compose -f docker-compose.prod.yml exec backend npx prisma db seed
 - [ ] админ создан, вход в админку **из tailnet** работает, **с публичного адреса — нет**;
 - [ ] SMS-код приходит на реальный номер; письмо с кодом приходит в gmail, mail.ru, qq.com (проверка доставки);
 - [ ] первый бэкап снят вручную: `docker compose -f docker-compose.prod.yml exec backup backup.sh once`, **восстановление проверено** (`infra/README.md` → «Проверка восстановления»), `BACKUP_REMOTE_CMD` настроен;
-- [ ] `/legal/terms`, `/legal/privacy` открываются на 4 языках (тексты — заготовки, **юрист правит до первого пользователя**);
+- [ ] **обязательно: юрист вычитал и утвердил** `infra/site/legal/terms.html`, `privacy.html`, `offer.html` (сейчас заготовки с пометкой «ТЕКСТ-ЗАГОТОВКА») — без этого в прод не выпускать; изменили смысл текста — поднять версию: согласие на ПДн `PD_CONSENT_VERSION` / `pdConsentVersion`, оферта `OFFER_VERSION` / `offerVersion` (бэкенд `src/auth/legal-consent.ts` и `lubao_core` `auth_repository.dart` — одинаково), пометку «ТЕКСТ-ЗАГОТОВКА» убрать;
+- [ ] `/legal/terms`, `/legal/privacy`, `/legal/offer` открываются на 4 языках;
 - [ ] веб логиста не ходит к gstatic/googleapis (DevTools → Network);
 - [ ] `minAppVersion` в «Настройки» админки пуст (обновления пока не требуем).
 

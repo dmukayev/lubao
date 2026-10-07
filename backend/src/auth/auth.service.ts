@@ -1,5 +1,5 @@
 import { LoginCodeChannel } from '../sms/login-code-channels';
-import { PD_CONSENT_VERSION, pdConsentRequired } from './pd-consent';
+import { OFFER_VERSION, PD_CONSENT_VERSION, pdConsentRequired } from './legal-consent';
 import {
   BadRequestException,
   ConflictException,
@@ -148,6 +148,9 @@ export class AuthService {
    * на qq.com/163.com ненадёжна.
    */
   async registerCompany(dto: RegisterCompanyAuthDto, ip: string) {
+    if (dto.offerVersion !== OFFER_VERSION) {
+      throw new BadRequestException({ code: 'OFFER_VERSION_MISMATCH', version: OFFER_VERSION });
+    }
     const normalizedEmail = normalizeEmail(dto.email);
     const existing = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
@@ -159,7 +162,7 @@ export class AuthService {
       data: { role: 'COMPANY', email: normalizedEmail, passwordHash },
     });
 
-    const { company, companyMember } = await this.companies.registerOwnedCompany(user.id, dto);
+    const { company, companyMember } = await this.companies.registerOwnedCompany(user.id, dto, { offerVersion: dto.offerVersion });
 
     try {
       await this.email.requestCode(normalizedEmail, ip, user.locale, 'CONFIRM_EMAIL');

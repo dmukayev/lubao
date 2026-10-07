@@ -1079,5 +1079,12 @@
   "legalPrivacy": "Құпиялылық саясаты",
   "appUpdateTitle": "Қосымшаны жаңартыңыз",
   "appUpdateBody": "Бұл нұсқа енді қолдау көрсетілмейді. Жаңасын орнатыңыз — бір минут қана.",
-  "appUpdateButton": "Жаңарту"
+  "appUpdateButton": "Жаңарту",
+  "legalOffer": "Компанияларға арналған оферта",
+  "companyRegisterOfferAccept": "Офертаны қабылдаймын: Lubao — ақпараттық алаң, тасымалдаушы емес және тасымал шартының тарапы емес",
+  "legalLoginNotice": "Жалғастыра отырып, сіз {terms} мен {privacy} қабылдайсыз",
+  "legalTermsLink": "Шарттарды",
+  "legalPrivacyLink": "Құпиялылық саясатын",
+  "aboutTitle": "Қосымша туралы",
+  "aboutVersion": "Нұсқа {version}"
 }

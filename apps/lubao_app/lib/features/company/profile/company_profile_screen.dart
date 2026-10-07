@@ -12,7 +12,6 @@ import '../../../providers/locale_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../shared/photo_picker.dart';
 import '../../shared/error_feedback.dart';
-import '../../shared/delete_account.dart';
 import '../../shared/pd_consent.dart';
 
 /// Плашка-напоминание о неподтверждённом email (задача 025, п. 7) — не
@@ -703,15 +702,19 @@ class CompanyProfileScreen extends ConsumerWidget {
             subtitle: Text(t.companySetPasswordHint),
             onTap: () => _showSetPasswordDialog(context, ref),
           ),
+          // 043 п.2: Условия, Политика, Оферта, версия, «Удалить аккаунт».
+          ListTile(
+            key: const Key('profileAboutItem'),
+            leading: const Icon(LucideIcons.info),
+            title: Text(t.aboutTitle),
+            onTap: () => context.push('/about'),
+          ),
           const SizedBox(height: 16),
           OutlinedButton(
             key: const Key('companyProfileLogoutButton'),
             onPressed: () => ref.read(sessionProvider.notifier).logout(),
             child: Text(t.profileLogout),
           ),
-          const SizedBox(height: 8),
-          const DeleteAccountButton(),
-          const LegalLinks(),
         ],
       ),
     );

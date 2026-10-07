@@ -1,6 +1,7 @@
 import * as bcrypt from 'bcryptjs';
 import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { OFFER_VERSION } from './legal-consent';
 
 /// Минимальная in-memory замена ioredis — только методы, которые реально
 /// использует AuthService.loginAdmin (get/incr/expire/set/del).
@@ -202,7 +203,7 @@ describe('AuthService.registerCompany (задача 025 — email+пароль �
     prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY' });
     await expect(
       service.registerCompany(
-        { email: 'owner@example.com', password: 'password1', ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1' },
+        { email: 'owner@example.com', password: 'password1', ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1', offerVersion: OFFER_VERSION },
         '1.1.1.1',
       ),
     ).rejects.toThrow('Email already registered');
@@ -214,16 +215,27 @@ describe('AuthService.registerCompany (задача 025 — email+пароль �
     prisma.user.create.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'owner@example.com' });
 
     const result = await service.registerCompany(
-      { email: 'Owner@Example.com', password: 'password1', ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1' },
+      { email: 'Owner@Example.com', password: 'password1', ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1', offerVersion: OFFER_VERSION },
       '1.1.1.1',
     );
 
     expect(prisma.user.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ role: 'COMPANY', email: 'owner@example.com' }) }),
     );
-    expect(companies.registerOwnedCompany).toHaveBeenCalledWith('u1', expect.objectContaining({ companyName: 'Yidao' }));
+    expect(companies.registerOwnedCompany).toHaveBeenCalledWith('u1', expect.objectContaining({ companyName: 'Yidao' }), { offerVersion: OFFER_VERSION });
     expect(result.company).toEqual({ id: 'c1', name: 'Yidao' });
     expect(result).toEqual(expect.objectContaining({ accessToken: 'at', refreshToken: 'rt' }));
+  });
+
+  it('043 п.2: без принятой текущей оферты компания не регистрируется', async () => {
+    prisma.user.findUnique.mockResolvedValue(null);
+    await expect(
+      service.registerCompany(
+        { email: 'owner@example.com', password: 'password1', ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1', offerVersion: '2000-01-01' },
+        '1.1.1.1',
+      ),
+    ).rejects.toMatchObject({ response: { code: 'OFFER_VERSION_MISMATCH' } });
+    expect(prisma.user.create).not.toHaveBeenCalled();
   });
 
   it('sends a verification code but does not fail registration if sending throws (п. 7 — не блокирует)', async () => {
@@ -233,7 +245,7 @@ describe('AuthService.registerCompany (задача 025 — email+пароль �
 
     await expect(
       service.registerCompany(
-        { email: 'owner@example.com', password: 'password1', ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1' },
+        { email: 'owner@example.com', password: 'password1', ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1', offerVersion: OFFER_VERSION },
         '1.1.1.1',
       ),
     ).resolves.toEqual(expect.objectContaining({ accessToken: 'at' }));

@@ -3012,4 +3012,30 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get appUpdateButton => 'Жаңарту';
+
+  @override
+  String get legalOffer => 'Компанияларға арналған оферта';
+
+  @override
+  String get companyRegisterOfferAccept =>
+      'Офертаны қабылдаймын: Lubao — ақпараттық алаң, тасымалдаушы емес және тасымал шартының тарапы емес';
+
+  @override
+  String legalLoginNotice(String terms, String privacy) {
+    return 'Жалғастыра отырып, сіз $terms мен $privacy қабылдайсыз';
+  }
+
+  @override
+  String get legalTermsLink => 'Шарттарды';
+
+  @override
+  String get legalPrivacyLink => 'Құпиялылық саясатын';
+
+  @override
+  String get aboutTitle => 'Қосымша туралы';
+
+  @override
+  String aboutVersion(String version) {
+    return 'Нұсқа $version';
+  }
 }

@@ -1204,5 +1204,12 @@
   "legalPrivacy": "Privacy policy",
   "appUpdateTitle": "Update the app",
   "appUpdateBody": "This version is no longer supported. Install the new one — it takes a minute.",
-  "appUpdateButton": "Update"
+  "appUpdateButton": "Update",
+  "legalOffer": "Offer for companies",
+  "companyRegisterOfferAccept": "I accept the offer: Lubao is an information platform, not a carrier and not a party to the transport contract",
+  "legalLoginNotice": "By continuing, you accept the {terms} and {privacy}",
+  "legalTermsLink": "Terms",
+  "legalPrivacyLink": "Privacy policy",
+  "aboutTitle": "About the app",
+  "aboutVersion": "Version {version}"
 }

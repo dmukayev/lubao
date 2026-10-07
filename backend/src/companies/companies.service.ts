@@ -127,7 +127,7 @@ export class CompaniesService {
   /// после создания пользователя). Владелец получает все права логиста
   /// (решение 2026-10-04) — отдельных прав для CompanyMemberRole.OWNER не
   /// заводим, это уже так во всех местах, где проверяется роль.
-  async registerOwnedCompany(userId: string, dto: RegisterCompanyDto) {
+  async registerOwnedCompany(userId: string, dto: RegisterCompanyDto, opts: { offerVersion?: string } = {}) {
     const existingMember = await this.prisma.companyMember.findUnique({ where: { userId } });
     if (existingMember) throw new BadRequestException('User is already a member of a company');
 
@@ -139,7 +139,12 @@ export class CompaniesService {
     try {
       ({ company, member } = await this.prisma.$transaction(async (tx) => {
         const company = await tx.company.create({
-          data: { name: dto.companyName, nameRu: dto.companyNameRu ?? dto.companyName, countryId: dto.countryId },
+          data: {
+            name: dto.companyName,
+            nameRu: dto.companyNameRu ?? dto.companyName,
+            countryId: dto.countryId,
+            ...(opts.offerVersion ? { offerAcceptedAt: new Date(), offerVersion: opts.offerVersion } : {}),
+          },
         });
         const member = await tx.companyMember.create({
           data: { companyId: company.id, userId, role: 'OWNER', fullName: dto.ownerName },

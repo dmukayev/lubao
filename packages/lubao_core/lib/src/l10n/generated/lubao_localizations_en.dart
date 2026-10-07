@@ -3013,4 +3013,30 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get appUpdateButton => 'Update';
+
+  @override
+  String get legalOffer => 'Offer for companies';
+
+  @override
+  String get companyRegisterOfferAccept =>
+      'I accept the offer: Lubao is an information platform, not a carrier and not a party to the transport contract';
+
+  @override
+  String legalLoginNotice(String terms, String privacy) {
+    return 'By continuing, you accept the $terms and $privacy';
+  }
+
+  @override
+  String get legalTermsLink => 'Terms';
+
+  @override
+  String get legalPrivacyLink => 'Privacy policy';
+
+  @override
+  String get aboutTitle => 'About the app';
+
+  @override
+  String aboutVersion(String version) {
+    return 'Version $version';
+  }
 }

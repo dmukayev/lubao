@@ -300,4 +300,11 @@ await api('POST', '/auth/phone/request-code', { body: { phone: DEL_PHONE } });
 const reReg2 = await api('POST', '/auth/phone/verify', { body: { phone: DEL_PHONE, code: '1111', deviceName: 'e2e', platform: 'ios' } });
 assert(reReg2.status < 300 && reReg2.json.user?.id !== delReg.user?.id, 'тот же номер входит как новый аккаунт', `status=${reReg2.status}`);
 
+// 043 п.2: компания регистрируется только с принятой текущей офертой.
+const cnId = refData.countries.find((c) => c.code === 'CN')?.id ?? refData.countries[0].id;
+const noOffer = await api('POST', '/auth/company/register', { body: { email: `e2e-nooffer-${Date.now()}@lubao-test.kz`, password: 'E2eLubao2026!', ownerName: 'Тест Офертов', companyName: 'No Offer LLC', countryId: cnId } });
+assert(noOffer.status === 400, 'без оферты компания не регистрируется', `status=${noOffer.status}`);
+const oldOffer = await api('POST', '/auth/company/register', { body: { email: `e2e-oldoffer-${Date.now()}@lubao-test.kz`, password: 'E2eLubao2026!', ownerName: 'Тест Офертов', companyName: 'Old Offer LLC', countryId: cnId, offerVersion: '2000-01-01' } });
+assert(oldOffer.status === 400, 'старая редакция оферты не принимается', `status=${oldOffer.status}`);
+
 console.log(`Готово: ${checks} проверок.`);

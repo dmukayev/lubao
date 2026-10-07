@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, HttpException } from '@nestjs/common';
-import { PD_CONSENT_VERSION } from '../auth/pd-consent';
+import { PD_CONSENT_VERSION } from '../auth/legal-consent';
 import { detectImageType } from './image-type';
 import { DAILY_UPLOAD_LIMIT, consumeUploadQuota } from './upload-quota';
 import { UploadsController } from './uploads.controller';

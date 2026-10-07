@@ -86,6 +86,11 @@ void main() {
     await tester.tap(find.text('Китай'));
     await tester.pumpAndSettle();
 
+    // 043 п.2: без принятой оферты кнопка неактивна.
+    await tester.ensureVisible(find.byKey(const Key('companyRegisterOfferCheckbox')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('companyRegisterOfferCheckbox')));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byType(PrimaryButton));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(PrimaryButton));
@@ -116,6 +121,11 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, 'Пароль'), 'password123');
     await tester.enterText(find.widgetWithText(TextField, 'Ваше имя'), 'Ли Вэй');
     await tester.enterText(find.widgetWithText(TextField, 'Название компании'), '新疆测试物流');
+    // 043 п.2: без принятой оферты кнопка неактивна.
+    await tester.ensureVisible(find.byKey(const Key('companyRegisterOfferCheckbox')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('companyRegisterOfferCheckbox')));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byType(PrimaryButton));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(PrimaryButton));

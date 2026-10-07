@@ -131,7 +131,7 @@ export class AuthController {
   }
 
   /// 043 п.2: согласие на обработку ПДн перед первой загрузкой документа.
-  @Post('me/pd-consent')
+  @Post('me/legal-consent')
   @HttpCode(200)
   async acceptPdConsent(@CurrentUser() ctx: RequestContext, @Body() dto: PdConsentDto) {
     await this.auth.acceptPdConsent(ctx.user.id, dto.version);

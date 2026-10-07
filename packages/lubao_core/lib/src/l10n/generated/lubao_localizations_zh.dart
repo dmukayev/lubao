@@ -2943,4 +2943,30 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get appUpdateButton => '更新';
+
+  @override
+  String get legalOffer => '公司服务条款（要约）';
+
+  @override
+  String get companyRegisterOfferAccept =>
+      '我接受要约：Lubao 是信息平台，不是承运人，也不是运输合同的当事方';
+
+  @override
+  String legalLoginNotice(String terms, String privacy) {
+    return '继续即表示您接受$terms和$privacy';
+  }
+
+  @override
+  String get legalTermsLink => '使用条款';
+
+  @override
+  String get legalPrivacyLink => '隐私政策';
+
+  @override
+  String get aboutTitle => '关于应用';
+
+  @override
+  String aboutVersion(String version) {
+    return '版本 $version';
+  }
 }

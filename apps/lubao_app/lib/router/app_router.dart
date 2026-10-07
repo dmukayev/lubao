@@ -32,6 +32,7 @@ import '../features/shared/my_chats_screen.dart';
 import '../features/shared/devices_screen.dart';
 import '../features/shared/notification_settings_screen.dart';
 import '../features/shared/splash_screen.dart';
+import '../features/shared/about_screen.dart';
 import '../features/shared/update_required_screen.dart';
 import '../features/driver/deals/my_responses_screen.dart';
 
@@ -108,6 +109,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
       GoRoute(path: '/update', builder: (context, state) => const UpdateRequiredScreen()),
       GoRoute(path: '/devices', builder: (context, state) => const DevicesScreen()),
+      GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
       GoRoute(path: '/notifications/settings', builder: (context, state) => const NotificationSettingsScreen()),
       GoRoute(path: '/role-select', builder: (context, state) => const RoleSelectScreen()),
       GoRoute(path: '/login/driver', builder: (context, state) => const DriverLoginScreen()),

@@ -47,6 +47,20 @@ void main() {
       await tester.pumpAndSettle();
     });
 
+    // 043 п.2: без принятой оферты кнопка неактивна.
+    await run.step(tester, 'оферта-галочка', () async {
+      final submit = find.byKey(const Key('companyRegisterSubmit'));
+      await reveal(tester, submit);
+      expect(tester.widget<PrimaryButton>(submit).onPressed, isNull, reason: 'без оферты регистрироваться нельзя');
+      expect(find.byKey(const Key('companyRegisterOfferLink')), findsOneWidget);
+      expect(find.byKey(const Key('legalLoginNotice')), findsOneWidget);
+      final offer = find.byKey(const Key('companyRegisterOfferCheckbox'));
+      await reveal(tester, offer);
+      await tester.tap(offer);
+      await tester.pumpAndSettle();
+      expectNoOverflow(tester);
+    });
+
     await run.step(tester, 'отправка-регистрации', () async {
       final submit = find.byKey(const Key('companyRegisterSubmit'));
       await reveal(tester, submit);

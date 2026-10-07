@@ -124,7 +124,7 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            const LegalLinks(),
+            const LegalNotice(),
           ],
         ),
       ),

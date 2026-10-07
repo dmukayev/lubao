@@ -1212,5 +1212,14 @@
   "legalPrivacy": "Политика конфиденциальности",
   "appUpdateTitle": "Обновите приложение",
   "appUpdateBody": "Эта версия больше не поддерживается. Установите новую — это займёт минуту.",
-  "appUpdateButton": "Обновить"
+  "appUpdateButton": "Обновить",
+  "legalOffer": "Оферта для компаний",
+  "companyRegisterOfferAccept": "Я принимаю оферту: Lubao — информационная площадка, не перевозчик и не сторона договора перевозки",
+  "legalLoginNotice": "Продолжая, вы принимаете {terms} и {privacy}",
+  "@legalLoginNotice": {"placeholders": {"terms": {"type": "String"}, "privacy": {"type": "String"}}},
+  "legalTermsLink": "Условия",
+  "legalPrivacyLink": "Политику конфиденциальности",
+  "aboutTitle": "О приложении",
+  "aboutVersion": "Версия {version}",
+  "@aboutVersion": {"placeholders": {"version": {"type": "String"}}}
 }

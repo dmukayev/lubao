@@ -6,6 +6,7 @@ import 'package:lubao_core/lubao_core.dart';
 import '../../providers/api_providers.dart';
 import '../../providers/auth_provider.dart';
 import '../shared/status_helpers.dart';
+import '../shared/pd_consent.dart';
 
 /// Регистрация компании — один экран, без предварительного входа (задача
 /// 025, заменяет пост-кодовый экран из 022): email, пароль, имя владельца,
@@ -30,6 +31,7 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
   bool _showAllCountries = false;
   bool _companyNameRuTouched = false;
   bool _obscurePassword = true;
+  bool _offerAccepted = false;
   bool _saving = false;
 
   String? _emailError;
@@ -228,8 +230,33 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 Text(_countryError!, style: AppTextStyles.caption.copyWith(color: AppColors.error)),
               ],
-              const SizedBox(height: AppSpacing.xxl),
-              PrimaryButton(key: const Key('companyRegisterSubmit'), label: t.companyRegisterSubmit, loading: _saving, onPressed: _submit),
+              const SizedBox(height: AppSpacing.xl),
+              // 043 п.2: оферта для компании — без галочки зарегистрироваться нельзя.
+              CheckboxListTile(
+                key: const Key('companyRegisterOfferCheckbox'),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                value: _offerAccepted,
+                onChanged: _saving ? null : (v) => setState(() => _offerAccepted = v ?? false),
+                title: Text(t.companyRegisterOfferAccept, style: AppTextStyles.body),
+              ),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton(
+                  key: const Key('companyRegisterOfferLink'),
+                  onPressed: () => openLegalPage(context, 'offer'),
+                  child: Text(t.legalOffer),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              PrimaryButton(
+                key: const Key('companyRegisterSubmit'),
+                label: t.companyRegisterSubmit,
+                loading: _saving,
+                onPressed: _offerAccepted ? _submit : null,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              const LegalNotice(),
             ],
           );
         },

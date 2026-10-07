@@ -48,6 +48,8 @@ void main() {
       await tester.tap(find.byKey(const Key('roleSelectDriverButton')));
       await tester.pumpAndSettle();
       await waitFor(tester, find.byKey(const Key('driverLoginChannel-telegram')));
+      // 043 п.2: «Продолжая, вы принимаете Условия и Политику» — на экране входа.
+      expect(find.byKey(const Key('legalLoginNotice')), findsOneWidget);
       expect(find.byKey(const Key('driverLoginChannel-whatsapp')), findsOneWidget);
       expect(find.byKey(const Key('driverLoginChannel-sms')), findsOneWidget);
       await tester.tap(find.byKey(const Key('driverLoginChannel-telegram')));

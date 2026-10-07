@@ -27,4 +27,9 @@ export class RegisterCompanyAuthDto {
 
   @IsString()
   countryId!: string;
+
+  /// Версия принятой оферты (043 п.2) — галочка на экране регистрации.
+  @IsString()
+  @Length(1, 32)
+  offerVersion!: string;
 }

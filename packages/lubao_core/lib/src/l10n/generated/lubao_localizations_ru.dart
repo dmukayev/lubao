@@ -2999,4 +2999,30 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get appUpdateButton => 'Обновить';
+
+  @override
+  String get legalOffer => 'Оферта для компаний';
+
+  @override
+  String get companyRegisterOfferAccept =>
+      'Я принимаю оферту: Lubao — информационная площадка, не перевозчик и не сторона договора перевозки';
+
+  @override
+  String legalLoginNotice(String terms, String privacy) {
+    return 'Продолжая, вы принимаете $terms и $privacy';
+  }
+
+  @override
+  String get legalTermsLink => 'Условия';
+
+  @override
+  String get legalPrivacyLink => 'Политику конфиденциальности';
+
+  @override
+  String get aboutTitle => 'О приложении';
+
+  @override
+  String aboutVersion(String version) {
+    return 'Версия $version';
+  }
 }

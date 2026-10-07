@@ -7,6 +7,10 @@ import '../models/user.dart';
 /// `infra/site/legal/privacy.html`) — совпадает с `PD_CONSENT_VERSION` на сервере.
 const pdConsentVersion = '2026-10-08';
 
+/// Редакция оферты для компании (`infra/site/legal/offer.html`) — совпадает с
+/// `OFFER_VERSION` на сервере; принимается галочкой при регистрации компании.
+const offerVersion = '2026-10-08';
+
 class AuthRepository {
   AuthRepository(this._client);
 
@@ -71,6 +75,7 @@ class AuthRepository {
       'companyName': companyName,
       if (companyNameRu != null) 'companyNameRu': companyNameRu,
       'countryId': countryId,
+      'offerVersion': offerVersion,
     });
     return _sessionFromTokenResponse(res.data as Map<String, dynamic>);
   }

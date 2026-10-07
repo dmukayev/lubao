@@ -8,8 +8,6 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../../providers/locale_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../shared/delete_account.dart';
-import '../../shared/pd_consent.dart';
 
 class DriverProfileScreen extends ConsumerStatefulWidget {
   const DriverProfileScreen({super.key});
@@ -107,15 +105,19 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
             title: Text(t.profileNotificationSettings),
             onTap: () => context.push('/notifications/settings'),
           ),
+          // 043 п.2: Условия, Политика, Оферта, версия, «Удалить аккаунт».
+          ListTile(
+            key: const Key('profileAboutItem'),
+            leading: const Icon(LucideIcons.info),
+            title: Text(t.aboutTitle),
+            onTap: () => context.push('/about'),
+          ),
           const SizedBox(height: 24),
           OutlinedButton(
             key: const Key('driverProfileLogoutButton'),
             onPressed: () => ref.read(sessionProvider.notifier).logout(),
             child: Text(t.profileLogout),
           ),
-          const SizedBox(height: 8),
-          const DeleteAccountButton(),
-          const LegalLinks(),
         ],
       ),
     );

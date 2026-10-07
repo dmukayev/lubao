@@ -6,6 +6,10 @@ import { User } from '@prisma/client';
 /// соглашался на старую, согласие спросят заново перед следующей загрузкой.
 export const PD_CONSENT_VERSION = '2026-10-08';
 
+/// Версия оферты для компании (043 п.2, `infra/site/legal/offer.html`):
+/// принимается галочкой при регистрации компании.
+export const OFFER_VERSION = '2026-10-08';
+
 export function pdConsentRequired(user: Pick<User, 'pdConsentAt' | 'pdConsentVersion'>): boolean {
   return !user.pdConsentAt || user.pdConsentVersion !== PD_CONSENT_VERSION;
 }

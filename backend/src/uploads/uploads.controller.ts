@@ -9,7 +9,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
 import { RedisService } from '../redis/redis.service';
-import { assertPdConsent } from '../auth/pd-consent';
+import { assertPdConsent } from '../auth/legal-consent';
 import { detectImageType } from './image-type';
 import { consumeUploadQuota } from './upload-quota';
 import { UploadsService } from './uploads.service';
