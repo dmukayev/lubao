@@ -844,6 +844,7 @@
   "adminRecognitionFieldIin": "ИИН",
   "adminRecognitionFieldLicenseNumber": "Номер прав",
   "adminRecognitionFieldExpiryDate": "Срок действия",
+  "adminRecognitionFieldBirthDate": "Дата рождения",
   "adminRecognitionFieldPlateNumber": "Госномер",
   "adminRecognitionFieldVin": "VIN",
   "adminRecognitionFieldBrand": "Марка",

@@ -92,17 +92,31 @@ export function levenshteinDistance(a: string, b: string): number {
 /// именем (после нормализации/транслитерации, с допуском на 1-2 опечатки
 /// пропорционально длине). Не находит совпадения → поле помечается
 /// needsReview в recognition.service.ts, не отклоняется само по себе.
-export function namesLikelyMatch(recognized: string, profileName: string): boolean {
-  const recognizedCandidates = matchCandidates(recognized);
-  const profileCandidates = matchCandidates(profileName);
-  if (recognizedCandidates.size === 0 || profileCandidates.size === 0) return false;
+function closeEnough(a: string, b: string): boolean {
+  const maxLen = Math.max(a.length, b.length);
+  const tolerance = maxLen <= 4 ? 0 : Math.max(1, Math.round(maxLen * 0.2));
+  return levenshteinDistance(a, b) <= tolerance;
+}
 
-  for (const a of recognizedCandidates) {
-    for (const b of profileCandidates) {
-      const maxLen = Math.max(a.length, b.length);
-      const tolerance = maxLen <= 4 ? 0 : Math.max(1, Math.round(maxLen * 0.2));
-      if (levenshteinDistance(a, b) <= tolerance) return true;
+function anyCandidatesClose(a: string, b: string): boolean {
+  for (const x of matchCandidates(a)) {
+    for (const y of matchCandidates(b)) {
+      if (closeEnough(x, y)) return true;
     }
   }
   return false;
+}
+
+export function namesLikelyMatch(recognized: string, profileName: string): boolean {
+  if (matchCandidates(recognized).size === 0 || matchCandidates(profileName).size === 0) return false;
+  if (anyCandidatesClose(recognized, profileName)) return true;
+
+  // Документы РК печатают «ФАМИЛИЯ ИМЯ ОТЧЕСТВО», а в профиле обычно
+  // «Имя Фамилия» — склеенные строки не сходятся. Пословно: каждое слово
+  // профиля (их не меньше двух) нашлось среди слов документа.
+  const words = (s: string) => s.split(/\s+/).filter((w) => normalizeForMatch(w).length >= 2);
+  const profileWords = words(profileName);
+  const recognizedWords = words(recognized);
+  if (profileWords.length < 2) return false;
+  return profileWords.every((p) => recognizedWords.some((r) => anyCandidatesClose(r, p)));
 }

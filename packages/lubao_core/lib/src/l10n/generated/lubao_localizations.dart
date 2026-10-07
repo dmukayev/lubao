@@ -3762,6 +3762,12 @@ abstract class LubaoLocalizations {
   /// **'Срок действия'**
   String get adminRecognitionFieldExpiryDate;
 
+  /// No description provided for @adminRecognitionFieldBirthDate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дата рождения'**
+  String get adminRecognitionFieldBirthDate;
+
   /// No description provided for @adminRecognitionFieldPlateNumber.
   ///
   /// In ru, this message translates to:

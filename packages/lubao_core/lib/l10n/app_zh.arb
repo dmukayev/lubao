@@ -719,6 +719,7 @@
   "adminRecognitionFieldIin": "身份证号",
   "adminRecognitionFieldLicenseNumber": "驾照号码",
   "adminRecognitionFieldExpiryDate": "有效期",
+  "adminRecognitionFieldBirthDate": "出生日期",
   "adminRecognitionFieldPlateNumber": "车牌号",
   "adminRecognitionFieldVin": "车架号(VIN)",
   "adminRecognitionFieldBrand": "品牌",

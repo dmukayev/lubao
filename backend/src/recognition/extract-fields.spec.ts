@@ -152,3 +152,59 @@ describe('кириллические двойники до сопоставле�
     expect(fields.vin?.value).toBe('XTA212130M1234567');
   });
 });
+
+/// Строки — как их отдаёт Tesseract по синтетическим документам из
+/// test-data/synthetic/ (scripts/synthetic-docs.py), все данные вымышлены.
+describe('extractFields — права по номерам полей, справки компаний', () => {
+  const license = [
+    'ҚАЗАҚСТАН РЕСПУБЛИКАСЫ ЖҮРГІЗУШІ КУӘЛІГІ',
+    'ВОДИТЕЛЬСКОЕ УДОСТОВЕРЕНИЕ',
+    '1. ТЕСТОВ',
+    '2. ЕРЛАН БОЛАТОВИЧ',
+    '3. 12.04.1988',
+    '4a. 15.05.2019 4b. 15.05.2029',
+    '4d. 880412300577',
+    '5. KZ 0812345',
+  ];
+
+  it('ФИО из полей 1 и 2, срок — 4b, дата рождения сверена с ИИН', () => {
+    const f = extractFields('DRIVER_LICENSE', license, { profileFullName: 'Ерлан Тестов' });
+    expect(f.fullName).toMatchObject({ value: 'ТЕСТОВ ЕРЛАН БОЛАТОВИЧ', checksumOk: true, needsReview: false });
+    expect(f.expiryDate?.value).toBe('15.05.2029');
+    expect(f.birthDate).toMatchObject({ value: '12.04.1988', checksumOk: true });
+  });
+
+  it('дата рождения не совпала с ИИН — «проверить»', () => {
+    const f = extractFields('DRIVER_LICENSE', license.map((l) => l.replace('3. 12.04.1988', '3. 13.04.1988')));
+    expect(f.birthDate).toMatchObject({ checksumOk: false, needsReview: true });
+  });
+
+  it('дата рождения без точки после месяца («12.041988») — всё равно читается', () => {
+    const f = extractFields('DRIVER_LICENSE', license.map((l) => l.replace('3. 12.04.1988', '3. 12.041988')));
+    expect(f.birthDate).toMatchObject({ value: '12.04.1988', checksumOk: true });
+  });
+
+  it('без метки 4b срок — самая поздняя дата, а не первая', () => {
+    const f = extractFields('DRIVER_LICENSE', ['12.04.1988', '15.05.2019', '15.05.2029']);
+    expect(f.expiryDate?.value).toBe('15.05.2029');
+  });
+
+  it('USCC с O/I вместо 0/1 восстанавливается; название — после «名称»', () => {
+    const f = extractFields('COMPANY_REGISTRATION', ['营业执照', '统一社会信用代码', '91650100MA7TEKDOIR', '名 称    乌鲁木齐测试物流有限公司']);
+    expect(f.uscc).toMatchObject({ value: '91650100MA7TEKD01R', checksumOk: true });
+    expect(f.companyName?.value).toBe('乌鲁木齐测试物流有限公司');
+  });
+
+  it('справка РК: БИН и название по метке «Наименование» на следующей строке', () => {
+    const f = extractFields('COMPANY_REGISTRATION', [
+      'СПРАВКА',
+      'о государственной регистрации юридического лица',
+      'БИН',
+      '200540012348',
+      'Наименование',
+      'ТОО Тестовый Логистик Сервис',
+    ]);
+    expect(f.bin).toMatchObject({ value: '200540012348', checksumOk: true });
+    expect(f.companyName?.value).toBe('ТОО Тестовый Логистик Сервис');
+  });
+});

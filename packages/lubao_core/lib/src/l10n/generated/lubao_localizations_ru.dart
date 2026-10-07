@@ -1969,6 +1969,9 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get adminRecognitionFieldExpiryDate => 'Срок действия';
 
   @override
+  String get adminRecognitionFieldBirthDate => 'Дата рождения';
+
+  @override
   String get adminRecognitionFieldPlateNumber => 'Госномер';
 
   @override

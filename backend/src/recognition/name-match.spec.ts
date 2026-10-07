@@ -41,4 +41,10 @@ describe('levenshteinDistance', () => {
   it('counts insertions/deletions', () => {
     expect(levenshteinDistance('кот', 'котик')).toBe(2);
   });
+
+  it('порядок слов и отчество не мешают: «ТЕСТОВ ЕРЛАН БОЛАТОВИЧ» ~ «Ерлан Тестов»', () => {
+    expect(namesLikelyMatch('ТЕСТОВ ЕРЛАН БОЛАТОВИЧ', 'Ерлан Тестов')).toBe(true);
+    expect(namesLikelyMatch('ТЕСТОВ ЕРЛАН БОЛАТОВИЧ', 'Ерлан Петров')).toBe(false);
+    expect(namesLikelyMatch('ТЕСТОВ ЕРЛАН', 'Ерлан')).toBe(false);
+  });
 });

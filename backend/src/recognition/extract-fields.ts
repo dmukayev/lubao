@@ -54,8 +54,15 @@ function extractIinOrBin(lines: string[]): RecognizedField | null {
   return null;
 }
 
+/// В алфавите USCC нет I/O/S/Z (GB 32100) — если OCR выдал их в 18-значном
+/// коде, это почти наверняка 1/0/5/2 (на синтетическом 营业执照 Tesseract
+/// прочитал «…D01R» как «…DOIR», и код не находился вовсе).
+const USCC_OCR_FIXES: Record<string, string> = { I: '1', O: '0', S: '5', Z: '2' };
+
 function extractUscc(lines: string[]): RecognizedField | null {
-  const candidates = joinedText(lines).toUpperCase().match(/[0-9A-HJ-NPQRTUWXY]{18}/g) ?? [];
+  const candidates = (joinedText(lines).toUpperCase().match(/[0-9A-Z]{18}/g) ?? [])
+    .map((c) => c.replace(/[IOSZ]/g, (ch) => USCC_OCR_FIXES[ch]!))
+    .filter((c) => /^[0-9A-HJ-NPQRTUWXY]{18}$/.test(c));
   for (const candidate of candidates) {
     if (isValidUscc(candidate)) return field(candidate, 0.95, true);
   }
@@ -107,10 +114,51 @@ function extractPlate(lines: string[]): RecognizedField | null {
 
 const DATE_RE = /\b(\d{2})[.\/](\d{2})[.\/](\d{4})\b/;
 
+const DATE_G_RE = /\b(\d{2})[.\/](\d{2})[.\/](\d{4})\b/g;
+
+function dateKey(d: string): string {
+  const [dd, mm, yyyy] = d.split(/[.\/]/);
+  return `${yyyy}${mm}${dd}`;
+}
+
+/// Права РК/ЕС пронумерованы по Венской конвенции: 3 — дата рождения,
+/// 4a — выдачи, 4b — срок действия. Сначала ищем «4b» (OCR путает латинскую
+/// b с кириллическими б/в/ь), иначе — самая поздняя дата на документе:
+/// срок действия всегда позже рождения и выдачи (раньше брали первую дату,
+/// и на реальной раскладке это была дата рождения или выдачи).
 function extractExpiryDate(lines: string[]): RecognizedField | null {
-  const match = findFirst(lines, DATE_RE);
-  if (!match) return null;
-  return field(match, 0.6, null);
+  const labeled = joinedText(lines).match(/\b4\s?[bбвь][.)]?\s*(\d{2}[.\/]\d{2}[.\/]\d{4})/i);
+  if (labeled) return field(labeled[1]!, 0.8, null);
+  const dates = joinedText(lines).match(DATE_G_RE) ?? [];
+  if (dates.length === 0) return null;
+  const latest = dates.reduce((a, b) => (dateKey(b) > dateKey(a) ? b : a));
+  return field(latest, 0.6, null);
+}
+
+/// Дата рождения — поле «3.»; сверяется с первыми шестью цифрами ИИН
+/// (ГГММДД) — это и есть её «контрольная сумма».
+function extractBirthDate(lines: string[], iin: string | undefined): RecognizedField | null {
+  // Разделители OCR теряет («3. 12.041988») — допускаем их отсутствие.
+  const labeled = joinedText(lines).match(/(?:^|\s)3[.)]\s*(\d{2})[.\/]?(\d{2})[.\/]?(\d{4})\b/m);
+  if (!labeled) return null;
+  const [, dd, mm, yyyy] = labeled;
+  const value = `${dd}.${mm}.${yyyy}`;
+  if (!iin) return field(value, 0.6, null);
+  const ok = iin.startsWith(`${yyyy!.slice(2)}${mm}${dd}`);
+  return field(value, ok ? 0.9 : 0.5, ok);
+}
+
+/// ФИО на правах — поля «1.» (фамилия) и «2.» (имя, отчество) отдельными
+/// строками; с цифрой в начале их не берёт общий фильтр «похоже на ФИО».
+function extractNumberedFullName(lines: string[], profileFullName?: string): RecognizedField | null {
+  const part = (n: string) =>
+    lines.map((l) => l.trim().match(new RegExp(`^${n}[.)]\\s*([\\p{L}][\\p{L}\\s'-]{1,60})$`, 'u'))).find(Boolean)?.[1]?.trim();
+  const surname = part('1');
+  const given = part('2');
+  if (!surname || !given) return null;
+  const value = `${surname} ${given}`;
+  if (profileFullName) return field(value, namesLikelyMatch(value, profileFullName) ? 0.9 : 0.5, namesLikelyMatch(value, profileFullName));
+  return field(value, 0.6, null);
 }
 
 /// Строка «похожа на ФИО»: 2-4 слова, только буквы (кирилл./лат./кит.),
@@ -138,6 +186,26 @@ function extractFullName(lines: string[], profileFullName?: string): RecognizedF
   // Ни один кандидат не совпал с профилем (или профиль не передали) —
   // лучшая догадка всё равно полезна админу, но помечена на проверку.
   return field(candidates[0], 0.5, profileFullName ? false : null);
+}
+
+/// Название юрлица: по метке («Наименование», «Атауы», «名称» — с пробелами
+/// внутри, как печатают в 营业执照) или по организационно-правовой форме
+/// (ТОО/АО/ИП/ЖШС/LLP, …有限公司). Раньше бралась первая «похожая на ФИО»
+/// строка — в справке это подзаголовок, в китайской лицензии — мусор.
+const COMPANY_LABEL_RE = /^(?:наименование|атауы|名\s*称)\s*[:：]?\s*(.*)$/iu;
+const COMPANY_FORM_RE = /(?:^|\s)(?:ТОО|АО|ИП|ЖШС|LLP|LLC)\s+\S|有限公司|股份公司/u;
+
+function extractCompanyName(lines: string[]): RecognizedField | null {
+  const trimmed = lines.map((l) => l.trim()).filter(Boolean);
+  for (let i = 0; i < trimmed.length; i++) {
+    const m = trimmed[i]!.match(COMPANY_LABEL_RE);
+    if (!m) continue;
+    const value = (m[1] || trimmed[i + 1] || '').trim();
+    if (value.length >= 3) return field(value, 0.8, null);
+  }
+  const byForm = trimmed.find((l) => COMPANY_FORM_RE.test(l));
+  if (byForm) return field(byForm, 0.7, null);
+  return extractFullName(lines);
 }
 
 function extractLicenseNumber(lines: string[]): RecognizedField | null {
@@ -195,8 +263,9 @@ export function extractFields(
 
   switch (documentType) {
     case 'DRIVER_LICENSE':
-      set('fullName', extractFullName(lines, context.profileFullName));
+      set('fullName', extractNumberedFullName(lines, context.profileFullName) ?? extractFullName(lines, context.profileFullName));
       set('iin', extractIinOrBin(lines));
+      set('birthDate', extractBirthDate(lines, fields.iin?.checksumOk ? fields.iin.value : undefined));
       set('licenseNumber', extractLicenseNumber(lines));
       set('expiryDate', extractExpiryDate(lines));
       break;
@@ -215,7 +284,7 @@ export function extractFields(
       set('capacityTons', extractCapacityTons(lines));
       break;
     case 'COMPANY_REGISTRATION':
-      set('companyName', extractFullName(lines));
+      set('companyName', extractCompanyName(lines));
       set('bin', extractIinOrBin(lines));
       set('uscc', extractUscc(lines));
       break;

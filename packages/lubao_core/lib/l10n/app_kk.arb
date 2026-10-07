@@ -719,6 +719,7 @@
   "adminRecognitionFieldIin": "ЖСН",
   "adminRecognitionFieldLicenseNumber": "Жүргізуші куәлігінің нөмірі",
   "adminRecognitionFieldExpiryDate": "Жарамдылық мерзімі",
+  "adminRecognitionFieldBirthDate": "Туған күні",
   "adminRecognitionFieldPlateNumber": "Мемлекеттік нөмір",
   "adminRecognitionFieldVin": "VIN",
   "adminRecognitionFieldBrand": "Маркасы",

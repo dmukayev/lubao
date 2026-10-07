@@ -1975,6 +1975,9 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get adminRecognitionFieldExpiryDate => 'Жарамдылық мерзімі';
 
   @override
+  String get adminRecognitionFieldBirthDate => 'Туған күні';
+
+  @override
   String get adminRecognitionFieldPlateNumber => 'Мемлекеттік нөмір';
 
   @override

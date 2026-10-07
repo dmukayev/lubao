@@ -707,6 +707,7 @@ String _recognitionFieldLabel(LubaoLocalizations t, String key) => switch (key) 
   'iin' => t.adminRecognitionFieldIin,
   'licenseNumber' => t.adminRecognitionFieldLicenseNumber,
   'expiryDate' => t.adminRecognitionFieldExpiryDate,
+  'birthDate' => t.adminRecognitionFieldBirthDate,
   'plateNumber' => t.adminRecognitionFieldPlateNumber,
   'vin' => t.adminRecognitionFieldVin,
   'brand' => t.adminRecognitionFieldBrand,

@@ -1977,6 +1977,9 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get adminRecognitionFieldExpiryDate => 'Expiry date';
 
   @override
+  String get adminRecognitionFieldBirthDate => 'Date of birth';
+
+  @override
   String get adminRecognitionFieldPlateNumber => 'Plate number';
 
   @override

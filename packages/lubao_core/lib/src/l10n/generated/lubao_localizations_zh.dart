@@ -1939,6 +1939,9 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get adminRecognitionFieldExpiryDate => '有效期';
 
   @override
+  String get adminRecognitionFieldBirthDate => '出生日期';
+
+  @override
   String get adminRecognitionFieldPlateNumber => '车牌号';
 
   @override

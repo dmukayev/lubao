@@ -844,6 +844,7 @@
   "adminRecognitionFieldIin": "ID number",
   "adminRecognitionFieldLicenseNumber": "License number",
   "adminRecognitionFieldExpiryDate": "Expiry date",
+  "adminRecognitionFieldBirthDate": "Date of birth",
   "adminRecognitionFieldPlateNumber": "Plate number",
   "adminRecognitionFieldVin": "VIN",
   "adminRecognitionFieldBrand": "Brand",
