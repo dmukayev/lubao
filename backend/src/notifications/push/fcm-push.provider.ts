@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { Injectable, Logger } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { PushMessage, fcmMessage } from './push-provider';
@@ -23,7 +25,19 @@ export class FcmPushProvider {
   private readonly configured: boolean;
 
   constructor() {
-    const raw = process.env.FCM_SERVICE_ACCOUNT_JSON;
+    // Ключ сервисного аккаунта: содержимое (FCM_SERVICE_ACCOUNT_JSON) или путь
+    // к файлу (FCM_SERVICE_ACCOUNT_FILE / FCM_SERVICE_ACCOUNT, относительно
+    // backend/ — например ./secrets/firebase.json, папка в .gitignore).
+    let raw = process.env.FCM_SERVICE_ACCOUNT_JSON;
+    const file = process.env.FCM_SERVICE_ACCOUNT_FILE || process.env.FCM_SERVICE_ACCOUNT;
+    if (!raw && file) {
+      try {
+        raw = readFileSync(resolve(file), 'utf8');
+      } catch {
+        // Путь и причину пишем, содержимое — нет.
+        this.logger.error(`Файл ключа FCM не прочитан (${file}) — FCM push выключен`);
+      }
+    }
     if (raw) {
       try {
         this.account = JSON.parse(raw);

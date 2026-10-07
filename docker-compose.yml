@@ -93,6 +93,9 @@ services:
       TELEGRAM_GATEWAY_TOKEN: ${TELEGRAM_GATEWAY_TOKEN:-}
       # Dev: без ключей WhatsApp/Telegram код пишется в лог — выбор канала виден на экране входа.
       LOGIN_CODE_CONSOLE_CHANNELS: ${LOGIN_CODE_CONSOLE_CHANNELS:-whatsapp,telegram}
+      # Push (042 п.1): console — в лог; real — FCM. Ключ — файл в backend/secrets/ (в .gitignore).
+      PUSH_PROVIDER: ${PUSH_PROVIDER:-console}
+      FCM_SERVICE_ACCOUNT: ${FCM_SERVICE_ACCOUNT:-}
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       IDENTIFIER_PEPPER: ${IDENTIFIER_PEPPER}

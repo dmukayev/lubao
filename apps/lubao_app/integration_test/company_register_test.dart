@@ -28,11 +28,19 @@ void main() {
       await tester.tap(find.byKey(const Key('companyLoginRegisterLink')));
       await waitFor(tester, find.byKey(const Key('companyRegisterEmail')));
       expectInsideSafeZone(tester);
-      await tester.enterText(find.byKey(const Key('companyRegisterEmail')), e2eNewCompanyEmail);
-      await tester.enterText(find.byKey(const Key('companyRegisterPassword')), e2ePassword);
-      await tester.enterText(find.byKey(const Key('companyRegisterOwnerName')), 'Ли Вэй');
-      await tester.enterText(find.byKey(const Key('companyRegisterCompanyName')), 'Urumqi Test Logistics');
-      await tester.pumpAndSettle();
+      // Каждое поле — сначала на экран (форма длиннее экрана 16e/17 с
+      // клавиатурой; без этого поле ещё не построено и ввод падает).
+      for (final (key, value) in [
+        ('companyRegisterEmail', e2eNewCompanyEmail),
+        ('companyRegisterPassword', e2ePassword),
+        ('companyRegisterOwnerName', 'Ли Вэй'),
+        ('companyRegisterCompanyName', 'Urumqi Test Logistics'),
+      ]) {
+        final field = find.byKey(Key(key));
+        await reveal(tester, field);
+        await tester.enterText(field, value);
+        await tester.pumpAndSettle();
+      }
       final china = find.byKey(const Key('companyRegisterCountryCN'));
       await reveal(tester, china);
       await tester.tap(china);

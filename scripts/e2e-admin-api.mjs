@@ -238,8 +238,8 @@ assert(mineEnd.arrivals.length === 1 && mineEnd.arrival.status === 'ON_SITE', '�
 
 // 042 п.1, п.7: push-токен регистрируется (мок — без Firebase) и снимается только владельцем.
 const fakeToken = `e2e-fcm-token-${Date.now()}`;
-const reg = await api('POST', '/notifications/device-tokens', { token: d6, body: { token: fakeToken, platform: 'FCM' } });
-assert(reg.status < 300, 'водитель регистрирует push-токен (FCM)', `status=${reg.status}`);
+const pushReg = await api('POST', '/notifications/device-tokens', { token: d6, body: { token: fakeToken, platform: 'FCM' } });
+assert(pushReg.status < 300, 'водитель регистрирует push-токен (FCM)', `status=${pushReg.status}`);
 const unreg = await api('DELETE', `/notifications/device-tokens/${encodeURIComponent(fakeToken)}`, { token: d6 });
 assert(unreg.status < 300, 'водитель снимает свой push-токен при выходе', `status=${unreg.status}`);
 
