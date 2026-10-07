@@ -5477,6 +5477,12 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Каналы сохранены'**
   String get adminLoginChannelsSaved;
+
+  /// No description provided for @pushChannelName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уведомления Lubao'**
+  String get pushChannelName;
 }
 
 class _LubaoLocalizationsDelegate

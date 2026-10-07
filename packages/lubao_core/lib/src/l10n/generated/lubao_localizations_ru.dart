@@ -2864,4 +2864,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminLoginChannelsSaved => 'Каналы сохранены';
+
+  @override
+  String get pushChannelName => 'Уведомления Lubao';
 }

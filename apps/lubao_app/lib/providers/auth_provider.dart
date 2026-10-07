@@ -5,6 +5,7 @@ import 'package:lubao_core/lubao_core.dart';
 import 'api_providers.dart';
 import 'locale_provider.dart';
 import 'tracking_provider.dart';
+import '../services/push_service.dart';
 
 /// true, пока идёт попытка восстановить сессию из secure storage при
 /// старте приложения (см. SessionController._restore) — роутер показывает
@@ -148,6 +149,8 @@ class SessionController extends StateNotifier<Session?> {
   }
 
   Future<void> logout() async {
+    // Push-токен снимаем, пока авторизация ещё есть (042 п.1).
+    await _ref.read(pushServiceProvider).unregister();
     await _ref.read(authRepositoryProvider).logout();
     state = null;
     // Согласия на геопозицию относятся к человеку, а не к устройству (041, п.11).

@@ -16,6 +16,7 @@ describe('payload push с кнопками (042 п.1)', () => {
     const msg = fcmMessage('tok', { ...base, category: 'AGREED_CHECK' });
     expect(msg.notification).toBeUndefined();
     expect(msg).toMatchObject({ token: 'tok', android: { priority: 'high' }, data: { title: base.title, body: base.body, category: 'AGREED_CHECK', deepLink: '/arrival' } });
+    expect(msg.apns).toEqual({ payload: { aps: { alert: { title: base.title, body: base.body }, category: 'AGREED_CHECK' } } });
   });
 
   it('FCM без кнопок — обычное уведомление, как раньше', () => {

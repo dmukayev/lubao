@@ -2877,4 +2877,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminLoginChannelsSaved => 'Арналар сақталды';
+
+  @override
+  String get pushChannelName => 'Lubao хабарландырулары';
 }

@@ -43,3 +43,7 @@ test-data/private/
 
 # e2e screenshots and reports
 test-results/
+
+# Push (042 п.1): конфиги Firebase — только локально и на сервере сборки
+apps/lubao_app/android/app/google-services.json
+apps/lubao_app/ios/Runner/GoogleService-Info.plist

@@ -236,6 +236,13 @@ assert(cancelSecond.status < 300, 'отмена второго анонса по
 const mineEnd = (await api('GET', '/arrivals/me', { token: d6 })).json;
 assert(mineEnd.arrivals.length === 1 && mineEnd.arrival.status === 'ON_SITE', 'остался один анонс — тот, где водитель на месте (D6 виден логисту в Алматы)');
 
+// 042 п.1, п.7: push-токен регистрируется (мок — без Firebase) и снимается только владельцем.
+const fakeToken = `e2e-fcm-token-${Date.now()}`;
+const reg = await api('POST', '/notifications/device-tokens', { token: d6, body: { token: fakeToken, platform: 'FCM' } });
+assert(reg.status < 300, 'водитель регистрирует push-токен (FCM)', `status=${reg.status}`);
+const unreg = await api('DELETE', `/notifications/device-tokens/${encodeURIComponent(fakeToken)}`, { token: d6 });
+assert(unreg.status < 300, 'водитель снимает свой push-токен при выходе', `status=${unreg.status}`);
+
 // 042 п.3: каналы кода входа из админки — порядок/вкл без релиза.
 const channelsAdmin = await get('/admin/login-code-channels');
 assert(channelsAdmin.status === 200 && channelsAdmin.json.map((c) => c.id).join() === 'whatsapp,telegram,sms' && channelsAdmin.json.every((c) => c.configured), 'каналы кода: три, по умолчанию все настроены (e2e — консольные)', JSON.stringify(channelsAdmin.json));

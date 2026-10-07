@@ -12,6 +12,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../services/push_service.dart';
 
 class CargoDetailScreen extends ConsumerStatefulWidget {
   const CargoDetailScreen({super.key, required this.cargoId});
@@ -31,6 +32,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
     setState(() => _responding = true);
     try {
       await ref.read(cargoRepositoryProvider).respond(widget.cargoId);
+      unawaited(ref.read(pushServiceProvider).requestPermissionAndRegister());
       ref.invalidate(myCargoResponseProvider(widget.cargoId));
     } on DioException catch (e) {
       ref.invalidate(myCargoResponseProvider(widget.cargoId));

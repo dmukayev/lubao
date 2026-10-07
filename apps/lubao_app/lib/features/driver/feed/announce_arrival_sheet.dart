@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
@@ -8,6 +10,7 @@ import '../../../providers/data_providers.dart';
 import '../../shared/city_picking.dart';
 import '../../shared/status_helpers.dart';
 import '../../shared/error_feedback.dart';
+import '../../../services/push_service.dart';
 
 const _waitDaysOptions = [1, 2, 3];
 
@@ -178,6 +181,8 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
             tractorId: _tractorId,
             trailerId: _trailerId,
           );
+      // Первое осмысленное действие — спрашиваем разрешение на push (042 п.1).
+      unawaited(ref.read(pushServiceProvider).requestPermissionAndRegister());
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {

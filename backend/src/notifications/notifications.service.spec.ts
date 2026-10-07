@@ -216,3 +216,12 @@ describe('NotificationsService — не подвешивает и не роня�
     jest.useRealTimers();
   });
 });
+
+describe('снятие push-токена (042 п.1)', () => {
+  it('удаляется только токен текущего пользователя', async () => {
+    const prisma = { deviceToken: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) } };
+    const service = new NotificationsService(prisma as any, {} as any, {} as any);
+    await service.unregisterDeviceToken('user-1', 'tok-of-someone');
+    expect(prisma.deviceToken.deleteMany).toHaveBeenCalledWith({ where: { token: 'tok-of-someone', userId: 'user-1' } });
+  });
+});

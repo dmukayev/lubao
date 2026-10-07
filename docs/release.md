@@ -162,13 +162,19 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build bac
 
 ## 5. Push (Firebase / APNs)
 
-Приложение собирается и работает без Firebase; push включается флагом `--dart-define=PUSH_ENABLED=true` и файлами, которые нельзя класть в репозиторий:
+Приложение собирается и работает без Firebase: push включается флагом сборки `--dart-define=PUSH_ENABLED=true` (без флага `PushService` ничего не делает) и файлами, которые не кладутся в репозиторий (они в `.gitignore`):
 
-- Android: `apps/lubao_app/android/app/google-services.json` + Gradle-плагин `com.google.gms.google-services` (подключается автоматически, если файл есть);
-- iOS: `apps/lubao_app/ios/Runner/GoogleService-Info.plist` + APNs-ключ в Firebase Console;
-- на сервере: `PUSH_PROVIDER=real`, учётные данные FCM/APNs (см. `backend/src/notifications/push/*`).
+1. Firebase Console → проект → добавить приложения:
+   - Android `com.lubao.lubao_app` → `google-services.json` в `apps/lubao_app/android/app/` (Gradle-плагин `com.google.gms.google-services` применяется сам, только если файл есть);
+   - iOS `com.lubao.lubaoApp` → `GoogleService-Info.plist` в `apps/lubao_app/ios/Runner/` и добавить в target Runner (Copy Bundle Resources).
+2. Apple Developer → Keys → ключ APNs (`.p8`) → загрузить в Firebase Console (Project settings → Cloud Messaging → APNs auth key). Обе платформы получают push через FCM; токен регистрируется как `FCM`.
+3. iOS: права `aps-environment` уже в `Runner.entitlements`, фоновый режим `remote-notification` — в Info.plist; при экспорте в App Store/TestFlight Xcode ставит production.
+4. Сервер: `PUSH_PROVIDER=real`, `FCM_SERVICE_ACCOUNT_JSON` (раздел 1). APNs-переменные нужны только для прямой отправки в обход FCM (сейчас не используется).
+5. Сборки: `flutter build apk --release --dart-define=PUSH_ENABLED=true …`, `flutter build ipa --dart-define=PUSH_ENABLED=true …`.
 
-Сборка для КНР без Firebase — отдельный flavor `cn` (заглушка не реализована, JPush — после пилота).
+Поведение (042 п.1): разрешение спрашивается после первого анонса / отклика / публикации груза; токен — при входе и смене, снимается при выходе; тап открывает экран из `deepLink`; «Ещё ищете груз?» — кнопки «Да / Уехал», «Договорились?» — «Да / Нет» (Android — уведомление рисует приложение из data-сообщения, iOS — категории регистрирует приложение, нажатие передаёт AppDelegate).
+
+Сборка для КНР — без флага `PUSH_ENABLED` (Firebase не инициализируется); JPush — после пилота.
 
 ## Журнал проверок
 

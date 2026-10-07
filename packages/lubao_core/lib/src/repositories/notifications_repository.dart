@@ -30,4 +30,9 @@ class NotificationsRepository {
   Future<void> registerDeviceToken(String token, String platform) async {
     await _client.dio.post('/notifications/device-tokens', data: {'token': token, 'platform': platform});
   }
+
+  /// При выходе из аккаунта (042 п.1) — сервер удаляет только свой токен.
+  Future<void> unregisterDeviceToken(String token) async {
+    await _client.dio.delete('/notifications/device-tokens/${Uri.encodeComponent(token)}');
+  }
 }

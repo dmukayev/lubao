@@ -1037,5 +1037,6 @@
   "adminLoginChannelsNoKeys": "未配置密钥",
   "adminMoveUp": "上移",
   "adminMoveDown": "下移",
-  "adminLoginChannelsSaved": "渠道已保存"
+  "adminLoginChannelsSaved": "渠道已保存",
+  "pushChannelName": "Lubao 通知"
 }

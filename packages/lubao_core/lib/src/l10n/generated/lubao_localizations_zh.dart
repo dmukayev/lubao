@@ -2813,4 +2813,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminLoginChannelsSaved => '渠道已保存';
+
+  @override
+  String get pushChannelName => 'Lubao 通知';
 }

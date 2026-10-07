@@ -6,6 +6,7 @@ import 'providers/locale_provider.dart';
 import 'router/app_router.dart';
 import 'services/location_reporter.dart';
 import 'services/realtime_connector.dart';
+import 'services/push_service.dart';
 
 class LubaoApp extends ConsumerWidget {
   const LubaoApp({super.key});
@@ -19,6 +20,8 @@ class LubaoApp extends ConsumerWidget {
     // разрешение просят с объяснением по «📍» в чате.
     ref.watch(realtimeConnectorProvider);
     ref.watch(locationReporterProvider);
+    // Push (042 п.1) — только при сборке с PUSH_ENABLED, иначе ничего не делает.
+    ref.watch(pushServiceProvider);
 
     return MaterialApp.router(
       onGenerateTitle: (context) => context.l10n.appName,

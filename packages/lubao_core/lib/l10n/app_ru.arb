@@ -1169,5 +1169,6 @@
   "adminLoginChannelsNoKeys": "нет ключей",
   "adminMoveUp": "Выше",
   "adminMoveDown": "Ниже",
-  "adminLoginChannelsSaved": "Каналы сохранены"
+  "adminLoginChannelsSaved": "Каналы сохранены",
+  "pushChannelName": "Уведомления Lubao"
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,6 +12,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../shared/city_picking.dart';
 import '../../shared/photo_picker.dart';
 import '../../shared/error_feedback.dart';
+import '../../../services/push_service.dart';
 
 class PostCargoScreen extends ConsumerStatefulWidget {
   const PostCargoScreen({super.key, this.cargo});
@@ -194,6 +197,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         ref.invalidate(cargoByIdProvider(widget.cargo!.id));
       } else {
         await ref.read(cargoRepositoryProvider).create(input);
+        unawaited(ref.read(pushServiceProvider).requestPermissionAndRegister());
       }
       ref.invalidate(myCargosProvider);
       if (mounted) Navigator.of(context).pop();

@@ -1037,5 +1037,6 @@
   "adminLoginChannelsNoKeys": "кілттер жоқ",
   "adminMoveUp": "Жоғары",
   "adminMoveDown": "Төмен",
-  "adminLoginChannelsSaved": "Арналар сақталды"
+  "adminLoginChannelsSaved": "Арналар сақталды",
+  "pushChannelName": "Lubao хабарландырулары"
 }

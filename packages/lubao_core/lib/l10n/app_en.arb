@@ -1162,5 +1162,6 @@
   "adminLoginChannelsNoKeys": "no keys",
   "adminMoveUp": "Move up",
   "adminMoveDown": "Move down",
-  "adminLoginChannelsSaved": "Channels saved"
+  "adminLoginChannelsSaved": "Channels saved",
+  "pushChannelName": "Lubao notifications"
 }

@@ -13,6 +13,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // flutter_local_notifications (кнопки в push, 042 п.1).
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -41,4 +43,14 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
+// Push (042 п.1, docs/release.md раздел 5): google-services.json не в
+// репозитории — без него сборка идёт без Firebase (PUSH_ENABLED=false).
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }

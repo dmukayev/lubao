@@ -29,6 +29,9 @@ export function fcmMessage(token: string, message: PushMessage): Record<string, 
       token,
       data: { ...message.data, title: message.title, body: message.body, category: message.category },
       android: { priority: 'high' },
+      // iOS через FCM: видимое уведомление с категорией кнопок (их
+      // регистрирует приложение, нажатие ловит AppDelegate).
+      apns: { payload: { aps: { alert: { title: message.title, body: message.body }, category: message.category } } },
     };
   }
   return { token, notification: { title: message.title, body: message.body }, data: message.data };
