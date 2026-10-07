@@ -525,7 +525,8 @@ export class ArrivalsService {
       arrivalId: r.arrival.id,
       driverId: r.arrival.driver.id,
       driverName: r.arrival.driver.fullName,
-      phone: r.arrival.driver.user.phone,
+      // Номер — только по нажатию «Позвонить» (POST /drivers/:id/contact, 043 п.11).
+      hasPhone: !!r.arrival.driver.user.phone,
       isVerified: r.arrival.driver.isVerified,
       ratingAvg: Number(r.arrival.driver.ratingAvg),
       ratingCount: r.arrival.driver.ratingCount,

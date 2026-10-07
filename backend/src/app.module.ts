@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { AppThrottlerGuard, THROTTLE_TTL_MS, defaultLimit } from './common/app-throttler.guard';
+import { AppThrottlerGuard, THROTTLE_TTL_MS, defaultLimit, userThrottler } from './common/app-throttler.guard';
 import { PrismaModule } from './prisma/prisma.module';
 import { ClientErrorsController } from './observability/client-errors.controller';
 import { HealthController } from './health/health.controller';
@@ -34,7 +34,7 @@ import { IdentifiersModule } from './identifiers/identifiers.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([{ name: 'default', ttl: THROTTLE_TTL_MS, limit: defaultLimit() }]),
+    ThrottlerModule.forRoot([{ name: 'default', ttl: THROTTLE_TTL_MS, limit: defaultLimit() }, userThrottler()]),
     PrismaModule,
     RedisModule,
     SmsModule,

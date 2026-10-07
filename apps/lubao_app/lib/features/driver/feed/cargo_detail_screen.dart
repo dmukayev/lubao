@@ -63,30 +63,35 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
     }
   }
 
-  /// Звонок/WhatsApp не должны ждать запись события (задача 017, п.5г) —
-  /// сначала открываем звонилку/WhatsApp, `contact_event` пишем без
-  /// ожидания.
-  void _logContact(Cargo cargo, String type) {
-    final driverId = ref.read(sessionProvider)?.driver?.id;
-    if (driverId == null) return;
-    unawaited(
-      ref
-          .read(cargoRepositoryProvider)
-          .logContactEvent(driverId: driverId, companyId: cargo.companyId, cargoId: cargo.id, type: type),
-    );
+  /// Номер логиста — по нажатию (043 п.11): сервер проверяет правила и
+  /// лимит, сам пишет contact_event и только тогда отдаёт номер.
+  Future<String?> _revealPhone(Cargo cargo, String type) async {
+    try {
+      return await ref.read(cargoRepositoryProvider).revealCargoContact(cargo.id, type: type);
+    } catch (e) {
+      debugPrint('CargoDetailScreen: reveal contact: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(contactErrorText(context.l10n, e))));
+      return null;
+    }
+  }
+
+  /// Непроверенному водителю телефон открывается после отклика «Готов взять»;
+  /// проверенному — сразу (decisions.md 2026-10-07).
+  bool _contactUnlocked() {
+    if (ref.watch(sessionProvider)?.driver?.isVerified ?? false) return true;
+    final status = ref.watch(myCargoResponseProvider(widget.cargoId)).valueOrNull?.status;
+    return status == ResponseStatus.pending || status == ResponseStatus.selected;
   }
 
   Future<void> _call(Cargo cargo) async {
-    final phone = cargo.contactPhone;
+    final phone = await _revealPhone(cargo, 'CALL');
     if (phone == null) return;
-    _logContact(cargo, 'CALL');
     await launchUrl(Uri(scheme: 'tel', path: phone));
   }
 
   Future<void> _whatsapp(Cargo cargo) async {
-    final phone = cargo.contactPhone;
+    final phone = await _revealPhone(cargo, 'WHATSAPP');
     if (phone == null) return;
-    _logContact(cargo, 'WHATSAPP');
     final digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
     final uri = Uri.parse('https://wa.me/$digits');
     await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -159,6 +164,8 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
     final t = context.l10n;
     final cargoAsync = ref.watch(cargoByIdProvider(widget.cargoId));
     final referenceData = ref.watch(referenceDataProvider);
+    final contactLocked = !_contactUnlocked();
+    final canContact = !contactLocked && (cargoAsync.valueOrNull?.hasContactPhone ?? false);
 
     return Scaffold(
       appBar: AppBar(title: Text(t.cargoDetailTitle)),
@@ -191,17 +198,19 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                         child: Text(
-                          t.cargoVerifyHint,
-                          key: const Key('cargoVerifyHint'),
+                          // 043 п.11: до отклика — как открыть телефон, после — про проверку.
+                          contactLocked ? t.contactRespondFirst : t.cargoVerifyHint,
+                          key: Key(contactLocked ? 'cargoContactLockedHint' : 'cargoVerifyHint'),
                           style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
                         ),
                       ),
                     Row(
                       children: [
                         IconSquareButton(
+                          key: const Key('cargoDetailCallButton'),
                           icon: LucideIcons.phone,
                           size: AppSizes.buttonHeight,
-                          onPressed: cargoAsync.value!.contactPhone == null ? null : () => _call(cargoAsync.value!),
+                          onPressed: canContact ? () => _call(cargoAsync.value!) : null,
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         IconSquareButton(
@@ -219,9 +228,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
                             background: WhatsAppIcon.whatsappSoft,
                             semanticLabel: t.commonWhatsApp,
                             size: AppSizes.buttonHeight,
-                            onPressed: cargoAsync.value!.contactPhone == null
-                                ? null
-                                : () => _whatsapp(cargoAsync.value!),
+                            onPressed: canContact ? () => _whatsapp(cargoAsync.value!) : null,
                           ),
                           const SizedBox(width: AppSpacing.sm),
                         ],

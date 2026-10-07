@@ -1211,5 +1211,14 @@
   "legalTermsLink": "Terms",
   "legalPrivacyLink": "Privacy policy",
   "aboutTitle": "About the app",
-  "aboutVersion": "Version {version}"
+  "aboutVersion": "Version {version}",
+  "contactRespondFirst": "Respond to the cargo and the logist’s phone will appear. Once your documents are verified, you can call right away.",
+  "contactDailyLimit": "Too many numbers opened today. Try tomorrow or write in the chat.",
+  "contactCompanyNotVerified": "You can call drivers once the company is verified. For now, write in the chat.",
+  "contactNoPhone": "No phone number — write in the chat.",
+  "tooManyRequests": "Too many requests. Please wait a minute.",
+  "adminSuspiciousTitle": "Looks like scraping: {name} — {count} numbers in 24 h",
+  "adminSuspiciousLimitHits": "Hit the daily limit: {count}",
+  "adminSuspiciousOk": "All good",
+  "adminSuspiciousBlock": "Block"
 }

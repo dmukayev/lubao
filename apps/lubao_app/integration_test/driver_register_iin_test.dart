@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lubao_app/app.dart';
 import 'package:lubao_app/providers/api_providers.dart';
@@ -64,9 +65,32 @@ void main() {
           await reveal(tester, card);
           await tester.tap(card);
           await waitFor(tester, find.byKey(const Key('cargoDetailRespondButton')));
-          expect(find.byKey(const Key('cargoVerifyHint')), findsOneWidget, reason: 'мягкая подсказка про проверку');
+          // 043 п.11: до отклика — подсказка, как открыть телефон.
+          expect(find.byKey(const Key('cargoContactLockedHint')), findsOneWidget);
           await tester.tap(find.byKey(const Key('cargoDetailRespondButton')));
           await waitFor(tester, find.text(t.cargoAlreadyResponded));
+          expect(find.byKey(const Key('cargoVerifyHint')), findsOneWidget, reason: 'после отклика — мягкая подсказка про проверку');
+          await tester.tap(find.byType(BackButton).first);
+          await tester.pumpAndSettle();
+        });
+        // 043 п.11: телефон логиста новичку — только после отклика «Готов взять».
+        await run.step(tester, '$tag-телефон-после-отклика', () async {
+          GoRouter.of(tester.element(find.byType(NavigationBar))).push('/driver/cargo/$e2eCargoKz');
+          final call = find.byKey(const Key('cargoDetailCallButton'));
+          await waitFor(tester, call);
+          expect(tester.widget<IconSquareButton>(call).onPressed, isNull, reason: 'до отклика номер закрыт');
+          final respond = find.byKey(const Key('cargoDetailRespondButton'));
+          await tester.tap(respond);
+          await waitFor(tester, find.text(t.cargoAlreadyResponded));
+          expect(tester.widget<IconSquareButton>(call).onPressed, isNotNull, reason: '«Готов взять» → «Позвонить» появляется');
+          final launcher = useFakeUrlLauncher();
+          await tester.tap(call);
+          final deadline = DateTime.now().add(const Duration(seconds: 10));
+          while (launcher.launched.isEmpty && DateTime.now().isBefore(deadline)) {
+            await tester.pump(const Duration(milliseconds: 300));
+          }
+          expect(launcher.launched.single, startsWith('tel:'), reason: 'номер пришёл по нажатию');
+          expectInsideSafeZone(tester);
           await tester.tap(find.byType(BackButton).first);
           await tester.pumpAndSettle();
         });

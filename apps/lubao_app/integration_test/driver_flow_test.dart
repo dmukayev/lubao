@@ -150,7 +150,11 @@ void main() {
       final before = await whatsappCount();
       final launcher = useFakeUrlLauncher();
       await tester.tap(button);
-      await tester.pumpAndSettle();
+      // 043 п.11: номер приходит запросом по нажатию — ждём реальным временем.
+      final launchDeadline = DateTime.now().add(const Duration(seconds: 10));
+      while (launcher.launched.isEmpty && DateTime.now().isBefore(launchDeadline)) {
+        await tester.pump(const Duration(milliseconds: 300));
+      }
       expect(launcher.launched, hasLength(1));
       expect(launcher.launched.single, matches(RegExp(r'^https://wa\.me/\d{10,15}$')));
       final deadline = DateTime.now().add(const Duration(seconds: 10));

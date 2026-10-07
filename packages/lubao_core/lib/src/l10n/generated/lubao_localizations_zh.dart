@@ -2969,4 +2969,35 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String aboutVersion(String version) {
     return '版本 $version';
   }
+
+  @override
+  String get contactRespondFirst => '先对货源进行响应，即可看到物流人员的电话。证件审核通过后可直接拨打。';
+
+  @override
+  String get contactDailyLimit => '今天查看的号码过多。请明天再试，或在聊天中留言。';
+
+  @override
+  String get contactCompanyNotVerified => '公司审核通过后才能拨打司机电话。请先在聊天中联系。';
+
+  @override
+  String get contactNoPhone => '未填写号码，请在聊天中留言。';
+
+  @override
+  String get tooManyRequests => '请求过于频繁，请稍等一分钟。';
+
+  @override
+  String adminSuspiciousTitle(String name, int count) {
+    return '疑似批量采集：$name — 24 小时内查看 $count 个号码';
+  }
+
+  @override
+  String adminSuspiciousLimitHits(int count) {
+    return '触达每日上限：$count 次';
+  }
+
+  @override
+  String get adminSuspiciousOk => '正常';
+
+  @override
+  String get adminSuspiciousBlock => '封禁';
 }

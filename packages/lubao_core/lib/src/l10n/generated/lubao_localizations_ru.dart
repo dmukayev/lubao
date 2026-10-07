@@ -3025,4 +3025,38 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String aboutVersion(String version) {
     return 'Версия $version';
   }
+
+  @override
+  String get contactRespondFirst =>
+      'Откликнитесь на груз — и появится телефон логиста. После проверки документов звонить можно сразу.';
+
+  @override
+  String get contactDailyLimit =>
+      'На сегодня открыто слишком много номеров. Попробуйте завтра или напишите в чат.';
+
+  @override
+  String get contactCompanyNotVerified =>
+      'Звонить водителям можно после проверки компании. Пока — напишите в чат.';
+
+  @override
+  String get contactNoPhone => 'Номер не указан — напишите в чат.';
+
+  @override
+  String get tooManyRequests => 'Слишком много запросов. Подождите минуту.';
+
+  @override
+  String adminSuspiciousTitle(String name, int count) {
+    return 'Похоже на парсинг: $name — $count номеров за сутки';
+  }
+
+  @override
+  String adminSuspiciousLimitHits(int count) {
+    return 'Упирался в суточный лимит: $count';
+  }
+
+  @override
+  String get adminSuspiciousOk => 'Всё в порядке';
+
+  @override
+  String get adminSuspiciousBlock => 'Заблокировать';
 }

@@ -5771,6 +5771,60 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Версия {version}'**
   String aboutVersion(String version);
+
+  /// No description provided for @contactRespondFirst.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откликнитесь на груз — и появится телефон логиста. После проверки документов звонить можно сразу.'**
+  String get contactRespondFirst;
+
+  /// No description provided for @contactDailyLimit.
+  ///
+  /// In ru, this message translates to:
+  /// **'На сегодня открыто слишком много номеров. Попробуйте завтра или напишите в чат.'**
+  String get contactDailyLimit;
+
+  /// No description provided for @contactCompanyNotVerified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Звонить водителям можно после проверки компании. Пока — напишите в чат.'**
+  String get contactCompanyNotVerified;
+
+  /// No description provided for @contactNoPhone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Номер не указан — напишите в чат.'**
+  String get contactNoPhone;
+
+  /// No description provided for @tooManyRequests.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком много запросов. Подождите минуту.'**
+  String get tooManyRequests;
+
+  /// No description provided for @adminSuspiciousTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Похоже на парсинг: {name} — {count} номеров за сутки'**
+  String adminSuspiciousTitle(String name, int count);
+
+  /// No description provided for @adminSuspiciousLimitHits.
+  ///
+  /// In ru, this message translates to:
+  /// **'Упирался в суточный лимит: {count}'**
+  String adminSuspiciousLimitHits(int count);
+
+  /// No description provided for @adminSuspiciousOk.
+  ///
+  /// In ru, this message translates to:
+  /// **'Всё в порядке'**
+  String get adminSuspiciousOk;
+
+  /// No description provided for @adminSuspiciousBlock.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заблокировать'**
+  String get adminSuspiciousBlock;
 }
 
 class _LubaoLocalizationsDelegate

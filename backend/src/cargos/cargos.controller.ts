@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import { IsString } from 'class-validator';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
@@ -8,6 +8,7 @@ import { CargosService } from './cargos.service';
 import { CreateCargoDto } from './dto/create-cargo.dto';
 import { UpdateCargoDto } from './dto/update-cargo.dto';
 import { CloseCargoDto } from './dto/close-cargo.dto';
+import { RevealContactDto } from '../contact-events/dto/reveal-contact.dto';
 
 class InviteDriverDto {
   @IsString()
@@ -112,6 +113,13 @@ export class CargosController {
     // Откликаться может любой водитель с профилем (041, п.1); гейт проверки —
     // только на «Подтверждаю перевозку» (deals.controller).
     return this.responses.createForCargo(id, ctx.driver.id, dto.message);
+  }
+
+  /// «Позвонить»/WhatsApp (043 п.11): номер логиста — по нажатию, с лимитом.
+  @Post(':id/contact')
+  @HttpCode(200)
+  contact(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: RevealContactDto) {
+    return this.cargos.revealContact(ctx, id, dto.type);
   }
 
   /// «Договорились?» → «Да» (push с кнопками, 042): отклик + сигнал логисту.

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
 import '../shared/admin_status_helpers.dart';
 import 'admin_search_bar.dart';
@@ -241,13 +242,13 @@ class _StatsGrid extends StatelessWidget {
   }
 }
 
-class _AttentionBlock extends StatelessWidget {
+class _AttentionBlock extends ConsumerWidget {
   const _AttentionBlock({required this.attention});
 
   final AdminAttention attention;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
     final rows = [
       if (attention.pendingVerificationCount > 0)
@@ -266,7 +267,8 @@ class _AttentionBlock extends StatelessWidget {
       if (attention.blacklistMatches > 0) (t.adminAttentionBlacklistMatches(attention.blacklistMatches), true, '/drivers'),
     ];
 
-    if (rows.isEmpty) {
+    final suspicious = attention.suspiciousContacts;
+    if (rows.isEmpty && suspicious.isEmpty) {
       return AppCard(child: Text(t.adminAttentionEmpty));
     }
 
@@ -280,6 +282,33 @@ class _AttentionBlock extends StatelessWidget {
               title: Text(label),
               trailing: const Icon(LucideIcons.chevronRight),
               onTap: () => context.go(route),
+            ),
+          // 043 п.11: «Похоже на парсинг» — «Заблокировать» ведёт в карточку
+          // (там блокировка с идентификаторами), «Всё в порядке» прячет на 7 дней.
+          for (final row in suspicious)
+            ListTile(
+              key: Key('suspiciousContact-${row.userId}'),
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(LucideIcons.shieldAlert, color: StatusBadge.danger),
+              title: Text(t.adminSuspiciousTitle(row.name ?? row.companyName ?? '—', row.opens24h)),
+              subtitle: row.limitHits24h > 0 ? Text(t.adminSuspiciousLimitHits(row.limitHits24h)) : null,
+              trailing: Wrap(
+                spacing: 4,
+                children: [
+                  TextButton(
+                    onPressed: () async {
+                      await ref.read(adminRepositoryProvider).dismissSuspiciousContacts(row.userId);
+                      ref.invalidate(adminAttentionProvider);
+                    },
+                    child: Text(t.adminSuspiciousOk),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(foregroundColor: StatusBadge.danger),
+                    onPressed: () => context.go(row.driverId != null ? '/drivers/${row.driverId}' : '/companies/${row.companyId}'),
+                    child: Text(t.adminSuspiciousBlock),
+                  ),
+                ],
+              ),
             ),
         ],
       ),

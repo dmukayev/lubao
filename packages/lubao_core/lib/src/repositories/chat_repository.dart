@@ -34,6 +34,12 @@ class ChatRepository {
   /// водитель+компания+груз чат уже есть, сервер вернёт ЕГО (переход в
   /// существующий, история сохраняется), иначе — текущий чат с довешенным
   /// `cargoId`.
+  /// «Позвонить» из чата (043 п.11): номер собеседника по нажатию, с лимитом.
+  Future<String> revealContact(String chatId, {required String type}) async {
+    final res = await _client.dio.post('/chats/$chatId/contact', data: {'type': type});
+    return (res.data as Map<String, dynamic>)['phone'] as String;
+  }
+
   Future<ChatThread> attachCargo(String chatId, String cargoId) async {
     final res = await _client.dio.patch('/chats/$chatId/cargo', data: {'cargoId': cargoId});
     return ChatThread.fromJson(res.data as Map<String, dynamic>);

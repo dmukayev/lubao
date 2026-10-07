@@ -40,14 +40,16 @@ describe('CargosService — logist contact resolution (задача 017, decisio
       deal: { count: jest.fn().mockResolvedValue(0) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ fullName: 'Ли Вэй', contactPhone: '+86123', wechatId: 'liwei88' }) },
     };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     const result = await service.byId('cargo1');
 
     expect(prisma.companyMember.findFirst).toHaveBeenCalledWith({ where: { userId: 'logist1' } });
     expect(result.contactUserId).toBe('logist1');
     expect(result.contactName).toBe('Ли Вэй');
-    expect(result.contactPhone).toBe('+86123');
+    // 043 п.11: номера в карточке нет, только признак.
+    expect(result).not.toHaveProperty('contactPhone');
+    expect(result.hasContactPhone).toBe(true);
     expect(result.contactWechatId).toBe('liwei88');
   });
 
@@ -57,12 +59,12 @@ describe('CargosService — logist contact resolution (задача 017, decisio
       deal: { count: jest.fn().mockResolvedValue(0) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ fullName: null, contactPhone: null, wechatId: null }) },
     };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     const result = await service.byId('cargo1');
 
     expect(result.contactName).toBe('Ли Вэй');
-    expect(result.contactPhone).toBe('+86123');
+    expect(result.hasContactPhone).toBe(true);
     expect(result.contactWechatId).toBeNull();
   });
 
@@ -74,7 +76,7 @@ describe('CargosService — logist contact resolution (задача 017, decisio
         findFirst: jest.fn().mockResolvedValue({ fullName: 'Owner Contact', contactPhone: '+77001112233', wechatId: null, user: { id: 'owner1', name: 'Owner', phone: '+77001112233' } }),
       },
     };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     const result = await service.byId('cargo1');
 
@@ -91,7 +93,7 @@ describe('CargosService — logist contact resolution (задача 017, decisio
       deal: { count: jest.fn().mockResolvedValue(0) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
     };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     const result = await service.byId('cargo1');
     expect(result.isWhatsappBlocked).toBe(true);
@@ -101,14 +103,14 @@ describe('CargosService — logist contact resolution (задача 017, decisio
 describe('CargosService.closeCargo — закрытие только с исходом (задача 017, п.6)', () => {
   it('refuses to close a cargo that is already closed', async () => {
     const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ status: 'CANCELLED' })) } };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     await expect(service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_OUTSIDE' } as any)).rejects.toThrow(BadRequestException);
   });
 
   it('FOUND_IN_APP without driverId throws', async () => {
     const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo()) } };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     await expect(service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_IN_APP' } as any)).rejects.toThrow(BadRequestException);
   });
@@ -119,7 +121,7 @@ describe('CargosService.closeCargo — закрытие только с исхо
       response: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const responses = { createDealDirect: jest.fn() };
-    const service = new CargosService(prisma, responses as any);
+    const service = new CargosService(prisma, responses as any, {} as any);
 
     await service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_IN_APP', driverId: 'd1' } as any);
 
@@ -136,7 +138,7 @@ describe('CargosService.closeCargo — закрытие только с исхо
       response: { findUnique: jest.fn().mockResolvedValue({ status: 'SELECTED' }) },
     };
     const responses = { createDealDirect: jest.fn() };
-    const service = new CargosService(prisma, responses as any);
+    const service = new CargosService(prisma, responses as any, {} as any);
 
     await service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_IN_APP', driverId: 'd1' } as any);
 
@@ -147,7 +149,7 @@ describe('CargosService.closeCargo — закрытие только с исхо
   it('FOUND_OUTSIDE and CARGO_CANCELLED just close the cargo, no invite', async () => {
     const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo()), update: jest.fn() } };
     const responses = { createDealDirect: jest.fn() };
-    const service = new CargosService(prisma, responses as any);
+    const service = new CargosService(prisma, responses as any, {} as any);
 
     await service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_OUTSIDE' } as any);
 
@@ -164,7 +166,7 @@ describe('CargosService.closeCandidates — union of responses/contacts/chats (�
       contactEvent: { findMany: jest.fn().mockResolvedValue([{ driverId: 'd1', driver: { fullName: 'Ерлан' } }]) },
       chat: { findMany: jest.fn().mockResolvedValue([{ driverId: 'd2', driver: { fullName: 'Нурлан' } }]) },
     };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     const result = await service.closeCandidates('c1', 'cargo1');
 
@@ -178,7 +180,7 @@ describe('CargosService.feed — hides blocked companies\' cargo (задача 0
       cargo: { findMany: jest.fn().mockResolvedValue([]) },
       deal: { count: jest.fn() },
     };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     await service.feed();
 
@@ -222,7 +224,7 @@ describe('CargosService — отсев грузов по размеру маши
       cargo: { findMany: jest.fn().mockResolvedValue([]) },
       deal: { count: jest.fn() },
     };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
     await service.feed();
     // нет ни arrival.findFirst, ни vehicle.findFirst — мок не падает,
     // значит driverCargoBody не вызывался.
@@ -245,7 +247,7 @@ describe('CargosService — отсев грузов по размеру маши
         findMany: jest.fn().mockResolvedValue([]),
       },
     };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     const result = await service.feed('d1');
 
@@ -256,7 +258,7 @@ describe('CargosService — отсев грузов по размеру маши
 describe('CargosService.create — непроверенная компания не публикует грузы (задача 012, п.4)', () => {
   it('throws COMPANY_NOT_VERIFIED when the company is not verified, without touching the database', async () => {
     const prisma: any = { point: { findUnique: jest.fn() }, cargo: { create: jest.fn() } };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     await expect(service.create('c1', 'u1', false, { readyDate: '2026-01-01' } as any)).rejects.toThrow(ForbiddenException);
     expect(prisma.point.findUnique).not.toHaveBeenCalled();
@@ -270,7 +272,7 @@ describe('CargosService.create — непроверенная компания �
       deal: { count: jest.fn().mockResolvedValue(0) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
     };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     await service.create('c1', 'u1', true, { pointId: 'p1', readyDate: '2026-01-01', destinationCountryId: 'kz', bodyTypeId: 'bt1', price: 100, currency: 'USD', allowPartial: true } as any);
 
@@ -281,7 +283,7 @@ describe('CargosService.create — непроверенная компания �
 
   it('040, п.7: груз без города погрузки опубликовать нельзя', async () => {
     const prisma: any = { point: { findUnique: jest.fn().mockResolvedValue(null) }, cargo: { create: jest.fn() } };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     await expect(service.create('c1', 'u1', true, { pointId: 'missing', readyDate: '2026-01-01' } as any)).rejects.toThrow('POINT_REQUIRED');
     expect(prisma.cargo.create).not.toHaveBeenCalled();
@@ -289,7 +291,7 @@ describe('CargosService.create — непроверенная компания �
 
   it('040, п.7: выключенный город тоже не принимается', async () => {
     const prisma: any = { point: { findUnique: jest.fn().mockResolvedValue({ id: 'p1', isActive: false }) }, cargo: { create: jest.fn() } };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     await expect(service.create('c1', 'u1', true, { pointId: 'p1', readyDate: '2026-01-01' } as any)).rejects.toThrow('POINT_REQUIRED');
   });
@@ -298,21 +300,21 @@ describe('CargosService.create — непроверенная компания �
 describe('CargosService.assertCanEdit — логист редактирует только свой груз, владелец — любой (задача 012, п.6)', () => {
   it('the OWNER can edit a cargo published by a colleague', async () => {
     const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedByUserId: 'logist-1' })) } };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     await expect(service.assertCanEdit('cargo1', 'c1', 'owner-1', 'OWNER')).resolves.toBeDefined();
   });
 
   it('a LOGIST cannot edit a colleague\'s cargo', async () => {
     const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedByUserId: 'logist-1' })) } };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     await expect(service.assertCanEdit('cargo1', 'c1', 'logist-2', 'LOGIST')).rejects.toThrow(ForbiddenException);
   });
 
   it('a LOGIST can edit their own cargo', async () => {
     const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedByUserId: 'logist-1' })) } };
-    const service = new CargosService(prisma, {} as any);
+    const service = new CargosService(prisma, {} as any, {} as any);
 
     await expect(service.assertCanEdit('cargo1', 'c1', 'logist-1', 'LOGIST')).resolves.toBeDefined();
   });
@@ -369,7 +371,7 @@ describe('CargosService — лента на сервере: город → об�
         findUnique: jest.fn().mockResolvedValue({ homeCity: opts.home ?? null, directions: (opts.directions ?? []).map((countryId) => ({ countryId })), anyCountry: false }),
       },
     };
-    return new CargosService(prisma, {} as any);
+    return new CargosService(prisma, {} as any, {} as any);
   }
   const cargoAt = (id: string, c: ReturnType<typeof city>, over: Record<string, unknown> = {}) =>
     baseCargo({ id, pointId: `p-${c.id}`, point: point(c), ...over });
@@ -448,10 +450,10 @@ describe('CargosService — лента на сервере: город → об�
     expect([...first.items, ...second.items].map((i: any) => i.id)).toEqual(['c-almaty-1', 'c-almaty-2', 'c-konaev', 'c-astana']);
   });
 
-  it('лимит ограничен сверху (100), отрицательный offset — 0', async () => {
+  it('лимит ограничен сверху (50 — 043 п.11), отрицательный offset — 0', async () => {
     const service = setupFeed({ cargos: [] });
     const page = await service.feed('d1', { limit: 5000, offset: -5 });
-    expect(page.limit).toBe(100);
+    expect(page.limit).toBe(50);
     expect(page.offset).toBe(0);
   });
 
@@ -472,7 +474,7 @@ describe('CargosService.partialHint — «Помещается к текущем
       },
       vehicle: { findUnique: jest.fn().mockResolvedValue({ id: 'trailer1', ...trailer }) },
     };
-    return { service: new CargosService(prisma, {} as any), prisma };
+    return { service: new CargosService(prisma, {} as any, {} as any), prisma };
   }
   const active = (weightKg: number | null) => ({
     id: 'deal-a',
@@ -503,3 +505,41 @@ describe('CargosService.partialHint — «Помещается к текущем
     await expect(service.partialHint('d1', 'nope')).rejects.toThrow('Cargo not found');
   });
 });
+
+// 043 п.11: номер — только по нажатию, через правила и лимит.
+describe('CargosService.revealContact', () => {
+  const policy = () => ({
+    assertDriverMayContactCargo: jest.fn().mockResolvedValue(undefined),
+    consume: jest.fn().mockResolvedValue(undefined),
+    record: jest.fn().mockResolvedValue(undefined),
+  });
+  const prismaWith = (member: unknown) => ({
+    cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedBy: { id: 'logist1', name: 'Ли', phone: '+86000' } })) },
+    companyMember: { findFirst: jest.fn().mockResolvedValue(member) },
+  });
+  const ctx: any = { user: { id: 'u-driver' }, driver: { id: 'd1', isVerified: false }, companyMember: null };
+
+  it('отдаёт номер логиста, проверив правила, лимит и записав contact_event', async () => {
+    const p = policy();
+    const service = new CargosService(prismaWith({ fullName: 'Ли Вэй', contactPhone: '+86123', wechatId: null }) as any, {} as any, p as any);
+    await expect(service.revealContact(ctx, 'cargo1', 'CALL')).resolves.toEqual({ phone: '+86123' });
+    expect(p.assertDriverMayContactCargo).toHaveBeenCalledWith(ctx.driver, 'cargo1');
+    expect(p.consume).toHaveBeenCalledWith('u-driver', 'cargo:cargo1');
+    expect(p.record).toHaveBeenCalledWith(expect.objectContaining({ driverId: 'd1', cargoId: 'cargo1', type: 'CALL' }));
+  });
+
+  it('правила не пустили — номер не выдаётся и лимит не тратится', async () => {
+    const p = policy();
+    p.assertDriverMayContactCargo.mockRejectedValue(Object.assign(new Error('RESPOND_FIRST'), { status: 403 }));
+    const service = new CargosService(prismaWith({ contactPhone: '+86123' }) as any, {} as any, p as any);
+    await expect(service.revealContact(ctx, 'cargo1', 'CALL')).rejects.toThrow('RESPOND_FIRST');
+    expect(p.consume).not.toHaveBeenCalled();
+    expect(p.record).not.toHaveBeenCalled();
+  });
+
+  it('логист номер груза так не получает', async () => {
+    const service = new CargosService({} as any, {} as any, policy() as any);
+    await expect(service.revealContact({ user: { id: 'u' }, driver: null } as any, 'cargo1', 'CALL')).rejects.toThrow('Only drivers');
+  });
+});
+

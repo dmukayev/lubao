@@ -9,7 +9,7 @@ class ChatThread {
     required this.companyId,
     required this.counterpartName,
     this.counterpartLocale,
-    this.counterpartPhone,
+    this.counterpartHasPhone = false,
     this.counterpartWechatId,
     this.counterpartCountryCode,
     this.cargoResponseId,
@@ -23,7 +23,8 @@ class ChatThread {
   final String companyId;
   final String counterpartName;
   final String? counterpartLocale;
-  final String? counterpartPhone;
+  /// Номер собеседника — только по нажатию (043 п.11, `ChatRepository.revealContact`).
+  final bool counterpartHasPhone;
   final String? counterpartWechatId;
   /// Страна компании-получателя (задача 032, п.15) — только когда viewer —
   /// водитель; решает, какую карту открыть в ссылке «моё место»: Amap для
@@ -43,7 +44,7 @@ class ChatThread {
         companyId: json['companyId'] as String,
         counterpartName: json['counterpartName'] as String? ?? '',
         counterpartLocale: json['counterpartLocale'] as String?,
-        counterpartPhone: json['counterpartPhone'] as String?,
+        counterpartHasPhone: json['counterpartHasPhone'] as bool? ?? false,
         counterpartWechatId: json['counterpartWechatId'] as String?,
         counterpartCountryCode: json['counterpartCountryCode'] as String?,
         cargoResponseId: json['cargoResponseId'] as String?,

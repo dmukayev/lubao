@@ -181,6 +181,9 @@ echo "== сборка backend =="
 if ! RWT_DIR=backend run_with_timeout 300 "$RESULTS/build.log" npx nest build; then
   row "окружение: сборка backend" "❌" "см. build.log"; tail -20 "$RESULTS/build.log"; exit 1
 fi
+# Снимок сборки: dev-бэкенд в Docker (`start:dev`, watch) пересобирает общий
+# backend/dist при каждой правке кода — e2e не должен подхватить полусобранное.
+rm -rf backend/dist-e2e && cp -R backend/dist backend/dist-e2e
 
 # Playwright для админки: зависимости и браузер (Chromium качает сам Playwright,
 # системный Chrome не нужен).
@@ -228,7 +231,8 @@ start_backend() {
     DATABASE_URL="$E2E_DB_URL" REDIS_URL="redis://localhost:${REDIS_PORT:-6379}/1" PORT="$E2E_PORT" \
       SMS_PROVIDER=console EMAIL_PROVIDER=console TRANSLATION_PROVIDER=noop NODE_ENV=development JOBS_DISABLED=true SMS_MINUTE_LOCK_SECONDS=0 LOGIN_CODE_CONSOLE_CHANNELS=whatsapp,telegram \
       OCR_SERVICE_URL="http://localhost:${OCR_PORT}" \
-      exec node dist/src/main.js >"$RESULTS/backend.log" 2>&1
+      THROTTLE_USER_LIMIT=600 `# сценарии жмут быстрее человека; сам лимит 60/мин — HTTP-тест в бэкенде` \
+      exec node dist-e2e/src/main.js >"$RESULTS/backend.log" 2>&1
   ) &
   BACKEND_PID=$!
   for _ in $(seq 1 60); do

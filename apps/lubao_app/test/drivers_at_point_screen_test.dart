@@ -31,7 +31,7 @@ class _FakeArrivalRepository extends ArrivalRepository {
         arrivalId: 'a-$id',
         driverId: id,
         driverName: name,
-        phone: '+77010000000',
+        hasPhone: true,
         isVerified: verified,
         ratingAvg: 4.8,
         ratingCount: 3,

@@ -357,3 +357,19 @@ String systemMessageText(LubaoLocalizations t, String? code, Map<String, String>
     _ => fallback,
   };
 }
+
+/// Понятный текст ошибок «Позвонить»/WhatsApp (043 п.11): номер выдаётся по
+/// нажатию — сервер может ответить «сначала откликнитесь», «лимит номеров на
+/// сегодня», «компания не проверена», «номера нет» или общим 429.
+String contactErrorText(LubaoLocalizations t, Object error) {
+  if (error is! DioException) return t.commonError;
+  final data = error.response?.data;
+  final code = data is Map ? data['code'] : null;
+  return switch (code) {
+    'RESPOND_FIRST' => t.contactRespondFirst,
+    'CONTACT_LIMIT' => t.contactDailyLimit,
+    'COMPANY_NOT_VERIFIED' => t.contactCompanyNotVerified,
+    'NO_PHONE' => t.contactNoPhone,
+    _ => error.response?.statusCode == 429 ? t.tooManyRequests : t.commonError,
+  };
+}

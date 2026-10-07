@@ -34,6 +34,8 @@ function toDeviceDto(session: { id: string; deviceName: string | null; platform:
 
 /// Сессии/устройства: выпуск, ротация (при /auth/refresh) и отзыв refresh-токенов.
 /// Несколько устройств одновременно разрешены — каждое своя строка Session.
+export const MAX_ACTIVE_SESSIONS = 3;
+
 @Injectable()
 export class SessionService {
   constructor(
@@ -53,8 +55,24 @@ export class SessionService {
         expiresAt: new Date(Date.now() + this.tokens.refreshTtlMs(role)),
       },
     });
+    if (role !== 'ADMIN') await this.revokeBeyondLimit(userId, session.id);
     const accessToken = await this.tokens.signAccessToken({ sub: userId, role, sid: session.id });
     return { accessToken, refreshToken };
+  }
+
+  /// Не больше [MAX_ACTIVE_SESSIONS] устройств на аккаунт (043 п.11, защита от
+  /// парсинга): новая сессия отзывает самые давно использованные. Админов
+  /// не касается — их единицы, вход только из tailnet.
+  private async revokeBeyondLimit(userId: string, newSessionId: string): Promise<void> {
+    const active = await this.prisma.session.findMany({
+      where: { userId, revokedAt: null, expiresAt: { gt: new Date() }, id: { not: newSessionId } },
+      orderBy: { lastUsedAt: 'desc' },
+      select: { id: true },
+    });
+    const excess = active.slice(MAX_ACTIVE_SESSIONS - 1).map((s) => s.id);
+    if (excess.length) {
+      await this.prisma.session.updateMany({ where: { id: { in: excess } }, data: { revokedAt: new Date() } });
+    }
   }
 
   /// Ротация refresh-токена. Два нюанса из ревью 006 (024 п.4):

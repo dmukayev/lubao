@@ -1086,5 +1086,14 @@
   "legalTermsLink": "Шарттарды",
   "legalPrivacyLink": "Құпиялылық саясатын",
   "aboutTitle": "Қосымша туралы",
-  "aboutVersion": "Нұсқа {version}"
+  "aboutVersion": "Нұсқа {version}",
+  "contactRespondFirst": "Жүкке жауап беріңіз — логистің телефоны пайда болады. Құжаттар тексерілгеннен кейін бірден қоңырау шалуға болады.",
+  "contactDailyLimit": "Бүгін тым көп нөмір ашылды. Ертең қайталаңыз немесе чатқа жазыңыз.",
+  "contactCompanyNotVerified": "Жүргізушілерге компания тексерілгеннен кейін қоңырау шалуға болады. Әзірге чатқа жазыңыз.",
+  "contactNoPhone": "Нөмір көрсетілмеген — чатқа жазыңыз.",
+  "tooManyRequests": "Сұраныс тым көп. Бір минут күтіңіз.",
+  "adminSuspiciousTitle": "Парсингке ұқсайды: {name} — тәулігіне {count} нөмір",
+  "adminSuspiciousLimitHits": "Тәуліктік шекке тірелді: {count}",
+  "adminSuspiciousOk": "Бәрі дұрыс",
+  "adminSuspiciousBlock": "Бұғаттау"
 }

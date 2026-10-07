@@ -111,23 +111,28 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     }
   }
 
-  /// Звонок/WhatsApp не должны ждать запись события (задача 017, п.5г).
-  void _logContact(String driverId, String type) {
-    final companyId = ref.read(sessionProvider)?.companyMember?.companyId;
-    if (companyId == null) return;
-    unawaited(ref.read(cargoRepositoryProvider).logContactEvent(driverId: driverId, companyId: companyId, type: type));
+  /// Номер водителя — по нажатию (043 п.11): только проверенной компании,
+  /// с суточным лимитом; contact_event пишет сервер.
+  Future<String?> _revealPhone(ArrivalListing driver, String type) async {
+    try {
+      return await ref.read(cargoRepositoryProvider).revealDriverContact(driver.driverId, type: type);
+    } catch (e) {
+      debugPrint('DriversAtPointScreen: reveal contact: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(contactErrorText(context.l10n, e))));
+      return null;
+    }
   }
 
   Future<void> _call(ArrivalListing driver) async {
-    if (driver.phone == null) return;
-    _logContact(driver.driverId, 'CALL');
-    await launchUrl(Uri(scheme: 'tel', path: driver.phone!));
+    final phone = await _revealPhone(driver, 'CALL');
+    if (phone == null) return;
+    await launchUrl(Uri(scheme: 'tel', path: phone));
   }
 
   Future<void> _whatsapp(ArrivalListing driver) async {
-    if (driver.phone == null) return;
-    _logContact(driver.driverId, 'WHATSAPP');
-    final digits = driver.phone!.replaceAll(RegExp(r'[^0-9]'), '');
+    final phone = await _revealPhone(driver, 'WHATSAPP');
+    if (phone == null) return;
+    final digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
     await launchUrl(Uri.parse('https://wa.me/$digits'), mode: LaunchMode.externalApplication);
   }
 
@@ -791,9 +796,10 @@ class _DriverCard extends StatelessWidget {
 
     final buttons = <Widget>[
       IconSquareButton(
+        key: Key('driversAtPointCall-${driver.driverId}'),
         size: 34,
         icon: LucideIcons.phone,
-        onPressed: driver.phone == null ? null : () => onCall(driver),
+        onPressed: driver.hasPhone ? () => onCall(driver) : null,
       ),
       const SizedBox(width: AppSpacing.xs + 2),
       IconSquareButton(
@@ -811,7 +817,7 @@ class _DriverCard extends StatelessWidget {
           child: const WhatsAppIcon(size: 18),
           background: WhatsAppIcon.whatsappSoft,
           semanticLabel: context.l10n.commonWhatsApp,
-          onPressed: driver.phone == null ? null : () => onWhatsapp(driver),
+          onPressed: driver.hasPhone ? () => onWhatsapp(driver) : null,
         ),
       ],
     ];

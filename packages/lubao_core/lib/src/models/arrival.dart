@@ -27,7 +27,7 @@ class ArrivalListing {
     required this.arrivalId,
     required this.driverId,
     required this.driverName,
-    this.phone,
+    this.hasPhone = false,
     required this.isVerified,
     required this.ratingAvg,
     required this.ratingCount,
@@ -55,7 +55,8 @@ class ArrivalListing {
   final String arrivalId;
   final String driverId;
   final String driverName;
-  final String? phone;
+  /// Номер водителя — только по нажатию (043 п.11, `revealDriverContact`).
+  final bool hasPhone;
   final bool isVerified;
   final double ratingAvg;
   final int ratingCount;
@@ -96,7 +97,7 @@ class ArrivalListing {
         arrivalId: json['arrivalId'] as String,
         driverId: json['driverId'] as String,
         driverName: json['driverName'] as String? ?? '',
-        phone: json['phone'] as String?,
+        hasPhone: json['hasPhone'] as bool? ?? false,
         isVerified: json['isVerified'] as bool? ?? false,
         ratingAvg: (json['ratingAvg'] as num?)?.toDouble() ?? 0,
         ratingCount: json['ratingCount'] as int? ?? 0,

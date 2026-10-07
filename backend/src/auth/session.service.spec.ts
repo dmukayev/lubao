@@ -52,6 +52,7 @@ describe('SessionService', () => {
 
   it('createSession stores a hashed refresh token and signs an access token with the session id', async () => {
     prisma.session.create.mockResolvedValue({ id: 'session-1' });
+    prisma.session.findMany.mockResolvedValue([]);
 
     const result = await service.createSession('user-1', 'DRIVER', 'iPhone', 'ios');
 
@@ -241,5 +242,20 @@ describe('SessionService', () => {
 
     prisma.session.findUnique.mockResolvedValueOnce({ revokedAt: null, expiresAt: new Date(Date.now() + 1000) });
     expect(await service.isSessionActive('s4')).toBe(true);
+  });
+
+  it('043 п.11: 4-я сессия водителя отзывает самую давно использованную, у админа лимита нет', async () => {
+    prisma.session.create.mockResolvedValue({ id: 'new' });
+    // Отсортировано по lastUsedAt desc: s1 — свежая, s3 — самая старая.
+    prisma.session.findMany.mockResolvedValue([{ id: 's1' }, { id: 's2' }, { id: 's3' }]);
+    await service.createSession('user-1', 'DRIVER');
+    expect(prisma.session.findMany.mock.calls[0][0]).toMatchObject({ where: { userId: 'user-1', revokedAt: null, id: { not: 'new' } }, orderBy: { lastUsedAt: 'desc' } });
+    expect(prisma.session.updateMany).toHaveBeenCalledWith({ where: { id: { in: ['s3'] } }, data: { revokedAt: expect.any(Date) } });
+
+    prisma.session.findMany.mockClear();
+    prisma.session.updateMany.mockClear();
+    await service.createSession('admin-1', 'ADMIN');
+    expect(prisma.session.findMany).not.toHaveBeenCalled();
+    expect(prisma.session.updateMany).not.toHaveBeenCalled();
   });
 });

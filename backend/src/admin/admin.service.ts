@@ -66,6 +66,10 @@ export const APP_SETTING_KEYS: Record<string, (value: string) => boolean> = {
   loginCodeChannels: isValidChannelSetting,
 };
 
+/// Пороги «похоже на парсинг» (043 п.11).
+export const SUSPICIOUS_OPENS_PER_DAY = 20;
+export const SUSPICIOUS_LIMIT_HITS_PER_DAY = 3;
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -341,7 +345,67 @@ export class AdminService {
       unverifiedCompanies,
       pendingCities,
       blacklistMatches,
+      suspiciousContacts: await this.suspiciousContacts(),
     };
+  }
+
+  /// «Требует внимания» → похоже на парсинг (043 п.11): за сутки открыл
+  /// ≥ 20 номеров и при этом ни одного отклика/сделки, или 3 раза упёрся в
+  /// суточный лимит. «Всё в порядке» прячет аккаунт на 7 дней, заблокированные
+  /// не показываются.
+  async suspiciousContacts() {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [opens, limitHits] = await Promise.all([
+      this.prisma.contactEvent.groupBy({ by: ['actorUserId'], where: { createdAt: { gte: since } }, _count: { _all: true } }),
+      this.prisma.auditLog.groupBy({ by: ['actorUserId'], where: { action: 'CONTACT_LIMIT_EXCEEDED', createdAt: { gte: since } }, _count: { _all: true } }),
+    ]);
+    const opensBy = new Map(opens.map((o) => [o.actorUserId, o._count._all]));
+    const hitsBy = new Map(limitHits.filter((h) => h.actorUserId).map((h) => [h.actorUserId as string, h._count._all]));
+    const candidates = [...new Set([...opensBy.keys(), ...hitsBy.keys()])].filter(
+      (id) => (opensBy.get(id) ?? 0) >= SUSPICIOUS_OPENS_PER_DAY || (hitsBy.get(id) ?? 0) >= SUSPICIOUS_LIMIT_HITS_PER_DAY,
+    );
+    if (!candidates.length) return [];
+    const dismissed = await this.prisma.auditLog.findMany({
+      where: { action: 'SUSPICIOUS_CONTACTS_DISMISSED', entityId: { in: candidates }, createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+      select: { entityId: true },
+    });
+    const dismissedIds = new Set(dismissed.map((d) => d.entityId));
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: candidates.filter((id) => !dismissedIds.has(id)) }, isBlocked: false, deletedAt: null },
+      include: { driver: { select: { id: true, fullName: true } }, companyMember: { select: { companyId: true, fullName: true, company: { select: { name: true } } } } },
+    });
+    const rows = await Promise.all(
+      users.map(async (u) => {
+        const [responses, deals] = await Promise.all([
+          u.driver ? this.prisma.response.count({ where: { driverId: u.driver.id, createdAt: { gte: since } } }) : 0,
+          this.prisma.deal.count({
+            where: { createdAt: { gte: since }, ...(u.driver ? { driverId: u.driver.id } : { companyId: u.companyMember?.companyId ?? '-' }) },
+          }),
+        ]);
+        const opensCount = opensBy.get(u.id) ?? 0;
+        const hits = hitsBy.get(u.id) ?? 0;
+        const looksLikeScraping = (opensCount >= SUSPICIOUS_OPENS_PER_DAY && responses + deals === 0) || hits >= SUSPICIOUS_LIMIT_HITS_PER_DAY;
+        if (!looksLikeScraping) return null;
+        return {
+          userId: u.id,
+          role: u.role,
+          name: u.driver?.fullName ?? u.companyMember?.fullName ?? u.name ?? null,
+          companyName: u.companyMember?.company.name ?? null,
+          driverId: u.driver?.id ?? null,
+          companyId: u.companyMember?.companyId ?? null,
+          opens24h: opensCount,
+          limitHits24h: hits,
+          responses24h: responses,
+          deals24h: deals,
+        };
+      }),
+    );
+    return rows.filter((r): r is NonNullable<typeof r> => r !== null).sort((a, b) => b.opens24h - a.opens24h);
+  }
+
+  async dismissSuspiciousContacts(actorUserId: string, userId: string) {
+    await this.logAudit(actorUserId, 'SUSPICIOUS_CONTACTS_DISMISSED', 'User', userId, {});
+    return { success: true };
   }
 
   /// Единая лента «Последние события» (задача 028, п.5) — audit_log

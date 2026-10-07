@@ -40,6 +40,11 @@ class AdminRepository {
     return AdminAttention.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// «Похоже на парсинг» → «Всё в порядке» (043 п.11): скрыть на 7 дней.
+  Future<void> dismissSuspiciousContacts(String userId) async {
+    await _client.dio.post('/admin/suspicious-contacts/$userId/dismiss');
+  }
+
   Future<List<AdminEvent>> recentEvents({int limit = 10}) async {
     final res = await _client.dio.get('/admin/events/recent', queryParameters: {'limit': limit});
     return (res.data as List<dynamic>).map((e) => AdminEvent.fromJson(e as Map<String, dynamic>)).toList();

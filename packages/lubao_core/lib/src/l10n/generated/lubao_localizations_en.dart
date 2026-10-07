@@ -3039,4 +3039,38 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String aboutVersion(String version) {
     return 'Version $version';
   }
+
+  @override
+  String get contactRespondFirst =>
+      'Respond to the cargo and the logist’s phone will appear. Once your documents are verified, you can call right away.';
+
+  @override
+  String get contactDailyLimit =>
+      'Too many numbers opened today. Try tomorrow or write in the chat.';
+
+  @override
+  String get contactCompanyNotVerified =>
+      'You can call drivers once the company is verified. For now, write in the chat.';
+
+  @override
+  String get contactNoPhone => 'No phone number — write in the chat.';
+
+  @override
+  String get tooManyRequests => 'Too many requests. Please wait a minute.';
+
+  @override
+  String adminSuspiciousTitle(String name, int count) {
+    return 'Looks like scraping: $name — $count numbers in 24 h';
+  }
+
+  @override
+  String adminSuspiciousLimitHits(int count) {
+    return 'Hit the daily limit: $count';
+  }
+
+  @override
+  String get adminSuspiciousOk => 'All good';
+
+  @override
+  String get adminSuspiciousBlock => 'Block';
 }

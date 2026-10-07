@@ -1061,6 +1061,40 @@ class AdminPendingCity {
 }
 
 /// Блок «Требует внимания» на сводке (задача 028, п.4).
+/// Строка «Похоже на парсинг» в «Требует внимания» (043 п.11).
+class AdminSuspiciousContact {
+  const AdminSuspiciousContact({
+    required this.userId,
+    required this.role,
+    this.name,
+    this.companyName,
+    this.driverId,
+    this.companyId,
+    required this.opens24h,
+    required this.limitHits24h,
+  });
+
+  final String userId;
+  final String role;
+  final String? name;
+  final String? companyName;
+  final String? driverId;
+  final String? companyId;
+  final int opens24h;
+  final int limitHits24h;
+
+  factory AdminSuspiciousContact.fromJson(Map<String, dynamic> json) => AdminSuspiciousContact(
+        userId: json['userId'] as String,
+        role: json['role'] as String,
+        name: json['name'] as String?,
+        companyName: json['companyName'] as String?,
+        driverId: json['driverId'] as String?,
+        companyId: json['companyId'] as String?,
+        opens24h: json['opens24h'] as int? ?? 0,
+        limitHits24h: json['limitHits24h'] as int? ?? 0,
+      );
+}
+
 class AdminAttention {
   const AdminAttention({
     required this.pendingVerificationCount,
@@ -1070,6 +1104,7 @@ class AdminAttention {
     required this.unverifiedCompanies,
     required this.pendingCities,
     this.blacklistMatches = 0,
+    this.suspiciousContacts = const [],
   });
 
   final int pendingVerificationCount;
@@ -1082,6 +1117,9 @@ class AdminAttention {
   /// «Совпадения с чёрным списком» (задача 032, п.11 / 038).
   final int blacklistMatches;
 
+  /// «Похоже на парсинг» (043 п.11): много открытых номеров без откликов/сделок.
+  final List<AdminSuspiciousContact> suspiciousContacts;
+
   factory AdminAttention.fromJson(Map<String, dynamic> json) {
     final pv = json['pendingVerification'] as Map<String, dynamic>;
     return AdminAttention(
@@ -1092,6 +1130,9 @@ class AdminAttention {
       unverifiedCompanies: json['unverifiedCompanies'] as int,
       pendingCities: json['pendingCities'] as int,
       blacklistMatches: json['blacklistMatches'] as int? ?? 0,
+      suspiciousContacts: [
+        for (final row in (json['suspiciousContacts'] as List<dynamic>? ?? const [])) AdminSuspiciousContact.fromJson(row as Map<String, dynamic>),
+      ],
     );
   }
 }

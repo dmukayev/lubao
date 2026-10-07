@@ -27,7 +27,7 @@ class Cargo {
     required this.expiresAt,
     this.contactUserId,
     this.contactName,
-    this.contactPhone,
+    this.hasContactPhone = false,
     this.contactWechatId,
     this.isWhatsappBlocked = false,
     this.closeOutcome,
@@ -67,7 +67,9 @@ class Cargo {
   /// не «компании».
   final String? contactUserId;
   final String? contactName;
-  final String? contactPhone;
+  /// Номер логиста не приходит в карточке (043 п.11) — только по нажатию
+  /// «Позвонить»/WhatsApp через `CargoRepository.revealContact`.
+  final bool hasContactPhone;
   final String? contactWechatId;
 
   /// WhatsApp заблокирован в Китае — показываем чат Lubao вместо кнопки,
@@ -109,7 +111,7 @@ class Cargo {
         expiresAt: DateTime.parse(json['expiresAt'] as String),
         contactUserId: json['contactUserId'] as String?,
         contactName: json['contactName'] as String?,
-        contactPhone: json['contactPhone'] as String?,
+        hasContactPhone: json['hasContactPhone'] as bool? ?? false,
         contactWechatId: json['contactWechatId'] as String?,
         isWhatsappBlocked: json['isWhatsappBlocked'] as bool? ?? false,
         closeOutcome: json['closeOutcome'] as String?,

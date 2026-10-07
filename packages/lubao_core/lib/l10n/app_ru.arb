@@ -1221,5 +1221,16 @@
   "legalPrivacyLink": "Политику конфиденциальности",
   "aboutTitle": "О приложении",
   "aboutVersion": "Версия {version}",
-  "@aboutVersion": {"placeholders": {"version": {"type": "String"}}}
+  "@aboutVersion": {"placeholders": {"version": {"type": "String"}}},
+  "contactRespondFirst": "Откликнитесь на груз — и появится телефон логиста. После проверки документов звонить можно сразу.",
+  "contactDailyLimit": "На сегодня открыто слишком много номеров. Попробуйте завтра или напишите в чат.",
+  "contactCompanyNotVerified": "Звонить водителям можно после проверки компании. Пока — напишите в чат.",
+  "contactNoPhone": "Номер не указан — напишите в чат.",
+  "tooManyRequests": "Слишком много запросов. Подождите минуту.",
+  "adminSuspiciousTitle": "Похоже на парсинг: {name} — {count} номеров за сутки",
+  "@adminSuspiciousTitle": {"placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}},
+  "adminSuspiciousLimitHits": "Упирался в суточный лимит: {count}",
+  "@adminSuspiciousLimitHits": {"placeholders": {"count": {"type": "int"}}},
+  "adminSuspiciousOk": "Всё в порядке",
+  "adminSuspiciousBlock": "Заблокировать"
 }

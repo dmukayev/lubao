@@ -121,6 +121,20 @@ class CargoRepository {
   /// сбое, похожем на отсутствие сети (таймаут/нет соединения — не
   /// настоящий ответ сервера), событие уходит в локальную очередь и
   /// досылается при восстановлении связи ([flushPendingContactEvents]).
+  /// «Позвонить»/WhatsApp водителя (043 п.11): номер логиста по нажатию.
+  /// Сервер сам пишет contact_event; 403 `RESPOND_FIRST` — сначала «Готов
+  /// взять», 429 `CONTACT_LIMIT` — суточный лимит номеров.
+  Future<String> revealCargoContact(String cargoId, {required String type}) async {
+    final res = await _client.dio.post('/cargos/$cargoId/contact', data: {'type': type});
+    return (res.data as Map<String, dynamic>)['phone'] as String;
+  }
+
+  /// То же для логиста: номер водителя (только проверенной компании).
+  Future<String> revealDriverContact(String driverId, {required String type, String? cargoId}) async {
+    final res = await _client.dio.post('/drivers/$driverId/contact', data: {'type': type, if (cargoId != null) 'cargoId': cargoId});
+    return (res.data as Map<String, dynamic>)['phone'] as String;
+  }
+
   Future<void> logContactEvent({
     required String driverId,
     required String companyId,

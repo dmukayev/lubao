@@ -1,6 +1,6 @@
 import { SmsService } from '../sms/sms.service';
 import { LOGIN_CODE_CHANNELS_SETTING, parseChannelSetting } from '../sms/login-code-channels';
-import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Put, Query, Res } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, Patch, Post, Put, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
@@ -60,6 +60,14 @@ export class AdminController {
   }
 
   /// Ручной чёрный список (043 п.4): ИИН / телефон / госномер / VIN… + причина.
+  /// «Похоже на парсинг» → «Всё в порядке» (043 п.11): скрыть на 7 дней.
+  @Post('suspicious-contacts/:userId/dismiss')
+  @HttpCode(200)
+  dismissSuspicious(@CurrentUser() ctx: RequestContext, @Param('userId') userId: string) {
+    assertAdmin(ctx);
+    return this.admin.dismissSuspiciousContacts(ctx.user.id, userId);
+  }
+
   @Get('blacklist')
   async blacklist(@CurrentUser() ctx: RequestContext, @Query('active') active?: string) {
     assertAdmin(ctx);

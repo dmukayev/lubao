@@ -6,6 +6,8 @@
 # node / pnpm
 node_modules/
 dist/
+# снимок сборки бэкенда для scripts/e2e.sh
+dist-e2e/
 .pnpm-store/
 pnpm-lock.yaml.bak
 

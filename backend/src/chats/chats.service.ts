@@ -7,6 +7,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { ChatSystemMessagesService } from './chat-system-messages.service';
 import { TranslationService } from '../translation/translation.service';
+import { ContactPolicyService } from '../contact-events/contact-policy.service';
 
 const CHAT_PREVIEW_LENGTH = 80;
 
@@ -19,6 +20,7 @@ export class ChatsService {
     private readonly translation: TranslationService,
     private readonly appSettings: AppSettingsService,
     private readonly chatSystem: ChatSystemMessagesService,
+    private readonly contactPolicy: ContactPolicyService,
   ) {}
 
   private assertParty(chat: { driverId: string; companyId: string }, ctx: RequestContext) {
@@ -177,7 +179,8 @@ export class ChatsService {
       companyId: chat.companyId,
       counterpartName,
       counterpartLocale,
-      counterpartPhone: ctx.driver ? companyMember?.contactPhone ?? companyMember?.user.phone ?? null : driver.user.phone,
+      // Номер собеседника — только по нажатию (POST /chats/:id/contact, 043 п.11).
+      counterpartHasPhone: !!(ctx.driver ? companyMember?.contactPhone ?? companyMember?.user.phone : driver.user.phone),
       counterpartWechatId: ctx.driver ? companyMember?.wechatId ?? null : null,
       // Задача 032, п.15 — водитель решает Amap (Китай) / 2ГИС (остальные)
       // по СТРАНЕ компании-получателя, не по языку интерфейса сотрудника.
@@ -197,6 +200,27 @@ export class ChatsService {
   async thread(chatId: string, ctx: RequestContext) {
     const chat = await this.loadChat(chatId, ctx);
     return this.toThreadDto(chat, ctx);
+  }
+
+  /// «Позвонить» из чата (043 п.11): водителю — номер логиста-собеседника по
+  /// тем же правилам, что и из карточки груза (непроверенному — после отклика);
+  /// логисту — номер водителя, только из проверенной компании. Лимит общий.
+  async revealContact(chatId: string, ctx: RequestContext, type: 'CALL' | 'WHATSAPP') {
+    const chat = await this.loadChat(chatId, ctx);
+    const { driver, companyMember } = await this.resolveParties(chat);
+    let phone: string | null | undefined;
+    if (ctx.driver) {
+      if (chat.cargoId) await this.contactPolicy.assertDriverMayContactCargo(ctx.driver, chat.cargoId);
+      else if (!ctx.driver.isVerified) throw new ForbiddenException({ code: 'RESPOND_FIRST', message: 'Verification required' });
+      phone = companyMember?.contactPhone ?? companyMember?.user.phone;
+    } else {
+      this.contactPolicy.assertCompanyMayContactDriver(ctx.companyMember!.company);
+      phone = driver.user.phone;
+    }
+    if (!phone) throw new NotFoundException({ code: 'NO_PHONE', message: 'Counterpart has no phone' });
+    await this.contactPolicy.consume(ctx.user.id, ctx.driver ? `chat-company:${chat.companyId}:${chat.cargoId ?? ''}` : `driver:${chat.driverId}`);
+    await this.contactPolicy.record({ actorUserId: ctx.user.id, driverId: chat.driverId, companyId: chat.companyId, cargoId: chat.cargoId, dealId: chat.dealId, type });
+    return { phone };
   }
 
   /// Мои чаты (п.1) — логист видит чаты **всех** коллег по компании

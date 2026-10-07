@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import { RevealContactDto } from '../contact-events/dto/reveal-contact.dto';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
 import { ChatsService } from './chats.service';
@@ -23,6 +24,13 @@ export class ChatsController {
   @Get(':chatId')
   thread(@CurrentUser() ctx: RequestContext, @Param('chatId') chatId: string) {
     return this.chats.thread(chatId, ctx);
+  }
+
+  /// «Позвонить» из чата (043 п.11): номер собеседника — по нажатию, с лимитом.
+  @Post(':chatId/contact')
+  @HttpCode(200)
+  contact(@CurrentUser() ctx: RequestContext, @Param('chatId') chatId: string, @Body() dto: RevealContactDto) {
+    return this.chats.revealContact(chatId, ctx, dto.type);
   }
 
   @Patch(':chatId/cargo')

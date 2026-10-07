@@ -9,11 +9,14 @@ import { parseDateOnly, toDateOnly } from '../common/date-only';
 import { haversineKm } from '../common/geo';
 import { CARGO_ARCHIVE_AFTER_MS } from './cargo-lifecycle';
 import { evaluateVehicleLoad } from '../deals/vehicle-load';
+import { ContactPolicyService } from '../contact-events/contact-policy.service';
+import { RequestContext } from '../common/request-context';
 
 /// Лента: «рядом» с городом водителя — та же область либо ≤200 км (040, п.5).
 export const NEARBY_KM = 200;
 const FEED_DEFAULT_LIMIT = 30;
-const FEED_MAX_LIMIT = 100;
+/// ≤ 50 на страницу (043 п.11, защита от парсинга): всю ленту одним запросом не выгрузить.
+const FEED_MAX_LIMIT = 50;
 
 type GeoCity = { id: string; regionId: string | null; lat: unknown; lng: unknown };
 type GeoPoint = { cityId: string; lat: unknown; lng: unknown; city: GeoCity };
@@ -33,6 +36,7 @@ export class CargosService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly responses: ResponsesService,
+    private readonly contactPolicy: ContactPolicyService,
   ) {}
 
   /// Водитель звонит/пишет конкретному логисту, опубликовавшему груз, а не
@@ -82,7 +86,9 @@ export class CargosService {
       companyCompletedDeals,
       contactUserId: contact?.id ?? null,
       contactName: contact?.name ?? null,
-      contactPhone: contact?.phone ?? null,
+      // Номер не отдаётся в списках и карточке (043 п.11) — только по нажатию
+      // через POST /cargos/:id/contact; здесь — есть ли он вообще.
+      hasContactPhone: !!contact?.phone,
       contactWechatId: contact?.wechatId ?? null,
       // WhatsApp заблокирован в Китае — водителю показываем чат Lubao
       // вместо кнопки, которая всё равно не дойдёт до логиста (decisions.md
@@ -107,6 +113,20 @@ export class CargosService {
       closeOutcome: cargo.closeOutcome,
       closedAt: cargo.closedAt,
     };
+  }
+
+  /// «Позвонить»/WhatsApp водителя (043 п.11): правила и лимит — в
+  /// ContactPolicyService, номер — того логиста, что опубликовал груз.
+  async revealContact(ctx: RequestContext, cargoId: string, type: 'CALL' | 'WHATSAPP') {
+    if (!ctx.driver) throw new ForbiddenException('Only drivers call cargo contacts');
+    const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId }, include: this.includeForDto });
+    if (!cargo) throw new NotFoundException('Cargo not found');
+    await this.contactPolicy.assertDriverMayContactCargo(ctx.driver, cargoId);
+    const contact = await this.resolveContact(cargo);
+    if (!contact?.phone) throw new NotFoundException({ code: 'NO_PHONE', message: 'Cargo contact has no phone' });
+    await this.contactPolicy.consume(ctx.user.id, `cargo:${cargoId}`);
+    await this.contactPolicy.record({ actorUserId: ctx.user.id, driverId: ctx.driver.id, companyId: cargo.companyId, cargoId, type });
+    return { phone: contact.phone };
   }
 
   private get includeForDto() {

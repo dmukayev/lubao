@@ -236,17 +236,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   /// Звонок не должен ждать запись события (задача 017, п.5г) — сначала
   /// открываем звонилку, `contact_event` пишем без ожидания.
+  /// Номер собеседника — по нажатию (043 п.11): правила, лимит и
+  /// contact_event — на сервере.
   Future<void> _call(ChatThread thread) async {
-    final phone = thread.counterpartPhone;
-    if (phone == null) return;
-    unawaited(launchUrl(Uri(scheme: 'tel', path: phone)));
-    unawaited(ref.read(cargoRepositoryProvider).logContactEvent(
-          driverId: thread.driverId,
-          companyId: thread.companyId,
-          cargoId: thread.cargoId,
-          dealId: thread.dealId,
-          type: 'CALL',
-        ));
+    try {
+      final phone = await ref.read(chatRepositoryProvider).revealContact(thread.id, type: 'CALL');
+      unawaited(launchUrl(Uri(scheme: 'tel', path: phone)));
+    } catch (e) {
+      debugPrint('ChatScreen: reveal contact: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(contactErrorText(context.l10n, e))));
+    }
   }
 
   Future<void> _confirm(DealStatus status) async {
@@ -326,10 +325,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ],
         ),
         actions: [
-          if (thread?.counterpartPhone != null)
+          if (thread?.counterpartHasPhone ?? false)
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.md),
-              child: IconSquareButton(icon: LucideIcons.phone, onPressed: () => _call(thread!)),
+              child: IconSquareButton(key: const Key('chatCallButton'), icon: LucideIcons.phone, onPressed: () => _call(thread!)),
             ),
         ],
       ),

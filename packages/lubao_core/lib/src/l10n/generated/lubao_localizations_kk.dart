@@ -3038,4 +3038,38 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String aboutVersion(String version) {
     return 'Нұсқа $version';
   }
+
+  @override
+  String get contactRespondFirst =>
+      'Жүкке жауап беріңіз — логистің телефоны пайда болады. Құжаттар тексерілгеннен кейін бірден қоңырау шалуға болады.';
+
+  @override
+  String get contactDailyLimit =>
+      'Бүгін тым көп нөмір ашылды. Ертең қайталаңыз немесе чатқа жазыңыз.';
+
+  @override
+  String get contactCompanyNotVerified =>
+      'Жүргізушілерге компания тексерілгеннен кейін қоңырау шалуға болады. Әзірге чатқа жазыңыз.';
+
+  @override
+  String get contactNoPhone => 'Нөмір көрсетілмеген — чатқа жазыңыз.';
+
+  @override
+  String get tooManyRequests => 'Сұраныс тым көп. Бір минут күтіңіз.';
+
+  @override
+  String adminSuspiciousTitle(String name, int count) {
+    return 'Парсингке ұқсайды: $name — тәулігіне $count нөмір';
+  }
+
+  @override
+  String adminSuspiciousLimitHits(int count) {
+    return 'Тәуліктік шекке тірелді: $count';
+  }
+
+  @override
+  String get adminSuspiciousOk => 'Бәрі дұрыс';
+
+  @override
+  String get adminSuspiciousBlock => 'Бұғаттау';
 }

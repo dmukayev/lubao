@@ -697,6 +697,47 @@ describe('AdminService.stats — growth and on-site counters (задача 028, 
   });
 });
 
+describe('AdminService.suspiciousContacts (043 п.11)', () => {
+  function setup(opts: { responses?: number; deals?: number; dismissed?: boolean; hits?: number; opens?: number }) {
+    const prisma: any = {
+      contactEvent: { groupBy: jest.fn().mockResolvedValue([{ actorUserId: 'u1', _count: { _all: opts.opens ?? 25 } }]) },
+      auditLog: {
+        groupBy: jest.fn().mockResolvedValue(opts.hits ? [{ actorUserId: 'u1', _count: { _all: opts.hits } }] : []),
+        findMany: jest.fn().mockResolvedValue(opts.dismissed ? [{ entityId: 'u1' }] : []),
+      },
+      user: {
+        findMany: jest.fn(async ({ where }: any) =>
+          where.id.in.includes('u1') ? [{ id: 'u1', role: 'DRIVER', name: null, driver: { id: 'd1', fullName: 'Парсер Тестов' }, companyMember: null }] : [],
+        ),
+      },
+      response: { count: jest.fn().mockResolvedValue(opts.responses ?? 0) },
+      deal: { count: jest.fn().mockResolvedValue(opts.deals ?? 0) },
+    };
+    return new AdminService(prisma, {} as any, fakeUploads() as any);
+  }
+
+  it('25 номеров за сутки и ни одного отклика — в списке', async () => {
+    const rows = await setup({}).suspiciousContacts();
+    expect(rows).toEqual([expect.objectContaining({ userId: 'u1', name: 'Парсер Тестов', opens24h: 25, driverId: 'd1' })]);
+  });
+
+  it('те же 25 номеров, но есть отклики — обычная работа, не показываем', async () => {
+    expect(await setup({ responses: 3 }).suspiciousContacts()).toEqual([]);
+  });
+
+  it('3 упора в лимит за сутки — в списке даже с откликами', async () => {
+    expect(await setup({ opens: 5, hits: 3, responses: 2 }).suspiciousContacts()).toHaveLength(1);
+  });
+
+  it('«Всё в порядке» за последние 7 дней — скрыт', async () => {
+    expect(await setup({ dismissed: true }).suspiciousContacts()).toEqual([]);
+  });
+
+  it('меньше 20 номеров и без упоров — не кандидат', async () => {
+    expect(await setup({ opens: 10 }).suspiciousContacts()).toEqual([]);
+  });
+});
+
 describe('AdminService.attention (задача 028, п.4)', () => {
   it('counts distinct people (not documents) waiting on verification, and the oldest pending age', async () => {
     const oldest = new Date(Date.now() - 5 * 60 * 60 * 1000); // 5h ago
@@ -714,11 +755,14 @@ describe('AdminService.attention (задача 028, п.4)', () => {
       city: { count: jest.fn().mockResolvedValue(0) },
       // 038 (032 п.11) — «Совпадения с чёрным списком» на сводке.
       $queryRaw: jest.fn().mockResolvedValue([{ count: 0n }]),
+      contactEvent: { groupBy: jest.fn().mockResolvedValue([]) },
+      auditLog: { groupBy: jest.fn().mockResolvedValue([]) },
     };
     prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     const result = await service.attention();
+    expect(result.suspiciousContacts).toEqual([]);
 
     expect(result.pendingVerification.count).toBe(3);
     expect(result.pendingVerification.oldestAgeHours).toBe(5);

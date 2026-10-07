@@ -1,4 +1,7 @@
-import { Body, Controller, ForbiddenException, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, HttpCode, NotFoundException, Param, Patch, Post } from '@nestjs/common';
+import { ContactPolicyService } from '../contact-events/contact-policy.service';
+import { RevealContactDto } from '../contact-events/dto/reveal-contact.dto';
+import { PrismaService } from '../prisma/prisma.service';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
 import { CreateVehicleDto, SetVehicleSizeDto } from './dto/create-vehicle.dto';
@@ -9,7 +12,30 @@ import { DriversService } from './drivers.service';
 
 @Controller('drivers')
 export class DriversController {
-  constructor(private readonly drivers: DriversService) {}
+  constructor(
+    private readonly drivers: DriversService,
+    private readonly prisma: PrismaService,
+    private readonly contactPolicy: ContactPolicyService,
+  ) {}
+
+  /// «Позвонить»/WhatsApp логиста (043 п.11): номер водителя — по нажатию,
+  /// только проверенной компании, с суточным лимитом; в списках номера нет.
+  @Post(':id/contact')
+  @HttpCode(200)
+  async contact(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: RevealContactDto) {
+    if (!ctx.companyMember) throw new ForbiddenException('Only company accounts call drivers');
+    this.contactPolicy.assertCompanyMayContactDriver(ctx.companyMember.company);
+    const driver = await this.prisma.driver.findUnique({ where: { id }, select: { id: true, user: { select: { phone: true } } } });
+    if (!driver) throw new NotFoundException('Driver not found');
+    if (!driver.user.phone) throw new NotFoundException({ code: 'NO_PHONE', message: 'Driver has no phone' });
+    await this.contactPolicy.consume(ctx.user.id, `driver:${id}`);
+    // Груз — только свой, иначе в contact_events не пишем (чужой id — не ошибка звонка).
+    const cargo = dto.cargoId
+      ? await this.prisma.cargo.findFirst({ where: { id: dto.cargoId, companyId: ctx.companyMember.companyId }, select: { id: true } })
+      : null;
+    await this.contactPolicy.record({ actorUserId: ctx.user.id, driverId: id, companyId: ctx.companyMember.companyId, cargoId: cargo?.id, type: dto.type });
+    return { phone: driver.user.phone };
+  }
 
   @Get('me')
   me(@CurrentUser() ctx: RequestContext) {

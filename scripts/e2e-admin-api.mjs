@@ -290,6 +290,31 @@ assert((await api('GET', '/auth/me', { token: delReg.accessToken })).json.user.p
 assert((await api('POST', '/auth/me/pd-consent', { token: delReg.accessToken, body: { version: '2000-01-01' } })).status === 400, 'согласие на старую редакцию текста — 400');
 assert((await api('POST', '/auth/me/pd-consent', { token: delReg.accessToken, body: { version: '2026-10-08' } })).status === 200, 'согласие на текущую редакцию принято');
 assert((await api('GET', '/auth/me', { token: delReg.accessToken })).json.user.pdConsentRequired === false, 'после согласия экран больше не нужен');
+// 043 п.11: телефоны — только по нажатию. В ленте и карточке номера нет;
+// непроверенный водитель получает номер после отклика; лимит и contact_events — на сервере.
+const KZ_CARGO = '11111111-1111-4111-8111-111111111008';
+const feedJson = (await api('GET', '/cargos?limit=200', { token: delReg.accessToken })).json;
+assert(feedJson.limit === 50, 'лента: не больше 50 на страницу', `limit=${feedJson.limit}`);
+assert(!/contactPhone|\+7\d{10}/.test(JSON.stringify(feedJson)), 'в ленте нет телефонов');
+const kzCard = (await api('GET', `/cargos/${KZ_CARGO}`, { token: delReg.accessToken })).json;
+assert(kzCard.hasContactPhone === true && !('contactPhone' in kzCard), 'в карточке груза — только «номер есть», без самого номера', JSON.stringify(Object.keys(kzCard)));
+const lockedContact = await api('POST', `/cargos/${KZ_CARGO}/contact`, { token: delReg.accessToken, body: { type: 'CALL' } });
+assert(lockedContact.status === 403 && lockedContact.json.code === 'RESPOND_FIRST', 'непроверенный водитель без отклика номер не получает', `status=${lockedContact.status}`);
+assert((await api('POST', `/cargos/${KZ_CARGO}/responses`, { token: delReg.accessToken, body: {} })).status < 300, 'водитель откликается «Готов взять»');
+const openContact = await api('POST', `/cargos/${KZ_CARGO}/contact`, { token: delReg.accessToken, body: { type: 'CALL' } });
+assert(openContact.status === 200 && /^\+\d{10,15}$/.test(openContact.json.phone ?? ''), 'после отклика — номер по нажатию', `status=${openContact.status}`);
+const kzOwner = (await api('POST', '/auth/company/login', { body: { email: 'e2e-owner@lubao-test.kz', password: 'E2eLubao2026!', deviceName: 'e2e', platform: 'ios' } })).json.accessToken;
+const arrivalsJson = (await api('GET', '/arrivals', { token: kzOwner })).json;
+assert(Array.isArray(arrivalsJson) && arrivalsJson.every((a) => !('phone' in a)), '«Кто свободен»: без телефонов', JSON.stringify(arrivalsJson[0] ?? {}).slice(0, 160));
+const driverContact = await api('POST', `/drivers/${delDriverId}/contact`, { token: kzOwner, body: { type: 'CALL', cargoId: KZ_CARGO } });
+assert(driverContact.status === 200 && driverContact.json.phone === DEL_PHONE, 'проверенная компания получает номер водителя по нажатию', `status=${driverContact.status}`);
+const newCo = await api('POST', '/auth/company/register', { body: { email: `e2e-unverified-${Date.now()}@lubao-test.kz`, password: 'E2eLubao2026!', ownerName: 'Тест Непроверенный', companyName: 'Unverified LLC', countryId: refData.countries[0].id, offerVersion: '2026-10-08' } });
+assert(newCo.status < 300, 'новая компания с офертой регистрируется', `status=${newCo.status}`);
+const unverifiedContact = await api('POST', `/drivers/${delDriverId}/contact`, { token: newCo.json.accessToken, body: { type: 'CALL' } });
+assert(unverifiedContact.status === 403 && unverifiedContact.json.code === 'COMPANY_NOT_VERIFIED', 'непроверенная компания номер водителя не получает', `status=${unverifiedContact.status}`);
+const contactAdmin = (await get(`/admin/drivers/${delDriverId}`)).json;
+assert((contactAdmin.stats?.calls ?? 0) >= 2, 'звонки записаны в contact_events (карточка админки)', JSON.stringify(contactAdmin.stats ?? {}));
+
 const delRes = await api('DELETE', '/auth/me', { token: delReg.accessToken });
 assert(delRes.status === 200, 'DELETE /auth/me — аккаунт удалён', `status=${delRes.status} ${delRes.text.slice(0, 120)}`);
 assert((await api('GET', '/auth/me', { token: delReg.accessToken })).status === 401, 'после удаления токен не работает');
