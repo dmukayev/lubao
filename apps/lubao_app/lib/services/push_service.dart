@@ -6,6 +6,7 @@ import 'dart:ui' show Locale, PlatformDispatcher;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,13 +48,16 @@ Future<void> _showLocal(FlutterLocalNotificationsPlugin plugin, RemoteMessage me
     title: title,
     body: body,
     // В payload — и ссылка, и груз: кнопке «Да» у «Договорились?» нужен cargoId.
-    payload: jsonEncode({'deepLink': data['deepLink'], 'cargoId': data['cargoId']}),
+    payload: jsonEncode({'deepLink': data['deepLink'], 'cargoId': data['cargoId'], 'event': data['event'], 'title': title, 'body': body}),
     notificationDetails: NotificationDetails(
       android: AndroidNotificationDetails(
         _channelId,
         t.pushChannelName,
         importance: Importance.high,
-        priority: Priority.high,
+        // С кнопками — максимальный приоритет и развёрнутый текст: на Huawei
+        // свёрнутое уведомление прятало «Да / Нет» (живая проверка 2026-10-08).
+        priority: actions.isEmpty ? Priority.high : Priority.max,
+        styleInformation: BigTextStyleInformation(body ?? ''),
         actions: [
           for (final (action, label) in actions) AndroidNotificationAction(pushActionId(action), label, showsUserInterface: true),
         ],
@@ -132,9 +136,11 @@ class PushService {
     }
 
     FirebaseMessaging.onMessage.listen((m) => unawaited(_showLocal(_plugin, m)));
-    FirebaseMessaging.onMessageOpenedApp.listen((m) => _open(m.data['deepLink'] as String?));
+    String openedPayload(RemoteMessage m) =>
+        jsonEncode({...m.data, 'title': m.notification?.title ?? m.data['title'], 'body': m.notification?.body ?? m.data['body']});
+    FirebaseMessaging.onMessageOpenedApp.listen((m) => unawaited(_onResponse(null, openedPayload(m))));
     final initial = await FirebaseMessaging.instance.getInitialMessage();
-    if (initial != null) _open(initial.data['deepLink'] as String?);
+    if (initial != null) unawaited(_onResponse(null, openedPayload(initial)));
     final launch = await _plugin.getNotificationAppLaunchDetails();
     if (launch?.didNotificationLaunchApp ?? false) {
       unawaited(_onResponse(launch!.notificationResponse?.actionId, launch.notificationResponse?.payload));
@@ -195,14 +201,43 @@ class PushService {
     _ref.read(routerProvider).push(resolvePushRoute(deepLink, role));
   }
 
+  Future<void> _askAgreed(String cargoId, String? title, String? body) async {
+    await Future<void>.delayed(const Duration(milliseconds: 600)); // после перехода на экран
+    final context = _ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
+    if (context == null || !context.mounted) return;
+    final t = context.l10n;
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        key: const Key('pushAgreedDialog'),
+        title: Text(title ?? ''),
+        content: body == null ? null : Text(body),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.commonNo)),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(t.commonYes)),
+        ],
+      ),
+    );
+    if (yes != true) return;
+    try {
+      await _ref.read(cargoRepositoryProvider).agreed(cargoId);
+    } catch (e) {
+      debugPrint('PushService: «договорились» не отправлено: $e');
+    }
+  }
+
   Future<void> _onResponse(String? actionId, String? payload, {String? cargoId}) async {
     // Наше локальное уведомление несёт JSON {deepLink, cargoId}; из AppDelegate
     // и старых уведомлений — просто ссылка.
     var deepLink = payload;
+    String? event, title, body;
     if (payload != null && payload.startsWith('{')) {
       final map = jsonDecode(payload) as Map<String, dynamic>;
       deepLink = map['deepLink'] as String?;
       cargoId ??= map['cargoId'] as String?;
+      event = map['event'] as String?;
+      title = map['title'] as String?;
+      body = map['body'] as String?;
     }
     final action = pushActionFromId(actionId);
     final arrivals = _ref.read(arrivalRepositoryProvider);
@@ -222,6 +257,9 @@ class PushService {
           return;
         case null:
           _open(deepLink);
+          // Нажали на сам текст «Договорились?» (кнопки свёрнуты/не видны) —
+          // спрашиваем в приложении, чтобы ответ не терялся.
+          if (event == 'AGREED_CHECK' && cargoId != null) unawaited(_askAgreed(cargoId, title, body));
           return;
       }
       _open('/arrival');
