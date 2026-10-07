@@ -1,3 +1,4 @@
+import { CodeEmailKind } from './email-messages';
 /// Абстракция канала email. Реализация выбирается через .env (EMAIL_PROVIDER),
 /// бизнес-логика (лимиты, TTL кода, хранение) — в EmailService, не здесь.
 /// По аналогии с SmsProvider (задача 006/022: вход логиста — код на email).
@@ -7,7 +8,7 @@ export abstract class EmailProvider {
   abstract generateCode(): string;
 
   /// `locale` — язык письма (kk/ru/zh/en); не задан — ru.
-  abstract sendCode(email: string, code: string, locale?: 'kk' | 'ru' | 'zh' | 'en'): Promise<void>;
+  abstract sendCode(email: string, code: string, locale?: 'kk' | 'ru' | 'zh' | 'en', kind?: CodeEmailKind): Promise<void>;
 
   /// Произвольное письмо (задача 025: приглашение сотрудника — ссылка, а не
   /// код). `bodyText` — простой текст, без вёрстки (решение 022, п. 14).

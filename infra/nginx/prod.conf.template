@@ -27,6 +27,17 @@ server {
     client_max_body_size 10m;   # загрузки: 8 МБ на файл (uploads.controller)
 
     # API и WebSocket
+    # Ссылка-приглашение https://<APP_HOST>/invite/<token> открывает приложение
+    # (042 п.2): iOS universal links и Android App Links проверяют эти файлы.
+    location = /.well-known/apple-app-site-association {
+        default_type application/json;
+        return 200 '{"applinks":{"apps":[],"details":[{"appIDs":["${IOS_APP_ID}"],"paths":["/invite/*"],"components":[{"/":"/invite/*"}]}]}}';
+    }
+    location = /.well-known/assetlinks.json {
+        default_type application/json;
+        return 200 '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"${ANDROID_PACKAGE}","sha256_cert_fingerprints":["${ANDROID_CERT_SHA256}"]}}]';
+    }
+
     location /api/ {
         proxy_pass http://backend:3000/;
         proxy_http_version 1.1;

@@ -2,7 +2,7 @@ import { randomInt } from 'crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { EmailProvider } from './email-provider';
-import { renderEmail, emailHtml } from './email-messages';
+import { CodeEmailKind, emailHtml, renderEmail } from './email-messages';
 
 /// Боевая отправка почты (задача 042, п.2): SMTP через nodemailer.
 /// env: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM (+ SMTP_SECURE=true для 465).
@@ -26,8 +26,8 @@ export class SmtpEmailProvider extends EmailProvider {
     return String(randomInt(0, 1_000_000)).padStart(6, '0');
   }
 
-  async sendCode(email: string, code: string, locale?: Parameters<typeof renderEmail>[1]): Promise<void> {
-    const { subject, text } = renderEmail('CODE', locale, { code, minutes: 10 });
+  async sendCode(email: string, code: string, locale?: Parameters<typeof renderEmail>[1], kind: CodeEmailKind = 'CODE'): Promise<void> {
+    const { subject, text } = renderEmail(kind, locale, { code, minutes: 10 });
     await this.sendMessage(email, subject, text);
   }
 

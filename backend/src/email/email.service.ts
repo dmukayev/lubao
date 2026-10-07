@@ -3,7 +3,7 @@ import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nes
 import { RedisService } from '../redis/redis.service';
 import { Locale } from '@prisma/client';
 import { EmailProvider } from './email-provider';
-import { EmailKind, renderEmail } from './email-messages';
+import { CodeEmailKind, EmailKind, renderEmail } from './email-messages';
 
 const CODE_TTL_SECONDS = 10 * 60;
 const MINUTE_LOCK_SECONDS = 60;
@@ -42,7 +42,7 @@ export class EmailService {
     return `email:verify-ip:${ip}`;
   }
 
-  async requestCode(email: string, ip: string, locale?: Locale): Promise<void> {
+  async requestCode(email: string, ip: string, locale?: Locale, kind: CodeEmailKind = 'CODE'): Promise<void> {
     const client = this.redis.client;
 
     const locked = await client.get(this.minuteKey(email));
@@ -69,7 +69,7 @@ export class EmailService {
       ipHourCount === 0 ? client.set(this.ipHourKey(ip), '1', 'EX', HOUR_WINDOW_SECONDS) : client.incr(this.ipHourKey(ip)),
     ]);
 
-    await this.provider.sendCode(email, code, locale);
+    await this.provider.sendCode(email, code, locale, kind);
   }
 
   /// Максимум 5 неверных попыток на код — на 6-й код сгорает, как у SMS.

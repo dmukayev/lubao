@@ -1,3 +1,4 @@
+import { CodeEmailKind } from './email-messages';
 import { Injectable, Logger } from '@nestjs/common';
 import { EmailProvider } from './email-provider';
 
@@ -17,7 +18,7 @@ export class ConsoleEmailProvider extends EmailProvider {
     if (process.env.NODE_ENV === 'production') throw new Error('ConsoleEmailProvider is disabled in production');
   }
 
-  async sendCode(email: string, code: string, _locale?: 'kk' | 'ru' | 'zh' | 'en'): Promise<void> {
+  async sendCode(email: string, code: string, _locale?: 'kk' | 'ru' | 'zh' | 'en', _kind?: CodeEmailKind): Promise<void> {
     this.assertNotProduction();
     this.logger.log(`[DEV EMAIL] ${email}: ваш код — ${code}`);
   }

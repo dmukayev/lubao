@@ -4,7 +4,10 @@ import { Locale } from '@prisma/client';
 /// (решение 022, п.14). Названия точек/городов в письма не вшиваются — только
 /// то, что приходит параметрами из справочника.
 
-export type EmailKind = 'CODE' | 'INVITE' | 'AGREED_DIGEST';
+export type EmailKind = 'CODE' | 'CONFIRM_EMAIL' | 'RESET_PASSWORD' | 'INVITE' | 'AGREED_DIGEST';
+/// Назначение письма с кодом (042 п.2): у подтверждения email и сброса
+/// пароля свои тема и текст; без назначения — общее «код подтверждения».
+export type CodeEmailKind = 'CODE' | 'CONFIRM_EMAIL' | 'RESET_PASSWORD';
 
 type Params = Record<string, string | number>;
 type Template = (p: Params) => { subject: string; text: string };
@@ -26,6 +29,42 @@ const T: Record<EmailKind, Record<Locale, Template>> = {
     en: (p) => ({
       subject: 'Your Lubao verification code',
       text: `Your code: ${p.code}\nIt is valid for ${p.minutes} minutes. If you did not request it, just ignore this email.`,
+    }),
+  },
+  CONFIRM_EMAIL: {
+    ru: (p) => ({
+      subject: 'Подтвердите email в Lubao',
+      text: `Код для подтверждения email: ${p.code}\nВведите его в приложении. Код действует ${p.minutes} минут. Если вы не регистрировались в Lubao — просто проигнорируйте письмо.`,
+    }),
+    kk: (p) => ({
+      subject: 'Lubao-да email-ді растаңыз',
+      text: `Email-ді растау коды: ${p.code}\nОны қолданбаға енгізіңіз. Код ${p.minutes} минут жарамды. Егер Lubao-да тіркелмеген болсаңыз — хатқа назар аудармаңыз.`,
+    }),
+    zh: (p) => ({
+      subject: '请确认您在 Lubao 的邮箱',
+      text: `邮箱确认码：${p.code}\n请在应用中输入。有效期 ${p.minutes} 分钟。如果您没有注册 Lubao，请忽略此邮件。`,
+    }),
+    en: (p) => ({
+      subject: 'Confirm your email for Lubao',
+      text: `Your email confirmation code: ${p.code}\nEnter it in the app. It is valid for ${p.minutes} minutes. If you did not sign up for Lubao, just ignore this email.`,
+    }),
+  },
+  RESET_PASSWORD: {
+    ru: (p) => ({
+      subject: 'Сброс пароля Lubao',
+      text: `Код для сброса пароля: ${p.code}\nКод действует ${p.minutes} минут. Если вы не просили сбросить пароль — ничего не делайте, пароль останется прежним.`,
+    }),
+    kk: (p) => ({
+      subject: 'Lubao құпиясөзін қалпына келтіру',
+      text: `Құпиясөзді қалпына келтіру коды: ${p.code}\nКод ${p.minutes} минут жарамды. Егер сіз сұрамаған болсаңыз — ештеңе жасамаңыз, құпиясөз өзгермейді.`,
+    }),
+    zh: (p) => ({
+      subject: '重置 Lubao 密码',
+      text: `重置密码验证码：${p.code}\n有效期 ${p.minutes} 分钟。如非本人操作，请忽略，密码不会改变。`,
+    }),
+    en: (p) => ({
+      subject: 'Reset your Lubao password',
+      text: `Your password reset code: ${p.code}\nIt is valid for ${p.minutes} minutes. If you did not ask to reset your password, do nothing — it stays the same.`,
     }),
   },
   INVITE: {

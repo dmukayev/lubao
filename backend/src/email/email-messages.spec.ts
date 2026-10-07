@@ -68,3 +68,14 @@ describe('emailHtml', () => {
   });
 });
 
+
+describe('письма с кодом по назначению (042 п.2)', () => {
+  it.each(['ru', 'kk', 'zh', 'en'] as const)('подтверждение email и сброс пароля — свои темы, код в тексте (%s)', (locale) => {
+    const confirm = renderEmail('CONFIRM_EMAIL', locale, { code: '123456', minutes: 10 });
+    const reset = renderEmail('RESET_PASSWORD', locale, { code: '123456', minutes: 10 });
+    expect(confirm.subject).not.toBe(reset.subject);
+    expect(confirm.text).toContain('123456');
+    expect(reset.text).toContain('123456');
+    expect(`${confirm.text}${reset.text}`).not.toMatch(/Хоргос|Khorgos|霍尔果斯/);
+  });
+});

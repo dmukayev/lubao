@@ -160,7 +160,7 @@ export class AuthService {
     const { company, companyMember } = await this.companies.registerOwnedCompany(user.id, dto);
 
     try {
-      await this.email.requestCode(normalizedEmail, ip, user.locale);
+      await this.email.requestCode(normalizedEmail, ip, user.locale, 'CONFIRM_EMAIL');
     } catch {
       // Письмо подтверждения — не блокирует регистрацию (п. 7); пользователь
       // может запросить его повторно из кабинета (resendVerification).
@@ -184,7 +184,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user?.email) throw new NotFoundException('User has no email');
     if (user.emailVerifiedAt) return;
-    await this.email.requestCode(normalizeEmail(user.email), ip, user.locale);
+    await this.email.requestCode(normalizeEmail(user.email), ip, user.locale, 'CONFIRM_EMAIL');
   }
 
   async verifyEmail(userId: string, code: string, ip?: string) {
@@ -203,7 +203,7 @@ export class AuthService {
     const normalizedEmail = normalizeEmail(email);
     const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (user?.role === 'COMPANY') {
-      await this.email.requestCode(normalizedEmail, ip, user.locale);
+      await this.email.requestCode(normalizedEmail, ip, user.locale, 'RESET_PASSWORD');
     }
   }
 

@@ -263,7 +263,7 @@ describe('AuthService password reset (задача 025, п. 9)', () => {
     prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'owner@example.com', locale: 'zh' });
     await service.requestPasswordReset('owner@example.com', '1.1.1.1');
     // Письмо — на языке пользователя (042, п.2).
-    expect(email.requestCode).toHaveBeenCalledWith('owner@example.com', '1.1.1.1', 'zh');
+    expect(email.requestCode).toHaveBeenCalledWith('owner@example.com', '1.1.1.1', 'zh', 'RESET_PASSWORD');
   });
 
   it('resetPassword rejects a wrong/expired code', async () => {
