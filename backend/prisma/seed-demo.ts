@@ -330,8 +330,11 @@ async function main() {
 
     await prisma.arrival.upsert({
       where: { id: demoId(`arrival:${def.key}`) },
-      update: { status: 'ON_SITE' },
+      // «Подтвердил, что на месте» — сейчас: иначе правило свежести (040 п.4)
+      // сразу спросит «Ещё ищете?» и через 12 ч погасит демо-анонс (042 п.0).
+      update: { status: 'ON_SITE', lastConfirmedAt: new Date(), staleAskedAt: null },
       create: {
+        lastConfirmedAt: new Date(),
         id: demoId(`arrival:${def.key}`),
         driverId: driver.id,
         pointId: khorgos.id,

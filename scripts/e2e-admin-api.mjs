@@ -157,7 +157,7 @@ await api('PATCH', `/admin/drivers/${e2eDriver.id}`, {
 // ---- 040. Точка → город --------------------------------------------------------
 const ref040 = (await api('GET', '/reference-data')).json;
 const terminal = ref040.points.find((p) => p.kind === 'TERMINAL');
-assert(!!terminal && terminal.radiusM === 3000 && typeof terminal.lat === 'number', 'Хоргос — терминал с геозоной (kind=TERMINAL, радиус, координаты числами)', JSON.stringify(terminal));
+assert(!!terminal && terminal.radiusM === 10000 && typeof terminal.lat === 'number', 'Хоргос — терминал с геозоной (kind=TERMINAL, радиус 10 км (042 п.0), координаты числами)', JSON.stringify(terminal));
 assert(ref040.points.filter((p) => p.kind === 'CITY').length >= 20, 'справочник точек: областные центры РК — города (kind=CITY)');
 assert(
   ref040.cities.filter((c) => c.lat != null).every((c) => typeof c.lat === 'number' && typeof c.lng === 'number'),

@@ -1,3 +1,5 @@
+import { SmsService } from '../sms/sms.service';
+import { LOGIN_CODE_CHANNELS_SETTING, parseChannelSetting } from '../sms/login-code-channels';
 import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Put, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { CurrentUser } from '../common/current-user.decorator';
@@ -43,7 +45,17 @@ export class AdminController {
   constructor(
     private readonly admin: AdminService,
     private readonly appSettings: AppSettingsService,
+    private readonly sms: SmsService,
   ) {}
+
+  /// Каналы кода входа для блока в Настройках (042 п.3): порядок, вкл/выкл
+  /// и есть ли ключи — без ключей канал показывается серым.
+  @Get('login-code-channels')
+  async loginCodeChannels(@CurrentUser() ctx: RequestContext) {
+    assertAdmin(ctx);
+    const setting = parseChannelSetting(await this.appSettings.get(LOGIN_CODE_CHANNELS_SETTING));
+    return setting.map((c) => ({ ...c, configured: this.sms.configured(c.id) }));
+  }
 
   @Get('settings')
   async settings(@CurrentUser() ctx: RequestContext) {

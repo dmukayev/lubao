@@ -33,8 +33,14 @@ export class AuthController {
   @Throttle({ default: { limit: authLimit(), ttl: THROTTLE_TTL_MS } })
   @Post('phone/request-code')
   async requestCode(@Body() dto: RequestCodeDto, @ClientIp() ip: string) {
-    const { channel } = await this.auth.requestDriverCode(dto.phone, ip, dto.channel);
-    return { success: true, channel };
+    const { channel, channels } = await this.auth.requestDriverCode(dto.phone, ip, dto.channel);
+    return { success: true, channel, channels };
+  }
+
+  @Public()
+  @Get('phone/channels')
+  codeChannels() {
+    return this.auth.driverCodeChannels();
   }
 
   @Public()

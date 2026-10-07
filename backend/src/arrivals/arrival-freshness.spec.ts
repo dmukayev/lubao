@@ -47,6 +47,23 @@ describe('decideFreshness — правило свежести анонса (за
     });
   });
 
+  describe('2а. анонс «на сегодня» после 22:00 (042 п.0)', () => {
+    // 2026-10-08 23:30 по Алматы (UTC+5) = 18:30 UTC.
+    const late = new Date('2026-10-08T18:30:00.000Z');
+    it('в полночь не гаснет', () => {
+      expect(decideFreshness(arrival({ createdAt: late }), new Date('2026-10-08T19:05:00.000Z'))).toBe('NONE');
+    });
+    it('на следующий день с 08:00 — «Доехали?»', () => {
+      expect(decideFreshness(arrival({ createdAt: late }), new Date('2026-10-09T04:00:00.000Z'))).toBe('ASK_DAY');
+    });
+    it('к концу следующего дня — гаснет', () => {
+      expect(decideFreshness(arrival({ createdAt: late, dayAskedAt: new Date('2026-10-09T04:00:00.000Z') }), new Date('2026-10-09T19:05:00.000Z'))).toBe('EXPIRE');
+    });
+    it('поданный днём — правило прежнее: гаснет в полночь', () => {
+      expect(decideFreshness(arrival({ createdAt: new Date('2026-10-08T06:00:00.000Z') }), new Date('2026-10-08T19:05:00.000Z'))).toBe('EXPIRE');
+    });
+  });
+
   describe('3. «на месте»: «Ещё ищете груз?» каждые 12 ч, без ответа — гаснет', () => {
     const arrivedAt = new Date('2026-10-08T05:00:00.000Z');
     const onSite = (over: Partial<FreshnessArrival> = {}) => arrival({ status: 'ON_SITE', arrivedAt, lastConfirmedAt: arrivedAt, ...over });

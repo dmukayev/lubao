@@ -1,3 +1,5 @@
+import { CARGO_ARCHIVE_AFTER_MS } from '../cargos/cargo-lifecycle';
+import { isValidChannelSetting } from '../sms/login-code-channels';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
@@ -59,6 +61,8 @@ export const APP_SETTING_KEYS: Record<string, (value: string) => boolean> = {
   homeRadiusKm: (v) => /^\d{1,4}$/.test(v),
   /// Минимальная версия приложения (задача 043, п.7): ниже — экран «Обновите приложение».
   minAppVersion: (v) => v === '' || /^\d+\.\d+\.\d+$/.test(v),
+  /// Каналы кода входа: порядок и вкл/выкл (042 п.3) — JSON `[{id, enabled}]`.
+  loginCodeChannels: isValidChannelSetting,
 };
 
 @Injectable()
@@ -610,7 +614,7 @@ export class AdminService {
     if (!existing) throw new NotFoundException('Cargo not found');
 
     const readyDate = dto.readyDate ? parseDateOnly(dto.readyDate) : existing.readyDate;
-    const expiresAt = dto.readyDate != null ? new Date(readyDate.getTime() + 48 * 60 * 60 * 1000) : existing.expiresAt;
+    const expiresAt = dto.readyDate != null ? new Date(readyDate.getTime() + CARGO_ARCHIVE_AFTER_MS) : existing.expiresAt;
 
     const fields: Array<[keyof AdminUpdateCargoDto, unknown, unknown]> = [
       ['destinationCountryId', existing.destinationCountryId, dto.destinationCountryId],

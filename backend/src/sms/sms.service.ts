@@ -1,7 +1,10 @@
 import * as crypto from 'crypto';
 import { BadRequestException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
+import { AppSettingsService } from '../app-settings/app-settings.service';
+import { LOGIN_CODE_CHANNELS_SETTING, LoginCodeChannel, consoleChannels, parseChannelSetting } from './login-code-channels';
 import { SmsProvider } from './sms-provider';
+import { TelegramCodeSender } from './telegram-code.sender';
 import { WhatsappCodeSender } from './whatsapp-code.sender';
 
 const CODE_TTL_SECONDS = 5 * 60;
@@ -32,7 +35,34 @@ export class SmsService {
     private readonly redis: RedisService,
     private readonly provider: SmsProvider,
     private readonly whatsapp?: WhatsappCodeSender,
+    private readonly telegram?: TelegramCodeSender,
+    private readonly settings?: AppSettingsService,
   ) {}
+
+  /// Канал настроен (есть ключи) — иначе в админке он серый и не используется.
+  configured(id: LoginCodeChannel): boolean {
+    if (id === 'sms') return true;
+    if (consoleChannels().has(id)) return true;
+    return id === 'whatsapp' ? !!this.whatsapp?.enabled() : !!this.telegram?.enabled();
+  }
+
+  /// Каналы, которые увидит водитель, в порядке из админки: включён и
+  /// настроен. Если не осталось ни одного — страховка SMS.
+  async channels(): Promise<LoginCodeChannel[]> {
+    const setting = parseChannelSetting(await this.settings?.get(LOGIN_CODE_CHANNELS_SETTING));
+    const list = setting.filter((c) => c.enabled && this.configured(c.id)).map((c) => c.id);
+    return list.length > 0 ? list : ['sms'];
+  }
+
+  private async send(id: LoginCodeChannel, phone: string, code: string): Promise<void> {
+    if (id === 'sms') return this.provider.sendCode(phone, code);
+    if (consoleChannels().has(id)) {
+      this.logger.log(`[DEV ${id}] ${phone}: ваш код — ${code}`);
+      return;
+    }
+    if (id === 'whatsapp') return this.whatsapp!.sendCode(phone, code);
+    return this.telegram!.sendCode(phone, code);
+  }
 
   private channelKey(phone: string) {
     return `sms:channel:${phone}`;
@@ -58,23 +88,29 @@ export class SmsService {
   }
 
   /// Генерирует и отправляет код, предварительно проверив лимиты:
-  /// не больше 1 SMS в минуту и 5 в час на номер, не больше 20 запросов
+  /// не больше 1 кода в минуту и 5 в час на номер, не больше 20 запросов
   /// в час на IP (защита от массового перебора номеров с одного источника).
+  /// Лимиты общие для всех каналов.
   ///
-  /// Канал (задача 042, п.3): если настроен WhatsApp — код сначала уходит
-  /// туда; нет WhatsApp у номера / отказ API / таймаут 10 с — автоматически
-  /// SMS. Кнопка «Не пришло? Отправить SMS» — `channel: 'sms'`: тот же код
-  /// уходит SMS сразу, не дожидаясь минутного лимита (если первым каналом
-  /// был WhatsApp); часовые лимиты при этом действуют как обычно.
-  async requestCode(phone: string, ip: string, opts: { channel?: 'sms' } = {}): Promise<{ channel: 'whatsapp' | 'sms' }> {
+  /// Канал (задача 042, п.3): водитель выбирает, куда прислать код (`channel`);
+  /// не выбрал — первый по порядку из админки. Сбой канала (нет WhatsApp/
+  /// Telegram на номере, отказ API, таймаут) — сервер сам берёт следующий и
+  /// отвечает, куда ушёл код. «Не пришло? Отправить по-другому» — запрос с
+  /// другим `channel`: тот же код уходит туда сразу, без минутной паузы.
+  async requestCode(
+    phone: string,
+    ip: string,
+    opts: { channel?: LoginCodeChannel } = {},
+  ): Promise<{ channel: LoginCodeChannel; channels: LoginCodeChannel[] }> {
     const client = this.redis.client;
+    const available = await this.channels();
 
-    const lastChannel = await client.get(this.channelKey(phone));
+    const lastChannel = (await client.get(this.channelKey(phone))) as LoginCodeChannel | null;
     const storedCode = await client.get(this.codeKey(phone));
-    const resendAsSms = opts.channel === 'sms' && lastChannel === 'whatsapp' && !!storedCode;
+    const resend = !!opts.channel && !!lastChannel && opts.channel !== lastChannel && !!storedCode;
 
     const locked = await client.get(this.minuteKey(phone));
-    if (locked && !resendAsSms) {
+    if (locked && !resend) {
       throw new HttpException('Слишком частые запросы кода, попробуйте через минуту', HttpStatus.TOO_MANY_REQUESTS);
     }
 
@@ -88,28 +124,34 @@ export class SmsService {
       throw new HttpException('Превышен лимит запросов кода с вашего адреса, попробуйте позже', HttpStatus.TOO_MANY_REQUESTS);
     }
 
-    const code = resendAsSms ? storedCode! : this.provider.generateCode();
+    const code = resend ? storedCode! : this.provider.generateCode();
     await Promise.all([
-      resendAsSms ? Promise.resolve() : client.set(this.codeKey(phone), code, 'EX', CODE_TTL_SECONDS),
-      resendAsSms ? Promise.resolve() : client.del(this.attemptsKey(phone)),
+      resend ? Promise.resolve() : client.set(this.codeKey(phone), code, 'EX', CODE_TTL_SECONDS),
+      resend ? Promise.resolve() : client.del(this.attemptsKey(phone)),
       minuteLockSeconds() > 0 ? client.set(this.minuteKey(phone), '1', 'EX', minuteLockSeconds()) : Promise.resolve(),
       hourCount === 0 ? client.set(this.hourKey(phone), '1', 'EX', HOUR_WINDOW_SECONDS) : client.incr(this.hourKey(phone)),
       ipHourCount === 0 ? client.set(this.ipHourKey(ip), '1', 'EX', HOUR_WINDOW_SECONDS) : client.incr(this.ipHourKey(ip)),
     ]);
 
-    let channel: 'whatsapp' | 'sms' = 'sms';
-    if (!resendAsSms && opts.channel !== 'sms' && this.whatsapp?.enabled()) {
+    // Выбор водителя — первым (если канал доступен), дальше — порядок из
+    // админки; при повторной отправке тот же канал не повторяем.
+    const preferred = opts.channel && available.includes(opts.channel) ? [opts.channel] : [];
+    let order = [...preferred, ...available.filter((c) => !preferred.includes(c))];
+    if (resend) order = order.filter((c) => c !== lastChannel);
+    if (order.length === 0) order = ['sms'];
+
+    let lastError: unknown;
+    for (const channel of order) {
       try {
-        await this.whatsapp.sendCode(phone, code);
-        channel = 'whatsapp';
+        await this.send(channel, phone, code);
+        await client.set(this.channelKey(phone), channel, 'EX', CODE_TTL_SECONDS);
+        return { channel, channels: available };
       } catch (e) {
-        this.logger.warn(`WhatsApp не сработал, отправляю SMS: ${(e as Error).message}`);
+        lastError = e;
+        this.logger.warn(`Код через ${channel} не ушёл, пробую следующий канал: ${(e as Error).message}`);
       }
     }
-    if (channel === 'sms') await this.provider.sendCode(phone, code);
-
-    await client.set(this.channelKey(phone), channel, 'EX', CODE_TTL_SECONDS);
-    return { channel };
+    throw lastError;
   }
 
   /// Сверяет код и удаляет его (одноразовый). true — код верный и ещё

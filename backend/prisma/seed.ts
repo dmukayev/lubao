@@ -248,7 +248,8 @@ const pointCoords: Record<string, { lat: number; lng: number }> = {
   'KZ-ZHETYSU-ZHARKENT': { lat: 44.1667, lng: 79.9833 },
 };
 const terminalPointCodes = new Set(['KZ-ZHETYSU-KHORGOS']);
-const TERMINAL_RADIUS_M = 3000;
+/// Геозона терминала — 10 км (042 п.0, решение 2026-10-07): очередь фур стоит дальше 3 км.
+const TERMINAL_RADIUS_M = 10_000;
 
 async function seedPoints() {
   for (const [code, coords] of Object.entries(pointCoords)) {

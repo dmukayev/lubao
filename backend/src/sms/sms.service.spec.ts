@@ -149,7 +149,7 @@ describe('SmsService', () => {
       for (let i = 0; i < 20; i++) {
         await service.requestCode(`+7700111${String(i).padStart(4, '0')}`, '2.2.2.2');
       }
-      await expect(service.requestCode('+77009999999', '3.3.3.3')).resolves.toEqual({ channel: 'sms' });
+      await expect(service.requestCode('+77009999999', '3.3.3.3')).resolves.toMatchObject({ channel: 'sms' });
     });
   });
 });
@@ -170,7 +170,7 @@ describe('SmsService — WhatsApp → SMS (задача 042, п.3)', () => {
 
   it('WhatsApp настроен и отвечает — код уходит туда, SMS не тратится', async () => {
     const res = await service.requestCode('+77010000001', '1.1.1.1');
-    expect(res).toEqual({ channel: 'whatsapp' });
+    expect(res).toMatchObject({ channel: 'whatsapp' });
     expect(whatsapp.sendCode).toHaveBeenCalledWith('+77010000001', '1234');
     expect(provider.sendCode).not.toHaveBeenCalled();
   });
@@ -178,7 +178,7 @@ describe('SmsService — WhatsApp → SMS (задача 042, п.3)', () => {
   it('у номера нет WhatsApp / отказ API / таймаут — код тут же уходит SMS (фолбэк)', async () => {
     whatsapp.sendCode.mockRejectedValue(new Error('WhatsApp request failed: 400'));
     const res = await service.requestCode('+77010000001', '1.1.1.1');
-    expect(res).toEqual({ channel: 'sms' });
+    expect(res).toMatchObject({ channel: 'sms' });
     expect(provider.sendCode).toHaveBeenCalledWith('+77010000001', '1234');
     // Код один и тот же — какой бы канал ни сработал, ввести можно его.
     expect(await service.verifyCode('+77010000001', '1234')).toBe(true);
@@ -186,7 +186,7 @@ describe('SmsService — WhatsApp → SMS (задача 042, п.3)', () => {
 
   it('без ключей WhatsApp канал выключен — работает обычный SMS, WhatsApp даже не вызывается', async () => {
     whatsapp.enabled.mockReturnValue(false);
-    expect(await service.requestCode('+77010000001', '1.1.1.1')).toEqual({ channel: 'sms' });
+    expect(await service.requestCode('+77010000001', '1.1.1.1')).toMatchObject({ channel: 'sms' });
     expect(whatsapp.sendCode).not.toHaveBeenCalled();
   });
 
@@ -196,7 +196,7 @@ describe('SmsService — WhatsApp → SMS (задача 042, п.3)', () => {
 
     const res = await service.requestCode('+77010000001', '1.1.1.1', { channel: 'sms' });
 
-    expect(res).toEqual({ channel: 'sms' });
+    expect(res).toMatchObject({ channel: 'sms' });
     expect(provider.sendCode).toHaveBeenCalledTimes(1);
     expect(provider.sendCode).toHaveBeenCalledWith('+77010000001', '1234');
     expect(whatsapp.sendCode).toHaveBeenCalledTimes(1);
@@ -217,7 +217,7 @@ describe('SmsService — WhatsApp → SMS (задача 042, п.3)', () => {
 
   it('channel=sms без предшествующего кода в WhatsApp — обычный запрос (SMS), без обхода лимитов', async () => {
     const res = await service.requestCode('+77010000009', '1.1.1.1', { channel: 'sms' });
-    expect(res).toEqual({ channel: 'sms' });
+    expect(res).toMatchObject({ channel: 'sms' });
     expect(whatsapp.sendCode).not.toHaveBeenCalled();
     await expect(service.requestCode('+77010000009', '1.1.1.1', { channel: 'sms' })).rejects.toBeInstanceOf(HttpException);
   });
@@ -273,5 +273,72 @@ describe('SmsService — SMS_MINUTE_LOCK_SECONDS для тестовых окр�
     const { service } = make();
     await service.requestCode('+77010000005', '1.1.1.1');
     await expect(service.requestCode('+77010000005', '1.1.1.1')).rejects.toBeInstanceOf(HttpException);
+  });
+});
+
+describe('SmsService — три канала из админки: WhatsApp / Telegram / SMS (042 п.3)', () => {
+  let client: FakeRedisClient;
+  let provider: FakeSmsProvider;
+  let whatsapp: { enabled: jest.Mock; sendCode: jest.Mock };
+  let telegram: { enabled: jest.Mock; sendCode: jest.Mock };
+  let setting: string | null;
+  let service: SmsService;
+
+  beforeEach(() => {
+    client = new FakeRedisClient();
+    provider = new FakeSmsProvider();
+    whatsapp = { enabled: jest.fn().mockReturnValue(true), sendCode: jest.fn().mockResolvedValue(undefined) };
+    telegram = { enabled: jest.fn().mockReturnValue(true), sendCode: jest.fn().mockResolvedValue(undefined) };
+    setting = null;
+    const settings = { get: jest.fn(async () => setting) };
+    service = new SmsService({ client } as any, provider, whatsapp as any, telegram as any, settings as any);
+    jest.spyOn((service as any).logger, 'warn').mockImplementation(() => undefined);
+  });
+
+  const order = (ids: Array<[string, boolean]>) => JSON.stringify(ids.map(([id, enabled]) => ({ id, enabled })));
+
+  it('порядок из админки: первым — первый включённый канал', async () => {
+    setting = order([['telegram', true], ['whatsapp', true], ['sms', true]]);
+    const res = await service.requestCode('+77010000001', '1.1.1.1');
+    expect(res).toEqual({ channel: 'telegram', channels: ['telegram', 'whatsapp', 'sms'] });
+    expect(whatsapp.sendCode).not.toHaveBeenCalled();
+  });
+
+  it('сбой канала — сервер берёт следующий по порядку и говорит, куда ушёл код', async () => {
+    telegram.sendCode.mockRejectedValue(new Error('PHONE_NUMBER_NOT_FOUND'));
+    setting = order([['telegram', true], ['whatsapp', true], ['sms', true]]);
+    expect(await service.requestCode('+77010000001', '1.1.1.1')).toMatchObject({ channel: 'whatsapp' });
+    expect(whatsapp.sendCode).toHaveBeenCalledWith('+77010000001', '1234');
+  });
+
+  it('выключенный канал не используется и не показывается', async () => {
+    setting = order([['whatsapp', false], ['telegram', true], ['sms', true]]);
+    expect(await service.channels()).toEqual(['telegram', 'sms']);
+    await service.requestCode('+77010000001', '1.1.1.1', { channel: 'whatsapp' });
+    expect(whatsapp.sendCode).not.toHaveBeenCalled();
+  });
+
+  it('канал без ключей недоступен, даже если включён', async () => {
+    telegram.enabled.mockReturnValue(false);
+    expect(await service.channels()).toEqual(['whatsapp', 'sms']);
+  });
+
+  it('выбор водителя уважается, даже если канал не первый', async () => {
+    const res = await service.requestCode('+77010000001', '1.1.1.1', { channel: 'sms' });
+    expect(res.channel).toBe('sms');
+    expect(whatsapp.sendCode).not.toHaveBeenCalled();
+    expect(telegram.sendCode).not.toHaveBeenCalled();
+  });
+
+  it('«Отправить по-другому»: тот же код другим каналом сразу, без минутной паузы', async () => {
+    await service.requestCode('+77010000001', '1.1.1.1'); // → WhatsApp
+    const res = await service.requestCode('+77010000001', '1.1.1.1', { channel: 'telegram' });
+    expect(res.channel).toBe('telegram');
+    expect(telegram.sendCode).toHaveBeenCalledWith('+77010000001', '1234');
+  });
+
+  it('все каналы выключены — страховка SMS', async () => {
+    setting = order([['whatsapp', false], ['telegram', false], ['sms', false]]);
+    expect(await service.channels()).toEqual(['sms']);
   });
 });

@@ -1,13 +1,15 @@
+import { LOGIN_CODE_CHANNELS, LoginCodeChannel } from '../../sms/login-code-channels';
 import { IsEmail, IsIn, IsOptional, IsString, Length } from 'class-validator';
 
 export class RequestCodeDto {
   @IsString()
   phone!: string;
 
-  /// «Не пришло? Отправить SMS» — тот же код SMS-ом, если первым был WhatsApp (042, п.3).
+  /// Куда прислать код: WhatsApp / Telegram / SMS (042, п.3). Повтор с другим
+  /// каналом («Не пришло? Отправить по-другому») — тот же код туда.
   @IsOptional()
-  @IsIn(['sms'])
-  channel?: 'sms';
+  @IsIn(LOGIN_CODE_CHANNELS as unknown as string[])
+  channel?: LoginCodeChannel;
 }
 
 export class VerifyCodeDto {

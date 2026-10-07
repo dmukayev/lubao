@@ -1,5 +1,5 @@
 import { ArrivalStatus } from '@prisma/client';
-import { localDateOnly, localHour, toDateOnly } from '../common/date-only';
+import { addDaysDateOnly, localDateOnly, localHour, toDateOnly } from '../common/date-only';
 
 /// Правило свежести анонса (задача 040, decisions.md «Точка → город»):
 /// отсчёт — от «Я на месте», а не от анонса.
@@ -10,6 +10,10 @@ import { localDateOnly, localHour, toDateOnly } from '../common/date-only';
 ///     ответа ещё 12 ч — гаснет. Предел — срок ожидания водителя (waitDays).
 export const STILL_LOOKING_EVERY_MS = 12 * 60 * 60 * 1000;
 const DAY_CHECK_FROM_HOUR = 8;
+/// Анонс «на сегодня», поданный поздно вечером, живёт до конца следующего
+/// дня (042 п.0, ревью 040): иначе в 23:30 «свободен сегодня» гас бы в
+/// полночь, не дождавшись ни одного «Доехали?».
+const LATE_ANNOUNCE_FROM_HOUR = 22;
 
 export type FreshnessArrival = {
   status: ArrivalStatus;
@@ -19,6 +23,7 @@ export type FreshnessArrival = {
   dayAskedAt: Date | null;
   staleAskedAt: Date | null;
   waitDays: number;
+  createdAt?: Date;
 };
 
 export type FreshnessAction = 'NONE' | 'ASK_DAY' | 'ASK_STILL_LOOKING' | 'EXPIRE';
@@ -26,7 +31,10 @@ export type FreshnessAction = 'NONE' | 'ASK_DAY' | 'ASK_STILL_LOOKING' | 'EXPIRE
 export function decideFreshness(a: FreshnessArrival, now: Date): FreshnessAction {
   if (a.status === 'PLANNED') {
     const today = localDateOnly(now);
-    const day = toDateOnly(a.plannedDay);
+    let day = toDateOnly(a.plannedDay);
+    if (a.createdAt && localDateOnly(a.createdAt) === day && localHour(a.createdAt) >= LATE_ANNOUNCE_FROM_HOUR) {
+      day = addDaysDateOnly(day, 1);
+    }
     if (day < today) return 'EXPIRE';
     if (day === today && !a.dayAskedAt && localHour(now) >= DAY_CHECK_FROM_HOUR) return 'ASK_DAY';
     return 'NONE';

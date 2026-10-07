@@ -194,11 +194,15 @@ export class DealsService {
           throw new BadRequestException(`Cannot move deal from ${fresh?.status ?? 'missing'} to ${nextStatus}`);
         }
         await this.assertVehicleNotFull(tx, deal);
-        return tx.deal.update({
+        const confirmed = await tx.deal.update({
           where: { id },
           data: { status: nextStatus as Deal['status'], [timestampField]: now },
           include: this.include,
         });
+        // Анонс сделал своё дело и гаснет сам (задача 040, п.4) — в той же
+        // транзакции (042 п.0): сделка и анонс меняются вместе или никак.
+        await completeArrivalForConfirmedDeal(tx, deal.driverId, now);
+        return confirmed;
       });
     } else {
       updated = await this.prisma.deal.update({
@@ -209,8 +213,6 @@ export class DealsService {
     }
     // «Перевозка подтверждена» — системная строка в чат (задача 038, п.11).
     if (nextStatus === 'CONFIRMED_BY_DRIVER') {
-      // Анонс сделал своё дело и гаснет сам (задача 040, п.4).
-      await completeArrivalForConfirmedDeal(this.prisma, updated.driverId, now);
       await this.chatSystem.post({
         driverId: updated.driverId,
         companyId: updated.companyId,

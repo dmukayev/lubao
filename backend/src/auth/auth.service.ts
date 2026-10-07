@@ -1,3 +1,4 @@
+import { LoginCodeChannel } from '../sms/login-code-channels';
 import {
   BadRequestException,
   ConflictException,
@@ -64,8 +65,13 @@ export class AuthService {
     private readonly sessions: SessionService,
   ) {}
 
-  async requestDriverCode(phone: string, ip: string, channel?: 'sms') {
+  async requestDriverCode(phone: string, ip: string, channel?: LoginCodeChannel) {
     return this.sms.requestCode(normalizePhone(phone), ip, { channel });
+  }
+
+  /// Каналы кода, которые видит водитель на экране входа (042 п.3).
+  async driverCodeChannels() {
+    return { channels: await this.sms.channels() };
   }
 
   /**

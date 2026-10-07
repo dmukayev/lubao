@@ -87,6 +87,12 @@ services:
       SMS_PROVIDER: ${SMS_PROVIDER:-console}
       MOBIZON_API_KEY: ${MOBIZON_API_KEY:-}
       MOBIZON_API_URL: ${MOBIZON_API_URL:-https://api.mobizon.kz/service/message/sendsmsmessage}
+      WHATSAPP_TOKEN: ${WHATSAPP_TOKEN:-}
+      WHATSAPP_PHONE_ID: ${WHATSAPP_PHONE_ID:-}
+      WHATSAPP_TEMPLATE: ${WHATSAPP_TEMPLATE:-}
+      TELEGRAM_GATEWAY_TOKEN: ${TELEGRAM_GATEWAY_TOKEN:-}
+      # Dev: без ключей WhatsApp/Telegram код пишется в лог — выбор канала виден на экране входа.
+      LOGIN_CODE_CONSOLE_CHANNELS: ${LOGIN_CODE_CONSOLE_CHANNELS:-whatsapp,telegram}
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       IDENTIFIER_PEPPER: ${IDENTIFIER_PEPPER}
