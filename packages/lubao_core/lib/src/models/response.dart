@@ -18,6 +18,8 @@ class CargoResponse {
     this.committedDestinationCountryId,
     this.committedDestinationCityId,
     this.committedReadyDate,
+    this.dealId,
+    this.dealStatus,
   });
 
   final String id;
@@ -43,6 +45,10 @@ class CargoResponse {
   final String? committedDestinationCityId;
   final DateTime? committedReadyDate;
 
+  /// Сделка по этому отклику (если выбран) — статус и переход в неё.
+  final String? dealId;
+  final DealStatus? dealStatus;
+
   factory CargoResponse.fromJson(Map<String, dynamic> json) => CargoResponse(
         id: json['id'] as String,
         cargoId: json['cargoId'] as String,
@@ -60,6 +66,8 @@ class CargoResponse {
         committedDestinationCountryId: json['committedDestinationCountryId'] as String?,
         committedDestinationCityId: json['committedDestinationCityId'] as String?,
         committedReadyDate: json['committedReadyDate'] == null ? null : DateTime.parse(json['committedReadyDate'] as String),
+        dealId: json['dealId'] as String?,
+        dealStatus: json['dealStatus'] == null ? null : dealStatusFromJson(json['dealStatus'] as String),
       );
 }
 

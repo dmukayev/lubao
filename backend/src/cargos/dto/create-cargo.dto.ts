@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsIn, IsISO8601, IsNumber, IsOptional, IsString, Min, IsInt } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsISO8601, IsNumber, IsOptional, IsString, Min, IsInt, Max } from 'class-validator';
 
 export class CreateCargoDto {
   /// Город погрузки — обязательное поле (задача 040, п.7): выбор из
@@ -19,6 +19,8 @@ export class CreateCargoDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  /// До 60 т: защита от «20000» в поле тонн (живая проверка 2026-10-07).
+  @Max(60_000)
   weightKg?: number;
 
   @IsOptional()

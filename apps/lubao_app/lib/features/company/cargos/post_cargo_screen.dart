@@ -46,6 +46,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   String? _destinationError;
   String? _bodyTypeError;
   String? _priceError;
+  String? _weightError;
   bool _saving = false;
   final List<String> _photoUrls = [];
   bool _uploadingPhoto = false;
@@ -173,8 +174,13 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       _destinationError = _countryId == null ? t.postCargoDestinationError : null;
       _bodyTypeError = _bodyTypeId == null ? t.postCargoBodyTypeError : null;
       _priceError = price == null ? t.postCargoPriceError : null;
+      // Вес — в тоннах: «20000» по привычке к килограммам давало груз в
+      // 20 000 т (живая проверка 2026-10-07). Пусто — можно, иначе 0 < т ≤ 60.
+      final weightText = _weightController.text.trim();
+      final tons = double.tryParse(weightText.replaceAll(',', '.'));
+      _weightError = weightText.isEmpty || (tons != null && tons > 0 && tons <= maxCargoTons) ? null : t.postCargoWeightError;
     });
-    if (_pointError != null || _destinationError != null || _bodyTypeError != null || _priceError != null) return;
+    if (_pointError != null || _destinationError != null || _bodyTypeError != null || _priceError != null || _weightError != null) return;
     setState(() => _saving = true);
     try {
       final input = CreateCargoInput(
@@ -313,6 +319,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                     child: AppTextField(
                       key: const Key('postCargoWeight'),
                       label: t.postCargoWeight,
+                      errorText: _weightError,
                       controller: _weightController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     ),
@@ -435,3 +442,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     );
   }
 }
+
+/// Предел веса груза в форме — тягач с полуприцепом в РК везёт до ~40 т;
+/// с запасом 60 т (сервер: CreateCargoDto, @Max 60000 кг).
+const maxCargoTons = 60;

@@ -2881,4 +2881,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get pushChannelName => 'Lubao notifications';
+
+  @override
+  String get postCargoWeightError => 'Weight in tons, up to 60 — e.g. 20';
 }

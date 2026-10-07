@@ -2880,4 +2880,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get pushChannelName => 'Lubao хабарландырулары';
+
+  @override
+  String get postCargoWeightError => 'Салмақ тоннамен, 60-қа дейін — мысалы 20';
 }

@@ -126,6 +126,18 @@ void main() {
       }
     });
 
+    // Живая проверка 2026-10-07: у выбранного отклика был только «Выбран» и
+    // никакого перехода — теперь статус сделки и нажатие открывает её.
+    await run.step(tester, 'отклик-ведёт-в-сделку', () async {
+      final selected = find.byWidgetPredicate((w) => w.key is ValueKey && w.key.toString().contains('responseCard-'));
+      await waitFor(tester, selected);
+      await tester.tap(selected.first);
+      await waitFor(tester, find.text(t.dealDetailTitle));
+      expectInsideSafeZone(tester);
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+    });
+
     await run.step(tester, 'сделка-в-списке', () async {
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();

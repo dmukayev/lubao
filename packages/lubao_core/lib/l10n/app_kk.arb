@@ -1038,5 +1038,6 @@
   "adminMoveUp": "Жоғары",
   "adminMoveDown": "Төмен",
   "adminLoginChannelsSaved": "Арналар сақталды",
-  "pushChannelName": "Lubao хабарландырулары"
+  "pushChannelName": "Lubao хабарландырулары",
+  "postCargoWeightError": "Салмақ тоннамен, 60-қа дейін — мысалы 20"
 }

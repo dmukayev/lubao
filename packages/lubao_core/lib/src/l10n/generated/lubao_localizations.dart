@@ -5483,6 +5483,12 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Уведомления Lubao'**
   String get pushChannelName;
+
+  /// No description provided for @postCargoWeightError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вес в тоннах, до 60 — например 20'**
+  String get postCargoWeightError;
 }
 
 class _LubaoLocalizationsDelegate

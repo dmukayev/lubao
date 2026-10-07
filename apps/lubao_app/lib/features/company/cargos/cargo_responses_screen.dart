@@ -213,9 +213,14 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final response = widget.response;
-    final (statusLabel, statusColor) = responseStatusPresentation(t, response.status);
-    // Задача 038, п.8 — занятость водителя видна прямо в отклике.
-    final haulHint = widget.refData == null
+    // Выбранный отклик — уже сделка: показываем её текущий статус
+    // («Загружен», «В пути»…) и открываем её по нажатию.
+    final (statusLabel, statusColor) = response.dealStatus != null
+        ? dealStatusPresentation(t, response.dealStatus!)
+        : responseStatusPresentation(t, response.status);
+    // Задача 038, п.8 — занятость водителя видна прямо в отклике (у выбранного
+    // она включает этот же груз — «уже везёт» здесь только путает).
+    final haulHint = widget.refData == null || response.dealId != null
         ? null
         : haulHintText(
             t,
@@ -231,6 +236,8 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
           );
 
     return AppCard(
+      key: Key('responseCard-${response.id}'),
+      onTap: response.dealId == null ? null : () => context.push('/deal/${response.dealId}'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

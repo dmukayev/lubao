@@ -2816,4 +2816,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get pushChannelName => 'Lubao 通知';
+
+  @override
+  String get postCargoWeightError => '重量以吨为单位，最多 60，例如 20';
 }

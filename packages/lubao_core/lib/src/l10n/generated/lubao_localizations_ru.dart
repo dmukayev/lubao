@@ -2867,4 +2867,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get pushChannelName => 'Уведомления Lubao';
+
+  @override
+  String get postCargoWeightError => 'Вес в тоннах, до 60 — например 20';
 }

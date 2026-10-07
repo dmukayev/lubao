@@ -97,6 +97,13 @@ export class ResponsesService {
         })
       : [];
     const bodyByVehicle = new Map(bodies.map((v) => [v.id, v]));
+    // Сделка по выбранному отклику: логист видит её статус и переходит в неё
+    // прямо из откликов (живая проверка 2026-10-07: «Выбран» оставался навсегда).
+    const deals = await this.prisma.deal.findMany({
+      where: { responseId: { in: responses.map((r) => r.id) } },
+      select: { id: true, responseId: true, status: true },
+    });
+    const dealByResponse = new Map(deals.map((d) => [d.responseId, d]));
 
     return responses.map((r) => {
       const combo = combos.get(r.driverId);
@@ -115,6 +122,8 @@ export class ResponsesService {
         committedDestinationCountryId: info?.committedDestinationCountryId ?? null,
         committedDestinationCityId: info?.committedDestinationCityId ?? null,
         committedReadyDate: info?.committedReadyDate ?? null,
+        dealId: dealByResponse.get(r.id)?.id ?? null,
+        dealStatus: dealByResponse.get(r.id)?.status ?? null,
       };
     });
   }

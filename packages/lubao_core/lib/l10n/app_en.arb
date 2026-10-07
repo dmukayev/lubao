@@ -1163,5 +1163,6 @@
   "adminMoveUp": "Move up",
   "adminMoveDown": "Move down",
   "adminLoginChannelsSaved": "Channels saved",
-  "pushChannelName": "Lubao notifications"
+  "pushChannelName": "Lubao notifications",
+  "postCargoWeightError": "Weight in tons, up to 60 — e.g. 20"
 }
