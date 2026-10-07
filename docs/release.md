@@ -181,3 +181,8 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build bac
 | Дата | Что проверено | Где | Результат |
 |---|---|---|---|
 | _заполняется при деплое_ | | | |
+
+## Идентификаторы приложения — зафиксированы 2026-10-07, не менять
+- Android `applicationId`: `com.lubao.lubao_app`
+- iOS `PRODUCT_BUNDLE_IDENTIFIER`: `com.lubao.lubaoApp`
+Под них заведены Firebase (FCM/APNs) и будут заведены Google Play и App Store. Смена идентификатора = другое приложение для магазинов и телефонов (обновления не придут). Название на иконке и в магазине меняется свободно, идентификаторы — нет.
