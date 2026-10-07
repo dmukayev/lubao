@@ -108,9 +108,14 @@ Future<void> loginDriver(WidgetTester tester, String phoneLocal) async {
   await tester.pumpAndSettle();
   await tester.enterText(find.byKey(const Key('driverLoginPhoneField')), phoneLocal);
   await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('driverLoginSendCodeButton')));
+  // Узкий экран + крупный шрифт (iPhone SE в e2e): кнопка и ячейки кода
+  // могут быть ниже края — сначала на экран, потом нажатие/ввод.
+  final send = find.byKey(const Key('driverLoginSendCodeButton'));
+  await reveal(tester, send);
+  await tester.tap(send);
   await waitFor(tester, find.byKey(const Key('driverLoginCodeDigit0')));
   for (var i = 0; i < 4; i++) {
+    await reveal(tester, find.byKey(Key('driverLoginCodeDigit$i')));
     await tester.enterText(find.byKey(Key('driverLoginCodeDigit$i')), e2eDevCode[i]);
     await tester.pump(const Duration(milliseconds: 300));
   }

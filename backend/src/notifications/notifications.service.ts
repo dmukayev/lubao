@@ -80,7 +80,8 @@ export class NotificationsService {
                 platform: t.platform as DevicePlatform,
                 title: rendered.title,
                 body: rendered.body,
-                data: { deepLink, event },
+                // locale — язык получателя: им же приложение подписывает кнопки push.
+                data: { deepLink, event, locale },
                 ...(def.category ? { category: def.category } : {}),
               },
               { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },

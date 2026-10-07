@@ -12,6 +12,7 @@ import 'package:lubao_core/lubao_core.dart';
 
 import '../providers/api_providers.dart';
 import '../providers/auth_provider.dart';
+import '../providers/locale_provider.dart';
 import '../router/app_router.dart';
 import 'push_routing.dart';
 
@@ -23,8 +24,11 @@ const pushEnabled = bool.fromEnvironment('PUSH_ENABLED');
 
 const _channelId = 'lubao_default';
 
-LubaoLocalizations _deviceL10n() {
-  final code = PlatformDispatcher.instance.locale.languageCode;
+/// Язык подписей кнопок: язык получателя из push (сервер пишет текст на нём),
+/// иначе — язык устройства. Раньше брался только язык устройства, и на
+/// английском телефоне кнопки были «Yes / No» под русским текстом.
+LubaoLocalizations _deviceL10n([String? preferred]) {
+  final code = preferred ?? PlatformDispatcher.instance.locale.languageCode;
   return lookupLubaoLocalizations(Locale(const {'kk', 'ru', 'zh', 'en'}.contains(code) ? code : 'ru'));
 }
 
@@ -35,7 +39,7 @@ Future<void> _showLocal(FlutterLocalNotificationsPlugin plugin, RemoteMessage me
   final title = message.notification?.title ?? data['title'] as String?;
   final body = message.notification?.body ?? data['body'] as String?;
   if (title == null && body == null) return;
-  final t = _deviceL10n();
+  final t = _deviceL10n(data['locale'] as String?);
   final actions = pushActionsFor(data['category'] as String?, t);
   await plugin.show(
     id: message.messageId.hashCode,
@@ -91,7 +95,8 @@ class PushService {
     }
     _ready = true;
     FirebaseMessaging.onBackgroundMessage(lubaoPushBackgroundHandler);
-    final t = _deviceL10n();
+    // Кнопки iOS регистрируются один раз — на языке, выбранном в приложении.
+    final t = _deviceL10n(_ref.read(localeProvider).languageCode);
     await _plugin.initialize(
       settings: InitializationSettings(
         android: const AndroidInitializationSettings('@mipmap/ic_launcher'),

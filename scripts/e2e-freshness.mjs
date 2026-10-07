@@ -52,10 +52,13 @@ try {
   // ---- 1. Запланированный: молчим до дня приезда, в день — «Доехали?», к концу дня — гаснет.
   const today = localDateOnly(new Date());
   const day = new Date(`${today}T00:00:00.000Z`);
-  const planned = await prisma.arrival.create({
-    data: { driverId: driver.id, pointId: almaty.id, plannedAt: new Date(), plannedDay: day, status: 'PLANNED', anyCountry: true },
-  });
   const noonAlmaty = new Date(`${today}T07:00:00.000Z`); // 12:00 по Алматы (UTC+5)
+  // Анонс подан днём накануне: с правилом «поздний анонс живёт до конца
+  // следующего дня» (042 п.0) createdAt = «сейчас» делал сценарий зависимым от
+  // часа запуска (после 22:00 по Алматы «Доехали?» сегодня не спрашивается).
+  const planned = await prisma.arrival.create({
+    data: { driverId: driver.id, pointId: almaty.id, plannedAt: new Date(), plannedDay: day, status: 'PLANNED', anyCountry: true, createdAt: new Date(noonAlmaty.getTime() - 24 * H) },
+  });
   const dayBefore = new Date(noonAlmaty.getTime() - 24 * H);
   let res = await sweep(dayBefore);
   assert(res.asked === 0 && res.expired === 0 && notified.length === 0, 'PLANNED за день до приезда — тишина');
