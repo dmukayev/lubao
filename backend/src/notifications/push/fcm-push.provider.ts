@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
-import { PushMessage } from './push-provider';
+import { PushMessage, fcmMessage } from './push-provider';
 
 interface ServiceAccount {
   project_id: string;
@@ -77,11 +77,7 @@ export class FcmPushProvider {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: {
-            token,
-            notification: { title: message.title, body: message.body },
-            data: message.data,
-          },
+          message: fcmMessage(token, message),
         }),
       },
     );

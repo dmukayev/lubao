@@ -28,7 +28,7 @@ export class NotificationsProcessor implements OnModuleInit, OnModuleDestroy {
       async (job) => {
         const data = job.data;
         if (data.channel === 'PUSH') {
-          await this.pushProvider.send(data.token, data.platform, { title: data.title, body: data.body, data: data.data });
+          await this.pushProvider.send(data.token, data.platform, { title: data.title, body: data.body, data: data.data, category: data.category });
         } else {
           await this.wecom.send(data.webhookUrl, data.text);
         }

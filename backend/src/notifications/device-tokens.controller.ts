@@ -14,7 +14,7 @@ export class DeviceTokensController {
   }
 
   @Delete(':token')
-  unregister(@Param('token') token: string) {
-    return this.notifications.unregisterDeviceToken(token).then(() => ({ success: true }));
+  unregister(@CurrentUser() ctx: RequestContext, @Param('token') token: string) {
+    return this.notifications.unregisterDeviceToken(ctx.user.id, token).then(() => ({ success: true }));
   }
 }

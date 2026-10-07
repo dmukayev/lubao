@@ -36,7 +36,7 @@ describe('NotificationsService.notify', () => {
         token: 'tok-1',
         platform: 'FCM',
         body: expect.stringContaining('Yidao'),
-        data: expect.objectContaining({ deepLink: 'lubao://cargo/cargo-1', event: 'CARGO_INVITE' }),
+        data: expect.objectContaining({ deepLink: '/driver/cargo/cargo-1', event: 'CARGO_INVITE' }),
       }),
     );
   });

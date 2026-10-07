@@ -78,7 +78,13 @@ export interface NotificationEventDef {
   eventGroup: NotificationEventGroup;
   channels: DeliveryChannel[];
   render: (locale: Locale, payload: NotificationPayload) => RenderedNotification;
+  /// Путь go_router в приложении (042 п.1): тап по push открывает его.
+  /// `/verification`, `/arrival`, `/profile` — общие псевдонимы, приложение
+  /// разворачивает их по роли (водитель/логист).
   deepLink: (payload: NotificationPayload) => string;
+  /// Категория кнопок в push (042 п.1): iOS — `aps.category`, Android —
+  /// уведомление с кнопками рисует само приложение.
+  category?: 'STILL_LOOKING' | 'AGREED_CHECK';
   /// Не чаще одного push в этот интервал на один throttleKey (задача 011,
   /// таблица событий: «не чаще 1 раза в минуту на чат»).
   throttleSeconds?: number;
@@ -185,20 +191,20 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
     eventGroup: 'NEW_CARGO_MATCH',
     channels: ['PUSH'],
     render: (locale, p) => T.NEW_CARGO_MATCH[locale](p),
-    deepLink: (p) => `lubao://cargo/${p.cargoId}`,
+    deepLink: (p) => `/driver/cargo/${p.cargoId}`,
   },
   CARGO_INVITE: {
     eventGroup: 'CARGO_INVITE',
     channels: ['PUSH'],
     render: (locale, p) => T.CARGO_INVITE[locale](p),
-    deepLink: (p) => `lubao://cargo/${p.cargoId}`,
+    deepLink: (p) => `/driver/cargo/${p.cargoId}`,
   },
   CHAT_MESSAGE: {
     eventGroup: 'CHAT_MESSAGE',
     // WeCom — сообщения водителя тоже уходят в бот компании (задача 042, п.5).
     channels: ['PUSH', 'WECOM'],
     render: (locale, p) => T.CHAT_MESSAGE[locale](p),
-    deepLink: (p) => `lubao://chat/${p.chatId}`,
+    deepLink: (p) => `/chat/${p.chatId}`,
     throttleSeconds: 60,
     throttleKey: (p) => `chat:${p.chatId}:${p.recipientUserId}`,
   },
@@ -206,66 +212,68 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
     eventGroup: 'NEW_RESPONSE',
     channels: ['PUSH', 'WECOM'],
     render: (locale, p) => T.NEW_RESPONSE[locale](p),
-    deepLink: (p) => `lubao://cargo/${p.cargoId}/responses`,
+    deepLink: (p) => `/company/cargos/${p.cargoId}/responses`,
   },
   NEW_DRIVER_DIGEST: {
     eventGroup: 'NEW_DRIVER_DIGEST',
     channels: ['WECOM'],
     render: (locale, p) => T.NEW_DRIVER_DIGEST[locale](p),
-    deepLink: () => 'lubao://company/drivers',
+    deepLink: () => '/company/drivers',
   },
   DEAL_STATUS: {
     eventGroup: 'DEAL_STATUS',
     channels: ['PUSH', 'WECOM'],
     render: (locale, p) => T.DEAL_STATUS[locale](p),
-    deepLink: (p) => `lubao://deal/${p.dealId}`,
+    deepLink: (p) => `/deal/${p.dealId}`,
   },
   VERIFICATION_RETURNED: {
     eventGroup: 'VERIFICATION',
     channels: ['PUSH'],
     render: (locale, p) => T.VERIFICATION_RETURNED[locale](p),
-    deepLink: () => 'lubao://profile/verification',
+    deepLink: () => '/verification',
   },
   VERIFICATION_APPROVED: {
     eventGroup: 'VERIFICATION',
     channels: ['PUSH'],
     render: (locale, p) => T.VERIFICATION_APPROVED[locale](p),
-    deepLink: () => 'lubao://profile/verification',
+    deepLink: () => '/verification',
   },
   AGREED_CHECK: {
     eventGroup: 'AGREED_CHECK',
     channels: ['PUSH'],
     render: (locale, p) => T.AGREED_CHECK[locale](p),
-    deepLink: (p) => (p.chatId ? `lubao://chat/${p.chatId}` : `lubao://cargo/${p.cargoId}`),
+    category: 'AGREED_CHECK',
+    deepLink: (p) => (p.chatId ? `/chat/${p.chatId}` : `/driver/cargo/${p.cargoId}`),
   },
   ARRIVAL_DAY_CHECK: {
     eventGroup: 'ARRIVAL_CHECK',
     channels: ['PUSH'],
     render: (locale, p) => T.ARRIVAL_DAY_CHECK[locale](p),
-    deepLink: () => 'lubao://arrival',
+    deepLink: () => '/arrival',
   },
   ARRIVAL_STILL_LOOKING: {
     eventGroup: 'ARRIVAL_CHECK',
     channels: ['PUSH'],
     render: (locale, p) => T.ARRIVAL_STILL_LOOKING[locale](p),
-    deepLink: () => 'lubao://arrival',
+    category: 'STILL_LOOKING',
+    deepLink: () => '/arrival',
   },
   CARGO_UNPUBLISHED: {
     eventGroup: 'ADMIN_ACTION',
     channels: ['PUSH'],
     render: (locale, p) => T.CARGO_UNPUBLISHED[locale](p),
-    deepLink: (p) => `lubao://cargo/${p.cargoId}`,
+    deepLink: (p) => `/driver/cargo/${p.cargoId}`,
   },
   COMPLAINT_RESOLVED: {
     eventGroup: 'ADMIN_ACTION',
     channels: ['PUSH'],
     render: (locale, p) => T.COMPLAINT_RESOLVED[locale](p),
-    deepLink: (p) => `lubao://complaint/${p.complaintId}`,
+    deepLink: (p) => '/profile',
   },
   COMPLAINT_WARNED: {
     eventGroup: 'ADMIN_ACTION',
     channels: ['PUSH'],
     render: (locale, p) => T.COMPLAINT_WARNED[locale](p),
-    deepLink: () => 'lubao://profile',
+    deepLink: () => '/profile',
   },
 };

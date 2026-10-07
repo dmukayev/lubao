@@ -81,6 +81,7 @@ export class NotificationsService {
                 title: rendered.title,
                 body: rendered.body,
                 data: { deepLink, event },
+                ...(def.category ? { category: def.category } : {}),
               },
               { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
             ),
@@ -146,8 +147,9 @@ export class NotificationsService {
     });
   }
 
-  async unregisterDeviceToken(token: string): Promise<void> {
-    await this.prisma.deviceToken.deleteMany({ where: { token } });
+  /// Только свой токен (042 п.1): чужой по известной строке не удалить.
+  async unregisterDeviceToken(userId: string, token: string): Promise<void> {
+    await this.prisma.deviceToken.deleteMany({ where: { token, userId } });
   }
 
   async getEventSettings(userId: string) {

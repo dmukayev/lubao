@@ -1,7 +1,7 @@
 import * as http2 from 'http2';
 import { Injectable, Logger } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
-import { PushMessage } from './push-provider';
+import { PushMessage, apnsPayload } from './push-provider';
 
 /// APNs provider API (iOS — задача 011, п.2). Токен-авторизация (ES256 JWT,
 /// как требует Apple), не сертификат — .env: APNS_KEY_ID, APNS_TEAM_ID,
@@ -61,10 +61,7 @@ export class ApnsPushProvider {
         });
         req.on('error', reject);
         req.end(
-          JSON.stringify({
-            aps: { alert: { title: message.title, body: message.body } },
-            ...message.data,
-          }),
+          JSON.stringify(apnsPayload(message)),
         );
       });
     } finally {
