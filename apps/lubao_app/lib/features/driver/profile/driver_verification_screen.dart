@@ -30,6 +30,8 @@ class DriverVerificationScreen extends ConsumerWidget {
       // Этот экран — только для водителя; companyRegistration сюда не
       // попадает, но enum общий с компанией (packages/lubao_core).
       VerificationDocType.companyRegistration => '',
+      VerificationDocType.vehiclePhotoFront => t.vehiclePhotoFront,
+      VerificationDocType.vehiclePhotoSide => t.vehiclePhotoSide,
     };
   }
 

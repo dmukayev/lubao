@@ -113,7 +113,7 @@ DriverVerificationStatus driverVerificationStatusFromJson(String? value) => Driv
       orElse: () => DriverVerificationStatus.none,
     );
 
-enum VerificationDocType { selfie, vehiclePassport, trailerPassport, driverLicense, companyRegistration }
+enum VerificationDocType { selfie, vehiclePassport, trailerPassport, driverLicense, companyRegistration, vehiclePhotoFront, vehiclePhotoSide }
 
 const _verificationDocTypeJson = {
   VerificationDocType.selfie: 'SELFIE',
@@ -122,6 +122,9 @@ const _verificationDocTypeJson = {
   VerificationDocType.driverLicense: 'DRIVER_LICENSE',
   /// Единственный документ, подтверждающий компанию (задача 012, п.5).
   VerificationDocType.companyRegistration: 'COMPANY_REGISTRATION',
+  /// Фото машины спереди с госномером и сбоку (044 п.7) — не проверяются.
+  VerificationDocType.vehiclePhotoFront: 'VEHICLE_PHOTO_FRONT',
+  VerificationDocType.vehiclePhotoSide: 'VEHICLE_PHOTO_SIDE',
 };
 
 VerificationDocType verificationDocTypeFromJson(String value) => _verificationDocTypeJson.entries

@@ -12,7 +12,7 @@ const OPEN_STATUSES: DealStatus[] = ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSI
 export const DOCS_AFTER_DELIVERY_MS = 30 * 24 * 60 * 60 * 1000;
 
 const PERSON_DOC_TYPES: VerificationDocType[] = ['SELFIE', 'DRIVER_LICENSE', 'IDENTITY'];
-const VEHICLE_DOC_TYPES: VerificationDocType[] = ['VEHICLE_PASSPORT', 'TRAILER_PASSPORT'];
+const VEHICLE_DOC_TYPES: VerificationDocType[] = ['VEHICLE_PASSPORT', 'TRAILER_PASSPORT', 'VEHICLE_PHOTO_FRONT', 'VEHICLE_PHOTO_SIDE'];
 
 export type DocsAuditAction = 'DRIVER_DOCS_VIEWED' | 'DRIVER_DOCS_DOWNLOADED';
 
@@ -98,6 +98,9 @@ export class DriverDocumentsService {
         brand: v.brand,
         isVerified: v.isVerified,
         passport: ref(latest(vehicleDocs.filter((d) => d.vehicleId === v.id), v.kind === 'TRAILER' ? 'TRAILER_PASSPORT' : 'VEHICLE_PASSPORT')),
+        // 044 п.7: фото машины — «Фото нет», если водитель не добавил.
+        photoFront: ref(latest(vehicleDocs.filter((d) => d.vehicleId === v.id), 'VEHICLE_PHOTO_FRONT')),
+        photoSide: ref(latest(vehicleDocs.filter((d) => d.vehicleId === v.id), 'VEHICLE_PHOTO_SIDE')),
       })),
       cargo: { pointId: deal.cargo.pointId, destinationCityId: deal.cargo.destinationCityId, destinationCountryId: deal.cargo.destinationCountryId, readyDate: deal.cargo.readyDate },
       companyName: deal.company.name,
@@ -115,7 +118,7 @@ export class DriverDocumentsService {
       pkg.cargo.destinationCityId ? this.prisma.city.findUnique({ where: { id: pkg.cargo.destinationCityId }, select: { name: true } }) : null,
     ]);
     const name = (json: unknown) => (json ? pickLocaleText(json as I18nName, locale) : '…');
-    const ids = [pkg.selfie?.id, pkg.identity?.id, pkg.license.document?.id, ...pkg.vehicles.map((v) => v.passport?.id)].filter((id): id is string => !!id);
+    const ids = [pkg.selfie?.id, pkg.identity?.id, pkg.license.document?.id, ...pkg.vehicles.flatMap((v) => [v.passport?.id, v.photoFront?.id, v.photoSide?.id])].filter((id): id is string => !!id);
     const docs = await this.prisma.verificationDocument.findMany({ where: { id: { in: ids } }, select: { id: true, fileUrl: true } });
     const images = new Map<string, PdfImage>();
     for (const d of docs) {
@@ -138,7 +141,7 @@ export class DriverDocumentsService {
       license: { number: pkg.license.number, expiryDate: pkg.license.expiryDate, documentId: pkg.license.document?.id ?? null },
       selfieId: pkg.selfie?.id ?? null,
       identityId: pkg.identity?.id ?? null,
-      vehicles: pkg.vehicles.map((v) => ({ kind: v.kind, plateNumber: v.plateNumber, vin: v.vin, brand: v.brand, isVerified: v.isVerified, passportId: v.passport?.id ?? null })),
+      vehicles: pkg.vehicles.map((v) => ({ kind: v.kind, plateNumber: v.plateNumber, vin: v.vin, brand: v.brand, isVerified: v.isVerified, passportId: v.passport?.id ?? null, photoFrontId: v.photoFront?.id ?? null, photoSideId: v.photoSide?.id ?? null })),
       issuedTo: pkg.issuedTo ?? '',
       companyName: pkg.companyName,
       issuedAt: pkg.issuedAt,

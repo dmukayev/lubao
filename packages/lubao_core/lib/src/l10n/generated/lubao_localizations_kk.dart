@@ -3072,4 +3072,86 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminSuspiciousBlock => 'Бұғаттау';
+
+  @override
+  String get vehiclePhotoFront => 'Алдынан, мемлекеттік нөмірімен';
+
+  @override
+  String get vehiclePhotoSide => 'Бүйірінен';
+
+  @override
+  String get vehiclePhotoStepTitle => 'Көлікті суретке түсіріңіз';
+
+  @override
+  String get vehiclePhotoStepHint =>
+      'Логист көлікті сіздің карточкаңызда және рейс құжаттарында көреді. Өткізіп, кейін қосуға болады.';
+
+  @override
+  String get commonSkip => 'Өткізу';
+
+  @override
+  String get garagePhotosReminder => 'Көлік фотосын қосыңыз';
+
+  @override
+  String get vehiclePhotosNone => 'Фото жоқ';
+
+  @override
+  String get driverDocsTitle => 'Жүргізуші құжаттары';
+
+  @override
+  String get driverDocsLocked => 'Жүргізуші растағаннан кейін ашылады';
+
+  @override
+  String get driverDocsDownloadPdf => 'PDF жүктеу';
+
+  @override
+  String get driverDocsOpen => 'Құжаттар';
+
+  @override
+  String get driverDocsVehiclePending => 'Көлік әлі тексерілуде';
+
+  @override
+  String get driverDocsIin => 'ЖСН';
+
+  @override
+  String get driverDocsLicense => 'Жүргізуші куәлігі';
+
+  @override
+  String get driverDocsSelfie => 'Жүргізушінің фотосы';
+
+  @override
+  String get driverDocsPassport => 'Техпаспорт';
+
+  @override
+  String get driverDocsExpired =>
+      'Құжаттар жабық: жеткізілгеннен кейін 30 күн өтті';
+
+  @override
+  String cargoDealDriverConfirmed(String name) {
+    return 'Жүргізуші: $name · растады';
+  }
+
+  @override
+  String cargoDealDriverWaiting(String name) {
+    return 'Жүргізуші: $name · растауды күтеміз';
+  }
+
+  @override
+  String dealConfirmDocsNotice(String company) {
+    return '$company логисіне рейске арналған құжаттарыңыз ашылады: куәлік, жүргізуші куәлігі, техпаспорттар. Тек осы мәміле бойынша.';
+  }
+
+  @override
+  String dealDocsOpenedAt(String when) {
+    return 'Логист құжаттарды ашты: $when';
+  }
+
+  @override
+  String get dealDocsAccessTitle => 'Құжаттарды кім ашты';
+
+  @override
+  String get adminVehicleAutoVerified => 'Автоматты түрде тексерілді';
+
+  @override
+  String get adminVehicleRevoke => 'Тексеруді қайтару';
 }

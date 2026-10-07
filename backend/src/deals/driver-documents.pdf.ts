@@ -8,27 +8,31 @@ const CJK = path.join(FONT_DIR, 'NotoSansSC-Lubao.otf');
 const HAS_CJK = /[⺀-鿿豈-﫿＀-￯]/;
 
 type Labels = Record<
-  'title' | 'driver' | 'fullName' | 'iin' | 'license' | 'licenseNumber' | 'expiry' | 'tractor' | 'trailer' | 'rigid' | 'plate' | 'vin' | 'pending' | 'noPhoto' | 'unsupported' | 'issued' | 'selfie' | 'identity' | 'passport',
+  'title' | 'photoFront' | 'photoSide' | 'driver' | 'fullName' | 'iin' | 'license' | 'licenseNumber' | 'expiry' | 'tractor' | 'trailer' | 'rigid' | 'plate' | 'vin' | 'pending' | 'noPhoto' | 'unsupported' | 'issued' | 'selfie' | 'identity' | 'passport',
   string
 >;
 
 const LABELS: Record<Locale, Labels> = {
   ru: {
+    photoFront: 'Фото спереди', photoSide: 'Фото сбоку',
     title: 'Документы на рейс', driver: 'Водитель', fullName: 'ФИО', iin: 'ИИН', license: 'Водительское удостоверение', licenseNumber: 'Номер',
     expiry: 'Действует до', tractor: 'Тягач', trailer: 'Прицеп', rigid: 'Грузовик', plate: 'Госномер', vin: 'VIN', pending: 'Машина ещё на проверке',
     noPhoto: 'Фото нет', unsupported: 'Фото в этом формате — откройте в приложении', issued: 'Выдано', selfie: 'Фото водителя', identity: 'Удостоверение личности', passport: 'Техпаспорт',
   },
   kk: {
+    photoFront: 'Алдынан фото', photoSide: 'Бүйірінен фото',
     title: 'Рейске арналған құжаттар', driver: 'Жүргізуші', fullName: 'Аты-жөні', iin: 'ЖСН', license: 'Жүргізуші куәлігі', licenseNumber: 'Нөмірі',
     expiry: 'Жарамды мерзімі', tractor: 'Тартқыш', trailer: 'Тіркеме', rigid: 'Жүк көлігі', plate: 'Мемлекеттік нөмір', vin: 'VIN', pending: 'Көлік әлі тексерілуде',
     noPhoto: 'Фото жоқ', unsupported: 'Бұл форматтағы фото — қосымшада ашыңыз', issued: 'Берілді', selfie: 'Жүргізушінің фотосы', identity: 'Жеке куәлік', passport: 'Техпаспорт',
   },
   zh: {
+    photoFront: '正面照片', photoSide: '侧面照片',
     title: '运输单据', driver: '司机', fullName: '姓名', iin: '个人识别号 (IIN)', license: '驾驶证', licenseNumber: '证号',
     expiry: '有效期至', tractor: '牵引车', trailer: '挂车', rigid: '货车', plate: '车牌号', vin: 'VIN', pending: '车辆尚在审核中',
     noPhoto: '无照片', unsupported: '该格式照片请在应用中查看', issued: '出具给', selfie: '司机照片', identity: '身份证', passport: '行驶证',
   },
   en: {
+    photoFront: 'Front photo', photoSide: 'Side photo',
     title: 'Documents for the haul', driver: 'Driver', fullName: 'Full name', iin: 'IIN', license: "Driver's licence", licenseNumber: 'Number',
     expiry: 'Valid until', tractor: 'Tractor unit', trailer: 'Trailer', rigid: 'Truck', plate: 'Plate', vin: 'VIN', pending: 'Vehicle is still being verified',
     noPhoto: 'No photo', unsupported: 'Photo in this format — open it in the app', issued: 'Issued to', selfie: 'Driver photo', identity: 'ID card', passport: 'Registration',
@@ -48,7 +52,7 @@ export interface DriverDocumentsPdfInput {
   license: { number: string | null; expiryDate: string | null; documentId: string | null };
   selfieId: string | null;
   identityId: string | null;
-  vehicles: Array<{ kind: string; plateNumber: string | null; vin: string | null; brand: string | null; isVerified: boolean; passportId: string | null }>;
+  vehicles: Array<{ kind: string; plateNumber: string | null; vin: string | null; brand: string | null; isVerified: boolean; passportId: string | null; photoFrontId?: string | null; photoSideId?: string | null }>;
   issuedTo: string;
   companyName: string;
   issuedAt: Date;
@@ -129,7 +133,10 @@ export function buildDriverDocumentsPdf(input: DriverDocumentsPdfInput): Promise
   if (input.identityId) photoPage(t.identity, input.identityId);
   photoPage(t.license, input.license.documentId);
   for (const v of input.vehicles) {
-    photoPage(`${t.passport} · ${v.kind === 'TRAILER' ? t.trailer : v.kind === 'RIGID' ? t.rigid : t.tractor} ${v.plateNumber ?? ''}`.trim(), v.passportId);
+    const name = `${v.kind === 'TRAILER' ? t.trailer : v.kind === 'RIGID' ? t.rigid : t.tractor} ${v.plateNumber ?? ''}`.trim();
+    photoPage(`${t.passport} · ${name}`, v.passportId);
+    photoPage(`${t.photoFront} · ${name}`, v.photoFrontId ?? null);
+    photoPage(`${t.photoSide} · ${name}`, v.photoSideId ?? null);
   }
   doc.end();
   return done;

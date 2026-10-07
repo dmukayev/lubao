@@ -3073,4 +3073,86 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminSuspiciousBlock => 'Block';
+
+  @override
+  String get vehiclePhotoFront => 'Front, with the plate';
+
+  @override
+  String get vehiclePhotoSide => 'Side';
+
+  @override
+  String get vehiclePhotoStepTitle => 'Take photos of the vehicle';
+
+  @override
+  String get vehiclePhotoStepHint =>
+      'The logist will see the vehicle in your card and in the haul documents. You can skip and add later.';
+
+  @override
+  String get commonSkip => 'Skip';
+
+  @override
+  String get garagePhotosReminder => 'Add vehicle photos';
+
+  @override
+  String get vehiclePhotosNone => 'No photos';
+
+  @override
+  String get driverDocsTitle => 'Driver documents';
+
+  @override
+  String get driverDocsLocked => 'Open after the driver confirms';
+
+  @override
+  String get driverDocsDownloadPdf => 'Download PDF';
+
+  @override
+  String get driverDocsOpen => 'Documents';
+
+  @override
+  String get driverDocsVehiclePending => 'Vehicle is still being verified';
+
+  @override
+  String get driverDocsIin => 'IIN';
+
+  @override
+  String get driverDocsLicense => 'Driver’s licence';
+
+  @override
+  String get driverDocsSelfie => 'Driver photo';
+
+  @override
+  String get driverDocsPassport => 'Registration';
+
+  @override
+  String get driverDocsExpired =>
+      'Documents are closed: 30 days have passed since delivery';
+
+  @override
+  String cargoDealDriverConfirmed(String name) {
+    return 'Driver: $name · confirmed';
+  }
+
+  @override
+  String cargoDealDriverWaiting(String name) {
+    return 'Driver: $name · awaiting confirmation';
+  }
+
+  @override
+  String dealConfirmDocsNotice(String company) {
+    return 'The logist of $company will see your documents for this haul: ID, licence, registrations. Only for this deal.';
+  }
+
+  @override
+  String dealDocsOpenedAt(String when) {
+    return 'The logist opened the documents $when';
+  }
+
+  @override
+  String get dealDocsAccessTitle => 'Who opened the documents';
+
+  @override
+  String get adminVehicleAutoVerified => 'Verified automatically';
+
+  @override
+  String get adminVehicleRevoke => 'Revoke verification';
 }

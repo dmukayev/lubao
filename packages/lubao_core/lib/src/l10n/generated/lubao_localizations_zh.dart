@@ -3000,4 +3000,84 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminSuspiciousBlock => '封禁';
+
+  @override
+  String get vehiclePhotoFront => '正面（含车牌）';
+
+  @override
+  String get vehiclePhotoSide => '侧面';
+
+  @override
+  String get vehiclePhotoStepTitle => '拍摄车辆照片';
+
+  @override
+  String get vehiclePhotoStepHint => '物流人员会在您的资料卡和运输单据中看到车辆。可以跳过，稍后再添加。';
+
+  @override
+  String get commonSkip => '跳过';
+
+  @override
+  String get garagePhotosReminder => '添加车辆照片';
+
+  @override
+  String get vehiclePhotosNone => '无照片';
+
+  @override
+  String get driverDocsTitle => '司机证件';
+
+  @override
+  String get driverDocsLocked => '司机确认后开放';
+
+  @override
+  String get driverDocsDownloadPdf => '下载 PDF';
+
+  @override
+  String get driverDocsOpen => '证件';
+
+  @override
+  String get driverDocsVehiclePending => '车辆尚在审核中';
+
+  @override
+  String get driverDocsIin => '个人识别号 (IIN)';
+
+  @override
+  String get driverDocsLicense => '驾驶证';
+
+  @override
+  String get driverDocsSelfie => '司机照片';
+
+  @override
+  String get driverDocsPassport => '行驶证';
+
+  @override
+  String get driverDocsExpired => '证件已关闭：送达已超过 30 天';
+
+  @override
+  String cargoDealDriverConfirmed(String name) {
+    return '司机：$name · 已确认';
+  }
+
+  @override
+  String cargoDealDriverWaiting(String name) {
+    return '司机：$name · 等待确认';
+  }
+
+  @override
+  String dealConfirmDocsNotice(String company) {
+    return '$company 的物流人员将看到您本次运输的证件：身份证、驾驶证、行驶证。仅限本次交易。';
+  }
+
+  @override
+  String dealDocsOpenedAt(String when) {
+    return '物流人员于 $when 查看了证件';
+  }
+
+  @override
+  String get dealDocsAccessTitle => '证件查看记录';
+
+  @override
+  String get adminVehicleAutoVerified => '已自动审核';
+
+  @override
+  String get adminVehicleRevoke => '撤销审核';
 }

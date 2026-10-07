@@ -3059,4 +3059,86 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminSuspiciousBlock => 'Заблокировать';
+
+  @override
+  String get vehiclePhotoFront => 'Спереди, с госномером';
+
+  @override
+  String get vehiclePhotoSide => 'Сбоку';
+
+  @override
+  String get vehiclePhotoStepTitle => 'Сфотографируйте машину';
+
+  @override
+  String get vehiclePhotoStepHint =>
+      'Логист увидит машину в вашей карточке и в документах на рейс. Можно пропустить и добавить позже.';
+
+  @override
+  String get commonSkip => 'Пропустить';
+
+  @override
+  String get garagePhotosReminder => 'Добавьте фото машины';
+
+  @override
+  String get vehiclePhotosNone => 'Фото нет';
+
+  @override
+  String get driverDocsTitle => 'Документы водителя';
+
+  @override
+  String get driverDocsLocked => 'Откроются после подтверждения водителем';
+
+  @override
+  String get driverDocsDownloadPdf => 'Скачать PDF';
+
+  @override
+  String get driverDocsOpen => 'Документы';
+
+  @override
+  String get driverDocsVehiclePending => 'Машина ещё на проверке';
+
+  @override
+  String get driverDocsIin => 'ИИН';
+
+  @override
+  String get driverDocsLicense => 'Водительское удостоверение';
+
+  @override
+  String get driverDocsSelfie => 'Фото водителя';
+
+  @override
+  String get driverDocsPassport => 'Техпаспорт';
+
+  @override
+  String get driverDocsExpired =>
+      'Документы закрыты: прошло 30 дней после доставки';
+
+  @override
+  String cargoDealDriverConfirmed(String name) {
+    return 'Водитель: $name · подтвердил';
+  }
+
+  @override
+  String cargoDealDriverWaiting(String name) {
+    return 'Водитель: $name · ждём подтверждения';
+  }
+
+  @override
+  String dealConfirmDocsNotice(String company) {
+    return 'Логисту $company откроются ваши документы на рейс: удостоверение, права, техпаспорта. Только по этой сделке.';
+  }
+
+  @override
+  String dealDocsOpenedAt(String when) {
+    return 'Логист открыл документы $when';
+  }
+
+  @override
+  String get dealDocsAccessTitle => 'Кто открывал документы';
+
+  @override
+  String get adminVehicleAutoVerified => 'Проверена автоматически';
+
+  @override
+  String get adminVehicleRevoke => 'Отозвать проверку';
 }

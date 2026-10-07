@@ -5825,6 +5825,150 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Заблокировать'**
   String get adminSuspiciousBlock;
+
+  /// No description provided for @vehiclePhotoFront.
+  ///
+  /// In ru, this message translates to:
+  /// **'Спереди, с госномером'**
+  String get vehiclePhotoFront;
+
+  /// No description provided for @vehiclePhotoSide.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сбоку'**
+  String get vehiclePhotoSide;
+
+  /// No description provided for @vehiclePhotoStepTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сфотографируйте машину'**
+  String get vehiclePhotoStepTitle;
+
+  /// No description provided for @vehiclePhotoStepHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логист увидит машину в вашей карточке и в документах на рейс. Можно пропустить и добавить позже.'**
+  String get vehiclePhotoStepHint;
+
+  /// No description provided for @commonSkip.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пропустить'**
+  String get commonSkip;
+
+  /// No description provided for @garagePhotosReminder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавьте фото машины'**
+  String get garagePhotosReminder;
+
+  /// No description provided for @vehiclePhotosNone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фото нет'**
+  String get vehiclePhotosNone;
+
+  /// No description provided for @driverDocsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Документы водителя'**
+  String get driverDocsTitle;
+
+  /// No description provided for @driverDocsLocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откроются после подтверждения водителем'**
+  String get driverDocsLocked;
+
+  /// No description provided for @driverDocsDownloadPdf.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скачать PDF'**
+  String get driverDocsDownloadPdf;
+
+  /// No description provided for @driverDocsOpen.
+  ///
+  /// In ru, this message translates to:
+  /// **'Документы'**
+  String get driverDocsOpen;
+
+  /// No description provided for @driverDocsVehiclePending.
+  ///
+  /// In ru, this message translates to:
+  /// **'Машина ещё на проверке'**
+  String get driverDocsVehiclePending;
+
+  /// No description provided for @driverDocsIin.
+  ///
+  /// In ru, this message translates to:
+  /// **'ИИН'**
+  String get driverDocsIin;
+
+  /// No description provided for @driverDocsLicense.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водительское удостоверение'**
+  String get driverDocsLicense;
+
+  /// No description provided for @driverDocsSelfie.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фото водителя'**
+  String get driverDocsSelfie;
+
+  /// No description provided for @driverDocsPassport.
+  ///
+  /// In ru, this message translates to:
+  /// **'Техпаспорт'**
+  String get driverDocsPassport;
+
+  /// No description provided for @driverDocsExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Документы закрыты: прошло 30 дней после доставки'**
+  String get driverDocsExpired;
+
+  /// No description provided for @cargoDealDriverConfirmed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель: {name} · подтвердил'**
+  String cargoDealDriverConfirmed(String name);
+
+  /// No description provided for @cargoDealDriverWaiting.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель: {name} · ждём подтверждения'**
+  String cargoDealDriverWaiting(String name);
+
+  /// No description provided for @dealConfirmDocsNotice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логисту {company} откроются ваши документы на рейс: удостоверение, права, техпаспорта. Только по этой сделке.'**
+  String dealConfirmDocsNotice(String company);
+
+  /// No description provided for @dealDocsOpenedAt.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логист открыл документы {when}'**
+  String dealDocsOpenedAt(String when);
+
+  /// No description provided for @dealDocsAccessTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Кто открывал документы'**
+  String get dealDocsAccessTitle;
+
+  /// No description provided for @adminVehicleAutoVerified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверена автоматически'**
+  String get adminVehicleAutoVerified;
+
+  /// No description provided for @adminVehicleRevoke.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отозвать проверку'**
+  String get adminVehicleRevoke;
 }
 
 class _LubaoLocalizationsDelegate

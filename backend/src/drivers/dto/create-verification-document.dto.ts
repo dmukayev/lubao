@@ -1,6 +1,7 @@
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
-const DRIVER_DOC_TYPES = ['SELFIE', 'VEHICLE_PASSPORT', 'TRAILER_PASSPORT', 'DRIVER_LICENSE'] as const;
+/// VEHICLE_PHOTO_* — фото машины спереди с госномером и сбоку (044 п.7), только с vehicleId.
+const DRIVER_DOC_TYPES = ['SELFIE', 'VEHICLE_PASSPORT', 'TRAILER_PASSPORT', 'DRIVER_LICENSE', 'VEHICLE_PHOTO_FRONT', 'VEHICLE_PHOTO_SIDE'] as const;
 
 export class CreateVerificationDocumentDto {
   @IsIn(DRIVER_DOC_TYPES)

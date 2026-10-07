@@ -226,6 +226,19 @@ export class DriversService {
       vehicleId = vehicle?.id ?? null;
     }
 
+    // Фото машины (044 п.7): только к своей машине, на проверку не идут и не
+    // распознаются; новое фото того же ракурса заменяет старое (файл удаляется).
+    if (dto.type === 'VEHICLE_PHOTO_FRONT' || dto.type === 'VEHICLE_PHOTO_SIDE') {
+      if (!vehicleId) throw new BadRequestException('vehicleId is required for a vehicle photo');
+      const previous = await this.prisma.verificationDocument.findMany({ where: { vehicleId, type: dto.type }, select: { id: true, fileUrl: true } });
+      const photo = await this.prisma.$transaction(async (tx) => {
+        if (previous.length) await tx.verificationDocument.deleteMany({ where: { id: { in: previous.map((p) => p.id) } } });
+        return tx.verificationDocument.create({ data: { userId, driverId, vehicleId, type: dto.type, fileUrl: dto.fileUrl, status: 'APPROVED' } });
+      });
+      for (const p of previous) await this.uploads?.removeDocument(p.fileUrl).catch(() => undefined);
+      return this.docToDto(photo);
+    }
+
     const doc = await this.prisma.verificationDocument.create({
       data: { userId, driverId, vehicleId, type: dto.type, fileUrl: dto.fileUrl, status: 'PENDING' },
     });
@@ -235,7 +248,8 @@ export class DriversService {
 
   async listVerificationDocuments(driverId: string) {
     const docs = await this.prisma.verificationDocument.findMany({
-      where: { driverId },
+      // Фото машины (044 п.7) — не документы проверки, у них свой показ в гараже.
+      where: { driverId, type: { notIn: ['VEHICLE_PHOTO_FRONT', 'VEHICLE_PHOTO_SIDE'] } },
       orderBy: { createdAt: 'desc' },
     });
     return docs.map((d) => this.docToDto(d));
@@ -379,11 +393,17 @@ export class DriversService {
     const withDocs = vehicles.length
       ? await this.prisma.verificationDocument.findMany({
           where: { vehicleId: { in: vehicles.map((v) => v.id) }, status: { in: ['PENDING', 'APPROVED'] } },
-          select: { vehicleId: true },
+          select: { vehicleId: true, type: true },
         })
       : [];
-    const documented = new Set(withDocs.map((d) => d.vehicleId));
-    return vehicles.map((v) => ({ ...this.vehicleToDto(v), hasDocument: documented.has(v.id) }));
+    // «Нужен документ» — только техпаспорт; фото машины (044 п.7) — отдельные признаки.
+    const has = (vehicleId: string, types: string[]) => withDocs.some((d) => d.vehicleId === vehicleId && types.includes(d.type));
+    return vehicles.map((v) => ({
+      ...this.vehicleToDto(v),
+      hasDocument: has(v.id, ['VEHICLE_PASSPORT', 'TRAILER_PASSPORT']),
+      hasPhotoFront: has(v.id, ['VEHICLE_PHOTO_FRONT']),
+      hasPhotoSide: has(v.id, ['VEHICLE_PHOTO_SIDE']),
+    }));
   }
 
   async createVehicle(userId: string, driverId: string, dto: CreateVehicleDto) {

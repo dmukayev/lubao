@@ -27,8 +27,8 @@ describe('buildDriverDocumentsPdf', () => {
       ]),
     });
     expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
-    // Обложка + селфи + права + 2 техпаспорта.
-    expect((pdf.toString('latin1').match(/\/Type \/Page\b/g) ?? []).length).toBe(5);
+    // Обложка + селфи + права + на каждую машину техпаспорт и 2 фото.
+    expect((pdf.toString('latin1').match(/\/Type \/Page\b/g) ?? []).length).toBe(9);
     expect(pdf.length).toBeGreaterThan(3000);
   });
 });
