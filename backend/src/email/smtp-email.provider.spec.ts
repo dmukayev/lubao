@@ -29,6 +29,7 @@ describe('SmtpEmailProvider (задача 042, п.2)', () => {
       to: 'logist@example.com',
       subject: 'Your Lubao verification code',
       text: expect.stringContaining('654321'),
+        html: expect.stringContaining('alt="Lubao"'),
     });
   });
 

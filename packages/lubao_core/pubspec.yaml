@@ -33,6 +33,10 @@ dev_dependencies:
 flutter:
   generate: true
 
+  # Фирменный знак (design/brand, утверждён 2026-10-07).
+  assets:
+    - assets/brand/
+
   fonts:
     - family: Onest
       fonts:

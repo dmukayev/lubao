@@ -18,21 +18,34 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Lubao — водители и грузы находят друг друга за минуты">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="lubao_app">
+  <meta name="apple-mobile-web-app-title" content="Lubao">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>lubao_app</title>
+  <title>Lubao</title>
   <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#E8742E">
+  <!-- Заставка до первого кадра Flutter (043 п.7): знак на кремовом фоне бренда. -->
+  <style>
+    #lubao-splash { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #FFF3DC; }
+    #lubao-splash img { width: 112px; height: 112px; }
+  </style>
 </head>
 <body>
+  <div id="lubao-splash"><img src="icons/Icon-maskable-192.png" alt="Lubao"></div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var el = document.getElementById('lubao-splash');
+      if (el) el.remove();
+    });
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

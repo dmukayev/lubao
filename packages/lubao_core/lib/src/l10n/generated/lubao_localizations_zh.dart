@@ -9,7 +9,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   LubaoLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get appName => '路宝';
+  String get appName => 'Lubao';
 
   @override
   String get commonCancel => '取消';

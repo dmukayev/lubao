@@ -158,6 +158,8 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
         padding: const EdgeInsets.all(AppSpacing.screen),
         child: Column(
           children: [
+            const LubaoLogo(height: 36),
+            const SizedBox(height: AppSpacing.lg),
             referenceData.when(
               loading: () => const LoadingView(),
               error: (e, st) {

@@ -18,6 +18,7 @@ export 'src/models/notification_settings.dart';
 export 'src/theme/app_theme.dart';
 
 export 'src/widgets/primary_button.dart';
+export 'src/widgets/lubao_brand.dart';
 export 'src/widgets/whatsapp_icon.dart';
 export 'src/widgets/app_card.dart';
 export 'src/widgets/status_badge.dart';

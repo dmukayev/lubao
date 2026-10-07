@@ -2,7 +2,7 @@ import { randomInt } from 'crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { EmailProvider } from './email-provider';
-import { renderEmail } from './email-messages';
+import { renderEmail, emailHtml } from './email-messages';
 
 /// Боевая отправка почты (задача 042, п.2): SMTP через nodemailer.
 /// env: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM (+ SMTP_SECURE=true для 465).
@@ -35,7 +35,7 @@ export class SmtpEmailProvider extends EmailProvider {
     this.transport ??= this.createTransport();
     const from = process.env.SMTP_FROM || process.env.SMTP_USER;
     try {
-      await this.transport.sendMail({ from, to: email, subject, text: bodyText });
+      await this.transport.sendMail({ from, to: email, subject, text: bodyText, html: emailHtml(bodyText) });
     } catch (e) {
       // Адрес и тело письма (в нём коды/ссылки) в лог не пишем.
       this.logger.error(`SMTP: письмо не отправлено: ${(e as Error).message}`);

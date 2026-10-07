@@ -30,6 +30,8 @@ class RoleSelectScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const LubaoAppIcon(size: 96),
+              const SizedBox(height: 16),
               Text(t.appName, style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 8),
               Text(t.roleSelectTitle, style: Theme.of(context).textTheme.titleLarge),

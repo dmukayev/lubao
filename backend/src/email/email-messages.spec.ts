@@ -1,4 +1,4 @@
-import { inviteLink, localeFromAcceptLanguage, renderEmail } from './email-messages';
+import { emailHtml, inviteLink, localeFromAcceptLanguage, renderEmail } from './email-messages';
 
 describe('письма на 4 языках (задача 042, п.2/п.6)', () => {
   const locales = ['kk', 'ru', 'zh', 'en'] as const;
@@ -57,3 +57,14 @@ describe('письма на 4 языках (задача 042, п.2/п.6)', () =>
     });
   });
 });
+
+describe('emailHtml', () => {
+  it('шапка с логотипом со своего сервера, текст экранирован, ссылки кликабельны', () => {
+    const html = emailHtml('Код <b>1</b>\nhttps://app.lubao.kz/invite/abc', 'https://app.lubao.kz');
+    expect(html).toContain('src="https://app.lubao.kz/assets/packages/lubao_core/assets/brand/logo-horizontal.png"');
+    expect(html).toContain('&lt;b&gt;1&lt;/b&gt;');
+    expect(html).toContain('<a href="https://app.lubao.kz/invite/abc"');
+    expect(html).not.toMatch(/googleapis|gstatic/);
+  });
+});
+

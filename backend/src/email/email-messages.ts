@@ -89,3 +89,25 @@ export function appLink(path: string, base = process.env.APP_PUBLIC_URL || 'http
 export function inviteLink(token: string, base?: string): string {
   return appLink(`invite/${token}`, base);
 }
+
+/// Логотип в письмах — со своего веб-сервера (ассет lubao_core в сборке
+/// Flutter Web), не с внешних хостингов (043 п.7).
+export function emailLogoUrl(base?: string): string {
+  return appLink('assets/packages/lubao_core/assets/brand/logo-horizontal.png', base);
+}
+
+const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
+/// HTML-версия письма: шапка с фирменным логотипом и тот же текст, ссылки
+/// кликабельны. Текстовая версия остаётся для клиентов без HTML.
+export function emailHtml(text: string, base?: string): string {
+  const body = text
+    .split('\n')
+    .map((line) => escapeHtml(line).replace(/https:\/\/[^\s<]+/g, (url) => `<a href="${url}" style="color:#1F4CFF">${url}</a>`))
+    .map((line) => `<p style="margin:0 0 12px">${line}</p>`)
+    .join('');
+  return `<!doctype html><html><body style="margin:0;padding:24px;background:#F3F4F7;font-family:Onest,Arial,sans-serif;color:#1A1D26">`
+    + `<div style="max-width:560px;margin:0 auto;background:#FFFFFF;border-radius:16px;padding:24px">`
+    + `<img src="${emailLogoUrl(base)}" alt="Lubao" height="40" style="display:block;height:40px;margin:0 0 20px">`
+    + `${body}</div></body></html>`;
+}

@@ -60,8 +60,8 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(t.appName, style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: 8),
+                const LubaoLogo(height: 48),
+                const SizedBox(height: 16),
                 Text(t.adminLoginTitle, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 24),
                 AppTextField(

@@ -84,7 +84,7 @@ class AdminShell extends ConsumerWidget {
             selectedIndex: currentIndex,
             onDestinationSelected: (index) => context.go(_tabs[index]),
             labelType: NavigationRailLabelType.all,
-            leading: const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Icon(LucideIcons.truck, size: 32)),
+            leading: const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: LubaoAppIcon(size: 40)),
             trailing: Expanded(
               child: Align(
                 alignment: Alignment.bottomCenter,

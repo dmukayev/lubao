@@ -71,6 +71,8 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            const LubaoLogo(height: 36),
+            const SizedBox(height: 24),
             AppTextField(
               key: const Key('companyLoginEmailField'),
               label: t.companyLoginEmailLabel,
