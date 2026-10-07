@@ -21,6 +21,8 @@
 # Использование:
 #   scripts/e2e.sh                      # iPhone 17 и iPhone 16e
 #   scripts/e2e.sh -d "iPhone 16e"      # одно устройство
+#   scripts/e2e.sh -d "iPhone SE (3rd generation)"   # узкий экран + крупный шрифт (по умолчанию для SE)
+#   E2E_CONTENT_SIZE=extra-extra-extra-large scripts/e2e.sh -d "iPhone 17"   # крупный системный шрифт на любом
 #   E2E_ONLY="driver_flow_test" scripts/e2e.sh   # dev: один сценарий (код 3)
 #   E2E_SKIP_IOS=1 / E2E_SKIP_ADMIN_UI=1 / E2E_ADMIN_UI_ONLY=1   # dev: код 3
 set -uo pipefail
@@ -259,6 +261,14 @@ prepare_simulator() {
   if run_with_timeout 300 "$RESULTS/simctl-boot.log" xcrun simctl boot "$UDID" \
      && run_with_timeout 300 "$RESULTS/simctl-bootstatus.log" xcrun simctl bootstatus "$UDID" -b; then
     IOS_READY=1
+    # Крупный системный шрифт: на узком SE — всегда (Huawei Y7: 360 dp × 1,3
+    # ломал вёрстку), на остальных — по E2E_CONTENT_SIZE. extra-extra-extra-large
+    # ≈ ×1,35 — самый крупный обычный размер iOS (без «Увеличенных размеров»).
+    local size="${E2E_CONTENT_SIZE:-}"
+    [[ -z "$size" && "$name" == *"SE"* ]] && size="extra-extra-extra-large"
+    if [[ -n "$size" ]]; then
+      xcrun simctl ui "$UDID" content_size "$size" >/dev/null 2>&1 && echo "  размер текста: $size"
+    fi
   else
     row "окружение: симулятор" "⏭ пропущено (окружение)" "simctl boot/bootstatus не завершились за 5 мин"
     IOS_ENV_FAILURES=2
