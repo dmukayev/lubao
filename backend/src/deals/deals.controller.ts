@@ -26,6 +26,16 @@ export class DealsController {
     return this.driverDocs.package(id, ctx);
   }
 
+  /// Тот же пакет одним PDF (044 п.1).
+  @Get(':id/driver-documents.pdf')
+  async driverDocumentsPdf(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Res() res: Response) {
+    const { buffer, filename } = await this.driverDocs.pdf(id, ctx);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.send(buffer);
+  }
+
   @Get(':id/driver-documents/files/:documentId')
   async driverDocumentFile(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Param('documentId') documentId: string, @Res() res: Response) {
     const source = await this.driverDocs.file(id, documentId, ctx);

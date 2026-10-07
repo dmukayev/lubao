@@ -25,6 +25,8 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/package.json ./package.json
+# Шрифты PDF «Документы на рейс» (044 п.1): кириллица и иероглифы.
+COPY --from=build /app/assets ./assets
 
 USER node
 EXPOSE 3000

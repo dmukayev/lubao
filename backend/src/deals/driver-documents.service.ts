@@ -4,6 +4,8 @@ import { RequestContext } from '../common/request-context';
 import { decryptIdentifier } from '../identifiers/crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
+import { I18nName, pickLocaleText } from '../notifications/notification-events';
+import { PdfImage, buildDriverDocumentsPdf } from './driver-documents.pdf';
 
 /// Пакет открыт, пока сделка обоюдная (водитель подтвердил) и ещё 30 дней после доставки.
 const OPEN_STATUSES: DealStatus[] = ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED'];
@@ -102,6 +104,47 @@ export class DriverDocumentsService {
       issuedTo: ctx.companyMember?.fullName ?? ctx.user.name ?? ctx.user.email,
       issuedAt: new Date(),
     };
+  }
+
+  /// Один PDF «Документы на рейс» (044 п.1) — каждое скачивание в журнал.
+  async pdf(dealId: string, ctx: RequestContext): Promise<{ buffer: Buffer; filename: string }> {
+    const pkg = await this.package(dealId, ctx, 'DRIVER_DOCS_DOWNLOADED');
+    const locale = ctx.user.locale;
+    const [point, destination] = await Promise.all([
+      this.prisma.point.findUnique({ where: { id: pkg.cargo.pointId }, select: { name: true } }),
+      pkg.cargo.destinationCityId ? this.prisma.city.findUnique({ where: { id: pkg.cargo.destinationCityId }, select: { name: true } }) : null,
+    ]);
+    const name = (json: unknown) => (json ? pickLocaleText(json as I18nName, locale) : '…');
+    const ids = [pkg.selfie?.id, pkg.identity?.id, pkg.license.document?.id, ...pkg.vehicles.map((v) => v.passport?.id)].filter((id): id is string => !!id);
+    const docs = await this.prisma.verificationDocument.findMany({ where: { id: { in: ids } }, select: { id: true, fileUrl: true } });
+    const images = new Map<string, PdfImage>();
+    for (const d of docs) {
+      try {
+        images.set(
+          d.id,
+          /^https?:\/\//.test(d.fileUrl)
+            ? await fetch(d.fileUrl).then(async (r) => ({ buffer: Buffer.from(await r.arrayBuffer()), contentType: r.headers.get('content-type') || 'image/jpeg' }))
+            : await this.uploads.getDocumentBuffer(d.fileUrl),
+        );
+      } catch {
+        // Файла нет в хранилище — страница будет «Фото нет», PDF всё равно выдаём.
+      }
+    }
+    const buffer = await buildDriverDocumentsPdf({
+      locale,
+      route: `${name(point?.name)} → ${name(destination?.name)}`,
+      readyDate: pkg.cargo.readyDate ? pkg.cargo.readyDate.toISOString().slice(0, 10) : null,
+      driver: { fullName: pkg.driver.fullName, iin: pkg.driver.iin },
+      license: { number: pkg.license.number, expiryDate: pkg.license.expiryDate, documentId: pkg.license.document?.id ?? null },
+      selfieId: pkg.selfie?.id ?? null,
+      identityId: pkg.identity?.id ?? null,
+      vehicles: pkg.vehicles.map((v) => ({ kind: v.kind, plateNumber: v.plateNumber, vin: v.vin, brand: v.brand, isVerified: v.isVerified, passportId: v.passport?.id ?? null })),
+      issuedTo: pkg.issuedTo ?? '',
+      companyName: pkg.companyName,
+      issuedAt: pkg.issuedAt,
+      images,
+    });
+    return { buffer, filename: `lubao-documents-${dealId.slice(0, 8)}.pdf` };
   }
 
   /// Файл документа из пакета — только тот, что действительно в пакете этой сделки.
