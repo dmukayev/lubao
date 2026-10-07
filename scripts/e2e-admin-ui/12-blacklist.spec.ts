@@ -49,22 +49,27 @@ test('блокировка по ИИН и ⛔ у нового водителя �
   await steps.step('чёрный-список-ручная-блокировка', async () => {
     await openRoute(page, '/blacklist');
     await page.getByRole('button', { name: 'Добавить в чёрный список' }).click();
-    const dialog = page.getByRole('dialog');
+    const dialog = page.getByRole('alertdialog');
     await expect(dialog).toBeVisible();
     await typeInto(page, dialog.getByRole('textbox', { name: 'Значение' }), manualIin);
     await typeInto(page, dialog.getByRole('textbox', { name: 'Причина' }), 'E2E: ручная блокировка ИИН');
     await dialog.getByRole('button', { name: 'Сохранить' }).click();
     await expect(dialog).toBeHidden();
-    await expect(page.getByText('E2E: ручная блокировка ИИН').first()).toBeVisible();
-    // Исходный ИИН на экране не показывается.
-    await expect(page.getByText(manualIin)).toHaveCount(0);
+    // Текст карточки Flutter сливает в один узел доступности — результат
+    // проверяем через API, вид строки — скриншот шага.
+    await expect.poll(async () => {
+      const rows = (await api('GET', '/admin/blacklist?active=true', { token })).json as Array<{ reason: string; valueMasked: string }>;
+      const row = rows.find((r) => r.reason === 'E2E: ручная блокировка ИИН');
+      return row ? row.valueMasked.includes(manualIin) : null;
+    }, { timeout: 15_000 }).toBe(false);
+    await page.waitForTimeout(800);
   });
 
   await steps.step('чёрный-список-снятие', async () => {
     const rows = await api('GET', '/admin/blacklist?active=true', { token });
     const before = rows.json.filter((r: { reason: string }) => r.reason === 'E2E: ручная блокировка ИИН').length;
     await page.getByRole('button', { name: 'Снять блокировку' }).first().click();
-    const dialog = page.getByRole('alertdialog').or(page.getByRole('dialog'));
+    const dialog = page.getByRole('alertdialog');
     await typeInto(page, dialog.getByRole('textbox', { name: 'Причина' }), 'E2E: ошибка оператора');
     await dialog.getByRole('button', { name: 'Снять блокировку' }).click();
     expect(before).toBeGreaterThan(0);
