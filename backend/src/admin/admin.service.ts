@@ -1,3 +1,4 @@
+import { notifyDealStatus } from '../deals/deal-status-notify';
 import { CARGO_ARCHIVE_AFTER_MS } from '../cargos/cargo-lifecycle';
 import { isValidChannelSetting } from '../sms/login-code-channels';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
@@ -811,18 +812,9 @@ export class AdminService {
   /// 029, п.7 — заменяет старую NOTIFICATION_QUEUED-заглушку) — тот же
   /// канал/событие DEAL_STATUS, что и у обычной смены статуса (011), не
   /// отдельный шаблон: с точки зрения получателя разницы нет.
-  private async notifyDealStatusChange(deal: { id: string; driverId: string; companyId: string; cargoId: string }, status: string) {
-    const [driver, cargo] = await Promise.all([
-      this.prisma.driver.findUnique({ where: { id: deal.driverId }, select: { userId: true } }),
-      this.prisma.cargo.findUnique({ where: { id: deal.cargoId }, select: { companyId: true, publishedByUserId: true } }),
-    ]);
-    if (!driver) return;
-    const contactUserId = cargo ? await resolveCargoContactUserId(this.prisma, cargo) : null;
-    await this.notifications?.notify(
-      { userIds: [driver.userId, ...(contactUserId ? [contactUserId] : [])], companyId: deal.companyId },
-      'DEAL_STATUS',
-      { dealId: deal.id, status },
-    );
+  private async notifyDealStatusChange(deal: { id: string; driverId: string; companyId: string; cargoId: string; cancelReason?: string | null }, status: string) {
+    // 042 п.8: правка админом — обеим сторонам, текстом по роли.
+    await notifyDealStatus(this.prisma, this.notifications, deal, status, 'ADMIN');
   }
 
   /// «Отменить сделку» админом (п.17) — причина обязательна,

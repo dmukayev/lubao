@@ -35,7 +35,12 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
     prisma = {
       deal: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
       arrival: { updateMany: jest.fn().mockResolvedValue({ count: 0 }), findFirst: jest.fn().mockResolvedValue(null), update: jest.fn() },
-      cargo: { updateMany: jest.fn() },
+      cargo: {
+        updateMany: jest.fn(),
+        findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', publishedByUserId: 'logist-1', point: { name: { ru: 'Хоргос' } }, destinationCity: { name: { ru: 'Алматы' } }, destinationCountry: null }),
+      },
+      driver: { findUnique: jest.fn().mockResolvedValue({ userId: 'user-d1', fullName: 'Ерлан' }) },
+      company: { findUnique: jest.fn().mockResolvedValue({ name: 'Acme' }) },
       companyMember: { findFirst: jest.fn() },
       chat: { findFirst: jest.fn().mockResolvedValue(null) },
       vehicle: {
@@ -85,10 +90,12 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
 
     await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
 
+    // 042 п.8: водитель нажал сам — ему push нет; логисту — текст от его лица с городами.
+    expect(notifications.notify).toHaveBeenCalledTimes(1);
     expect(notifications.notify).toHaveBeenCalledWith(
-      { userIds: ['user-d1', 'logist-1'], companyId: 'c1' },
-      'DEAL_STATUS',
-      expect.objectContaining({ dealId: 'deal1', status: 'CONFIRMED_BY_DRIVER' }),
+      { userIds: ['logist-1'], companyId: 'c1' },
+      'DEAL_FOR_LOGIST',
+      expect.objectContaining({ dealId: 'deal1', status: 'CONFIRMED_BY_DRIVER', driverName: 'Ерлан', destination: { ru: 'Алматы' } }),
     );
   });
 
@@ -96,13 +103,14 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
     const deal = dealFixture({ cargo: { companyId: 'c1', publishedByUserId: null } });
     prisma.deal.findUnique.mockResolvedValue(deal);
     prisma.deal.update.mockResolvedValue(deal);
+    prisma.cargo.findUnique.mockResolvedValue({ companyId: 'c1', publishedByUserId: null, point: null, destinationCity: null, destinationCountry: null });
     prisma.companyMember.findFirst.mockResolvedValue({ userId: 'owner-1' });
 
     await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
 
     expect(notifications.notify).toHaveBeenCalledWith(
-      { userIds: ['user-d1', 'owner-1'], companyId: 'c1' },
-      'DEAL_STATUS',
+      { userIds: ['owner-1'], companyId: 'c1' },
+      'DEAL_FOR_LOGIST',
       expect.anything(),
     );
   });
@@ -114,11 +122,13 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
 
     await service.cancel('deal1', { driverId: 'd1' }, 'Не получилось забрать груз');
 
+    // Отменил водитель — логист получает причину.
     expect(notifications.notify).toHaveBeenCalledWith(
-      expect.anything(),
-      'DEAL_STATUS',
+      expect.objectContaining({ userIds: ['logist-1'] }),
+      'DEAL_FOR_LOGIST',
       expect.objectContaining({ status: 'CANCELLED' }),
     );
+    expect(notifications.notify).not.toHaveBeenCalledWith(expect.anything(), 'DEAL_FOR_DRIVER', expect.anything());
   });
 
   it('041, п.2: отмена сделки возвращает груз IN_DEAL → PUBLISHED (снова в ленте)', async () => {

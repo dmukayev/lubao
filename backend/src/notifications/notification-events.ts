@@ -58,6 +58,8 @@ export type NotificationEvent =
   | 'DRIVER_AGREED'
   | 'NEW_DRIVER_DIGEST'
   | 'DEAL_STATUS'
+  | 'DEAL_FOR_LOGIST'
+  | 'DEAL_FOR_DRIVER'
   | 'DEAL_SELECTED'
   | 'VERIFICATION_RETURNED'
   | 'VERIFICATION_APPROVED'
@@ -75,6 +77,77 @@ export interface RenderedNotification {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type NotificationPayload = Record<string, any>;
+
+/// 042 п.8: статус сделки — по роли и по-человечески, города из справочника.
+type Loc = 'ru' | 'kk' | 'zh' | 'en';
+function place(p: NotificationPayload, key: 'origin' | 'destination', locale: Loc): string {
+  return p[key] ? pickLocaleText(p[key], locale) : '';
+}
+function route(p: NotificationPayload, locale: Loc): string {
+  const from = place(p, 'origin', locale);
+  const to = place(p, 'destination', locale);
+  return from && to ? `${from} → ${to}` : to || from;
+}
+const LOGIST_STATUS: Record<Loc, (p: NotificationPayload) => { title: string; body: string }> = {
+  ru: (p) => {
+    switch (p.status) {
+      case 'CONFIRMED_BY_DRIVER': return { title: 'Перевозка подтверждена', body: `${p.driverName} подтвердил перевозку ${route(p, 'ru')}`.trim() };
+      case 'LOADED': return { title: 'Загрузился', body: `${p.driverName} загрузился, едет в ${place(p, 'destination', 'ru')}`.trim() };
+      case 'IN_TRANSIT': return { title: 'В пути', body: `${p.driverName} в пути в ${place(p, 'destination', 'ru')}`.trim() };
+      case 'DELIVERED': return { title: 'Груз доставлен', body: `${p.driverName} доставил груз — оцените водителя` };
+      case 'CANCELLED': return { title: 'Сделка отменена', body: p.reason ? `${p.driverName}: ${p.reason}` : p.driverName };
+      default: return { title: 'Сделка', body: DEAL_STATUS_LABEL[p.status]?.ru ?? p.status };
+    }
+  },
+  kk: (p) => {
+    switch (p.status) {
+      case 'CONFIRMED_BY_DRIVER': return { title: 'Тасымал расталды', body: `${p.driverName} тасымалды растады ${route(p, 'kk')}`.trim() };
+      case 'LOADED': return { title: 'Тиелді', body: `${p.driverName} жүк тиеді, ${place(p, 'destination', 'kk')} бағытына барады`.trim() };
+      case 'IN_TRANSIT': return { title: 'Жолда', body: `${p.driverName} ${place(p, 'destination', 'kk')} бағытында жолда`.trim() };
+      case 'DELIVERED': return { title: 'Жүк жеткізілді', body: `${p.driverName} жүкті жеткізді — жүргізушіні бағалаңыз` };
+      case 'CANCELLED': return { title: 'Мәміле болдырылмады', body: p.reason ? `${p.driverName}: ${p.reason}` : p.driverName };
+      default: return { title: 'Мәміле', body: DEAL_STATUS_LABEL[p.status]?.kk ?? p.status };
+    }
+  },
+  zh: (p) => {
+    switch (p.status) {
+      case 'CONFIRMED_BY_DRIVER': return { title: '运输已确认', body: `${p.driverName} 已确认运输 ${route(p, 'zh')}`.trim() };
+      case 'LOADED': return { title: '已装货', body: `${p.driverName} 已装货，正前往${place(p, 'destination', 'zh')}` };
+      case 'IN_TRANSIT': return { title: '运输中', body: `${p.driverName} 正在前往${place(p, 'destination', 'zh')}` };
+      case 'DELIVERED': return { title: '货物已送达', body: `${p.driverName} 已送达货物 — 请评价司机` };
+      case 'CANCELLED': return { title: '交易已取消', body: p.reason ? `${p.driverName}：${p.reason}` : p.driverName };
+      default: return { title: '交易', body: DEAL_STATUS_LABEL[p.status]?.zh ?? p.status };
+    }
+  },
+  en: (p) => {
+    switch (p.status) {
+      case 'CONFIRMED_BY_DRIVER': return { title: 'Haul confirmed', body: `${p.driverName} confirmed the haul ${route(p, 'en')}`.trim() };
+      case 'LOADED': return { title: 'Loaded', body: `${p.driverName} has loaded and is heading to ${place(p, 'destination', 'en')}`.trim() };
+      case 'IN_TRANSIT': return { title: 'In transit', body: `${p.driverName} is on the way to ${place(p, 'destination', 'en')}`.trim() };
+      case 'DELIVERED': return { title: 'Cargo delivered', body: `${p.driverName} delivered the cargo — rate the driver` };
+      case 'CANCELLED': return { title: 'Deal cancelled', body: p.reason ? `${p.driverName}: ${p.reason}` : p.driverName };
+      default: return { title: 'Deal', body: DEAL_STATUS_LABEL[p.status]?.en ?? p.status };
+    }
+  },
+};
+const DRIVER_STATUS: Record<Loc, (p: NotificationPayload) => { title: string; body: string }> = {
+  ru: (p) =>
+    p.status === 'DELIVERED' ? { title: 'Доставка отмечена', body: `${p.companyName} отметила доставку — оставьте отзыв` }
+    : p.status === 'CANCELLED' ? { title: 'Сделка отменена', body: p.reason ? `Причина: ${p.reason}` : p.companyName }
+    : { title: p.companyName, body: DEAL_STATUS_LABEL[p.status]?.ru ?? p.status },
+  kk: (p) =>
+    p.status === 'DELIVERED' ? { title: 'Жеткізу белгіленді', body: `${p.companyName} жеткізуді белгіледі — пікір қалдырыңыз` }
+    : p.status === 'CANCELLED' ? { title: 'Мәміле болдырылмады', body: p.reason ? `Себебі: ${p.reason}` : p.companyName }
+    : { title: p.companyName, body: DEAL_STATUS_LABEL[p.status]?.kk ?? p.status },
+  zh: (p) =>
+    p.status === 'DELIVERED' ? { title: '已确认送达', body: `${p.companyName} 已确认送达 — 请留下评价` }
+    : p.status === 'CANCELLED' ? { title: '交易已取消', body: p.reason ? `原因：${p.reason}` : p.companyName }
+    : { title: p.companyName, body: DEAL_STATUS_LABEL[p.status]?.zh ?? p.status },
+  en: (p) =>
+    p.status === 'DELIVERED' ? { title: 'Delivery confirmed', body: `${p.companyName} marked the delivery — leave a review` }
+    : p.status === 'CANCELLED' ? { title: 'Deal cancelled', body: p.reason ? `Reason: ${p.reason}` : p.companyName }
+    : { title: p.companyName, body: DEAL_STATUS_LABEL[p.status]?.en ?? p.status },
+};
 
 export interface NotificationEventDef {
   eventGroup: NotificationEventGroup;
@@ -139,6 +212,8 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
   },
   /// Водителю — когда логист выбрал его (042 п.1, «Готово, когда»):
   /// от его лица, а не общее «Статус сделки: Водитель выбран».
+  DEAL_FOR_LOGIST: LOGIST_STATUS,
+  DEAL_FOR_DRIVER: DRIVER_STATUS,
   DEAL_SELECTED: {
     ru: () => ({ title: 'Вас выбрали', body: 'Логист выбрал вас на груз. Подтвердите перевозку в приложении.' }),
     kk: () => ({ title: 'Сізді таңдады', body: 'Логист сізді жүкке таңдады. Тасымалды қолданбада растаңыз.' }),
@@ -243,6 +318,18 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
     channels: ['WECOM'],
     render: (locale, p) => T.NEW_DRIVER_DIGEST[locale](p),
     deepLink: () => '/company/drivers',
+  },
+  DEAL_FOR_LOGIST: {
+    eventGroup: 'DEAL_STATUS',
+    channels: ['PUSH', 'WECOM'],
+    render: (locale, p) => LOGIST_STATUS[locale as Loc](p),
+    deepLink: (p) => `/deal/${p.dealId}`,
+  },
+  DEAL_FOR_DRIVER: {
+    eventGroup: 'DEAL_STATUS',
+    channels: ['PUSH'],
+    render: (locale, p) => DRIVER_STATUS[locale as Loc](p),
+    deepLink: (p) => `/deal/${p.dealId}`,
   },
   DEAL_SELECTED: {
     eventGroup: 'DEAL_STATUS',

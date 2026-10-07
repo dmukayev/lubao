@@ -1,3 +1,4 @@
+import { DealActor, notifyDealStatus } from './deal-status-notify';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Company, Deal, Driver, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -32,13 +33,10 @@ export class DealsService {
   /// (задача 011, таблица событий «Смена статуса сделки»). Задача 038,
   /// п.12 — плюс deal:updated в комнату чата сделки: собеседник с
   /// открытым чатом видит новый статус без перезахода.
-  private async notifyStatusChange(deal: DealWithRelations, status: string) {
+  private async notifyStatusChange(deal: DealWithRelations, status: string, actor: DealActor) {
+    // 042 п.8: второй стороне — текст от её лица (кто нажал — push не получает).
+    await notifyDealStatus(this.prisma, this.notifications, deal, status, actor);
     const contactUserId = await resolveCargoContactUserId(this.prisma, deal.cargo);
-    await this.notifications.notify(
-      { userIds: [deal.driver.userId, ...(contactUserId ? [contactUserId] : [])], companyId: deal.companyId },
-      'DEAL_STATUS',
-      { dealId: deal.id, status },
-    );
     const chat = await this.prisma.chat.findFirst({ where: { dealId: deal.id }, select: { id: true } });
     if (chat) this.realtime.emitDealUpdated(chat.id, { dealId: deal.id, status });
     // Личные комнаты участников: водителю — чтобы трекинг рейса стартовал/
@@ -228,7 +226,7 @@ export class DealsService {
         data: { status: 'ARCHIVED', closeOutcome: 'FOUND_IN_APP', closedAt: new Date() },
       });
     }
-    await this.notifyStatusChange(updated, nextStatus);
+    await this.notifyStatusChange(updated, nextStatus, 'DRIVER');
     return this.toDto(updated);
   }
 
@@ -254,7 +252,7 @@ export class DealsService {
     });
     // Сделка отменена → груз снова в ленте, если он не был закрыт (041, п.2).
     await this.prisma.cargo.updateMany({ where: { id: updated.cargoId, status: 'IN_DEAL' }, data: { status: 'PUBLISHED' } });
-    await this.notifyStatusChange(updated, 'CANCELLED');
+    await this.notifyStatusChange(updated, 'CANCELLED', ctx.driverId ? 'DRIVER' : 'COMPANY');
     return this.toDto(updated);
   }
 }

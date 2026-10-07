@@ -1303,8 +1303,9 @@ describe('AdminService.dealDetail / dealChat / advanceDealStatusByAdmin / cancel
 
   function dealNotificationMocks() {
     return {
-      driver: { findUnique: jest.fn().mockResolvedValue({ userId: 'u-driver' }) },
-      cargo: { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', publishedByUserId: 'logist-1' }) },
+      driver: { findUnique: jest.fn().mockResolvedValue({ userId: 'u-driver', fullName: 'Ерлан' }) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', publishedByUserId: 'logist-1', point: null, destinationCity: null, destinationCountry: null }) },
+      company: { findUnique: jest.fn().mockResolvedValue({ name: 'Acme' }) },
     };
   }
 
@@ -1320,11 +1321,9 @@ describe('AdminService.dealDetail / dealChat / advanceDealStatusByAdmin / cancel
     await service.advanceDealStatusByAdmin('deal1', 'admin-1', { status: 'LOADED', reason: 'Водитель уже погрузился' } as any);
 
     expect(prisma.deal.update).toHaveBeenCalledWith({ where: { id: 'deal1' }, data: { status: 'LOADED', loadedAt: expect.any(Date) } });
-    expect(notifications.notify).toHaveBeenCalledWith(
-      { userIds: ['u-driver', 'logist-1'], companyId: 'c1' },
-      'DEAL_STATUS',
-      expect.objectContaining({ dealId: 'deal1', status: 'LOADED' }),
-    );
+    // 042 п.8: правка админом — обеим сторонам, каждой своим текстом.
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u-driver'] }, 'DEAL_FOR_DRIVER', expect.objectContaining({ dealId: 'deal1', status: 'LOADED' }));
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['logist-1'], companyId: 'c1' }, 'DEAL_FOR_LOGIST', expect.objectContaining({ dealId: 'deal1', status: 'LOADED' }));
   });
 
   it('advanceDealStatusByAdmin allows moving one step backward and clears the timestamp being undone', async () => {

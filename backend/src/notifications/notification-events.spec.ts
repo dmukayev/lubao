@@ -55,3 +55,25 @@ describe('deep link push — маршруты приложения (042 п.1)', 
     expect(withButtons).toEqual(['AGREED_CHECK', 'ARRIVAL_STILL_LOOKING']);
   });
 });
+
+describe('статус сделки по роли (042 п.8)', () => {
+  const p = { status: 'LOADED', driverName: 'Ерлан', companyName: 'Acme', origin: { ru: 'Хоргос', zh: '霍尔果斯' }, destination: { ru: 'Алматы', en: 'Almaty' }, reason: '' };
+  it('логисту — по-человечески, с городом из справочника', () => {
+    expect(NOTIFICATION_EVENTS.DEAL_FOR_LOGIST.render('ru', p).body).toBe('Ерлан загрузился, едет в Алматы');
+    expect(NOTIFICATION_EVENTS.DEAL_FOR_LOGIST.render('ru', { ...p, status: 'CONFIRMED_BY_DRIVER' }).body).toBe('Ерлан подтвердил перевозку Хоргос → Алматы');
+    expect(NOTIFICATION_EVENTS.DEAL_FOR_LOGIST.render('en', { ...p, status: 'DELIVERED' }).body).toBe('Ерлан delivered the cargo — rate the driver');
+  });
+  it('водителю — доставка и отмена с причиной', () => {
+    expect(NOTIFICATION_EVENTS.DEAL_FOR_DRIVER.render('ru', { ...p, status: 'DELIVERED' }).body).toBe('Acme отметила доставку — оставьте отзыв');
+    expect(NOTIFICATION_EVENTS.DEAL_FOR_DRIVER.render('ru', { ...p, status: 'CANCELLED', reason: 'Груз не готов' }).body).toBe('Причина: Груз не готов');
+  });
+  it('в шаблонах нет «Хоргос» строкой — только из справочника', () => {
+    const noOrigin = { ...p, origin: null };
+    for (const locale of ['ru', 'kk', 'zh', 'en'] as const) {
+      for (const status of ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED']) {
+        const r = NOTIFICATION_EVENTS.DEAL_FOR_LOGIST.render(locale, { ...noOrigin, status });
+        expect(`${r.title} ${r.body}`).not.toMatch(/Хоргос|Khorgos|霍尔果斯/);
+      }
+    }
+  });
+});
