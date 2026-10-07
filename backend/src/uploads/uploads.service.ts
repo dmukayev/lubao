@@ -38,6 +38,10 @@ export class UploadsService implements OnModuleInit {
       useSSL: publicUrlParsed.protocol === 'https:',
       accessKey: process.env.MINIO_ACCESS_KEY || 'lubao',
       secretKey: process.env.MINIO_SECRET_KEY || 'lubao_minio_password',
+      // Регион задан явно: без него minio-js перед подписью спрашивает его у
+      // сервера — сетевой запрос на ПУБЛИЧНЫЙ хост, который бэкенду может быть
+      // недоступен (ECONNREFUSED при открытии документа в админке).
+      region: process.env.MINIO_REGION || 'us-east-1',
     });
   }
 
