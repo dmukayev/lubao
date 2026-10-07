@@ -5549,6 +5549,24 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Координаты скопированы'**
   String get mapsCoordinatesCopied;
+
+  /// No description provided for @adminRatesTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Курсы валют (НБ РК)'**
+  String get adminRatesTitle;
+
+  /// No description provided for @adminRatesHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновляются сами каждый день в 10:00 по курсу Нацбанка. Ручная правка автоматически не перезаписывается.'**
+  String get adminRatesHint;
+
+  /// No description provided for @adminRateEdit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменить курс'**
+  String get adminRateEdit;
 }
 
 class _LubaoLocalizationsDelegate

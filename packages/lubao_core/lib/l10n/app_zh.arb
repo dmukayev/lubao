@@ -1049,5 +1049,8 @@
   "mapsAmap": "高德地图",
   "mapsBaidu": "百度地图",
   "mapsCopyCoordinates": "复制坐标",
-  "mapsCoordinatesCopied": "坐标已复制"
+  "mapsCoordinatesCopied": "坐标已复制",
+  "adminRatesTitle": "汇率（哈萨克斯坦国家银行）",
+  "adminRatesHint": "每天 10:00 按国家银行汇率自动更新。手动修改不会被自动覆盖。",
+  "adminRateEdit": "修改汇率"
 }

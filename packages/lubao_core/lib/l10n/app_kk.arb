@@ -1049,5 +1049,8 @@
   "mapsAmap": "高德地图 (Amap)",
   "mapsBaidu": "百度地图 (Baidu)",
   "mapsCopyCoordinates": "Координаттарды көшіру",
-  "mapsCoordinatesCopied": "Координаттар көшірілді"
+  "mapsCoordinatesCopied": "Координаттар көшірілді",
+  "adminRatesTitle": "Валюта бағамдары (ҰБ)",
+  "adminRatesHint": "Күн сайын 10:00-де Ұлттық банк бағамы бойынша өздігінен жаңарады. Қолмен өзгерту автоматты түрде қайта жазылмайды.",
+  "adminRateEdit": "Бағамды өзгерту"
 }

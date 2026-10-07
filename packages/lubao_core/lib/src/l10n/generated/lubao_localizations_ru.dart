@@ -2900,4 +2900,14 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get mapsCoordinatesCopied => 'Координаты скопированы';
+
+  @override
+  String get adminRatesTitle => 'Курсы валют (НБ РК)';
+
+  @override
+  String get adminRatesHint =>
+      'Обновляются сами каждый день в 10:00 по курсу Нацбанка. Ручная правка автоматически не перезаписывается.';
+
+  @override
+  String get adminRateEdit => 'Изменить курс';
 }

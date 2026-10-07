@@ -64,6 +64,11 @@ class AdminRepository {
     await _client.dio.patch('/admin/settings/$key', data: {'value': value, if (reason != null) 'reason': reason});
   }
 
+  /// Ручная правка курса (042 п.4): автообновление НБ РК её не перезапишет.
+  Future<void> setExchangeRate(String currency, double rateToKzt, {required String reason}) async {
+    await _client.dio.put('/admin/exchange-rates', data: {'currency': currency, 'rateToKzt': rateToKzt, 'reason': reason});
+  }
+
   /// Каналы кода входа (042 п.3): порядок, вкл/выкл и есть ли ключи.
   Future<List<AdminLoginCodeChannel>> loginCodeChannels() async {
     final res = await _client.dio.get('/admin/login-code-channels');

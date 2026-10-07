@@ -2914,4 +2914,14 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get mapsCoordinatesCopied => 'Coordinates copied';
+
+  @override
+  String get adminRatesTitle => 'Exchange rates (NBK)';
+
+  @override
+  String get adminRatesHint =>
+      'Updated automatically every day at 10:00 from the National Bank. A manual change is not overwritten automatically.';
+
+  @override
+  String get adminRateEdit => 'Change rate';
 }

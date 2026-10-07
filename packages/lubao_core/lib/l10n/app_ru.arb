@@ -1181,5 +1181,8 @@
   "mapsAmap": "高德地图 (Amap)",
   "mapsBaidu": "百度地图 (Baidu)",
   "mapsCopyCoordinates": "Скопировать координаты",
-  "mapsCoordinatesCopied": "Координаты скопированы"
+  "mapsCoordinatesCopied": "Координаты скопированы",
+  "adminRatesTitle": "Курсы валют (НБ РК)",
+  "adminRatesHint": "Обновляются сами каждый день в 10:00 по курсу Нацбанка. Ручная правка автоматически не перезаписывается.",
+  "adminRateEdit": "Изменить курс"
 }

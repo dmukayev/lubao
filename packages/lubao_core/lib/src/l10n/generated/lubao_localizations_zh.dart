@@ -2849,4 +2849,13 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get mapsCoordinatesCopied => '坐标已复制';
+
+  @override
+  String get adminRatesTitle => '汇率（哈萨克斯坦国家银行）';
+
+  @override
+  String get adminRatesHint => '每天 10:00 按国家银行汇率自动更新。手动修改不会被自动覆盖。';
+
+  @override
+  String get adminRateEdit => '修改汇率';
 }

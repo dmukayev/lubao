@@ -149,6 +149,8 @@ class AdminSettingsScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               const _LoginCodeChannelsCard(),
               const SizedBox(height: 12),
+              _RatesCard(rates: refDataAsync.valueOrNull?.exchangeRates ?? const []),
+              const SizedBox(height: 12),
               translationStats.when(
                 loading: () => const AppCard(child: LoadingView()),
                 error: (e, st) {
@@ -304,3 +306,77 @@ class _LoginCodeChannelsCard extends ConsumerWidget {
   }
 }
 
+/// Курсы НБ РК (042 п.4): видно текущие, правка — с причиной (audit_log).
+class _RatesCard extends ConsumerWidget {
+  const _RatesCard({required this.rates});
+
+  final List<ExchangeRate> rates;
+
+  Future<void> _edit(BuildContext context, WidgetRef ref, Currency currency, double? current) async {
+    final t = context.l10n;
+    final rateController = TextEditingController(text: current?.toStringAsFixed(2) ?? '');
+    final reasonController = TextEditingController();
+    final code = currency.name.toUpperCase();
+    final result = await showDialog<(double, String)>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) {
+          final rate = double.tryParse(rateController.text.trim().replaceAll(',', '.'));
+          final canSave = rate != null && rate > 0 && reasonController.text.trim().isNotEmpty;
+          return AlertDialog(
+            title: Text('${t.adminRateEdit}: $code → ₸'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppTextField(key: const Key('adminRateValue'), label: '$code → ₸', controller: rateController, keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => setState(() {})),
+                const SizedBox(height: 12),
+                AppTextField(key: const Key('adminRateReason'), label: t.adminReasonLabel, controller: reasonController, maxLines: 2, onChanged: (_) => setState(() {})),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
+              FilledButton(
+                onPressed: canSave ? () => Navigator.pop(dialogContext, (rate, reasonController.text.trim())) : null,
+                child: Text(t.commonSave),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (result == null) return;
+    await ref.read(adminRepositoryProvider).setExchangeRate(code, result.$1, reason: result.$2);
+    ref.invalidate(referenceDataProvider);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.l10n;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(t.adminRatesTitle, style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Text(t.adminRatesHint, style: AppTextStyles.caption),
+          const SizedBox(height: 8),
+          for (final currency in const [Currency.usd, Currency.cny])
+            Builder(builder: (context) {
+              final rate = rates.where((r) => r.currency == currency).firstOrNull?.rateToKzt;
+              return Row(
+                children: [
+                  Expanded(child: Text('1 ${currency.name.toUpperCase()} = ${rate?.toStringAsFixed(2) ?? '—'} ₸')),
+                  IconButton(
+                    key: Key('adminRateEdit-${currency.name}'),
+                    tooltip: t.adminRateEdit,
+                    icon: const Icon(LucideIcons.pencil, size: 18),
+                    onPressed: () => _edit(context, ref, currency, rate),
+                  ),
+                ],
+              );
+            }),
+        ],
+      ),
+    );
+  }
+}

@@ -2913,4 +2913,14 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get mapsCoordinatesCopied => 'Координаттар көшірілді';
+
+  @override
+  String get adminRatesTitle => 'Валюта бағамдары (ҰБ)';
+
+  @override
+  String get adminRatesHint =>
+      'Күн сайын 10:00-де Ұлттық банк бағамы бойынша өздігінен жаңарады. Қолмен өзгерту автоматты түрде қайта жазылмайды.';
+
+  @override
+  String get adminRateEdit => 'Бағамды өзгерту';
 }
