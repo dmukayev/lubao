@@ -19,7 +19,25 @@ void main() {
   testWidgets('водитель: вход → анонс → лента → чат → сообщение', (tester) async {
     final run = E2eRun(binding, 'driver_flow');
     await clearPersistedSession();
-    await tester.pumpWidget(const ProviderScope(child: LubaoApp()));
+
+    // 043 п.8: версия ниже minAppVersion из админки — только экран обновления.
+    await run.step(tester, 'обновите-приложение', () async {
+      final admin = await adminApi();
+      Future<void> setMin(String value) => admin.patch('/admin/settings/minAppVersion', data: {'value': value, 'reason': 'E2E'});
+      await setMin('99.0.0');
+      try {
+        await tester.pumpWidget(ProviderScope(key: UniqueKey(), child: const LubaoApp()));
+        await waitFor(tester, find.byKey(const Key('appUpdateTitle')));
+        expect(find.byKey(const Key('appUpdateButton')), findsOneWidget);
+        expect(find.byKey(const Key('roleSelectDriverButton')), findsNothing);
+        expectInsideSafeZone(tester);
+        expectNoOverflow(tester);
+      } finally {
+        await setMin('');
+      }
+    });
+
+    await tester.pumpWidget(ProviderScope(key: UniqueKey(), child: const LubaoApp()));
 
     await waitFor(tester, find.byKey(const Key('roleSelectDriverButton')));
     final t = tester.element(find.byType(Scaffold).first).l10n;

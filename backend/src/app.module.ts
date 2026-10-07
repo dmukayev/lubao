@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppThrottlerGuard, THROTTLE_TTL_MS, defaultLimit } from './common/app-throttler.guard';
 import { PrismaModule } from './prisma/prisma.module';
+import { ClientErrorsController } from './observability/client-errors.controller';
 import { HealthController } from './health/health.controller';
 import { JwtAuthGuard } from './common/jwt-auth.guard';
 import { AuthModule } from './auth/auth.module';
@@ -58,7 +59,7 @@ import { IdentifiersModule } from './identifiers/identifiers.module';
     AdminModule,
     UploadsModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, ClientErrorsController],
   providers: [
     AdminBootstrapService,
     { provide: APP_GUARD, useClass: AppThrottlerGuard },

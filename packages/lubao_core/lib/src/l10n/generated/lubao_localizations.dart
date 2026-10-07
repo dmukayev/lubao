@@ -5573,6 +5573,162 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'{name}: договорились — выберите водителя, чтобы сделка пошла по шагам'**
   String chatSystemDriverSaysAgreed(String name);
+
+  /// No description provided for @adminNavBlacklist.
+  ///
+  /// In ru, this message translates to:
+  /// **'Чёрный список'**
+  String get adminNavBlacklist;
+
+  /// No description provided for @adminBlacklistAdd.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить в чёрный список'**
+  String get adminBlacklistAdd;
+
+  /// No description provided for @adminBlacklistType.
+  ///
+  /// In ru, this message translates to:
+  /// **'Что блокируем'**
+  String get adminBlacklistType;
+
+  /// No description provided for @adminBlacklistValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Значение'**
+  String get adminBlacklistValue;
+
+  /// No description provided for @adminBlacklistLift.
+  ///
+  /// In ru, this message translates to:
+  /// **'Снять блокировку'**
+  String get adminBlacklistLift;
+
+  /// No description provided for @adminBlacklistLifted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Снята'**
+  String get adminBlacklistLifted;
+
+  /// No description provided for @adminBlacklistEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Чёрный список пуст'**
+  String get adminBlacklistEmpty;
+
+  /// No description provided for @adminBlacklistShowLifted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показать снятые'**
+  String get adminBlacklistShowLifted;
+
+  /// No description provided for @adminIdentifierTypeBin.
+  ///
+  /// In ru, this message translates to:
+  /// **'БИН'**
+  String get adminIdentifierTypeBin;
+
+  /// No description provided for @adminIdentifierTypeUscc.
+  ///
+  /// In ru, this message translates to:
+  /// **'USCC (КНР)'**
+  String get adminIdentifierTypeUscc;
+
+  /// No description provided for @adminBlacklistInvalid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Значение не подходит для этого типа'**
+  String get adminBlacklistInvalid;
+
+  /// No description provided for @profileDeleteAccount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить аккаунт'**
+  String get profileDeleteAccount;
+
+  /// No description provided for @profileDeleteAccountTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить аккаунт?'**
+  String get profileDeleteAccountTitle;
+
+  /// No description provided for @profileDeleteAccountBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя, телефон, email, документы и данные машин будут удалены, вход в аккаунт закроется на всех устройствах. Завершённые сделки и отзывы останутся без вашего имени. Отменить удаление нельзя.'**
+  String get profileDeleteAccountBody;
+
+  /// No description provided for @profileDeleteAccountConfirm.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить'**
+  String get profileDeleteAccountConfirm;
+
+  /// No description provided for @profileDeleteAccountActiveDeals.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сначала завершите или отмените активные сделки.'**
+  String get profileDeleteAccountActiveDeals;
+
+  /// No description provided for @profileDeleteAccountOwnerHasMembers.
+  ///
+  /// In ru, this message translates to:
+  /// **'В компании есть сотрудники: сначала передайте владение или удалите их.'**
+  String get profileDeleteAccountOwnerHasMembers;
+
+  /// No description provided for @pdConsentTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Согласие на обработку данных'**
+  String get pdConsentTitle;
+
+  /// No description provided for @pdConsentBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Чтобы проверить вас, мы храним фото документов и данные из них (ФИО, ИИН, номер прав, госномер, VIN). Данные хранятся на серверах в Казахстане, видны только проверяющему администратору и не передаются третьим лицам. Документы удаляются вместе с аккаунтом.'**
+  String get pdConsentBody;
+
+  /// No description provided for @pdConsentCheckbox.
+  ///
+  /// In ru, this message translates to:
+  /// **'Я согласен на сбор и обработку моих персональных данных'**
+  String get pdConsentCheckbox;
+
+  /// No description provided for @pdConsentContinue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Продолжить'**
+  String get pdConsentContinue;
+
+  /// No description provided for @legalTerms.
+  ///
+  /// In ru, this message translates to:
+  /// **'Условия использования'**
+  String get legalTerms;
+
+  /// No description provided for @legalPrivacy.
+  ///
+  /// In ru, this message translates to:
+  /// **'Политика конфиденциальности'**
+  String get legalPrivacy;
+
+  /// No description provided for @appUpdateTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновите приложение'**
+  String get appUpdateTitle;
+
+  /// No description provided for @appUpdateBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Эта версия больше не поддерживается. Установите новую — это займёт минуту.'**
+  String get appUpdateBody;
+
+  /// No description provided for @appUpdateButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновить'**
+  String get appUpdateButton;
 }
 
 class _LubaoLocalizationsDelegate

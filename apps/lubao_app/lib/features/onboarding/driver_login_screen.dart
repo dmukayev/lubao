@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../shared/status_helpers.dart';
 import '../shared/error_feedback.dart';
+import '../shared/pd_consent.dart';
 
 const _codeLength = 4;
 
@@ -269,6 +270,8 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
                 loading: _sendingCode,
                 onPressed: _requestCode,
               ),
+              const SizedBox(height: AppSpacing.md),
+              const LegalLinks(),
             ] else ...[
               const SizedBox(height: AppSpacing.lg),
               Text(t.driverOtpSubtitle(_fullPhone), style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),

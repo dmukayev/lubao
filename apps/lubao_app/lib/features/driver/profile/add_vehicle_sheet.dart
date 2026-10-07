@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../shared/photo_picker.dart';
+import '../../shared/pd_consent.dart';
 
 /// Добавление машины в гараж (задача 031, этап B, п.8) — без распознавания
 /// (этап D) поля заполняются вручную, ничего не блокируется. Возвращает
@@ -61,6 +62,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   }
 
   Future<void> _pickPhoto(ImageSource source) async {
+    if (!await ensurePdConsent(context, ref) || !mounted) return;
     final picked = await pickPhoto(source);
     if (picked != null) setState(() { _photo = picked; _photoError = null; });
   }

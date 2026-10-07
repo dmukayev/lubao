@@ -64,6 +64,20 @@ class AdminRepository {
     await _client.dio.patch('/admin/settings/$key', data: {'value': value, if (reason != null) 'reason': reason});
   }
 
+  /// Ручной чёрный список (043 п.4).
+  Future<List<AdminBlockedIdentifier>> blacklist({bool activeOnly = true}) async {
+    final res = await _client.dio.get('/admin/blacklist', queryParameters: {'active': activeOnly ? 'true' : 'false'});
+    return (res.data as List).cast<Map<String, dynamic>>().map(AdminBlockedIdentifier.fromJson).toList();
+  }
+
+  Future<void> addToBlacklist({required String type, required String value, required String reason}) async {
+    await _client.dio.post('/admin/blacklist', data: {'type': type, 'value': value, 'reason': reason});
+  }
+
+  Future<void> liftBlacklist(String id, {required String reason}) async {
+    await _client.dio.post('/admin/blacklist/$id/lift', data: {'reason': reason});
+  }
+
   /// Ручная правка курса (042 п.4): автообновление НБ РК её не перезапишет.
   Future<void> setExchangeRate(String currency, double rateToKzt, {required String reason}) async {
     await _client.dio.put('/admin/exchange-rates', data: {'currency': currency, 'rateToKzt': rateToKzt, 'reason': reason});
@@ -700,4 +714,38 @@ class AdminLoginCodeChannel {
   final bool configured;
 
   AdminLoginCodeChannel copyWith({bool? enabled}) => AdminLoginCodeChannel(id: id, enabled: enabled ?? this.enabled, configured: configured);
+}
+
+/// Запись чёрного списка (043 п.4): значение — только маской.
+class AdminBlockedIdentifier {
+  const AdminBlockedIdentifier({
+    required this.id,
+    required this.type,
+    required this.valueMasked,
+    required this.reason,
+    required this.createdAt,
+    this.blockedByName,
+    this.liftedAt,
+    this.liftReason,
+  });
+
+  final String id;
+  final String type;
+  final String valueMasked;
+  final String reason;
+  final DateTime createdAt;
+  final String? blockedByName;
+  final DateTime? liftedAt;
+  final String? liftReason;
+
+  factory AdminBlockedIdentifier.fromJson(Map<String, dynamic> json) => AdminBlockedIdentifier(
+        id: json['id'] as String,
+        type: json['type'] as String,
+        valueMasked: json['valueMasked'] as String? ?? '',
+        reason: json['reason'] as String? ?? '',
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        blockedByName: json['blockedByName'] as String?,
+        liftedAt: json['liftedAt'] == null ? null : DateTime.parse(json['liftedAt'] as String),
+        liftReason: json['liftReason'] as String?,
+      );
 }

@@ -8,6 +8,7 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/photo_picker.dart';
 import '../../shared/error_feedback.dart';
+import '../../shared/pd_consent.dart';
 
 const _requiredDocs = [
   // Задача 032, п.13 (038) — техпаспорта убраны: они загружаются в гараже
@@ -87,6 +88,7 @@ class _DocSlotState extends ConsumerState<_DocSlot> {
   Future<void> _pick(ImageSource source) async {
     if (_locked) return;
     final t = context.l10n;
+    if (!await ensurePdConsent(context, ref) || !mounted) return;
     final picked = await pickPhoto(source);
     if (picked == null) return;
     setState(() => _uploading = true);

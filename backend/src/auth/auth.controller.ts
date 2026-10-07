@@ -7,6 +7,7 @@ import { Public } from '../common/public.decorator';
 import { RequestContext } from '../common/request-context';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
+import { AccountDeletionService } from './account-deletion.service';
 import {
   AdminLoginDto,
   CompanyPasswordLoginDto,
@@ -20,6 +21,7 @@ import {
   VerifyEmailDto,
 } from './dto/login.dto';
 import { RegisterCompanyAuthDto } from './dto/register-company.dto';
+import { PdConsentDto } from './dto/pd-consent.dto';
 import { AcceptInviteDto } from '../companies/dto/invite.dto';
 
 @Controller('auth')
@@ -27,6 +29,7 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly sessions: SessionService,
+    private readonly accountDeletion: AccountDeletionService,
   ) {}
 
   @Public()
@@ -125,6 +128,22 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() ctx: RequestContext) {
     return this.auth.me(ctx.user.id);
+  }
+
+  /// 043 п.2: согласие на обработку ПДн перед первой загрузкой документа.
+  @Post('me/pd-consent')
+  @HttpCode(200)
+  async acceptPdConsent(@CurrentUser() ctx: RequestContext, @Body() dto: PdConsentDto) {
+    await this.auth.acceptPdConsent(ctx.user.id, dto.version);
+    return { success: true };
+  }
+
+  /// 043 п.1: удаление аккаунта самим пользователем (обезличивание).
+  @Delete('me')
+  @HttpCode(200)
+  async deleteMe(@CurrentUser() ctx: RequestContext) {
+    await this.accountDeletion.deleteAccount(ctx.user.id);
+    return { success: true };
   }
 
   @Patch('me/locale')

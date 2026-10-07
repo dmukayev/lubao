@@ -257,4 +257,47 @@ assert(viaOff.status < 300 && viaOff.json.channel === 'telegram', 'выключ�
 assert((await api('PATCH', '/admin/settings/loginCodeChannels', { token, body: { value: '[{"id":"viber","enabled":true}]', reason: 'E2E' } })).status === 400, 'неизвестный канал админка не сохраняет');
 assert((await setChannels([{ id: 'whatsapp', enabled: true }, { id: 'telegram', enabled: true }, { id: 'sms', enabled: true }])).status < 300, 'настройка каналов возвращена (остальные сценарии)');
 
+// 043 п.4: ручной чёрный список — добавить (значение только маской, в журнале
+// без исходного), увидеть в списке, снять с причиной; неизвестный тип — 400.
+// ИИН — чувствительный (маска), госномер маской не скрывается (он и так на машине).
+const BL_IIN = `9901013${String(Date.now()).slice(-5)}`;
+const blAdd = await api('POST', '/admin/blacklist', { token, body: { type: 'IIN', value: BL_IIN, reason: 'E2E: ручная блокировка' } });
+assert(blAdd.status < 300 && blAdd.json.valueMasked && !blAdd.json.valueMasked.includes(BL_IIN), 'админ добавляет ИИН в чёрный список, ответ — маской', JSON.stringify(blAdd.json));
+assert((await api('POST', '/admin/blacklist', { token, body: { type: 'PASSPORT', value: 'X', reason: 'E2E' } })).status === 400, 'неизвестный тип идентификатора — 400');
+assert((await api('POST', '/admin/blacklist', { token, body: { type: 'IIN', value: BL_IIN } })).status === 400, 'без причины не добавляется');
+const blActive = (await get('/admin/blacklist?active=true')).json;
+assert(blActive.some((r) => r.id === blAdd.json.id && r.reason === 'E2E: ручная блокировка'), 'запись видна в активном списке');
+assert(!JSON.stringify(blActive).includes(BL_IIN), 'в списке нет исходного значения');
+const blAudit = (await get('/admin/audit?entityType=BlockedIdentifier&limit=20')).json;
+assert(!JSON.stringify(blAudit).includes(BL_IIN), 'в журнале действий нет исходного значения');
+assert((await api('POST', `/admin/blacklist/${blAdd.json.id}/lift`, { token, body: { reason: 'E2E: снято' } })).status < 300, 'админ снимает блокировку с причиной');
+assert(!(await get('/admin/blacklist?active=true')).json.some((r) => r.id === blAdd.json.id), 'снятая запись ушла из активных');
+assert((await get('/admin/blacklist?active=false')).json.some((r) => r.id === blAdd.json.id && r.liftedAt && r.liftReason === 'E2E: снято'), 'снятая видна с «Показать снятые»');
+
+// 043 п.1: удаление аккаунта — водитель удаляет себя, ПДн обезличены,
+// сессия больше не работает, тот же номер регистрируется заново как новый.
+const DEL_PHONE = '+77010000098';
+await api('POST', '/auth/phone/request-code', { body: { phone: DEL_PHONE } });
+const delReg = (await api('POST', '/auth/phone/verify', { body: { phone: DEL_PHONE, code: '1111', deviceName: 'e2e', platform: 'ios' } })).json;
+const delSetup = await api('PATCH', '/drivers/me', {
+  token: delReg.accessToken,
+  body: { fullName: 'Удаляемый Тестов', homeCityId: refData.cities[0].id, anyCountry: true, directionCountryIds: [], permitIds: [], bodyTypeId: refData.bodyTypes[0].id, plateNumber: '098DEL02', capacityTons: 20 },
+});
+assert(delSetup.status < 300, 'водитель для удаления создан', `status=${delSetup.status}`);
+const delDriverId = (await api('GET', '/auth/me', { token: delReg.accessToken })).json.driver.id;
+// 043 п.2: согласие на ПДн — новый пользователь его ещё не давал, чужая версия текста не принимается.
+assert((await api('GET', '/auth/me', { token: delReg.accessToken })).json.user.pdConsentRequired === true, 'новому водителю нужно согласие на ПДн');
+assert((await api('POST', '/auth/me/pd-consent', { token: delReg.accessToken, body: { version: '2000-01-01' } })).status === 400, 'согласие на старую редакцию текста — 400');
+assert((await api('POST', '/auth/me/pd-consent', { token: delReg.accessToken, body: { version: '2026-10-08' } })).status === 200, 'согласие на текущую редакцию принято');
+assert((await api('GET', '/auth/me', { token: delReg.accessToken })).json.user.pdConsentRequired === false, 'после согласия экран больше не нужен');
+const delRes = await api('DELETE', '/auth/me', { token: delReg.accessToken });
+assert(delRes.status === 200, 'DELETE /auth/me — аккаунт удалён', `status=${delRes.status} ${delRes.text.slice(0, 120)}`);
+assert((await api('GET', '/auth/me', { token: delReg.accessToken })).status === 401, 'после удаления токен не работает');
+assert((await api('POST', '/auth/refresh', { body: { refreshToken: delReg.refreshToken } })).status >= 400, 'refresh-токен отозван');
+const delCard = (await get(`/admin/drivers/${delDriverId}`)).json;
+assert(delCard.fullName === '—' && !delCard.user?.phone && !JSON.stringify(delCard).includes('098DEL02') && !JSON.stringify(delCard).includes('Удаляемый'), 'в админке водитель обезличен: без имени, телефона и госномера', JSON.stringify({ fullName: delCard.fullName, phone: delCard.user?.phone }));
+await api('POST', '/auth/phone/request-code', { body: { phone: DEL_PHONE } });
+const reReg2 = await api('POST', '/auth/phone/verify', { body: { phone: DEL_PHONE, code: '1111', deviceName: 'e2e', platform: 'ios' } });
+assert(reReg2.status < 300 && reReg2.json.user?.id !== delReg.user?.id, 'тот же номер входит как новый аккаунт', `status=${reReg2.status}`);
+
 console.log(`Готово: ${checks} проверок.`);

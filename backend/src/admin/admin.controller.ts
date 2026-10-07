@@ -34,6 +34,8 @@ import {
   SetExchangeRateDto,
   SetVerifiedDto,
   StatsQueryDto,
+  AddBlockedIdentifierDto,
+  LiftBlockedIdentifierDto,
 } from './dto/admin.dto';
 
 function assertAdmin(ctx: RequestContext) {
@@ -55,6 +57,25 @@ export class AdminController {
     assertAdmin(ctx);
     const setting = parseChannelSetting(await this.appSettings.get(LOGIN_CODE_CHANNELS_SETTING));
     return setting.map((c) => ({ ...c, configured: this.sms.configured(c.id) }));
+  }
+
+  /// Ручной чёрный список (043 п.4): ИИН / телефон / госномер / VIN… + причина.
+  @Get('blacklist')
+  async blacklist(@CurrentUser() ctx: RequestContext, @Query('active') active?: string) {
+    assertAdmin(ctx);
+    return this.admin.listBlacklist(active !== 'false');
+  }
+
+  @Post('blacklist')
+  async addToBlacklist(@CurrentUser() ctx: RequestContext, @Body() dto: AddBlockedIdentifierDto) {
+    assertAdmin(ctx);
+    return this.admin.addToBlacklist(ctx.user.id, dto);
+  }
+
+  @Post('blacklist/:id/lift')
+  async liftFromBlacklist(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: LiftBlockedIdentifierDto) {
+    assertAdmin(ctx);
+    return this.admin.liftFromBlacklist(ctx.user.id, id, dto.reason);
   }
 
   @Get('settings')

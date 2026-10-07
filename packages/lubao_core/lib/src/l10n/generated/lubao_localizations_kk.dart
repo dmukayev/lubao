@@ -2928,4 +2928,88 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String chatSystemDriverSaysAgreed(String name) {
     return '$name: келістік — мәміле қадамдармен жүруі үшін жүргізушіні таңдаңыз';
   }
+
+  @override
+  String get adminNavBlacklist => 'Қара тізім';
+
+  @override
+  String get adminBlacklistAdd => 'Қара тізімге қосу';
+
+  @override
+  String get adminBlacklistType => 'Не бұғатталады';
+
+  @override
+  String get adminBlacklistValue => 'Мәні';
+
+  @override
+  String get adminBlacklistLift => 'Бұғаттан шығару';
+
+  @override
+  String get adminBlacklistLifted => 'Алынды';
+
+  @override
+  String get adminBlacklistEmpty => 'Қара тізім бос';
+
+  @override
+  String get adminBlacklistShowLifted => 'Алынғандарды көрсету';
+
+  @override
+  String get adminIdentifierTypeBin => 'БСН';
+
+  @override
+  String get adminIdentifierTypeUscc => 'USCC (ҚХР)';
+
+  @override
+  String get adminBlacklistInvalid => 'Мән бұл түрге сәйкес келмейді';
+
+  @override
+  String get profileDeleteAccount => 'Аккаунтты жою';
+
+  @override
+  String get profileDeleteAccountTitle => 'Аккаунтты жою керек пе?';
+
+  @override
+  String get profileDeleteAccountBody =>
+      'Аты-жөні, телефон, email, құжаттар мен көлік деректері жойылады, аккаунтқа кіру барлық құрылғыда жабылады. Аяқталған мәмілелер мен пікірлер сіздің атыңызсыз қалады. Жоюды болдырмау мүмкін емес.';
+
+  @override
+  String get profileDeleteAccountConfirm => 'Жою';
+
+  @override
+  String get profileDeleteAccountActiveDeals =>
+      'Алдымен белсенді мәмілелерді аяқтаңыз немесе тоқтатыңыз.';
+
+  @override
+  String get profileDeleteAccountOwnerHasMembers =>
+      'Компанияда қызметкерлер бар: алдымен иелікті беріңіз немесе оларды шығарыңыз.';
+
+  @override
+  String get pdConsentTitle => 'Деректерді өңдеуге келісім';
+
+  @override
+  String get pdConsentBody =>
+      'Сізді тексеру үшін құжаттардың фотосы мен ондағы деректерді (аты-жөні, ЖСН, куәлік нөмірі, мемлекеттік нөмір, VIN) сақтаймыз. Деректер Қазақстандағы серверлерде сақталады, тек тексеретін әкімшіге көрінеді және үшінші тұлғаларға берілмейді. Құжаттар аккаунтпен бірге жойылады.';
+
+  @override
+  String get pdConsentCheckbox =>
+      'Жеке деректерімді жинауға және өңдеуге келісемін';
+
+  @override
+  String get pdConsentContinue => 'Жалғастыру';
+
+  @override
+  String get legalTerms => 'Пайдалану шарттары';
+
+  @override
+  String get legalPrivacy => 'Құпиялылық саясаты';
+
+  @override
+  String get appUpdateTitle => 'Қосымшаны жаңартыңыз';
+
+  @override
+  String get appUpdateBody =>
+      'Бұл нұсқа енді қолдау көрсетілмейді. Жаңасын орнатыңыз — бір минут қана.';
+
+  @override
+  String get appUpdateButton => 'Жаңарту';
 }

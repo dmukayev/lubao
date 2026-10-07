@@ -3,6 +3,10 @@ import '../api/device_info.dart';
 import '../models/session_device.dart';
 import '../models/user.dart';
 
+/// Редакция текста согласия на обработку ПДн (ARB `pdConsentBody`, политика
+/// `infra/site/legal/privacy.html`) — совпадает с `PD_CONSENT_VERSION` на сервере.
+const pdConsentVersion = '2026-10-08';
+
 class AuthRepository {
   AuthRepository(this._client);
 
@@ -146,6 +150,20 @@ class AuthRepository {
         // лучший вариант — локальный логаут всё равно происходит
       }
     }
+    await _client.logoutLocally();
+  }
+
+  /// Согласие на обработку ПДн (043 п.2) — версия текста, который показан
+  /// пользователю ([pdConsentVersion]); сервер принимает только текущую.
+  Future<void> acceptPdConsent() async {
+    await _client.dio.post('/auth/me/pd-consent', data: {'version': pdConsentVersion});
+  }
+
+  /// Удаление аккаунта (043 п.1): сервер обезличивает ПДн и отзывает все
+  /// сессии; локально — как выход. Ошибка (409 — активная сделка/сотрудники)
+  /// пробрасывается, локальные токены тогда не трогаем.
+  Future<void> deleteAccount() async {
+    await _client.dio.delete('/auth/me');
     await _client.logoutLocally();
   }
 

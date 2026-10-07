@@ -17,6 +17,7 @@ function prismaMock() {
       updateMany: jest.fn(),
     },
     auditLog: { create: jest.fn() },
+    vehicle: { findMany: jest.fn().mockResolvedValue([]) },
   };
 }
 
@@ -186,10 +187,22 @@ describe('IdentifiersService — задача 031, этап C', () => {
       await service.blockDriverAndVehicles({ driverId: 'd1', vehicleIds: ['tractor1', 'trailer1'], reason: 'r', blockedByUserId: 'admin-1' });
 
       // driver + 2 vehicles = 3 lookups of confirmed identifiers to block.
-      expect(prisma.identifier.findMany).toHaveBeenCalledTimes(3);
+      // + 1 — проверка, какие госномер/VIN машин уже подтверждены (живая проверка 2026-10-07).
+      expect(prisma.identifier.findMany).toHaveBeenCalledTimes(4);
       expect(prisma.identifier.findMany).toHaveBeenCalledWith({ where: { ownerType: 'DRIVER', ownerId: 'd1' } });
       expect(prisma.identifier.findMany).toHaveBeenCalledWith({ where: { ownerType: 'VEHICLE', ownerId: 'tractor1' } });
       expect(prisma.identifier.findMany).toHaveBeenCalledWith({ where: { ownerType: 'VEHICLE', ownerId: 'trailer1' } });
+    });
+    it('машина без подтверждённых идентификаторов — госномер блокируется по данным машины', async () => {
+      prisma.identifier.findMany.mockResolvedValue([]);
+      prisma.vehicle.findMany.mockResolvedValue([{ id: 'trailer1', plateNumber: '45 ABC 05', vin: null }]);
+      prisma.blockedIdentifier.findFirst.mockResolvedValue(null);
+      prisma.blockedIdentifier.create.mockImplementation(async ({ data }: any) => ({ id: 'b1', ...data }));
+
+      const blocked = await service.blockDriverAndVehicles({ driverId: 'd1', vehicleIds: ['trailer1'], reason: 'r', blockedByUserId: 'admin-1', types: ['IIN', 'PLATE'] });
+
+      expect(blocked.map((b: any) => b.type)).toEqual(['PLATE']);
+      expect(prisma.blockedIdentifier.create).toHaveBeenCalledWith({ data: expect.objectContaining({ type: 'PLATE', sourceOwnerType: 'VEHICLE', sourceOwnerId: 'trailer1' }) });
     });
   });
 

@@ -2929,4 +2929,88 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String chatSystemDriverSaysAgreed(String name) {
     return '$name: agreed — select the driver so the deal goes step by step';
   }
+
+  @override
+  String get adminNavBlacklist => 'Blacklist';
+
+  @override
+  String get adminBlacklistAdd => 'Add to blacklist';
+
+  @override
+  String get adminBlacklistType => 'What to block';
+
+  @override
+  String get adminBlacklistValue => 'Value';
+
+  @override
+  String get adminBlacklistLift => 'Lift block';
+
+  @override
+  String get adminBlacklistLifted => 'Lifted';
+
+  @override
+  String get adminBlacklistEmpty => 'The blacklist is empty';
+
+  @override
+  String get adminBlacklistShowLifted => 'Show lifted';
+
+  @override
+  String get adminIdentifierTypeBin => 'BIN';
+
+  @override
+  String get adminIdentifierTypeUscc => 'USCC (China)';
+
+  @override
+  String get adminBlacklistInvalid => 'The value does not fit this type';
+
+  @override
+  String get profileDeleteAccount => 'Delete account';
+
+  @override
+  String get profileDeleteAccountTitle => 'Delete account?';
+
+  @override
+  String get profileDeleteAccountBody =>
+      'Your name, phone, email, documents and vehicle details will be deleted and you will be signed out on all devices. Completed deals and reviews stay, without your name. This cannot be undone.';
+
+  @override
+  String get profileDeleteAccountConfirm => 'Delete';
+
+  @override
+  String get profileDeleteAccountActiveDeals =>
+      'Finish or cancel your active deals first.';
+
+  @override
+  String get profileDeleteAccountOwnerHasMembers =>
+      'The company has employees: transfer ownership or remove them first.';
+
+  @override
+  String get pdConsentTitle => 'Consent to data processing';
+
+  @override
+  String get pdConsentBody =>
+      'To verify you, we store photos of your documents and the data in them (full name, IIN, licence number, plate number, VIN). The data is stored on servers in Kazakhstan, is visible only to the reviewing administrator and is not shared with third parties. Documents are deleted together with the account.';
+
+  @override
+  String get pdConsentCheckbox =>
+      'I agree to the collection and processing of my personal data';
+
+  @override
+  String get pdConsentContinue => 'Continue';
+
+  @override
+  String get legalTerms => 'Terms of use';
+
+  @override
+  String get legalPrivacy => 'Privacy policy';
+
+  @override
+  String get appUpdateTitle => 'Update the app';
+
+  @override
+  String get appUpdateBody =>
+      'This version is no longer supported. Install the new one — it takes a minute.';
+
+  @override
+  String get appUpdateButton => 'Update';
 }

@@ -12,6 +12,8 @@ import '../../../providers/locale_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../shared/photo_picker.dart';
 import '../../shared/error_feedback.dart';
+import '../../shared/delete_account.dart';
+import '../../shared/pd_consent.dart';
 
 /// Плашка-напоминание о неподтверждённом email (задача 025, п. 7) — не
 /// блокирует ничего, просто предлагает подтвердить. «Отправить код» зовёт
@@ -464,6 +466,7 @@ class _CompanyVerificationCardState extends ConsumerState<_CompanyVerificationCa
 
   Future<void> _pick(ImageSource source) async {
     final t = context.l10n;
+    if (!await ensurePdConsent(context, ref) || !mounted) return;
     final picked = await pickPhoto(source);
     if (picked == null) return;
     setState(() => _uploading = true);
@@ -706,6 +709,9 @@ class CompanyProfileScreen extends ConsumerWidget {
             onPressed: () => ref.read(sessionProvider.notifier).logout(),
             child: Text(t.profileLogout),
           ),
+          const SizedBox(height: 8),
+          const DeleteAccountButton(),
+          const LegalLinks(),
         ],
       ),
     );

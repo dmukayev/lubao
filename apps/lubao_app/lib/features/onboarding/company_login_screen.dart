@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../shared/error_feedback.dart';
 import '../shared/status_helpers.dart';
+import '../shared/pd_consent.dart';
 
 /// Вход логиста — email и пароль по умолчанию (задача 025, заменяет вход
 /// по коду из 006/022). Внизу — «Регистрация» и «Забыли пароль?» в одну
@@ -122,6 +123,8 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+            const LegalLinks(),
           ],
         ),
       ),

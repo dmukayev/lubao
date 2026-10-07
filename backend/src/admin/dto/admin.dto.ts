@@ -703,3 +703,27 @@ export class ModerateCityDto {
   @IsString()
   rejectReason?: string;
 }
+
+/// Ручной чёрный список (043 п.4): значение и причина — обязательно.
+export class AddBlockedIdentifierDto {
+  @IsIn(['IIN', 'DRIVER_LICENSE_NO', 'VIN', 'PLATE', 'PHONE', 'BIN', 'USCC'])
+  type!: 'IIN' | 'DRIVER_LICENSE_NO' | 'VIN' | 'PLATE' | 'PHONE' | 'BIN' | 'USCC';
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(64)
+  value!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(1000)
+  reason!: string;
+}
+
+export class LiftBlockedIdentifierDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(1000)
+  reason!: string;
+}
+

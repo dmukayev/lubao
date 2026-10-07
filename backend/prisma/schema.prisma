@@ -345,6 +345,13 @@ model User {
   locale          Locale    @default(ru)
   isActive        Boolean   @default(true)
   isBlocked       Boolean   @default(false)
+  /// Аккаунт удалён самим пользователем (043 п.1): ПДн обезличены, вход
+  /// закрыт (isActive=false), сделки и отзывы остаются без имени.
+  deletedAt       DateTime?
+  /// Согласие на обработку ПДн (043 п.2) — спрашивается перед первой
+  /// загрузкой документа; новая версия текста → спросить заново.
+  pdConsentAt      DateTime?
+  pdConsentVersion String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

@@ -8,6 +8,7 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/photo_picker.dart';
 import 'add_vehicle_sheet.dart';
+import '../../shared/pd_consent.dart';
 
 /// «Мой гараж» (задача 031, этап B, макет 26) — тягачи и прицепы по
 /// отдельности, каждый со своим статусом проверки.
@@ -147,6 +148,7 @@ class GarageScreen extends ConsumerWidget {
   /// без техпаспорта — прикладываем фото здесь, оно уходит на проверку.
   Future<void> _addDocument(BuildContext context, WidgetRef ref, GarageVehicle vehicle) async {
     final t = context.l10n;
+    if (!await ensurePdConsent(context, ref) || !context.mounted) return;
     final picked = await pickPhoto(ImageSource.gallery);
     if (picked == null) return;
     try {

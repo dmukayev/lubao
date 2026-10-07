@@ -78,6 +78,43 @@ export class AdminService {
     private readonly recognition?: RecognitionService,
   ) {}
 
+  /// Ручной чёрный список (043 п.4): значение — маской, кто и почему.
+  async listBlacklist(activeOnly: boolean) {
+    if (!this.identifiers) return [];
+    const rows = await this.identifiers.listBlocked({ activeOnly });
+    return rows.map((r) => ({
+      id: r.id,
+      type: r.type,
+      valueMasked: r.valueMasked,
+      reason: r.reason,
+      createdAt: r.createdAt,
+      blockedByName: r.blockedBy?.name ?? r.blockedBy?.email ?? null,
+      liftedAt: r.liftedAt,
+      liftReason: r.liftReason,
+      liftedByName: r.liftedBy?.name ?? r.liftedBy?.email ?? null,
+      sourceOwnerType: r.sourceOwnerType,
+      sourceOwnerId: r.sourceOwnerId,
+    }));
+  }
+
+  async addToBlacklist(actorUserId: string, dto: { type: IdentifierTypeValue; value: string; reason: string }) {
+    if (!this.identifiers) throw new BadRequestException('Identifiers are not configured');
+    const normalized = normalizeIdentifier(dto.type, dto.value);
+    if (!normalized) throw new BadRequestException({ code: 'IDENTIFIER_INVALID', message: 'Empty identifier' });
+    const row = await this.identifiers.blockRawValue({ type: dto.type, rawValue: dto.value, reason: dto.reason, blockedByUserId: actorUserId });
+    // В журнал — только маска, не значение.
+    await this.logAudit(actorUserId, 'IDENTIFIER_BLOCKED', 'BlockedIdentifier', row.id, { type: dto.type, valueMasked: row.valueMasked, reason: dto.reason });
+    return { id: row.id, type: row.type, valueMasked: row.valueMasked };
+  }
+
+  async liftFromBlacklist(actorUserId: string, id: string, reason: string) {
+    if (!this.identifiers) throw new BadRequestException('Identifiers are not configured');
+    const row = await this.identifiers.liftBlocked({ id, reason, liftedByUserId: actorUserId });
+    await this.logAudit(actorUserId, 'IDENTIFIER_UNBLOCKED', 'BlockedIdentifier', id, { type: row.type, valueMasked: row.valueMasked, reason });
+    return { id, liftedAt: row.liftedAt };
+  }
+
+
   private async logAudit(actorUserId: string, action: string, entityType: string, entityId: string, metadata?: object) {
     await this.prisma.auditLog.create({ data: { actorUserId, action, entityType, entityId, metadata } });
   }

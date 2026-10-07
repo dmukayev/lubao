@@ -233,7 +233,48 @@ export class IdentifiersService {
         this.blockOwnerIdentifiers({ ownerType: 'VEHICLE', ownerId: vehicleId, reason: params.reason, blockedByUserId: params.blockedByUserId, types: params.types }),
       ),
     ]);
-    return [...driverBlocked, ...vehicleBlocked.flat()];
+    // Госномер/VIN машины без подтверждённого identifier-ряда (машина из
+    // мастера регистрации, техпаспорт не одобрен) — блокируем по данным самой
+    // машины. Живая проверка 2026-10-07: галочка «Госномер» ничего не вносила.
+    const wantsPlate = !params.types || params.types.includes('PLATE');
+    const wantsVin = !params.types || params.types.includes('VIN');
+    const extra = [];
+    if ((wantsPlate || wantsVin) && params.vehicleIds.length > 0) {
+      const covered = new Set(vehicleBlocked.flat().map((b) => `${b.sourceOwnerId}:${b.type}`));
+      const known = await this.prisma.identifier.findMany({
+        where: { ownerType: 'VEHICLE', ownerId: { in: params.vehicleIds }, type: { in: ['PLATE', 'VIN'] } },
+        select: { ownerId: true, type: true },
+      });
+      for (const k of known) covered.add(`${k.ownerId}:${k.type}`);
+      const vehicles = await this.prisma.vehicle.findMany({ where: { id: { in: params.vehicleIds } }, select: { id: true, plateNumber: true, vin: true } });
+      for (const v of vehicles) {
+        const raw: Array<[IdentifierTypeValue, string | null]> = [];
+        if (wantsPlate) raw.push(['PLATE', v.plateNumber]);
+        if (wantsVin) raw.push(['VIN', v.vin]);
+        for (const [type, value] of raw) {
+          if (!value || covered.has(`${v.id}:${type}`)) continue;
+          extra.push(await this.blockRawValue({ type, rawValue: value, reason: params.reason, blockedByUserId: params.blockedByUserId, sourceOwnerType: 'VEHICLE', sourceOwnerId: v.id }));
+        }
+      }
+    }
+    return [...driverBlocked, ...vehicleBlocked.flat(), ...extra];
+  }
+
+  /// Ручной чёрный список в админке (043 п.4): все записи, новые сверху.
+  async listBlocked(params: { activeOnly?: boolean } = {}) {
+    return this.prisma.blockedIdentifier.findMany({
+      where: params.activeOnly ? { liftedAt: null } : {},
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+      include: { blockedBy: { select: { name: true, email: true } }, liftedBy: { select: { name: true, email: true } } },
+    });
+  }
+
+  async liftBlocked(params: { id: string; reason: string; liftedByUserId: string }) {
+    return this.prisma.blockedIdentifier.update({
+      where: { id: params.id },
+      data: { liftedAt: new Date(), liftedByUserId: params.liftedByUserId, liftReason: params.reason },
+    });
   }
 
   /// Блокировка «сырого» значения без подтверждённого identifier-ряда

@@ -8,6 +8,8 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../../providers/locale_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../shared/delete_account.dart';
+import '../../shared/pd_consent.dart';
 
 class DriverProfileScreen extends ConsumerStatefulWidget {
   const DriverProfileScreen({super.key});
@@ -111,6 +113,9 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
             onPressed: () => ref.read(sessionProvider.notifier).logout(),
             child: Text(t.profileLogout),
           ),
+          const SizedBox(height: 8),
+          const DeleteAccountButton(),
+          const LegalLinks(),
         ],
       ),
     );

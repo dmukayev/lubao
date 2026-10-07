@@ -1,4 +1,5 @@
-import { BadRequestException, HttpException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, HttpException } from '@nestjs/common';
+import { PD_CONSENT_VERSION } from '../auth/pd-consent';
 import { detectImageType } from './image-type';
 import { DAILY_UPLOAD_LIMIT, consumeUploadQuota } from './upload-quota';
 import { UploadsController } from './uploads.controller';
@@ -65,7 +66,7 @@ describe('квота загрузок (задача 043, п.4)', () => {
 });
 
 describe('UploadsController (задача 043, п.4)', () => {
-  const ctx = { user: { id: 'u1' } } as any;
+  const ctx = { user: { id: 'u1', pdConsentAt: new Date(), pdConsentVersion: PD_CONSENT_VERSION } } as any;
   function setup() {
     const uploads = { uploadImage: jest.fn().mockResolvedValue('http://x/f.png'), uploadDocument: jest.fn().mockResolvedValue('key.png') };
     const redis = { client: { incr: jest.fn().mockResolvedValue(1), expire: jest.fn() } };
@@ -103,5 +104,14 @@ describe('UploadsController (задача 043, п.4)', () => {
     const { controller, redis } = setup();
     redis.client.incr.mockResolvedValue(DAILY_UPLOAD_LIMIT + 1);
     await expect(controller.uploadImage(ctx, file(PNG))).rejects.toBeInstanceOf(HttpException);
+  });
+
+  it('043 п.2: документ без согласия на ПДн (или со старой версией) — 403 PD_CONSENT_REQUIRED, в хранилище не идёт', async () => {
+    const { controller, uploads } = setup();
+    for (const user of [{ id: 'u1', pdConsentAt: null, pdConsentVersion: null }, { id: 'u1', pdConsentAt: new Date(), pdConsentVersion: '2000-01-01' }]) {
+      await expect(controller.uploadDocument({ user } as any, file(JPEG))).rejects.toMatchObject({ response: { code: 'PD_CONSENT_REQUIRED' } });
+    }
+    await expect(controller.uploadDocument({ user: { id: 'u1' } } as any, file(JPEG))).rejects.toBeInstanceOf(ForbiddenException);
+    expect(uploads.uploadDocument).not.toHaveBeenCalled();
   });
 });

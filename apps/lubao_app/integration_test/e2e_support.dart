@@ -494,3 +494,32 @@ Future<void> waitAndReveal(WidgetTester tester, Finder finder, {Duration timeout
   }
 }
 
+
+/// 043 п.2: перед первой загрузкой документа — лист согласия на обработку
+/// ПДн. «Продолжить» неактивна до галочки; после согласия лист закрывается
+/// и загрузка идёт дальше.
+Future<void> acceptPdConsent(WidgetTester tester) async {
+  await waitFor(tester, find.byKey(const Key('pdConsentSheet')));
+  expect(find.byKey(const Key('pdConsentPolicyLink')), findsOneWidget);
+  final continueButton = find.byKey(const Key('pdConsentContinueButton'));
+  await reveal(tester, continueButton);
+  expect(tester.widget<PrimaryButton>(continueButton).onPressed, isNull, reason: 'без галочки дальше нельзя');
+  final checkbox = find.byKey(const Key('pdConsentCheckbox'));
+  await reveal(tester, checkbox);
+  await tester.tap(checkbox);
+  await tester.pumpAndSettle();
+  await reveal(tester, continueButton);
+  await tester.tap(continueButton);
+  final deadline = DateTime.now().add(const Duration(seconds: 20));
+  while (find.byKey(const Key('pdConsentSheet')).evaluate().isNotEmpty) {
+    if (DateTime.now().isAfter(deadline)) fail('Лист согласия не закрылся');
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+  await tester.pumpAndSettle();
+}
+
+/// То же, если лист показан (водитель из сида мог уже согласиться раньше).
+Future<void> acceptPdConsentIfAsked(WidgetTester tester) async {
+  await tester.pumpAndSettle();
+  if (find.byKey(const Key('pdConsentSheet')).evaluate().isNotEmpty) await acceptPdConsent(tester);
+}

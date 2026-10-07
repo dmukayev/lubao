@@ -70,7 +70,14 @@ class AppSizes {
   static const bottomNavHeight = 84.0;
 }
 
-const _fontFamily = 'Onest';
+/// Шрифты объявлены в пакете lubao_core, поэтому Flutter регистрирует их
+/// с префиксом `packages/lubao_core/` — без него имя не находится и текст
+/// молча рисуется системным шрифтом (на вебе — Roboto из сети).
+const _fontFamily = 'packages/lubao_core/Onest';
+
+/// Иероглифы, которых нет в Onest, — из вшитого Noto Sans SC, а не из сети
+/// (Flutter Web иначе тянет их с fonts.gstatic.com, в Китае заблокирован).
+const _fontFamilyFallback = ['packages/lubao_core/NotoSansSC'];
 
 /// Типографика — см. таблицу стилей в design/DESIGN.md.
 class AppTextStyles {
@@ -78,6 +85,7 @@ class AppTextStyles {
 
   static const display = TextStyle(
     fontFamily: _fontFamily,
+    fontFamilyFallback: _fontFamilyFallback,
     fontSize: 28,
     fontWeight: FontWeight.w800,
     letterSpacing: -0.5,
@@ -86,6 +94,7 @@ class AppTextStyles {
 
   static const headline = TextStyle(
     fontFamily: _fontFamily,
+    fontFamilyFallback: _fontFamilyFallback,
     fontSize: 26,
     fontWeight: FontWeight.w800,
     color: AppColors.text,
@@ -93,6 +102,7 @@ class AppTextStyles {
 
   static const title = TextStyle(
     fontFamily: _fontFamily,
+    fontFamilyFallback: _fontFamilyFallback,
     fontSize: 20,
     fontWeight: FontWeight.w700,
     color: AppColors.text,
@@ -100,6 +110,7 @@ class AppTextStyles {
 
   static const route = TextStyle(
     fontFamily: _fontFamily,
+    fontFamilyFallback: _fontFamilyFallback,
     fontSize: 20,
     fontWeight: FontWeight.w700,
     color: AppColors.text,
@@ -107,6 +118,7 @@ class AppTextStyles {
 
   static const priceCard = TextStyle(
     fontFamily: _fontFamily,
+    fontFamilyFallback: _fontFamilyFallback,
     fontSize: 20,
     fontWeight: FontWeight.w800,
     color: AppColors.text,
@@ -114,6 +126,7 @@ class AppTextStyles {
 
   static const priceDetail = TextStyle(
     fontFamily: _fontFamily,
+    fontFamilyFallback: _fontFamilyFallback,
     fontSize: 30,
     fontWeight: FontWeight.w800,
     color: AppColors.text,
@@ -121,12 +134,14 @@ class AppTextStyles {
 
   static const button = TextStyle(
     fontFamily: _fontFamily,
+    fontFamilyFallback: _fontFamilyFallback,
     fontSize: 17,
     fontWeight: FontWeight.w700,
   );
 
   static const body = TextStyle(
     fontFamily: _fontFamily,
+    fontFamilyFallback: _fontFamilyFallback,
     fontSize: 16,
     fontWeight: FontWeight.w400,
     color: AppColors.text,
@@ -134,6 +149,7 @@ class AppTextStyles {
 
   static const bodyStrong = TextStyle(
     fontFamily: _fontFamily,
+    fontFamilyFallback: _fontFamilyFallback,
     fontSize: 16,
     fontWeight: FontWeight.w600,
     color: AppColors.text,
@@ -141,6 +157,7 @@ class AppTextStyles {
 
   static const caption = TextStyle(
     fontFamily: _fontFamily,
+    fontFamilyFallback: _fontFamilyFallback,
     fontSize: 13,
     fontWeight: FontWeight.w500,
     color: AppColors.textSecondary,
@@ -148,6 +165,7 @@ class AppTextStyles {
 
   static const small = TextStyle(
     fontFamily: _fontFamily,
+    fontFamilyFallback: _fontFamilyFallback,
     fontSize: 12,
     fontWeight: FontWeight.w700,
     color: AppColors.textSecondary,
@@ -176,6 +194,7 @@ class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.bg,
       fontFamily: _fontFamily,
+      fontFamilyFallback: _fontFamilyFallback,
       splashFactory: InkRipple.splashFactory,
       textTheme: const TextTheme(
         displayLarge: AppTextStyles.display,

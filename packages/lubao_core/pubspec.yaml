@@ -50,3 +50,9 @@ flutter:
           weight: 700
         - asset: assets/fonts/Onest-Variable.ttf
           weight: 800
+    # Иероглифы без запросов к fonts.gstatic.com (020 часть А, 043 п.8):
+    # Noto Sans SC, урезанный до GB 2312 ур.1 + символы app_zh.arb —
+    # scripts/subset-noto-sc.py. Лицензия — assets/fonts/NotoSansSC-OFL.txt.
+    - family: NotoSansSC
+      fonts:
+        - asset: assets/fonts/NotoSansSC-Lubao.otf

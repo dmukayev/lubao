@@ -2863,4 +2863,84 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String chatSystemDriverSaysAgreed(String name) {
     return '$name：已谈妥 — 请选择该司机，交易将按步骤进行';
   }
+
+  @override
+  String get adminNavBlacklist => '黑名单';
+
+  @override
+  String get adminBlacklistAdd => '加入黑名单';
+
+  @override
+  String get adminBlacklistType => '封禁类型';
+
+  @override
+  String get adminBlacklistValue => '值';
+
+  @override
+  String get adminBlacklistLift => '解除封禁';
+
+  @override
+  String get adminBlacklistLifted => '已解除';
+
+  @override
+  String get adminBlacklistEmpty => '黑名单为空';
+
+  @override
+  String get adminBlacklistShowLifted => '显示已解除';
+
+  @override
+  String get adminIdentifierTypeBin => 'BIN';
+
+  @override
+  String get adminIdentifierTypeUscc => '统一社会信用代码';
+
+  @override
+  String get adminBlacklistInvalid => '该值不符合此类型';
+
+  @override
+  String get profileDeleteAccount => '删除账号';
+
+  @override
+  String get profileDeleteAccountTitle => '确定删除账号？';
+
+  @override
+  String get profileDeleteAccountBody =>
+      '姓名、电话、邮箱、证件和车辆信息将被删除，所有设备上的登录将失效。已完成的交易和评价将保留，但不再显示您的名字。删除后无法恢复。';
+
+  @override
+  String get profileDeleteAccountConfirm => '删除';
+
+  @override
+  String get profileDeleteAccountActiveDeals => '请先完成或取消进行中的交易。';
+
+  @override
+  String get profileDeleteAccountOwnerHasMembers => '公司还有员工：请先转让所有权或移除员工。';
+
+  @override
+  String get pdConsentTitle => '个人数据处理同意书';
+
+  @override
+  String get pdConsentBody =>
+      '为完成审核，我们会保存证件照片及其中的信息（姓名、身份证号、驾驶证号、车牌号、VIN）。数据存储在哈萨克斯坦境内的服务器上，仅审核管理员可见，不会提供给第三方。删除账号时证件一并删除。';
+
+  @override
+  String get pdConsentCheckbox => '我同意收集和处理我的个人数据';
+
+  @override
+  String get pdConsentContinue => '继续';
+
+  @override
+  String get legalTerms => '使用条款';
+
+  @override
+  String get legalPrivacy => '隐私政策';
+
+  @override
+  String get appUpdateTitle => '请更新应用';
+
+  @override
+  String get appUpdateBody => '此版本已不再支持。请安装新版本，只需一分钟。';
+
+  @override
+  String get appUpdateButton => '更新';
 }

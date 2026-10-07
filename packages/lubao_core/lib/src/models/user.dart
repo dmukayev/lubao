@@ -8,6 +8,7 @@ class AppUser {
     this.email,
     required this.locale,
     this.emailVerifiedAt,
+    this.pdConsentRequired = false,
   });
 
   final String id;
@@ -20,6 +21,20 @@ class AppUser {
   /// показывает плашку-напоминание в кабинете.
   final DateTime? emailVerifiedAt;
 
+  /// Согласие на обработку ПДн ещё не дано (или текст обновился) — экран
+  /// согласия перед первой загрузкой документа (043 п.2).
+  final bool pdConsentRequired;
+
+  AppUser copyWith({bool? pdConsentRequired}) => AppUser(
+        id: id,
+        role: role,
+        phone: phone,
+        email: email,
+        locale: locale,
+        emailVerifiedAt: emailVerifiedAt,
+        pdConsentRequired: pdConsentRequired ?? this.pdConsentRequired,
+      );
+
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
         id: json['id'] as String,
         role: userRoleFromJson(json['role'] as String),
@@ -27,6 +42,7 @@ class AppUser {
         email: json['email'] as String?,
         locale: json['locale'] as String? ?? 'ru',
         emailVerifiedAt: json['emailVerifiedAt'] == null ? null : DateTime.parse(json['emailVerifiedAt'] as String),
+        pdConsentRequired: json['pdConsentRequired'] as bool? ?? false,
       );
 }
 

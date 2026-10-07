@@ -39,6 +39,8 @@ export 'src/utils/date_only.dart';
 export 'src/utils/geo.dart';
 export 'src/utils/person_name.dart';
 export 'src/utils/rating.dart';
+export 'src/utils/app_version.dart';
+export 'src/observability/error_reporter.dart';
 
 export 'src/api/api_client.dart';
 export 'src/repositories/auth_repository.dart';

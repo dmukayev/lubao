@@ -87,8 +87,14 @@ server {
         try_files $uri $uri/ /index.html;
         add_header Cache-Control "no-cache";
     }
-    location ~* \.(js|wasm|ttf|otf|png|jpg|ico)$ {
+    # Запасные шрифты движка не хостим (иероглифы — из вшитого Noto Sans SC):
+    # честный 404, а не index.html, который движок принял бы за шрифт.
+    location /fonts/fallback/ {
+        return 404;
+    }
+    location ~* \.(js|wasm|ttf|otf|woff2|png|jpg|ico)$ {
         root /srv/app;
+        try_files $uri =404;
         expires 7d;
         add_header Cache-Control "public";
     }

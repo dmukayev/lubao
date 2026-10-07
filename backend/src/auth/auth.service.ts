@@ -1,4 +1,5 @@
 import { LoginCodeChannel } from '../sms/login-code-channels';
+import { PD_CONSENT_VERSION, pdConsentRequired } from './pd-consent';
 import {
   BadRequestException,
   ConflictException,
@@ -30,6 +31,7 @@ function toUserDto(user: User) {
     email: user.email,
     locale: user.locale,
     emailVerifiedAt: user.emailVerifiedAt,
+    pdConsentRequired: pdConsentRequired(user),
   };
 }
 
@@ -282,6 +284,13 @@ export class AuthService {
 
   async logout(refreshToken: string): Promise<void> {
     await this.sessions.revokeByRefreshToken(refreshToken);
+  }
+
+  /// 043 п.2: согласие на обработку ПДн — версия должна совпадать с текущей
+  /// (клиент со старым текстом не может согласиться «за» новый).
+  async acceptPdConsent(userId: string, version: string) {
+    if (version !== PD_CONSENT_VERSION) throw new BadRequestException({ code: 'PD_CONSENT_VERSION_MISMATCH', version: PD_CONSENT_VERSION });
+    await this.prisma.user.update({ where: { id: userId }, data: { pdConsentAt: new Date(), pdConsentVersion: version } });
   }
 
   async setLocale(userId: string, locale: 'kk' | 'ru' | 'zh' | 'en') {

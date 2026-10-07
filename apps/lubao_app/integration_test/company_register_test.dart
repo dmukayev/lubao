@@ -72,6 +72,8 @@ void main() {
       final gallery = find.byKey(const Key('companyVerificationGallery'));
       await reveal(tester, gallery);
       await tester.tap(gallery);
+      // 043 п.2: новая компания — согласие на ПДн перед первой загрузкой.
+      await acceptPdConsent(tester);
       await waitFor(tester, find.text(t.companyVerificationStatusPending));
     });
 

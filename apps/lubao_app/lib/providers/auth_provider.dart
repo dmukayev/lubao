@@ -169,6 +169,29 @@ class SessionController extends StateNotifier<Session?> {
     await _ref.read(trackingConsentProvider.notifier).reset();
   }
 
+  /// 043 п.2: согласие на обработку ПДн дано — экран больше не показываем.
+  Future<void> acceptPdConsent() async {
+    await _ref.read(authRepositoryProvider).acceptPdConsent();
+    final current = state;
+    if (current != null) state = current.copyWith(user: current.user.copyWith(pdConsentRequired: false));
+  }
+
+  /// 043 п.1: удалить аккаунт. Сначала сервер (при 409 — активная сделка,
+  /// сотрудники — пользователь остаётся в приложении), потом локальная уборка
+  /// хуков выхода: push-токены сервер уже удалил, ошибки хуков не важны.
+  Future<void> deleteAccount() async {
+    await _ref.read(authRepositoryProvider).deleteAccount();
+    for (final hook in _beforeLogout) {
+      try {
+        await hook();
+      } catch (e) {
+        debugPrint('SessionController: after-delete: $e');
+      }
+    }
+    state = null;
+    await _ref.read(trackingConsentProvider.notifier).reset();
+  }
+
   @override
   void dispose() {
     _sessionExpiredSub.cancel();

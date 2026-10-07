@@ -208,6 +208,20 @@ if [[ -z "${E2E_SKIP_ADMIN_UI:-}" && -z "${E2E_SKIP_ADMIN_BUILD:-}" ]]; then
   fi
 fi
 
+# Веб логиста (020 часть А, 043 п.8): одна сборка, проверка «ни одного
+# запроса к Google» — на первом устройстве прогона.
+APP_WEB="$RESULTS/app-web"
+APP_WEB_PORT="${E2E_APP_WEB_PORT:-3201}"
+if [[ -z "${E2E_SKIP_ADMIN_UI:-}" && -z "${E2E_ONLY:-}" ]]; then
+  echo "== сборка веба логиста =="
+  rm -rf "$APP_WEB"
+  if ! RWT_DIR=apps/lubao_app run_with_timeout 900 "$RESULTS/app-web-build.log" \
+        flutter build web --release --no-web-resources-cdn --dart-define=API_BASE_URL="http://localhost:${E2E_PORT}" --output "$APP_WEB"; then
+    APP_WEB=""
+  fi
+fi
+WEB_CHECKED=""
+
 start_backend() {
   (
     cd backend
@@ -372,6 +386,22 @@ for DEVICE in "${DEVICES[@]}"; do
     else
       row "правило свежести анонса (040, п.4)" "❌" "см. $DEVICE_SLUG-freshness.log"
       tail -15 "$RESULTS/$DEVICE_SLUG-freshness.log"; FAILED=$((FAILED + 1))
+    fi
+    if [[ -z "$WEB_CHECKED" && -n "${APP_WEB+x}" && -z "${E2E_SKIP_ADMIN_UI:-}" && -z "${E2E_ONLY:-}" ]]; then
+      WEB_CHECKED=1
+      if [[ -z "$APP_WEB" ]]; then
+        row "веб логиста без Google (020 А)" "❌" "сборка не прошла, см. app-web-build.log"; FAILED=$((FAILED + 1))
+      else
+        node scripts/e2e-static-server.mjs "$APP_WEB" "$APP_WEB_PORT" >"$RESULTS/app-static.log" 2>&1 &
+        APP_STATIC_PID=$!
+        for _ in $(seq 1 20); do curl -sf "http://localhost:${APP_WEB_PORT}/" >/dev/null 2>&1 && break; sleep 1; done
+        if RWT_DIR=scripts/e2e-admin-ui run_with_timeout 120 "$RESULTS/app-web-google.log" node web-no-google.mjs "http://localhost:${APP_WEB_PORT}/" "$SHOTS/app-web-zh.png"; then
+          row "веб логиста без Google (020 А): CanvasKit и шрифты свои, zh" "✅" "$(grep -o '^ok .*' "$RESULTS/app-web-google.log")"
+        else
+          row "веб логиста без Google (020 А)" "❌" "$(grep -m1 FAIL "$RESULTS/app-web-google.log" | cut -c1-160)"; FAILED=$((FAILED + 1))
+        fi
+        kill_tree "$APP_STATIC_PID"
+      fi
     fi
     # Смоук меняет данные (регистрирует водителя из ЧС) — для UI админки
     # чистое состояние нужно заново.

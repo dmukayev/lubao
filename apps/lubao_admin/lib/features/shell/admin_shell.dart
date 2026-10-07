@@ -28,6 +28,7 @@ class AdminShell extends ConsumerWidget {
     '/cargos',
     '/deals',
     '/reference',
+    '/blacklist',
     '/settings',
   ];
 
@@ -113,6 +114,7 @@ class AdminShell extends ConsumerWidget {
               NavigationRailDestination(icon: const Icon(LucideIcons.truck), label: Text(t.adminNavCargos)),
               NavigationRailDestination(icon: const Icon(LucideIcons.fileCheck2), label: Text(t.adminNavDeals)),
               NavigationRailDestination(icon: const Icon(LucideIcons.clipboardList), label: Text(t.adminNavReference)),
+              NavigationRailDestination(icon: const Icon(LucideIcons.ban), label: Text(t.adminNavBlacklist)),
               NavigationRailDestination(icon: const Icon(LucideIcons.settings), label: Text(t.adminNavSettings)),
             ],
           ),

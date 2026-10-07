@@ -45,4 +45,10 @@ class ReferenceDataRepository {
         .post('/reference-data/cities', data: {'settlementName': settlementName, 'regionId': regionId});
     return City.fromJson(res.data as Map<String, dynamic>);
   }
+
+  /// Минимальная версия приложения из админки (043 п.8); `null` — не требуем.
+  Future<String?> minAppVersion() async {
+    final res = await _client.dio.get('/app/min-version');
+    return (res.data as Map<String, dynamic>)['minAppVersion'] as String?;
+  }
 }

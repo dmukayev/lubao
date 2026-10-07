@@ -146,6 +146,13 @@ export class UploadsService implements OnModuleInit {
     return this.presignClient.presignedGetObject(this.documentsBucket, fileKey, DOCUMENT_PRESIGN_TTL_SECONDS);
   }
 
+  /// Удаление аккаунта (043 п.1): файл документа стирается из приватного
+  /// бакета. Легаси-URL (демо-сид) — не наш объект, пропускаем.
+  async removeDocument(fileKey: string): Promise<void> {
+    if (/^https?:\/\//.test(fileKey)) return;
+    await this.client.removeObject(this.documentsBucket, fileKey);
+  }
+
   /// Прокси вместо presigned-ссылки (задача 028, п.12) — браузер админки
   /// тянул бы фото напрямую с MinIO (другой origin, без CORS), и зум/превью
   /// молча не загружались. Бэкенд ходит в MinIO сам (server-to-server, не

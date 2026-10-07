@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 
+import '../providers/app_update_provider.dart';
 import '../providers/auth_provider.dart';
 import '../features/onboarding/role_select_screen.dart';
 import '../features/onboarding/driver_login_screen.dart';
@@ -31,12 +32,14 @@ import '../features/shared/my_chats_screen.dart';
 import '../features/shared/devices_screen.dart';
 import '../features/shared/notification_settings_screen.dart';
 import '../features/shared/splash_screen.dart';
+import '../features/shared/update_required_screen.dart';
 import '../features/driver/deals/my_responses_screen.dart';
 
 class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
     ref.listen(sessionProvider, (previous, next) => notifyListeners());
     ref.listen(sessionRestoringProvider, (previous, next) => notifyListeners());
+    ref.listen(appUpdateRequiredProvider, (previous, next) => notifyListeners());
   }
 }
 
@@ -48,6 +51,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: refresh,
     redirect: (context, state) {
       final loc = state.matchedLocation;
+
+      // 043 п.8: версия ниже минимальной — только экран обновления.
+      if (ref.read(appUpdateRequiredProvider)) {
+        return loc == '/update' ? null : '/update';
+      }
+      if (loc == '/update') return '/splash';
 
       // Пока идёт восстановление сессии из secure storage — остаёмся на
       // сплэше, чтобы не мигнуть экраном входа перед тем, как токен
@@ -97,6 +106,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
+      GoRoute(path: '/update', builder: (context, state) => const UpdateRequiredScreen()),
       GoRoute(path: '/devices', builder: (context, state) => const DevicesScreen()),
       GoRoute(path: '/notifications/settings', builder: (context, state) => const NotificationSettingsScreen()),
       GoRoute(path: '/role-select', builder: (context, state) => const RoleSelectScreen()),

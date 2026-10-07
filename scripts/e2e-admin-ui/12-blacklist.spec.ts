@@ -42,4 +42,36 @@ test('блокировка по ИИН и ⛔ у нового водителя �
     await expect(page.getByRole('button', { name: 'Подтвердить вопреки совпадению' })).toBeVisible();
     await expect(page.getByText(/Совпадение с чёрным списком/).first()).toBeVisible();
   });
+
+  // 043 п.4: экран «Чёрный список» — ручная блокировка с причиной, значение
+  // только маской, снятие с причиной.
+  const manualIin = desktop ? '990101300011' : '990101300022';
+  await steps.step('чёрный-список-ручная-блокировка', async () => {
+    await openRoute(page, '/blacklist');
+    await page.getByRole('button', { name: 'Добавить в чёрный список' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await typeInto(page, dialog.getByRole('textbox', { name: 'Значение' }), manualIin);
+    await typeInto(page, dialog.getByRole('textbox', { name: 'Причина' }), 'E2E: ручная блокировка ИИН');
+    await dialog.getByRole('button', { name: 'Сохранить' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByText('E2E: ручная блокировка ИИН').first()).toBeVisible();
+    // Исходный ИИН на экране не показывается.
+    await expect(page.getByText(manualIin)).toHaveCount(0);
+  });
+
+  await steps.step('чёрный-список-снятие', async () => {
+    const rows = await api('GET', '/admin/blacklist?active=true', { token });
+    const before = rows.json.filter((r: { reason: string }) => r.reason === 'E2E: ручная блокировка ИИН').length;
+    await page.getByRole('button', { name: 'Снять блокировку' }).first().click();
+    const dialog = page.getByRole('alertdialog').or(page.getByRole('dialog'));
+    await typeInto(page, dialog.getByRole('textbox', { name: 'Причина' }), 'E2E: ошибка оператора');
+    await dialog.getByRole('button', { name: 'Снять блокировку' }).click();
+    expect(before).toBeGreaterThan(0);
+    // Список свежими сверху — снята именно ручная запись этого прогона.
+    const manualActive = async () =>
+      (await api('GET', '/admin/blacklist?active=true', { token })).json.filter((r: { reason: string }) => r.reason === 'E2E: ручная блокировка ИИН').length;
+    await expect.poll(manualActive, { timeout: 15_000 }).toBe(before - 1);
+  });
 });
+

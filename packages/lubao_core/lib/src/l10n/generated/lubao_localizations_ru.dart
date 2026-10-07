@@ -2915,4 +2915,88 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String chatSystemDriverSaysAgreed(String name) {
     return '$name: договорились — выберите водителя, чтобы сделка пошла по шагам';
   }
+
+  @override
+  String get adminNavBlacklist => 'Чёрный список';
+
+  @override
+  String get adminBlacklistAdd => 'Добавить в чёрный список';
+
+  @override
+  String get adminBlacklistType => 'Что блокируем';
+
+  @override
+  String get adminBlacklistValue => 'Значение';
+
+  @override
+  String get adminBlacklistLift => 'Снять блокировку';
+
+  @override
+  String get adminBlacklistLifted => 'Снята';
+
+  @override
+  String get adminBlacklistEmpty => 'Чёрный список пуст';
+
+  @override
+  String get adminBlacklistShowLifted => 'Показать снятые';
+
+  @override
+  String get adminIdentifierTypeBin => 'БИН';
+
+  @override
+  String get adminIdentifierTypeUscc => 'USCC (КНР)';
+
+  @override
+  String get adminBlacklistInvalid => 'Значение не подходит для этого типа';
+
+  @override
+  String get profileDeleteAccount => 'Удалить аккаунт';
+
+  @override
+  String get profileDeleteAccountTitle => 'Удалить аккаунт?';
+
+  @override
+  String get profileDeleteAccountBody =>
+      'Имя, телефон, email, документы и данные машин будут удалены, вход в аккаунт закроется на всех устройствах. Завершённые сделки и отзывы останутся без вашего имени. Отменить удаление нельзя.';
+
+  @override
+  String get profileDeleteAccountConfirm => 'Удалить';
+
+  @override
+  String get profileDeleteAccountActiveDeals =>
+      'Сначала завершите или отмените активные сделки.';
+
+  @override
+  String get profileDeleteAccountOwnerHasMembers =>
+      'В компании есть сотрудники: сначала передайте владение или удалите их.';
+
+  @override
+  String get pdConsentTitle => 'Согласие на обработку данных';
+
+  @override
+  String get pdConsentBody =>
+      'Чтобы проверить вас, мы храним фото документов и данные из них (ФИО, ИИН, номер прав, госномер, VIN). Данные хранятся на серверах в Казахстане, видны только проверяющему администратору и не передаются третьим лицам. Документы удаляются вместе с аккаунтом.';
+
+  @override
+  String get pdConsentCheckbox =>
+      'Я согласен на сбор и обработку моих персональных данных';
+
+  @override
+  String get pdConsentContinue => 'Продолжить';
+
+  @override
+  String get legalTerms => 'Условия использования';
+
+  @override
+  String get legalPrivacy => 'Политика конфиденциальности';
+
+  @override
+  String get appUpdateTitle => 'Обновите приложение';
+
+  @override
+  String get appUpdateBody =>
+      'Эта версия больше не поддерживается. Установите новую — это займёт минуту.';
+
+  @override
+  String get appUpdateButton => 'Обновить';
 }

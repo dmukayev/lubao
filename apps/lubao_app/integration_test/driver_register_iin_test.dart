@@ -79,6 +79,8 @@ void main() {
         await waitFor(tester, find.byKey(const Key('driverVerifyGallery-selfie')));
         usePhoto(await makeSyntheticDocument('selfie-$tag.png', ['SELFIE', fullName]));
         await tester.tap(find.byKey(const Key('driverVerifyGallery-selfie')));
+        // 043 п.2: новый водитель — согласие на ПДн перед первой загрузкой.
+        await acceptPdConsent(tester);
         await waitFor(tester, find.text(t.driverVerificationStatusPending));
         usePhoto(await makeSyntheticDocument('driver-license-$tag.png', [
           'ВОДИТЕЛЬСКОЕ УДОСТОВЕРЕНИЕ',

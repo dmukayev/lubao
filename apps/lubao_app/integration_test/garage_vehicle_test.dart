@@ -71,7 +71,7 @@ void main() {
       final gallery = find.byKey(const Key('addVehiclePhotoGallery'));
       await reveal(tester, gallery);
       await tester.tap(gallery);
-      await tester.pumpAndSettle();
+      await acceptPdConsentIfAsked(tester);
       expect(find.text('trailer-passport.png'), findsOneWidget);
     });
 

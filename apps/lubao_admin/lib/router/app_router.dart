@@ -20,6 +20,7 @@ import '../features/cargos/cargo_detail_screen.dart';
 import '../features/deals/admin_deals_screen.dart';
 import '../features/deals/deal_detail_screen.dart';
 import '../features/audit/admin_audit_screen.dart';
+import '../features/blacklist/blacklist_screen.dart';
 import '../features/settings/admin_settings_screen.dart';
 import '../features/reference/reference_screen.dart';
 
@@ -110,6 +111,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(path: '/audit', builder: (context, state) => const AdminAuditScreen()),
+          GoRoute(path: '/blacklist', builder: (context, state) => const BlacklistScreen()),
           GoRoute(path: '/settings', builder: (context, state) => const AdminSettingsScreen()),
           GoRoute(path: '/reference', builder: (context, state) => const ReferenceScreen()),
         ],

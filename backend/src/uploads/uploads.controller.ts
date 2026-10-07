@@ -9,6 +9,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
 import { RedisService } from '../redis/redis.service';
+import { assertPdConsent } from '../auth/pd-consent';
 import { detectImageType } from './image-type';
 import { consumeUploadQuota } from './upload-quota';
 import { UploadsService } from './uploads.service';
@@ -47,6 +48,7 @@ export class UploadsController {
   @Post('document')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_SIZE_BYTES } }))
   async uploadDocument(@CurrentUser() ctx: RequestContext, @UploadedFile() file?: Express.Multer.File) {
+    assertPdConsent(ctx.user);
     const detected = await this.checkedImage(ctx, file);
     const key = await this.uploads.uploadDocument(file!.buffer, detected.ext, detected.mime, ctx.user.id);
     return { key };
