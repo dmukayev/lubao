@@ -189,6 +189,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build bac
 | _заполняется при деплое_ | | | |
 
 ## Идентификаторы приложения — зафиксированы 2026-10-07, не менять
-- Android `applicationId`: `com.lubao.lubao_app`
-- iOS `PRODUCT_BUNDLE_IDENTIFIER`: `com.lubao.lubaoApp`
+- Android `applicationId` и `namespace`: `kz.mukayev.lubao`
+- iOS `PRODUCT_BUNDLE_IDENTIFIER`: `kz.mukayev.lubao`
+(были шаблонные `com.lubao.lubao_app` / `com.lubao.lubaoApp` — переименовать до первой внешней сборки: Android `build.gradle`, папка пакета `MainActivity`, `AndroidManifest`; iOS все три конфигурации в `project.pbxproj`, `APNS_BUNDLE_ID` в `.env.example`; `google-services.json`/`GoogleService-Info.plist` пользователь заводит уже под новые.)
 Под них заведены Firebase (FCM/APNs) и будут заведены Google Play и App Store. Смена идентификатора = другое приложение для магазинов и телефонов (обновления не придут). Название на иконке и в магазине меняется свободно, идентификаторы — нет.
