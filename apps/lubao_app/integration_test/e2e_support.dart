@@ -406,7 +406,13 @@ Future<void> reveal(WidgetTester tester, Finder finder) async {
       }
     }
     if (best == null) fail('Нет вертикальной прокрутки, чтобы найти $finder');
-    await tester.scrollUntilVisible(finder, 200, scrollable: best);
+    // Сначала вниз, не нашли — вверх: список мог остаться прокрученным
+    // с прошлого шага (лента после поиска груза внизу, а кнопка — наверху).
+    try {
+      await tester.scrollUntilVisible(finder, 200, scrollable: best, maxScrolls: 30);
+    } catch (_) {
+      await tester.scrollUntilVisible(finder, -200, scrollable: best, maxScrolls: 60);
+    }
   }
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle(const Duration(milliseconds: 100), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 3)).catchError((_) => 0);
@@ -470,3 +476,21 @@ Future<Dio> adminApi() async {
   dio.options.headers['Authorization'] = 'Bearer ${(res.data as Map)['accessToken']}';
   return dio;
 }
+
+/// Дождаться элемента ленивого списка и прокрутить к нему: на узком экране с
+/// крупным шрифтом (iPhone SE в e2e) он ниже края и ещё не построен — простой
+/// waitFor его не видит.
+Future<void> waitAndReveal(WidgetTester tester, Finder finder, {Duration timeout = const Duration(seconds: 20)}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (true) {
+    try {
+      await reveal(tester, finder);
+      if (finder.evaluate().isNotEmpty) return;
+    } catch (_) {
+      if (DateTime.now().isAfter(deadline)) rethrow;
+    }
+    if (DateTime.now().isAfter(deadline)) fail('Не нашли за $timeout даже с прокруткой: $finder');
+    await tester.pump(const Duration(milliseconds: 500));
+  }
+}
+

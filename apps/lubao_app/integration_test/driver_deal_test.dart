@@ -77,9 +77,11 @@ void main() {
     }
 
     Future<void> advance(String fromLabel, String toLabel) async {
-      expect(find.descendant(of: find.byKey(const Key('dealNextStatusButton')), matching: find.text(fromLabel)), findsOneWidget);
-      await tester.tap(find.byKey(const Key('dealNextStatusButton')));
-      await waitFor(tester, find.descendant(of: find.byKey(const Key('dealNextStatusButton')), matching: find.text(toLabel)));
+      final button = find.byKey(const Key('dealNextStatusButton'));
+      await waitAndReveal(tester, button);
+      expect(find.descendant(of: button, matching: find.text(fromLabel)), findsOneWidget);
+      await tester.tap(button);
+      await waitAndReveal(tester, find.descendant(of: button, matching: find.text(toLabel)));
     }
 
     TrackingConsent consent() => ProviderScope.containerOf(tester.element(find.byType(LubaoApp))).read(trackingConsentProvider);
@@ -90,6 +92,7 @@ void main() {
       await openDeal(deal1);
       await advance(t.dealConfirm, t.dealMarkLoaded);
       expect(consent().trip, isFalse);
+      await waitAndReveal(tester, find.byKey(const Key('dealNextStatusButton')));
       await tester.tap(find.byKey(const Key('dealNextStatusButton')));
       await waitFor(tester, find.byKey(const Key('tripTrackingConsentSheet')));
       expect(find.text(t.tripTrackingConsentTitle), findsOneWidget);
@@ -110,6 +113,7 @@ void main() {
     await run.step(tester, 'сделка2-согласие-на-трекинг-и-пауза', () async {
       await openDeal(deal2);
       await advance(t.dealConfirm, t.dealMarkLoaded);
+      await waitAndReveal(tester, find.byKey(const Key('dealNextStatusButton')));
       await tester.tap(find.byKey(const Key('dealNextStatusButton')));
       await waitFor(tester, find.byKey(const Key('consentUnderstoodButton')));
       await tester.tap(find.byKey(const Key('consentUnderstoodButton')));
@@ -135,6 +139,7 @@ void main() {
 
     await run.step(tester, 'сделка3-машина-заполнена', () async {
       await openDeal(deal3);
+      await waitAndReveal(tester, find.byKey(const Key('dealNextStatusButton')));
       await tester.tap(find.byKey(const Key('dealNextStatusButton')));
       await waitFor(tester, find.text(t.dealVehicleFullTitle));
       expect(find.text(t.dealVehicleFullOpenCurrent), findsOneWidget);

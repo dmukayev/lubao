@@ -72,7 +72,7 @@ void main() {
       await waitFor(tester, find.byKey(const Key('driverCheckInButton')));
       expect(tester.widget<Text>(find.byKey(const Key('anonsCityName'))).data, 'Алматы');
       // Груз из Алматы виден первым (город анонса = город погрузки).
-      await waitFor(tester, find.byKey(const Key('feedCargoCard-$e2eCargo6')));
+      await waitAndReveal(tester, find.byKey(const Key('feedCargoCard-$e2eCargo6')));
       expect(find.text('Догруз'), findsWidgets, reason: 'груз 6 помечен «можно догрузом»');
       expect(firstFeedCargoId(tester), e2eCargo6);
     });
@@ -81,6 +81,7 @@ void main() {
       await reveal(tester, find.byKey(const Key('anonsEditButton')));
       await tester.tap(find.byKey(const Key('anonsEditButton')));
       await tester.pumpAndSettle();
+      await waitAndReveal(tester, find.byKey(const Key('announceCityField')));
       await tester.tap(find.byKey(const Key('announceCityField')));
       await tester.pumpAndSettle();
       // Поиск не зависит от языка интерфейса: латиницей.
@@ -88,9 +89,12 @@ void main() {
       final submitButton = find.byKey(const Key('announceArrivalSubmitButton'));
       await reveal(tester, submitButton);
       await tester.tap(submitButton);
-      await waitFor(tester, find.byKey(const Key('anonsCityName')));
-      await waitFor(tester, find.byKey(const Key('feedCargoCard-$e2eCargo7')));
+      // Порядок важен на узком экране с крупным шрифтом: сначала анонс
+      // (наверху), потом первая карточка ленты — прокрутка вниз к ней
+      // выгружает анонс из дерева.
+      await waitAndReveal(tester, find.byKey(const Key('anonsCityName')));
       expect(tester.widget<Text>(find.byKey(const Key('anonsCityName'))).data, 'Астана');
+      await waitAndReveal(tester, find.byWidgetPredicate((w) => w.key is ValueKey && '${(w.key! as ValueKey).value}'.startsWith('feedCargoCard-')).first);
       // Теперь первым — груз из Астаны, груз из Алматы ушёл вниз.
       expect(firstFeedCargoId(tester), e2eCargo7);
       expectNoOverflow(tester);
