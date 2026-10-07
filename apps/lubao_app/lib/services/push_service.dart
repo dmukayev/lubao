@@ -134,6 +134,7 @@ class PushService {
     }
     FirebaseMessaging.instance.onTokenRefresh.listen((token) => unawaited(_register(token)));
 
+    _ref.read(sessionProvider.notifier).addBeforeLogout(unregister);
     _ref.listen<Session?>(sessionProvider, (previous, next) {
       if (next != null) unawaited(_registerIfAllowed());
     }, fireImmediately: true);

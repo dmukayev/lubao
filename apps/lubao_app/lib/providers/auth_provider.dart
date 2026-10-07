@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:flutter/material.dart' show Locale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,7 +6,6 @@ import 'package:lubao_core/lubao_core.dart';
 import 'api_providers.dart';
 import 'locale_provider.dart';
 import 'tracking_provider.dart';
-import '../services/push_service.dart';
 
 /// true, пока идёт попытка восстановить сессию из secure storage при
 /// старте приложения (см. SessionController._restore) — роутер показывает
@@ -148,9 +148,21 @@ class SessionController extends StateNotifier<Session?> {
     state = current.copyWith(company: company, companyMember: companyMember);
   }
 
+  /// Что сделать перед выходом, пока авторизация ещё есть (042 п.1:
+  /// PushService снимает токен). Сервисы подписываются сами — сессия про них
+  /// не знает, иначе цикл зависимостей провайдеров (push зависит от сессии).
+  final _beforeLogout = <Future<void> Function()>[];
+
+  void addBeforeLogout(Future<void> Function() hook) => _beforeLogout.add(hook);
+
   Future<void> logout() async {
-    // Push-токен снимаем, пока авторизация ещё есть (042 п.1).
-    await _ref.read(pushServiceProvider).unregister();
+    for (final hook in _beforeLogout) {
+      try {
+        await hook();
+      } catch (e) {
+        debugPrint('SessionController: before-logout: $e');
+      }
+    }
     await _ref.read(authRepositoryProvider).logout();
     state = null;
     // Согласия на геопозицию относятся к человеку, а не к устройству (041, п.11).
