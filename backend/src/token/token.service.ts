@@ -6,7 +6,8 @@ import { UserRole } from '@prisma/client';
 const ACCESS_TOKEN_TTL = '15m';
 
 const REFRESH_TTL_MS: Record<UserRole, number> = {
-  DRIVER: 90 * 24 * 60 * 60 * 1000,
+  // 043 п.9 (решение 2026-10-07): водитель — 180 дней бездействия, продление при каждом открытии.
+  DRIVER: 180 * 24 * 60 * 60 * 1000,
   COMPANY: 30 * 24 * 60 * 60 * 1000,
   ADMIN: 12 * 60 * 60 * 1000,
 };

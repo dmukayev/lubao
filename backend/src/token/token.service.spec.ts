@@ -47,7 +47,7 @@ describe('TokenService', () => {
 
   it('returns the exact role-based refresh TTLs', () => {
     const service = new TokenService(new JwtService());
-    expect(service.refreshTtlMs('DRIVER')).toBe(90 * 24 * 60 * 60 * 1000);
+    expect(service.refreshTtlMs('DRIVER')).toBe(180 * 24 * 60 * 60 * 1000);
     expect(service.refreshTtlMs('COMPANY')).toBe(30 * 24 * 60 * 60 * 1000);
     expect(service.refreshTtlMs('ADMIN')).toBe(12 * 60 * 60 * 1000);
   });
