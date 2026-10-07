@@ -2883,4 +2883,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get postCargoWeightError => 'Салмақ тоннамен, 60-қа дейін — мысалы 20';
+
+  @override
+  String get companyLoginInvalidCredentials => 'Email немесе құпиясөз қате';
 }

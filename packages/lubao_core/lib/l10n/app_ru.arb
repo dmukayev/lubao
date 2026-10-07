@@ -1171,5 +1171,6 @@
   "adminMoveDown": "Ниже",
   "adminLoginChannelsSaved": "Каналы сохранены",
   "pushChannelName": "Уведомления Lubao",
-  "postCargoWeightError": "Вес в тоннах, до 60 — например 20"
+  "postCargoWeightError": "Вес в тоннах, до 60 — например 20",
+  "companyLoginInvalidCredentials": "Неверный email или пароль"
 }

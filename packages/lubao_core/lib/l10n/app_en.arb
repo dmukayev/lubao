@@ -1164,5 +1164,6 @@
   "adminMoveDown": "Move down",
   "adminLoginChannelsSaved": "Channels saved",
   "pushChannelName": "Lubao notifications",
-  "postCargoWeightError": "Weight in tons, up to 60 — e.g. 20"
+  "postCargoWeightError": "Weight in tons, up to 60 — e.g. 20",
+  "companyLoginInvalidCredentials": "Wrong email or password"
 }

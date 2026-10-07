@@ -1039,5 +1039,6 @@
   "adminMoveDown": "Төмен",
   "adminLoginChannelsSaved": "Арналар сақталды",
   "pushChannelName": "Lubao хабарландырулары",
-  "postCargoWeightError": "Салмақ тоннамен, 60-қа дейін — мысалы 20"
+  "postCargoWeightError": "Салмақ тоннамен, 60-қа дейін — мысалы 20",
+  "companyLoginInvalidCredentials": "Email немесе құпиясөз қате"
 }

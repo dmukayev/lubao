@@ -5489,6 +5489,12 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Вес в тоннах, до 60 — например 20'**
   String get postCargoWeightError;
+
+  /// No description provided for @companyLoginInvalidCredentials.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверный email или пароль'**
+  String get companyLoginInvalidCredentials;
 }
 
 class _LubaoLocalizationsDelegate

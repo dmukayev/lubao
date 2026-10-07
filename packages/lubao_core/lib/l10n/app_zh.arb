@@ -1039,5 +1039,6 @@
   "adminMoveDown": "下移",
   "adminLoginChannelsSaved": "渠道已保存",
   "pushChannelName": "Lubao 通知",
-  "postCargoWeightError": "重量以吨为单位，最多 60，例如 20"
+  "postCargoWeightError": "重量以吨为单位，最多 60，例如 20",
+  "companyLoginInvalidCredentials": "邮箱或密码错误"
 }

@@ -2884,4 +2884,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get postCargoWeightError => 'Weight in tons, up to 60 — e.g. 20';
+
+  @override
+  String get companyLoginInvalidCredentials => 'Wrong email or password';
 }

@@ -2819,4 +2819,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get postCargoWeightError => '重量以吨为单位，最多 60，例如 20';
+
+  @override
+  String get companyLoginInvalidCredentials => '邮箱或密码错误';
 }

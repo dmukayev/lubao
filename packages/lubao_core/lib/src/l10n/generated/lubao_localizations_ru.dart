@@ -2870,4 +2870,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get postCargoWeightError => 'Вес в тоннах, до 60 — например 20';
+
+  @override
+  String get companyLoginInvalidCredentials => 'Неверный email или пароль';
 }
