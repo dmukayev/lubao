@@ -69,6 +69,9 @@ void main() {
       await tester.tap(send);
       await waitFor(tester, find.byKey(const Key('driverLoginSentVia')));
       expect(find.text(t.loginCodeSentVia(t.loginChannelTelegram)), findsOneWidget);
+      // Поле кода само берёт фокус — клавиатура закрывает «Отправить по-другому».
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle(const Duration(milliseconds: 500));
       final viaSms = find.byKey(const Key('driverLoginResendVia-sms'));
       await reveal(tester, viaSms);
       await tester.tap(viaSms);
