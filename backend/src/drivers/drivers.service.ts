@@ -159,7 +159,15 @@ export class DriversService {
         const bodyType = bodyTypeId ? await tx.bodyType.findUnique({ where: { id: bodyTypeId }, select: { fields: true } }) : null;
         const fields = bodyFields(bodyType?.fields);
         const hasCapacity = fields.length === 0 || fields.some((f) => f.key === 'capacityTons');
-        const specs = fields.length ? validateSpecs(fields, { capacityTons: input.capacityTons, ...(input.preferredSpecs ?? {}) }, 'preferred') : {};
+        // 049 п.5: без preferredSpecs в запросе — не стирать сохранённые (реф
+        // терял tempMin при смене стран); тоннаж — внутри существующих specs.
+        // Сменился кузов — старые параметры к нему не относятся.
+        const sameBody = !input.bodyTypeId || input.bodyTypeId === driver.preferredBodyTypeId;
+        const kept = sameBody ? ((driver.preferredSpecs as Record<string, unknown> | null) ?? {}) : {};
+        const base = input.preferredSpecs ?? kept;
+        const specs = fields.length
+          ? validateSpecs(fields, { ...base, ...(input.capacityTons !== undefined ? { capacityTons: input.capacityTons } : {}) }, 'preferred')
+          : {};
         const capacity = typeof specs.capacityTons === 'number' ? specs.capacityTons : input.capacityTons;
         await tx.driver.update({
           where: { id: driver.id },
@@ -539,8 +547,12 @@ export class DriversService {
         capacityTons,
         ...(volume
           ? {
-              volumeM3: (specs.volumeM3 as number | undefined) ?? vehicle.volumeM3,
-              palletsEuro: (specs.palletsEuro as number | undefined) ?? vehicle.palletsEuro,
+              volumeM3: col('volumeM3'),
+              palletsEuro: col('palletsEuro'),
+              innerLengthM: col('innerLengthM'),
+              innerWidthM: col('innerWidthM'),
+              innerHeightM: col('innerHeightM'),
+              ...(extra.sizePresetId !== undefined ? { sizePresetId: extra.sizePresetId } : {}),
             }
           : {}),
       },

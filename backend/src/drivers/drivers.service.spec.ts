@@ -372,6 +372,14 @@ describe('DriversService.updateProfile — «основа» кузова по п
     expect(tx.driver.update.mock.calls[0][0].data).toMatchObject({ preferredCapacityTons: null, preferredSpecs: { carSlots: 8 } });
   });
 
+  it('049 п.5: правка профиля без preferredSpecs (смена стран) не стирает tempMin рефа; тоннаж — внутри specs', async () => {
+    const { tx, service } = setup(BODY_TYPE_PROFILES.REFRIGERATOR.fields);
+    // Сохранённая анкета (тот же кузов) — tempMin уже есть.
+    tx.driver.create.mockResolvedValueOnce({ id: 'd1', preferredBodyTypeId: 'bt', preferredSpecs: { capacityTons: 20, tempMin: -18 } });
+    await service.updateProfile('u1', { ...input, anyCountry: false, directionCountryIds: ['kz'], capacityTons: 22 });
+    expect(tx.driver.update.mock.calls[0][0].data.preferredSpecs).toEqual({ capacityTons: 22, tempMin: -18 });
+  });
+
   it('цистерна: литры и продукт; тент — тоннаж', async () => {
     const tank = setup(BODY_TYPE_PROFILES.TANK.fields);
     await tank.service.updateProfile('u1', { ...input, preferredSpecs: { liters: 30000, product: 'FUEL' } });
