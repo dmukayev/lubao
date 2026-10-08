@@ -436,9 +436,6 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get driverSetupSubmit => 'Сохранить и продолжить';
 
   @override
-  String get driverHomeGreeting => 'Сәлем,';
-
-  @override
   String get driverHomeAnonsTitle => 'Мой анонс';
 
   @override

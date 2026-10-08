@@ -135,7 +135,6 @@
   "driverSetupVehicleBodyType": "车厢类型",
   "driverSetupVehiclePlate": "车牌号",
   "driverSetupSubmit": "保存并继续",
-  "driverHomeGreeting": "你好，",
   "driverHomeAnonsTitle": "我的位置公告",
   "driverHomeLogistsCount": "附近物流公司：{count}",
   "driverHomeSince": "到达时间：{date}",

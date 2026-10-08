@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lubao_app/app.dart';
@@ -79,6 +80,8 @@ void main() {
         await tester.pump(const Duration(milliseconds: 300));
       }
       await waitFor(tester, find.byKey(const Key('driverStatusBar')));
+      // 053 п.6: наверху ленты — строка статуса, без приветствия и колокольчика.
+      expect(find.byIcon(LucideIcons.bell), findsNothing);
       expectInsideSafeZone(tester);
     });
 

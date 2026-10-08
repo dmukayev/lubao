@@ -176,7 +176,6 @@
     }
   },
   "driverSetupSubmit": "Save and continue",
-  "driverHomeGreeting": "Hi,",
   "driverHomeAnonsTitle": "My announcement",
   "driverHomeLogistsCount": "Logists nearby: {count}",
   "@driverHomeLogistsCount": {

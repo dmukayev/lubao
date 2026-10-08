@@ -440,9 +440,6 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get driverSetupSubmit => 'Сақтап, жалғастыру';
 
   @override
-  String get driverHomeGreeting => 'Сәлем,';
-
-  @override
   String get driverHomeAnonsTitle => 'Менің анонсым';
 
   @override

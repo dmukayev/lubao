@@ -55,6 +55,8 @@ void main() {
       deal3 = await logist.selectFirstResponse(e2eCargo3);
       await tester.tap(find.text(t.navDeals));
       await waitFor(tester, find.byKey(Key('driverDealCard-$deal1')));
+      // 053 п.6: сделки, ждущие подтверждения, — цифрой на вкладке.
+      await waitFor(tester, find.descendant(of: find.byKey(const Key('navDealsBadge')), matching: find.text('3')));
       expectInsideSafeZone(tester);
     });
 

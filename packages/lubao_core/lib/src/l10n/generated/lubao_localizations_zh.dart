@@ -425,9 +425,6 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get driverSetupSubmit => '保存并继续';
 
   @override
-  String get driverHomeGreeting => '你好，';
-
-  @override
   String get driverHomeAnonsTitle => '我的位置公告';
 
   @override

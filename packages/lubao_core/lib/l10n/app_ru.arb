@@ -176,7 +176,6 @@
     }
   },
   "driverSetupSubmit": "Сохранить и продолжить",
-  "driverHomeGreeting": "Сәлем,",
   "driverHomeAnonsTitle": "Мой анонс",
   "driverHomeLogistsCount": "Логистов рядом: {count}",
   "@driverHomeLogistsCount": {

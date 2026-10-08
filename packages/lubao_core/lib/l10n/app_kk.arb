@@ -135,7 +135,6 @@
   "driverSetupVehicleBodyType": "Кузов түрі",
   "driverSetupVehiclePlate": "Мемлекеттік нөмір",
   "driverSetupSubmit": "Сақтап, жалғастыру",
-  "driverHomeGreeting": "Сәлем,",
   "driverHomeAnonsTitle": "Менің анонсым",
   "driverHomeLogistsCount": "Жақын логистер: {count}",
   "driverHomeSince": "{date} бастап осындамын",

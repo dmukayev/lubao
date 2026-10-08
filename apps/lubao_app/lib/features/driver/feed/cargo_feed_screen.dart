@@ -65,8 +65,6 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
     final t = context.l10n;
     final referenceData = ref.watch(referenceDataProvider);
     final cargoFeed = ref.watch(cargoFeedProvider);
-    final session = ref.watch(sessionProvider);
-    final driver = session?.driver;
 
     return Scaffold(
       body: SafeArea(
@@ -103,19 +101,18 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                   ref.invalidate(myResponsesProvider);
                 },
                 child: ListView(
-                  padding: const EdgeInsets.only(top: AppSpacing.xxl, bottom: AppSpacing.lg),
+                  padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.lg),
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-                      child: _GreetingRow(fullName: driver?.fullName),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    // 045 п.11: статус водителя — главный вход; карточка анонса —
-                    // подробности, только когда статус есть.
+                    // 053 п.6: наверху — строка статуса (045 п.11, главный вход),
+                    // без приветствия и пустого колокольчика.
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
                       child: DriverStatusBar(refData: refData),
                     ),
+                    // Под ней — «нужно действие», только пока актуально:
+                    // пригласили / выбрали (045 п.3), затем анонс с вопросами
+                    // «вы на месте?» и «ещё ищете?».
+                    const _MyResponsesSummary(),
                     if (ref.watch(myArrivalsProvider).valueOrNull?.current != null) ...[
                       const SizedBox(height: AppSpacing.md),
                       Padding(
@@ -123,8 +120,6 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                         child: _AnonsCard(refData: refData),
                       ),
                     ],
-                    // 045 п.3: первая секция над лентой — где мои отклики.
-                    const _MyResponsesSummary(),
                     const SizedBox(height: AppSpacing.xl),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
@@ -320,40 +315,6 @@ class _MyResponsesSummary extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _GreetingRow extends StatelessWidget {
-  const _GreetingRow({required this.fullName});
-
-  final String? fullName;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    final firstName = (fullName ?? '').trim().split(' ').firstOrNull ?? '';
-    final initials = firstName.isEmpty ? '' : firstName.substring(0, 1).toUpperCase();
-
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: AppColors.primarySoft,
-          child: Text(initials, style: AppTextStyles.title.copyWith(color: AppColors.primary)),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(t.driverHomeGreeting, style: AppTextStyles.caption),
-              Text(firstName, style: AppTextStyles.title),
-            ],
-          ),
-        ),
-        IconSquareButton(icon: LucideIcons.bell, onPressed: null),
-      ],
     );
   }
 }
@@ -694,8 +655,4 @@ class _Pill extends StatelessWidget {
       child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.small.copyWith(color: Colors.white)),
     );
   }
-}
-
-extension _FirstOrNull<T> on Iterable<T> {
-  T? get firstOrNull => isEmpty ? null : first;
 }

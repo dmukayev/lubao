@@ -912,12 +912,6 @@ abstract class LubaoLocalizations {
   /// **'Сохранить и продолжить'**
   String get driverSetupSubmit;
 
-  /// No description provided for @driverHomeGreeting.
-  ///
-  /// In ru, this message translates to:
-  /// **'Сәлем,'**
-  String get driverHomeGreeting;
-
   /// No description provided for @driverHomeAnonsTitle.
   ///
   /// In ru, this message translates to:
