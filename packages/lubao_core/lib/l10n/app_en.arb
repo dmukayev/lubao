@@ -1255,5 +1255,12 @@
   "homeMyResponsesSummary": "Your responses: {total}",
   "homeMyResponsesPending": "awaiting reply {count}",
   "homeMyResponsesInvited": "invitations {count}",
-  "homeMyResponsesSelected": "selected {count}"
+  "homeMyResponsesSelected": "selected {count}",
+  "driverSetupFirstName": "What is your name",
+  "directionRegionsAll": "Whole country",
+  "directionRegionsCount": "Regions: {count}",
+  "directionRegionsTitle": "Where in {country}",
+  "driverSetupPermitsOptional": "Permits — if you have them",
+  "licenseNameBanner": "On your licence: {name}. Use it in your profile?",
+  "licenseNameAccept": "Yes, that’s me"
 }

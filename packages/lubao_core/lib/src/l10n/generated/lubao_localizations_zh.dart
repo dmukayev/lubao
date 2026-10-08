@@ -3123,4 +3123,31 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String homeMyResponsesSelected(int count) {
     return '已选中 $count';
   }
+
+  @override
+  String get driverSetupFirstName => '您怎么称呼';
+
+  @override
+  String get directionRegionsAll => '全国';
+
+  @override
+  String directionRegionsCount(int count) {
+    return '地区：$count';
+  }
+
+  @override
+  String directionRegionsTitle(String country) {
+    return '$country 境内的目的地';
+  }
+
+  @override
+  String get driverSetupPermitsOptional => '许可证（如有）';
+
+  @override
+  String licenseNameBanner(String name) {
+    return '驾驶证上的姓名：$name。是否填入资料？';
+  }
+
+  @override
+  String get licenseNameAccept => '是的，是我';
 }

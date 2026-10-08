@@ -3198,4 +3198,31 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String homeMyResponsesSelected(int count) {
     return 'таңдалды $count';
   }
+
+  @override
+  String get driverSetupFirstName => 'Атыңыз кім';
+
+  @override
+  String get directionRegionsAll => 'Бүкіл ел';
+
+  @override
+  String directionRegionsCount(int count) {
+    return 'Облыстар: $count';
+  }
+
+  @override
+  String directionRegionsTitle(String country) {
+    return '$country ішінде қайда';
+  }
+
+  @override
+  String get driverSetupPermitsOptional => 'Рұқсаттар — бар болса';
+
+  @override
+  String licenseNameBanner(String name) {
+    return 'Куәлікте: $name. Профильге қою керек пе?';
+  }
+
+  @override
+  String get licenseNameAccept => 'Иә, бұл мен';
 }

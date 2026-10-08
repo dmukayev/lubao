@@ -3199,4 +3199,31 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String homeMyResponsesSelected(int count) {
     return 'selected $count';
   }
+
+  @override
+  String get driverSetupFirstName => 'What is your name';
+
+  @override
+  String get directionRegionsAll => 'Whole country';
+
+  @override
+  String directionRegionsCount(int count) {
+    return 'Regions: $count';
+  }
+
+  @override
+  String directionRegionsTitle(String country) {
+    return 'Where in $country';
+  }
+
+  @override
+  String get driverSetupPermitsOptional => 'Permits — if you have them';
+
+  @override
+  String licenseNameBanner(String name) {
+    return 'On your licence: $name. Use it in your profile?';
+  }
+
+  @override
+  String get licenseNameAccept => 'Yes, that’s me';
 }

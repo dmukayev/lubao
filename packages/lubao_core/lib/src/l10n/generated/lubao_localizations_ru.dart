@@ -3185,4 +3185,31 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String homeMyResponsesSelected(int count) {
     return 'выбраны $count';
   }
+
+  @override
+  String get driverSetupFirstName => 'Как вас зовут';
+
+  @override
+  String get directionRegionsAll => 'Вся страна';
+
+  @override
+  String directionRegionsCount(int count) {
+    return 'Области: $count';
+  }
+
+  @override
+  String directionRegionsTitle(String country) {
+    return 'Куда в $country';
+  }
+
+  @override
+  String get driverSetupPermitsOptional => 'Допуски — если есть';
+
+  @override
+  String licenseNameBanner(String name) {
+    return 'В правах: $name. Подставить в профиль?';
+  }
+
+  @override
+  String get licenseNameAccept => 'Да, это я';
 }

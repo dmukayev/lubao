@@ -80,7 +80,7 @@ void main() {
       await tester.pumpWidget(_wrap(const DriverSetupScreen(isRegistration: true), driverRepo: _FakeDriverRepository()));
       await tester.pumpAndSettle();
 
-      final field = find.widgetWithText(TextField, 'Ф.И.О.');
+      final field = find.widgetWithText(TextField, 'Как вас зовут');
       await tester.enterText(field, name);
       await tester.pump();
 
@@ -95,7 +95,7 @@ void main() {
 
     // Шаг 1 из 3 (задача 021): имя + город. Кузов — шаг 2, недоступен пока
     // не пройдена валидация этого шага.
-    await tester.enterText(find.widgetWithText(TextField, 'Ф.И.О.'), 'Ерлан Қасымов');
+    await tester.enterText(find.widgetWithText(TextField, 'Как вас зовут'), 'Ерлан Қасымов');
     await tester.tap(find.widgetWithText(PrimaryButton, 'Далее'));
     await tester.pumpAndSettle();
 
@@ -109,7 +109,7 @@ void main() {
     await tester.pumpWidget(_wrap(const DriverSetupScreen(isRegistration: true), driverRepo: driverRepo));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.widgetWithText(TextField, 'Ф.И.О.'), 'Ерлан Қасымов');
+    await tester.enterText(find.widgetWithText(TextField, 'Как вас зовут'), 'Ерлан Қасымов');
 
     final cityField = find.widgetWithText(TextField, 'Домашний город');
     await tester.tap(cityField);
@@ -130,7 +130,7 @@ void main() {
 
     expect(find.text('Шаг 1 из 3'), findsOneWidget);
 
-    await tester.enterText(find.widgetWithText(TextField, 'Ф.И.О.'), 'Ерлан Қасымов');
+    await tester.enterText(find.widgetWithText(TextField, 'Как вас зовут'), 'Ерлан Қасымов');
     await tester.tap(find.widgetWithText(TextField, 'Домашний город'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Шымкент, Казахстан').first);

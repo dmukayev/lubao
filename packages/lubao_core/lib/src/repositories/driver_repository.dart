@@ -10,6 +10,7 @@ class DriverSetupInput {
     required this.anyCountry,
     required this.directionCountryIds,
     required this.permitIds,
+    this.directionRegionIds = const [],
     this.bodyTypeId,
     this.plateNumber,
     this.capacityTons,
@@ -20,7 +21,11 @@ class DriverSetupInput {
   final bool anyCountry;
   final List<String> directionCountryIds;
   final List<String> permitIds;
-  /// Кузов и тоннаж нужны только при регистрации (041, п.6) — дальше машины в гараже.
+
+  /// Области внутри выбранных стран (045 п.7); у страны без областей — вся страна.
+  final List<String> directionRegionIds;
+
+  /// Кузов и тоннаж — предпочтение из регистрации (045 п.5), машины — в гараже.
   final String? bodyTypeId;
   final String? plateNumber;
   final double? capacityTons;
@@ -31,6 +36,7 @@ class DriverSetupInput {
         'anyCountry': anyCountry,
         'directionCountryIds': directionCountryIds,
         'permitIds': permitIds,
+        'directionRegionIds': directionRegionIds,
         if (bodyTypeId != null) 'bodyTypeId': bodyTypeId,
         if (plateNumber != null) 'plateNumber': plateNumber,
         if (capacityTons != null) 'capacityTons': capacityTons,
@@ -49,6 +55,12 @@ class DriverRepository {
 
   Future<Driver> updateProfile(DriverSetupInput input) async {
     final res = await _client.dio.patch('/drivers/me', data: input.toJson());
+    return Driver.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// «Да, это я» — ФИО из одобренных прав в профиль (045 п.10).
+  Future<Driver> acceptLicenseName() async {
+    final res = await _client.dio.post('/drivers/me/accept-license-name');
     return Driver.fromJson(res.data as Map<String, dynamic>);
   }
 

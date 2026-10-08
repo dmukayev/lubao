@@ -201,6 +201,8 @@ class Driver {
     this.location,
     this.preferredBodyTypeId,
     this.preferredCapacityTons,
+    this.directionRegionIds = const [],
+    this.licenseFullName,
   });
 
   final String id;
@@ -222,6 +224,12 @@ class Driver {
   final String? preferredBodyTypeId;
   final double? preferredCapacityTons;
 
+  /// Области внутри стран направлений (045 п.7).
+  final List<String> directionRegionIds;
+
+  /// ФИО из одобренных прав, если отличается от профиля (045 п.10).
+  final String? licenseFullName;
+
   factory Driver.fromJson(Map<String, dynamic> json) => Driver(
         id: json['id'] as String,
         userId: json['userId'] as String,
@@ -238,6 +246,8 @@ class Driver {
         location: json['location'] == null ? null : DriverLocation.fromJson(json['location'] as Map<String, dynamic>),
         preferredBodyTypeId: json['preferredBodyTypeId'] as String?,
         preferredCapacityTons: (json['preferredCapacityTons'] as num?)?.toDouble(),
+        directionRegionIds: (json['directionRegionIds'] as List<dynamic>? ?? []).cast<String>(),
+        licenseFullName: json['licenseFullName'] as String?,
       );
 }
 

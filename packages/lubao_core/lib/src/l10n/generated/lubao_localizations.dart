@@ -6035,6 +6035,48 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'выбраны {count}'**
   String homeMyResponsesSelected(int count);
+
+  /// No description provided for @driverSetupFirstName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Как вас зовут'**
+  String get driverSetupFirstName;
+
+  /// No description provided for @directionRegionsAll.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вся страна'**
+  String get directionRegionsAll;
+
+  /// No description provided for @directionRegionsCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Области: {count}'**
+  String directionRegionsCount(int count);
+
+  /// No description provided for @directionRegionsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Куда в {country}'**
+  String directionRegionsTitle(String country);
+
+  /// No description provided for @driverSetupPermitsOptional.
+  ///
+  /// In ru, this message translates to:
+  /// **'Допуски — если есть'**
+  String get driverSetupPermitsOptional;
+
+  /// No description provided for @licenseNameBanner.
+  ///
+  /// In ru, this message translates to:
+  /// **'В правах: {name}. Подставить в профиль?'**
+  String licenseNameBanner(String name);
+
+  /// No description provided for @licenseNameAccept.
+  ///
+  /// In ru, this message translates to:
+  /// **'Да, это я'**
+  String get licenseNameAccept;
 }
 
 class _LubaoLocalizationsDelegate

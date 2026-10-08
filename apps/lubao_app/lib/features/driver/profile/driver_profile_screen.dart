@@ -36,6 +36,16 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
     }
   }
 
+  Future<void> _acceptLicenseName() async {
+    try {
+      final updated = await ref.read(driverRepositoryProvider).acceptLicenseName();
+      if (mounted) ref.read(sessionProvider.notifier).updateDriver(updated);
+    } catch (e) {
+      debugPrint('DriverProfileScreen: accept license name: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.commonError)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
@@ -64,6 +74,21 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
               ),
             ],
           ),
+          // 045 п.10: ФИО из одобренных прав — подставить одним нажатием.
+          if (driver?.licenseFullName != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            AppCard(
+              key: const Key('licenseNameBanner'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(t.licenseNameBanner(driver!.licenseFullName!), style: AppTextStyles.body),
+                  const SizedBox(height: AppSpacing.sm),
+                  PrimaryButton(key: const Key('licenseNameAccept'), label: t.licenseNameAccept, onPressed: _acceptLicenseName),
+                ],
+              ),
+            ),
+          ],
           if (!(driver?.isVerified ?? false)) ...[
             const SizedBox(height: AppSpacing.lg),
             _CompletenessBanner(driver: driver),

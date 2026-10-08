@@ -1130,5 +1130,12 @@
   "homeMyResponsesSummary": "Сіздің жауаптарыңыз: {total}",
   "homeMyResponsesPending": "жауап күтуде {count}",
   "homeMyResponsesInvited": "шақыру {count}",
-  "homeMyResponsesSelected": "таңдалды {count}"
+  "homeMyResponsesSelected": "таңдалды {count}",
+  "driverSetupFirstName": "Атыңыз кім",
+  "directionRegionsAll": "Бүкіл ел",
+  "directionRegionsCount": "Облыстар: {count}",
+  "directionRegionsTitle": "{country} ішінде қайда",
+  "driverSetupPermitsOptional": "Рұқсаттар — бар болса",
+  "licenseNameBanner": "Куәлікте: {name}. Профильге қою керек пе?",
+  "licenseNameAccept": "Иә, бұл мен"
 }

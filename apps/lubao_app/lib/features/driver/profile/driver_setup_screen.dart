@@ -32,6 +32,8 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
   bool _anyCountry = false;
   final _selectedCountries = <String>{};
   final _selectedPermits = <String>{};
+  /// Области внутри выбранных стран (045 п.7); у страны без своих областей — вся страна.
+  final _selectedRegions = <String>{};
   bool _initialized = false;
   bool _saving = false;
   TextEditingController? _cityFieldController;
@@ -57,6 +59,59 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
     _anyCountry = driver.anyCountry;
     _selectedCountries.addAll(driver.directionCountryIds);
     _selectedPermits.addAll(driver.permitIds);
+    _selectedRegions.addAll(driver.directionRegionIds);
+  }
+
+  /// Области страны (045 п.7): ничего не отмечено — вся страна.
+  Future<void> _pickRegions(BuildContext context, ReferenceData refData, Country country, String locale) async {
+    final t = context.l10n;
+    final regions = refData.regionsOf(country.id);
+    final picked = {..._selectedRegions.where((id) => regions.any((r) => r.id == id))};
+    final result = await showModalBottomSheet<Set<String>>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheet) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.screen),
+              child: Text(t.directionRegionsTitle(country.name.forLanguageCode(locale)), style: AppTextStyles.title),
+            ),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  CheckboxListTile(
+                    key: const Key('directionRegionsAll'),
+                    value: picked.isEmpty,
+                    title: Text(t.directionRegionsAll),
+                    onChanged: (_) => setSheet(picked.clear),
+                  ),
+                  for (final region in regions)
+                    CheckboxListTile(
+                      key: Key('directionRegion-${region.id}'),
+                      value: picked.contains(region.id),
+                      title: Text(region.name.forLanguageCode(locale)),
+                      onChanged: (v) => setSheet(() => v == true ? picked.add(region.id) : picked.remove(region.id)),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.screen),
+              child: PrimaryButton(key: const Key('directionRegionsDone'), label: t.commonDone, onPressed: () => Navigator.pop(sheetContext, picked)),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result == null) return;
+    setState(() {
+      _selectedRegions.removeAll(regions.map((r) => r.id));
+      _selectedRegions.addAll(result);
+    });
   }
 
   @override
@@ -118,6 +173,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
               anyCountry: _anyCountry,
               directionCountryIds: _anyCountry ? [] : _selectedCountries.toList(),
               permitIds: _selectedPermits.toList(),
+              directionRegionIds: _anyCountry ? const [] : _selectedRegions.toList(),
               bodyTypeId: widget.isRegistration ? _bodyTypeId : null,
               plateNumber: null,
               capacityTons: _capacityTons,
@@ -171,7 +227,8 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
           final step0Fields = [
             AppTextField(
               key: const Key('driverSetupFullName'),
-              label: t.driverSetupFullName,
+              // 045 п.10: при регистрации — только имя; полное ФИО придёт из прав.
+              label: widget.isRegistration ? t.driverSetupFirstName : t.driverSetupFullName,
               controller: _fullNameController,
               errorText: _fullNameError,
             ),
@@ -228,6 +285,26 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
               },
             ),
           ];
+
+          final Widget permitChips = Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: refData.permits.map((permit) {
+                  final selected = _selectedPermits.contains(permit.id);
+                  return SelectableTile(
+                    label: permit.name.forLanguageCode(locale),
+                    selected: selected,
+                    leading: selected ? const Icon(LucideIcons.check, size: 16, color: AppColors.primary) : null,
+                    onTap: () => setState(() {
+                      if (selected) {
+                        _selectedPermits.remove(permit.id);
+                      } else {
+                        _selectedPermits.add(permit.id);
+                      }
+                    }),
+                  );
+                }).toList(),
+              );
 
           final step1Fields = [
             if (widget.isRegistration) ...[
@@ -305,25 +382,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
               const SizedBox(height: AppSpacing.md),
               Text(t.driverSetupDocuments, style: AppTextStyles.bodyStrong),
               const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: refData.permits.map((permit) {
-                  final selected = _selectedPermits.contains(permit.id);
-                  return SelectableTile(
-                    label: permit.name.forLanguageCode(locale),
-                    selected: selected,
-                    leading: selected ? const Icon(LucideIcons.check, size: 16, color: AppColors.primary) : null,
-                    onTap: () => setState(() {
-                      if (selected) {
-                        _selectedPermits.remove(permit.id);
-                      } else {
-                        _selectedPermits.add(permit.id);
-                      }
-                    }),
-                  );
-                }).toList(),
-              ),
+              permitChips,
             ],
           ];
 
@@ -352,23 +411,49 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                 padding: EdgeInsets.zero,
                 child: Column(
                   children: [
-                    for (final country in refData.countries)
+                    for (final country in refData.countries) ...[
                       _CountryRow(
                         code: country.code,
                         label: country.name.forLanguageCode(locale),
                         selected: _selectedCountries.contains(country.id),
-                        showDivider: country != refData.countries.last,
+                        showDivider: country != refData.countries.last && !_selectedCountries.contains(country.id),
                         onTap: () => setState(() {
                           if (_selectedCountries.contains(country.id)) {
                             _selectedCountries.remove(country.id);
+                            _selectedRegions.removeAll(refData.regionsOf(country.id).map((r) => r.id));
                           } else {
                             _selectedCountries.add(country.id);
                           }
                         }),
                       ),
+                      // 045 п.7: уточнить области — по тапу; по умолчанию «вся страна».
+                      if (_selectedCountries.contains(country.id) && refData.regionsOf(country.id).isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(AppSpacing.xxl + AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
+                          child: Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: TextButton.icon(
+                              key: Key('directionRegions-${country.code}'),
+                              onPressed: () => _pickRegions(context, refData, country, locale),
+                              icon: const Icon(LucideIcons.mapPin, size: 16),
+                              label: Text(() {
+                                final count = refData.regionsOf(country.id).where((r) => _selectedRegions.contains(r.id)).length;
+                                return count == 0 ? t.directionRegionsAll : t.directionRegionsCount(count);
+                              }()),
+                            ),
+                          ),
+                        ),
+                    ],
                   ],
                 ),
               ),
+            ],
+            // 045 п.8: допуски — на этом же шаге, необязательными чипами.
+            if (widget.isRegistration) ...[
+              const SizedBox(height: AppSpacing.lg),
+              Text(t.driverSetupPermitsOptional, style: AppTextStyles.bodyStrong),
+              const SizedBox(height: AppSpacing.sm),
+              permitChips,
             ],
           ];
 
@@ -501,6 +586,7 @@ class _CountryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
+      key: Key('driverSetupCountry-$code'),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),

@@ -1276,5 +1276,15 @@
   "homeMyResponsesInvited": "приглашение {count}",
   "@homeMyResponsesInvited": {"placeholders": {"count": {"type": "int"}}},
   "homeMyResponsesSelected": "выбраны {count}",
-  "@homeMyResponsesSelected": {"placeholders": {"count": {"type": "int"}}}
+  "@homeMyResponsesSelected": {"placeholders": {"count": {"type": "int"}}},
+  "driverSetupFirstName": "Как вас зовут",
+  "directionRegionsAll": "Вся страна",
+  "directionRegionsCount": "Области: {count}",
+  "@directionRegionsCount": {"placeholders": {"count": {"type": "int"}}},
+  "directionRegionsTitle": "Куда в {country}",
+  "@directionRegionsTitle": {"placeholders": {"country": {"type": "String"}}},
+  "driverSetupPermitsOptional": "Допуски — если есть",
+  "licenseNameBanner": "В правах: {name}. Подставить в профиль?",
+  "@licenseNameBanner": {"placeholders": {"name": {"type": "String"}}},
+  "licenseNameAccept": "Да, это я"
 }

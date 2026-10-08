@@ -55,6 +55,26 @@ void main() {
         await tester.pumpAndSettle();
       });
       await run.step(tester, '$tag-мастер-шаг3-готово', () async {
+        if (tag == 'A') {
+          // 045 п.7–8: страна → уточнить область по тапу; допуски — тут же, необязательно.
+          final kz = find.byKey(const Key('driverSetupCountry-KZ'));
+          await reveal(tester, kz);
+          await tester.tap(kz);
+          await tester.pumpAndSettle();
+          final regions = find.byKey(const Key('directionRegions-KZ'));
+          await reveal(tester, regions);
+          expect(find.descendant(of: regions, matching: find.text(t.directionRegionsAll)), findsOneWidget);
+          await tester.tap(regions);
+          await tester.pumpAndSettle();
+          await tester.tap(find.byType(CheckboxListTile).at(1));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const Key('directionRegionsDone')));
+          await tester.pumpAndSettle();
+          expect(find.descendant(of: regions, matching: find.text(t.directionRegionsCount(1))), findsOneWidget);
+          expect(find.text(t.driverSetupPermitsOptional), findsOneWidget);
+          expectNoOverflow(tester);
+        }
+        await reveal(tester, find.byKey(const Key('driverSetupNext')));
         await tester.tap(find.byKey(const Key('driverSetupNext')));
         await waitFor(tester, find.byType(NavigationBar));
       });
