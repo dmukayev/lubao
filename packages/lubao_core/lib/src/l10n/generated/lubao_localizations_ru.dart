@@ -3557,4 +3557,9 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   @override
   String get adminSettingPartialLoadsHint =>
       'Выключен — одна перевозка на машину, без пометки «можно догрузом». Включён — догруз только для тента, изотерма и рефа.';
+
+  @override
+  String adminRecognitionDuplicateOf(String name) {
+    return 'Дубликат у $name';
+  }
 }

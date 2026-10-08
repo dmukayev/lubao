@@ -3570,4 +3570,9 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   @override
   String get adminSettingPartialLoadsHint =>
       'Өшірулі — бір көлікке бір тасымал, «қосымша жүк» белгісіз. Қосулы — тек тент, изотерм және реф үшін.';
+
+  @override
+  String adminRecognitionDuplicateOf(String name) {
+    return '$name иесінде қайталанады';
+  }
 }

@@ -6677,6 +6677,12 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Выключен — одна перевозка на машину, без пометки «можно догрузом». Включён — догруз только для тента, изотерма и рефа.'**
   String get adminSettingPartialLoadsHint;
+
+  /// No description provided for @adminRecognitionDuplicateOf.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дубликат у {name}'**
+  String adminRecognitionDuplicateOf(String name);
 }
 
 class _LubaoLocalizationsDelegate

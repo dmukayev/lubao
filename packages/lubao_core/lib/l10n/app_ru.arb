@@ -1404,5 +1404,7 @@
   "dealVehicleOneDealTitle": "Машина занята",
   "dealVehicleOneDealBody": "Для этой машины одна перевозка за раз — завершите текущую.",
   "adminSettingPartialLoads": "Догруз (сборные грузы)",
-  "adminSettingPartialLoadsHint": "Выключен — одна перевозка на машину, без пометки «можно догрузом». Включён — догруз только для тента, изотерма и рефа."
+  "adminSettingPartialLoadsHint": "Выключен — одна перевозка на машину, без пометки «можно догрузом». Включён — догруз только для тента, изотерма и рефа.",
+  "adminRecognitionDuplicateOf": "Дубликат у {name}",
+  "@adminRecognitionDuplicateOf": { "placeholders": { "name": { "type": "String" } } }
 }

@@ -3487,4 +3487,9 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   @override
   String get adminSettingPartialLoadsHint =>
       '关闭——每车一次一单，不显示“可拼货”。开启——仅篷布车、保温车和冷藏车可拼货。';
+
+  @override
+  String adminRecognitionDuplicateOf(String name) {
+    return '与 $name 重复';
+  }
 }

@@ -3572,4 +3572,9 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   @override
   String get adminSettingPartialLoadsHint =>
       'Off — one haul per vehicle, no “partial load” option. On — partial loads only for tent, isotherm and reefer.';
+
+  @override
+  String adminRecognitionDuplicateOf(String name) {
+    return 'Duplicate of $name';
+  }
 }

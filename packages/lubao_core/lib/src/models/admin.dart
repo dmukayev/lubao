@@ -491,7 +491,11 @@ class AdminRecognizedField {
     this.checksumOk,
     required this.needsReview,
     this.match,
+    this.duplicateOfName,
   });
+
+  /// 049 п.3: чей это идентификатор, если дубликат («дубликат у Ерлан Т.»).
+  final String? duplicateOfName;
 
   final String value;
   final double confidence;
@@ -507,6 +511,7 @@ class AdminRecognizedField {
         checksumOk: json['checksumOk'] as bool?,
         needsReview: json['needsReview'] as bool,
         match: json['match'] as String?,
+        duplicateOfName: (json['duplicateOf'] as Map<String, dynamic>?)?['name'] as String?,
       );
 }
 

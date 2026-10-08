@@ -854,7 +854,7 @@ class _RecognitionFieldRow extends StatelessWidget {
     final displayValue = overrideValue ?? field.value;
     final (badgeLabel, badgeColor) = switch (field.match) {
       'blacklisted' => (t.adminRecognitionBlacklisted, StatusBadge.danger),
-      'duplicate' => (t.adminRecognitionDuplicate, StatusBadge.warning),
+      'duplicate' => (field.duplicateOfName != null ? t.adminRecognitionDuplicateOf(field.duplicateOfName!) : t.adminRecognitionDuplicate, StatusBadge.warning),
       _ when field.needsReview => (t.adminRecognitionNeedsReview, StatusBadge.warning),
       _ => (t.adminRecognitionMatchOk, StatusBadge.success),
     };
