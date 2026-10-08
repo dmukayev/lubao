@@ -17,6 +17,8 @@ const PDF_LINK_TTL_SECONDS = 5 * 60;
 const PERSON_DOC_TYPES: VerificationDocType[] = ['SELFIE', 'DRIVER_LICENSE', 'IDENTITY'];
 const VEHICLE_DOC_TYPES: VerificationDocType[] = ['VEHICLE_PASSPORT', 'TRAILER_PASSPORT', 'VEHICLE_PHOTO_FRONT', 'VEHICLE_PHOTO_SIDE'];
 
+const VIEW_DEDUP_MS = 10 * 60 * 1000;
+
 export type DocsAuditAction = 'DRIVER_DOCS_VIEWED' | 'DRIVER_DOCS_DOWNLOADED';
 
 /// Документы водителя логисту по обоюдной сделке (044, decisions.md
@@ -71,7 +73,10 @@ export class DriverDocumentsService {
     if (!OPEN_STATUSES.includes(deal.status)) {
       throw new ForbiddenException({ code: 'DOCS_NOT_YET', message: 'Documents open after the driver confirms the haul' });
     }
-    if (deal.status === 'DELIVERED' && deal.deliveredAt && Date.now() - deal.deliveredAt.getTime() > DOCS_AFTER_DELIVERY_MS) {
+    // 049 п.8: доставлено без deliveredAt (правка админом, старые данные) — от
+    // последнего изменения сделки, иначе пакет был бы бессрочным.
+    const deliveredAt = deal.deliveredAt ?? deal.updatedAt;
+    if (deal.status === 'DELIVERED' && Date.now() - deliveredAt.getTime() > DOCS_AFTER_DELIVERY_MS) {
       throw new ForbiddenException({ code: 'DOCS_EXPIRED', message: 'Documents are closed 30 days after delivery' });
     }
     return deal;
@@ -106,9 +111,20 @@ export class DriverDocumentsService {
     const license = latest(personDocs, 'DRIVER_LICENSE');
     const licenseFields = (license?.recognition?.fields ?? {}) as Record<string, { value?: string } | undefined>;
 
-    await this.prisma.auditLog.create({
-      data: { actorUserId: ctx.user.id, action, entityType: 'Deal', entityId: dealId, metadata: { driverId: deal.driverId, companyId: deal.companyId } },
-    });
+    // 049 п.8: просмотр пишется не на каждый рендер — раз в 10 минут на
+    // пользователя и сделку; скачивание PDF — всегда.
+    const recentView =
+      action === 'DRIVER_DOCS_VIEWED'
+        ? await this.prisma.auditLog.findFirst({
+            where: { actorUserId: ctx.user.id, action, entityType: 'Deal', entityId: dealId, createdAt: { gte: new Date(Date.now() - VIEW_DEDUP_MS) } },
+            select: { id: true },
+          })
+        : null;
+    if (!recentView) {
+      await this.prisma.auditLog.create({
+        data: { actorUserId: ctx.user.id, action, entityType: 'Deal', entityId: dealId, metadata: { driverId: deal.driverId, companyId: deal.companyId } },
+      });
+    }
 
     const ref = (doc: Pick<VerificationDocument, 'id' | 'status'> | null) => (doc ? { id: doc.id, status: doc.status } : null);
     // Тягач первым, прицеп вторым — как в связке сделки.

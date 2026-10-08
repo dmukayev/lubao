@@ -45,7 +45,7 @@ function setup(deal: unknown) {
         { type: 'DRIVER_LICENSE_NO', valueEncrypted: encryptIdentifier('AB1234567'), valueMasked: 'AB•••67' },
       ]),
     },
-    auditLog: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+    auditLog: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
   };
   const uploads: any = { getDocumentStream: jest.fn().mockResolvedValue({ stream: 'S', contentType: 'image/jpeg' }) };
   const store = new Map<string, string>();
@@ -98,6 +98,22 @@ describe('DriverDocumentsService', () => {
     await expect(setup(dealRow({ status: 'DELIVERED', deliveredAt: old })).service.package('deal1', logist)).rejects.toMatchObject({ response: { code: 'DOCS_EXPIRED' } });
     const recent = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
     await expect(setup(dealRow({ status: 'DELIVERED', deliveredAt: recent })).service.package('deal1', logist)).resolves.toBeDefined();
+  });
+
+  it('049 п.8: доставлено без deliveredAt — срок от updatedAt, пакет не бессрочный', async () => {
+    const old = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
+    await expect(setup(dealRow({ status: 'DELIVERED', deliveredAt: null, updatedAt: old })).service.package('deal1', logist)).rejects.toMatchObject({ response: { code: 'DOCS_EXPIRED' } });
+  });
+
+  it('049 п.8: повторный просмотр в течение 10 минут не пишется в журнал, скачивание — всегда', async () => {
+    const view = setup(dealRow());
+    view.prisma.auditLog.findFirst.mockResolvedValue({ id: 'recent' });
+    await view.service.package('deal1', logist);
+    expect(view.prisma.auditLog.create).not.toHaveBeenCalled();
+    const download = setup(dealRow());
+    download.prisma.auditLog.findFirst.mockResolvedValue({ id: 'recent' });
+    await download.service.package('deal1', logist, 'DRIVER_DOCS_DOWNLOADED');
+    expect(download.prisma.auditLog.create.mock.calls[0][0].data.action).toBe('DRIVER_DOCS_DOWNLOADED');
   });
 
   it('водитель пакет так не получает (только компания)', async () => {

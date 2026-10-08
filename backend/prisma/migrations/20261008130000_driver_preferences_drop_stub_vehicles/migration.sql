@@ -14,10 +14,14 @@ FROM (
 ) v
 WHERE v."driverId" = d."id";
 
--- Заглушки регистрации: без госномера, без документов и ни в одной сделке.
+-- Заглушки регистрации: без госномера, VIN и марки, не проверенные, без
+-- документов и ни в одной сделке (049 п.8: настоящую машину без номера не трогать).
 CREATE TEMP TABLE stub_vehicles AS
 SELECT v."id" FROM "vehicles" v
 WHERE v."plateNumber" IS NULL
+  AND v."vin" IS NULL
+  AND v."brand" IS NULL
+  AND NOT v."isVerified"
   AND NOT EXISTS (SELECT 1 FROM "verification_documents" vd WHERE vd."vehicleId" = v."id")
   AND NOT EXISTS (SELECT 1 FROM "deals" dl WHERE dl."tractorId" = v."id" OR dl."trailerId" = v."id");
 

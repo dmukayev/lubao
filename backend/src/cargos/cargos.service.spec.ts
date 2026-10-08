@@ -443,6 +443,19 @@ describe('CargosService — лента на сервере: город → об�
     expect(items.map((i: any) => i.id)).toEqual(['here', 'near', 'far']);
   });
 
+  it('049 п.8: «домой» — та же область, что и домашний город, а не вся страна', async () => {
+    const service = setupFeed({
+      home: { id: 'talgar', regionId: 'almaty-region', lat: 43.3, lng: 77.24, countryId: 'kz' },
+      directions: [],
+      cargos: [
+        cargoAt('to-taraz', almaty, { destinationCountryId: 'kz', destinationCity: { regionId: 'zhambyl' } }),
+        cargoAt('to-konaev', almaty, { destinationCountryId: 'kz', destinationCity: { regionId: 'almaty-region' } }),
+      ],
+    });
+    const { items } = await service.feed('d1');
+    expect(items.map((i: any) => [i.id, i.feedSection])).toEqual([['to-konaev', 'home'], ['to-taraz', 'other']]);
+  });
+
   it('внутри одного ранга: «домой» → выбранные страны → остальные, затем по дате готовности', async () => {
     const service = setupFeed({
       home: { id: 'almaty', regionId: null, lat: 43.2389, lng: 76.8897, countryId: 'kz' },

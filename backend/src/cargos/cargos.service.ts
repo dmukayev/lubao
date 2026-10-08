@@ -334,10 +334,19 @@ export class CargosService {
       return regions.has(cargo.destinationCity.regionId);
     };
 
+    // 049 п.8 (CLAUDE.md): «домой» — город назначения в той же области, что и
+    // домашний город; у домашнего города без области — по стране.
+    const homeRegionId = driver?.homeCity?.regionId ?? null;
+    const isHome = (cargo: { destinationCountryId: string; destinationCity: { regionId: string | null } | null }) => {
+      if (!homeCountryId || cargo.destinationCountryId !== homeCountryId) return false;
+      if (!homeRegionId) return true;
+      return cargo.destinationCity?.regionId === homeRegionId;
+    };
+
     const ranked = fitting.map((cargo) => {
       const pickupRank = origin ? CargosService.pickupRank(cargo.point, origin) : 2;
       const section: 'home' | 'selected' | 'other' =
-        homeCountryId && cargo.destinationCountryId === homeCountryId
+        isHome(cargo)
           ? 'home'
           : (driver?.anyCountry ?? true) || inSelected(cargo)
             ? 'selected'
