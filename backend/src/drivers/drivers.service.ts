@@ -40,12 +40,16 @@ export class DriversService {
   }
 
   async toDto(driver: Driver) {
-    const [directions, permits, tractor, trailer, verificationStatus] = await Promise.all([
+    const [directions, permits, tractor, trailer, verificationStatus, approvedSelfie] = await Promise.all([
       this.prisma.driverDirection.findMany({ where: { driverId: driver.id } }),
       this.prisma.driverPermit.findMany({ where: { driverId: driver.id } }),
       this.prisma.vehicle.findFirst({ where: { driverId: driver.id, kind: { in: ['TRACTOR', 'RIGID'] }, isArchived: false }, orderBy: { createdAt: 'asc' } }),
       this.prisma.vehicle.findFirst({ where: { driverId: driver.id, kind: 'TRAILER', isArchived: false }, orderBy: { createdAt: 'asc' } }),
       this.verificationStatus(driver.userId, driver.isVerified),
+      // 054 п.2: предложение «Поставить это фото в профиль?» — только после принятого селфи.
+      driver.avatarFileKey || driver.avatarOfferDismissedAt
+        ? Promise.resolve(null)
+        : this.prisma.verificationDocument.findFirst({ where: { driverId: driver.id, type: 'SELFIE', status: 'APPROVED' }, select: { id: true } }),
     ]);
     // Задача 031 — Vehicle разделена на тягач+прицеп (гараж), но старый
     // контракт /drivers/me отдаёт одну объединённую «машину» (пока Stage B
@@ -63,6 +67,9 @@ export class DriversService {
       verificationStatus,
       ratingAvg: Number(driver.ratingAvg),
       ratingCount: driver.ratingCount,
+      // 054: версия фото профиля (для кэша клиента); null — фото нет, буквы имени.
+      avatarVersion: driver.avatarFileKey && driver.avatarUpdatedAt ? driver.avatarUpdatedAt.toISOString() : null,
+      avatarOffer: !!approvedSelfie,
       location:
         driver.currentLat && driver.currentLng
           ? {

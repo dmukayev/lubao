@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, HttpCode, NotFoundException, Param, Patch, Post, Res } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, NotFoundException, Param, Patch, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { UploadsService } from '../uploads/uploads.service';
 import { ContactPolicyService } from '../contact-events/contact-policy.service';
@@ -11,6 +11,8 @@ import { CreateVerificationDocumentDto } from './dto/create-verification-documen
 import { UpdateDriverDto } from './dto/update-driver.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { DriversService } from './drivers.service';
+import { DriverAvatarService } from './driver-avatar.service';
+import { SetAvatarDto } from './dto/set-avatar.dto';
 
 @Controller('drivers')
 export class DriversController {
@@ -19,7 +21,52 @@ export class DriversController {
     private readonly prisma: PrismaService,
     private readonly contactPolicy: ContactPolicyService,
     private readonly uploads: UploadsService,
+    private readonly avatars: DriverAvatarService,
   ) {}
+
+  /// 054: «Да» на предложении — копия принятого селфи в фото профиля.
+  @Post('me/avatar/from-selfie')
+  @HttpCode(200)
+  avatarFromSelfie(@CurrentUser() ctx: RequestContext) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.avatars.setFromSelfie(ctx.driver.id, ctx.user.id);
+  }
+
+  /// 054: «Сделать другое» / «Сменить фото» — файл из `POST /uploads/document`.
+  @Post('me/avatar')
+  @HttpCode(200)
+  setAvatar(@CurrentUser() ctx: RequestContext, @Body() dto: SetAvatarDto) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.avatars.setFromUpload(ctx.driver.id, ctx.user.id, dto.fileKey);
+  }
+
+  @Delete('me/avatar')
+  removeAvatar(@CurrentUser() ctx: RequestContext) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.avatars.remove(ctx.driver.id, ctx.user.id, 'DRIVER');
+  }
+
+  /// «Не сейчас» — предложение больше не показываем.
+  @Post('me/avatar/dismiss-offer')
+  @HttpCode(204)
+  async dismissAvatarOffer(@CurrentUser() ctx: RequestContext) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    await this.avatars.dismissOffer(ctx.driver.id);
+  }
+
+  /// 054 п.4: фото видят все вошедшие сотрудники компаний (и непроверенных),
+  /// админ и сам водитель; другие водители — нет. Без токена — 401 (глобальный гард).
+  @Get(':id/avatar')
+  async avatar(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Res() res: Response) {
+    const allowed = !!ctx.companyMember || ctx.user.role === 'ADMIN' || ctx.driver?.id === id;
+    if (!allowed) throw new NotFoundException('Photo not found');
+    const key = await this.avatars.fileKey(id);
+    if (!key) throw new NotFoundException('Photo not found');
+    const source = await this.uploads.getDocumentStream(key);
+    res.setHeader('Content-Type', source.contentType);
+    res.setHeader('Cache-Control', 'private, max-age=86400');
+    source.stream.pipe(res);
+  }
 
   /// 049 п.6: фото и номера машин — только проверенной компании, которой водитель
   /// виден (анонс, отклик, сделка); суточный лимит как у номеров (свой счётчик).

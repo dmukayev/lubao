@@ -1,12 +1,13 @@
 import { SmsService } from '../sms/sms.service';
 import { LOGIN_CODE_CHANNELS_SETTING, parseChannelSetting } from '../sms/login-code-channels';
-import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, Patch, Post, Put, Query, Res } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, Patch, Post, Put, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { AdminService } from './admin.service';
 import { DealsService } from '../deals/deals.service';
+import { DriverAvatarService } from '../drivers/driver-avatar.service';
 import {
   AdminResolveDisputeDto,
   CreateCargoCategoryDto,
@@ -53,6 +54,7 @@ export class AdminController {
     private readonly appSettings: AppSettingsService,
     private readonly sms: SmsService,
     private readonly deals: DealsService,
+    private readonly avatars: DriverAvatarService,
   ) {}
 
   /// Каналы кода входа для блока в Настройках (042 п.3): порядок, вкл/выкл
@@ -429,6 +431,15 @@ export class AdminController {
   driverDetail(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
     assertAdmin(ctx);
     return this.admin.driverDetail(id);
+  }
+
+  /// 054 п.5: «Убрать фото» (жалоба на неподходящее фото) — причина в журнал.
+  @Delete('drivers/:id/avatar')
+  removeDriverAvatar(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() body: { reason?: string }) {
+    assertAdmin(ctx);
+    const reason = typeof body?.reason === 'string' ? body.reason.trim().slice(0, 500) : '';
+    if (!reason) throw new BadRequestException({ code: 'REASON_REQUIRED', message: 'Reason is required' });
+    return this.avatars.remove(id, ctx.user.id, 'ADMIN', reason);
   }
 
   @Patch('drivers/:id/verify')

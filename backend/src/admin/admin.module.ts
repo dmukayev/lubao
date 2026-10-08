@@ -8,9 +8,10 @@ import { IdentifiersModule } from '../identifiers/identifiers.module';
 import { RecognitionModule } from '../recognition/recognition.module';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
+import { DriversModule } from '../drivers/drivers.module';
 
 @Module({
-  imports: [DealsModule, AppSettingsModule, AuthModule, UploadsModule, IdentifiersModule, RecognitionModule, SmsModule],
+  imports: [DealsModule, DriversModule, AppSettingsModule, AuthModule, UploadsModule, IdentifiersModule, RecognitionModule, SmsModule],
   controllers: [AdminController],
   providers: [AdminService],
 })

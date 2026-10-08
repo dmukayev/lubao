@@ -14,7 +14,7 @@ describe('DriversController.vehiclePhotos — доступ', () => {
     };
     const redis: any = { client: { sadd: jest.fn().mockResolvedValue(1), expire: jest.fn(), scard: jest.fn().mockResolvedValue(1), srem: jest.fn() } };
     const policy = new ContactPolicyService(prisma, redis);
-    const controller = new DriversController({} as any, prisma, policy, {} as any);
+    const controller = new DriversController({} as any, prisma, policy, {} as any, {} as any);
     return { prisma, redis, controller };
   }
   const ctx = (isVerified: boolean) => ({ user: { id: 'logist-1' }, companyMember: { companyId: 'c1', company: { isVerified } } }) as any;

@@ -476,6 +476,13 @@ model Driver {
   /// ФИО из водительского удостоверения (045 п.10) — при регистрации водитель
   /// пишет только имя; после одобрения прав предлагаем подставить полное ФИО.
   licenseFullName       String?
+  /// 054: фото профиля — отдельный объект в приватном бакете (миниатюра
+  /// ~200 px), ставится только с согласия водителя; селфи проверки — не оно.
+  avatarFileKey         String?
+  /// Версия фото для кэша клиентов (меняется при смене/удалении).
+  avatarUpdatedAt       DateTime?
+  /// «Не сейчас» на предложении поставить селфи в профиль — больше не предлагаем.
+  avatarOfferDismissedAt DateTime?
   isVerified            Boolean   @default(false)
   ratingAvg             Decimal   @default(0) @db.Decimal(3, 2)
   ratingCount           Int       @default(0)

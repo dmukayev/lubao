@@ -2237,6 +2237,8 @@ export class AdminService {
       // 049 п.9: штраф за отмены, накопленный до первого отзыва.
       pendingPenalty: Number(driver.pendingPenalty),
       id: driver.id,
+      // 054 п.5: фото профиля в карточке; «Убрать фото» — DELETE /admin/drivers/:id/avatar.
+      avatarVersion: driver.avatarFileKey && driver.avatarUpdatedAt ? driver.avatarUpdatedAt.toISOString() : null,
       fullName: driver.fullName,
       isVerified: driver.isVerified,
       blockedByPhone: !!phoneMatch?.blocked,

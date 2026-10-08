@@ -38,7 +38,7 @@ describe('AdminController — every endpoint is ADMIN only (задача 028, п
   it.each(['DRIVER', 'COMPANY'] as const)('every controller method throws ForbiddenException for role=%s', async (role) => {
     const adminService = {} as AdminService; // ни один метод не должен быть вызван
     const appSettings = {} as AppSettingsService;
-    const controller = new AdminController(adminService, appSettings, {} as SmsService, {} as never) as unknown as Record<string, (...args: unknown[]) => unknown>;
+    const controller = new AdminController(adminService, appSettings, {} as SmsService, {} as never, {} as never) as unknown as Record<string, (...args: unknown[]) => unknown>;
     const ctx = nonAdminContext(role);
 
     for (const name of methodNames) {
