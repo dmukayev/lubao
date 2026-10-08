@@ -8,6 +8,7 @@ import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { ChatSystemMessagesService } from './chat-system-messages.service';
 import { TranslationService } from '../translation/translation.service';
 import { ContactPolicyService } from '../contact-events/contact-policy.service';
+import { avatarVersion } from '../drivers/avatar-version';
 
 const CHAT_PREVIEW_LENGTH = 80;
 
@@ -178,6 +179,8 @@ export class ChatsService {
       driverId: chat.driverId,
       companyId: chat.companyId,
       counterpartName,
+      // 054: логист видит фото водителя в чате; водителю фото логиста не показываем.
+      counterpartAvatarVersion: ctx.driver ? null : avatarVersion(driver),
       counterpartLocale,
       // Номер собеседника — только по нажатию (POST /chats/:id/contact, 043 п.11).
       counterpartHasPhone: !!(ctx.driver ? companyMember?.contactPhone ?? companyMember?.user.phone : driver.user.phone),

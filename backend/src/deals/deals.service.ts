@@ -22,6 +22,7 @@ import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
 import { toDateOnly } from '../common/date-only';
+import { avatarVersion } from '../drivers/avatar-version';
 
 function rethrowStatusRace(e: unknown): never {
   if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') throw new ConflictException('DEAL_STATUS_CHANGED');
@@ -82,6 +83,7 @@ export class DealsService {
       cargoId: deal.cargoId,
       driverId: deal.driverId,
       driverName: deal.driver.fullName,
+      driverAvatarVersion: avatarVersion(deal.driver),
       // 053 п.4: машины рейса — водитель видит в сделке фото спереди своей машины.
       tractorId: deal.tractorId,
       trailerId: deal.trailerId,

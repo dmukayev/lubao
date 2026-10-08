@@ -9,6 +9,7 @@ import { loadCargoPushSummary } from '../notifications/cargo-push-summary';
 import { IdentifiersService } from '../identifiers/identifiers.service';
 import { toDateOnly } from '../common/date-only';
 import { cancelStatsFor } from '../deals/cancel-policy';
+import { avatarVersion } from '../drivers/avatar-version';
 
 type ResponseWithDriver = CargoResponseEntity & { driver: Driver };
 
@@ -27,6 +28,7 @@ export class ResponsesService {
       cargoId: response.cargoId,
       driverId: response.driverId,
       driverName: response.driver.fullName,
+      avatarVersion: avatarVersion(response.driver),
       message: response.message,
       status: response.status,
       // 056 п.1: почему закрыт (null у активных).
