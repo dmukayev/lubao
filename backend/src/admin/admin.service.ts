@@ -1592,11 +1592,9 @@ export class AdminService {
       include: { reviewedBy: { select: { id: true, name: true, email: true } } },
     });
 
-    const cancels = await this.cancellations('DRIVER', driver.id);
     return {
       id: driver.id,
       fullName: driver.fullName,
-      ...cancels,
       isVerified: driver.isVerified,
       vehicles: driver.vehicles.map((v) => ({
         id: v.id,
@@ -1634,11 +1632,9 @@ export class AdminService {
       include: { reviewedBy: { select: { id: true, name: true, email: true } } },
     });
 
-    const cancels = await this.cancellations('COMPANY', company.id);
     return {
       id: company.id,
       name: company.name,
-      ...cancels,
       nameRu: company.nameRu,
       taxId: company.taxId,
       isVerified: company.isVerified,
@@ -2213,7 +2209,9 @@ export class AdminService {
         ? await this.identifiers.checkMatches('PHONE', driver.user.phone, { ownerType: 'DRIVER', ownerId: id })
         : null;
 
+    const cancels = await this.cancellations('DRIVER', driver.id);
     return {
+      ...cancels,
       id: driver.id,
       fullName: driver.fullName,
       isVerified: driver.isVerified,
@@ -2340,7 +2338,9 @@ export class AdminService {
       this.identifiersCard('COMPANY', id),
     ]);
 
+    const cancels = await this.cancellations('COMPANY', company.id);
     return {
+      ...cancels,
       id: company.id,
       name: company.name,
       nameRu: company.nameRu,
