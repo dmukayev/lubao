@@ -94,6 +94,25 @@ enum DealStatus {
   IN_TRANSIT
   DELIVERED
   CANCELLED
+  /// 046: после «В пути» одна сторона просит отмену, вторая подтверждает или оспаривает.
+  CANCEL_REQUESTED
+  /// 046: вторая сторона оспорила отмену — решает админ.
+  DISPUTED
+}
+
+/// 046: на каком этапе отменили — по статусу в момент отмены.
+enum CancelStage {
+  BEFORE_CONFIRM
+  AFTER_CONFIRM
+  AFTER_LOAD
+  IN_TRANSIT
+}
+
+/// 046: чья вина — относительно стороны, отменившей сделку.
+enum FaultSide {
+  SELF
+  OTHER_PARTY
+  NEUTRAL
 }
 
 enum ContactEventType {
@@ -914,6 +933,16 @@ model Deal {
   /// статистику по причинам не посчитать.
   cancelReasonCode   String?
   cancelledByRole    ReviewAuthorRole?
+  /// 046: этап и сторона вины отмены (вес в рейтинге и статистике).
+  cancelStage        CancelStage?
+  faultSide          FaultSide?
+  /// 046: запрос отмены после «В пути» — кто, почему, когда; позиция второй стороны в споре.
+  cancelRequestedAt     DateTime?
+  cancelRequestedByRole ReviewAuthorRole?
+  cancelRequestReasonCode String?
+  cancelRequestReason   String?
+  disputeReason         String?
+  disputedAt            DateTime?
   confirmedAt        DateTime?
   loadedAt           DateTime?
   inTransitAt        DateTime?
