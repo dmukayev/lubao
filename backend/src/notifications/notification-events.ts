@@ -56,6 +56,7 @@ export type NotificationEvent =
   | 'CHAT_MESSAGE'
   | 'NEW_RESPONSE'
   | 'DRIVER_AGREED'
+  | 'RESPONSE_REJECTED'
   | 'NEW_DRIVER_DIGEST'
   | 'DEAL_STATUS'
   | 'DEAL_FOR_LOGIST'
@@ -210,6 +211,13 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
     zh: (p) => ({ title: '该点新司机', body: `符合您筛选条件的新司机 ${p.count} 名` }),
     en: (p) => ({ title: 'New drivers at point', body: `${p.count} new drivers matching your filters` }),
   },
+  /// Водителю — отклик не выбран (045 п.3): раньше это было видно только в чате.
+  RESPONSE_REJECTED: {
+    ru: (p) => ({ title: 'Логист выбрал другого водителя', body: `${p.companyName}: груз ушёл другому. В ленте есть другие грузы.` }),
+    kk: (p) => ({ title: 'Логист басқа жүргізушіні таңдады', body: `${p.companyName}: жүк басқаға кетті. Таспада басқа жүктер бар.` }),
+    zh: (p) => ({ title: '物流方选择了其他司机', body: `${p.companyName}：该货物已由他人承运。货源列表中还有其他货物。` }),
+    en: (p) => ({ title: 'The logist chose another driver', body: `${p.companyName}: the cargo went to someone else. There are other loads in the feed.` }),
+  },
   /// Водителю — когда логист выбрал его (042 п.1, «Готово, когда»):
   /// от его лица, а не общее «Статус сделки: Водитель выбран».
   DEAL_FOR_LOGIST: LOGIST_STATUS,
@@ -306,6 +314,12 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
     channels: ['PUSH', 'WECOM'],
     render: (locale, p) => T.DRIVER_AGREED[locale](p),
     deepLink: (p) => `/company/cargos/${p.cargoId}/responses`,
+  },
+  RESPONSE_REJECTED: {
+    eventGroup: 'DEAL_STATUS',
+    channels: ['PUSH'],
+    render: (locale, p) => T.RESPONSE_REJECTED[locale](p),
+    deepLink: () => '/driver/responses',
   },
   NEW_RESPONSE: {
     eventGroup: 'NEW_RESPONSE',

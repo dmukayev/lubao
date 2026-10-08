@@ -108,11 +108,12 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
 });
 
 describe('ResponsesService.updateStatus — attaches the pre-deal chat (задача 017, п.3) + DEAL_STATUS (011)', () => {
-  it('REJECTED does not touch deal/chat/notifications', async () => {
+  it('REJECTED не трогает сделку; водителю — push «Логист выбрал другого водителя» (045 п.3)', async () => {
     const tx = txMock();
     tx.response.findUniqueOrThrow.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'REJECTED', driver: { userId: 'u1' } });
     const prisma: any = {
       response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }) },
+      company: { findUnique: jest.fn().mockResolvedValue({ name: 'Acme' }) },
       $transaction: jest.fn(async (cb: any) => cb(tx)),
     };
     const notifications = { notify: jest.fn() };
@@ -121,7 +122,8 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
     await service.updateStatus('r1', 'c1', 'REJECTED');
 
     expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: { in: ['PENDING', 'INVITED'] } }, data: { status: 'REJECTED' } });
-    expect(notifications.notify).not.toHaveBeenCalled();
+    expect(tx.deal.create).not.toHaveBeenCalled();
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u1'] }, 'RESPONSE_REJECTED', { cargoId: 'cargo1', companyName: 'Acme' });
   });
 
   it('throws NotFoundException for an unknown response', async () => {

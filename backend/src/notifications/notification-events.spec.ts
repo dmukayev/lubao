@@ -40,6 +40,7 @@ describe('deep link push — маршруты приложения (042 п.1)', 
     /^\/deal\/[^/]+$/,
     /^\/company\/cargos\/[^/]+\/responses$/,
     /^\/company\/drivers$/,
+    /^\/driver\/responses$/,
     /^\/(verification|arrival|profile)$/,
   ];
   const payload = { cargoId: 'c1', chatId: 'ch1', dealId: 'd1', complaintId: 'cp1', status: 'LOADED' };

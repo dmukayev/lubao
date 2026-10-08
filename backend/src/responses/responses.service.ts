@@ -360,6 +360,7 @@ export class ResponsesService {
         actorUserId: actorUserId ?? updated.driver.userId,
         code: 'RESPONSE_REJECTED',
       });
+      await this.notifyRejected([updated.driver.userId], companyId, updated.cargoId);
       return this.toDto(updated);
     }
 
@@ -432,6 +433,19 @@ export class ResponsesService {
   private async postCargoTaken(others: Array<{ driverId: string; driver: { userId: string } }>, companyId: string, cargoId: string, actorUserId: string) {
     for (const other of others) {
       await this.chatSystem.post({ driverId: other.driverId, companyId, cargoId, actorUserId, code: 'CARGO_TAKEN' });
+    }
+    await this.notifyRejected(others.map((o) => o.driver.userId), companyId, cargoId);
+  }
+
+  /// Push «Логист выбрал другого водителя» (045 п.3) — best-effort: сбой
+  /// уведомлений не должен откатывать выбор водителя.
+  private async notifyRejected(userIds: string[], companyId: string, cargoId: string) {
+    if (!userIds.length) return;
+    try {
+      const company = await this.prisma.company.findUnique({ where: { id: companyId }, select: { name: true } });
+      await this.notifications.notify({ userIds }, 'RESPONSE_REJECTED', { cargoId, companyName: company?.name ?? '' });
+    } catch {
+      // уведомление не критично
     }
   }
 
