@@ -15,7 +15,9 @@ export class DistanceService {
   constructor(private readonly prisma: PrismaService) {}
 
   /// Подменяется в тестах.
-  fetchFn: FetchLike = (url) => fetch(url, { signal: AbortSignal.timeout(5000) });
+  /// Таймаут 5 с (047); с `osrm-routed --mmap` холодный запрос читает карту с
+  /// диска до ~10 с — тогда OSRM_TIMEOUT_MS больше (пара считается один раз, дальше кэш).
+  fetchFn: FetchLike = (url) => fetch(url, { signal: AbortSignal.timeout(Number(process.env.OSRM_TIMEOUT_MS) || 5000) });
 
   private get baseUrl(): string | null {
     return process.env.OSRM_URL || null;

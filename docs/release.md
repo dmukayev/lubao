@@ -118,6 +118,11 @@ docker compose -f docker-compose.prod.yml exec backend npx prisma db seed
 #   rsync -a /data/osrm/region.osrm* <сервер>:/tmp/osrm/
 #   docker volume create osrm-data
 #   docker run --rm -v osrm-data:/data -v /tmp/osrm:/src alpine sh -c 'cp /src/region.osrm* /data/'
+# Память: полная карта ~8 ГБ. Сервер с 8+ ГБ свободной RAM — без mmap (как в docker-compose.prod.yml),
+# иначе с --mmap (добавить флаг в command сервиса osrm: osrm-routed --algorithm ch --mmap …;
+# так в docker-compose.yml для Мака) — ответы медленнее на холодном кэше, память не съедается.
+# С --mmap бэкенду — OSRM_TIMEOUT_MS=30000: холодный маршрут до ~10 с (замер на Маке 8 ГБ:
+# Алматы → Астана 8,7 с холодный / 0,5 с тёплый), без mmap хватает 5 с по умолчанию.
 docker compose -f docker-compose.prod.yml restart osrm
 # Пока карты нет, сервис osrm ждёт, а в ленте вместо км — «—» (досчитается планировщиком).
 # Проверка изнутри сети: Алматы → Астана ≈ 1 200 км (поле "distance" в метрах)

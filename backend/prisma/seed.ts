@@ -249,6 +249,74 @@ const pointCoords: Record<string, { lat: number; lng: number }> = {
   'KZ-ZHETYSU-KHORGOS': { lat: 44.2167, lng: 80.4167 },
   'KZ-ZHETYSU-ZHARKENT': { lat: 44.1667, lng: 79.9833 },
 };
+// Координаты остальных городов справочника (049 п.11): без них OSRM не считает
+// расстояние до города назначения — км и ₸/км у груза пустые. Центры городов.
+const cityCoords: Record<string, { lat: number; lng: number }> = {
+  'AM-YEREVAN': { lat: 40.1792, lng: 44.4991 },
+  'AZ-BAKU': { lat: 40.4093, lng: 49.8671 },
+  'BY-MINSK': { lat: 53.9006, lng: 27.559 },
+  'CN-BEIJING': { lat: 39.9042, lng: 116.4074 },
+  'CN-KASHGAR': { lat: 39.4704, lng: 75.9898 },
+  'CN-KORLA': { lat: 41.7259, lng: 86.1747 },
+  'CN-URUMQI': { lat: 43.8256, lng: 87.6168 },
+  'CN-YINING': { lat: 43.9168, lng: 81.3241 },
+  'GE-TBILISI': { lat: 41.7151, lng: 44.8271 },
+  'IR-TEHRAN': { lat: 35.6892, lng: 51.389 },
+  'KG-BISHKEK': { lat: 42.8746, lng: 74.5698 },
+  'KG-OSH': { lat: 40.5283, lng: 72.7985 },
+  'KZ-ABAI-AYAGOZ': { lat: 47.9645, lng: 80.4344 },
+  'KZ-ABAI-KURCHATOV': { lat: 50.7564, lng: 78.5404 },
+  'KZ-AKMOLA-ATBASAR': { lat: 51.8, lng: 68.3333 },
+  'KZ-AKMOLA-SHCHUCHINSK': { lat: 52.9333, lng: 70.2 },
+  'KZ-AKMOLA-STEPNOGORSK': { lat: 52.35, lng: 71.8833 },
+  'KZ-AKTOBE-KHROMTAU': { lat: 50.2503, lng: 58.4347 },
+  'KZ-AKTOBE-SHALKAR': { lat: 47.8333, lng: 59.6 },
+  'KZ-ALMATY_REGION-ESIK': { lat: 43.3553, lng: 77.4528 },
+  'KZ-ALMATY_REGION-KASKELEN': { lat: 43.2, lng: 76.6167 },
+  'KZ-ALMATY_REGION-TALGAR': { lat: 43.3, lng: 77.24 },
+  'KZ-ATYRAU-KULSARY': { lat: 46.9531, lng: 54.0197 },
+  'KZ-EAST_KZ-RIDDER': { lat: 50.3444, lng: 83.5122 },
+  'KZ-EAST_KZ-ZYRYANOVSK': { lat: 49.7389, lng: 84.2731 },
+  'KZ-KARAGANDY-BALKHASH': { lat: 46.8481, lng: 74.995 },
+  'KZ-KARAGANDY-SARAN': { lat: 49.8, lng: 72.85 },
+  'KZ-KARAGANDY-TEMIRTAU': { lat: 50.0549, lng: 72.9646 },
+  'KZ-KOSTANAY-LISAKOVSK': { lat: 52.5369, lng: 62.4936 },
+  'KZ-KOSTANAY-RUDNY': { lat: 52.9653, lng: 63.1336 },
+  'KZ-KYZYLORDA-ARALSK': { lat: 46.8, lng: 61.6667 },
+  'KZ-KYZYLORDA-BAIKONUR': { lat: 45.6167, lng: 63.3167 },
+  'KZ-MANGYSTAU-ZHANAOZEN': { lat: 43.3412, lng: 52.8619 },
+  'KZ-NORTH_KZ-TAIYNSHA': { lat: 53.8478, lng: 69.7639 },
+  'KZ-PAVLODAR-AKSU': { lat: 52.0333, lng: 76.9167 },
+  'KZ-PAVLODAR-EKIBASTUZ': { lat: 51.7231, lng: 75.3228 },
+  'KZ-TURKISTAN-ARYS': { lat: 42.4333, lng: 68.8 },
+  'KZ-TURKISTAN-KENTAU': { lat: 43.5167, lng: 68.5167 },
+  'KZ-TURKISTAN-SARYAGASH': { lat: 41.45, lng: 69.1667 },
+  'KZ-TURKISTAN-ZHETYSAY': { lat: 40.7753, lng: 68.3272 },
+  'KZ-ULYTAU-SATBAYEV': { lat: 47.9, lng: 67.5333 },
+  'KZ-WEST_KZ-AKSAI': { lat: 51.1678, lng: 52.995 },
+  'KZ-ZHAMBYL-KARATAU': { lat: 43.1833, lng: 70.4667 },
+  'KZ-ZHAMBYL-SHU': { lat: 43.6, lng: 73.7667 },
+  'KZ-ZHAMBYL-ZHANATAS': { lat: 43.5667, lng: 69.75 },
+  'KZ-ZHETYSU-SARKAND': { lat: 45.4103, lng: 79.9186 },
+  'KZ-ZHETYSU-USHARAL': { lat: 46.1667, lng: 80.9333 },
+  'MD-CHISINAU': { lat: 47.0105, lng: 28.8638 },
+  'MN-ULAANBAATAR': { lat: 47.8864, lng: 106.9057 },
+  'RU-MOSCOW': { lat: 55.7558, lng: 37.6173 },
+  'RU-NOVOSIBIRSK': { lat: 55.0084, lng: 82.9357 },
+  'RU-OMSK': { lat: 54.9885, lng: 73.3242 },
+  'TJ-DUSHANBE': { lat: 38.5598, lng: 68.787 },
+  'TM-ASHGABAT': { lat: 37.9601, lng: 58.3261 },
+  'UA-KYIV': { lat: 50.4501, lng: 30.5234 },
+  'UZ-SAMARKAND': { lat: 39.627, lng: 66.975 },
+  'UZ-TASHKENT': { lat: 41.2995, lng: 69.2401 },
+};
+
+async function seedCityCoords() {
+  for (const [code, coords] of Object.entries(cityCoords)) {
+    await prisma.city.updateMany({ where: { code }, data: coords });
+  }
+}
+
 const terminalPointCodes = new Set(['KZ-ZHETYSU-KHORGOS']);
 /// Геозона терминала — 10 км (042 п.0, решение 2026-10-07): очередь фур стоит дальше 3 км.
 const TERMINAL_RADIUS_M = 10_000;
@@ -355,6 +423,7 @@ async function main() {
   }
 
   await seedPoints();
+  await seedCityCoords();
 
   for (const bt of bodyTypes) {
     // 048: профиль и поля — из prisma/body-type-profiles.ts.
