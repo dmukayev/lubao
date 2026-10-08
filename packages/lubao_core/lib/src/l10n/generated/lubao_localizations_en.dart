@@ -821,7 +821,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get postCargoVolume => 'Volume, m³';
 
   @override
-  String get postCargoWeight => 'Weight, t';
+  String get postCargoWeight => 'Weight';
 
   @override
   String get postCargoPhotos => 'Photos';
@@ -2880,7 +2880,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get pushChannelName => 'Lubao notifications';
 
   @override
-  String get postCargoWeightError => 'Weight in tons, up to 60 — e.g. 20';
+  String get postCargoWeightError => 'Weight up to 60 t (60,000 kg)';
 
   @override
   String get companyLoginInvalidCredentials => 'Wrong email or password';
@@ -3655,4 +3655,14 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   @override
   String get adminAvatarRemoveReason =>
       'Reason (e.g. a complaint about the photo)';
+
+  @override
+  String postCargoWeightLooksLikeKg(String kg, String tons) {
+    return 'Is it $kg kg = $tons t?';
+  }
+
+  @override
+  String postCargoWeightLooksLikeTons(String tons) {
+    return 'Maybe $tons t?';
+  }
 }

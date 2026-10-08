@@ -1611,7 +1611,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @postCargoWeight.
   ///
   /// In ru, this message translates to:
-  /// **'Вес, т'**
+  /// **'Вес'**
   String get postCargoWeight;
 
   /// No description provided for @postCargoPhotos.
@@ -5481,7 +5481,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @postCargoWeightError.
   ///
   /// In ru, this message translates to:
-  /// **'Вес в тоннах, до 60 — например 20'**
+  /// **'Вес — до 60 т (60 000 кг)'**
   String get postCargoWeightError;
 
   /// No description provided for @companyLoginInvalidCredentials.
@@ -6827,6 +6827,18 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Причина (например, жалоба на фото)'**
   String get adminAvatarRemoveReason;
+
+  /// No description provided for @postCargoWeightLooksLikeKg.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это {kg} кг = {tons} т?'**
+  String postCargoWeightLooksLikeKg(String kg, String tons);
+
+  /// No description provided for @postCargoWeightLooksLikeTons.
+  ///
+  /// In ru, this message translates to:
+  /// **'Может, {tons} т?'**
+  String postCargoWeightLooksLikeTons(String tons);
 }
 
 class _LubaoLocalizationsDelegate

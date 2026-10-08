@@ -818,7 +818,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get postCargoVolume => 'Көлемі, м³';
 
   @override
-  String get postCargoWeight => 'Салмағы, т';
+  String get postCargoWeight => 'Салмағы';
 
   @override
   String get postCargoPhotos => 'Фотосуреттер';
@@ -2879,7 +2879,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get pushChannelName => 'Lubao хабарландырулары';
 
   @override
-  String get postCargoWeightError => 'Салмақ тоннамен, 60-қа дейін — мысалы 20';
+  String get postCargoWeightError => 'Салмақ — 60 т-ға дейін (60 000 кг)';
 
   @override
   String get companyLoginInvalidCredentials => 'Email немесе құпиясөз қате';
@@ -3652,4 +3652,14 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminAvatarRemoveReason => 'Себебі (мысалы, суретке шағым)';
+
+  @override
+  String postCargoWeightLooksLikeKg(String kg, String tons) {
+    return 'Бұл $kg кг = $tons т ма?';
+  }
+
+  @override
+  String postCargoWeightLooksLikeTons(String tons) {
+    return 'Мүмкін, $tons т?';
+  }
 }

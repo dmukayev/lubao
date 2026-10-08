@@ -134,6 +134,13 @@ const MONTHS: Record<Loc, string[]> = {
   en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
 };
 const TON: Record<Loc, string> = { ru: 'т', kk: 'т', zh: '吨', en: 't' };
+const KG: Record<Loc, string> = { ru: 'кг', kk: 'кг', zh: '公斤', en: 'kg' };
+/// 055: как у водителя в приложении — «18,5 т», «20 т», меньше тонны — «800 кг».
+export function formatCargoWeight(kg: number, locale: Loc): string {
+  if (kg < 1000) return `${groupThousands(kg)} ${KG[locale]}`;
+  const tons = (Math.round((kg / 1000) * 10) / 10).toString();
+  return `${locale === 'ru' || locale === 'kk' ? tons.replace('.', ',') : tons} ${TON[locale]}`;
+}
 const LOADING: Record<Loc, (date: string) => string> = {
   ru: (d) => `погрузка ${d}`,
   kk: (d) => `тиеу ${d}`,
@@ -151,11 +158,10 @@ function shortDate(iso: string, locale: Loc): string {
   return `${d} ${MONTHS[locale][m - 1]}`;
 }
 export function cargoLine(p: NotificationPayload, locale: Loc): string {
-  const tons = p.weightKg != null ? Number(p.weightKg) / 1000 : null;
   const body = p.bodyType ? pickLocaleText(p.bodyType, locale) : '';
   return [
     `${CURRENCY_SYMBOL[p.currency] ?? ''}${groupThousands(Number(p.price))}${CURRENCY_SYMBOL[p.currency] ? '' : ` ${p.currency ?? ''}`}`.trim(),
-    tons != null ? `${Number.isInteger(tons) ? tons : tons.toFixed(1)} ${TON[locale]}` : '',
+    p.weightKg != null ? formatCargoWeight(Number(p.weightKg), locale) : '',
     locale === 'zh' || !body ? body : body.toLocaleLowerCase(locale),
     p.readyDate ? LOADING[locale](shortDate(p.readyDate, locale)) : '',
   ].filter((part) => !!part).join(' · ');

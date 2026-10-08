@@ -175,7 +175,8 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
       _ => (null, StatusBadge.neutral),
     };
     final perKmKzt = cargo.pricePerKm == null ? null : refData.convertToKzt(cargo.pricePerKm!, cargo.currency);
-    final weight = cargo.weightKg == null ? null : '${(cargo.weightKg! / 1000).toStringAsFixed(cargo.weightKg! % 1000 == 0 ? 0 : 1)} ${t.unitTon}';
+    // 055: водителю — тонны («18,5 т»), меньше тонны — кг.
+    final weight = cargo.weightKg == null ? null : formatCargoWeight(cargo.weightKg!, tonUnit: t.unitTon, kgUnit: t.unitKg, languageCode: locale);
     final grey = AppTextStyles.body.copyWith(color: AppColors.textSecondary);
     final blue = AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600);
     final small = AppTextStyles.small.copyWith(color: AppColors.textSecondary);

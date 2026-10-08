@@ -59,7 +59,19 @@ void main() {
       await tester.pumpAndSettle();
       // Каждое поле — сначала на экран: иначе нажатие не фокусирует его и
       // текст уходит в предыдущее поле (цена оставалась пустой).
-      for (final (key, value) in [('postCargoVolume', '90'), ('postCargoWeight', '12'), ('postCargoPrice', '1500')]) {
+      // 055: вес по умолчанию в кг. «18» в кг — подсказка «Может, 18 т?»;
+      // дальше вводим как привыкли логисты — 18 500 кг, под полем «= 18,5 т».
+      final weight = find.byKey(const Key('postCargoWeight'));
+      await reveal(tester, weight);
+      await tester.enterText(weight, '18');
+      await tester.pumpAndSettle();
+      expect(find.text(t.postCargoWeightLooksLikeTons('18')), findsOneWidget);
+      await tester.enterText(weight, '18500');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('postCargoWeightHint')), findsNothing);
+      expect(find.text('= 18,5 ${t.unitTon}'), findsOneWidget);
+      expectNoOverflow(tester);
+      for (final (key, value) in [('postCargoVolume', '90'), ('postCargoPrice', '1500')]) {
         final field = find.byKey(Key(key));
         await reveal(tester, field);
         await tester.enterText(field, value);
@@ -113,6 +125,7 @@ void main() {
       expect(cargos, isNotEmpty);
       final cargo = cargos.first;
       expect(cargo.volumeM3, 90);
+      expect(cargo.weightKg, 18500, reason: '055: введено 18 500 кг — в базе кг');
       expect(cargo.allowPartial, isFalse, reason: 'догруз выключен — пометки нет');
       final refData = await container.read(referenceDataProvider.future);
       expect(refData.pointOrNull(cargo.pointId)?.name.ru, 'Астана', reason: 'город погрузки — из выбора, не первая точка');
@@ -122,6 +135,26 @@ void main() {
       expect(cargo.pricePerKm, closeTo(1500 / 1230, 0.01));
       cargoId = cargo.id;
       expectNoOverflow(tester);
+    });
+
+    // 055: водитель видит вес в тоннах — «18,5 т».
+    await run.step(tester, 'вес-в-ленте-водителя', () async {
+      await logoutViaProfile(tester, driver: false);
+      await loginDriver(tester, '7010000001');
+      await waitFor(tester, find.byType(NavigationBar));
+      final card = find.byKey(Key('feedCargoCard-$cargoId'));
+      await waitAndReveal(tester, card, timeout: const Duration(seconds: 30));
+      expect(find.descendant(of: card, matching: find.textContaining('18,5 ${t.unitTon}')), findsOneWidget);
+      await logoutViaProfile(tester, driver: true);
+      await tester.tap(find.byKey(const Key('roleSelectCompanyButton')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('companyLoginEmailField')), e2eNewCompanyEmail);
+      await tester.enterText(find.byKey(const Key('companyLoginPasswordField')), e2ePassword);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('companyLoginSubmitButton')));
+      await waitFor(tester, find.text(t.navDrivers));
+      await goTab(tester, t.navCargos);
+      await waitAndReveal(tester, find.byKey(Key('companyCargoCard-$cargoId')));
     });
 
     await run.step(tester, 'водитель-откликается', () async {

@@ -258,7 +258,7 @@
   "postCargoDestinationCity": "目的城市",
   "postCargoBodyType": "车厢类型",
   "postCargoVolume": "体积(m³)",
-  "postCargoWeight": "重量(吨)",
+  "postCargoWeight": "重量",
   "postCargoPhotos": "照片",
   "postCargoAddPhotoCamera": "拍照",
   "postCargoAddPhotoGallery": "从相册选择",
@@ -1038,7 +1038,7 @@
   "adminMoveDown": "下移",
   "adminLoginChannelsSaved": "渠道已保存",
   "pushChannelName": "Lubao 通知",
-  "postCargoWeightError": "重量以吨为单位，最多 60，例如 20",
+  "postCargoWeightError": "重量最多 60 吨（60 000 公斤）",
   "companyLoginInvalidCredentials": "邮箱或密码错误",
   "mapsOpen": "在地图中打开",
   "mapsApple": "苹果地图",
@@ -1262,5 +1262,7 @@
   "avatarChange": "更换照片",
   "avatarRemove": "移除照片",
   "avatarHint": "物流方会在您的名字旁看到照片",
-  "adminAvatarRemoveReason": "原因（例如：照片被投诉）"
+  "adminAvatarRemoveReason": "原因（例如：照片被投诉）",
+  "postCargoWeightLooksLikeKg": "是 {kg} 公斤 = {tons} 吨吗？",
+  "postCargoWeightLooksLikeTons": "是不是 {tons} 吨？"
 }

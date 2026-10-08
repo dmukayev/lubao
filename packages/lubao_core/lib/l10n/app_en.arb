@@ -341,7 +341,7 @@
   "postCargoDestinationCity": "Destination city",
   "postCargoBodyType": "Body type",
   "postCargoVolume": "Volume, m³",
-  "postCargoWeight": "Weight, t",
+  "postCargoWeight": "Weight",
   "postCargoPhotos": "Photos",
   "postCargoAddPhotoCamera": "Camera",
   "postCargoAddPhotoGallery": "Gallery",
@@ -1163,7 +1163,7 @@
   "adminMoveDown": "Move down",
   "adminLoginChannelsSaved": "Channels saved",
   "pushChannelName": "Lubao notifications",
-  "postCargoWeightError": "Weight in tons, up to 60 — e.g. 20",
+  "postCargoWeightError": "Weight up to 60 t (60,000 kg)",
   "companyLoginInvalidCredentials": "Wrong email or password",
   "mapsOpen": "Open in maps",
   "mapsApple": "Apple Maps",
@@ -1387,5 +1387,7 @@
   "avatarChange": "Change photo",
   "avatarRemove": "Remove photo",
   "avatarHint": "Logists see the photo next to your name",
-  "adminAvatarRemoveReason": "Reason (e.g. a complaint about the photo)"
+  "adminAvatarRemoveReason": "Reason (e.g. a complaint about the photo)",
+  "postCargoWeightLooksLikeKg": "Is it {kg} kg = {tons} t?",
+  "postCargoWeightLooksLikeTons": "Maybe {tons} t?"
 }

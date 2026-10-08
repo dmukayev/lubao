@@ -814,7 +814,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get postCargoVolume => 'Объём, м³';
 
   @override
-  String get postCargoWeight => 'Вес, т';
+  String get postCargoWeight => 'Вес';
 
   @override
   String get postCargoPhotos => 'Фотографии';
@@ -2866,7 +2866,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get pushChannelName => 'Уведомления Lubao';
 
   @override
-  String get postCargoWeightError => 'Вес в тоннах, до 60 — например 20';
+  String get postCargoWeightError => 'Вес — до 60 т (60 000 кг)';
 
   @override
   String get companyLoginInvalidCredentials => 'Неверный email или пароль';
@@ -3639,4 +3639,14 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminAvatarRemoveReason => 'Причина (например, жалоба на фото)';
+
+  @override
+  String postCargoWeightLooksLikeKg(String kg, String tons) {
+    return 'Это $kg кг = $tons т?';
+  }
+
+  @override
+  String postCargoWeightLooksLikeTons(String tons) {
+    return 'Может, $tons т?';
+  }
 }

@@ -799,7 +799,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoVolume => '体积(m³)';
 
   @override
-  String get postCargoWeight => '重量(吨)';
+  String get postCargoWeight => '重量';
 
   @override
   String get postCargoPhotos => '照片';
@@ -2815,7 +2815,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get pushChannelName => 'Lubao 通知';
 
   @override
-  String get postCargoWeightError => '重量以吨为单位，最多 60，例如 20';
+  String get postCargoWeightError => '重量最多 60 吨（60 000 公斤）';
 
   @override
   String get companyLoginInvalidCredentials => '邮箱或密码错误';
@@ -3567,4 +3567,14 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminAvatarRemoveReason => '原因（例如：照片被投诉）';
+
+  @override
+  String postCargoWeightLooksLikeKg(String kg, String tons) {
+    return '是 $kg 公斤 = $tons 吨吗？';
+  }
+
+  @override
+  String postCargoWeightLooksLikeTons(String tons) {
+    return '是不是 $tons 吨？';
+  }
 }

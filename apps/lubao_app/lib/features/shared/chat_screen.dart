@@ -845,7 +845,7 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
     final bodyType = widget.refData.bodyTypeById(cargo.bodyTypeId);
     final detailParts = <String>[
       bodyType.name.forLanguageCode(locale),
-      if (cargo.weightKg != null) '${(cargo.weightKg! / 1000).toStringAsFixed(cargo.weightKg! % 1000 == 0 ? 0 : 1)} ${t.unitTon}',
+      if (cargo.weightKg != null) formatCargoWeight(cargo.weightKg!, tonUnit: t.unitTon, kgUnit: t.unitKg, languageCode: Localizations.localeOf(context).languageCode),
       if (cargo.volumeM3 != null) '${cargo.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
     ];
     final kztLabel = formatKztConversion(widget.refData.convertToKzt(cargo.price, cargo.currency));
