@@ -1,6 +1,11 @@
 import { ArrayMaxSize, IsArray, IsBoolean, IsISO8601, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class UpdateCargoDto {
+  /// 047: категория груза.
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
   @IsOptional()
   @IsString()
   pointId?: string;

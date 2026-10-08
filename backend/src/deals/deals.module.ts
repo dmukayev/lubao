@@ -1,3 +1,4 @@
+import { PricingModule } from '../pricing/pricing.module';
 import { Module } from '@nestjs/common';
 import { CargosModule } from '../cargos/cargos.module';
 import { ChatsModule } from '../chats/chats.module';
@@ -8,7 +9,7 @@ import { DriverDocumentsService } from './driver-documents.service';
 import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
-  imports: [CargosModule, ChatsModule, UploadsModule],
+  imports: [CargosModule, ChatsModule, UploadsModule, PricingModule],
   controllers: [DealsController],
   providers: [DealsService, ReviewsService, DriverDocumentsService],
   exports: [DealsService],

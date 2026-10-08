@@ -1,5 +1,6 @@
+import { PricingService } from '../pricing/pricing.service';
 import { cancelStatsFor } from '../deals/cancel-policy';
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Optional, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { BodyTypeProfile, Cargo, Company, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ResponsesService } from '../responses/responses.service';
@@ -40,7 +41,28 @@ export class CargosService {
     private readonly prisma: PrismaService,
     private readonly responses: ResponsesService,
     private readonly contactPolicy: ContactPolicyService,
+    @Optional() private readonly pricing?: PricingService,
   ) {}
+
+  /// 047 п.1: категория — активная запись справочника.
+  private async assertCategory(categoryId: string | undefined) {
+    if (!categoryId) throw new BadRequestException('CATEGORY_REQUIRED');
+    const category = await this.prisma.cargoCategory.findUnique({ where: { id: categoryId }, select: { isActive: true } });
+    if (!category?.isActive) throw new BadRequestException('CATEGORY_REQUIRED');
+  }
+
+  /// 047 п.2–4: расстояние и ₸/км по городам груза; при публикации — точка статистики.
+  private async applyPricing(cargoId: string, listed: boolean) {
+    if (!this.pricing) return;
+    const cargo = await this.prisma.cargo.findUnique({
+      where: { id: cargoId },
+      include: { point: { select: { cityId: true } }, destinationCountry: { select: { code: true } } },
+    });
+    if (!cargo) return;
+    const { distanceKm, pricePerKm } = await this.pricing.distanceFor(cargo);
+    await this.prisma.cargo.update({ where: { id: cargoId }, data: { distanceKm, pricePerKm } });
+    if (listed) await this.pricing.recordPoint('LISTED', { ...cargo, distanceKm });
+  }
 
   /// Водитель звонит/пишет конкретному логисту, опубликовавшему груз, а не
   /// «компании» (decisions.md «Компания: проверка, роли, контакты», задача
@@ -104,6 +126,10 @@ export class CargosService {
       destinationCountryId: cargo.destinationCountryId,
       destinationCityId: cargo.destinationCityId,
       bodyTypeId: cargo.bodyTypeId,
+      // 047: категория, расстояние по дороге и цена за км (в валюте груза).
+      categoryId: cargo.categoryId,
+      distanceKm: cargo.distanceKm ?? null,
+      pricePerKm: cargo.pricePerKm != null ? Number(cargo.pricePerKm) : null,
       extraBodyTypeIds: cargo.extraBodyTypeIds ?? [],
       specs: cargo.specs ?? null,
       weightKg: cargo.weightKg ? Number(cargo.weightKg) : null,
@@ -448,9 +474,27 @@ export class CargosService {
   }
 
   async byId(id: string) {
-    const cargo = await this.prisma.cargo.findUnique({ where: { id }, include: this.includeForDto });
+    const cargo = await this.prisma.cargo.findUnique({
+      where: { id },
+      include: { ...this.includeForDto, point: { select: { cityId: true } }, destinationCountry: { select: { code: true } } },
+    });
     if (!cargo) throw new NotFoundException('Cargo not found');
-    return this.toDto(cargo);
+    // 047 п.6: «Рынок за месяц: 650–720 ₸/км» — только в карточке, не в ленте.
+    const market = this.pricing
+      ? await this.pricing.marketFor(cargo.point.cityId, cargo.destinationCityId, cargo.destinationCountry.code, cargo.weightKg == null ? null : Number(cargo.weightKg))
+      : null;
+    return { ...(await this.toDto(cargo)), market };
+  }
+
+  /// 047 п.7: подсказка логисту при публикации — медиана по маршруту.
+  async marketHint(pointId: string, destinationCityId: string | undefined, destinationCountryId: string, weightKg: number | undefined) {
+    if (!this.pricing || !destinationCityId) return { market: null };
+    const [point, country] = await Promise.all([
+      this.prisma.point.findUnique({ where: { id: pointId }, select: { cityId: true } }),
+      this.prisma.country.findUnique({ where: { id: destinationCountryId }, select: { code: true } }),
+    ]);
+    if (!point || !country) return { market: null };
+    return { market: await this.pricing.marketFor(point.cityId, destinationCityId, country.code, weightKg ?? null) };
   }
 
   private async findEntity(id: string) {
@@ -471,10 +515,12 @@ export class CargosService {
     const readyDate = parseDateOnly(dto.readyDate);
     const expiresAt = new Date(readyDate.getTime() + CARGO_ARCHIVE_AFTER_MS);
     const bodyData = await this.cargoBodyData(dto.bodyTypeId, dto.specs, dto.extraBodyTypeIds);
+    await this.assertCategory(dto.categoryId);
 
-    const cargo = await this.prisma.cargo.create({
+    const created = await this.prisma.cargo.create({
       data: {
         companyId,
+        categoryId: dto.categoryId,
         publishedByUserId: userId,
         pointId: point.id,
         destinationCountryId: dto.destinationCountryId,
@@ -494,9 +540,11 @@ export class CargosService {
         expiresAt,
         ...bodyData,
       },
-      include: this.includeForDto,
+      select: { id: true },
     });
-    return this.toDto(cargo);
+    // Публикует только проверенная компания (проверено выше) — точка LISTED.
+    await this.applyPricing(created.id, true);
+    return this.toDto(await this.findEntity(created.id));
   }
 
   async assertOwnedBy(cargoId: string, companyId: string) {
@@ -535,9 +583,12 @@ export class CargosService {
         ? await this.cargoBodyData(dto.bodyTypeId ?? existing.bodyTypeId, dto.specs ?? (existing.specs as Record<string, unknown> | null) ?? undefined, dto.extraBodyTypeIds ?? existing.extraBodyTypeIds)
         : {};
 
-    const cargo = await this.prisma.cargo.update({
+    if (dto.categoryId !== undefined) await this.assertCategory(dto.categoryId);
+
+    await this.prisma.cargo.update({
       where: { id },
       data: {
+        categoryId: dto.categoryId,
         pointId: dto.pointId,
         allowPartial: dto.allowPartial,
         destinationCountryId: dto.destinationCountryId,
@@ -554,9 +605,10 @@ export class CargosService {
         description: dto.description,
         ...bodyData,
       },
-      include: this.includeForDto,
     });
-    return this.toDto(cargo);
+    // Сменился маршрут или цена — заново км и ₸/км.
+    if (dto.pointId !== undefined || dto.destinationCityId !== undefined || dto.price !== undefined) await this.applyPricing(id, false);
+    return this.toDto(await this.findEntity(id));
   }
 
   /// 048: specs груза по полям профиля основного кузова; другие подходящие

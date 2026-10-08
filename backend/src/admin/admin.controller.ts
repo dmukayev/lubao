@@ -502,6 +502,35 @@ export class AdminController {
     return this.admin.updatePermit(id, ctx.user.id, dto);
   }
 
+  /// 047 п.1: категории груза — справочник без релиза.
+  @Post('reference/cargo-categories')
+  createCargoCategory(@CurrentUser() ctx: RequestContext, @Body() dto: CreatePermitDto) {
+    assertAdmin(ctx);
+    return this.admin.createCargoCategory(dto);
+  }
+
+  @Patch('reference/cargo-categories/:id')
+  updateCargoCategory(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminUpdateReferenceItemDto) {
+    assertAdmin(ctx);
+    return this.admin.updateCargoCategory(id, ctx.user.id, dto);
+  }
+
+  /// 047 п.8: «Цены по маршрутам» — таблица и выгрузка CSV.
+  @Get('route-prices')
+  routePrices(@CurrentUser() ctx: RequestContext, @Query('bucket') bucket?: string, @Query('tonnageClass') tonnageClass?: string) {
+    assertAdmin(ctx);
+    return this.admin.routePrices({ bucket, tonnageClass: tonnageClass ? Number(tonnageClass) : undefined });
+  }
+
+  @Get('route-prices.csv')
+  async routePricesCsv(@CurrentUser() ctx: RequestContext, @Res() res: Response, @Query('bucket') bucket?: string, @Query('tonnageClass') tonnageClass?: string) {
+    assertAdmin(ctx);
+    const csv = await this.admin.routePricesCsv({ bucket, tonnageClass: tonnageClass ? Number(tonnageClass) : undefined });
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="route-prices.csv"');
+    res.send(csv);
+  }
+
   @Post('reference/points')
   createPoint(@CurrentUser() ctx: RequestContext, @Body() dto: CreatePointDto) {
     assertAdmin(ctx);

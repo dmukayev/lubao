@@ -23,6 +23,7 @@ export class ReferenceDataService {
       bodyTypes,
       bodySizePresets,
       permits,
+      cargoCategories,
       points,
       exchangeRates,
       defaultPointCityId,
@@ -38,6 +39,8 @@ export class ReferenceDataService {
       // клиенты показывают водителю только активные.
       this.prisma.bodySizePreset.findMany({ orderBy: { sortOrder: 'asc' } }),
       this.prisma.permit.findMany({ orderBy: { sortOrder: 'asc' } }),
+      // 047: категории груза — как bodyTypes, без фильтра (клиенты скрывают выключенные).
+      this.prisma.cargoCategory.findMany({ orderBy: { sortOrder: 'asc' } }),
       this.prisma.point.findMany({ where: { isActive: true } }),
       this.latestExchangeRates(),
       this.appSettings.get('defaultPointCityId'),
@@ -60,6 +63,7 @@ export class ReferenceDataService {
         volumeM3: p.volumeM3 != null ? Number(p.volumeM3) : null,
       })),
       permits,
+      cargoCategories,
       // Decimal сериализуется строкой — клиенту нужны числа (задача 040).
       points: points.map((p) => ({ ...p, lat: p.lat != null ? Number(p.lat) : null, lng: p.lng != null ? Number(p.lng) : null })),
       exchangeRates,

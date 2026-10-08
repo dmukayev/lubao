@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { JobLockService } from './job-lock.service';
 import { JobsService } from './jobs.service';
 import { DealsService } from '../deals/deals.service';
+import { PricingService } from '../pricing/pricing.service';
 
 const TIME_ZONE = process.env.APP_TIMEZONE || 'Asia/Almaty';
 
@@ -17,6 +18,7 @@ export class JobsScheduler implements OnApplicationBootstrap {
     private readonly jobs: JobsService,
     private readonly lock: JobLockService,
     private readonly deals: DealsService,
+    private readonly pricing: PricingService,
   ) {}
 
   private async run(name: string, ttlSeconds: number, task: () => Promise<unknown>) {
@@ -48,6 +50,18 @@ export class JobsScheduler implements OnApplicationBootstrap {
   @Cron('*/10 * * * *')
   cancelRequests() {
     return this.guarded('expire-cancel-requests', 540, () => this.deals.expireCancelRequests());
+  }
+
+  /// 047 п.4: медиана и P25–P75 ₸/км по маршрутам за 30 дней.
+  @Cron('20 4 * * *', { timeZone: TIME_ZONE })
+  routePrices() {
+    return this.guarded('route-price-stats', 600, () => this.pricing.recomputeStats());
+  }
+
+  /// 047 п.2: OSRM был недоступен — досчитать расстояния грузов.
+  @Cron('40 * * * *')
+  distances() {
+    return this.guarded('fill-distances', 600, () => this.pricing.fillMissingDistances());
   }
 
   @Cron('0 9 * * *', { timeZone: TIME_ZONE })

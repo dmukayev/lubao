@@ -37,6 +37,21 @@ export class CargosController {
   }
 
   /// Задача 033, п.10 — «подходит N водителям на точке» при публикации.
+  /// 047 п.7: «По этому маршруту за месяц: медиана 690 ₸/км, 8 сделок».
+  @Get('market-hint')
+  marketHint(
+    @CurrentUser() ctx: RequestContext,
+    @Query('pointId') pointId: string,
+    @Query('destinationCountryId') destinationCountryId: string,
+    @Query('destinationCityId') destinationCityId?: string,
+    @Query('weightKg') weightKg?: string,
+  ) {
+    if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
+    if (!pointId || !destinationCountryId) return { market: null };
+    const w = weightKg != null && weightKg !== '' ? Number(weightKg) : undefined;
+    return this.cargos.marketHint(pointId, destinationCityId || undefined, destinationCountryId, Number.isFinite(w) ? w : undefined);
+  }
+
   @Get('fit-count')
   fitCount(
     @CurrentUser() ctx: RequestContext,

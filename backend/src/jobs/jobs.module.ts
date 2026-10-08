@@ -1,3 +1,4 @@
+import { PricingModule } from '../pricing/pricing.module';
 import { DealsModule } from '../deals/deals.module';
 import { Module } from '@nestjs/common';
 import { ChatsModule } from '../chats/chats.module';
@@ -7,7 +8,7 @@ import { JobsScheduler } from './jobs.scheduler';
 import { JobsService } from './jobs.service';
 
 @Module({
-  imports: [ChatsModule, EmailModule, DealsModule],
+  imports: [ChatsModule, EmailModule, DealsModule, PricingModule],
   providers: [JobLockService, JobsService, JobsScheduler],
   exports: [JobLockService, JobsService],
 })

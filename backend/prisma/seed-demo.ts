@@ -83,6 +83,9 @@ async function main() {
     cityByRuName('Тегеран'),
   ]);
 
+  // 047: категории груза по кругу — лента выглядит живой.
+  const categories = await prisma.cargoCategory.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } });
+  let cargoIndex = 0;
   const [tent, refrigerator, flatbed, container, tank, lowloader, grain, carcarrier, isotherm, dump] =
     await Promise.all([
       bodyType('TENT'),
@@ -620,6 +623,7 @@ async function main() {
         destinationCountryId: def.destinationCountry.id,
         destinationCityId: def.destinationCity?.id ?? null,
         bodyTypeId: def.bodyType.id,
+        categoryId: categories[cargoIndex++ % categories.length].id,
         weightKg: def.weightKg,
         volumeM3: def.volumeM3,
         photoUrls: def.photoUrls,

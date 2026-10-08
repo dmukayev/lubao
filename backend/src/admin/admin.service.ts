@@ -2963,9 +2963,54 @@ export class AdminService {
     return this.updateReferenceItem('permit', 'Permit', id, adminUserId, dto);
   }
 
+  async createCargoCategory(dto: CreatePermitDto) {
+    return this.prisma.cargoCategory.create({
+      data: { code: dto.code, name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en } },
+    });
+  }
+
+  async updateCargoCategory(id: string, adminUserId: string, dto: AdminUpdateReferenceItemDto) {
+    return this.updateReferenceItem('cargoCategory', 'CargoCategory', id, adminUserId, dto);
+  }
+
+  /// 047 п.8: строки статистики с названиями городов.
+  async routePrices(filter: { bucket?: string; tonnageClass?: number }) {
+    const rows = await this.prisma.routePriceStat.findMany({
+      where: { ...(filter.bucket ? { bucket: filter.bucket } : {}), ...(filter.tonnageClass ? { tonnageClass: filter.tonnageClass } : {}) },
+      orderBy: { points: 'desc' },
+      take: 500,
+    });
+    const cityIds = [...new Set(rows.flatMap((r) => [r.fromCityId, r.toCityId]))];
+    const cities = cityIds.length ? await this.prisma.city.findMany({ where: { id: { in: cityIds } }, select: { id: true, name: true } }) : [];
+    const name = new Map(cities.map((c) => [c.id, c.name]));
+    return rows.map((r) => ({
+      fromCityId: r.fromCityId,
+      toCityId: r.toCityId,
+      fromName: name.get(r.fromCityId) ?? null,
+      toName: name.get(r.toCityId) ?? null,
+      bucket: r.bucket,
+      tonnageClass: r.tonnageClass,
+      median: Number(r.median),
+      p25: Number(r.p25),
+      p75: Number(r.p75),
+      points: r.points,
+      dealPoints: r.dealPoints,
+      computedAt: r.computedAt,
+    }));
+  }
+
+  async routePricesCsv(filter: { bucket?: string; tonnageClass?: number }) {
+    const rows = await this.routePrices(filter);
+    const ru = (n: unknown) => (n && typeof n === 'object' ? String((n as Record<string, string>).ru ?? '') : '');
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const header = ['from', 'to', 'bucket', 'tonnage_class', 'median_kzt_per_km', 'p25', 'p75', 'points', 'deal_points'];
+    const lines = rows.map((r) => [ru(r.fromName), ru(r.toName), r.bucket, r.tonnageClass, r.median, r.p25, r.p75, r.points, r.dealPoints].map(esc).join(','));
+    return '\uFEFF' + [header.join(','), ...lines].join('\n') + '\n';
+  }
+
   private async updateReferenceItem(
-    model: 'bodyType' | 'permit',
-    entityType: 'BodyType' | 'Permit',
+    model: 'bodyType' | 'permit' | 'cargoCategory',
+    entityType: 'BodyType' | 'Permit' | 'CargoCategory',
     id: string,
     adminUserId: string,
     dto: AdminUpdateReferenceItemDto,

@@ -226,12 +226,12 @@ model Country {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  regions            Region[]
-  cities             City[]
-  companies          Company[]
-  driverDirections   DriverDirection[]
-  arrivalDirections  ArrivalDirection[]
-  cargoDestinations  Cargo[]
+  regions           Region[]
+  cities            City[]
+  companies         Company[]
+  driverDirections  DriverDirection[]
+  arrivalDirections ArrivalDirection[]
+  cargoDestinations Cargo[]
 
   @@map("countries")
 }
@@ -273,9 +273,9 @@ model City {
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
-  points             Point[]
-  driversHomeCity    Driver[]
-  cargoDestinations  Cargo[]
+  points            Point[]
+  driversHomeCity   Driver[]
+  cargoDestinations Cargo[]
 
   @@index([countryId])
   @@index([regionId])
@@ -284,18 +284,18 @@ model City {
 }
 
 model Point {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   cityId    String
-  city      City     @relation(fields: [cityId], references: [id])
+  city      City      @relation(fields: [cityId], references: [id])
   name      Json
-  lat       Decimal? @db.Decimal(9, 6)
-  lng       Decimal? @db.Decimal(9, 6)
+  lat       Decimal?  @db.Decimal(9, 6)
+  lng       Decimal?  @db.Decimal(9, 6)
   kind      PointKind @default(CITY)
   /// Радиус геозоны, м — только для TERMINAL с координатами (задача 040).
   radiusM   Int?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   arrivals Arrival[]
   cargos   Cargo[]
@@ -305,21 +305,21 @@ model Point {
 }
 
 model BodyType {
-  id        String   @id @default(uuid())
-  code      String   @unique
+  id        String          @id @default(uuid())
+  code      String          @unique
   name      Json
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
+  sortOrder Int             @default(0)
+  isActive  Boolean         @default(true)
   /// 048: профиль и поля (JSON: [{key, kind, unit, label, forVehicle, forCargo,
   /// required, primary, min, max, options}]) — правятся в админке без релиза.
   profile   BodyTypeProfile @default(VOLUME)
   fields    Json            @default("[]")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
 
-  vehicles Vehicle[]
-  preferredByDrivers Driver[] @relation("DriverPreferredBodyType")
-  cargos   Cargo[]
+  vehicles           Vehicle[]
+  preferredByDrivers Driver[]  @relation("DriverPreferredBodyType")
+  cargos             Cargo[]
 
   @@map("body_types")
 }
@@ -379,48 +379,48 @@ model MessageTemplate {
 // ---------------------------------------------------------------------------
 
 model User {
-  id              String    @id @default(uuid())
-  role            UserRole
-  phone           String?   @unique
-  email           String?   @unique
-  passwordHash    String?
-  name            String?
-  emailVerifiedAt DateTime?
-  locale          Locale    @default(ru)
-  isActive        Boolean   @default(true)
-  isBlocked       Boolean   @default(false)
+  id               String    @id @default(uuid())
+  role             UserRole
+  phone            String?   @unique
+  email            String?   @unique
+  passwordHash     String?
+  name             String?
+  emailVerifiedAt  DateTime?
+  locale           Locale    @default(ru)
+  isActive         Boolean   @default(true)
+  isBlocked        Boolean   @default(false)
   /// Аккаунт удалён самим пользователем (043 п.1): ПДн обезличены, вход
   /// закрыт (isActive=false), сделки и отзывы остаются без имени.
-  deletedAt       DateTime?
+  deletedAt        DateTime?
   /// Согласие на обработку ПДн (043 п.2) — спрашивается перед первой
   /// загрузкой документа; новая версия текста → спросить заново.
   pdConsentAt      DateTime?
   pdConsentVersion String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  driver                 Driver?
-  companyMember          CompanyMember?
-  sentMessages           Message[]
-  contactEventsAsActor   ContactEvent[]      @relation("ContactEventActor")
-  reviewsAuthored        Review[]
-  verificationDocuments  VerificationDocument[]
-  notificationSettings   NotificationSetting[]
+  driver                    Driver?
+  companyMember             CompanyMember?
+  sentMessages              Message[]
+  contactEventsAsActor      ContactEvent[]             @relation("ContactEventActor")
+  reviewsAuthored           Review[]
+  verificationDocuments     VerificationDocument[]
+  notificationSettings      NotificationSetting[]
   notificationEventSettings NotificationEventSetting[]
-  deviceTokens           DeviceToken[]
-  complaintsFiled        Complaint[]         @relation("ComplaintReporter")
-  complaintsResolved     Complaint[]         @relation("ComplaintResolver")
-  complaintsAssigned     Complaint[]         @relation("ComplaintAssignee")
-  auditLogs              AuditLog[]
-  reviewedDocuments      VerificationDocument[] @relation("VerificationDocumentReviewer")
-  sessions               Session[]
-  citiesSubmitted        City[]                  @relation("CitySubmittedBy")
-  citiesReviewed         City[]                  @relation("CityReviewedBy")
-  companyInvitesSent     CompanyInvite[]
-  cargosPublished        Cargo[]                 @relation("CargoPublishedBy")
-  identifiersConfirmed   Identifier[]            @relation("IdentifierConfirmedBy")
-  identifiersBlocked     BlockedIdentifier[]     @relation("IdentifierBlockedBy")
-  identifiersLifted      BlockedIdentifier[]     @relation("IdentifierLiftedBy")
+  deviceTokens              DeviceToken[]
+  complaintsFiled           Complaint[]                @relation("ComplaintReporter")
+  complaintsResolved        Complaint[]                @relation("ComplaintResolver")
+  complaintsAssigned        Complaint[]                @relation("ComplaintAssignee")
+  auditLogs                 AuditLog[]
+  reviewedDocuments         VerificationDocument[]     @relation("VerificationDocumentReviewer")
+  sessions                  Session[]
+  citiesSubmitted           City[]                     @relation("CitySubmittedBy")
+  citiesReviewed            City[]                     @relation("CityReviewedBy")
+  companyInvitesSent        CompanyInvite[]
+  cargosPublished           Cargo[]                    @relation("CargoPublishedBy")
+  identifiersConfirmed      Identifier[]               @relation("IdentifierConfirmedBy")
+  identifiersBlocked        BlockedIdentifier[]        @relation("IdentifierBlockedBy")
+  identifiersLifted         BlockedIdentifier[]        @relation("IdentifierLiftedBy")
 
   @@map("users")
 }
@@ -443,13 +443,13 @@ model Session {
 }
 
 model Driver {
-  id           String   @id @default(uuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id])
-  fullName     String
-  homeCityId   String
-  homeCity     City     @relation(fields: [homeCityId], references: [id])
-  anyCountry   Boolean  @default(false)
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id])
+  fullName              String
+  homeCityId            String
+  homeCity              City      @relation(fields: [homeCityId], references: [id])
+  anyCountry            Boolean   @default(false)
   /// Кузов и тоннаж из регистрации (045 п.5) — предпочтение для ленты и «Кто
   /// свободен», пока в гараже нет настоящей машины; машины при регистрации не создаются.
   preferredBodyTypeId   String?
@@ -460,25 +460,25 @@ model Driver {
   /// ФИО из водительского удостоверения (045 п.10) — при регистрации водитель
   /// пишет только имя; после одобрения прав предлагаем подставить полное ФИО.
   licenseFullName       String?
-  isVerified   Boolean  @default(false)
-  ratingAvg    Decimal  @default(0) @db.Decimal(3, 2)
-  ratingCount  Int      @default(0)
-  currentLat        Decimal?  @db.Decimal(9, 6)
-  currentLng        Decimal?  @db.Decimal(9, 6)
-  locationUpdatedAt DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isVerified            Boolean   @default(false)
+  ratingAvg             Decimal   @default(0) @db.Decimal(3, 2)
+  ratingCount           Int       @default(0)
+  currentLat            Decimal?  @db.Decimal(9, 6)
+  currentLng            Decimal?  @db.Decimal(9, 6)
+  locationUpdatedAt     DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  directions           DriverDirection[]
-  permits              DriverPermit[]
-  vehicles             Vehicle[]
-  arrivals             Arrival[]
-  responses            Response[]
-  deals                Deal[]
-  chats                Chat[]
-  contactEvents        ContactEvent[]
+  directions            DriverDirection[]
+  permits               DriverPermit[]
+  vehicles              Vehicle[]
+  arrivals              Arrival[]
+  responses             Response[]
+  deals                 Deal[]
+  chats                 Chat[]
+  contactEvents         ContactEvent[]
   verificationDocuments VerificationDocument[] @relation("DriverVerificationDocuments")
-  payments             Payment[]
+  payments              Payment[]
 
   @@index([homeCityId])
   @@map("drivers")
@@ -511,52 +511,52 @@ model DriverPermit {
 }
 
 model Vehicle {
-  id            String      @id @default(uuid())
-  driverId      String
-  driver        Driver      @relation(fields: [driverId], references: [id])
-  kind          VehicleKind
+  id           String          @id @default(uuid())
+  driverId     String
+  driver       Driver          @relation(fields: [driverId], references: [id])
+  kind         VehicleKind
   /// Кузов/тоннаж/длина — только у TRAILER и RIGID (решение 2026-10-05,
   /// «Несколько машин: гараж»); у TRACTOR всегда null.
-  bodyTypeId    String?
-  bodyType      BodyType?   @relation(fields: [bodyTypeId], references: [id])
-  plateNumber   String?
-  vin           String?
-  brand         String?
-  capacityTons  Decimal?    @db.Decimal(6, 2)
-  lengthM       Decimal?    @db.Decimal(5, 2)
+  bodyTypeId   String?
+  bodyType     BodyType?       @relation(fields: [bodyTypeId], references: [id])
+  plateNumber  String?
+  vin          String?
+  brand        String?
+  capacityTons Decimal?        @db.Decimal(6, 2)
+  lengthM      Decimal?        @db.Decimal(5, 2)
   /// Размер кузова (задача 033) — только TRAILER/RIGID. При выборе шаблона
   /// значения КОПИРУЮТСЯ из него (правка шаблона не меняет задним числом
   /// чужие машины); «Свой размер» — ввод Д/Ш/В, объём и паллеты считаются.
-  sizePresetId  String?
-  sizePreset    BodySizePreset? @relation(fields: [sizePresetId], references: [id])
-  innerLengthM  Decimal?    @db.Decimal(5, 2)
-  innerWidthM   Decimal?    @db.Decimal(4, 2)
-  innerHeightM  Decimal?    @db.Decimal(4, 2)
-  volumeM3      Decimal?    @db.Decimal(6, 1)
-  palletsEuro   Int?
+  sizePresetId String?
+  sizePreset   BodySizePreset? @relation(fields: [sizePresetId], references: [id])
+  innerLengthM Decimal?        @db.Decimal(5, 2)
+  innerWidthM  Decimal?        @db.Decimal(4, 2)
+  innerHeightM Decimal?        @db.Decimal(4, 2)
+  volumeM3     Decimal?        @db.Decimal(6, 1)
+  palletsEuro  Int?
   /// 048: параметры по профилю кузова (литры, продукт, места под машины…);
   /// у объёмных — проекция и в колонки volumeM3/palletsEuro/inner*.
-  specs         Json?
+  specs        Json?
   /// Водитель — собственник или работает на чужой машине.
 
-  isOwner       Boolean     @default(true)
+  isOwner    Boolean          @default(true)
   /// Техпаспорт одобрен (ставится при approve соответствующего документа,
   /// см. admin.service.ts) — отдельно от Driver.isVerified (селфи+права).
-  isVerified    Boolean     @default(false)
+  isVerified Boolean          @default(false)
   /// 044 п.6: ADMIN — одобрил админ, AUTO — автопроверка (VIN/госномер прошли
   /// формат, контрольную цифру и чёрный список); админ может отозвать.
-  verifiedBy    VehicleVerifier?
-  verifiedAt    DateTime?
-  isActive      Boolean     @default(true)
-  isArchived    Boolean     @default(false)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  verifiedBy VehicleVerifier?
+  verifiedAt DateTime?
+  isActive   Boolean          @default(true)
+  isArchived Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 
   verificationDocuments VerificationDocument[] @relation("VehicleVerificationDocuments")
-  arrivalsAsTractor     Arrival[]               @relation("ArrivalTractor")
-  arrivalsAsTrailer     Arrival[]               @relation("ArrivalTrailer")
-  dealsAsTractor        Deal[]                  @relation("DealTractor")
-  dealsAsTrailer        Deal[]                  @relation("DealTrailer")
+  arrivalsAsTractor     Arrival[]              @relation("ArrivalTractor")
+  arrivalsAsTrailer     Arrival[]              @relation("ArrivalTrailer")
+  dealsAsTractor        Deal[]                 @relation("DealTractor")
+  dealsAsTrailer        Deal[]                 @relation("DealTrailer")
 
   @@index([driverId])
   @@index([bodyTypeId])
@@ -564,18 +564,18 @@ model Vehicle {
 }
 
 model Company {
-  id            String   @id @default(uuid())
-  name          String
-  nameRu        String?
-  countryId     String
-  country       Country  @relation(fields: [countryId], references: [id])
-  city          String?
-  legalAddress  String?
-  taxId         String?
+  id              String    @id @default(uuid())
+  name            String
+  nameRu          String?
+  countryId       String
+  country         Country   @relation(fields: [countryId], references: [id])
+  city            String?
+  legalAddress    String?
+  taxId           String?
   /// Вебхук группового бота WeCom (задача 011, п.2) — владелец вставляет
   /// адрес в профиле компании; «Проверить» шлёт туда тестовое сообщение.
   wecomWebhookUrl String?
-  isVerified    Boolean  @default(false)
+  isVerified      Boolean   @default(false)
   /// Оферта для компании (043 п.2) принята при регистрации — версия текста
   /// `/legal/offer`; у компаний до 043 — null.
   offerAcceptedAt DateTime?
@@ -583,11 +583,11 @@ model Company {
   /// Блокировка компании целиком (задача 026, п.5) — отдельно от
   /// User.isBlocked у каждого сотрудника: блокировка компании блокирует
   /// всех её участников И скрывает активные грузы из ленты водителя.
-  isBlocked     Boolean  @default(false)
-  ratingAvg     Decimal  @default(0) @db.Decimal(3, 2)
-  ratingCount   Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  isBlocked       Boolean   @default(false)
+  ratingAvg       Decimal   @default(0) @db.Decimal(3, 2)
+  ratingCount     Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   members               CompanyMember[]
   cargos                Cargo[]
@@ -605,22 +605,22 @@ model Company {
 }
 
 model CompanyMember {
-  id        String            @id @default(uuid())
-  companyId String
-  company   Company           @relation(fields: [companyId], references: [id])
-  userId    String            @unique
-  user      User              @relation(fields: [userId], references: [id])
-  role      CompanyMemberRole
+  id           String            @id @default(uuid())
+  companyId    String
+  company      Company           @relation(fields: [companyId], references: [id])
+  userId       String            @unique
+  user         User              @relation(fields: [userId], references: [id])
+  role         CompanyMemberRole
   /// Контакты конкретного сотрудника (задача 012) — водитель звонит/пишет
   /// логисту, опубликовавшему груз, а не «компании» (decisions.md
   /// «Компания: проверка, роли, контакты»). null у сотрудников, которые
   /// ещё не заполнили «Мой профиль» — тогда показываем company.name/
   /// User.phone как раньше (см. резолв контакта в cargos/chats).
-  fullName    String?
+  fullName     String?
   contactPhone String?
-  wechatId    String?
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  wechatId     String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   @@index([companyId])
   @@map("company_members")
@@ -656,33 +656,33 @@ model CompanyInvite {
 /// Один активный (PLANNED/ON_SITE) анонс на водителя — новый вызов
 /// announce() заменяет предыдущий, а не плодит дубли.
 model Arrival {
-  id         String        @id @default(uuid())
-  driverId   String
-  driver     Driver        @relation(fields: [driverId], references: [id])
-  pointId    String
-  point      Point         @relation(fields: [pointId], references: [id])
-  plannedAt  DateTime
+  id              String        @id @default(uuid())
+  driverId        String
+  driver          Driver        @relation(fields: [driverId], references: [id])
+  pointId         String
+  point           Point         @relation(fields: [pointId], references: [id])
+  plannedAt       DateTime
   /// Календарный день приезда, выбранный водителем (задача 041, п.5): день
   /// без времени и часового пояса — группировка «Кто свободен» идёт по нему.
-  plannedDay DateTime      @db.Date
-  arrivedAt  DateTime?
+  plannedDay      DateTime      @db.Date
+  arrivedAt       DateTime?
   /// Правило свежести (задача 040): когда водитель последний раз ответил
   /// «Да, ищу» / «Я на месте»; когда ему отправили напоминание «Доехали?»
   /// (день приезда) и «Ещё ищете груз?» (каждые 12 ч на месте).
   lastConfirmedAt DateTime?
   dayAskedAt      DateTime?
   staleAskedAt    DateTime?
-  waitDays   Int           @default(2)
-  anyCountry Boolean       @default(false)
-  status     ArrivalStatus @default(PLANNED)
+  waitDays        Int           @default(2)
+  anyCountry      Boolean       @default(false)
+  status          ArrivalStatus @default(PLANNED)
   /// Связка на эту поездку (задача 031, этап A) — для RIGID используется
   /// только tractorId (сама машина), trailerId остаётся null.
-  tractorId  String?
-  tractor    Vehicle?      @relation("ArrivalTractor", fields: [tractorId], references: [id])
-  trailerId  String?
-  trailer    Vehicle?      @relation("ArrivalTrailer", fields: [trailerId], references: [id])
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  tractorId       String?
+  tractor         Vehicle?      @relation("ArrivalTractor", fields: [tractorId], references: [id])
+  trailerId       String?
+  trailer         Vehicle?      @relation("ArrivalTrailer", fields: [trailerId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   directions ArrivalDirection[]
   views      ArrivalView[]
@@ -759,7 +759,7 @@ enum IdentifierOwnerType {
 /// одно подтверждённое значение на тип (новое подтверждение перезаписывает
 /// старое, например при смене госномера).
 model Identifier {
-  id                String               @id @default(uuid())
+  id                String                @id @default(uuid())
   type              IdentifierType
   valueHash         String
   valueMasked       String
@@ -769,10 +769,10 @@ model Identifier {
   sourceDocumentId  String?
   sourceDocument    VerificationDocument? @relation(fields: [sourceDocumentId], references: [id])
   confirmedByUserId String?
-  confirmedBy       User?                @relation("IdentifierConfirmedBy", fields: [confirmedByUserId], references: [id])
+  confirmedBy       User?                 @relation("IdentifierConfirmedBy", fields: [confirmedByUserId], references: [id])
   confirmedAt       DateTime?
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 
   @@unique([ownerType, ownerId, type])
   @@index([type, valueHash])
@@ -821,73 +821,152 @@ enum DocumentRecognitionStatus {
 /// в identifiers значения попадают лишь после его подтверждения
 /// (reviewVerificationDocument/admin-ручной ввод, не отсюда напрямую).
 model DocumentRecognition {
-  id           String                    @id @default(uuid())
-  documentId   String                    @unique
-  document     VerificationDocument      @relation(fields: [documentId], references: [id])
-  status       DocumentRecognitionStatus @default(PENDING)
-  fields       Json?
+  id            String                    @id @default(uuid())
+  documentId    String                    @unique
+  document      VerificationDocument      @relation(fields: [documentId], references: [id])
+  status        DocumentRecognitionStatus @default(PENDING)
+  fields        Json?
   engineVersion String?
-  durationMs   Int?
-  errorMessage String?
-  createdAt    DateTime                  @default(now())
-  updatedAt    DateTime                  @updatedAt
+  durationMs    Int?
+  errorMessage  String?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
 
   @@map("document_recognitions")
 }
 
 model Cargo {
-  id                    String      @id @default(uuid())
-  companyId             String
-  company               Company     @relation(fields: [companyId], references: [id])
+  id                   String             @id @default(uuid())
+  companyId            String
+  company              Company            @relation(fields: [companyId], references: [id])
   /// Логист, опубликовавший груз (decisions.md «Компания: проверка, роли,
   /// контакты», задача 012: «водитель звонит конкретному логисту, а не
   /// компании») — водитель видит и звонит именно ему, не владельцу
   /// компании. `NULL` у грузов, опубликованных до задачи 017 — на чтении
   /// падаем на владельца компании.
-  publishedByUserId     String?
-  publishedBy           User?       @relation("CargoPublishedBy", fields: [publishedByUserId], references: [id])
-  pointId               String
-  point                 Point       @relation(fields: [pointId], references: [id])
-  destinationCountryId  String
-  destinationCountry    Country     @relation(fields: [destinationCountryId], references: [id])
-  destinationCityId     String?
-  destinationCity       City?       @relation(fields: [destinationCityId], references: [id])
-  bodyTypeId            String
-  bodyType              BodyType    @relation(fields: [bodyTypeId], references: [id])
-  weightKg              Decimal?    @db.Decimal(10, 2)
-  volumeM3              Decimal?    @db.Decimal(7, 2)
+  publishedByUserId    String?
+  publishedBy          User?              @relation("CargoPublishedBy", fields: [publishedByUserId], references: [id])
+  pointId              String
+  point                Point              @relation(fields: [pointId], references: [id])
+  destinationCountryId String
+  destinationCountry   Country            @relation(fields: [destinationCountryId], references: [id])
+  destinationCityId    String?
+  destinationCity      City?              @relation(fields: [destinationCityId], references: [id])
+  bodyTypeId           String
+  bodyType             BodyType           @relation(fields: [bodyTypeId], references: [id])
+  weightKg             Decimal?           @db.Decimal(10, 2)
+  volumeM3             Decimal?           @db.Decimal(7, 2)
   /// Паллеты (задача 033) — логист может указать вместо/вместе с объёмом.
-  palletCount           Int?
+  palletCount          Int?
   /// 048: другие подходящие кузова (кроме основного bodyTypeId) и параметры
   /// груза по профилю (продукт и литры, тип контейнера, число машин…).
-  extraBodyTypeIds      String[]    @default([])
-  specs                 Json?
-  photoUrls             String[]    @default([])
-  price                 Decimal     @db.Decimal(12, 2)
-  currency              Currency
-  readyDate             DateTime @db.Date
+  extraBodyTypeIds     String[]           @default([])
+  specs                Json?
+  photoUrls            String[]           @default([])
+  /// 047: категория груза (справочник), обязательна при публикации.
+  categoryId           String
+  category             CargoCategory      @relation(fields: [categoryId], references: [id])
+  /// 047: расстояние по дороге (OSRM, кэш пар городов) и цена за км в валюте
+  /// груза; `NULL` — нет города назначения или OSRM был недоступен.
+  distanceKm           Int?
+  pricePerKm           Decimal?           @db.Decimal(12, 2)
+  price                Decimal            @db.Decimal(12, 2)
+  currency             Currency
+  readyDate            DateTime           @db.Date
   /// «Можно догрузом» (задача 040, п.6): груз не на всю машину, сборный.
-  allowPartial          Boolean     @default(false)
-  description           String?
-  status                CargoStatus @default(PUBLISHED)
-  publishedAt           DateTime    @default(now())
-  expiresAt             DateTime
-  archivedAt            DateTime?
+  allowPartial         Boolean            @default(false)
+  description          String?
+  status               CargoStatus        @default(PUBLISHED)
+  publishedAt          DateTime           @default(now())
+  expiresAt            DateTime
+  archivedAt           DateTime?
   /// Исход закрытия (задача 017, п.6/7) — метрика утечки сделок мимо
   /// приложения, тот же смысл, что у аналогичной метрики анонсов (014).
-  closeOutcome          CargoCloseOutcome?
-  closedAt              DateTime?
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
+  closeOutcome         CargoCloseOutcome?
+  closedAt             DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 
-  responses      Response[]
-  deals          Deal[]
-  chats          Chat[]
-  contactEvents  ContactEvent[]
+  responses     Response[]
+  deals         Deal[]
+  chats         Chat[]
+  contactEvents ContactEvent[]
 
   @@index([status, pointId, destinationCountryId])
   @@index([companyId])
   @@map("cargos")
+}
+
+/// Категория груза (047 п.1): стройматериалы, продукты, оборудование… —
+/// справочник, правится в админке без релиза.
+model CargoCategory {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      Json
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cargos Cargo[]
+
+  @@map("cargo_categories")
+}
+
+/// Расстояние по дороге между городами (047 п.2) — пара хранится один раз
+/// (fromCityId < toCityId), считается OSRM.
+model CityDistance {
+  fromCityId String
+  toCityId   String
+  km         Int
+  source     String   @default("osrm")
+  computedAt DateTime @default(now())
+
+  @@id([fromCityId, toCityId])
+  @@map("city_distances")
+}
+
+enum PricePointKind {
+  LISTED
+  DEAL
+}
+
+/// Точка статистики цен (047 п.4): объявление проверенной компании или сделка.
+model PricePoint {
+  id            String         @id @default(uuid())
+  kind          PricePointKind
+  cargoId       String
+  dealId        String?
+  driverId      String?
+  companyId     String
+  fromCityId    String
+  toCityId      String
+  /// KZ / CIS / CN_FAR — по стране назначения.
+  bucket        String
+  /// 5 / 10 / 20 — класс тоннажа.
+  tonnageClass  Int
+  pricePerKmKzt Decimal        @db.Decimal(12, 2)
+  createdAt     DateTime       @default(now())
+
+  @@index([fromCityId, toCityId, bucket, tonnageClass, createdAt])
+  @@map("price_points")
+}
+
+/// Медиана и P25–P75 ₸/км за 30 дней (047 п.4), пересчёт раз в сутки.
+model RoutePriceStat {
+  fromCityId   String
+  toCityId     String
+  bucket       String
+  tonnageClass Int
+  median       Decimal  @db.Decimal(12, 2)
+  p25          Decimal  @db.Decimal(12, 2)
+  p75          Decimal  @db.Decimal(12, 2)
+  points       Int
+  dealPoints   Int
+  computedAt   DateTime
+
+  @@id([fromCityId, toCityId, bucket, tonnageClass])
+  @@map("route_price_stats")
 }
 
 model Response {
@@ -909,46 +988,46 @@ model Response {
 }
 
 model Deal {
-  id                 String     @id @default(uuid())
-  responseId         String     @unique
-  response           Response   @relation(fields: [responseId], references: [id])
-  cargoId            String
-  cargo              Cargo      @relation(fields: [cargoId], references: [id])
-  driverId           String
-  driver             Driver     @relation(fields: [driverId], references: [id])
-  companyId          String
-  company             Company   @relation(fields: [companyId], references: [id])
+  id                      String            @id @default(uuid())
+  responseId              String            @unique
+  response                Response          @relation(fields: [responseId], references: [id])
+  cargoId                 String
+  cargo                   Cargo             @relation(fields: [cargoId], references: [id])
+  driverId                String
+  driver                  Driver            @relation(fields: [driverId], references: [id])
+  companyId               String
+  company                 Company           @relation(fields: [companyId], references: [id])
   /// Связка машин на этот рейс (задача 031, этап A) — снимок с актуальной
   /// заявки водителя на момент создания сделки; null — старые сделки до
   /// миграции 031 или водитель без заявки на точке (проверка по связке
   /// тогда пропускается, см. deals.service.ts).
-  tractorId          String?
-  tractor            Vehicle?   @relation("DealTractor", fields: [tractorId], references: [id])
-  trailerId          String?
-  trailer            Vehicle?   @relation("DealTrailer", fields: [trailerId], references: [id])
-  status             DealStatus @default(SELECTED)
-  cancelReason       String?
+  tractorId               String?
+  tractor                 Vehicle?          @relation("DealTractor", fields: [tractorId], references: [id])
+  trailerId               String?
+  trailer                 Vehicle?          @relation("DealTrailer", fields: [trailerId], references: [id])
+  status                  DealStatus        @default(SELECTED)
+  cancelReason            String?
   /// Код причины отмены (задача 038, п.15) — «Взял другой груз» и т.п.
   /// хранится кодом (TOOK_OTHER_CARGO), не переведённой строкой — иначе
   /// статистику по причинам не посчитать.
-  cancelReasonCode   String?
-  cancelledByRole    ReviewAuthorRole?
+  cancelReasonCode        String?
+  cancelledByRole         ReviewAuthorRole?
   /// 046: этап и сторона вины отмены (вес в рейтинге и статистике).
-  cancelStage        CancelStage?
-  faultSide          FaultSide?
+  cancelStage             CancelStage?
+  faultSide               FaultSide?
   /// 046: запрос отмены после «В пути» — кто, почему, когда; позиция второй стороны в споре.
-  cancelRequestedAt     DateTime?
-  cancelRequestedByRole ReviewAuthorRole?
+  cancelRequestedAt       DateTime?
+  cancelRequestedByRole   ReviewAuthorRole?
   cancelRequestReasonCode String?
-  cancelRequestReason   String?
-  disputeReason         String?
-  disputedAt            DateTime?
-  confirmedAt        DateTime?
-  loadedAt           DateTime?
-  inTransitAt        DateTime?
-  deliveredAt        DateTime?
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
+  cancelRequestReason     String?
+  disputeReason           String?
+  disputedAt              DateTime?
+  confirmedAt             DateTime?
+  loadedAt                DateTime?
+  inTransitAt             DateTime?
+  deliveredAt             DateTime?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
 
   contactEvents ContactEvent[]
   chats         Chat[]
@@ -962,19 +1041,19 @@ model Deal {
 }
 
 model ContactEvent {
-  id         String           @id @default(uuid())
-  driverId   String
-  driver     Driver           @relation(fields: [driverId], references: [id])
-  companyId  String
-  company    Company          @relation(fields: [companyId], references: [id])
-  cargoId    String?
-  cargo      Cargo?           @relation(fields: [cargoId], references: [id])
-  dealId     String?
-  deal       Deal?            @relation(fields: [dealId], references: [id])
+  id          String           @id @default(uuid())
+  driverId    String
+  driver      Driver           @relation(fields: [driverId], references: [id])
+  companyId   String
+  company     Company          @relation(fields: [companyId], references: [id])
+  cargoId     String?
+  cargo       Cargo?           @relation(fields: [cargoId], references: [id])
+  dealId      String?
+  deal        Deal?            @relation(fields: [dealId], references: [id])
   actorUserId String
-  actor      User             @relation("ContactEventActor", fields: [actorUserId], references: [id])
-  type       ContactEventType
-  createdAt  DateTime         @default(now())
+  actor       User             @relation("ContactEventActor", fields: [actorUserId], references: [id])
+  type        ContactEventType
+  createdAt   DateTime         @default(now())
 
   @@index([driverId])
   @@index([companyId])
@@ -982,20 +1061,20 @@ model ContactEvent {
 }
 
 model Chat {
-  id        String   @id @default(uuid())
-  cargoId   String?
-  cargo     Cargo?   @relation(fields: [cargoId], references: [id])
-  dealId    String?
-  deal      Deal?    @relation(fields: [dealId], references: [id])
-  driverId  String
-  driver    Driver   @relation(fields: [driverId], references: [id])
-  companyId String
-  company   Company  @relation(fields: [companyId], references: [id])
+  id            String   @id @default(uuid())
+  cargoId       String?
+  cargo         Cargo?   @relation(fields: [cargoId], references: [id])
+  dealId        String?
+  deal          Deal?    @relation(fields: [dealId], references: [id])
+  driverId      String
+  driver        Driver   @relation(fields: [driverId], references: [id])
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id])
   /// Логист, начавший чат без груза (041, п.9): собеседник водителя — он, а не
   /// случайный владелец компании.
   companyUserId String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   messages Message[]
 
@@ -1054,27 +1133,27 @@ model Message {
 /// включён/выключен, модель, расход за 7 дней. Одна строка на один вызов
 /// провайдера (не на сообщение — ретрай пишет вторую строку).
 model TranslationLog {
-  id           String   @id @default(uuid())
-  provider     String
-  model        String?
-  success      Boolean
-  tokensUsed   Int?
-  createdAt    DateTime @default(now())
+  id         String   @id @default(uuid())
+  provider   String
+  model      String?
+  success    Boolean
+  tokensUsed Int?
+  createdAt  DateTime @default(now())
 
   @@index([createdAt])
   @@map("translation_logs")
 }
 
 model Review {
-  id             String           @id @default(uuid())
-  dealId         String
-  deal           Deal             @relation(fields: [dealId], references: [id])
-  authorUserId   String
-  author         User             @relation(fields: [authorUserId], references: [id])
-  authorRole     ReviewAuthorRole
-  rating         Int
-  comment        String?
-  createdAt      DateTime         @default(now())
+  id           String           @id @default(uuid())
+  dealId       String
+  deal         Deal             @relation(fields: [dealId], references: [id])
+  authorUserId String
+  author       User             @relation(fields: [authorUserId], references: [id])
+  authorRole   ReviewAuthorRole
+  rating       Int
+  comment      String?
+  createdAt    DateTime         @default(now())
 
   @@unique([dealId, authorRole])
   @@map("reviews")
@@ -1184,28 +1263,28 @@ model DeviceToken {
 }
 
 model Complaint {
-  id               String              @id @default(uuid())
+  id               String               @id @default(uuid())
   reporterUserId   String
-  reporter         User                @relation("ComplaintReporter", fields: [reporterUserId], references: [id])
+  reporter         User                 @relation("ComplaintReporter", fields: [reporterUserId], references: [id])
   targetType       ComplaintTargetType
   targetId         String
   reason           String
   description      String?
-  status           ComplaintStatus     @default(OPEN)
+  status           ComplaintStatus      @default(OPEN)
   /// Кто взял в работу (задача 028, п.24e) — отдельно от resolvedByUserId,
   /// который ставится только при закрытии.
   assignedToUserId String?
-  assignedTo       User?               @relation("ComplaintAssignee", fields: [assignedToUserId], references: [id])
+  assignedTo       User?                @relation("ComplaintAssignee", fields: [assignedToUserId], references: [id])
   takenAt          DateTime?
   resolvedByUserId String?
-  resolvedBy       User?               @relation("ComplaintResolver", fields: [resolvedByUserId], references: [id])
+  resolvedBy       User?                @relation("ComplaintResolver", fields: [resolvedByUserId], references: [id])
   resolvedAt       DateTime?
   /// Решение (п.24b) — `NULL` у старых записей, закрытых до этой миграции.
   resolution       ComplaintResolution?
   /// Ответ автору жалобы — обязателен при закрытии (п.24d), `NULL` у старых.
   resolutionNote   String?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
 
   @@index([targetType, targetId])
   @@map("complaints")

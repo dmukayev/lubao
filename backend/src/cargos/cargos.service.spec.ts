@@ -270,18 +270,31 @@ describe('CargosService.create — непроверенная компания �
   it('a verified company publishes normally', async () => {
     const prisma: any = {
       point: { findUnique: jest.fn().mockResolvedValue({ id: 'p1', isActive: true }) },
-      cargo: { create: jest.fn().mockResolvedValue(baseCargo()) },
+      cargo: { create: jest.fn().mockResolvedValue({ id: 'cargo1' }), findUnique: jest.fn().mockResolvedValue(baseCargo()) },
+      cargoCategory: { findUnique: jest.fn().mockResolvedValue({ isActive: true }) },
       deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       bodyType: { findUnique: jest.fn().mockResolvedValue({ fields: [] }), findMany: jest.fn().mockResolvedValue([]) },
     };
     const service = new CargosService(prisma, {} as any, {} as any);
 
-    await service.create('c1', 'u1', true, { pointId: 'p1', readyDate: '2026-01-01', destinationCountryId: 'kz', bodyTypeId: 'bt1', price: 100, currency: 'USD', allowPartial: true } as any);
+    await service.create('c1', 'u1', true, { pointId: 'p1', readyDate: '2026-01-01', destinationCountryId: 'kz', bodyTypeId: 'bt1', price: 100, currency: 'USD', allowPartial: true, categoryId: 'cat1' } as any);
 
     expect(prisma.cargo.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ pointId: 'p1', allowPartial: true }) }),
     );
+  });
+
+  it('047 п.1: без категории груз не публикуется', async () => {
+    const prisma: any = {
+      point: { findUnique: jest.fn().mockResolvedValue({ id: 'p1', isActive: true }) },
+      cargo: { create: jest.fn() },
+      cargoCategory: { findUnique: jest.fn().mockResolvedValue(null) },
+      bodyType: { findUnique: jest.fn().mockResolvedValue({ fields: [] }), findMany: jest.fn().mockResolvedValue([]) },
+    };
+    const service = new CargosService(prisma, {} as any, {} as any);
+    await expect(service.create('c1', 'u1', true, { pointId: 'p1', readyDate: '2026-01-01', destinationCountryId: 'kz', bodyTypeId: 'bt1', price: 100, currency: 'USD' } as any)).rejects.toThrow('CATEGORY_REQUIRED');
+    expect(prisma.cargo.create).not.toHaveBeenCalled();
   });
 
   it('040, п.7: груз без города погрузки опубликовать нельзя', async () => {
@@ -628,14 +641,15 @@ describe('CargosService.create — профиль кузова', () => {
   function setup() {
     const prisma: any = {
       point: { findUnique: jest.fn().mockResolvedValue({ id: 'p1', isActive: true }) },
-      cargo: { create: jest.fn().mockResolvedValue(baseCargo()) },
+      cargo: { create: jest.fn().mockResolvedValue({ id: 'cargo1' }), findUnique: jest.fn().mockResolvedValue(baseCargo()) },
+      cargoCategory: { findUnique: jest.fn().mockResolvedValue({ isActive: true }) },
       deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       bodyType: { findUnique: jest.fn().mockResolvedValue({ fields: TANK_FIELDS }), findMany: jest.fn().mockResolvedValue([{ id: 'bt-other' }]) },
     };
     return { prisma, service: new CargosService(prisma, {} as any, {} as any) };
   }
-  const base = { pointId: 'p1', readyDate: '2030-01-01', destinationCountryId: 'kz', bodyTypeId: 'bt-tank', price: 100, currency: 'USD' } as any;
+  const base = { pointId: 'p1', readyDate: '2030-01-01', destinationCountryId: 'kz', bodyTypeId: 'bt-tank', price: 100, currency: 'USD', categoryId: 'cat1' } as any;
 
   it('цистерна: продукт и литры сохраняются, другие кузова — только существующие и не основной', async () => {
     const { prisma, service } = setup();

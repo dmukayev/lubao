@@ -1,6 +1,10 @@
 import { ArrayMaxSize, IsArray, IsBoolean, IsISO8601, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CreateCargoDto {
+  /// 047: категория груза из справочника — обязательна при публикации.
+  @IsString()
+  categoryId!: string;
+
   /// Город погрузки — обязательное поле (задача 040, п.7): выбор из
   /// справочника точек/городов, а не «первая активная точка».
   @IsString()

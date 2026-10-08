@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { BODY_TYPE_PROFILES } from './body-type-profiles';
+import { CARGO_CATEGORIES } from './cargo-categories';
 
 const prisma = new PrismaClient();
 
@@ -383,6 +384,10 @@ async function main() {
       update: { name: p.name, sortOrder: p.sortOrder },
       create: p,
     });
+  }
+
+  for (const c of CARGO_CATEGORIES) {
+    await prisma.cargoCategory.upsert({ where: { code: c.code }, update: { name: c.name, sortOrder: c.sortOrder }, create: c });
   }
 
   for (const t of messageTemplates) {

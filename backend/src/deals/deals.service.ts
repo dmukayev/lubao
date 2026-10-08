@@ -1,5 +1,6 @@
 import { DealActor, notifyDealStatus } from './deal-status-notify';
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { PricingService } from '../pricing/pricing.service';
 import { CancelStage, Company, Deal, DealStatus, Driver, FaultSide, Prisma, ReviewAuthorRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { completeArrivalForConfirmedDeal } from '../arrivals/arrival-lifecycle';
@@ -43,6 +44,7 @@ export class DealsService {
     private readonly notifications: NotificationsService,
     private readonly chatSystem: ChatSystemMessagesService,
     private readonly realtime: RealtimeGateway,
+    @Optional() private readonly pricing?: PricingService,
   ) {}
 
   /// Push обеим сторонам + WeCom компании при смене статуса сделки
@@ -267,6 +269,14 @@ export class DealsService {
         where: { id: updated.cargoId, status: 'IN_DEAL' },
         data: { status: 'ARCHIVED', closeOutcome: 'FOUND_IN_APP', closedAt: new Date() },
       });
+      // 047 п.4: сделка — точка статистики цен по маршруту.
+      if (this.pricing) {
+        const cargo = await this.prisma.cargo.findUnique({
+          where: { id: updated.cargoId },
+          include: { point: { select: { cityId: true } }, destinationCountry: { select: { code: true } } },
+        });
+        if (cargo) await this.pricing.recordPoint('DEAL', cargo, { driverId: updated.driverId, dealId: updated.id });
+      }
     }
     await this.notifyStatusChange(updated, nextStatus, 'DRIVER');
     return this.toDto(updated);

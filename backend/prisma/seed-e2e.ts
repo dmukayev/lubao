@@ -110,6 +110,8 @@ async function main() {
   const [kz, cn] = await Promise.all([country('KZ'), country('CN')]);
   const [almaty] = await Promise.all([cityByRuName('Алматы')]);
   const tent = await bodyType('TENT');
+  // 047: категория обязательна — синтетическим грузам «Стройматериалы».
+  const category = await prisma.cargoCategory.findUniqueOrThrow({ where: { code: 'CONSTRUCTION' } });
   const khorgos = await khorgosPoint();
   const almatyPoint = await pointByCityCode('KZ-ALMATY');
   const astanaPoint = await pointByCityCode('KZ-ASTANA');
@@ -303,6 +305,7 @@ async function main() {
         destinationCountryId: kz.id,
         destinationCityId: almaty.id,
         bodyTypeId: tent.id,
+        categoryId: category.id,
         photoUrls: [],
         description: def.note,
         publishedAt: new Date(),
@@ -351,6 +354,7 @@ async function main() {
       destinationCountryId: kz.id,
       destinationCityId: almaty.id,
       bodyTypeId: tent.id,
+      categoryId: category.id,
       photoUrls: [],
       description: 'E2E — груз казахстанской компании (WhatsApp)',
       publishedAt: new Date(),
