@@ -143,6 +143,23 @@ export class DriversController {
     return this.drivers.createVehicle(ctx.user.id, ctx.driver.id, dto);
   }
 
+  /// 053 п.5: водитель видит свои фото машины (миниатюры в гараже, анонсе, сделке).
+  @Get('me/vehicles/:id/photos/:type')
+  async ownVehiclePhoto(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Param('type') type: string, @Res() res: Response) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    const kind = type.toUpperCase();
+    if (kind !== 'FRONT' && kind !== 'SIDE' && kind !== 'PASSPORT') throw new NotFoundException('Photo not found');
+    const fileUrl = await this.drivers.ownVehiclePhoto(ctx.driver.id, id, kind);
+    if (/^https?:\/\//.test(fileUrl)) {
+      res.redirect(fileUrl);
+      return;
+    }
+    const source = await this.uploads.getDocumentStream(fileUrl);
+    res.setHeader('Content-Type', source.contentType);
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    source.stream.pipe(res);
+  }
+
   @Post('me/vehicles/:id/archive')
   archiveVehicle(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');

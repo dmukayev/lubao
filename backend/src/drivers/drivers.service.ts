@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Driver, Prisma } from '@prisma/client';
+import { Driver, Prisma, VerificationDocType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { leaveTerminalIfOutside } from '../arrivals/arrival-lifecycle';
 import { IdentifiersService } from '../identifiers/identifiers.service';
@@ -471,9 +471,12 @@ export class DriversService {
     const withDocs = vehicles.length
       ? await this.prisma.verificationDocument.findMany({
           where: { vehicleId: { in: vehicles.map((v) => v.id) }, status: { in: ['PENDING', 'APPROVED'] } },
-          select: { vehicleId: true, type: true },
+          select: { id: true, vehicleId: true, type: true },
+          orderBy: { createdAt: 'desc' },
         })
       : [];
+    // 053 п.5: id последнего фото — миниатюра в гараже обновляется после «Переснять».
+    const latestId = (vehicleId: string, type: string) => withDocs.find((d) => d.vehicleId === vehicleId && d.type === type)?.id ?? null;
     // «Нужен документ» — только техпаспорт; фото машины (044 п.7) — отдельные признаки.
     const has = (vehicleId: string, types: string[]) => withDocs.some((d) => d.vehicleId === vehicleId && types.includes(d.type));
     return vehicles.map((v) => ({
@@ -481,7 +484,25 @@ export class DriversService {
       hasDocument: has(v.id, ['VEHICLE_PASSPORT', 'TRAILER_PASSPORT']),
       hasPhotoFront: has(v.id, ['VEHICLE_PHOTO_FRONT']),
       hasPhotoSide: has(v.id, ['VEHICLE_PHOTO_SIDE']),
+      photoFrontId: latestId(v.id, 'VEHICLE_PHOTO_FRONT'),
+      photoSideId: latestId(v.id, 'VEHICLE_PHOTO_SIDE'),
     }));
+  }
+
+  /// 053 п.5: свои фото и техпаспорт машины — только владельцу (компании —
+  /// по своим правилам, 044/049 п.6). Последний не отклонённый документ типа.
+  async ownVehiclePhoto(driverId: string, vehicleId: string, type: 'FRONT' | 'SIDE' | 'PASSPORT') {
+    const vehicle = await this.prisma.vehicle.findUnique({ where: { id: vehicleId }, select: { driverId: true } });
+    if (!vehicle || vehicle.driverId !== driverId) throw new NotFoundException('Vehicle not found');
+    const types: VerificationDocType[] =
+      type === 'FRONT' ? ['VEHICLE_PHOTO_FRONT'] : type === 'SIDE' ? ['VEHICLE_PHOTO_SIDE'] : ['VEHICLE_PASSPORT', 'TRAILER_PASSPORT'];
+    const doc = await this.prisma.verificationDocument.findFirst({
+      where: { vehicleId, type: { in: types }, status: { not: 'REJECTED' } },
+      orderBy: { createdAt: 'desc' },
+      select: { fileUrl: true },
+    });
+    if (!doc) throw new NotFoundException('Photo not found');
+    return doc.fileUrl;
   }
 
   async createVehicle(userId: string, driverId: string, dto: CreateVehicleDto) {

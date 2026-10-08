@@ -439,3 +439,38 @@ describe('DriversService.setVehicleSize — по профилю кузова (04
     expect(prisma.vehicle.update).not.toHaveBeenCalled();
   });
 });
+
+describe('DriversService — свои фото машины (053 п.5)', () => {
+  function setup(vehicle: unknown, doc: unknown = { fileUrl: 'photos/front.jpg' }) {
+    const prisma: any = {
+      vehicle: { findUnique: jest.fn().mockResolvedValue(vehicle) },
+      verificationDocument: { findFirst: jest.fn().mockResolvedValue(doc) },
+    };
+    return { prisma, service: new DriversService(prisma) };
+  }
+
+  it('владелец получает своё фото спереди (последнее не отклонённое)', async () => {
+    const { prisma, service } = setup({ driverId: 'd1' });
+    await expect(service.ownVehiclePhoto('d1', 'v1', 'FRONT')).resolves.toBe('photos/front.jpg');
+    expect(prisma.verificationDocument.findFirst.mock.calls[0][0].where).toMatchObject({ vehicleId: 'v1', type: { in: ['VEHICLE_PHOTO_FRONT'] }, status: { not: 'REJECTED' } });
+  });
+
+  it('чужая машина — 404, фото ещё нет — 404', async () => {
+    await expect(setup({ driverId: 'other' }).service.ownVehiclePhoto('d1', 'v1', 'SIDE')).rejects.toThrow('Vehicle not found');
+    await expect(setup({ driverId: 'd1' }, null).service.ownVehiclePhoto('d1', 'v1', 'PASSPORT')).rejects.toThrow('Photo not found');
+  });
+
+  it('гараж отдаёт id последних фото — миниатюра обновляется после «Переснять»', async () => {
+    const prisma: any = {
+      vehicle: { findMany: jest.fn().mockResolvedValue([{ id: 'v1', driverId: 'd1', kind: 'TRAILER', bodyTypeId: 'bt', plateNumber: null, vin: null, brand: null, capacityTons: null, lengthM: null, isOwner: true, isVerified: false, isArchived: false, createdAt: new Date() }]) },
+      verificationDocument: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'new-front', vehicleId: 'v1', type: 'VEHICLE_PHOTO_FRONT' },
+          { id: 'old-front', vehicleId: 'v1', type: 'VEHICLE_PHOTO_FRONT' },
+        ]),
+      },
+    };
+    const [v] = (await new DriversService(prisma).listVehicles('d1')) as any[];
+    expect(v).toMatchObject({ hasPhotoFront: true, photoFrontId: 'new-front', hasPhotoSide: false, photoSideId: null });
+  });
+});
