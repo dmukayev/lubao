@@ -11,6 +11,7 @@ import '../../shared/status_helpers.dart';
 import 'announce_arrival_sheet.dart';
 import '../../shared/error_feedback.dart';
 import '../../shared/tracking_consent_sheet.dart';
+import '../deals/my_responses_screen.dart';
 
 class CargoFeedScreen extends ConsumerStatefulWidget {
   const CargoFeedScreen({super.key});
@@ -82,6 +83,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                 onRefresh: () async {
                   ref.invalidate(cargoFeedProvider);
                   ref.invalidate(myArrivalsProvider);
+                  ref.invalidate(myResponsesProvider);
                 },
                 child: ListView(
                   padding: const EdgeInsets.only(top: AppSpacing.xxl, bottom: AppSpacing.lg),
@@ -95,6 +97,8 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
                       child: _AnonsCard(refData: refData),
                     ),
+                    // 045 п.3: первая секция над лентой — где мои отклики.
+                    const _MyResponsesSummary(),
                     const SizedBox(height: AppSpacing.xl),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
@@ -161,6 +165,44 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
             )
           : CountryCode(code: country.code),
       onTap: () => context.push('/driver/cargo/${cargo.id}'),
+    );
+  }
+}
+
+/// «Ваши отклики: 3 · ждут ответа 2 · приглашение 1» (045 п.3) — тап открывает
+/// «Мои отклики»; нет активных откликов — секции нет.
+class _MyResponsesSummary extends ConsumerWidget {
+  const _MyResponsesSummary();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.l10n;
+    final entries = ref.watch(myResponsesProvider).valueOrNull ?? const [];
+    final pending = entries.where((e) => e.status == ResponseStatus.pending).length;
+    final invited = entries.where((e) => e.status == ResponseStatus.invited).length;
+    final selected = entries.where((e) => e.status == ResponseStatus.selected).length;
+    final total = pending + invited + selected;
+    if (total == 0) return const SizedBox.shrink();
+    final parts = [
+      t.homeMyResponsesSummary(total),
+      if (pending > 0) t.homeMyResponsesPending(pending),
+      if (invited > 0) t.homeMyResponsesInvited(invited),
+      if (selected > 0) t.homeMyResponsesSelected(selected),
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.md, AppSpacing.screen, 0),
+      child: AppCard(
+        key: const Key('homeMyResponses'),
+        onTap: () => context.push('/driver/responses'),
+        child: Row(
+          children: [
+            Icon(LucideIcons.send, color: invited > 0 || selected > 0 ? AppColors.accentText : AppColors.primary),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(child: Text(parts.join(' · '), style: AppTextStyles.bodyStrong)),
+            const Icon(LucideIcons.chevronRight, size: 18),
+          ],
+        ),
+      ),
     );
   }
 }

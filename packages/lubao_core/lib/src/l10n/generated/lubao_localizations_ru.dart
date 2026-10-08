@@ -3165,4 +3165,24 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String feedStateOthers(int count) {
     return 'Откликнулись: $count';
   }
+
+  @override
+  String homeMyResponsesSummary(int total) {
+    return 'Ваши отклики: $total';
+  }
+
+  @override
+  String homeMyResponsesPending(int count) {
+    return 'ждут ответа $count';
+  }
+
+  @override
+  String homeMyResponsesInvited(int count) {
+    return 'приглашение $count';
+  }
+
+  @override
+  String homeMyResponsesSelected(int count) {
+    return 'выбраны $count';
+  }
 }

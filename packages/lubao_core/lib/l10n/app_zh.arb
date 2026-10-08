@@ -1126,5 +1126,9 @@
   "feedStateResponded": "您已响应",
   "feedStateInvited": "邀请您承运",
   "feedStateSelected": "您已被选中——请确认",
-  "feedStateOthers": "已有 {count} 人响应"
+  "feedStateOthers": "已有 {count} 人响应",
+  "homeMyResponsesSummary": "您的响应：{total}",
+  "homeMyResponsesPending": "等待回复 {count}",
+  "homeMyResponsesInvited": "邀请 {count}",
+  "homeMyResponsesSelected": "已选中 {count}"
 }

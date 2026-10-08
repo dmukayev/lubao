@@ -1126,5 +1126,9 @@
   "feedStateResponded": "Сіз жауап бердіңіз",
   "feedStateInvited": "Сізді шақырады",
   "feedStateSelected": "Сіз таңдалдыңыз — растаңыз",
-  "feedStateOthers": "Жауап бергендер: {count}"
+  "feedStateOthers": "Жауап бергендер: {count}",
+  "homeMyResponsesSummary": "Сіздің жауаптарыңыз: {total}",
+  "homeMyResponsesPending": "жауап күтуде {count}",
+  "homeMyResponsesInvited": "шақыру {count}",
+  "homeMyResponsesSelected": "таңдалды {count}"
 }

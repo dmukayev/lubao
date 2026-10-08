@@ -94,6 +94,14 @@ void main() {
           await waitAndReveal(tester, feedCard);
           await waitFor(tester, find.descendant(of: feedCard, matching: find.text(t.feedStateResponded)));
           expect(find.descendant(of: feedCard, matching: find.text(t.cargoStatusPublished)), findsNothing);
+          // 045 п.3: над лентой — «Ваши отклики: 1 · ждут ответа 1», тап → «Мои отклики».
+          final summary = find.byKey(const Key('homeMyResponses'));
+          await waitAndReveal(tester, summary);
+          expect(find.descendant(of: summary, matching: find.textContaining(t.homeMyResponsesPending(1))), findsOneWidget);
+          await tester.tap(summary);
+          await waitFor(tester, find.text(t.myResponsesTitle));
+          await tester.tap(find.byType(BackButton).first);
+          await tester.pumpAndSettle();
         });
         // 043 п.11: телефон логиста новичку — только после отклика «Готов взять».
         await run.step(tester, '$tag-телефон-после-отклика', () async {

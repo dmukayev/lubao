@@ -3178,4 +3178,24 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String feedStateOthers(int count) {
     return 'Жауап бергендер: $count';
   }
+
+  @override
+  String homeMyResponsesSummary(int total) {
+    return 'Сіздің жауаптарыңыз: $total';
+  }
+
+  @override
+  String homeMyResponsesPending(int count) {
+    return 'жауап күтуде $count';
+  }
+
+  @override
+  String homeMyResponsesInvited(int count) {
+    return 'шақыру $count';
+  }
+
+  @override
+  String homeMyResponsesSelected(int count) {
+    return 'таңдалды $count';
+  }
 }

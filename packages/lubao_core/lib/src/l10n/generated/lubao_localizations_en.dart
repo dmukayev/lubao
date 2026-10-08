@@ -3179,4 +3179,24 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String feedStateOthers(int count) {
     return 'Responded: $count';
   }
+
+  @override
+  String homeMyResponsesSummary(int total) {
+    return 'Your responses: $total';
+  }
+
+  @override
+  String homeMyResponsesPending(int count) {
+    return 'awaiting reply $count';
+  }
+
+  @override
+  String homeMyResponsesInvited(int count) {
+    return 'invitations $count';
+  }
+
+  @override
+  String homeMyResponsesSelected(int count) {
+    return 'selected $count';
+  }
 }

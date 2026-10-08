@@ -1251,5 +1251,9 @@
   "feedStateResponded": "You responded",
   "feedStateInvited": "You are invited",
   "feedStateSelected": "You were selected — confirm",
-  "feedStateOthers": "Responded: {count}"
+  "feedStateOthers": "Responded: {count}",
+  "homeMyResponsesSummary": "Your responses: {total}",
+  "homeMyResponsesPending": "awaiting reply {count}",
+  "homeMyResponsesInvited": "invitations {count}",
+  "homeMyResponsesSelected": "selected {count}"
 }

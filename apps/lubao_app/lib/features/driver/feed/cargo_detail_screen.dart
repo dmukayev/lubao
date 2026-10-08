@@ -13,6 +13,7 @@ import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../services/push_service.dart';
+import '../deals/my_responses_screen.dart';
 
 class CargoDetailScreen extends ConsumerStatefulWidget {
   const CargoDetailScreen({super.key, required this.cargoId});
@@ -36,6 +37,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
       ref.invalidate(myCargoResponseProvider(widget.cargoId));
       // 045 п.2: плашка «Вы откликнулись» в ленте — по свежим данным.
       ref.invalidate(cargoFeedProvider);
+      ref.invalidate(myResponsesProvider);
     } on DioException catch (e) {
       ref.invalidate(myCargoResponseProvider(widget.cargoId));
       if (e.response?.statusCode != 409 && mounted) {
@@ -62,6 +64,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
     } finally {
       ref.invalidate(myCargoResponseProvider(widget.cargoId));
       ref.invalidate(cargoFeedProvider);
+      ref.invalidate(myResponsesProvider);
       if (mounted) setState(() => _responding = false);
     }
   }

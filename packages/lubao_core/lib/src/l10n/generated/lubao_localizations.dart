@@ -6011,6 +6011,30 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Откликнулись: {count}'**
   String feedStateOthers(int count);
+
+  /// No description provided for @homeMyResponsesSummary.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ваши отклики: {total}'**
+  String homeMyResponsesSummary(int total);
+
+  /// No description provided for @homeMyResponsesPending.
+  ///
+  /// In ru, this message translates to:
+  /// **'ждут ответа {count}'**
+  String homeMyResponsesPending(int count);
+
+  /// No description provided for @homeMyResponsesInvited.
+  ///
+  /// In ru, this message translates to:
+  /// **'приглашение {count}'**
+  String homeMyResponsesInvited(int count);
+
+  /// No description provided for @homeMyResponsesSelected.
+  ///
+  /// In ru, this message translates to:
+  /// **'выбраны {count}'**
+  String homeMyResponsesSelected(int count);
 }
 
 class _LubaoLocalizationsDelegate

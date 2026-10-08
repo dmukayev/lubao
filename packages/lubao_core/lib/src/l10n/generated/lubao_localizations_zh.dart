@@ -3103,4 +3103,24 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String feedStateOthers(int count) {
     return '已有 $count 人响应';
   }
+
+  @override
+  String homeMyResponsesSummary(int total) {
+    return '您的响应：$total';
+  }
+
+  @override
+  String homeMyResponsesPending(int count) {
+    return '等待回复 $count';
+  }
+
+  @override
+  String homeMyResponsesInvited(int count) {
+    return '邀请 $count';
+  }
+
+  @override
+  String homeMyResponsesSelected(int count) {
+    return '已选中 $count';
+  }
 }

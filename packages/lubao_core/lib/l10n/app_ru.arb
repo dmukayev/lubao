@@ -1268,5 +1268,13 @@
   "feedStateInvited": "Вас приглашают",
   "feedStateSelected": "Вы выбраны — подтвердите",
   "feedStateOthers": "Откликнулись: {count}",
-  "@feedStateOthers": {"placeholders": {"count": {"type": "int"}}}
+  "@feedStateOthers": {"placeholders": {"count": {"type": "int"}}},
+  "homeMyResponsesSummary": "Ваши отклики: {total}",
+  "@homeMyResponsesSummary": {"placeholders": {"total": {"type": "int"}}},
+  "homeMyResponsesPending": "ждут ответа {count}",
+  "@homeMyResponsesPending": {"placeholders": {"count": {"type": "int"}}},
+  "homeMyResponsesInvited": "приглашение {count}",
+  "@homeMyResponsesInvited": {"placeholders": {"count": {"type": "int"}}},
+  "homeMyResponsesSelected": "выбраны {count}",
+  "@homeMyResponsesSelected": {"placeholders": {"count": {"type": "int"}}}
 }
