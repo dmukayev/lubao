@@ -12,6 +12,7 @@ import 'announce_arrival_sheet.dart';
 import '../../shared/error_feedback.dart';
 import '../../shared/tracking_consent_sheet.dart';
 import '../deals/my_responses_screen.dart';
+import 'driver_status.dart';
 
 class CargoFeedScreen extends ConsumerStatefulWidget {
   const CargoFeedScreen({super.key});
@@ -27,6 +28,21 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
   final List<Cargo> _more = [];
   int _total = 0;
   bool _loadingMore = false;
+
+  /// 045 п.11: первый вход после регистрации — шторка «Где вы сейчас?» сама,
+  /// один раз (без отдельного шага «Ищете груз?» и без автоматического анонса).
+  bool _askedWhereNow = false;
+
+  void _maybeAskWhereNow(ReferenceData refData) {
+    if (_askedWhereNow) return;
+    // Без роутера (виджет-тесты экрана) спрашивать нечего.
+    if (GoRouter.maybeOf(context) == null) return;
+    if (GoRouterState.of(context).uri.queryParameters['where'] != '1') return;
+    _askedWhereNow = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) showWhereNowSheet(context, ref, refData: refData);
+    });
+  }
 
   Future<void> _loadMore(CargoFeedPage first) async {
     setState(() => _loadingMore = true);
@@ -71,6 +87,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
               );
             },
             data: (first) {
+              _maybeAskWhereNow(refData);
               if (!identical(first, _firstPage)) {
                 _firstPage = first;
                 _more.clear();
@@ -93,10 +110,19 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                       child: _GreetingRow(fullName: driver?.fullName),
                     ),
                     const SizedBox(height: AppSpacing.lg),
+                    // 045 п.11: статус водителя — главный вход; карточка анонса —
+                    // подробности, только когда статус есть.
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-                      child: _AnonsCard(refData: refData),
+                      child: DriverStatusBar(refData: refData),
                     ),
+                    if (ref.watch(myArrivalsProvider).valueOrNull?.current != null) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                        child: _AnonsCard(refData: refData),
+                      ),
+                    ],
                     // 045 п.3: первая секция над лентой — где мои отклики.
                     const _MyResponsesSummary(),
                     const SizedBox(height: AppSpacing.xl),

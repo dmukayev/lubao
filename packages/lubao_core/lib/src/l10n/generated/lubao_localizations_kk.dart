@@ -3225,4 +3225,42 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get licenseNameAccept => 'Иә, бұл мен';
+
+  @override
+  String statusLookingFrom(String city) {
+    return '$city қаласынан жүк іздеймін';
+  }
+
+  @override
+  String statusOnTheWay(String city, String day) {
+    return 'Жолдамын, $city қаласында $day боламын';
+  }
+
+  @override
+  String get statusInTrip => 'Рейсте';
+
+  @override
+  String get statusNotLooking => 'Іздемеймін';
+
+  @override
+  String get whereNowTitle => 'Қазір қайдасыз?';
+
+  @override
+  String get whereNowGoing => 'Жолдамын, … боламын';
+
+  @override
+  String get whereNowNotLooking => 'Әзірге іздемеймін';
+
+  @override
+  String get whereNowOtherCity => 'Мен басқа қаладамын';
+
+  @override
+  String whereNowGpsHint(String city) {
+    return 'Сіз қазір $city қаласындасыз ба?';
+  }
+
+  @override
+  String deliveredAskTitle(String city) {
+    return 'Сіз $city қаласындасыз. Осы жерден жүк іздейсіз бе?';
+  }
 }

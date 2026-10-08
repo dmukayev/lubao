@@ -182,7 +182,8 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
       ref.read(sessionProvider.notifier).updateDriver(updated);
       if (mounted) {
         if (widget.isRegistration) {
-          context.go('/driver/feed');
+          // 045 п.9/11: сразу на главную, там — «Где вы сейчас?».
+          context.go('/driver/feed?where=1');
         } else {
           Navigator.of(context).pop();
         }

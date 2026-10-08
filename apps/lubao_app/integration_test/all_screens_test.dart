@@ -51,14 +51,14 @@ void main() {
     await visit('role-select-2', '/role-select', expectFinder: find.byKey(const Key('roleSelectDriverButton')));
     await run.step(tester, 'вход-водителя', () async {
       await loginDriver(tester, '7010000002');
-      await waitFor(tester, find.byKey(const Key('driverAnnounceArrivalButton')));
+      await waitFor(tester, find.byKey(const Key('driverStatusBar')));
     });
     Future<(List<String>, List<String>)> myIds() async => (
           (await container.read(dealRepositoryProvider).mine()).map((d) => d.id).toList(),
           (await container.read(chatRepositoryProvider).myChats()).map((c) => c.thread.id).toList(),
         );
     var (dealIds, chatIds) = await myIds();
-    await visit('driver-feed', '/driver/feed', expectFinder: find.byKey(const Key('driverAnnounceArrivalButton')));
+    await visit('driver-feed', '/driver/feed', expectFinder: find.byKey(const Key('driverStatusBar')));
     await visit('driver-chats', '/driver/chats');
     await visit('driver-deals', '/driver/deals');
     await visit('driver-profile', '/driver/profile');

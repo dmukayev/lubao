@@ -30,7 +30,7 @@ void main() {
     final t = tester.element(find.byType(Scaffold).first).l10n;
     await run.step(tester, 'вход', () async {
       await loginDriver(tester, '7010000002');
-      await waitFor(tester, find.byKey(const Key('driverAnnounceArrivalButton')));
+      await waitFor(tester, find.byKey(const Key('driverStatusBar')));
     });
 
     await run.step(tester, 'отклики-на-три-груза', () async {
@@ -145,6 +145,27 @@ void main() {
       expect(find.text(t.dealVehicleFullOpenCurrent), findsOneWidget);
       expectInsideSafeZone(tester);
       expectNoOverflow(tester);
+    });
+
+    // 045 п.11: после «Доставлено» — «Вы в Алматы. Ищете груз отсюда?» одним касанием.
+    await run.step(tester, 'доставлено-ищете-груз-отсюда', () async {
+      await tester.tapAt(const Offset(20, 80)); // закрыть шторку «Машина заполнена»
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+      await openDeal(deal1);
+      final next = find.byKey(const Key('dealNextStatusButton'));
+      await waitAndReveal(tester, next);
+      expect(find.descendant(of: next, matching: find.text(t.dealMarkDelivered)), findsOneWidget);
+      await tester.tap(next);
+      await waitFor(tester, find.text(t.deliveredAskTitle('Алматы')));
+      expectInsideSafeZone(tester);
+      await tester.tap(find.byKey(const Key('deliveredLookHere')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+      await goTab(tester, t.navFeed);
+      await waitFor(tester, find.byKey(const Key('driverStatus-lookingHere')));
     });
   });
 }

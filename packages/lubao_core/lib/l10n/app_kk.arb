@@ -1137,5 +1137,15 @@
   "directionRegionsTitle": "{country} ішінде қайда",
   "driverSetupPermitsOptional": "Рұқсаттар — бар болса",
   "licenseNameBanner": "Куәлікте: {name}. Профильге қою керек пе?",
-  "licenseNameAccept": "Иә, бұл мен"
+  "licenseNameAccept": "Иә, бұл мен",
+  "statusLookingFrom": "{city} қаласынан жүк іздеймін",
+  "statusOnTheWay": "Жолдамын, {city} қаласында {day} боламын",
+  "statusInTrip": "Рейсте",
+  "statusNotLooking": "Іздемеймін",
+  "whereNowTitle": "Қазір қайдасыз?",
+  "whereNowGoing": "Жолдамын, … боламын",
+  "whereNowNotLooking": "Әзірге іздемеймін",
+  "whereNowOtherCity": "Мен басқа қаладамын",
+  "whereNowGpsHint": "Сіз қазір {city} қаласындасыз ба?",
+  "deliveredAskTitle": "Сіз {city} қаласындасыз. Осы жерден жүк іздейсіз бе?"
 }

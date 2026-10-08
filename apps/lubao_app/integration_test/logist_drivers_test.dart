@@ -216,7 +216,7 @@ void main() {
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
       await goTab(tester, t.navFeed);
-      await waitFor(tester, find.byKey(const Key('driverAnnounceArrivalButton')));
+      await waitFor(tester, find.byKey(const Key('driverStatusBar')));
       expect(find.byKey(const Key('driverCheckInButton')), findsNothing);
       expectNoOverflow(tester);
     });

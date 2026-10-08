@@ -6077,6 +6077,66 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Да, это я'**
   String get licenseNameAccept;
+
+  /// No description provided for @statusLookingFrom.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ищу груз из {city}'**
+  String statusLookingFrom(String city);
+
+  /// No description provided for @statusOnTheWay.
+  ///
+  /// In ru, this message translates to:
+  /// **'Еду, буду в {city} {day}'**
+  String statusOnTheWay(String city, String day);
+
+  /// No description provided for @statusInTrip.
+  ///
+  /// In ru, this message translates to:
+  /// **'В рейсе'**
+  String get statusInTrip;
+
+  /// No description provided for @statusNotLooking.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не ищу'**
+  String get statusNotLooking;
+
+  /// No description provided for @whereNowTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Где вы сейчас?'**
+  String get whereNowTitle;
+
+  /// No description provided for @whereNowGoing.
+  ///
+  /// In ru, this message translates to:
+  /// **'Еду, буду в …'**
+  String get whereNowGoing;
+
+  /// No description provided for @whereNowNotLooking.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пока не ищу'**
+  String get whereNowNotLooking;
+
+  /// No description provided for @whereNowOtherCity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Я в другом городе'**
+  String get whereNowOtherCity;
+
+  /// No description provided for @whereNowGpsHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы теперь в {city}?'**
+  String whereNowGpsHint(String city);
+
+  /// No description provided for @deliveredAskTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы в {city}. Ищете груз отсюда?'**
+  String deliveredAskTitle(String city);
 }
 
 class _LubaoLocalizationsDelegate

@@ -3212,4 +3212,42 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get licenseNameAccept => 'Да, это я';
+
+  @override
+  String statusLookingFrom(String city) {
+    return 'Ищу груз из $city';
+  }
+
+  @override
+  String statusOnTheWay(String city, String day) {
+    return 'Еду, буду в $city $day';
+  }
+
+  @override
+  String get statusInTrip => 'В рейсе';
+
+  @override
+  String get statusNotLooking => 'Не ищу';
+
+  @override
+  String get whereNowTitle => 'Где вы сейчас?';
+
+  @override
+  String get whereNowGoing => 'Еду, буду в …';
+
+  @override
+  String get whereNowNotLooking => 'Пока не ищу';
+
+  @override
+  String get whereNowOtherCity => 'Я в другом городе';
+
+  @override
+  String whereNowGpsHint(String city) {
+    return 'Вы теперь в $city?';
+  }
+
+  @override
+  String deliveredAskTitle(String city) {
+    return 'Вы в $city. Ищете груз отсюда?';
+  }
 }

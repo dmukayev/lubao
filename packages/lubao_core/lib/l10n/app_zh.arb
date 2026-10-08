@@ -1137,5 +1137,15 @@
   "directionRegionsTitle": "{country} 境内的目的地",
   "driverSetupPermitsOptional": "许可证（如有）",
   "licenseNameBanner": "驾驶证上的姓名：{name}。是否填入资料？",
-  "licenseNameAccept": "是的，是我"
+  "licenseNameAccept": "是的，是我",
+  "statusLookingFrom": "在{city}找货",
+  "statusOnTheWay": "在路上，{day}到{city}",
+  "statusInTrip": "运输中",
+  "statusNotLooking": "暂不找货",
+  "whereNowTitle": "您现在在哪里？",
+  "whereNowGoing": "在路上，将到达…",
+  "whereNowNotLooking": "暂时不找",
+  "whereNowOtherCity": "我在其他城市",
+  "whereNowGpsHint": "您现在在{city}吗？",
+  "deliveredAskTitle": "您在{city}。要从这里找货吗？"
 }

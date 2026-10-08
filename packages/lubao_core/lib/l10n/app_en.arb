@@ -1262,5 +1262,15 @@
   "directionRegionsTitle": "Where in {country}",
   "driverSetupPermitsOptional": "Permits — if you have them",
   "licenseNameBanner": "On your licence: {name}. Use it in your profile?",
-  "licenseNameAccept": "Yes, that’s me"
+  "licenseNameAccept": "Yes, that’s me",
+  "statusLookingFrom": "Looking for cargo from {city}",
+  "statusOnTheWay": "On my way, in {city} {day}",
+  "statusInTrip": "On a haul",
+  "statusNotLooking": "Not looking",
+  "whereNowTitle": "Where are you now?",
+  "whereNowGoing": "On my way, will be in …",
+  "whereNowNotLooking": "Not looking for now",
+  "whereNowOtherCity": "I’m in another city",
+  "whereNowGpsHint": "Are you in {city} now?",
+  "deliveredAskTitle": "You’re in {city}. Looking for cargo from here?"
 }

@@ -12,6 +12,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'error_feedback.dart';
 import 'tracking_consent_sheet.dart';
 import 'map_links.dart';
+import '../driver/feed/driver_status.dart';
 
 class DealDetailScreen extends ConsumerStatefulWidget {
   const DealDetailScreen({super.key, required this.dealId});
@@ -57,6 +58,8 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
     // (041, п.11). Закрыли шторку — сделка всё равно двигается, координаты не уйдут.
     if (next == DealStatus.loaded) await ensureTripTrackingConsent(context, ref);
     if (!mounted) return;
+    // Город назначения — до перезагрузки сделки (для «Ищете груз отсюда?»).
+    final dealBefore = ref.read(dealByIdProvider(widget.dealId)).valueOrNull;
     setState(() => _busy = true);
     try {
       await ref.read(dealRepositoryProvider).advanceStatus(widget.dealId, next);
@@ -65,6 +68,13 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
       // Подтверждение сделки гасит анонс водителя на сервере (040, п.4).
       ref.invalidate(myArrivalsProvider);
       ref.invalidate(cargoFeedProvider);
+      // 045 п.11: после «Доставлено» — «Вы в <город>. Ищете груз отсюда?».
+      if (next == DealStatus.delivered && mounted) {
+        final refData = ref.read(referenceDataProvider).valueOrNull;
+        if (refData != null) {
+          await askLookingFromDestination(context, ref, refData: refData, destinationCityId: dealBefore?.cargo?.destinationCityId);
+        }
+      }
     } on DioException catch (e) {
       final full = asVehicleFullError(e);
       if (isDriverNotVerifiedError(e)) {

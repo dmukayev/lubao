@@ -3150,4 +3150,42 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get licenseNameAccept => '是的，是我';
+
+  @override
+  String statusLookingFrom(String city) {
+    return '在$city找货';
+  }
+
+  @override
+  String statusOnTheWay(String city, String day) {
+    return '在路上，$day到$city';
+  }
+
+  @override
+  String get statusInTrip => '运输中';
+
+  @override
+  String get statusNotLooking => '暂不找货';
+
+  @override
+  String get whereNowTitle => '您现在在哪里？';
+
+  @override
+  String get whereNowGoing => '在路上，将到达…';
+
+  @override
+  String get whereNowNotLooking => '暂时不找';
+
+  @override
+  String get whereNowOtherCity => '我在其他城市';
+
+  @override
+  String whereNowGpsHint(String city) {
+    return '您现在在$city吗？';
+  }
+
+  @override
+  String deliveredAskTitle(String city) {
+    return '您在$city。要从这里找货吗？';
+  }
 }

@@ -4,6 +4,7 @@
 //  B — с тем же ИИН, что у заблокированного администратором водителя
 //      (сценарий 12: в проверке ⛔, «Подтвердить» неактивна).
 // ИИН распознаётся OCR — это проверяется здесь же.
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -77,6 +78,28 @@ void main() {
         await reveal(tester, find.byKey(const Key('driverSetupNext')));
         await tester.tap(find.byKey(const Key('driverSetupNext')));
         await waitFor(tester, find.byType(NavigationBar));
+      });
+      // 045 п.9, 11: сразу главная и одна шторка «Где вы сейчас?» — без
+      // отдельного шага и без автоматического анонса.
+      await run.step(tester, '$tag-где-вы-сейчас', () async {
+        await waitFor(tester, find.byKey(const Key('whereNowSheet')));
+        expectInsideSafeZone(tester);
+        expectNoOverflow(tester);
+        if (tag == 'A') {
+          final looking = find.byKey(const Key('whereNowLooking'));
+          expect(find.descendant(of: looking, matching: find.text(t.statusLookingFrom('Алматы'))), findsOneWidget);
+          await reveal(tester, looking);
+          await tester.tap(looking);
+          await waitFor(tester, find.byKey(const Key('driverStatus-lookingHere')));
+          // Логист видит его в «Кто свободен».
+          final logist = Dio(BaseOptions(baseUrl: e2eApiBase, validateStatus: (_) => true));
+          final login = await logist.post('/auth/company/login', data: {'email': 'e2e-owner@lubao-test.kz', 'password': e2ePassword, 'deviceName': 'e2e', 'platform': 'ios'});
+          final rows = (await logist.get('/arrivals', options: Options(headers: {'authorization': 'Bearer ${login.data['accessToken']}'}))).data as List<dynamic>;
+          expect(rows.any((r) => r['driverName'] == fullName), isTrue, reason: '«Ищу груз из Алматы» — виден логисту');
+        } else {
+          await tester.tap(find.byKey(const Key('whereNowNotLooking')));
+          await waitFor(tester, find.byKey(const Key('driverStatus-notLooking')));
+        }
       });
       if (tag == 'A') {
         // 045 п.5: регистрация не создаёт машин-заглушек — гараж пуст, одна

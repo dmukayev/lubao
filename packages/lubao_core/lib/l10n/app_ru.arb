@@ -1286,5 +1286,19 @@
   "driverSetupPermitsOptional": "Допуски — если есть",
   "licenseNameBanner": "В правах: {name}. Подставить в профиль?",
   "@licenseNameBanner": {"placeholders": {"name": {"type": "String"}}},
-  "licenseNameAccept": "Да, это я"
+  "licenseNameAccept": "Да, это я",
+  "statusLookingFrom": "Ищу груз из {city}",
+  "@statusLookingFrom": {"placeholders": {"city": {"type": "String"}}},
+  "statusOnTheWay": "Еду, буду в {city} {day}",
+  "@statusOnTheWay": {"placeholders": {"city": {"type": "String"}, "day": {"type": "String"}}},
+  "statusInTrip": "В рейсе",
+  "statusNotLooking": "Не ищу",
+  "whereNowTitle": "Где вы сейчас?",
+  "whereNowGoing": "Еду, буду в …",
+  "whereNowNotLooking": "Пока не ищу",
+  "whereNowOtherCity": "Я в другом городе",
+  "whereNowGpsHint": "Вы теперь в {city}?",
+  "@whereNowGpsHint": {"placeholders": {"city": {"type": "String"}}},
+  "deliveredAskTitle": "Вы в {city}. Ищете груз отсюда?",
+  "@deliveredAskTitle": {"placeholders": {"city": {"type": "String"}}}
 }

@@ -3226,4 +3226,42 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get licenseNameAccept => 'Yes, that’s me';
+
+  @override
+  String statusLookingFrom(String city) {
+    return 'Looking for cargo from $city';
+  }
+
+  @override
+  String statusOnTheWay(String city, String day) {
+    return 'On my way, in $city $day';
+  }
+
+  @override
+  String get statusInTrip => 'On a haul';
+
+  @override
+  String get statusNotLooking => 'Not looking';
+
+  @override
+  String get whereNowTitle => 'Where are you now?';
+
+  @override
+  String get whereNowGoing => 'On my way, will be in …';
+
+  @override
+  String get whereNowNotLooking => 'Not looking for now';
+
+  @override
+  String get whereNowOtherCity => 'I’m in another city';
+
+  @override
+  String whereNowGpsHint(String city) {
+    return 'Are you in $city now?';
+  }
+
+  @override
+  String deliveredAskTitle(String city) {
+    return 'You’re in $city. Looking for cargo from here?';
+  }
 }

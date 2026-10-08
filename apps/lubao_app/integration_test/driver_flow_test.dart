@@ -74,14 +74,18 @@ void main() {
         await tester.enterText(find.byKey(Key('driverLoginCodeDigit$i')), e2eDevCode[i]);
         await tester.pump(const Duration(milliseconds: 300));
       }
-      await waitFor(tester, find.byKey(const Key('driverAnnounceArrivalButton')));
+      await waitFor(tester, find.byKey(const Key('driverStatusBar')));
       expectInsideSafeZone(tester);
     });
 
     // 040: «свободен в <город>» — город по умолчанию домашний (Алматы), несколько
     // анонсов в одном приложении, порядок ленты задаёт город анонса.
     await run.step(tester, 'анонс-свободен-в-алматы', () async {
-      await tester.tap(find.byKey(const Key('driverAnnounceArrivalButton')));
+      // 045 п.11: статус «Не ищу» → шторка «Где вы сейчас?» → «Еду, буду в …».
+      expect(find.byKey(const Key('driverStatus-notLooking')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('driverStatusBar')));
+      await waitFor(tester, find.byKey(const Key('whereNowSheet')));
+      await tester.tap(find.byKey(const Key('whereNowGoing')));
       await tester.pumpAndSettle();
       expectInsideSafeZone(tester);
       // Город по умолчанию — домашний город водителя (Алматы).
