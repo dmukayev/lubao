@@ -9,6 +9,7 @@ import { ChatSystemCode, ChatSystemMessagesService } from '../chats/chat-system-
 import {
   CANCEL_REQUEST_TIMEOUT_HOURS,
   CancelReasonCode,
+  cancelStatsFor,
   DRIVER_ONLY_REASONS,
   faultFor,
   needsCounterpartyConsent,
@@ -68,6 +69,11 @@ export class DealsService {
   } as const;
 
   async toDto(deal: DealWithRelations) {
+    // 046 п.3: обе стороны видят отмены друг друга (карточка сделки, чат).
+    const [driverStats, companyStats] = await Promise.all([
+      cancelStatsFor(this.prisma, 'DRIVER', [deal.driverId]),
+      cancelStatsFor(this.prisma, 'COMPANY', [deal.companyId]),
+    ]);
     return {
       id: deal.id,
       responseId: deal.responseId,
@@ -99,6 +105,8 @@ export class DealsService {
       inTransitAt: deal.inTransitAt,
       deliveredAt: deal.deliveredAt,
       createdAt: deal.createdAt,
+      driverCancelStats: driverStats.get(deal.driverId) ?? null,
+      companyCancelStats: companyStats.get(deal.companyId) ?? null,
       cargo: await this.cargos.toDto(deal.cargo),
       driverLocation:
         deal.driver.currentLat && deal.driver.currentLng

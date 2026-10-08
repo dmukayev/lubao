@@ -37,7 +37,7 @@ describe('CargosService — logist contact resolution (задача 017, decisio
   it('uses the publishing logist\'s own contacts (CompanyMember.fullName/contactPhone/wechatId) when set, задача 012', async () => {
     const prisma: any = {
       cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedBy: { id: 'logist1', name: 'Li Wei (User.name)', phone: '+86000' } })) },
-      deal: { count: jest.fn().mockResolvedValue(0) },
+      deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ fullName: 'Ли Вэй', contactPhone: '+86123', wechatId: 'liwei88' }) },
     };
     const service = new CargosService(prisma, {} as any, {} as any);
@@ -56,7 +56,7 @@ describe('CargosService — logist contact resolution (задача 017, decisio
   it('falls back to User.name/phone when the publishing logist has not filled in «Мой профиль» yet', async () => {
     const prisma: any = {
       cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedBy: { id: 'logist1', name: 'Ли Вэй', phone: '+86123' } })) },
-      deal: { count: jest.fn().mockResolvedValue(0) },
+      deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ fullName: null, contactPhone: null, wechatId: null }) },
     };
     const service = new CargosService(prisma, {} as any, {} as any);
@@ -71,7 +71,7 @@ describe('CargosService — logist contact resolution (задача 017, decisio
   it('falls back to the oldest OWNER when the cargo predates publishedByUserId', async () => {
     const prisma: any = {
       cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ publishedBy: null })) },
-      deal: { count: jest.fn().mockResolvedValue(0) },
+      deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: {
         findFirst: jest.fn().mockResolvedValue({ fullName: 'Owner Contact', contactPhone: '+77001112233', wechatId: null, user: { id: 'owner1', name: 'Owner', phone: '+77001112233' } }),
       },
@@ -90,7 +90,7 @@ describe('CargosService — logist contact resolution (задача 017, decisio
   it('flags isWhatsappBlocked for a China-based company', async () => {
     const prisma: any = {
       cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ company: { name: 'Acme CN', isVerified: true, ratingAvg: 5, ratingCount: 1, country: { code: 'CN' } } })) },
-      deal: { count: jest.fn().mockResolvedValue(0) },
+      deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
     };
     const service = new CargosService(prisma, {} as any, {} as any);
@@ -178,7 +178,7 @@ describe('CargosService.feed — hides blocked companies\' cargo (задача 0
   it('filters by company.isBlocked: false, without touching cargo status', async () => {
     const prisma: any = {
       cargo: { findMany: jest.fn().mockResolvedValue([]) },
-      deal: { count: jest.fn() },
+      deal: { count: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     };
     const service = new CargosService(prisma, {} as any, {} as any);
 
@@ -222,7 +222,7 @@ describe('CargosService — отсев грузов по размеру маши
   it('feed() без driverId (аноним/не водитель) не фильтрует вовсе', async () => {
     const prisma: any = {
       cargo: { findMany: jest.fn().mockResolvedValue([]) },
-      deal: { count: jest.fn() },
+      deal: { count: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     };
     const service = new CargosService(prisma, {} as any, {} as any);
     await service.feed();
@@ -236,7 +236,7 @@ describe('CargosService — отсев грузов по размеру маши
     const smallCargo = baseCargo({ id: 'small', volumeM3: 80 });
     const prisma: any = {
       cargo: { findMany: jest.fn().mockResolvedValue([bigCargo, smallCargo]) },
-      deal: { count: jest.fn().mockResolvedValue(0) },
+      deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       driver: { findUnique: jest.fn().mockResolvedValue(null) },
       response: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
@@ -271,7 +271,7 @@ describe('CargosService.create — непроверенная компания �
     const prisma: any = {
       point: { findUnique: jest.fn().mockResolvedValue({ id: 'p1', isActive: true }) },
       cargo: { create: jest.fn().mockResolvedValue(baseCargo()) },
-      deal: { count: jest.fn().mockResolvedValue(0) },
+      deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       bodyType: { findUnique: jest.fn().mockResolvedValue({ fields: [] }), findMany: jest.fn().mockResolvedValue([]) },
     };
@@ -366,7 +366,7 @@ describe('CargosService — лента на сервере: город → об�
   function setupFeed(opts: { arrivals?: unknown[]; home?: unknown; directions?: string[]; cargos: unknown[] }) {
     const prisma: any = {
       cargo: { findMany: jest.fn().mockResolvedValue(opts.cargos) },
-      deal: { count: jest.fn().mockResolvedValue(0) },
+      deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       arrival: { findMany: jest.fn().mockResolvedValue(opts.arrivals ?? []), findFirst: jest.fn().mockResolvedValue(null) },
       response: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
@@ -553,7 +553,7 @@ describe('CargosService.feed — моё состояние и конкурент
   it('мой отклик и сколько других откликнулись — по грузам страницы', async () => {
     const prisma: any = {
       cargo: { findMany: jest.fn().mockResolvedValue([baseCargo({ id: 'c1' }), baseCargo({ id: 'c2' })]) },
-      deal: { count: jest.fn().mockResolvedValue(0) },
+      deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       driver: { findUnique: jest.fn().mockResolvedValue(null) },
       arrival: { findFirst: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
@@ -579,7 +579,7 @@ describe('CargosService.feed — области направлений', () => {
       baseCargo({ id, destinationCountryId: 'kz', destinationCity: { regionId }, readyDate: new Date(day), point: { cityId: 'p', lat: null, lng: null, city: { id: 'p', regionId: 'x', lat: null, lng: null } } });
     const prisma: any = {
       cargo: { findMany: jest.fn().mockResolvedValue([mk('other-region', 'r-astana', '2030-01-01'), mk('my-region', 'r-almaty', '2030-01-05')]) },
-      deal: { count: jest.fn().mockResolvedValue(0) },
+      deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       arrival: { findFirst: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
       vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
@@ -629,7 +629,7 @@ describe('CargosService.create — профиль кузова', () => {
     const prisma: any = {
       point: { findUnique: jest.fn().mockResolvedValue({ id: 'p1', isActive: true }) },
       cargo: { create: jest.fn().mockResolvedValue(baseCargo()) },
-      deal: { count: jest.fn().mockResolvedValue(0) },
+      deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       bodyType: { findUnique: jest.fn().mockResolvedValue({ fields: TANK_FIELDS }), findMany: jest.fn().mockResolvedValue([{ id: 'bt-other' }]) },
     };

@@ -1041,6 +1041,7 @@ describe('AdminService.verificationDriverProfile / verificationCompanyProfile (Ð
   it('returns vehicles and ALL documents (including already-approved) with proxy fileUrl, not presigned', async () => {
     const uploads = fakeUploads();
     const prisma: any = {
+      deal: { findMany: jest.fn().mockResolvedValue([]) },
       driver: {
         findUnique: jest.fn().mockResolvedValue({
           id: 'd1',

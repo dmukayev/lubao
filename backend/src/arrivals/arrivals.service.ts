@@ -1,3 +1,4 @@
+import { cancelStatsFor } from '../deals/cancel-policy';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Arrival } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -526,6 +527,8 @@ export class ArrivalsService {
         ])
       : [[], []];
     const dealsTotalMap = new Map(totalsByDriver.map((g) => [g.driverId, g._count as unknown as number]));
+    // 046 п.3: «отменил 1 из 15 · после загрузки 1».
+    const cancelStats = await cancelStatsFor(this.prisma, 'DRIVER', driverIds);
     const dealsCancelledMap = new Map(cancelledByDriver.map((g) => [g.driverId, g._count as unknown as number]));
 
     return filtered.map((r) => ({
@@ -558,6 +561,7 @@ export class ArrivalsService {
       // Задача 038, п.15 — «отменил 1 из 15 сделок» прямо в карточке.
       dealsTotal: dealsTotalMap.get(r.arrival.driver.id) ?? 0,
       dealsCancelledByDriver: dealsCancelledMap.get(r.arrival.driver.id) ?? 0,
+      cancelStats: cancelStats.get(r.arrival.driver.id) ?? null,
       anyCountry: r.arrival.anyCountry,
       directionCountryIds: r.arrival.directions.map((d) => d.countryId),
     }));

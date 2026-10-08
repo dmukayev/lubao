@@ -7,6 +7,7 @@ import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IdentifiersService } from '../identifiers/identifiers.service';
 import { toDateOnly } from '../common/date-only';
+import { cancelStatsFor } from '../deals/cancel-policy';
 
 type ResponseWithDriver = CargoResponseEntity & { driver: Driver };
 
@@ -104,6 +105,8 @@ export class ResponsesService {
       select: { id: true, responseId: true, status: true },
     });
     const dealByResponse = new Map(deals.map((d) => [d.responseId, d]));
+    // 046 п.3: отмены водителя — в карточке отклика.
+    const cancelStats = await cancelStatsFor(this.prisma, 'DRIVER', [...combos.keys()]);
 
     return responses.map((r) => {
       const combo = combos.get(r.driverId);
@@ -127,6 +130,7 @@ export class ResponsesService {
         committedReadyDate: info?.committedReadyDate ?? null,
         dealId: dealByResponse.get(r.id)?.id ?? null,
         dealStatus: dealByResponse.get(r.id)?.status ?? null,
+        cancelStats: cancelStats.get(r.driverId) ?? null,
       };
     });
   }

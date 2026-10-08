@@ -1,5 +1,5 @@
 import { notifyDealStatus } from '../deals/deal-status-notify';
-import { stageForStatus } from '../deals/cancel-policy';
+import { cancelStatsFor, isAtFault, stageForStatus } from '../deals/cancel-policy';
 import { CARGO_ARCHIVE_AFTER_MS } from '../cargos/cargo-lifecycle';
 import { isValidChannelSetting } from '../sms/login-code-channels';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
@@ -363,6 +363,30 @@ export class AdminService {
       blacklistMatches,
       suspiciousContacts: await this.suspiciousContacts(),
       disputedDeals: await this.disputedDeals(),
+    };
+  }
+
+  /// 046 п.3: те же цифры, что видит вторая сторона, + последние отмены с причинами.
+  private async cancellations(side: 'DRIVER' | 'COMPANY', id: string) {
+    const stats = await cancelStatsFor(this.prisma, side, [id]);
+    const rows = await this.prisma.deal.findMany({
+        where: { [side === 'DRIVER' ? 'driverId' : 'companyId']: id, status: 'CANCELLED' },
+        orderBy: { updatedAt: 'desc' },
+        take: 20,
+        select: { id: true, cancelledByRole: true, cancelReasonCode: true, cancelReason: true, cancelStage: true, faultSide: true, cancelRequestedAt: true, updatedAt: true },
+    });
+    return {
+      cancelStats: stats.get(id) ?? null,
+      cancellations: rows.map((d) => ({
+        dealId: d.id,
+        cancelledByRole: d.cancelledByRole,
+        reasonCode: d.cancelReasonCode,
+        reason: d.cancelReason,
+        stage: d.cancelStage,
+        faultSide: d.faultSide,
+        atFault: isAtFault(d, side),
+        at: d.updatedAt,
+      })),
     };
   }
 
@@ -1568,9 +1592,11 @@ export class AdminService {
       include: { reviewedBy: { select: { id: true, name: true, email: true } } },
     });
 
+    const cancels = await this.cancellations('DRIVER', driver.id);
     return {
       id: driver.id,
       fullName: driver.fullName,
+      ...cancels,
       isVerified: driver.isVerified,
       vehicles: driver.vehicles.map((v) => ({
         id: v.id,
@@ -1608,9 +1634,11 @@ export class AdminService {
       include: { reviewedBy: { select: { id: true, name: true, email: true } } },
     });
 
+    const cancels = await this.cancellations('COMPANY', company.id);
     return {
       id: company.id,
       name: company.name,
+      ...cancels,
       nameRu: company.nameRu,
       taxId: company.taxId,
       isVerified: company.isVerified,

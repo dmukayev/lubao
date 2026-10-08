@@ -1,3 +1,4 @@
+import { cancelStatsFor } from '../deals/cancel-policy';
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { BodyTypeProfile, Cargo, Company, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -77,6 +78,8 @@ export class CargosService {
       where: { companyId: cargo.companyId, status: 'DELIVERED' },
     });
     const contact = await this.resolveContact(cargo);
+    // 046 п.3: отмены компании — водителю в карточке груза.
+    const companyCancelStats = (await cancelStatsFor(this.prisma, 'COMPANY', [cargo.companyId])).get(cargo.companyId) ?? null;
 
     return {
       id: cargo.id,
@@ -86,6 +89,7 @@ export class CargosService {
       companyRatingAvg: Number(cargo.company.ratingAvg),
       companyRatingCount: cargo.company.ratingCount,
       companyCompletedDeals,
+      companyCancelStats,
       contactUserId: contact?.id ?? null,
       contactName: contact?.name ?? null,
       // Номер не отдаётся в списках и карточке (043 п.11) — только по нажатию

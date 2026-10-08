@@ -581,7 +581,7 @@ describe('DealsService.byId — плашки пакета документов',
   it('машина на проверке → vehiclesVerified=false; последнее открытие документов', async () => {
     const opened = new Date('2030-01-01T10:00:00Z');
     const prisma: any = {
-      deal: { findUnique: jest.fn().mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' })) },
+      deal: { findUnique: jest.fn().mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' })), findMany: jest.fn().mockResolvedValue([]) },
       vehicle: { findMany: jest.fn().mockResolvedValue([{ isVerified: true }, { isVerified: false }]) },
       auditLog: { findFirst: jest.fn().mockResolvedValue({ createdAt: opened }) },
     };
