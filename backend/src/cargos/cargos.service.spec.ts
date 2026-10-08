@@ -704,3 +704,48 @@ describe('CargosService.create — профиль кузова', () => {
   });
 });
 
+
+/// 056 п.2: «Грузы» логиста — три вкладки, страницами, числа на вкладках.
+describe('CargosService.companyTab (056 п.2)', () => {
+  function make() {
+    const prisma: any = {
+      cargo: {
+        findMany: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(7),
+        groupBy: jest.fn().mockResolvedValue([
+          { status: 'PUBLISHED', _count: { _all: 5 } },
+          { status: 'IN_DEAL', _count: { _all: 2 } },
+          { status: 'ARCHIVED', _count: { _all: 3 } },
+          { status: 'CANCELLED', _count: { _all: 1 } },
+          { status: 'EXPIRED', _count: { _all: 1 } },
+        ]),
+      },
+      deal: { findMany: jest.fn().mockResolvedValue([]) },
+    };
+    return { prisma, service: new CargosService(prisma, {} as any, {} as any) };
+  }
+
+  it('Активные — только опубликованные; числа: «Активные 5 · В работе 2 · Архив 5»', async () => {
+    const { prisma, service } = make();
+    const r = await service.companyTab('c1', { tab: 'active' });
+    expect(prisma.cargo.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { companyId: 'c1', status: { in: ['PUBLISHED'] } }, take: 20, skip: 0 }));
+    expect(r.counts).toEqual({ active: 5, work: 2, archive: 5 });
+    expect(r.total).toBe(7);
+  });
+
+  it('В работе — груз в сделке; лимит страницы не больше 50', async () => {
+    const { prisma, service } = make();
+    await service.companyTab('c1', { tab: 'work', limit: 500, offset: 40 });
+    expect(prisma.cargo.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { companyId: 'c1', status: { in: ['IN_DEAL'] } }, take: 50, skip: 40 }));
+  });
+
+  it('Архив — доставлено/снят/истёк, поиск по городу и периоду погрузки, свежие сверху', async () => {
+    const { prisma, service } = make();
+    await service.companyTab('c1', { tab: 'archive', cityId: 'city1', from: '2026-10-01', to: '2026-10-09' });
+    const arg = prisma.cargo.findMany.mock.calls[0][0];
+    expect(arg.where.status).toEqual({ in: ['ARCHIVED', 'EXPIRED', 'CANCELLED'] });
+    expect(arg.where.OR).toEqual([{ destinationCityId: 'city1' }, { point: { cityId: 'city1' } }]);
+    expect(arg.where.readyDate).toEqual({ gte: new Date('2026-10-01T00:00:00.000Z'), lte: new Date('2026-10-09T00:00:00.000Z') });
+    expect(arg.orderBy).toEqual([{ updatedAt: 'desc' }]);
+  });
+});

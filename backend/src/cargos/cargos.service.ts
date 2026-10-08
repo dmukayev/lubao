@@ -1,7 +1,7 @@
 import { PricingService } from '../pricing/pricing.service';
 import { cancelStatsFor } from '../deals/cancel-policy';
 import { BadRequestException, Optional, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { BodyTypeProfile, Cargo, Company, Prisma } from '@prisma/client';
+import { BodyTypeProfile, Cargo, CargoStatus, Company, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ResponsesService } from '../responses/responses.service';
 import { CreateCargoDto } from './dto/create-cargo.dto';
@@ -16,6 +16,15 @@ import { ContactPolicyService } from '../contact-events/contact-policy.service';
 import { RequestContext } from '../common/request-context';
 import { validateSpecs } from '../body-types/specs';
 import { DriverBody, cargoFitsBody } from '../body-types/profile-fit';
+
+/// 056 п.2: вкладки «Грузов» логиста по статусу груза. Доставленный груз
+/// архивируется (deals.service: DELIVERED → ARCHIVED), сделка в работе — IN_DEAL.
+export type CompanyCargoTab = 'active' | 'work' | 'archive';
+export const COMPANY_TAB_STATUSES: Record<CompanyCargoTab, CargoStatus[]> = {
+  active: ['PUBLISHED'],
+  work: ['IN_DEAL'],
+  archive: ['ARCHIVED', 'EXPIRED', 'CANCELLED'],
+};
 
 /// Лента: «рядом» с городом водителя — та же область либо ≤200 км (040, п.5).
 export const NEARBY_KM = 200;
@@ -418,6 +427,49 @@ export class CargosService {
       include: this.includeForDto,
       orderBy: { createdAt: 'desc' },
     });
+    return this.withActiveDeals(cargos);
+  }
+
+  /// 056 п.2: «Грузы» логиста по вкладкам — Активные (ищем водителя), В работе
+  /// (сделка от «выбран» до «в пути»), Архив (доставлено, снят, истёк; поиск по
+  /// городу и периоду). Страницами; числа на вкладках — одним запросом.
+  async companyTab(
+    companyId: string,
+    params: { tab: CompanyCargoTab; limit?: number; offset?: number; cityId?: string; from?: string; to?: string },
+  ) {
+    const limit = Math.min(Math.max(params.limit ?? 20, 1), 50);
+    const offset = Math.max(params.offset ?? 0, 0);
+    const where: Prisma.CargoWhereInput = { companyId, status: { in: COMPANY_TAB_STATUSES[params.tab] } };
+    if (params.tab === 'archive') {
+      if (params.cityId) where.OR = [{ destinationCityId: params.cityId }, { point: { cityId: params.cityId } }];
+      const range: Prisma.DateTimeFilter = {};
+      if (params.from) range.gte = new Date(`${params.from}T00:00:00.000Z`);
+      if (params.to) range.lte = new Date(`${params.to}T00:00:00.000Z`);
+      if (range.gte || range.lte) where.readyDate = range;
+    }
+    const [cargos, total, counts] = await Promise.all([
+      this.prisma.cargo.findMany({
+        where,
+        include: this.includeForDto,
+        // Архив — свежие сверху по закрытию; остальные — по публикации.
+        orderBy: params.tab === 'archive' ? [{ updatedAt: 'desc' }] : [{ createdAt: 'desc' }],
+        take: limit,
+        skip: offset,
+      }),
+      this.prisma.cargo.count({ where }),
+      this.companyTabCounts(companyId),
+    ]);
+    return { items: await this.withActiveDeals(cargos), total, limit, offset, counts };
+  }
+
+  async companyTabCounts(companyId: string): Promise<Record<CompanyCargoTab, number>> {
+    const groups = await this.prisma.cargo.groupBy({ by: ['status'], where: { companyId }, _count: { _all: true } });
+    const byStatus = new Map(groups.map((g) => [g.status, g._count._all]));
+    const sum = (tab: CompanyCargoTab) => COMPANY_TAB_STATUSES[tab].reduce((acc, st) => acc + (byStatus.get(st) ?? 0), 0);
+    return { active: sum('active'), work: sum('work'), archive: sum('archive') };
+  }
+
+  private async withActiveDeals(cargos: Array<Prisma.CargoGetPayload<{ include: CargosService['includeForDto'] }>>) {
     // 044 п.3: «Водитель: <имя> · подтвердил / ждём подтверждения» + «Документы» —
     // последняя неотменённая сделка по грузу, одним запросом.
     const deals = cargos.length
