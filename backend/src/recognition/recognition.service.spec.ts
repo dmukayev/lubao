@@ -208,14 +208,14 @@ describe('RecognitionService#enqueue — п.18', () => {
 // 044 п.6: автопроверка машины после распознавания техпаспорта.
 describe('RecognitionService.tryAutoVerifyVehicle', () => {
   const GOOD = { vin: { value: '1M8GDM9AXKP042788', confidence: 0.95, checksumOk: true, needsReview: false }, plateNumber: { value: '123ABC02', confidence: 0.9, checksumOk: true, needsReview: false } };
-  function setup({ blocked = null as unknown, isVerified = false } = {}) {
+  function setup({ blocked = null as unknown, isVerified = false, duplicateOwner = null as unknown } = {}) {
     const prisma: any = {
       vehicle: { findUnique: jest.fn().mockResolvedValue({ id: 'v1', isVerified, plateNumber: null, vin: null }), update: jest.fn() },
       verificationDocument: { findUnique: jest.fn().mockResolvedValue({ status: 'PENDING' }), update: jest.fn() },
       auditLog: { create: jest.fn() },
     };
     prisma.$transaction = jest.fn((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
-    const identifiers: any = { checkMatches: jest.fn().mockResolvedValue({ blocked }), confirmIdentifier: jest.fn() };
+    const identifiers: any = { checkMatches: jest.fn().mockResolvedValue({ blocked, duplicateOwner }), confirmIdentifier: jest.fn() };
     return { prisma, identifiers, service: new RecognitionService(prisma, {} as any, {} as any, identifiers) };
   }
 
@@ -233,6 +233,14 @@ describe('RecognitionService.tryAutoVerifyVehicle', () => {
     const { prisma, service } = setup({ blocked: { id: 'b1' } });
     await expect(service.tryAutoVerifyVehicle('doc1', 'VEHICLE_PASSPORT', 'v1', GOOD)).resolves.toBe(false);
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('049 п.3: VIN уже подтверждён у машины другого водителя — не AUTO, в очередь админу с пометкой', async () => {
+    const { prisma, service } = setup({ duplicateOwner: { ownerType: 'VEHICLE', ownerId: 'v-other' } });
+    await expect(service.tryAutoVerifyVehicle('doc1', 'VEHICLE_PASSPORT', 'v1', GOOD)).resolves.toBe(false);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(prisma.vehicle.update).not.toHaveBeenCalled();
+    expect(prisma.auditLog.create.mock.calls[0][0].data).toMatchObject({ action: 'VEHICLE_AUTO_VERIFY_SKIPPED', metadata: expect.objectContaining({ reason: 'DUPLICATE' }) });
   });
 
   it('плохой формат VIN — нет; уже проверенная машина — не трогаем', async () => {

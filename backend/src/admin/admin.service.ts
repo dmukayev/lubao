@@ -1111,16 +1111,19 @@ export class AdminService {
     for (const [key, field] of Object.entries(rawFields)) {
       const identifierType = RECOGNIZED_FIELD_IDENTIFIER_TYPE[key];
       let match: 'blacklisted' | 'duplicate' | 'ok' | null = null;
+      let duplicateOf: { driverId: string | null; companyId: string | null; name: string | null } | null = null;
       if (identifierType && this.identifiers) {
         const rawValue = this.resolveRecognizedValue(field);
         if (rawValue) {
           const result = await this.identifiers.checkMatches(identifierType, rawValue, owner ?? undefined);
           match = result.blocked ? 'blacklisted' : result.duplicateOwner ? 'duplicate' : 'ok';
+          // 049 п.3: «дубликат у <водитель>» — чей это идентификатор.
+          if (result.duplicateOwner) duplicateOf = await this.identifierOwnerName(result.duplicateOwner);
         }
       }
       // Клиенту — маска для чувствительных полей, не то, что хранится
       // под valueEncrypted; ciphertext наружу вообще не отдаём.
-      fields[key] = { value: field.value ?? field.valueMasked, confidence: field.confidence, checksumOk: field.checksumOk, needsReview: field.needsReview, match };
+      fields[key] = { value: field.value ?? field.valueMasked, confidence: field.confidence, checksumOk: field.checksumOk, needsReview: field.needsReview, match, duplicateOf };
     }
 
     return {
@@ -1129,6 +1132,20 @@ export class AdminService {
       durationMs: doc.recognition.durationMs,
       fields,
     };
+  }
+
+  /// Владелец идентификатора-дубликата: машина → её водитель, водитель, компания.
+  private async identifierOwnerName(owner: { ownerType: string; ownerId: string }) {
+    if (owner.ownerType === 'VEHICLE') {
+      const v = await this.prisma.vehicle.findUnique({ where: { id: owner.ownerId }, select: { driver: { select: { id: true, fullName: true } } } });
+      return { driverId: v?.driver?.id ?? null, companyId: null, name: v?.driver?.fullName ?? null };
+    }
+    if (owner.ownerType === 'DRIVER') {
+      const d = await this.prisma.driver.findUnique({ where: { id: owner.ownerId }, select: { fullName: true } });
+      return { driverId: owner.ownerId, companyId: null, name: d?.fullName ?? null };
+    }
+    const c = await this.prisma.company.findUnique({ where: { id: owner.ownerId }, select: { name: true } });
+    return { driverId: null, companyId: owner.ownerId, name: c?.name ?? null };
   }
 
   /// Задача 032, п.7 — кнопка «Распознать заново»: нужна, когда

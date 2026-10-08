@@ -177,6 +177,21 @@ export class RecognitionService {
         this.logger.log(`Vehicle auto-verify skipped for document ${documentId}: ${type} is blacklisted`);
         return false;
       }
+      // 049 п.3: тот же VIN/госномер уже подтверждён у другой машины — чужой
+      // техпаспорт автоматом не проходит, решает админ (в карточке — «дубликат у …»).
+      if (match.duplicateOwner) {
+        this.logger.log(`Vehicle auto-verify skipped for document ${documentId}: ${type} is a duplicate`);
+        await this.prisma.auditLog.create({
+          data: {
+            actorUserId: null,
+            action: 'VEHICLE_AUTO_VERIFY_SKIPPED',
+            entityType: 'Vehicle',
+            entityId: vehicle.id,
+            metadata: { documentId, reason: 'DUPLICATE', identifierType: type, duplicateOwner: match.duplicateOwner },
+          },
+        });
+        return false;
+      }
     }
     const identifiers = this.identifiers;
     const now = new Date();
