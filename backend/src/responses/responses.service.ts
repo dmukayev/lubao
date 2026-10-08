@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
-import { Driver, Prisma, Response as CargoResponseEntity } from '@prisma/client';
+import { Driver, Prisma, Response as CargoResponseEntity, ResponseCloseReason } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChatSystemMessagesService } from '../chats/chat-system-messages.service';
 import { haulInfoByDriver } from '../deals/haul-summary';
@@ -29,6 +29,8 @@ export class ResponsesService {
       driverName: response.driver.fullName,
       message: response.message,
       status: response.status,
+      // 056 п.1: почему закрыт (null у активных).
+      closeReason: response.closeReason ?? null,
       createdAt: response.createdAt,
     };
   }
@@ -47,6 +49,7 @@ export class ResponsesService {
       id: r.id,
       cargoId: r.cargoId,
       status: r.status,
+      closeReason: r.closeReason ?? null,
       updatedAt: r.updatedAt,
       cargo: {
         id: r.cargo.id,
@@ -203,7 +206,7 @@ export class ResponsesService {
     const response = existing
       ? await this.prisma.response.update({
           where: { id: existing.id },
-          data: { status: 'PENDING', message: message ?? existing.message },
+          data: { status: 'PENDING', closeReason: null, message: message ?? existing.message },
           include: { driver: true },
         })
       : await this.prisma.response.create({
@@ -277,7 +280,7 @@ export class ResponsesService {
     }
     const wasInvited = response.status === 'INVITED';
 
-    const updated = await this.closePending(responseId, response.cargoId, 'CANCELLED');
+    const updated = await this.closePending(responseId, response.cargoId, 'CANCELLED', 'WITHDRAWN');
 
     // «Водитель отозвал отклик» / «отказался от приглашения» — системно в чат
     // (задача 038, п.11/12), логист с открытым чатом видит смену кнопок сразу.
@@ -308,11 +311,11 @@ export class ResponsesService {
   /// PENDING → REJECTED/CANCELLED под замком груза, условным апдейтом: если
   /// отклик за это время уже выбран/отозван/отклонён — 409, а не молчаливая
   /// перезапись (039, п.1).
-  private async closePending(responseId: string, cargoId: string, to: 'REJECTED' | 'CANCELLED') {
+  private async closePending(responseId: string, cargoId: string, to: 'REJECTED' | 'CANCELLED', closeReason: ResponseCloseReason) {
     return this.prisma.$transaction(async (tx) => {
       await this.lockCargo(tx, cargoId);
       // PENDING и INVITED: приглашение можно и отозвать (логист), и отклонить (водитель).
-      const res = await tx.response.updateMany({ where: { id: responseId, status: { in: ['PENDING', 'INVITED'] } }, data: { status: to } });
+      const res = await tx.response.updateMany({ where: { id: responseId, status: { in: ['PENDING', 'INVITED'] } }, data: { status: to, closeReason } });
       if (res.count === 0) {
         throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
       }
@@ -358,7 +361,7 @@ export class ResponsesService {
       if (response.status !== 'PENDING' && response.status !== 'INVITED') {
         throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
       }
-      const updated = await this.closePending(responseId, response.cargoId, 'REJECTED');
+      const updated = await this.closePending(responseId, response.cargoId, 'REJECTED', 'REJECTED_BY_LOGIST');
       // Задача 038, п.27 — водитель с открытым чатом сразу видит «отклонён»
       // (системная строка + chat:updated из неё), а не вечный «Отклик отправлен».
       await this.chatSystem.post({
@@ -433,7 +436,7 @@ export class ResponsesService {
       select: { id: true, driverId: true, driver: { select: { userId: true } } },
     });
     if (others.length > 0) {
-      await tx.response.updateMany({ where: { id: { in: others.map((o) => o.id) } }, data: { status: 'REJECTED' } });
+      await tx.response.updateMany({ where: { id: { in: others.map((o) => o.id) } }, data: { status: 'REJECTED', closeReason: 'TAKEN_BY_OTHER' } });
     }
     await tx.cargo.updateMany({ where: { id: cargoId, status: 'PUBLISHED' }, data: { status: 'IN_DEAL' } });
     return others;
@@ -444,6 +447,30 @@ export class ResponsesService {
       await this.chatSystem.post({ driverId: other.driverId, companyId, cargoId, actorUserId, code: 'CARGO_TAKEN' });
     }
     await this.notifyRejected(others.map((o) => o.driver.userId), companyId, cargoId);
+  }
+
+  /// 056 п.1: логист снял груз — ждущие отклики (PENDING/INVITED) не висят
+  /// «Ожидает»: CANCELLED с причиной «груз снят», водителям — push.
+  async closeForCargo(cargoId: string) {
+    const closed = await this.prisma.$transaction(async (tx) => {
+      await this.lockCargo(tx, cargoId);
+      const open = await tx.response.findMany({
+        where: { cargoId, status: { in: ['PENDING', 'INVITED'] } },
+        select: { id: true, driver: { select: { userId: true } } },
+      });
+      if (open.length > 0) {
+        await tx.response.updateMany({ where: { id: { in: open.map((r) => r.id) } }, data: { status: 'CANCELLED', closeReason: 'CARGO_CLOSED' } });
+      }
+      return open;
+    });
+    if (closed.length === 0) return 0;
+    try {
+      const summary = await loadCargoPushSummary(this.prisma, cargoId);
+      await this.notifications.notify({ userIds: closed.map((r) => r.driver.userId) }, 'RESPONSE_CARGO_CLOSED', { ...summary, cargoId });
+    } catch {
+      // уведомление не критично
+    }
+    return closed.length;
   }
 
   /// Push «Логист выбрал другого водителя» (045 п.3) — best-effort: сбой
@@ -487,7 +514,7 @@ export class ResponsesService {
       }
 
       const saved = existing
-        ? await tx.response.update({ where: { id: existing.id }, data: { status: 'INVITED' }, include: { driver: true } })
+        ? await tx.response.update({ where: { id: existing.id }, data: { status: 'INVITED', closeReason: null }, include: { driver: true } })
         : await tx.response.create({ data: { cargoId, driverId, status: 'INVITED' }, include: { driver: true } });
       return { response: saved, created: true };
     });
@@ -532,7 +559,7 @@ export class ResponsesService {
         // не воскрешается.
         const claimed = await tx.response.updateMany({
           where: { id: existing.id, status: { in: ['PENDING', 'INVITED', 'CANCELLED'] } },
-          data: { status: 'SELECTED' },
+          data: { status: 'SELECTED', closeReason: null },
         });
         if (claimed.count === 0) {
           throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Driver already has a decided response for this cargo' });

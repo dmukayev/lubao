@@ -99,7 +99,7 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
 
     expect(prisma.response.create).not.toHaveBeenCalled();
     expect(prisma.response.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'r1' }, data: { status: 'PENDING', message: 'старое' } }),
+      expect.objectContaining({ where: { id: 'r1' }, data: { status: 'PENDING', closeReason: null, message: 'старое' } }),
     );
     expect(result.status).toBe('PENDING');
     // Логист снова получает уведомление — для него это новый отклик.
@@ -121,7 +121,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
 
     await service.updateStatus('r1', 'c1', 'REJECTED');
 
-    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: { in: ['PENDING', 'INVITED'] } }, data: { status: 'REJECTED' } });
+    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: { in: ['PENDING', 'INVITED'] } }, data: { status: 'REJECTED', closeReason: 'REJECTED_BY_LOGIST' } });
     expect(tx.deal.create).not.toHaveBeenCalled();
     expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u1'] }, 'RESPONSE_REJECTED', { cargoId: 'cargo1', companyName: 'Acme' });
   });
@@ -258,7 +258,7 @@ describe('ResponsesService.withdraw — «Отозвать» (задача 035)'
 
     const result = await service.withdraw('r1', 'd1');
 
-    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: { in: ['PENDING', 'INVITED'] } }, data: { status: 'CANCELLED' } });
+    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: { in: ['PENDING', 'INVITED'] } }, data: { status: 'CANCELLED', closeReason: 'WITHDRAWN' } });
     expect(result.status).toBe('CANCELLED');
   });
 
@@ -343,7 +343,7 @@ describe('ResponsesService.createDealDirect — attaches the pre-deal chat too (
 
     expect(tx.response.create).not.toHaveBeenCalled();
     expect(tx.response.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'r1', status: { in: ['PENDING', 'INVITED', 'CANCELLED'] } }, data: { status: 'SELECTED' } }),
+      expect.objectContaining({ where: { id: 'r1', status: { in: ['PENDING', 'INVITED', 'CANCELLED'] } }, data: { status: 'SELECTED', closeReason: null } }),
     );
   });
 
@@ -534,7 +534,7 @@ describe('ResponsesService — приглашение с согласием, г�
   it('inviteDriver: отозванный отклик (CANCELLED) переоткрывается как INVITED, тот же id', async () => {
     const { service, tx } = inviteSetup({ existing: { id: 'r1', status: 'CANCELLED', driver: { fullName: 'Ерлан', userId: 'u1' } } });
     await service.inviteDriver('cargo1', 'd1', 'c1');
-    expect(tx.response.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'r1' }, data: { status: 'INVITED' } }));
+    expect(tx.response.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'r1' }, data: { status: 'INVITED', closeReason: null } }));
     expect(tx.response.create).not.toHaveBeenCalled();
   });
 
@@ -577,7 +577,7 @@ describe('ResponsesService — приглашение с согласием, г�
 
     await service.updateStatus('r1', 'c1', 'SELECTED');
 
-    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: { in: ['r2'] } }, data: { status: 'REJECTED' } });
+    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: { in: ['r2'] } }, data: { status: 'REJECTED', closeReason: 'TAKEN_BY_OTHER' } });
     expect(tx.cargo.updateMany).toHaveBeenCalledWith({ where: { id: 'cargo1', status: 'PUBLISHED' }, data: { status: 'IN_DEAL' } });
     expect(chat.post).toHaveBeenCalledWith(expect.objectContaining({ driverId: 'd2', code: 'CARGO_TAKEN' }));
   });
@@ -651,5 +651,36 @@ describe('ResponsesService.driverAgreed — «Договорились?» → «
   it('груз уже не опубликован — 409', async () => {
     const prisma: any = { response: { findUnique: jest.fn() }, cargo: { findUnique: jest.fn().mockResolvedValue({ ...cargo, status: 'IN_DEAL' }) } };
     await expect(new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any).driverAgreed('cargo1', 'd1')).rejects.toThrow(ConflictException);
+  });
+});
+
+/// 056 п.1: логист снял груз — ждущие отклики не висят «Ожидает».
+describe('ResponsesService.closeForCargo — груз снят (056 п.1)', () => {
+  it('PENDING/INVITED → CANCELLED с причиной CARGO_CLOSED, водителям push', async () => {
+    const tx = txMock();
+    tx.response.findMany.mockResolvedValue([
+      { id: 'r1', driver: { userId: 'u1' } },
+      { id: 'r2', driver: { userId: 'u2' } },
+    ]);
+    const prisma: any = { $transaction: jest.fn((fn: any) => fn(tx)), cargo: { findUnique: jest.fn().mockResolvedValue(null) } };
+    const notifications = { notify: jest.fn() };
+    const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
+
+    await expect(service.closeForCargo('cargo1')).resolves.toBe(2);
+
+    expect(tx.response.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { cargoId: 'cargo1', status: { in: ['PENDING', 'INVITED'] } } }));
+    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: { in: ['r1', 'r2'] } }, data: { status: 'CANCELLED', closeReason: 'CARGO_CLOSED' } });
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u1', 'u2'] }, 'RESPONSE_CARGO_CLOSED', expect.objectContaining({ cargoId: 'cargo1' }));
+  });
+
+  it('нет ждущих откликов — ничего не пишет и не шлёт', async () => {
+    const tx = txMock();
+    const prisma: any = { $transaction: jest.fn((fn: any) => fn(tx)) };
+    const notifications = { notify: jest.fn() };
+    const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
+
+    await expect(service.closeForCargo('cargo1')).resolves.toBe(0);
+    expect(tx.response.updateMany).not.toHaveBeenCalled();
+    expect(notifications.notify).not.toHaveBeenCalled();
   });
 });

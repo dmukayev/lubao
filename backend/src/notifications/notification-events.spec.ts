@@ -122,3 +122,13 @@ describe('CARGO_INVITE / DEAL_SELECTED — маршрут, цена, вес, к�
     expect(NOTIFICATION_EVENTS.DEAL_SELECTED.deepLink(payload)).toBe('/deal/deal1');
   });
 });
+
+describe('RESPONSE_CARGO_CLOSED — груз снят (056 п.1)', () => {
+  it('маршрут и компания на языке получателя, тап — в мои отклики', () => {
+    const p = { cargoId: 'c1', companyName: 'ТОО X', origin: { ru: 'Алматы', en: 'Almaty' }, destination: { ru: 'Астана', en: 'Astana' } };
+    expect(NOTIFICATION_EVENTS.RESPONSE_CARGO_CLOSED.render('ru', p)).toEqual({ title: 'Груз снят', body: 'Алматы → Астана — ТОО X. В ленте есть другие грузы.' });
+    expect(NOTIFICATION_EVENTS.RESPONSE_CARGO_CLOSED.render('en', p).body).toBe('Almaty → Astana — ТОО X. There are other loads in the feed.');
+    expect(NOTIFICATION_EVENTS.RESPONSE_CARGO_CLOSED.render('zh', { companyName: 'ТОО X' }).body).toBe('ТОО X。货源列表中还有其他货物。');
+    expect(NOTIFICATION_EVENTS.RESPONSE_CARGO_CLOSED.deepLink(p)).toBe('/driver/responses');
+  });
+});

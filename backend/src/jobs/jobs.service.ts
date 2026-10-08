@@ -187,7 +187,7 @@ export class JobsService {
     });
     await this.prisma.response.updateMany({
       where: { cargoId: { in: ids }, status: { in: ['PENDING', 'INVITED'] } },
-      data: { status: 'CANCELLED' },
+      data: { status: 'CANCELLED', closeReason: 'CARGO_ARCHIVED' },
     });
     return { archived: res.count };
   }
@@ -201,7 +201,7 @@ export class JobsService {
     let expired = 0;
     for (const response of stale) {
       // Условный апдейт: водитель мог согласиться/отказаться за эти секунды.
-      const res = await this.prisma.response.updateMany({ where: { id: response.id, status: 'INVITED' }, data: { status: 'CANCELLED' } });
+      const res = await this.prisma.response.updateMany({ where: { id: response.id, status: 'INVITED' }, data: { status: 'CANCELLED', closeReason: 'INVITE_EXPIRED' } });
       if (res.count === 0) continue;
       expired += 1;
       await this.chatSystem.post({

@@ -398,6 +398,19 @@ assert(c1.status < 300 && c1.json.status === 'CANCELLED' && c1.json.cancelStage 
 const respList = (await api('GET', `/cargos/${d1.cargoId}/responses`, { token: kzOwner048 })).json;
 const stats1 = respList.find((r) => r.dealId === d1.dealId)?.cancelStats;
 assert(stats1?.cancelled === 1 && stats1?.afterLoad === 1, 'у логиста в карточке водителя «отменил 1 · после загрузки 1»', JSON.stringify(stats1));
+
+// 056 п.1: зависшие отклики. Сделка отменена → отклик не висит «Вас выбрали»;
+// логист снял груз → ждущий отклик закрыт «груз снят», а не «Ожидает».
+const myResponse = async (tkn, cargoId) => (await api('GET', '/responses/mine', { token: tkn })).json.find((r) => r.cargoId === cargoId);
+const afterCancel = await myResponse(cancelDriver.token, d1.cargoId);
+assert(afterCancel?.status === 'CANCELLED' && afterCancel.closeReason === 'DEAL_CANCELLED', 'сделка отменена → отклик водителя закрыт «сделка отменена»', JSON.stringify(afterCancel));
+const closeMe = await api('POST', '/cargos', { token: kzOwner048, body: { pointId: almaty048.id, destinationCountryId: kz046, bodyTypeId: tentType.id, categoryId: otherCategoryId, price: 1056, currency: 'USD', readyDate: '2030-03-02' } });
+assert((await api('POST', `/cargos/${closeMe.json.id}/responses`, { token: tentDriver.token, body: {} })).status < 300, 'водитель откликнулся на груз, который снимут');
+assert((await myResponse(tentDriver.token, closeMe.json.id))?.status === 'PENDING', 'до снятия — «Ожидает»');
+const closed = await api('POST', `/cargos/${closeMe.json.id}/close`, { token: kzOwner048, body: { outcome: 'CARGO_CANCELLED' } });
+assert(closed.status < 300, 'логист снял груз', `status=${closed.status} ${closed.text.slice(0, 120)}`);
+const afterClose = await myResponse(tentDriver.token, closeMe.json.id);
+assert(afterClose?.status === 'CANCELLED' && afterClose.closeReason === 'CARGO_CLOSED', 'груз снят → отклик закрыт «груз снят»', JSON.stringify(afterClose));
 const me046 = (await api('GET', '/drivers/me', { token: cancelDriver.token })).json;
 // 049 п.9: отзывов ещё нет — среднее 0 («—»), штраф ×3 копится до первого отзыва.
 const card046 = (await get(`/admin/drivers/${me046.id}`)).json;

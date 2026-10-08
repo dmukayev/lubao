@@ -26,6 +26,7 @@ function dealFixture(overrides: Record<string, unknown> = {}) {
     createdAt: new Date(),
     driver: { userId: 'user-d1', fullName: 'Ерлан', currentLat: null, currentLng: null, locationUpdatedAt: null },
     company: { name: 'Acme' },
+    response: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
     cargo: { companyId: 'c1', publishedByUserId: 'logist-1' },
     tractorId: 'tractor1',
     trailerId: 'trailer1',
@@ -43,6 +44,7 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
     prisma = {
       deal: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
       arrival: { updateMany: jest.fn().mockResolvedValue({ count: 0 }), findFirst: jest.fn().mockResolvedValue(null), update: jest.fn() },
+      response: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
       cargo: {
         updateMany: jest.fn(),
         findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', publishedByUserId: 'logist-1', point: { name: { ru: 'Хоргос' } }, destinationCity: { name: { ru: 'Алматы' } }, destinationCountry: null }),
@@ -145,6 +147,15 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
     await service.cancel('deal1', { driverId: 'd1' }, 'Не получилось забрать груз');
 
     expect(prisma.cargo.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { status: 'PUBLISHED' } }));
+  });
+
+  it('056 п.1: отмена сделки закрывает отклик водителя — не висит «Вас выбрали»', async () => {
+    prisma.deal.findUnique.mockResolvedValue(dealFixture());
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CANCELLED', responseId: 'r1' }));
+
+    await service.cancel('deal1', { companyId: 'c1' }, 'Груз не готов');
+
+    expect(prisma.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: 'SELECTED' }, data: { status: 'CANCELLED', closeReason: 'DEAL_CANCELLED' } });
   });
 });
 
@@ -468,6 +479,7 @@ describe('DealsService.cancel — причина из списка, этап и 
   function setup(status = 'SELECTED') {
     const prisma: any = {
       deal: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+      response: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
       cargo: { updateMany: jest.fn(), findUnique: jest.fn().mockResolvedValue(null) },
       companyMember: { findFirst: jest.fn() },
       chat: { findFirst: jest.fn().mockResolvedValue(null) },
@@ -550,6 +562,7 @@ describe('DealsService — запрос отмены после «В пути»:
   function setup(deal: any) {
     const prisma: any = {
       deal: { findUnique: jest.fn().mockResolvedValue(deal), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+      response: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
       cargo: { updateMany: jest.fn(), findUnique: jest.fn().mockResolvedValue(null) },
       companyMember: { findFirst: jest.fn() },
       chat: { findFirst: jest.fn().mockResolvedValue(null) },

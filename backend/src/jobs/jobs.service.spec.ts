@@ -215,7 +215,7 @@ describe('JobsService.archiveCargos — через 3 дня после даты 
       select: { id: true },
     });
     expect(prisma.cargo.updateMany).toHaveBeenCalledWith({ where: { id: { in: ['c1', 'c2'] }, status: 'PUBLISHED' }, data: { status: 'ARCHIVED', archivedAt: NOW } });
-    expect(prisma.response.updateMany).toHaveBeenCalledWith({ where: { cargoId: { in: ['c1', 'c2'] }, status: { in: ['PENDING', 'INVITED'] } }, data: { status: 'CANCELLED' } });
+    expect(prisma.response.updateMany).toHaveBeenCalledWith({ where: { cargoId: { in: ['c1', 'c2'] }, status: { in: ['PENDING', 'INVITED'] } }, data: { status: 'CANCELLED', closeReason: 'CARGO_ARCHIVED' } });
   });
 
   it('нечего архивировать — ничего не пишет', async () => {
@@ -242,7 +242,7 @@ describe('JobsService.expireInvitations — 24 часа на ответ', () => 
 
     expect(res).toEqual({ expired: 1 });
     expect(prisma.response.findMany.mock.calls[0][0].where).toEqual({ status: 'INVITED', updatedAt: { lt: new Date(NOW.getTime() - 24 * H) } });
-    expect(prisma.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: 'INVITED' }, data: { status: 'CANCELLED' } });
+    expect(prisma.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: 'INVITED' }, data: { status: 'CANCELLED', closeReason: 'INVITE_EXPIRED' } });
     expect(chatSystem.post).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVITATION_EXPIRED', driverId: 'd1', cargoId: 'cargo1' }));
   });
 

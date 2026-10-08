@@ -87,6 +87,19 @@ enum ResponseStatus {
   CANCELLED
 }
 
+/// 056 п.1: почему отклик закрыт (REJECTED/CANCELLED) — для «Истории рейсов»
+/// водителя. У активных откликов — null.
+enum ResponseCloseReason {
+  WITHDRAWN
+  INVITE_EXPIRED
+  CARGO_ARCHIVED
+  CARGO_CLOSED
+  TAKEN_BY_OTHER
+  REJECTED_BY_LOGIST
+  DEAL_CANCELLED
+  ACCOUNT_DELETED
+}
+
 enum DealStatus {
   SELECTED
   CONFIRMED_BY_DRIVER
@@ -985,6 +998,7 @@ model Response {
   driver    Driver         @relation(fields: [driverId], references: [id])
   message   String?
   status    ResponseStatus @default(PENDING)
+  closeReason ResponseCloseReason?
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 

@@ -92,7 +92,7 @@ export class AccountDeletionService {
         });
         await tx.vehicle.updateMany({ where: { driverId: driver.id }, data: { plateNumber: null, vin: null, isActive: false, isVerified: false } });
         await tx.arrival.updateMany({ where: { driverId: driver.id, status: { in: ['PLANNED', 'ON_SITE'] } }, data: { status: 'CANCELLED' } });
-        await tx.response.updateMany({ where: { driverId: driver.id, status: { in: ['INVITED', 'PENDING'] } }, data: { status: 'CANCELLED' } });
+        await tx.response.updateMany({ where: { driverId: driver.id, status: { in: ['INVITED', 'PENDING'] } }, data: { status: 'CANCELLED', closeReason: 'ACCOUNT_DELETED' } });
       }
       if (member) {
         await tx.companyMember.update({ where: { id: member.id }, data: { fullName: null, contactPhone: null, wechatId: null } });

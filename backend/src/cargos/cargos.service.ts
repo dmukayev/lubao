@@ -677,5 +677,7 @@ export class CargosService {
       where: { id },
       data: { status: 'CANCELLED', closeOutcome: dto.outcome, closedAt: new Date() },
     });
+    // 056 п.1: отклики, что ещё ждали, закрываются с причиной «груз снят».
+    await this.responses.closeForCargo(id);
   }
 }

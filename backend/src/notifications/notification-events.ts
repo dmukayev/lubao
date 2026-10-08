@@ -91,6 +91,7 @@ export type NotificationEvent =
   | 'NEW_RESPONSE'
   | 'DRIVER_AGREED'
   | 'RESPONSE_REJECTED'
+  | 'RESPONSE_CARGO_CLOSED'
   | 'NEW_DRIVER_DIGEST'
   | 'DEAL_STATUS'
   | 'DEAL_FOR_LOGIST'
@@ -305,6 +306,13 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
   },
   /// Водителю — когда логист выбрал его (042 п.1, «Готово, когда»):
   /// от его лица, а не общее «Статус сделки: Водитель выбран».
+  /// 056 п.1: логист снял груз, на который водитель откликнулся.
+  RESPONSE_CARGO_CLOSED: {
+    ru: (p) => ({ title: 'Груз снят', body: `${[route(p, 'ru'), p.companyName].filter(Boolean).join(' — ')}. В ленте есть другие грузы.` }),
+    kk: (p) => ({ title: 'Жүк алынып тасталды', body: `${[route(p, 'kk'), p.companyName].filter(Boolean).join(' — ')}. Таспада басқа жүктер бар.` }),
+    zh: (p) => ({ title: '货物已下架', body: `${[route(p, 'zh'), p.companyName].filter(Boolean).join(' — ')}。货源列表中还有其他货物。` }),
+    en: (p) => ({ title: 'Cargo withdrawn', body: `${[route(p, 'en'), p.companyName].filter(Boolean).join(' — ')}. There are other loads in the feed.` }),
+  },
   DEAL_FOR_LOGIST: LOGIST_STATUS,
   DEAL_FOR_DRIVER: DRIVER_STATUS,
   DEAL_SELECTED: {
@@ -404,6 +412,12 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
     eventGroup: 'DEAL_STATUS',
     channels: ['PUSH'],
     render: (locale, p) => T.RESPONSE_REJECTED[locale](p),
+    deepLink: () => '/driver/responses',
+  },
+  RESPONSE_CARGO_CLOSED: {
+    eventGroup: 'DEAL_STATUS',
+    channels: ['PUSH'],
+    render: (locale, p) => T.RESPONSE_CARGO_CLOSED[locale](p),
     deepLink: () => '/driver/responses',
   },
   NEW_RESPONSE: {

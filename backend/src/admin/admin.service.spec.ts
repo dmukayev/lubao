@@ -1279,6 +1279,7 @@ describe('AdminService.dealDetail / dealChat / advanceDealStatusByAdmin / cancel
   function baseDeal(overrides: Partial<Record<string, unknown>> = {}) {
     return {
       id: 'deal1',
+      responseId: 'r1',
       cargoId: 'cargo1',
       driverId: 'd1',
       companyId: 'c1',
@@ -1400,9 +1401,12 @@ describe('AdminService.dealDetail / dealChat / advanceDealStatusByAdmin / cancel
       ...dealNotificationMocks(),
     };
     prisma.cargo = { ...(prisma.cargo ?? {}), updateMany: jest.fn() };
+    prisma.response = { ...(prisma.response ?? {}), updateMany: jest.fn() };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
 
     await service.cancelDealByAdmin('deal1', 'admin-1', 'Груз утрачен');
+    // 056 п.1: отклик водителя закрыт «сделка отменена», не висит «Вас выбрали».
+    expect(prisma.response.updateMany).toHaveBeenCalledWith({ where: { id: expect.any(String), status: 'SELECTED' }, data: { status: 'CANCELLED', closeReason: 'DEAL_CANCELLED' } });
     // 041: груз возвращается в ленту.
     expect(prisma.cargo.updateMany).toHaveBeenCalledWith({ where: { id: expect.any(String), status: 'IN_DEAL' }, data: { status: 'PUBLISHED' } });
 
