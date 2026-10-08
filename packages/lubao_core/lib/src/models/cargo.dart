@@ -37,6 +37,7 @@ class Cargo {
     this.feedSection,
     this.myResponseStatus,
     this.responsesCount = 0,
+    this.activeDeal,
   });
 
   final String id;
@@ -93,6 +94,9 @@ class Cargo {
   final ResponseStatus? myResponseStatus;
   final int responsesCount;
 
+  /// Список грузов логиста (044 п.3): сделка по грузу — водитель и статус.
+  final CargoActiveDeal? activeDeal;
+
   factory Cargo.fromJson(Map<String, dynamic> json) => Cargo(
         id: json['id'] as String,
         companyId: json['companyId'] as String,
@@ -127,6 +131,7 @@ class Cargo {
         pickupRank: json['pickupRank'] as int?,
         myResponseStatus: json['myResponseStatus'] == null ? null : responseStatusFromJson(json['myResponseStatus'] as String),
         responsesCount: json['responsesCount'] as int? ?? 0,
+        activeDeal: json['activeDeal'] == null ? null : CargoActiveDeal.fromJson(json['activeDeal'] as Map<String, dynamic>),
         feedSection: switch (json['feedSection']) {
           'home' => CargoFeedSection.home,
           'selected' => CargoFeedSection.selected,
@@ -241,3 +246,14 @@ class CreateCargoInput {
 /// Секции ленты внутри одного «города погрузки»: домой → выбранные страны
 /// → остальное (порядок считает сервер).
 enum CargoFeedSection { home, selected, other }
+
+class CargoActiveDeal {
+  const CargoActiveDeal({required this.id, required this.status, required this.driverName});
+  final String id;
+  final DealStatus status;
+  final String driverName;
+
+  factory CargoActiveDeal.fromJson(Map<String, dynamic> json) =>
+      CargoActiveDeal(id: json['id'] as String, status: dealStatusFromJson(json['status'] as String), driverName: json['driverName'] as String);
+}
+

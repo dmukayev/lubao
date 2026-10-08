@@ -109,6 +109,28 @@ void main() {
       await tester.pumpAndSettle();
     });
 
+    // 044: после «Подтверждаю перевозку» логист открывает пакет документов и
+    // скачивает PDF; водитель видит «Логист открыл документы».
+    await run.step(tester, 'логист-открыл-документы-водитель-видит', () async {
+      final logist = await LogistApi.login();
+      final notYet = await logist.driverDocuments(deal3);
+      expect(notYet.statusCode, 403, reason: 'до подтверждения водителем документы закрыты');
+      final pkg = await logist.driverDocuments(deal1);
+      expect(pkg.statusCode, 200);
+      expect((pkg.data as Map)['driver']['fullName'], isNotEmpty);
+      final pdf = await logist.driverDocumentsPdf(deal1);
+      expect(String.fromCharCodes(pdf.take(5)), '%PDF-');
+      await openDeal(deal1);
+      await waitAndReveal(tester, find.byKey(const Key('driverDocsOpened')));
+      await tester.tap(find.byKey(const Key('driverDocsOpened')));
+      await waitFor(tester, find.text(t.dealDocsAccessTitle));
+      expectInsideSafeZone(tester);
+      await tester.tapAt(const Offset(20, 80));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+    });
+
     // Второй рейс: «Понятно» → согласие дано, переключатель включён, пауза работает.
     await run.step(tester, 'сделка2-согласие-на-трекинг-и-пауза', () async {
       await openDeal(deal2);

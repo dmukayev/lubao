@@ -40,6 +40,11 @@ class AdminRepository {
     return AdminAttention.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// «Отозвать проверку» машины (044 п.6) — с причиной; техпаспорт снова в очереди.
+  Future<void> revokeVehicleVerification(String vehicleId, {required String reason}) async {
+    await _client.dio.post('/admin/vehicles/$vehicleId/revoke-verification', data: {'reason': reason});
+  }
+
   /// «Похоже на парсинг» → «Всё в порядке» (043 п.11): скрыть на 7 дней.
   Future<void> dismissSuspiciousContacts(String userId) async {
     await _client.dio.post('/admin/suspicious-contacts/$userId/dismiss');

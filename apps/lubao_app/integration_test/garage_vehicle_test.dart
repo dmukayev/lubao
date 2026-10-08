@@ -2,6 +2,7 @@
 // техпаспорта, выбрать шаблон размера (033) → прицеп «на проверке»; документ
 // распознан (OCR): госномер, VIN и грузоподъёмность достались из фото.
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -79,8 +80,17 @@ void main() {
       final submit = find.byKey(const Key('addVehicleSubmit'));
       await reveal(tester, submit);
       await tester.tap(submit);
+      // 044 п.7: шаг «Сфотографируйте машину» — спереди снимаем, сбоку пропускаем.
+      await waitFor(tester, find.byKey(const Key('vehiclePhotosSheet')));
+      expectInsideSafeZone(tester);
+      await tester.tap(find.byKey(const Key('vehiclePhoto-vehiclePhotoFront')));
+      await acceptPdConsentIfAsked(tester);
+      await waitFor(tester, find.descendant(of: find.byKey(const Key('vehiclePhoto-vehiclePhotoFront')), matching: find.byIcon(LucideIcons.checkCircle2)));
+      await tester.tap(find.byKey(const Key('vehiclePhotosDone')));
       await waitFor(tester, find.text(t.garagePending));
       expect(find.text(t.garagePending), findsWidgets);
+      // Сбоку фото нет — мягкое напоминание в карточке.
+      expect(find.text(t.garagePhotosReminder), findsWidgets);
       // Размер прицепа из шаблона виден в карточке: «… м³ · … пал.».
       expect(find.textContaining(t.unitM3), findsWidgets);
       expectNoOverflow(tester);

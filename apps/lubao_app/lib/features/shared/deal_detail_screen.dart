@@ -13,6 +13,7 @@ import 'error_feedback.dart';
 import 'tracking_consent_sheet.dart';
 import 'map_links.dart';
 import '../driver/feed/driver_status.dart';
+import 'driver_documents_block.dart';
 
 class DealDetailScreen extends ConsumerStatefulWidget {
   const DealDetailScreen({super.key, required this.dealId});
@@ -259,6 +260,16 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                   const SizedBox(height: 16),
                   Text('${t.dealCancelReasonLabel}: ${deal.cancelReason}'),
                 ],
+                // 044 п.5: машина рейса ещё на проверке — видно обоим.
+                if (!deal.vehiclesVerified && deal.status != DealStatus.cancelled) ...[
+                  const SizedBox(height: 12),
+                  StatusBadge(key: const Key('dealVehiclePending'), label: t.driverDocsVehiclePending, color: StatusBadge.warning),
+                ],
+                if (!isDriver && deal.status != DealStatus.cancelled) ...[
+                  const Divider(height: 32),
+                  DriverDocumentsBlock(deal: deal),
+                ],
+                if (isDriver) DriverDocsOpenedRow(deal: deal),
                 if (!isDriver) ...[
                   const Divider(height: 32),
                   Text(t.dealDriverLocationTitle, style: Theme.of(context).textTheme.titleSmall),
@@ -297,6 +308,11 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                 const SizedBox(height: 24),
                 if (isDriver && (deal.status == DealStatus.loaded || deal.status == DealStatus.inTransit)) ...[
                   const TripTrackingSwitch(),
+                  const SizedBox(height: 8),
+                ],
+                // 044 п.4: что и кому открывается при подтверждении.
+                if (isDriver && deal.nextStatus == DealStatus.confirmedByDriver) ...[
+                  Text(t.dealConfirmDocsNotice(deal.companyName), key: const Key('dealConfirmDocsNotice'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
                 ],
                 if (isDriver && deal.nextStatus != null) ...[

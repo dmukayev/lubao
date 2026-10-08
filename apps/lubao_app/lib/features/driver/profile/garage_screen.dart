@@ -15,9 +15,14 @@ import '../../shared/pd_consent.dart';
 class GarageScreen extends ConsumerWidget {
   const GarageScreen({super.key});
 
+  Future<void> _addPhotos(BuildContext context, WidgetRef ref, GarageVehicle vehicle) async {
+    await showVehiclePhotosSheet(context, ref, vehicle);
+    ref.invalidate(garageVehiclesProvider);
+  }
+
   Future<void> _addVehicle(BuildContext context, WidgetRef ref) async {
     final added = await showAddVehicleSheet(context, ref);
-    if (added) ref.invalidate(garageVehiclesProvider);
+    if (added != null) ref.invalidate(garageVehiclesProvider);
   }
 
   /// Мягкая подсказка (задача 033, п.5) — прицепам/одиночкам, созданным до
@@ -247,6 +252,7 @@ class GarageScreen extends ConsumerWidget {
                     bodyTypeCode: codeOf(v.bodyTypeId),
                     onArchive: () => _archive(context, ref, v),
                     onAddDocument: () => _addDocument(context, ref, v),
+                    onAddPhotos: () => _addPhotos(context, ref, v),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                 ],
@@ -262,6 +268,7 @@ class GarageScreen extends ConsumerWidget {
                     bodyTypeCode: codeOf(v.bodyTypeId),
                     onArchive: () => _archive(context, ref, v),
                     onAddDocument: () => _addDocument(context, ref, v),
+                    onAddPhotos: () => _addPhotos(context, ref, v),
                     // Размер можно сменить и позже (033 п.6 / 038 п.14) — только
                     // у объёмных кузовов (045 п.6).
                     onSetSize: isVolumeBodyType(codeOf(v.bodyTypeId)) ? () => _setSize(context, ref, v) : null,
@@ -318,7 +325,10 @@ class _EmptyRow extends StatelessWidget {
 }
 
 class _VehicleCard extends StatelessWidget {
-  const _VehicleCard({required this.vehicle, required this.onArchive, required this.onAddDocument, this.onSetSize, this.bodyTypeCode});
+  const _VehicleCard({required this.vehicle, required this.onArchive, required this.onAddDocument, this.onSetSize, this.bodyTypeCode, this.onAddPhotos});
+
+  /// «Добавьте фото машины» (044 п.7) — мягкое напоминание, если фото нет.
+  final VoidCallback? onAddPhotos;
 
   final GarageVehicle vehicle;
   final String? bodyTypeCode;
@@ -386,6 +396,14 @@ class _VehicleCard extends StatelessWidget {
                     key: Key('garageAddDocument-${vehicle.id}'),
                     onTap: onAddDocument,
                     child: Text(context.l10n.garageAddDocument, style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
+                  ),
+                ],
+                if (onAddPhotos != null && (!vehicle.hasPhotoFront || !vehicle.hasPhotoSide)) ...[
+                  const SizedBox(height: 2),
+                  GestureDetector(
+                    key: Key('garageAddPhotos-${vehicle.id}'),
+                    onTap: onAddPhotos,
+                    child: Text(context.l10n.garagePhotosReminder, style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
                   ),
                 ],
                 if (onSetSize != null) ...[

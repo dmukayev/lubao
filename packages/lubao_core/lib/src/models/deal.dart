@@ -21,6 +21,8 @@ class Deal {
     required this.createdAt,
     this.cargo,
     this.driverLocation,
+    this.vehiclesVerified = true,
+    this.driverDocsOpenedAt,
   });
 
   final String id;
@@ -44,6 +46,12 @@ class Deal {
   final Cargo? cargo;
   final DriverLocation? driverLocation;
 
+  /// 044 п.5: машины рейса проверены; нет — плашка «Машина ещё на проверке».
+  final bool vehiclesVerified;
+
+  /// 044 п.4: когда логист последний раз открыл документы водителя.
+  final DateTime? driverDocsOpenedAt;
+
   factory Deal.fromJson(Map<String, dynamic> json) => Deal(
         id: json['id'] as String,
         responseId: json['responseId'] as String,
@@ -65,6 +73,8 @@ class Deal {
         driverLocation: json['driverLocation'] == null
             ? null
             : DriverLocation.fromJson(json['driverLocation'] as Map<String, dynamic>),
+        vehiclesVerified: json['vehiclesVerified'] as bool? ?? true,
+        driverDocsOpenedAt: json['driverDocsOpenedAt'] == null ? null : DateTime.parse(json['driverDocsOpenedAt'] as String),
       );
 
   static const List<DealStatus> driverProgression = [
@@ -83,3 +93,90 @@ class Deal {
 
   bool get isCancellable => status != DealStatus.delivered && status != DealStatus.cancelled;
 }
+
+/// Документ в пакете водителя (044 п.1): id для превью и статус проверки.
+class DriverDocRef {
+  const DriverDocRef({required this.id, required this.status});
+  final String id;
+  final String status;
+
+  static DriverDocRef? fromJson(dynamic json) =>
+      json == null ? null : DriverDocRef(id: (json as Map<String, dynamic>)['id'] as String, status: json['status'] as String);
+}
+
+class DriverDocsVehicle {
+  const DriverDocsVehicle({required this.id, required this.kind, this.plateNumber, this.vin, this.brand, required this.isVerified, this.passport, this.photoFront, this.photoSide});
+  final String id;
+  final VehicleKind kind;
+  final String? plateNumber;
+  final String? vin;
+  final String? brand;
+  final bool isVerified;
+  final DriverDocRef? passport;
+  final DriverDocRef? photoFront;
+  final DriverDocRef? photoSide;
+
+  factory DriverDocsVehicle.fromJson(Map<String, dynamic> json) => DriverDocsVehicle(
+        id: json['id'] as String,
+        kind: vehicleKindFromJson(json['kind'] as String),
+        plateNumber: json['plateNumber'] as String?,
+        vin: json['vin'] as String?,
+        brand: json['brand'] as String?,
+        isVerified: json['isVerified'] as bool? ?? false,
+        passport: DriverDocRef.fromJson(json['passport']),
+        photoFront: DriverDocRef.fromJson(json['photoFront']),
+        photoSide: DriverDocRef.fromJson(json['photoSide']),
+      );
+}
+
+/// Пакет документов водителя логисту по обоюдной сделке (044 п.1).
+class DriverDocumentsPackage {
+  const DriverDocumentsPackage({
+    required this.dealId,
+    required this.fullName,
+    this.iin,
+    this.selfie,
+    this.licenseNumber,
+    this.licenseExpiry,
+    this.license,
+    required this.vehicles,
+  });
+  final String dealId;
+  final String fullName;
+  final String? iin;
+  final DriverDocRef? selfie;
+  final String? licenseNumber;
+  final String? licenseExpiry;
+  final DriverDocRef? license;
+  final List<DriverDocsVehicle> vehicles;
+
+  factory DriverDocumentsPackage.fromJson(Map<String, dynamic> json) {
+    final driver = json['driver'] as Map<String, dynamic>;
+    final license = json['license'] as Map<String, dynamic>? ?? const {};
+    return DriverDocumentsPackage(
+      dealId: json['dealId'] as String,
+      fullName: driver['fullName'] as String,
+      iin: driver['iin'] as String?,
+      selfie: DriverDocRef.fromJson(json['selfie']),
+      licenseNumber: license['number'] as String?,
+      licenseExpiry: license['expiryDate'] as String?,
+      license: DriverDocRef.fromJson(license['document']),
+      vehicles: [for (final v in json['vehicles'] as List<dynamic>? ?? const []) DriverDocsVehicle.fromJson(v as Map<String, dynamic>)],
+    );
+  }
+}
+
+/// Кто и когда открывал документы (044 п.4) — водителю.
+class DriverDocsAccess {
+  const DriverDocsAccess({required this.at, required this.downloaded, this.by});
+  final DateTime at;
+  final bool downloaded;
+  final String? by;
+
+  factory DriverDocsAccess.fromJson(Map<String, dynamic> json) => DriverDocsAccess(
+        at: DateTime.parse(json['at'] as String),
+        downloaded: json['action'] == 'DRIVER_DOCS_DOWNLOADED',
+        by: json['by'] as String?,
+      );
+}
+

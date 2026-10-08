@@ -109,6 +109,8 @@ class GarageVehicle {
     required this.isArchived,
     required this.createdAt,
     this.hasDocument = true,
+    this.hasPhotoFront = false,
+    this.hasPhotoSide = false,
   });
 
   final String id;
@@ -134,6 +136,10 @@ class GarageVehicle {
   /// Загружен ли техпаспорт (на проверке/одобрен); false — кнопка «Добавить документ» (041, п.6).
   final bool hasDocument;
 
+  /// Фото машины спереди/сбоку (044 п.7) — без них в гараже мягкое напоминание.
+  final bool hasPhotoFront;
+  final bool hasPhotoSide;
+
   factory GarageVehicle.fromJson(Map<String, dynamic> json) => GarageVehicle(
         id: json['id'] as String,
         kind: vehicleKindFromJson(json['kind'] as String),
@@ -153,6 +159,8 @@ class GarageVehicle {
         isVerified: json['isVerified'] as bool? ?? false,
         isArchived: json['isArchived'] as bool? ?? false,
         hasDocument: json['hasDocument'] as bool? ?? true,
+        hasPhotoFront: json['hasPhotoFront'] as bool? ?? false,
+        hasPhotoSide: json['hasPhotoSide'] as bool? ?? false,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 }

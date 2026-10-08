@@ -66,6 +66,7 @@ class CompanyCargosScreen extends ConsumerWidget {
                   statusLabel: statusLabel,
                   statusColor: statusColor,
                   onTap: () => context.push('/company/cargos/${cargo.id}/responses'),
+                  trailing: cargo.activeDeal == null ? null : _DealDriverRow(deal: cargo.activeDeal!),
                 );
               },
             ),
@@ -75,3 +76,37 @@ class CompanyCargosScreen extends ConsumerWidget {
     );
   }
 }
+
+/// «Водитель: <имя> · подтвердил» + «Документы» / «· ждём подтверждения» (044 п.3).
+class _DealDriverRow extends StatelessWidget {
+  const _DealDriverRow({required this.deal});
+  final CargoActiveDeal deal;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final confirmed = deal.status != DealStatus.selected;
+    return Row(
+      key: Key('cargoDealDriver-${deal.id}'),
+      children: [
+        Icon(confirmed ? LucideIcons.checkCircle2 : LucideIcons.clock, size: 16, color: confirmed ? AppColors.success : AppColors.accentText),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: Text(
+            confirmed ? t.cargoDealDriverConfirmed(deal.driverName) : t.cargoDealDriverWaiting(deal.driverName),
+            style: AppTextStyles.caption,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        if (confirmed)
+          TextButton(
+            key: Key('cargoDealDocs-${deal.id}'),
+            onPressed: () => context.push('/deal/${deal.id}'),
+            child: Text(t.driverDocsOpen),
+          ),
+      ],
+    );
+  }
+}
+

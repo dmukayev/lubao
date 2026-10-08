@@ -542,7 +542,13 @@ class AdminDriverVehicle {
     this.brand,
     this.identifiers = const [],
     this.identifierBlockHistory = const [],
+    this.isVerified = false,
+    this.verifiedBy,
   });
+
+  /// 044 п.6: «AUTO» — проверена автоматически (бейдж и «Отозвать проверку»).
+  final bool isVerified;
+  final String? verifiedBy;
 
   final String id;
   // Задача 032, п.6 — различать тягач/прицеп по kind, а не по тому, какие
@@ -565,6 +571,8 @@ class AdminDriverVehicle {
 
   factory AdminDriverVehicle.fromJson(Map<String, dynamic> json) => AdminDriverVehicle(
         id: json['id'] as String,
+        isVerified: json['isVerified'] as bool? ?? false,
+        verifiedBy: json['verifiedBy'] as String?,
         kind: vehicleKindFromJson(json['kind'] as String),
         bodyTypeId: json['bodyTypeId'] as String?,
         bodyTypeName: json['bodyTypeName'] == null ? null : I18nText.fromJson(json['bodyTypeName'] as Map<String, dynamic>),

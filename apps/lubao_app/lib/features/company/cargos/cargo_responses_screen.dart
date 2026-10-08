@@ -9,6 +9,7 @@ import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
 import '../haul_hint.dart';
 import 'cargo_close_dialog.dart';
+import '../../shared/driver_vehicle_photos.dart';
 
 class CargoResponsesScreen extends ConsumerWidget {
   const CargoResponsesScreen({super.key, required this.cargoId});
@@ -255,8 +256,12 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
           // «20 т · 90 м³ · 33 пал.».
           if (response.bodyTypeId != null || response.capacityTons != null || response.volumeM3 != null || response.palletsEuro != null) ...[
             const SizedBox(height: AppSpacing.xs),
-            Row(
-              children: [
+            // 044 п.7: тап по строке машины — её фото.
+            InkWell(
+              key: Key('responsePhotos-${response.id}'),
+              onTap: () => showDriverVehiclePhotos(context, driverId: response.driverId, driverName: response.driverName),
+              child: Row(
+                children: [
                 // 045 п.4: миниатюра кузова водителя.
                 if (response.bodyTypeId != null) ...[
                   BodyTypeIcon(bodyTypeCode: bodyCode, width: 40),
@@ -274,7 +279,9 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
                     style: AppTextStyles.caption,
                   ),
                 ),
-              ],
+                  const Icon(LucideIcons.image, size: 16, color: AppColors.primary),
+                ],
+              ),
             ),
           ],
           if (haulHint != null) ...[

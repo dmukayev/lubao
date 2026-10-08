@@ -156,6 +156,18 @@ class LogistApi {
     return (res.data as List).cast<Map>().map((e) => e['id'] as String).toList();
   }
 
+  /// 044: пакет документов водителя по сделке (как его видит логист).
+  Future<Response<dynamic>> driverDocuments(String dealId) => _dio.get('/deals/$dealId/driver-documents');
+
+  /// 044: PDF пакета по одноразовой ссылке — байты.
+  Future<List<int>> driverDocumentsPdf(String dealId) async {
+    final link = await _dio.post('/deals/$dealId/driver-documents/pdf-link');
+    final token = (link.data as Map)['token'] as String;
+    final pdf = await Dio(BaseOptions(baseUrl: e2eApiBase, validateStatus: (_) => true))
+        .get<List<int>>('/deals/$dealId/driver-documents.pdf', queryParameters: {'token': token}, options: Options(responseType: ResponseType.bytes));
+    return pdf.data ?? const [];
+  }
+
   /// Ждёт отклик на груз (запись на сервере появляется асинхронно) и
   /// выбирает этого водителя; возвращает id сделки.
   Future<String> selectFirstResponse(String cargoId) async {

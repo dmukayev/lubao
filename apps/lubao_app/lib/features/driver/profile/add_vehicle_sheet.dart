@@ -11,16 +11,117 @@ import '../../../providers/auth_provider.dart';
 
 /// Добавление машины в гараж (задача 031, этап B, п.8) — без распознавания
 /// (этап D) поля заполняются вручную, ничего не блокируется. Возвращает
-/// true, если машина была добавлена.
-Future<bool> showAddVehicleSheet(BuildContext context, WidgetRef ref) async {
-  final result = await showModalBottomSheet<bool>(
+/// добавленную машину (null — закрыли). Дальше — шаг «Сфотографируйте машину»
+/// (044 п.7), его можно пропустить.
+Future<GarageVehicle?> showAddVehicleSheet(BuildContext context, WidgetRef ref) async {
+  final result = await showModalBottomSheet<GarageVehicle>(
     context: context,
     isScrollControlled: true,
     backgroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge))),
     builder: (context) => const _AddVehicleSheet(),
   );
-  return result ?? false;
+  if (result != null && context.mounted) await showVehiclePhotosSheet(context, ref, result);
+  return result;
+}
+
+/// «Сфотографируйте машину» (044 п.7): спереди с госномером и сбоку, по одному
+/// касанию; можно пропустить. Фото — в приватный бакет, на проверку не идут.
+Future<void> showVehiclePhotosSheet(BuildContext context, WidgetRef ref, GarageVehicle vehicle) async {
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: AppColors.surface,
+    builder: (context) => _VehiclePhotosSheet(vehicle: vehicle),
+  );
+}
+
+class _VehiclePhotosSheet extends ConsumerStatefulWidget {
+  const _VehiclePhotosSheet({required this.vehicle});
+  final GarageVehicle vehicle;
+
+  @override
+  ConsumerState<_VehiclePhotosSheet> createState() => _VehiclePhotosSheetState();
+}
+
+class _VehiclePhotosSheetState extends ConsumerState<_VehiclePhotosSheet> {
+  late bool _front = widget.vehicle.hasPhotoFront;
+  late bool _side = widget.vehicle.hasPhotoSide;
+  VerificationDocType? _uploading;
+
+  Future<void> _take(VerificationDocType type) async {
+    if (!await ensurePdConsent(context, ref) || !mounted) return;
+    final picked = await pickPhoto(ImageSource.camera);
+    if (picked == null) return;
+    setState(() => _uploading = type);
+    try {
+      final bytes = await picked.readAsBytes();
+      final key = await ref.read(uploadsRepositoryProvider).uploadDocument(bytes, filename: picked.name);
+      await ref.read(driverRepositoryProvider).submitVerificationDocument(type: type, fileUrl: key, vehicleId: widget.vehicle.id);
+      if (mounted) setState(() => type == VerificationDocType.vehiclePhotoFront ? _front = true : _side = true);
+    } catch (e) {
+      debugPrint('VehiclePhotosSheet: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.commonError)));
+    } finally {
+      if (mounted) setState(() => _uploading = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final refData = ref.watch(referenceDataProvider).valueOrNull;
+    final code = widget.vehicle.bodyTypeId == null ? null : refData?.bodyTypes.where((b) => b.id == widget.vehicle.bodyTypeId).firstOrNull?.code;
+    Widget slot(VerificationDocType type, String label, bool done) => Expanded(
+          child: OutlinedButton(
+            key: Key('vehiclePhoto-${type.name}'),
+            onPressed: _uploading != null ? null : () => _take(type),
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(AppSpacing.md)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Подсказка-силуэт — миниатюра этого кузова.
+                Opacity(opacity: done ? 1 : 0.35, child: BodyTypeIcon(bodyTypeCode: code, vehicleKind: widget.vehicle.kind, width: 96)),
+                const SizedBox(height: AppSpacing.sm),
+                if (_uploading == type)
+                  const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                else
+                  Icon(done ? LucideIcons.checkCircle2 : LucideIcons.camera, color: done ? AppColors.success : AppColors.primary),
+                const SizedBox(height: AppSpacing.xs),
+                Text(label, textAlign: TextAlign.center, style: AppTextStyles.caption),
+              ],
+            ),
+          ),
+        );
+    return SingleChildScrollView(
+      key: const Key('vehiclePhotosSheet'),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.lg, AppSpacing.screen, AppSpacing.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(t.vehiclePhotoStepTitle, style: AppTextStyles.headline),
+          const SizedBox(height: AppSpacing.sm),
+          Text(t.vehiclePhotoStepHint, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              slot(VerificationDocType.vehiclePhotoFront, t.vehiclePhotoFront, _front),
+              const SizedBox(width: AppSpacing.sm),
+              slot(VerificationDocType.vehiclePhotoSide, t.vehiclePhotoSide, _side),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          PrimaryButton(
+            key: const Key('vehiclePhotosDone'),
+            label: _front && _side ? t.commonDone : t.commonSkip,
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _AddVehicleSheet extends ConsumerStatefulWidget {
@@ -99,7 +200,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
       // оставляет машину без техпаспорта.
       final bytes = await _photo!.readAsBytes();
       final key = await ref.read(uploadsRepositoryProvider).uploadDocument(bytes, filename: _photo!.name);
-      await ref.read(driverRepositoryProvider).addVehicle(
+      final vehicle = await ref.read(driverRepositoryProvider).addVehicle(
             kind: _kind,
             documentFileUrl: key,
             bodyTypeId: isTractor ? null : _bodyTypeId,
@@ -114,7 +215,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
             innerHeightM: isTractor || !_customSize || !_isVolume ? null : double.tryParse(_innerHeightController.text.trim()),
           );
 
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) Navigator.of(context).pop(vehicle);
     } catch (e) {
       debugPrint('AddVehicleSheet: failed to add vehicle: $e');
       if (mounted) {

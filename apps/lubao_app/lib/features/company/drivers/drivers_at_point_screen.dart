@@ -14,6 +14,7 @@ import '../../../providers/data_providers.dart';
 import '../../shared/city_picking.dart';
 import '../../shared/status_helpers.dart';
 import '../haul_hint.dart';
+import '../../shared/driver_vehicle_photos.dart';
 
 class DriversAtPointScreen extends ConsumerStatefulWidget {
   const DriversAtPointScreen({super.key});
@@ -887,12 +888,18 @@ class _DriverCard extends StatelessWidget {
                     ),
                     if (spec.isNotEmpty)
                       // 045 п.4: миниатюра кузова (40 px) перед строкой машины.
-                      Row(
-                        children: [
-                          BodyTypeIcon(bodyTypeCode: bodyType?.code, width: 40),
-                          const SizedBox(width: AppSpacing.xs),
-                          Expanded(child: Text(spec, style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                        ],
+                      // 044 п.7: тап по строке машины — её фото («Фото нет», если не добавлены).
+                      InkWell(
+                        key: Key('driversAtPointPhotos-${driver.driverId}'),
+                        onTap: () => showDriverVehiclePhotos(context, driverId: driver.driverId, driverName: driver.driverName),
+                        child: Row(
+                          children: [
+                            BodyTypeIcon(bodyTypeCode: bodyType?.code, width: 40),
+                            const SizedBox(width: AppSpacing.xs),
+                            Expanded(child: Text(spec, style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                            const Icon(LucideIcons.image, size: 16, color: AppColors.primary),
+                          ],
+                        ),
                       ),
                   ],
                 ),

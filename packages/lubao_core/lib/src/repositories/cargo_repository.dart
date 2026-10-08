@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
@@ -127,6 +129,20 @@ class CargoRepository {
   Future<String> revealCargoContact(String cargoId, {required String type}) async {
     final res = await _client.dio.post('/cargos/$cargoId/contact', data: {'type': type});
     return (res.data as Map<String, dynamic>)['phone'] as String;
+  }
+
+  /// 044 п.7: фото машин водителя для логиста — [(documentId, type, plateNumber)].
+  Future<List<({String documentId, String type, String? plateNumber})>> driverVehiclePhotos(String driverId) async {
+    final res = await _client.dio.get('/drivers/$driverId/vehicle-photos');
+    return [
+      for (final e in res.data as List<dynamic>)
+        (documentId: (e as Map<String, dynamic>)['documentId'] as String, type: e['type'] as String, plateNumber: e['plateNumber'] as String?),
+    ];
+  }
+
+  Future<Uint8List> driverVehiclePhotoFile(String driverId, String documentId) async {
+    final res = await _client.dio.get<List<int>>('/drivers/$driverId/vehicle-photos/$documentId', options: Options(responseType: ResponseType.bytes));
+    return Uint8List.fromList(res.data ?? const []);
   }
 
   /// То же для логиста: номер водителя (только проверенной компании).

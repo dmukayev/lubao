@@ -206,7 +206,7 @@ class DriverDetailScreen extends ConsumerWidget {
                       onReject: (doc) => _reviewDocument(context, ref, doc, approve: false),
                     ),
                     const SizedBox(height: 16),
-                    _VehicleCard(vehicles: driver.vehicles, locale: locale),
+                    _VehicleCard(driverId: driver.id, vehicles: driver.vehicles, locale: locale),
                     const SizedBox(height: 16),
                     IdentifiersCard(
                       identifiers: [...driver.identifiers, ...driver.vehicles.expand((v) => v.identifiers)],
@@ -477,14 +477,23 @@ class _DocumentRow extends StatelessWidget {
   }
 }
 
-class _VehicleCard extends StatelessWidget {
-  const _VehicleCard({required this.vehicles, required this.locale});
+class _VehicleCard extends ConsumerWidget {
+  const _VehicleCard({required this.driverId, required this.vehicles, required this.locale});
 
+  final String driverId;
   final List<AdminDriverVehicle> vehicles;
   final String locale;
 
+  Future<void> _revoke(BuildContext context, WidgetRef ref, AdminDriverVehicle v) async {
+    final t = context.l10n;
+    final reason = await showReasonDialog(context, title: t.adminVehicleRevoke, confirmLabel: t.adminVehicleRevoke, danger: true);
+    if (reason == null) return;
+    await ref.read(adminRepositoryProvider).revokeVehicleVerification(v.id, reason: reason);
+    ref.invalidate(adminDriverDetailProvider(driverId));
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
     return AppCard(
       child: Column(
@@ -495,17 +504,33 @@ class _VehicleCard extends StatelessWidget {
           for (final v in vehicles)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(
-                [
-                  // Тип кузова есть только у прицепа — у тягача (задача
-                  // 031, этап A) bodyTypeName всегда null, показываем марку.
-                  if (v.bodyTypeName != null) v.bodyTypeName!.forLanguageCode(locale) else if (v.brand != null) v.brand!,
-                  if (v.capacityTons != null) '${v.capacityTons} ${t.unitTon}',
-                  // Задача 033, п.11 — размер кузова в карточке машины.
-                  if (v.volumeM3 != null) '${v.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
-                  if (v.palletsEuro != null) '${v.palletsEuro} ${t.unitPallets}',
-                  if (v.plateNumber != null) v.plateNumber!,
-                ].join(' · '),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    [
+                      // Тип кузова есть только у прицепа — у тягача (задача
+                      // 031, этап A) bodyTypeName всегда null, показываем марку.
+                      if (v.bodyTypeName != null) v.bodyTypeName!.forLanguageCode(locale) else if (v.brand != null) v.brand!,
+                      if (v.capacityTons != null) '${v.capacityTons} ${t.unitTon}',
+                      // Задача 033, п.11 — размер кузова в карточке машины.
+                      if (v.volumeM3 != null) '${v.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+                      if (v.palletsEuro != null) '${v.palletsEuro} ${t.unitPallets}',
+                      if (v.plateNumber != null) v.plateNumber!,
+                    ].join(' · '),
+                  ),
+                  // 044 п.6: «проверена автоматически» + «Отозвать проверку».
+                  if (v.isVerified && v.verifiedBy == 'AUTO') ...[
+                    StatusBadge(key: Key('adminVehicleAuto-${v.id}'), label: t.adminVehicleAutoVerified, color: StatusBadge.info),
+                    TextButton(
+                      key: Key('adminVehicleRevoke-${v.id}'),
+                      onPressed: () => _revoke(context, ref, v),
+                      child: Text(t.adminVehicleRevoke),
+                    ),
+                  ],
+                ],
               ),
             ),
         ],
