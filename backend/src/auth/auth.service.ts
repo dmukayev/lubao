@@ -73,7 +73,9 @@ export class AuthService {
 
   /// Каналы кода, которые видит водитель на экране входа (042 п.3).
   async driverCodeChannels() {
-    return { channels: await this.sms.channels() };
+    // 050: methods — порядок кнопок экрана входа, включая бот Telegram.
+    const telegramBot = !!process.env.TELEGRAM_BOT_TOKEN && !!process.env.TELEGRAM_BOT_USERNAME;
+    return { channels: await this.sms.channels(), methods: await this.sms.loginMethods(telegramBot) };
   }
 
   /**
@@ -86,7 +88,13 @@ export class AuthService {
     const normalized = normalizePhone(phone);
     const ok = await this.sms.verifyCode(normalized, code, ip);
     if (!ok) throw new BadRequestException('Неверный или истёкший код');
+    return this.loginDriverByPhone(normalized, deviceName, platform);
+  }
 
+  /// Вход или регистрация водителя по подтверждённому номеру — после кода
+  /// (SMS/WhatsApp/Telegram Gateway) и после «Поделиться номером» в боте
+  /// Telegram (050): те же проверки (роль, блокировка, чёрный список 039 п.2).
+  async loginDriverByPhone(normalized: string, deviceName?: string, platform?: string, extra: { telegramUserId?: string } = {}) {
     let user = await this.prisma.user.findUnique({ where: { phone: normalized } });
     if (!user) {
       user = await this.prisma.user.create({ data: { role: 'DRIVER', phone: normalized } });
@@ -95,6 +103,11 @@ export class AuthService {
     }
     assertNotBlocked(user);
 
+    // 050: Telegram-аккаунт запоминаем — повторный вход одной кнопкой «Старт».
+    if (extra.telegramUserId && user.telegramUserId !== extra.telegramUserId) {
+      await this.prisma.user.updateMany({ where: { telegramUserId: extra.telegramUserId, NOT: { id: user.id } }, data: { telegramUserId: null } });
+      user = await this.prisma.user.update({ where: { id: user.id }, data: { telegramUserId: extra.telegramUserId } });
+    }
     // Телефон в чёрном списке → снять «Проверен», завести идентификатор (039, п.2).
     await this.drivers.applyPhoneBlacklist(user.id);
     const driver = await this.drivers.findByUserId(user.id);

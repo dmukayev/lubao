@@ -61,7 +61,7 @@ export class AdminController {
   async loginCodeChannels(@CurrentUser() ctx: RequestContext) {
     assertAdmin(ctx);
     const setting = parseChannelSetting(await this.appSettings.get(LOGIN_CODE_CHANNELS_SETTING));
-    return setting.map((c) => ({ ...c, configured: this.sms.configured(c.id) }));
+    return setting.map((c) => ({ ...c, configured: c.id === 'telegram_bot' ? !!process.env.TELEGRAM_BOT_TOKEN && !!process.env.TELEGRAM_BOT_USERNAME : this.sms.configured(c.id) }));
   }
 
   /// Ручной чёрный список (043 п.4): ИИН / телефон / госномер / VIN… + причина.

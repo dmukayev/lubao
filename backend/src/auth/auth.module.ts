@@ -6,13 +6,15 @@ import { EmailModule } from '../email/email.module';
 import { UploadsModule } from '../uploads/uploads.module';
 import { AccountDeletionService } from './account-deletion.service';
 import { AuthController } from './auth.controller';
+import { TelegramLoginController } from './telegram-login.controller';
+import { TelegramLoginService } from './telegram-login.service';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
 
 @Module({
   imports: [DriversModule, CompaniesModule, SmsModule, EmailModule, UploadsModule],
-  controllers: [AuthController],
-  providers: [AuthService, SessionService, AccountDeletionService],
+  controllers: [AuthController, TelegramLoginController],
+  providers: [AuthService, SessionService, AccountDeletionService, TelegramLoginService],
   exports: [SessionService],
 })
 export class AuthModule {}

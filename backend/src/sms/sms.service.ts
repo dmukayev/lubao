@@ -2,7 +2,7 @@ import * as crypto from 'crypto';
 import { BadRequestException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { AppSettingsService } from '../app-settings/app-settings.service';
-import { LOGIN_CODE_CHANNELS_SETTING, LoginCodeChannel, consoleChannels, parseChannelSetting } from './login-code-channels';
+import { LOGIN_CODE_CHANNELS_SETTING, LoginChannel, LoginCodeChannel, consoleChannels, isLoginCodeChannel, parseChannelSetting } from './login-code-channels';
 import { SmsProvider } from './sms-provider';
 import { TelegramCodeSender } from './telegram-code.sender';
 import { WhatsappCodeSender } from './whatsapp-code.sender';
@@ -50,8 +50,16 @@ export class SmsService {
   /// настроен. Если не осталось ни одного — страховка SMS.
   async channels(): Promise<LoginCodeChannel[]> {
     const setting = parseChannelSetting(await this.settings?.get(LOGIN_CODE_CHANNELS_SETTING));
-    const list = setting.filter((c) => c.enabled && this.configured(c.id)).map((c) => c.id);
+    const list = setting.filter((c): c is { id: LoginCodeChannel; enabled: boolean } => isLoginCodeChannel(c.id) && c.enabled && this.configured(c.id)).map((c) => c.id);
     return list.length > 0 ? list : ['sms'];
+  }
+
+  /// 050 п.2: все способы входа в порядке из админки — для экрана входа
+  /// (бот Telegram — кнопкой, каналы кода — как раньше).
+  async loginMethods(telegramBotConfigured: boolean): Promise<LoginChannel[]> {
+    const setting = parseChannelSetting(await this.settings?.get(LOGIN_CODE_CHANNELS_SETTING));
+    const codes = await this.channels();
+    return setting.filter((c) => c.enabled && (c.id === 'telegram_bot' ? telegramBotConfigured : codes.includes(c.id as LoginCodeChannel))).map((c) => c.id);
   }
 
   private async send(id: LoginCodeChannel, phone: string, code: string): Promise<void> {

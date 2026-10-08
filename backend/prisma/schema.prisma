@@ -383,6 +383,9 @@ model User {
   role             UserRole
   phone            String?   @unique
   email            String?   @unique
+  /// 050: аккаунт Telegram, с которого водитель вошёл через бота, — повторный
+  /// вход одной кнопкой «Старт» без контакта.
+  telegramUserId   String?   @unique
   passwordHash     String?
   name             String?
   emailVerifiedAt  DateTime?
