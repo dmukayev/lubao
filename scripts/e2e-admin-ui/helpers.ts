@@ -115,7 +115,9 @@ export async function openRoute(page: Page, route: string) {
 
 /// Прокручивает правую панель (ленивый список), пока элемент не появится в семантике.
 export async function scrollPaneTo(page: Page, loc: Locator, x = 800) {
-  for (let i = 0; i < 12; i++) {
+  // На узком экране сводка длинная (события в несколько строк) — запас по шагам;
+  // нашли элемент — выходим сразу.
+  for (let i = 0; i < 24; i++) {
     if (await loc.first().isVisible().catch(() => false)) return;
     await page.mouse.move(x, 500);
     await page.mouse.wheel(0, 500);
