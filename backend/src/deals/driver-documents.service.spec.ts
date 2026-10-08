@@ -48,7 +48,15 @@ function setup(deal: unknown) {
     auditLog: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
   };
   const uploads: any = { getDocumentStream: jest.fn().mockResolvedValue({ stream: 'S', contentType: 'image/jpeg' }) };
-  return { prisma, uploads, service: new DriverDocumentsService(prisma, uploads) };
+  const store = new Map<string, string>();
+  const redis: any = {
+    client: {
+      set: jest.fn(async (k: string, v: string) => store.set(k, v)),
+      get: jest.fn(async (k: string) => store.get(k) ?? null),
+      del: jest.fn(async (k: string) => store.delete(k)),
+    },
+  };
+  return { prisma, uploads, redis, service: new DriverDocumentsService(prisma, uploads, redis) };
 }
 
 const logist: any = { user: { id: 'u-logist', name: 'Ли', email: 'li@x' }, companyMember: { companyId: 'c1', fullName: 'Ли Вэй' }, driver: null };
@@ -106,5 +114,21 @@ describe('DriverDocumentsService', () => {
     await expect(service.accessLog('deal1', { user: { id: 'u' }, driver: { id: 'other' } } as any)).rejects.toBeInstanceOf(ForbiddenException);
     const log = await service.accessLog('deal1', { user: { id: 'u' }, driver: { id: 'd1' } } as any);
     expect(log).toEqual([{ at: new Date('2030-01-01T10:00:00Z'), action: 'DRIVER_DOCS_VIEWED', by: 'Ли Вэй' }]);
+  });
+
+  it('одноразовая ссылка на PDF: выдаётся участнику сделки, срабатывает один раз и только для своей сделки', async () => {
+    const { prisma, service } = setup(dealRow());
+    prisma.user = { findUnique: jest.fn().mockResolvedValue({ id: 'u-logist', isActive: true, isBlocked: false }) };
+    prisma.companyMember = { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', company: {} }) };
+    const { token } = await service.createPdfLink('deal1', logist);
+    await expect(service.consumePdfLink('other-deal', token)).rejects.toMatchObject({ response: { code: 'LINK_EXPIRED' } });
+    const { token: token2 } = await service.createPdfLink('deal1', logist);
+    const ctx = await service.consumePdfLink('deal1', token2);
+    expect(ctx.user.id).toBe('u-logist');
+    await expect(service.consumePdfLink('deal1', token2)).rejects.toMatchObject({ response: { code: 'LINK_EXPIRED' } });
+  });
+
+  it('ссылку чужой компании не выдаём', async () => {
+    await expect(setup(dealRow({ companyId: 'other' })).service.createPdfLink('deal1', logist)).rejects.toMatchObject({ response: { code: 'NOT_YOUR_DEAL' } });
   });
 });

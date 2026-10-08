@@ -1,4 +1,5 @@
-import { Body, Controller, ForbiddenException, Get, Param, Patch, Post, Res } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Param, Patch, Post, Query, Res } from '@nestjs/common';
+import { Public } from '../common/public.decorator';
 import type { Response } from 'express';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
@@ -26,12 +27,22 @@ export class DealsController {
     return this.driverDocs.package(id, ctx);
   }
 
-  /// Тот же пакет одним PDF (044 п.1).
+  /// Одноразовая ссылка на PDF пакета (044 п.1–2) — открывается без заголовков.
+  @Post(':id/driver-documents/pdf-link')
+  driverDocumentsPdfLink(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    return this.driverDocs.createPdfLink(id, ctx);
+  }
+
+  /// Тот же пакет одним PDF (044 п.1): по одноразовой ссылке (`?token=`) или с
+  /// обычной авторизацией. Каждое скачивание — DRIVER_DOCS_DOWNLOADED.
+  @Public()
   @Get(':id/driver-documents.pdf')
-  async driverDocumentsPdf(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Res() res: Response) {
-    const { buffer, filename } = await this.driverDocs.pdf(id, ctx);
+  async driverDocumentsPdf(@CurrentUser() ctx: RequestContext | undefined, @Param('id') id: string, @Query('token') token: string | undefined, @Res() res: Response) {
+    const viewer = token ? await this.driverDocs.consumePdfLink(id, token) : ctx;
+    if (!viewer?.user) throw new ForbiddenException({ code: 'LINK_EXPIRED', message: 'Download link expired' });
+    const { buffer, filename } = await this.driverDocs.pdf(id, viewer);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Cache-Control', 'private, no-store');
     res.send(buffer);
   }

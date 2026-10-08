@@ -4,12 +4,15 @@ import { RequestContext } from '../common/request-context';
 import { decryptIdentifier } from '../identifiers/crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
+import { randomBytes } from 'crypto';
+import { RedisService } from '../redis/redis.service';
 import { I18nName, pickLocaleText } from '../notifications/notification-events';
 import { PdfImage, buildDriverDocumentsPdf } from './driver-documents.pdf';
 
 /// Пакет открыт, пока сделка обоюдная (водитель подтвердил) и ещё 30 дней после доставки.
 const OPEN_STATUSES: DealStatus[] = ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED'];
 export const DOCS_AFTER_DELIVERY_MS = 30 * 24 * 60 * 60 * 1000;
+const PDF_LINK_TTL_SECONDS = 5 * 60;
 
 const PERSON_DOC_TYPES: VerificationDocType[] = ['SELFIE', 'DRIVER_LICENSE', 'IDENTITY'];
 const VEHICLE_DOC_TYPES: VerificationDocType[] = ['VEHICLE_PASSPORT', 'TRAILER_PASSPORT', 'VEHICLE_PHOTO_FRONT', 'VEHICLE_PHOTO_SIDE'];
@@ -25,7 +28,33 @@ export class DriverDocumentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly uploads: UploadsService,
+    private readonly redis: RedisService,
   ) {}
+
+  /// Одноразовая ссылка на PDF (044 п.2): приложение открывает её в браузере/
+  /// системном просмотрщике без своих заголовков авторизации — так одинаково на
+  /// вебе, iOS и Android. Живёт 5 минут, срабатывает один раз; права проверяются
+  /// и при выдаче ссылки, и при скачивании.
+  async createPdfLink(dealId: string, ctx: RequestContext): Promise<{ token: string; expiresInSeconds: number }> {
+    await this.accessibleDeal(dealId, ctx);
+    const token = randomBytes(24).toString('base64url');
+    await this.redis.client.set(`docs-pdf:${token}`, JSON.stringify({ dealId, userId: ctx.user.id }), 'EX', PDF_LINK_TTL_SECONDS);
+    return { token, expiresInSeconds: PDF_LINK_TTL_SECONDS };
+  }
+
+  /// Контекст по одноразовой ссылке — тот же, что у вошедшего логиста.
+  async consumePdfLink(dealId: string, token: string): Promise<RequestContext> {
+    const key = `docs-pdf:${token}`;
+    const raw = await this.redis.client.get(key);
+    if (!raw) throw new ForbiddenException({ code: 'LINK_EXPIRED', message: 'Download link expired' });
+    await this.redis.client.del(key);
+    const { dealId: linkDeal, userId } = JSON.parse(raw) as { dealId: string; userId: string };
+    if (linkDeal !== dealId) throw new ForbiddenException({ code: 'LINK_EXPIRED', message: 'Download link expired' });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const companyMember = await this.prisma.companyMember.findUnique({ where: { userId }, include: { company: true } });
+    if (!user || !user.isActive || user.isBlocked) throw new ForbiddenException({ code: 'LINK_EXPIRED', message: 'Download link expired' });
+    return { user, driver: null, companyMember, sessionId: 'pdf-link' };
+  }
 
   async accessibleDeal(dealId: string, ctx: RequestContext) {
     if (!ctx.companyMember) throw new ForbiddenException({ code: 'COMPANY_ONLY', message: 'Only the cargo company sees driver documents' });
