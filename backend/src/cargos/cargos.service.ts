@@ -267,11 +267,29 @@ export class CargosService {
         a.cargo.readyDate.getTime() - b.cargo.readyDate.getTime(),
     );
 
+    const pageRanked = ranked.slice(offset, offset + limit);
+    // 045 п.2: состояние груза для ЭТОГО водителя (вместо «Опубликован») и
+    // сколько других водителей уже откликнулись — два запроса на страницу.
+    const pageIds = pageRanked.map((r) => r.cargo.id);
+    const [mine, others] = driverId && pageIds.length
+      ? await Promise.all([
+          this.prisma.response.findMany({ where: { cargoId: { in: pageIds }, driverId }, select: { cargoId: true, status: true } }),
+          this.prisma.response.groupBy({
+            by: ['cargoId'],
+            where: { cargoId: { in: pageIds }, driverId: { not: driverId }, status: { in: ['PENDING', 'SELECTED'] } },
+            _count: { _all: true },
+          }),
+        ])
+      : [[], []];
+    const myStatus = new Map(mine.map((r) => [r.cargoId, r.status]));
+    const othersCount = new Map(others.map((g) => [g.cargoId, g._count._all]));
     const items = await Promise.all(
-      ranked.slice(offset, offset + limit).map(async ({ cargo, pickupRank, section }) => ({
+      pageRanked.map(async ({ cargo, pickupRank, section }) => ({
         ...(await this.toDto(cargo)),
         pickupRank,
         feedSection: section,
+        myResponseStatus: myStatus.get(cargo.id) ?? null,
+        responsesCount: othersCount.get(cargo.id) ?? 0,
       })),
     );
     return { items, total: ranked.length, offset, limit, originCityId: origin?.cityId ?? null, originSource: source };

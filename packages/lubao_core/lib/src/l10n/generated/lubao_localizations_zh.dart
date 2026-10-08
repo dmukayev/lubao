@@ -3089,4 +3089,18 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get garageNoPlate => '无车牌';
+
+  @override
+  String get feedStateResponded => '您已响应';
+
+  @override
+  String get feedStateInvited => '邀请您承运';
+
+  @override
+  String get feedStateSelected => '您已被选中——请确认';
+
+  @override
+  String feedStateOthers(int count) {
+    return '已有 $count 人响应';
+  }
 }

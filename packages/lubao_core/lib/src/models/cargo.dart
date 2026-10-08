@@ -35,6 +35,8 @@ class Cargo {
     this.allowPartial = false,
     this.pickupRank,
     this.feedSection,
+    this.myResponseStatus,
+    this.responsesCount = 0,
   });
 
   final String id;
@@ -86,6 +88,11 @@ class Cargo {
   final int? pickupRank;
   final CargoFeedSection? feedSection;
 
+  /// Лента водителя (045 п.2): его отклик на этот груз и сколько других
+  /// водителей уже откликнулись.
+  final ResponseStatus? myResponseStatus;
+  final int responsesCount;
+
   factory Cargo.fromJson(Map<String, dynamic> json) => Cargo(
         id: json['id'] as String,
         companyId: json['companyId'] as String,
@@ -118,6 +125,8 @@ class Cargo {
         closedAt: json['closedAt'] == null ? null : DateTime.parse(json['closedAt'] as String),
         allowPartial: json['allowPartial'] as bool? ?? false,
         pickupRank: json['pickupRank'] as int?,
+        myResponseStatus: json['myResponseStatus'] == null ? null : responseStatusFromJson(json['myResponseStatus'] as String),
+        responsesCount: json['responsesCount'] as int? ?? 0,
         feedSection: switch (json['feedSection']) {
           'home' => CargoFeedSection.home,
           'selected' => CargoFeedSection.selected,

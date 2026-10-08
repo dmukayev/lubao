@@ -1263,5 +1263,10 @@
   "adminVehicleRevoke": "Отозвать проверку",
   "garageEmptyTitle": "Добавьте машину",
   "garageEmptyBody": "Сфотографируйте техпаспорт — госномер и VIN заполнятся сами.",
-  "garageNoPlate": "Без номера"
+  "garageNoPlate": "Без номера",
+  "feedStateResponded": "Вы откликнулись",
+  "feedStateInvited": "Вас приглашают",
+  "feedStateSelected": "Вы выбраны — подтвердите",
+  "feedStateOthers": "Откликнулись: {count}",
+  "@feedStateOthers": {"placeholders": {"count": {"type": "int"}}}
 }

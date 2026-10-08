@@ -3165,4 +3165,18 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get garageNoPlate => 'No plate';
+
+  @override
+  String get feedStateResponded => 'You responded';
+
+  @override
+  String get feedStateInvited => 'You are invited';
+
+  @override
+  String get feedStateSelected => 'You were selected — confirm';
+
+  @override
+  String feedStateOthers(int count) {
+    return 'Responded: $count';
+  }
 }

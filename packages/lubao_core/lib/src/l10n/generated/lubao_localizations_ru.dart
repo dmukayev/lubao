@@ -3151,4 +3151,18 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get garageNoPlate => 'Без номера';
+
+  @override
+  String get feedStateResponded => 'Вы откликнулись';
+
+  @override
+  String get feedStateInvited => 'Вас приглашают';
+
+  @override
+  String get feedStateSelected => 'Вы выбраны — подтвердите';
+
+  @override
+  String feedStateOthers(int count) {
+    return 'Откликнулись: $count';
+  }
 }

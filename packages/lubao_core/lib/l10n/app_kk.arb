@@ -1122,5 +1122,9 @@
   "adminVehicleRevoke": "Тексеруді қайтару",
   "garageEmptyTitle": "Көлік қосыңыз",
   "garageEmptyBody": "Техпаспортты суретке түсіріңіз — мемлекеттік нөмір мен VIN өздігінен толтырылады.",
-  "garageNoPlate": "Нөмірсіз"
+  "garageNoPlate": "Нөмірсіз",
+  "feedStateResponded": "Сіз жауап бердіңіз",
+  "feedStateInvited": "Сізді шақырады",
+  "feedStateSelected": "Сіз таңдалдыңыз — растаңыз",
+  "feedStateOthers": "Жауап бергендер: {count}"
 }

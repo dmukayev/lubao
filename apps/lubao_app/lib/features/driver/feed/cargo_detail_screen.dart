@@ -34,6 +34,8 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
       await ref.read(cargoRepositoryProvider).respond(widget.cargoId);
       unawaited(ref.read(pushServiceProvider).requestPermissionAndRegister());
       ref.invalidate(myCargoResponseProvider(widget.cargoId));
+      // 045 п.2: плашка «Вы откликнулись» в ленте — по свежим данным.
+      ref.invalidate(cargoFeedProvider);
     } on DioException catch (e) {
       ref.invalidate(myCargoResponseProvider(widget.cargoId));
       if (e.response?.statusCode != 409 && mounted) {
@@ -59,6 +61,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
       }
     } finally {
       ref.invalidate(myCargoResponseProvider(widget.cargoId));
+      ref.invalidate(cargoFeedProvider);
       if (mounted) setState(() => _responding = false);
     }
   }

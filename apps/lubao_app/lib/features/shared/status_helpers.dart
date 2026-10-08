@@ -22,6 +22,19 @@ import '../../providers/api_providers.dart';
   }
 }
 
+/// Плашка груза в ленте водителя (045 п.2) — состояние для НЕГО, не статус
+/// публикации: «Вы выбраны — подтвердите» (самая заметная) / «Вас приглашают» /
+/// «Вы откликнулись» / «Откликнулись N»; ничего — если он не откликался и
+/// других откликов нет.
+(String?, Color) feedStatePresentation(LubaoLocalizations t, Cargo cargo) {
+  return switch (cargo.myResponseStatus) {
+    ResponseStatus.selected => (t.feedStateSelected, StatusBadge.info),
+    ResponseStatus.invited => (t.feedStateInvited, StatusBadge.warning),
+    ResponseStatus.pending => (t.feedStateResponded, StatusBadge.success),
+    _ => cargo.responsesCount > 0 ? (t.feedStateOthers(cargo.responsesCount), StatusBadge.neutral) : (null, StatusBadge.neutral),
+  };
+}
+
 (String, Color) responseStatusPresentation(LubaoLocalizations t, ResponseStatus status) {
   switch (status) {
     case ResponseStatus.invited:

@@ -10,8 +10,8 @@ class CargoCard extends StatelessWidget {
     required this.bodyTypeLabel,
     required this.priceLabel,
     required this.readyDateLabel,
-    required this.statusLabel,
-    required this.statusColor,
+    this.statusLabel,
+    this.statusColor = StatusBadge.neutral,
     this.onTap,
     this.trailing,
     this.badge,
@@ -31,7 +31,9 @@ class CargoCard extends StatelessWidget {
   final String bodyTypeLabel;
   final String priceLabel;
   final String readyDateLabel;
-  final String statusLabel;
+  /// null — без плашки (045 п.2: в ленте водителя плашка — только состояние
+  /// груза для него самого, «Опубликован» не показываем).
+  final String? statusLabel;
   final Color statusColor;
   final VoidCallback? onTap;
   final Widget? trailing;
@@ -71,7 +73,7 @@ class CargoCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              StatusBadge(label: statusLabel, color: statusColor),
+              if (statusLabel != null) StatusBadge(label: statusLabel!, color: statusColor),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),

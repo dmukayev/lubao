@@ -239,6 +239,7 @@ describe('CargosService — отсев грузов по размеру маши
       deal: { count: jest.fn().mockResolvedValue(0) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       driver: { findUnique: jest.fn().mockResolvedValue(null) },
+      response: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
       arrival: {
         findFirst: jest.fn().mockResolvedValue({
           trailer: { capacityTons: 20, volumeM3: 90, palletsEuro: 33, kind: 'TRAILER' },
@@ -366,6 +367,7 @@ describe('CargosService — лента на сервере: город → об�
       deal: { count: jest.fn().mockResolvedValue(0) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       arrival: { findMany: jest.fn().mockResolvedValue(opts.arrivals ?? []), findFirst: jest.fn().mockResolvedValue(null) },
+      response: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
       vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
       driver: {
         findUnique: jest.fn().mockResolvedValue({ homeCity: opts.home ?? null, directions: (opts.directions ?? []).map((countryId) => ({ countryId })), anyCountry: false }),
@@ -543,3 +545,26 @@ describe('CargosService.revealContact', () => {
   });
 });
 
+// 045 п.2: в ленте — состояние груза для этого водителя и число других откликов.
+describe('CargosService.feed — моё состояние и конкуренты', () => {
+  it('мой отклик и сколько других откликнулись — по грузам страницы', async () => {
+    const prisma: any = {
+      cargo: { findMany: jest.fn().mockResolvedValue([baseCargo({ id: 'c1' }), baseCargo({ id: 'c2' })]) },
+      deal: { count: jest.fn().mockResolvedValue(0) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+      driver: { findUnique: jest.fn().mockResolvedValue(null) },
+      arrival: { findFirst: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
+      vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
+      response: {
+        findMany: jest.fn().mockResolvedValue([{ cargoId: 'c1', status: 'INVITED' }]),
+        groupBy: jest.fn().mockResolvedValue([{ cargoId: 'c2', _count: { _all: 3 } }]),
+      },
+    };
+    const service = new CargosService(prisma, {} as any, {} as any);
+    const { items } = await service.feed('d1');
+    const byId = Object.fromEntries(items.map((i: any) => [i.id, i]));
+    expect(byId.c1).toMatchObject({ myResponseStatus: 'INVITED', responsesCount: 0 });
+    expect(byId.c2).toMatchObject({ myResponseStatus: null, responsesCount: 3 });
+    expect(prisma.response.groupBy.mock.calls[0][0].where).toMatchObject({ driverId: { not: 'd1' }, status: { in: ['PENDING', 'SELECTED'] } });
+  });
+});

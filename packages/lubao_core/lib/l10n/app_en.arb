@@ -1247,5 +1247,9 @@
   "adminVehicleRevoke": "Revoke verification",
   "garageEmptyTitle": "Add a vehicle",
   "garageEmptyBody": "Take a photo of the registration — the plate and VIN fill in automatically.",
-  "garageNoPlate": "No plate"
+  "garageNoPlate": "No plate",
+  "feedStateResponded": "You responded",
+  "feedStateInvited": "You are invited",
+  "feedStateSelected": "You were selected — confirm",
+  "feedStateOthers": "Responded: {count}"
 }

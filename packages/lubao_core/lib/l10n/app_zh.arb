@@ -1122,5 +1122,9 @@
   "adminVehicleRevoke": "撤销审核",
   "garageEmptyTitle": "添加车辆",
   "garageEmptyBody": "拍摄行驶证，车牌号和 VIN 会自动填写。",
-  "garageNoPlate": "无车牌"
+  "garageNoPlate": "无车牌",
+  "feedStateResponded": "您已响应",
+  "feedStateInvited": "邀请您承运",
+  "feedStateSelected": "您已被选中——请确认",
+  "feedStateOthers": "已有 {count} 人响应"
 }

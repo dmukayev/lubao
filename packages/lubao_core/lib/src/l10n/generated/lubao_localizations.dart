@@ -5987,6 +5987,30 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Без номера'**
   String get garageNoPlate;
+
+  /// No description provided for @feedStateResponded.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы откликнулись'**
+  String get feedStateResponded;
+
+  /// No description provided for @feedStateInvited.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вас приглашают'**
+  String get feedStateInvited;
+
+  /// No description provided for @feedStateSelected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы выбраны — подтвердите'**
+  String get feedStateSelected;
+
+  /// No description provided for @feedStateOthers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откликнулись: {count}'**
+  String feedStateOthers(int count);
 }
 
 class _LubaoLocalizationsDelegate

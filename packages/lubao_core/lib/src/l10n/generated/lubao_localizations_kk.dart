@@ -3164,4 +3164,18 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get garageNoPlate => 'Нөмірсіз';
+
+  @override
+  String get feedStateResponded => 'Сіз жауап бердіңіз';
+
+  @override
+  String get feedStateInvited => 'Сізді шақырады';
+
+  @override
+  String get feedStateSelected => 'Сіз таңдалдыңыз — растаңыз';
+
+  @override
+  String feedStateOthers(int count) {
+    return 'Жауап бергендер: $count';
+  }
 }

@@ -89,6 +89,11 @@ void main() {
           expect(find.byKey(const Key('cargoVerifyHint')), findsOneWidget, reason: 'после отклика — мягкая подсказка про проверку');
           await tester.tap(find.byType(BackButton).first);
           await tester.pumpAndSettle();
+          // 045 п.2: в ленте у груза — «Вы откликнулись», а не «Опубликован».
+          final feedCard = find.byKey(const Key('feedCargoCard-$e2eCargo5'));
+          await waitAndReveal(tester, feedCard);
+          await waitFor(tester, find.descendant(of: feedCard, matching: find.text(t.feedStateResponded)));
+          expect(find.descendant(of: feedCard, matching: find.text(t.cargoStatusPublished)), findsNothing);
         });
         // 043 п.11: телефон логиста новичку — только после отклика «Готов взять».
         await run.step(tester, '$tag-телефон-после-отклика', () async {

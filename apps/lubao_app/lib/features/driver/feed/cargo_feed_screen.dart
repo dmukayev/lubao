@@ -137,7 +137,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
     final destinationLabel =
         [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
     final bodyType = refData.bodyTypeById(cargo.bodyTypeId);
-    final (statusLabel, statusColor) = cargoStatusPresentation(t, cargo.status);
+    final (statusLabel, statusColor) = feedStatePresentation(t, cargo);
     final isHere = cargo.pickupRank == 0;
     final isHomeSection = cargo.feedSection == CargoFeedSection.home;
 
