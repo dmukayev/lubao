@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsIn, IsISO8601, IsNumber, IsOptional, IsString, Min, IsInt, Max } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsISO8601, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class UpdateCargoDto {
   @IsOptional()
@@ -59,4 +59,16 @@ export class UpdateCargoDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  /// 048: другие подходящие кузова (кроме основного) — груз виден и им.
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  extraBodyTypeIds?: string[];
+
+  /// 048: параметры груза по профилю кузова (продукт и литры, тип контейнера, число машин…).
+  @IsOptional()
+  @IsObject()
+  specs?: Record<string, unknown>;
 }

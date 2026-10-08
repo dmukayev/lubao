@@ -1,4 +1,4 @@
-import { IsIn, IsNumber, IsOptional, IsString, Min, Max } from 'class-validator';
+import { IsIn, IsNumber, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
 
 const VEHICLE_KINDS = ['TRACTOR', 'TRAILER', 'RIGID'] as const;
 
@@ -65,11 +65,14 @@ export class CreateVehicleDto {
   @Min(0)
   @Max(4.5)
   innerHeightM?: number;
+
+  /// 048: параметры по профилю кузова (литры, продукт, места под машины…);
+  /// проверяются по полям типа кузова. Старые клиенты шлют колонки — их тоже учитываем.
+  @IsOptional()
+  @IsObject()
+  specs?: Record<string, unknown>;
 }
 
-/// «Размер кузова» отдельно от создания (задача 033, п.5) — существующим
-/// машинам размер не проставляется автоматически, водитель выбирает при
-/// следующем открытии гаража.
 export class SetVehicleSizeDto {
   @IsOptional()
   @IsString()
@@ -92,4 +95,5 @@ export class SetVehicleSizeDto {
   @Min(0)
   @Max(4.5)
   innerHeightM?: number;
+
 }

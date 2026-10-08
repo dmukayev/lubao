@@ -1,4 +1,4 @@
-import { ArrayUnique, IsArray, IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { ArrayUnique, IsArray, IsBoolean, IsNumber, IsObject, IsOptional, IsString, Min } from 'class-validator';
 import { IsPersonName } from '../../common/validators/person-name.validator';
 
 export class UpdateDriverDto {
@@ -42,4 +42,10 @@ export class UpdateDriverDto {
   @IsNumber()
   @Min(0)
   capacityTons?: number;
+
+  /// 048 п.7: «основа» кузова из регистрации по профилю (литры и продукт у
+  /// цистерны, места у автовоза, контейнеры у контейнеровоза).
+  @IsOptional()
+  @IsObject()
+  preferredSpecs?: Record<string, unknown>;
 }

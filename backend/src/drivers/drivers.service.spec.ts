@@ -95,6 +95,7 @@ describe('DriversService#updateProfile — подтверждение телеф
           driver: { create: jest.fn().mockResolvedValue({ id: 'd1' }), update: jest.fn() },
           driverDirection: { deleteMany: jest.fn(), createMany: jest.fn() },
           driverPermit: { deleteMany: jest.fn(), createMany: jest.fn() },
+      bodyType: { findUnique: jest.fn().mockResolvedValue(null) },
           vehicle: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'v1' }) },
         }),
       ),
@@ -133,6 +134,7 @@ describe('DriversService#updateProfile — подтверждение телеф
           driver: { update: jest.fn().mockResolvedValue({ id: 'd1' }), create: jest.fn() },
           driverDirection: { deleteMany: jest.fn(), createMany: jest.fn() },
           driverPermit: { deleteMany: jest.fn(), createMany: jest.fn() },
+      bodyType: { findUnique: jest.fn().mockResolvedValue(null) },
           vehicle: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'v1' }) },
         }),
       ),
@@ -271,6 +273,7 @@ describe('DriversService.updateProfile — машины при регистра�
       driver: { create: jest.fn().mockResolvedValue({ id: 'd1' }), update: jest.fn().mockResolvedValue({ id: 'd1' }) },
       driverDirection: { deleteMany: jest.fn(), createMany: jest.fn() },
       driverPermit: { deleteMany: jest.fn(), createMany: jest.fn() },
+      bodyType: { findUnique: jest.fn().mockResolvedValue(null) },
       vehicle: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
       region: { findMany: jest.fn().mockResolvedValue([{ id: 'r-almaty', countryId: 'kz' }, { id: 'r-osh', countryId: 'kg' }]) },
     };
@@ -292,7 +295,7 @@ describe('DriversService.updateProfile — машины при регистра�
     const { tx, service } = setup(null);
     await service.updateProfile('u1', input);
     expect(tx.vehicle.create).not.toHaveBeenCalled();
-    expect(tx.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { preferredBodyTypeId: 'b1', preferredCapacityTons: 20 } });
+    expect(tx.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: expect.objectContaining({ preferredBodyTypeId: 'b1', preferredCapacityTons: 20 }) });
   });
 
   it('045 п.7: области раскладываются по своим странам, у страны без областей — вся страна', async () => {
@@ -336,6 +339,46 @@ describe('DriversService.acceptLicenseName (045 п.10)', () => {
     expect(prisma.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { fullName: 'Тестов Ерлан Серикович' } });
     prisma.driver.findUnique.mockResolvedValue({ id: 'd1', userId: 'u1', fullName: 'Ерлан', licenseFullName: null });
     await expect(service.acceptLicenseName('u1')).rejects.toThrow('No full name from the licence');
+  });
+});
+
+describe('DriversService.updateProfile — «основа» кузова по профилю (048 п.7)', () => {
+  const { BODY_TYPE_PROFILES } = require('../../prisma/body-type-profiles');
+  function setup(fields: unknown) {
+    const tx: any = {
+      driver: { create: jest.fn().mockResolvedValue({ id: 'd1', preferredBodyTypeId: null }), update: jest.fn().mockResolvedValue({ id: 'd1' }) },
+      driverDirection: { deleteMany: jest.fn(), createMany: jest.fn() },
+      driverPermit: { deleteMany: jest.fn(), createMany: jest.fn() },
+      bodyType: { findUnique: jest.fn().mockResolvedValue({ fields }) },
+      region: { findMany: jest.fn().mockResolvedValue([]) },
+    };
+    const prisma: any = {
+      city: { findUnique: jest.fn().mockResolvedValue({ id: 'city-1' }) },
+      driver: { findUnique: jest.fn().mockResolvedValue(null), findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'd1', userId: 'u1', isVerified: false, ratingAvg: 0, ratingCount: 0 }) },
+      driverDirection: { findMany: jest.fn().mockResolvedValue([]) },
+      driverPermit: { findMany: jest.fn().mockResolvedValue([]) },
+      vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
+      verificationDocument: { findFirst: jest.fn().mockResolvedValue(null) },
+      user: { findUnique: jest.fn().mockResolvedValue({ phone: null }) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+    };
+    return { tx, service: new DriversService(prisma) };
+  }
+  const input: any = { fullName: 'Ерлан', homeCityId: 'city-1', anyCountry: true, directionCountryIds: [], permitIds: [], bodyTypeId: 'bt' };
+
+  it('автовоз: места под машины в preferredSpecs, тоннаж не хранится', async () => {
+    const { tx, service } = setup(BODY_TYPE_PROFILES.CARCARRIER.fields);
+    await service.updateProfile('u1', { ...input, capacityTons: 20, preferredSpecs: { carSlots: 8 } });
+    expect(tx.driver.update.mock.calls[0][0].data).toMatchObject({ preferredCapacityTons: null, preferredSpecs: { carSlots: 8 } });
+  });
+
+  it('цистерна: литры и продукт; тент — тоннаж', async () => {
+    const tank = setup(BODY_TYPE_PROFILES.TANK.fields);
+    await tank.service.updateProfile('u1', { ...input, preferredSpecs: { liters: 30000, product: 'FUEL' } });
+    expect(tank.tx.driver.update.mock.calls[0][0].data.preferredSpecs).toEqual({ liters: 30000, product: 'FUEL' });
+    const tent = setup(BODY_TYPE_PROFILES.TENT.fields);
+    await tent.service.updateProfile('u1', { ...input, capacityTons: 20 });
+    expect(tent.tx.driver.update.mock.calls[0][0].data).toMatchObject({ preferredCapacityTons: 20, preferredSpecs: { capacityTons: 20 } });
   });
 });
 

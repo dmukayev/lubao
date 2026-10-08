@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Driver } from '@prisma/client';
+import { Driver, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { leaveTerminalIfOutside } from '../arrivals/arrival-lifecycle';
 import { IdentifiersService } from '../identifiers/identifiers.service';
@@ -9,6 +9,7 @@ import { calculatePalletsEuro, calculateVolumeM3 } from './body-size';
 import { CreateVehicleDto, SetVehicleSizeDto } from './dto/create-vehicle.dto';
 import { CreateVerificationDocumentDto } from './dto/create-verification-document.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
+import { bodyFields, validateSpecs } from '../body-types/specs';
 
 /// Задача 031, этап A, п.4 — проверка разделена: водитель «Проверен» по
 /// селфи и правам (человек); техпаспорта тягача/прицепа теперь проверяют
@@ -76,6 +77,7 @@ export class DriversService {
       permitIds: permits.map((p) => p.permitId),
       preferredBodyTypeId: driver.preferredBodyTypeId,
       preferredCapacityTons: driver.preferredCapacityTons != null ? Number(driver.preferredCapacityTons) : null,
+      preferredSpecs: driver.preferredSpecs ?? null,
       vehicle: vehicle
         ? {
             id: vehicle.id,
@@ -150,12 +152,21 @@ export class DriversService {
       // без номера и документов только путали. Кузов и тоннаж из мастера —
       // предпочтение водителя (лента, «Кто свободен»), пока нет настоящей машины.
       if (!existing && !input.bodyTypeId) throw new BadRequestException('bodyTypeId is required for registration');
-      if (input.bodyTypeId !== undefined || input.capacityTons !== undefined) {
+      if (input.bodyTypeId !== undefined || input.capacityTons !== undefined || input.preferredSpecs !== undefined) {
+        // 048 п.7: тоннаж — только если он поле профиля (у автовоза и
+        // контейнеровоза его нет); остальная «основа» — в preferredSpecs.
+        const bodyTypeId = input.bodyTypeId ?? driver.preferredBodyTypeId;
+        const bodyType = bodyTypeId ? await tx.bodyType.findUnique({ where: { id: bodyTypeId }, select: { fields: true } }) : null;
+        const fields = bodyFields(bodyType?.fields);
+        const hasCapacity = fields.length === 0 || fields.some((f) => f.key === 'capacityTons');
+        const specs = fields.length ? validateSpecs(fields, { capacityTons: input.capacityTons, ...(input.preferredSpecs ?? {}) }, 'preferred') : {};
+        const capacity = typeof specs.capacityTons === 'number' ? specs.capacityTons : input.capacityTons;
         await tx.driver.update({
           where: { id: driver.id },
           data: {
             ...(input.bodyTypeId !== undefined ? { preferredBodyTypeId: input.bodyTypeId } : {}),
-            ...(input.capacityTons !== undefined ? { preferredCapacityTons: input.capacityTons } : {}),
+            preferredCapacityTons: hasCapacity ? (capacity ?? null) : null,
+            preferredSpecs: Object.keys(specs).length ? specs : Prisma.JsonNull,
           },
         });
       }
@@ -349,6 +360,7 @@ export class DriversService {
     innerHeightM?: unknown;
     volumeM3?: unknown;
     palletsEuro?: number | null;
+    specs?: unknown;
     isOwner: boolean;
     isVerified: boolean;
     isArchived: boolean;
@@ -369,6 +381,7 @@ export class DriversService {
       innerHeightM: v.innerHeightM != null ? Number(v.innerHeightM) : null,
       volumeM3: v.volumeM3 != null ? Number(v.volumeM3) : null,
       palletsEuro: v.palletsEuro ?? null,
+      specs: v.specs ?? null,
       isOwner: v.isOwner,
       isVerified: v.isVerified,
       isArchived: v.isArchived,
@@ -379,6 +392,41 @@ export class DriversService {
   /// Задача 033, п.3 — поля размера для записи в Vehicle: шаблон КОПИРУЕТСЯ
   /// (правка шаблона в админке не меняет задним числом чужие машины), «свой
   /// размер» — объём и паллеты считаются из Д/Ш/В.
+  /// 048: specs машины по профилю её кузова + проекция в колонки 033/037 у
+  /// объёмных (у остальных объём/паллеты/размер не хранятся).
+  private async vehicleBodyData(dto: CreateVehicleDto, sizeFields: Record<string, unknown>) {
+    const bodyType = dto.bodyTypeId ? await this.prisma.bodyType.findUnique({ where: { id: dto.bodyTypeId }, select: { profile: true, fields: true } }) : null;
+    const num = (v: unknown) => (v == null ? undefined : Number(v));
+    const legacy: Record<string, unknown> = {
+      capacityTons: dto.capacityTons,
+      volumeM3: num(sizeFields.volumeM3),
+      palletsEuro: num(sizeFields.palletsEuro),
+      innerLengthM: num(sizeFields.innerLengthM),
+      innerWidthM: num(sizeFields.innerWidthM),
+      innerHeightM: num(sizeFields.innerHeightM),
+    };
+    const fields = bodyFields(bodyType?.fields);
+    if (!bodyType || fields.length === 0) {
+      // Тип без полей (новый из админки) — как раньше, колонками.
+      return { capacityTons: dto.capacityTons ?? null, ...sizeFields };
+    }
+    const specs = validateSpecs(fields, { ...legacy, ...(dto.specs ?? {}) }, 'vehicle');
+    const capacityTons = typeof specs.capacityTons === 'number' ? specs.capacityTons : null;
+    if (bodyType.profile !== 'VOLUME') {
+      return { specs, capacityTons, volumeM3: null, palletsEuro: null, innerLengthM: null, innerWidthM: null, innerHeightM: null, sizePresetId: null };
+    }
+    return {
+      specs,
+      capacityTons,
+      sizePresetId: (sizeFields.sizePresetId as string | null | undefined) ?? null,
+      volumeM3: (specs.volumeM3 as number | undefined) ?? null,
+      palletsEuro: (specs.palletsEuro as number | undefined) ?? null,
+      innerLengthM: (specs.innerLengthM as number | undefined) ?? null,
+      innerWidthM: (specs.innerWidthM as number | undefined) ?? null,
+      innerHeightM: (specs.innerHeightM as number | undefined) ?? null,
+    };
+  }
+
   private async resolveSizeFields(dto: { sizePresetId?: string; innerLengthM?: number; innerWidthM?: number; innerHeightM?: number }) {
     if (dto.sizePresetId) {
       const preset = await this.prisma.bodySizePreset.findUnique({ where: { id: dto.sizePresetId } });
@@ -438,6 +486,7 @@ export class DriversService {
     }
 
     const sizeFields = dto.kind === 'TRACTOR' ? {} : await this.resolveSizeFields(dto);
+    const body = dto.kind === 'TRACTOR' ? null : await this.vehicleBodyData(dto, sizeFields);
     const { vehicle, document } = await this.prisma.$transaction(async (tx) => {
       const vehicle = await tx.vehicle.create({
         data: {
@@ -447,9 +496,8 @@ export class DriversService {
           plateNumber: dto.plateNumber,
           vin: dto.vin,
           brand: dto.brand,
-          capacityTons: dto.kind === 'TRACTOR' ? null : dto.capacityTons,
           lengthM: dto.kind === 'TRACTOR' ? null : dto.lengthM,
-          ...sizeFields,
+          ...(body ?? { capacityTons: null }),
         },
       });
       const document = dto.documentFileUrl

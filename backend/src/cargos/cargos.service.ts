@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Cargo, Company } from '@prisma/client';
+import { Cargo, Company, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ResponsesService } from '../responses/responses.service';
 import { CreateCargoDto } from './dto/create-cargo.dto';
@@ -11,6 +11,7 @@ import { CARGO_ARCHIVE_AFTER_MS } from './cargo-lifecycle';
 import { evaluateVehicleLoad } from '../deals/vehicle-load';
 import { ContactPolicyService } from '../contact-events/contact-policy.service';
 import { RequestContext } from '../common/request-context';
+import { validateSpecs } from '../body-types/specs';
 
 /// Лента: «рядом» с городом водителя — та же область либо ≤200 км (040, п.5).
 export const NEARBY_KM = 200;
@@ -98,6 +99,8 @@ export class CargosService {
       destinationCountryId: cargo.destinationCountryId,
       destinationCityId: cargo.destinationCityId,
       bodyTypeId: cargo.bodyTypeId,
+      extraBodyTypeIds: cargo.extraBodyTypeIds ?? [],
+      specs: cargo.specs ?? null,
       weightKg: cargo.weightKg ? Number(cargo.weightKg) : null,
       volumeM3: cargo.volumeM3 ? Number(cargo.volumeM3) : null,
       palletCount: cargo.palletCount ?? null,
@@ -413,6 +416,7 @@ export class CargosService {
     if (!point || !point.isActive) throw new BadRequestException('POINT_REQUIRED');
     const readyDate = parseDateOnly(dto.readyDate);
     const expiresAt = new Date(readyDate.getTime() + CARGO_ARCHIVE_AFTER_MS);
+    const bodyData = await this.cargoBodyData(dto.bodyTypeId, dto.specs, dto.extraBodyTypeIds);
 
     const cargo = await this.prisma.cargo.create({
       data: {
@@ -434,6 +438,7 @@ export class CargosService {
         status: 'PUBLISHED',
         publishedAt: new Date(),
         expiresAt,
+        ...bodyData,
       },
       include: this.includeForDto,
     });
@@ -470,6 +475,11 @@ export class CargosService {
       const point = await this.prisma.point.findUnique({ where: { id: dto.pointId } });
       if (!point || !point.isActive) throw new BadRequestException('POINT_REQUIRED');
     }
+    // 048: сменили кузов или параметры — заново по полям профиля.
+    const bodyData =
+      dto.bodyTypeId !== undefined || dto.specs !== undefined || dto.extraBodyTypeIds !== undefined
+        ? await this.cargoBodyData(dto.bodyTypeId ?? existing.bodyTypeId, dto.specs ?? (existing.specs as Record<string, unknown> | null) ?? undefined, dto.extraBodyTypeIds ?? existing.extraBodyTypeIds)
+        : {};
 
     const cargo = await this.prisma.cargo.update({
       where: { id },
@@ -488,10 +498,22 @@ export class CargosService {
         readyDate,
         expiresAt,
         description: dto.description,
+        ...bodyData,
       },
       include: this.includeForDto,
     });
     return this.toDto(cargo);
+  }
+
+  /// 048: specs груза по полям профиля основного кузова; другие подходящие
+  /// кузова — только существующие и не повторяющие основной.
+  private async cargoBodyData(bodyTypeId: string, specsInput: Record<string, unknown> | undefined, extraIds: string[] | undefined) {
+    const bodyType = await this.prisma.bodyType.findUnique({ where: { id: bodyTypeId }, select: { fields: true } });
+    if (!bodyType) throw new BadRequestException('BODY_TYPE_REQUIRED');
+    const specs = validateSpecs(bodyType.fields, specsInput ?? {}, 'cargo');
+    const wanted = [...new Set((extraIds ?? []).filter((id) => id !== bodyTypeId))];
+    const extra = wanted.length ? await this.prisma.bodyType.findMany({ where: { id: { in: wanted }, isActive: true }, select: { id: true } }) : [];
+    return { specs: Object.keys(specs).length ? specs : Prisma.JsonNull, extraBodyTypeIds: extra.map((b) => b.id) };
   }
 
   /// Кандидаты на «Нашёл в Lubao» (задача 017, п.6) — водители, с кем уже

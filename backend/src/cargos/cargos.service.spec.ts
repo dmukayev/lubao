@@ -272,6 +272,7 @@ describe('CargosService.create — непроверенная компания �
       cargo: { create: jest.fn().mockResolvedValue(baseCargo()) },
       deal: { count: jest.fn().mockResolvedValue(0) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+      bodyType: { findUnique: jest.fn().mockResolvedValue({ fields: [] }), findMany: jest.fn().mockResolvedValue([]) },
     };
     const service = new CargosService(prisma, {} as any, {} as any);
 
@@ -615,6 +616,34 @@ describe('CargosService.mine — сделка по грузу', () => {
     expect(list.find((c) => c.id === 'c1').activeDeal).toEqual({ id: 'deal1', status: 'CONFIRMED_BY_DRIVER', driverName: 'Ерлан' });
     expect(list.find((c) => c.id === 'c2').activeDeal).toBeNull();
     expect(prisma.deal.findMany.mock.calls[0][0].where).toMatchObject({ status: { not: 'CANCELLED' } });
+  });
+});
+
+// 048 п.2, п.4: груз — specs по полям профиля основного кузова, другие подходящие кузова.
+describe('CargosService.create — профиль кузова', () => {
+  const TANK_FIELDS = require('../../prisma/body-type-profiles').BODY_TYPE_PROFILES.TANK.fields;
+  function setup() {
+    const prisma: any = {
+      point: { findUnique: jest.fn().mockResolvedValue({ id: 'p1', isActive: true }) },
+      cargo: { create: jest.fn().mockResolvedValue(baseCargo()) },
+      deal: { count: jest.fn().mockResolvedValue(0) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+      bodyType: { findUnique: jest.fn().mockResolvedValue({ fields: TANK_FIELDS }), findMany: jest.fn().mockResolvedValue([{ id: 'bt-other' }]) },
+    };
+    return { prisma, service: new CargosService(prisma, {} as any, {} as any) };
+  }
+  const base = { pointId: 'p1', readyDate: '2030-01-01', destinationCountryId: 'kz', bodyTypeId: 'bt-tank', price: 100, currency: 'USD' } as any;
+
+  it('цистерна: продукт и литры сохраняются, другие кузова — только существующие и не основной', async () => {
+    const { prisma, service } = setup();
+    await service.create('c1', 'u1', true, { ...base, specs: { cargoProduct: 'FOOD', cargoLiters: 20000, palletsEuro: 5 }, extraBodyTypeIds: ['bt-tank', 'bt-other', 'bt-other'] });
+    expect(prisma.cargo.create.mock.calls[0][0].data).toMatchObject({ specs: { cargoProduct: 'FOOD', cargoLiters: 20000 }, extraBodyTypeIds: ['bt-other'] });
+    expect(prisma.bodyType.findMany.mock.calls[0][0].where.id.in).toEqual(['bt-other']);
+  });
+
+  it('цистерна без литров — 400 INVALID_SPECS', async () => {
+    const { service } = setup();
+    await expect(service.create('c1', 'u1', true, { ...base, specs: { cargoProduct: 'FOOD' } })).rejects.toMatchObject({ response: { code: 'INVALID_SPECS' } });
   });
 });
 
