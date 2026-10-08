@@ -192,5 +192,55 @@ void main() {
       await waitFor(tester, find.byKey(const Key('driverStatus-inTrip')));
       await waitFor(tester, find.byWidgetPredicate((w) => w is Text && w.key == const Key('anonsCityName') && w.data == 'Алматы'));
     });
+
+    Future<void> tapInDialog(Finder finder) async {
+      await tester.ensureVisible(finder);
+      await tester.pumpAndSettle();
+      await tester.tap(finder);
+      await tester.pumpAndSettle();
+    }
+
+    // 046 п.1: причина — чипом из списка; «Другое» требует текст.
+    await run.step(tester, 'отмена-причина-из-списка', () async {
+      await goTab(tester, t.navDeals);
+      await openDeal(deal3);
+      await waitAndReveal(tester, find.byKey(const Key('dealCancelButton')));
+      await tester.tap(find.byKey(const Key('dealCancelButton')));
+      await waitFor(tester, find.byKey(const Key('cancelReason_VEHICLE_BREAKDOWN')));
+      expect(find.byKey(const Key('cancelReason_TOOK_OTHER_CARGO')), findsOneWidget);
+      expect(tester.widget<FilledButton>(find.byKey(const Key('cancelSubmit'))).onPressed, isNull);
+      await tapInDialog(find.byKey(const Key('cancelReason_OTHER')));
+      await waitFor(tester, find.byKey(const Key('cancelOtherText')));
+      expect(tester.widget<FilledButton>(find.byKey(const Key('cancelSubmit'))).onPressed, isNull);
+      expectInsideSafeZone(tester);
+      expectNoOverflow(tester);
+      await tapInDialog(find.byKey(const Key('cancelReason_TERMS_CHANGED')));
+      await tapInDialog(find.byKey(const Key('cancelSubmit')));
+      await waitFor(tester, find.byKey(const Key('dealCancelReason')));
+      expect(find.textContaining(t.cancelReasonTermsChanged), findsOneWidget);
+      expect(find.textContaining(t.cancelStageBeforeConfirm), findsOneWidget);
+      // Отмена до подтверждения — жалобу не предлагаем.
+      expect(find.byKey(const Key('complaintOffer')), findsNothing);
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+    });
+
+    // 046 п.6: отмена «Загружен» по своей вине → сразу «Пожаловаться» со сделкой.
+    await run.step(tester, 'отмена-после-загрузки-и-жалоба', () async {
+      await openDeal(deal2);
+      await waitAndReveal(tester, find.byKey(const Key('dealCancelButton')));
+      await tester.tap(find.byKey(const Key('dealCancelButton')));
+      await waitFor(tester, find.byKey(const Key('cancelReason_VEHICLE_BREAKDOWN')));
+      await tapInDialog(find.byKey(const Key('cancelReason_VEHICLE_BREAKDOWN')));
+      await tapInDialog(find.byKey(const Key('cancelSubmit')));
+      await waitFor(tester, find.byKey(const Key('complaintOffer')));
+      expectInsideSafeZone(tester);
+      await tester.enterText(find.byKey(const Key('complaintText')), 'E2E: машина сломалась после загрузки');
+      await tapInDialog(find.byKey(const Key('complaintSubmit')));
+      await waitFor(tester, find.text(t.complaintSent));
+      await waitFor(tester, find.byKey(const Key('dealCancelReason')));
+      expect(find.textContaining(t.cancelStageAfterLoad), findsOneWidget);
+      await waitAndReveal(tester, find.byKey(const Key('dealComplain')));
+    });
   });
 }

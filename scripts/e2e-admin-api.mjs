@@ -362,4 +362,56 @@ assert(typeof fit.count === 'number', '«подходит N водителям»
 const badFields = await api('PATCH', `/admin/reference/body-types/${tankType.id}/profile`, { token, body: { profile: 'TANK', fields: [{ key: '1x', kind: 'text' }], reason: 'E2E' } });
 assert(badFields.status === 400 && badFields.json.code === 'INVALID_BODY_FIELDS', 'сломанные поля типа кузова админка не сохраняет', `status=${badFields.status}`);
 
+// 046: отмена после загрузки → у логиста в карточке водителя «после загрузки 1», рейтинг ниже;
+// после «В пути» — только запросом: повтор 409, вторая сторона оспаривает, админ закрывает спор.
+const kz046 = ref048.countries.find((c) => c.code === 'KZ').id;
+const cancelDriver = await newDriver('+77010000094', tentType.id, { capacityTons: 20 });
+async function dealFor(price) {
+  const cargo = await api('POST', '/cargos', { token: kzOwner048, body: { pointId: almaty048.id, destinationCountryId: kz046, bodyTypeId: tentType.id, price, currency: 'USD', readyDate: '2030-03-01' } });
+  const resp = await api('POST', `/cargos/${cargo.json.id}/responses`, { token: cancelDriver.token, body: {} });
+  const sel = await api('PATCH', `/responses/${resp.json.id}`, { token: kzOwner048, body: { status: 'SELECTED' } });
+  const deal = (await api('GET', '/deals/mine', { token: cancelDriver.token })).json.find((d) => d.cargoId === cargo.json.id);
+  return { cargoId: cargo.json.id, dealId: deal?.id, ok: cargo.status < 300 && resp.status < 300 && sel.status < 300 && !!deal };
+}
+async function adminAdvance(dealId, ...statuses) {
+  for (const status of statuses) {
+    const r = await api('PATCH', `/admin/deals/${dealId}/status`, { token, body: { status, reason: 'E2E 046' } });
+    if (r.status >= 300) return r;
+  }
+  return { status: 200 };
+}
+const d1 = await dealFor(1046);
+assert(d1.ok, 'сделка для отмены создана (отклик → выбран)');
+assert((await adminAdvance(d1.dealId, 'CONFIRMED_BY_DRIVER', 'LOADED')).status < 300, 'сделка доведена до «Загружен»');
+const noReason = await api('PATCH', `/deals/${d1.dealId}/cancel`, { token: cancelDriver.token, body: { reasonCode: 'OTHER' } });
+assert(noReason.status === 400, '«Другое» без текста не принимается', `status=${noReason.status}`);
+const c1 = await api('PATCH', `/deals/${d1.dealId}/cancel`, { token: cancelDriver.token, body: { reasonCode: 'VEHICLE_BREAKDOWN' } });
+assert(c1.status < 300 && c1.json.status === 'CANCELLED' && c1.json.cancelStage === 'AFTER_LOAD' && c1.json.faultSide === 'SELF', 'отмена после загрузки: этап AFTER_LOAD, своя вина', JSON.stringify({ s: c1.status, st: c1.json?.cancelStage, f: c1.json?.faultSide }));
+const respList = (await api('GET', `/cargos/${d1.cargoId}/responses`, { token: kzOwner048 })).json;
+const stats1 = respList.find((r) => r.dealId === d1.dealId)?.cancelStats;
+assert(stats1?.cancelled === 1 && stats1?.afterLoad === 1, 'у логиста в карточке водителя «отменил 1 · после загрузки 1»', JSON.stringify(stats1));
+const me046 = (await api('GET', '/drivers/me', { token: cancelDriver.token })).json;
+assert(Number(me046.ratingAvg) === 1 && me046.ratingCount === 0, 'отмена по своей вине после загрузки бьёт по рейтингу (×3 оценки 1★)', JSON.stringify({ r: me046.ratingAvg, c: me046.ratingCount }));
+const complaint = await api('POST', `/deals/${d1.dealId}/complaint`, { token: kzOwner048, body: { reason: 'E2E 046: отмена с грузом в машине' } });
+assert(complaint.status < 300, '«Пожаловаться» после отмены с грузом — жалоба по сделке', `status=${complaint.status}`);
+assert((await api('POST', `/deals/${d1.dealId}/complaint`, { token: kzOwner048, body: { reason: 'повтор' } })).status === 409, 'вторая открытая жалоба на ту же сделку — 409');
+const companyCard = (await api('GET', `/cargos/${d1.cargoId}`, { token: cancelDriver.token })).json;
+assert(companyCard.companyCancelStats && typeof companyCard.companyCancelStats.cancelled === 'number', 'водителю в карточке груза — статистика отмен компании', JSON.stringify(companyCard.companyCancelStats));
+
+const d2 = await dealFor(2046);
+assert(d2.ok && (await adminAdvance(d2.dealId, 'CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT')).status < 300, 'вторая сделка доведена до «В пути»');
+const req = await api('PATCH', `/deals/${d2.dealId}/cancel`, { token: kzOwner048, body: { reasonCode: 'TERMS_CHANGED' } });
+assert(req.status < 300 && req.json.status === 'CANCEL_REQUESTED' && req.json.cancelRequest?.byRole === 'COMPANY', 'после «В пути» отмена — запрос второй стороне', JSON.stringify({ s: req.status, st: req.json?.status }));
+assert((await api('PATCH', `/deals/${d2.dealId}/cancel`, { token: cancelDriver.token, body: { reasonCode: 'TERMS_CHANGED' } })).status === 409, 'пока ждём ответа, новую отмену не начать');
+assert((await api('POST', `/deals/${d2.dealId}/cancel-request/confirm`, { token: kzOwner048 })).status === 403, 'инициатор сам себе отмену не подтверждает');
+const disp = await api('POST', `/deals/${d2.dealId}/cancel-request/dispute`, { token: cancelDriver.token, body: { reason: 'E2E 046: груз везу, условия не менялись' } });
+assert(disp.status < 300 && disp.json.status === 'DISPUTED', 'водитель оспорил — спор', `status=${disp.status}`);
+const att046 = (await get('/admin/attention')).json;
+assert((att046.disputedDeals ?? []).some((d) => d.dealId === d2.dealId && d.disputeReason?.startsWith('E2E 046')), '«Требует внимания»: спор с обеими позициями', JSON.stringify(att046.disputedDeals?.[0] ?? {}));
+const resolved046 = await api('POST', `/admin/deals/${d2.dealId}/resolve-dispute`, { token, body: { resolution: 'CANCEL', guilty: 'COMPANY', reason: 'E2E 046' } });
+assert(resolved046.status < 300 && resolved046.json.status === 'CANCELLED' && resolved046.json.faultSide === 'SELF' && resolved046.json.cancelStage === 'IN_TRANSIT', 'админ закрыл спор: отменено, виновата компания', JSON.stringify({ s: resolved046.status, f: resolved046.json?.faultSide }));
+assert(!(await get('/admin/attention')).json.disputedDeals.some((d) => d.dealId === d2.dealId), 'закрытый спор ушёл из «Требует внимания»');
+const coCard = (await get(`/admin/companies/${companyCard.companyId}`)).json;
+assert((coCard.cancelStats?.selfFault ?? 0) >= 1 && coCard.cancellations.some((c) => c.dealId === d2.dealId && c.atFault), 'в админке у компании — отмены с причинами и виной', JSON.stringify(coCard.cancelStats));
+
 console.log(`Готово: ${checks} проверок.`);
