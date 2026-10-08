@@ -240,6 +240,7 @@ describe('CargosService — отсев грузов по размеру маши
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       driver: { findUnique: jest.fn().mockResolvedValue(null) },
       response: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
+      bodyType: { findMany: jest.fn().mockResolvedValue([]) },
       arrival: {
         findFirst: jest.fn().mockResolvedValue({
           trailer: { capacityTons: 20, volumeM3: 90, palletsEuro: 33, kind: 'TRAILER' },
@@ -369,6 +370,7 @@ describe('CargosService — лента на сервере: город → об�
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       arrival: { findMany: jest.fn().mockResolvedValue(opts.arrivals ?? []), findFirst: jest.fn().mockResolvedValue(null) },
       response: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
+      bodyType: { findMany: jest.fn().mockResolvedValue([]) },
       vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
       driver: {
         findUnique: jest.fn().mockResolvedValue({ homeCity: opts.home ?? null, directions: (opts.directions ?? []).map((countryId) => ({ countryId })), anyCountry: false }),
@@ -590,6 +592,7 @@ describe('CargosService.feed — области направлений', () => {
         }),
       },
       response: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
+      bodyType: { findMany: jest.fn().mockResolvedValue([]) },
     };
     const service = new CargosService(prisma, {} as any, {} as any);
     const { items } = await service.feed('d1');

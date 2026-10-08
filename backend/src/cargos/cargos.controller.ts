@@ -44,13 +44,24 @@ export class CargosController {
     @Query('volumeM3') volumeM3?: string,
     @Query('palletCount') palletCount?: string,
     @Query('pointId') pointId?: string,
+    @Query('bodyTypeIds') bodyTypeIds?: string,
+    @Query('specs') specs?: string,
   ) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
+    let parsedSpecs: Record<string, unknown> | undefined;
+    try {
+      parsedSpecs = specs ? (JSON.parse(specs) as Record<string, unknown>) : undefined;
+    } catch {
+      parsedSpecs = undefined;
+    }
     return this.cargos.fitCount({
       weightKg: weightKg ? Number(weightKg) : undefined,
       volumeM3: volumeM3 ? Number(volumeM3) : undefined,
       palletCount: palletCount ? Number(palletCount) : undefined,
       pointId,
+      // 048 п.4: кузова груза (через запятую) и его параметры (JSON).
+      bodyTypeIds: bodyTypeIds ? bodyTypeIds.split(',').filter(Boolean) : undefined,
+      specs: parsedSpecs,
     });
   }
 

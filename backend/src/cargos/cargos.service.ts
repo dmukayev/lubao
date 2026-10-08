@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Cargo, Company, Prisma } from '@prisma/client';
+import { BodyTypeProfile, Cargo, Company, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ResponsesService } from '../responses/responses.service';
 import { CreateCargoDto } from './dto/create-cargo.dto';
@@ -12,6 +12,7 @@ import { evaluateVehicleLoad } from '../deals/vehicle-load';
 import { ContactPolicyService } from '../contact-events/contact-policy.service';
 import { RequestContext } from '../common/request-context';
 import { validateSpecs } from '../body-types/specs';
+import { DriverBody, cargoFitsBody } from '../body-types/profile-fit';
 
 /// Лента: «рядом» с городом водителя — та же область либо ≤200 км (040, п.5).
 export const NEARBY_KM = 200;
@@ -138,11 +139,11 @@ export class CargosService {
 
   /// Кузов связки водителя для отсева грузов (задача 033, п.8) — прицеп
   /// (или одиночка-RIGID) активного анонса; без анонса — первый из гаража.
-  private async driverCargoBody(driverId: string): Promise<{ capacityTons: number | null; volumeM3: number | null; palletsEuro: number | null } | null> {
+  private async driverCargoBody(driverId: string): Promise<DriverBody | null> {
     const arrival = await this.prisma.arrival.findFirst({
       where: { driverId, status: { in: ['PLANNED', 'ON_SITE'] } },
       orderBy: { createdAt: 'desc' },
-      include: { trailer: true, tractor: true },
+      include: { trailer: { include: { bodyType: { select: { profile: true } } } }, tractor: { include: { bodyType: { select: { profile: true } } } } },
     });
     const fromArrival = arrival?.trailer ?? (arrival?.tractor?.kind === 'RIGID' ? arrival.tractor : null);
     const vehicle =
@@ -151,18 +152,40 @@ export class CargosService {
         where: { driverId, kind: { in: ['TRAILER', 'RIGID'] }, isArchived: false },
         // TRAILER раньше RIGID («kind: desc» — 'TRAILER' > 'RIGID' по алфавиту).
         orderBy: [{ kind: 'desc' }, { createdAt: 'asc' }],
+        include: { bodyType: { select: { profile: true } } },
       }));
     if (!vehicle) {
-      // 045 п.5: машины ещё нет — тоннаж из регистрации (предпочтение).
-      const driver = await this.prisma.driver.findUnique({ where: { id: driverId }, select: { preferredCapacityTons: true } });
-      if (driver?.preferredCapacityTons == null) return null;
-      return { capacityTons: Number(driver.preferredCapacityTons), volumeM3: null, palletsEuro: null };
+      // 045 п.5 / 048 п.7: машины ещё нет — кузов, тоннаж и «основа» из регистрации.
+      const driver = await this.prisma.driver.findUnique({
+        where: { id: driverId },
+        select: { preferredCapacityTons: true, preferredSpecs: true, preferredBodyType: { select: { profile: true } } },
+      });
+      if (!driver || (driver.preferredCapacityTons == null && !driver.preferredBodyType)) return null;
+      return {
+        profile: driver.preferredBodyType?.profile ?? null,
+        capacityTons: driver.preferredCapacityTons != null ? Number(driver.preferredCapacityTons) : null,
+        volumeM3: null,
+        palletsEuro: null,
+        specs: (driver.preferredSpecs as Record<string, unknown> | null) ?? null,
+      };
     }
     return {
+      profile: vehicle.bodyType?.profile ?? null,
       capacityTons: vehicle.capacityTons != null ? Number(vehicle.capacityTons) : null,
       volumeM3: vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null,
       palletsEuro: vehicle.palletsEuro ?? null,
+      specs: (vehicle.specs as Record<string, unknown> | null) ?? null,
     };
+  }
+
+  /// Профили, под которые подходит груз (основной кузов + другие подходящие), 048.
+  private static cargoProfiles(cargo: { bodyTypeId: string; extraBodyTypeIds?: string[] }, profileOf: Map<string, BodyTypeProfile>): BodyTypeProfile[] {
+    return [...new Set([cargo.bodyTypeId, ...(cargo.extraBodyTypeIds ?? [])].map((id) => profileOf.get(id)).filter((p): p is BodyTypeProfile => !!p))];
+  }
+
+  private async bodyProfiles(): Promise<Map<string, BodyTypeProfile>> {
+    const rows = await this.prisma.bodyType.findMany({ select: { id: true, profile: true } });
+    return new Map(rows.map((r) => [r.id, r.profile]));
   }
 
   /// Задача 033, п.8 — груз скрывается, только когда известно И ТО И
@@ -241,7 +264,16 @@ export class CargosService {
       orderBy: { readyDate: 'asc' },
     });
     const body = driverId ? await this.driverCargoBody(driverId) : null;
-    const fitting = body ? cargos.filter((c) => CargosService.cargoFitsVehicle(c, body)) : cargos;
+    const profileOf = body ? await this.bodyProfiles() : new Map<string, BodyTypeProfile>();
+    // 048 п.5: отсев по профилю кузова (вес всегда; м³/паллеты — объёмным; литры — цистерне…).
+    const fitting = body
+      ? cargos.filter((c) =>
+          cargoFitsBody(
+            { profiles: CargosService.cargoProfiles(c, profileOf), weightKg: c.weightKg, volumeM3: c.volumeM3, palletCount: c.palletCount, specs: c.specs as Record<string, unknown> | null },
+            body,
+          ),
+        )
+      : cargos;
 
     const [{ origin, source }, driver] = driverId
       ? await Promise.all([
@@ -369,26 +401,44 @@ export class CargosService {
   /// Задача 033, п.10 — подсказка при публикации: «подходит N водителям на
   /// точке». Простой счётчик по активным анонсам, те же правила отсева,
   /// что у ленты (cargoFitsVehicle).
-  async fitCount(params: { weightKg?: number; volumeM3?: number; palletCount?: number; pointId?: string }) {
+  async fitCount(params: { weightKg?: number; volumeM3?: number; palletCount?: number; pointId?: string; bodyTypeIds?: string[]; specs?: Record<string, unknown> }) {
     const arrivals = await this.prisma.arrival.findMany({
       where: { status: { in: ['PLANNED', 'ON_SITE'] }, ...(params.pointId ? { pointId: params.pointId } : {}) },
-      include: { trailer: true, tractor: true, driver: { select: { preferredCapacityTons: true } } },
+      include: {
+        trailer: { include: { bodyType: { select: { profile: true } } } },
+        tractor: { include: { bodyType: { select: { profile: true } } } },
+        driver: { select: { preferredCapacityTons: true, preferredSpecs: true, preferredBodyType: { select: { profile: true } } } },
+      },
     });
-    const cargoLike = {
+    // 048 п.4: «Подходит N водителям» — по профилю выбранных кузовов груза.
+    const profileOf = params.bodyTypeIds?.length ? await this.bodyProfiles() : new Map<string, BodyTypeProfile>();
+    const cargo = {
+      profiles: [...new Set((params.bodyTypeIds ?? []).map((id) => profileOf.get(id)).filter((p): p is BodyTypeProfile => !!p))],
       weightKg: params.weightKg ?? null,
       volumeM3: params.volumeM3 ?? null,
       palletCount: params.palletCount ?? null,
+      specs: params.specs ?? null,
     };
     const fittingDrivers = new Set<string>();
     for (const arrival of arrivals) {
       const vehicle = arrival.trailer ?? (arrival.tractor?.kind === 'RIGID' ? arrival.tractor : null);
-      const preferred = arrival.driver.preferredCapacityTons;
-      const body = {
-        capacityTons: vehicle?.capacityTons != null ? Number(vehicle.capacityTons) : preferred != null ? Number(preferred) : null,
-        volumeM3: vehicle?.volumeM3 != null ? Number(vehicle.volumeM3) : null,
-        palletsEuro: vehicle?.palletsEuro ?? null,
-      };
-      if (CargosService.cargoFitsVehicle(cargoLike, body)) fittingDrivers.add(arrival.driverId);
+      const d = arrival.driver;
+      const body: DriverBody = vehicle
+        ? {
+            profile: vehicle.bodyType?.profile ?? null,
+            capacityTons: vehicle.capacityTons != null ? Number(vehicle.capacityTons) : null,
+            volumeM3: vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null,
+            palletsEuro: vehicle.palletsEuro ?? null,
+            specs: (vehicle.specs as Record<string, unknown> | null) ?? null,
+          }
+        : {
+            profile: d.preferredBodyType?.profile ?? null,
+            capacityTons: d.preferredCapacityTons != null ? Number(d.preferredCapacityTons) : null,
+            volumeM3: null,
+            palletsEuro: null,
+            specs: (d.preferredSpecs as Record<string, unknown> | null) ?? null,
+          };
+      if (cargoFitsBody(cargo, body)) fittingDrivers.add(arrival.driverId);
     }
     return { count: fittingDrivers.size };
   }
