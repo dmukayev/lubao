@@ -523,13 +523,15 @@ export class DriversService {
   /// гаража). Только TRAILER/RIGID.
   /// 048 п.3: параметры уже добавленной машины по профилю её кузова (цистерна,
   /// автовоз, контейнеровоз…). Объёмным — колонки обновляются из specs.
-  async setVehicleSpecs(driverId: string, vehicleId: string, specsInput: Record<string, unknown>) {
+  async setVehicleSpecs(driverId: string, vehicleId: string, specsInput: Record<string, unknown>, extra: { sizePresetId?: string | null } = {}) {
     const vehicle = await this.prisma.vehicle.findUnique({ where: { id: vehicleId }, include: { bodyType: { select: { profile: true, fields: true } } } });
     if (!vehicle || vehicle.driverId !== driverId) throw new NotFoundException('Vehicle not found');
     if (!vehicle.bodyType) throw new BadRequestException('Vehicle has no body type');
     const specs = validateSpecs(vehicle.bodyType.fields, specsInput, 'vehicle');
     const capacityTons = typeof specs.capacityTons === 'number' ? specs.capacityTons : null;
     const volume = vehicle.bodyType.profile === 'VOLUME';
+    // 049 п.4: колонки объёмного кузова (м³, паллеты, Д×Ш×В) — проекция specs.
+    const col = (key: string) => (typeof specs[key] === 'number' ? (specs[key] as number) : null);
     const updated = await this.prisma.vehicle.update({
       where: { id: vehicleId },
       data: {
@@ -553,6 +555,23 @@ export class DriversService {
 
     const sizeFields = await this.resolveSizeFields(dto);
     if (Object.keys(sizeFields).length === 0) throw new BadRequestException('Either sizePresetId or all of innerLengthM/innerWidthM/innerHeightM are required');
+
+    // 049 п.4: размер «как у тента» есть только у объёмного кузова; у профиля —
+    // через specs (иначе колонки расходились с параметрами из 048).
+    const bodyType = vehicle.bodyTypeId ? await this.prisma.bodyType.findUnique({ where: { id: vehicle.bodyTypeId }, select: { profile: true, fields: true } }) : null;
+    if (bodyType && bodyFields(bodyType.fields).length > 0) {
+      if (bodyType.profile !== 'VOLUME') throw new BadRequestException({ code: 'BODY_HAS_NO_SIZE', message: 'This body profile has no box size — use specs' });
+      const num = (v: unknown) => (v == null ? undefined : Number(v));
+      const merged = {
+        ...((vehicle.specs as Record<string, unknown> | null) ?? {}),
+        ...Object.fromEntries(
+          (['volumeM3', 'palletsEuro', 'innerLengthM', 'innerWidthM', 'innerHeightM'] as const)
+            .map((k) => [k, num(sizeFields[k])])
+            .filter(([, v]) => v !== undefined),
+        ),
+      };
+      return this.setVehicleSpecs(driverId, vehicleId, merged, { sizePresetId: (sizeFields.sizePresetId as string | null | undefined) ?? null });
+    }
 
     const updated = await this.prisma.vehicle.update({ where: { id: vehicleId }, data: sizeFields });
     return this.vehicleToDto(updated);

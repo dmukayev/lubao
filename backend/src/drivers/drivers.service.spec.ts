@@ -400,3 +400,34 @@ describe('DriversService.setVehicleSpecs (048 п.3)', () => {
   });
 });
 
+
+describe('DriversService.setVehicleSize — по профилю кузова (049 п.4)', () => {
+  const { BODY_TYPE_PROFILES } = require('../../prisma/body-type-profiles');
+  function setup(profile: 'VOLUME' | 'TANK', specs: Record<string, unknown> | null) {
+    const fields = profile === 'VOLUME' ? BODY_TYPE_PROFILES.TENT.fields : BODY_TYPE_PROFILES.TANK.fields;
+    const row = { id: 'v1', driverId: 'd1', kind: 'TRAILER', bodyTypeId: 'bt', specs, volumeM3: null, palletsEuro: null };
+    const prisma: any = {
+      vehicle: {
+        findUnique: jest.fn(async (args: any) => (args.include ? { ...row, bodyType: { profile, fields } } : row)),
+        update: jest.fn(async ({ data }: any) => ({ id: 'v1', kind: 'TRAILER', bodyTypeId: 'bt', plateNumber: null, vin: null, brand: null, capacityTons: null, lengthM: null, isOwner: true, isVerified: false, isArchived: false, createdAt: new Date(), ...data })),
+      },
+      bodyType: { findUnique: jest.fn().mockResolvedValue({ profile, fields }) },
+    };
+    return { prisma, service: new DriversService(prisma) };
+  }
+
+  it('тент: Д×Ш×В → specs (тоннаж сохраняется), колонки — проекция specs', async () => {
+    const { prisma, service } = setup('VOLUME', { capacityTons: 20 });
+    await service.setVehicleSize('d1', 'v1', { innerLengthM: 13.6, innerWidthM: 2.45, innerHeightM: 2.7 } as any);
+    const data = prisma.vehicle.update.mock.calls[0][0].data;
+    expect(data.specs).toMatchObject({ capacityTons: 20, innerLengthM: 13.6, innerWidthM: 2.45, innerHeightM: 2.7 });
+    expect(data.specs.volumeM3).toBeGreaterThan(80);
+    expect(data).toMatchObject({ innerLengthM: 13.6, volumeM3: data.specs.volumeM3, palletsEuro: data.specs.palletsEuro ?? null, sizePresetId: null });
+  });
+
+  it('цистерна: размера «как у тента» нет — 400', async () => {
+    const { prisma, service } = setup('TANK', { liters: 25000, product: 'FUEL' });
+    await expect(service.setVehicleSize('d1', 'v1', { innerLengthM: 10, innerWidthM: 2.4, innerHeightM: 2.5 } as any)).rejects.toMatchObject({ response: { code: 'BODY_HAS_NO_SIZE' } });
+    expect(prisma.vehicle.update).not.toHaveBeenCalled();
+  });
+});
