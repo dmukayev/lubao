@@ -1233,5 +1233,9 @@
   "tonnageUpTo": "{tons} т дейін",
   "tonnageOver": "10 т-дан астам",
   "adminCargoCategoriesTitle": "Жүк санаттары",
-  "adminCsvSaved": "CSV сақталды"
+  "adminCsvSaved": "CSV сақталды",
+  "dealVehicleOneDealTitle": "Көлік бос емес",
+  "dealVehicleOneDealBody": "Бұл көлікке бір уақытта бір тасымал — ағымдағысын аяқтаңыз.",
+  "adminSettingPartialLoads": "Қосымша жүк (жинақ жүк)",
+  "adminSettingPartialLoadsHint": "Өшірулі — бір көлікке бір тасымал, «қосымша жүк» белгісіз. Қосулы — тек тент, изотерм және реф үшін."
 }

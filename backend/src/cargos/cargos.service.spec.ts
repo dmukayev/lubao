@@ -275,6 +275,7 @@ describe('CargosService.create — непроверенная компания �
       deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       bodyType: { findUnique: jest.fn().mockResolvedValue({ fields: [] }), findMany: jest.fn().mockResolvedValue([]) },
+      appSetting: { findUnique: jest.fn().mockResolvedValue({ value: 'true' }) },
     };
     const service = new CargosService(prisma, {} as any, {} as any);
 
@@ -283,6 +284,12 @@ describe('CargosService.create — непроверенная компания �
     expect(prisma.cargo.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ pointId: 'p1', allowPartial: true }) }),
     );
+
+    // 049 п.1: флаг выключен — «Можно догрузом» игнорируется.
+    prisma.appSetting.findUnique.mockResolvedValue(null);
+    const fresh = new CargosService(prisma, {} as any, {} as any);
+    await fresh.create('c1', 'u1', true, { pointId: 'p1', readyDate: '2026-01-01', destinationCountryId: 'kz', bodyTypeId: 'bt1', price: 100, currency: 'USD', allowPartial: true, categoryId: 'cat1' } as any);
+    expect(prisma.cargo.create.mock.calls[1][0].data.allowPartial).toBe(false);
   });
 
   it('047 п.1: без категории груз не публикуется', async () => {
@@ -376,8 +383,9 @@ describe('CargosService — лента на сервере: город → об�
     });
   });
 
-  function setupFeed(opts: { arrivals?: unknown[]; home?: unknown; directions?: string[]; cargos: unknown[] }) {
+  function setupFeed(opts: { arrivals?: unknown[]; home?: unknown; directions?: string[]; cargos: unknown[]; partialLoads?: boolean }) {
     const prisma: any = {
+      appSetting: { findUnique: jest.fn().mockResolvedValue(opts.partialLoads === false ? null : { value: 'true' }) },
       cargo: { findMany: jest.fn().mockResolvedValue(opts.cargos) },
       deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
@@ -480,6 +488,12 @@ describe('CargosService — лента на сервере: город → об�
     const { items } = await service.feed('d1');
     expect(items[0].allowPartial).toBe(true);
   });
+
+  it('049 п.1: догруз выключен — бейджа нет, даже у груза с пометкой', async () => {
+    const service = setupFeed({ cargos: [cargoAt('partial', almaty, { allowPartial: true })], partialLoads: false });
+    const { items } = await service.feed('d1');
+    expect(items[0].allowPartial).toBe(false);
+  });
 });
 
 describe('CargosService.partialHint — «Помещается к текущему» (задача 040, п.6)', () => {
@@ -490,7 +504,8 @@ describe('CargosService.partialHint — «Помещается к текущем
         findFirst: jest.fn().mockResolvedValue(lastDeal),
         findMany: jest.fn().mockResolvedValue(activeDeals),
       },
-      vehicle: { findUnique: jest.fn().mockResolvedValue({ id: 'trailer1', ...trailer }) },
+      vehicle: { findUnique: jest.fn().mockResolvedValue({ id: 'trailer1', bodyType: { profile: 'VOLUME' }, ...trailer }) },
+      appSetting: { findUnique: jest.fn().mockResolvedValue({ value: 'true' }) },
     };
     return { service: new CargosService(prisma, {} as any, {} as any), prisma };
   }
@@ -515,6 +530,12 @@ describe('CargosService.partialHint — «Помещается к текущем
     const { service } = setup([active(15000)], { tractorId: 't1', trailerId: 'trailer1' });
     const { hint } = await service.partialHint('d1', 'cargo1');
     expect(hint).toMatchObject({ fits: false, reason: 'FULL', committedWeightKg: 15000, capacityKg: 20000 });
+  });
+
+  it('049 п.1: догруз выключен — подсказки нет', async () => {
+    const { service, prisma } = setup([active(8000)], { tractorId: 't1', trailerId: 'trailer1' });
+    prisma.appSetting.findUnique.mockResolvedValue(null);
+    expect(await service.partialHint('d1', 'cargo1')).toEqual({ hint: null });
   });
 
   it('несуществующий груз — 404', async () => {

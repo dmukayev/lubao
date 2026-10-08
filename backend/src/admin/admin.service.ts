@@ -69,6 +69,8 @@ export const APP_SETTING_KEYS: Record<string, (value: string) => boolean> = {
   /// Вес отмены по своей вине в рейтинге по этапам (046 п.4) — JSON
   /// `{BEFORE_CONFIRM, AFTER_CONFIRM, AFTER_LOAD, IN_TRANSIT}`, числа 0–20.
   cancelRatingWeights: isValidCancelWeights,
+  /// Догруз (049 п.1, decisions.md 2026-10-08): по умолчанию выключен.
+  partialLoadsEnabled: isBool,
 };
 
 function isValidCancelWeights(v: string): boolean {

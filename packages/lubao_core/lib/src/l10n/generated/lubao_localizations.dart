@@ -6653,6 +6653,30 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'CSV сохранён'**
   String get adminCsvSaved;
+
+  /// No description provided for @dealVehicleOneDealTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Машина занята'**
+  String get dealVehicleOneDealTitle;
+
+  /// No description provided for @dealVehicleOneDealBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Для этой машины одна перевозка за раз — завершите текущую.'**
+  String get dealVehicleOneDealBody;
+
+  /// No description provided for @adminSettingPartialLoads.
+  ///
+  /// In ru, this message translates to:
+  /// **'Догруз (сборные грузы)'**
+  String get adminSettingPartialLoads;
+
+  /// No description provided for @adminSettingPartialLoadsHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выключен — одна перевозка на машину, без пометки «можно догрузом». Включён — догруз только для тента, изотерма и рефа.'**
+  String get adminSettingPartialLoadsHint;
 }
 
 class _LubaoLocalizationsDelegate

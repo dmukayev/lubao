@@ -142,6 +142,7 @@ VehicleFullError? asVehicleFullError(Object error) {
   if (data is! Map || data['code'] != 'VEHICLE_FULL') return null;
   return VehicleFullError(
     isNextTrip: data['reason'] == 'NEXT_TRIP',
+    oneDealPerVehicle: data['reason'] == 'ONE_DEAL_PER_VEHICLE',
     usedWeightKg: (data['usedWeightKg'] as num?)?.toDouble(),
     capacityKg: (data['capacityKg'] as num?)?.toDouble(),
     dealIds: ((data['deals'] as List<dynamic>?) ?? []).map((d) => (d as Map)['dealId'] as String).toList(),
@@ -149,7 +150,10 @@ VehicleFullError? asVehicleFullError(Object error) {
 }
 
 class VehicleFullError {
-  const VehicleFullError({required this.isNextTrip, this.usedWeightKg, this.capacityKg, this.dealIds = const []});
+  const VehicleFullError({required this.isNextTrip, this.oneDealPerVehicle = false, this.usedWeightKg, this.capacityKg, this.dealIds = const []});
+
+  /// 049 п.1: догруз выключен или кузов не объёмный — одна перевозка за раз.
+  final bool oneDealPerVehicle;
 
   /// true — грузы с разными датами погрузки: это не догруз, а следующий
   /// рейс, подтверждать после доставки текущего.
@@ -173,10 +177,12 @@ Future<void> showVehicleFullSheet(BuildContext context, VehicleFullError full) a
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(t.dealVehicleFullTitle, style: AppTextStyles.title),
+            Text(full.oneDealPerVehicle ? t.dealVehicleOneDealTitle : t.dealVehicleFullTitle, style: AppTextStyles.title),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              full.isNextTrip
+              full.oneDealPerVehicle
+                  ? t.dealVehicleOneDealBody
+                  : full.isNextTrip
                   ? t.dealVehicleFullNextTrip
                   : t.dealVehicleFullBody(
                       ((full.usedWeightKg ?? 0) / 1000).toStringAsFixed(0),

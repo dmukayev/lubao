@@ -3543,4 +3543,18 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get adminCsvSaved => 'CSV сохранён';
+
+  @override
+  String get dealVehicleOneDealTitle => 'Машина занята';
+
+  @override
+  String get dealVehicleOneDealBody =>
+      'Для этой машины одна перевозка за раз — завершите текущую.';
+
+  @override
+  String get adminSettingPartialLoads => 'Догруз (сборные грузы)';
+
+  @override
+  String get adminSettingPartialLoadsHint =>
+      'Выключен — одна перевозка на машину, без пометки «можно догрузом». Включён — догруз только для тента, изотерма и рефа.';
 }

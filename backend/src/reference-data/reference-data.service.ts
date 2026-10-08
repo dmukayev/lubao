@@ -30,6 +30,7 @@ export class ReferenceDataService {
       supportWhatsapp,
       supportWechat,
       supportEmail,
+      partialLoads,
     ] = await Promise.all([
       this.prisma.country.findMany({ orderBy: { sortOrder: 'asc' } }),
       this.prisma.region.findMany(),
@@ -47,6 +48,7 @@ export class ReferenceDataService {
       this.appSettings.get('supportWhatsapp'),
       this.appSettings.get('supportWechat'),
       this.appSettings.get('supportEmail'),
+      this.appSettings.get('partialLoadsEnabled'),
     ]);
 
     return {
@@ -71,6 +73,8 @@ export class ReferenceDataService {
       supportWhatsapp,
       supportWechat,
       supportEmail,
+      // 049 п.1: догруз за флагом — клиенты прячут «Можно догрузом» и бейджи.
+      partialLoadsEnabled: partialLoads === 'true',
     };
   }
 

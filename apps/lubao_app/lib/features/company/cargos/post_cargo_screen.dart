@@ -235,7 +235,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     try {
       final input = CreateCargoInput(
         pointId: _pointId!,
-        allowPartial: _allowPartial,
+        allowPartial: _allowPartial && (refData?.partialLoadsEnabled ?? false),
         destinationCountryId: _countryId!,
         destinationCityId: _cityId,
         bodyTypeId: _bodyTypeId!,
@@ -460,14 +460,16 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 const SizedBox(height: 4),
                 Text(t.postCargoFitCount(_fitCount!), style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
               ],
-              SwitchListTile(
-                key: const Key('postCargoAllowPartial'),
-                contentPadding: EdgeInsets.zero,
-                title: Text(t.postCargoAllowPartial),
-                subtitle: Text(t.postCargoAllowPartialHint),
-                value: _allowPartial,
-                onChanged: (value) => setState(() => _allowPartial = value),
-              ),
+              // 049 п.1: догруз за флагом — выключен, переключателя нет.
+              if (refData.partialLoadsEnabled)
+                SwitchListTile(
+                  key: const Key('postCargoAllowPartial'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(t.postCargoAllowPartial),
+                  subtitle: Text(t.postCargoAllowPartialHint),
+                  value: _allowPartial,
+                  onChanged: (value) => setState(() => _allowPartial = value),
+                ),
               const SizedBox(height: 12),
               if (_market != null) ...[
                 Text(

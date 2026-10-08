@@ -1233,5 +1233,9 @@
   "tonnageUpTo": "{tons} 吨以内",
   "tonnageOver": "10 吨以上",
   "adminCargoCategoriesTitle": "货物类别",
-  "adminCsvSaved": "CSV 已保存"
+  "adminCsvSaved": "CSV 已保存",
+  "dealVehicleOneDealTitle": "车辆已占用",
+  "dealVehicleOneDealBody": "该车辆一次只能承运一单——请先完成当前运输。",
+  "adminSettingPartialLoads": "拼货（零担）",
+  "adminSettingPartialLoadsHint": "关闭——每车一次一单，不显示“可拼货”。开启——仅篷布车、保温车和冷藏车可拼货。"
 }

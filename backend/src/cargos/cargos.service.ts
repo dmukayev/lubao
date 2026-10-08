@@ -11,6 +11,7 @@ import { parseDateOnly, toDateOnly } from '../common/date-only';
 import { haversineKm } from '../common/geo';
 import { CARGO_ARCHIVE_AFTER_MS } from './cargo-lifecycle';
 import { evaluateVehicleLoad } from '../deals/vehicle-load';
+import { partialLoadsEnabled } from '../app-settings/partial-loads';
 import { ContactPolicyService } from '../contact-events/contact-policy.service';
 import { RequestContext } from '../common/request-context';
 import { validateSpecs } from '../body-types/specs';
@@ -43,6 +44,15 @@ export class CargosService {
     private readonly contactPolicy: ContactPolicyService,
     @Optional() private readonly pricing?: PricingService,
   ) {}
+
+  /// 049 п.1: флаг догруза — читается часто (каждая карточка), кэш на 5 с.
+  private partialFlag: { value: boolean; at: number } | null = null;
+  private async partialEnabled(): Promise<boolean> {
+    if (this.partialFlag && Date.now() - this.partialFlag.at < 5000) return this.partialFlag.value;
+    const value = await partialLoadsEnabled(this.prisma);
+    this.partialFlag = { value, at: Date.now() };
+    return value;
+  }
 
   /// 047 п.1: категория — активная запись справочника.
   private async assertCategory(categoryId: string | undefined) {
@@ -139,7 +149,8 @@ export class CargosService {
       price: Number(cargo.price),
       currency: cargo.currency,
       readyDate: toDateOnly(cargo.readyDate),
-      allowPartial: cargo.allowPartial,
+      // 049 п.1: догруз выключен — бейджа нет, даже если груз помечен раньше.
+      allowPartial: cargo.allowPartial && (await this.partialEnabled()),
       description: cargo.description,
       status: cargo.status,
       publishedAt: cargo.publishedAt,
@@ -381,12 +392,15 @@ export class CargosService {
       orderBy: { createdAt: 'desc' },
     });
     if (!lastDeal) return { hint: null };
+    // 049 п.1: догруз выключен — подсказки «помещается к текущему» нет.
+    if (!(await this.partialEnabled())) return { hint: null };
 
     const load = await evaluateVehicleLoad(this.prisma, {
       driverId,
       tractorId: lastDeal.tractorId,
       trailerId: lastDeal.trailerId,
       cargo,
+      partialLoadsEnabled: true,
     });
     if (load.verdict === 'NONE') return { hint: null };
     return {
@@ -533,7 +547,8 @@ export class CargosService {
         price: dto.price,
         currency: dto.currency,
         readyDate,
-        allowPartial: dto.allowPartial ?? false,
+        // 049 п.1: при выключенном догрузе пометка игнорируется.
+        allowPartial: (dto.allowPartial ?? false) && (await this.partialEnabled()),
         description: dto.description,
         status: 'PUBLISHED',
         publishedAt: new Date(),
@@ -590,7 +605,7 @@ export class CargosService {
       data: {
         categoryId: dto.categoryId,
         pointId: dto.pointId,
-        allowPartial: dto.allowPartial,
+        allowPartial: dto.allowPartial === undefined ? undefined : dto.allowPartial && (await this.partialEnabled()),
         destinationCountryId: dto.destinationCountryId,
         destinationCityId: dto.destinationCityId,
         bodyTypeId: dto.bodyTypeId,

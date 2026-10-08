@@ -3558,4 +3558,18 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get adminCsvSaved => 'CSV saved';
+
+  @override
+  String get dealVehicleOneDealTitle => 'Vehicle busy';
+
+  @override
+  String get dealVehicleOneDealBody =>
+      'This vehicle takes one haul at a time — finish the current one first.';
+
+  @override
+  String get adminSettingPartialLoads => 'Partial loads (groupage)';
+
+  @override
+  String get adminSettingPartialLoadsHint =>
+      'Off — one haul per vehicle, no “partial load” option. On — partial loads only for tent, isotherm and reefer.';
 }

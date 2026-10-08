@@ -82,7 +82,7 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    await run.step(tester, 'выбор-города-погрузки-и-догруз', () async {
+    await run.step(tester, 'выбор-города-погрузки-и-категории', () async {
       final field = find.byKey(const Key('postCargoPickupCity'));
       await waitFor(tester, field);
       await tester.tap(field);
@@ -93,11 +93,8 @@ void main() {
       await tester.tap(category);
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('postCargoCategoryError')), findsNothing);
-      final partial = find.byKey(const Key('postCargoAllowPartial'));
-      await reveal(tester, partial);
-      await tester.tap(partial);
-      await tester.pumpAndSettle();
-      expect(tester.widget<SwitchListTile>(partial).value, isTrue);
+      // 049 п.1: догруз выключен флагом — переключателя «Можно догрузом» нет.
+      expect(find.byKey(const Key('postCargoAllowPartial')), findsNothing);
     });
 
     late String cargoId;
@@ -111,7 +108,7 @@ void main() {
       expect(cargos, isNotEmpty);
       final cargo = cargos.first;
       expect(cargo.volumeM3, 90);
-      expect(cargo.allowPartial, isTrue, reason: '«Можно догрузом» ушло на сервер');
+      expect(cargo.allowPartial, isFalse, reason: 'догруз выключен — пометки нет');
       final refData = await container.read(referenceDataProvider.future);
       expect(refData.pointOrNull(cargo.pointId)?.name.ru, 'Астана', reason: 'город погрузки — из выбора, не первая точка');
       // 047: категория ушла, расстояние Астана → Алматы посчитано (в e2e — из кэша пар городов).

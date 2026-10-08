@@ -1,8 +1,8 @@
-// Задача 034, сценарий 6 + шаги 037: водитель откликается на три груза
-// (10 + 8 + 10 т на 20-тонный прицеп), логист (через API — «параллельный
-// сценарий») выбирает его на каждый; водитель подтверждает перевозку и
-// ведёт первую сделку «Загружен» → «В пути»; вторая (догруз 8 т) тоже
-// подтверждается, третья (+10 т) — упирается в «Машина заполнена».
+// Задача 034, сценарий 6 (+049 п.1): водитель откликается на три груза,
+// логист (через API — «параллельный сценарий») выбирает его на каждый;
+// водитель ведёт первую сделку до «В пути». Догруз выключен флагом — вторую
+// на ту же машину не подтвердить («одна перевозка за раз»), после доставки
+// первой — подтверждается; третья снова упирается в шторку.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,7 +16,7 @@ import 'e2e_support.dart';
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('водитель: отклик → выбор → подтверждение → статусы; догруз; «Машина заполнена»', (tester) async {
+  testWidgets('водитель: отклик → выбор → подтверждение → статусы; одна перевозка за раз', (tester) async {
     final run = E2eRun(binding, 'driver_deal');
     await clearPersistedSession();
     // Системный диалог геолокации робот нажать не может — подменяем запрос ОС
@@ -131,7 +131,40 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    // Второй рейс: «Понятно» → согласие дано, переключатель включён, пауза работает.
+    // 049 п.1: догруз выключен — пока первая сделка в пути, вторую на ту же
+    // машину не подтвердить: шторка «одна перевозка за раз».
+    await run.step(tester, 'сделка2-одна-перевозка-за-раз', () async {
+      await openDeal(deal2);
+      await waitAndReveal(tester, find.byKey(const Key('dealNextStatusButton')));
+      await tester.tap(find.byKey(const Key('dealNextStatusButton')));
+      await waitFor(tester, find.text(t.dealVehicleOneDealTitle));
+      expect(find.text(t.dealVehicleOneDealBody), findsOneWidget);
+      expect(find.text(t.dealVehicleFullOpenCurrent), findsOneWidget);
+      expectInsideSafeZone(tester);
+      expectNoOverflow(tester);
+      await tester.tapAt(const Offset(20, 80)); // закрыть шторку
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+    });
+
+    // 045 п.11: после «Доставлено» — «Вы в Алматы. Ищете груз отсюда?» одним касанием.
+    await run.step(tester, 'доставлено-ищете-груз-отсюда', () async {
+      await openDeal(deal1);
+      final next = find.byKey(const Key('dealNextStatusButton'));
+      await waitAndReveal(tester, next);
+      expect(find.descendant(of: next, matching: find.text(t.dealMarkDelivered)), findsOneWidget);
+      await tester.tap(next);
+      await waitFor(tester, find.text(t.deliveredAskTitle('Алматы')));
+      expectInsideSafeZone(tester);
+      await tester.tap(find.byKey(const Key('deliveredLookHere')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+    });
+
+    // Первая доставлена — машина свободна: второй рейс подтверждается.
+    // «Понятно» → согласие дано, переключатель включён, пауза работает.
     await run.step(tester, 'сделка2-согласие-на-трекинг-и-пауза', () async {
       await openDeal(deal2);
       await advance(t.dealConfirm, t.dealMarkLoaded);
@@ -157,40 +190,23 @@ void main() {
       expect(consent().tripSharingActive, isTrue);
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
+      // Второй рейс «загружен» — статус «В рейсе»; анонс «Ищу груз из Алматы»
+      // погас сам при подтверждении (040 п.4).
+      await goTab(tester, t.navFeed);
+      await waitFor(tester, find.byKey(const Key('driverStatus-inTrip')));
+      await goTab(tester, t.navDeals);
     });
 
-    await run.step(tester, 'сделка3-машина-заполнена', () async {
+    await run.step(tester, 'сделка3-одна-перевозка-за-раз', () async {
       await openDeal(deal3);
       await waitAndReveal(tester, find.byKey(const Key('dealNextStatusButton')));
       await tester.tap(find.byKey(const Key('dealNextStatusButton')));
-      await waitFor(tester, find.text(t.dealVehicleFullTitle));
-      expect(find.text(t.dealVehicleFullOpenCurrent), findsOneWidget);
+      await waitFor(tester, find.text(t.dealVehicleOneDealTitle));
       expectInsideSafeZone(tester);
-      expectNoOverflow(tester);
-    });
-
-    // 045 п.11: после «Доставлено» — «Вы в Алматы. Ищете груз отсюда?» одним касанием.
-    await run.step(tester, 'доставлено-ищете-груз-отсюда', () async {
-      await tester.tapAt(const Offset(20, 80)); // закрыть шторку «Машина заполнена»
+      await tester.tapAt(const Offset(20, 80));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
-      await openDeal(deal1);
-      final next = find.byKey(const Key('dealNextStatusButton'));
-      await waitAndReveal(tester, next);
-      expect(find.descendant(of: next, matching: find.text(t.dealMarkDelivered)), findsOneWidget);
-      await tester.tap(next);
-      await waitFor(tester, find.text(t.deliveredAskTitle('Алматы')));
-      expectInsideSafeZone(tester);
-      await tester.tap(find.byKey(const Key('deliveredLookHere')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byType(BackButton).first);
-      await tester.pumpAndSettle();
-      await goTab(tester, t.navFeed);
-      // Второй рейс ещё «загружен» — статус «В рейсе», а анонс «Ищу груз из
-      // Алматы» уже стоит (виден логистам, когда водитель освободится).
-      await waitFor(tester, find.byKey(const Key('driverStatus-inTrip')));
-      await waitFor(tester, find.byWidgetPredicate((w) => w is Text && w.key == const Key('anonsCityName') && w.data == 'Алматы'));
     });
 
     Future<void> tapInDialog(Finder finder) async {
@@ -202,7 +218,6 @@ void main() {
 
     // 046 п.1: причина — чипом из списка; «Другое» требует текст.
     await run.step(tester, 'отмена-причина-из-списка', () async {
-      await goTab(tester, t.navDeals);
       await openDeal(deal3);
       await waitAndReveal(tester, find.byKey(const Key('dealCancelButton')));
       await tester.tap(find.byKey(const Key('dealCancelButton')));

@@ -3474,4 +3474,17 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get adminCsvSaved => 'CSV 已保存';
+
+  @override
+  String get dealVehicleOneDealTitle => '车辆已占用';
+
+  @override
+  String get dealVehicleOneDealBody => '该车辆一次只能承运一单——请先完成当前运输。';
+
+  @override
+  String get adminSettingPartialLoads => '拼货（零担）';
+
+  @override
+  String get adminSettingPartialLoadsHint =>
+      '关闭——每车一次一单，不显示“可拼货”。开启——仅篷布车、保温车和冷藏车可拼货。';
 }

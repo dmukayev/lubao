@@ -97,7 +97,8 @@ void main() {
       expect(tester.widget<Text>(find.byKey(const Key('anonsCityName'))).data, 'Алматы');
       // Груз из Алматы виден первым (город анонса = город погрузки).
       await waitAndReveal(tester, find.byKey(const Key('feedCargoCard-$e2eCargo6')));
-      expect(find.text('Догруз'), findsWidgets, reason: 'груз 6 помечен «можно догрузом»');
+      // 049 п.1: догруз выключен флагом — бейджа нет, хотя груз 6 помечен в сиде.
+      expect(find.text(t.feedBadgePartial), findsNothing, reason: 'догруз за флагом, по умолчанию выключен');
       expect(firstFeedCargoId(tester), e2eCargo6);
     });
 

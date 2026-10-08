@@ -245,9 +245,12 @@ describe('DealsService — догруз разрешён, «бронь всег�
     };
   }
 
+  // 049 п.1: правила догруза (037) действуют, только когда флаг включён и кузов объёмный.
   function setup({
     activeDeals = [] as unknown[],
     trailer = { capacityTons: 20, volumeM3: null, palletsEuro: null } as { capacityTons: number | null; volumeM3: number | null; palletsEuro: number | null },
+    partialLoads = 'true' as string | null,
+    profile = 'VOLUME',
   }) {
     const prisma: any = {
       deal: {
@@ -261,7 +264,7 @@ describe('DealsService — догруз разрешён, «бронь всег�
       vehicle: {
         // Первый findUnique — проверка тягача (kind), второй — кузов связки.
         findUnique: jest.fn().mockImplementation(({ where }: any) =>
-          Promise.resolve(where.id === 'tractor1' ? { isVerified: true, kind: 'TRACTOR' } : { id: 'trailer1', isVerified: true, kind: 'TRAILER', ...trailer }),
+          Promise.resolve(where.id === 'tractor1' ? { isVerified: true, kind: 'TRACTOR' } : { id: 'trailer1', isVerified: true, kind: 'TRAILER', bodyType: { profile }, ...trailer }),
         ),
         findMany: jest.fn().mockResolvedValue([
           { id: 'tractor1', isVerified: true },
@@ -269,11 +272,38 @@ describe('DealsService — догруз разрешён, «бронь всег�
         ]),
       },
       $queryRaw: jest.fn().mockResolvedValue([]),
+      appSetting: { findUnique: jest.fn().mockResolvedValue(partialLoads == null ? null : { value: partialLoads }) },
     };
     prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new DealsService(prisma, { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) } as any, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);
     return { prisma, service };
   }
+
+  it('049 п.1: догруз выключен (по умолчанию) — вторая сделка на машину 409 ONE_DEAL_PER_VEHICLE, даже если помещается', async () => {
+    const { prisma, service } = setup({ activeDeals: [{ id: 'deal-old', cargo: cargoFixture({ weightKg: 2000 }) }], partialLoads: null });
+    prisma.deal.findUnique.mockResolvedValue(dealFixture({ cargo: cargoFixture({ weightKg: 2000 }) }));
+    await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'VEHICLE_FULL', reason: 'ONE_DEAL_PER_VEHICLE' }),
+    });
+    expect(prisma.deal.update).not.toHaveBeenCalled();
+  });
+
+  it.each(['TANK', 'BULK', 'CAR_CARRIER', 'CONTAINER', 'PLATFORM'])('049 п.1: догруз включён, но кузов %s — одна сделка за раз', async (profile) => {
+    const { prisma, service } = setup({ activeDeals: [{ id: 'deal-old', cargo: cargoFixture({ weightKg: 2000 }) }], profile });
+    prisma.deal.findUnique.mockResolvedValue(dealFixture({ cargo: cargoFixture({ weightKg: 2000 }) }));
+    await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toMatchObject({
+      response: expect.objectContaining({ reason: 'ONE_DEAL_PER_VEHICLE' }),
+    });
+  });
+
+  it('049 п.1: без активных сделок флаг даже не читается — первая сделка проходит', async () => {
+    const { prisma, service } = setup({ partialLoads: null });
+    prisma.deal.findUnique.mockResolvedValue(dealFixture({ cargo: cargoFixture() }));
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
+    await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
+    expect(prisma.deal.update).toHaveBeenCalled();
+    expect(prisma.appSetting.findUnique).not.toHaveBeenCalled();
+  });
 
   it('два частичных 8 т + 10 т на машину 20 т — вторая подтверждается', async () => {
     const { prisma, service } = setup({

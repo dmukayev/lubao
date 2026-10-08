@@ -3556,4 +3556,18 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get adminCsvSaved => 'CSV сақталды';
+
+  @override
+  String get dealVehicleOneDealTitle => 'Көлік бос емес';
+
+  @override
+  String get dealVehicleOneDealBody =>
+      'Бұл көлікке бір уақытта бір тасымал — ағымдағысын аяқтаңыз.';
+
+  @override
+  String get adminSettingPartialLoads => 'Қосымша жүк (жинақ жүк)';
+
+  @override
+  String get adminSettingPartialLoadsHint =>
+      'Өшірулі — бір көлікке бір тасымал, «қосымша жүк» белгісіз. Қосулы — тек тент, изотерм және реф үшін.';
 }

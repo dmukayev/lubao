@@ -147,6 +147,22 @@ class AdminSettingsScreen extends ConsumerWidget {
                 onEdit: () => _saveNumberSetting(context, ref, key: 'homeRadiusKm', title: t.adminSettingHomeRadius, currentValue: homeRadiusKm),
               ),
               const SizedBox(height: 12),
+              // 049 п.1: догруз за флагом, по умолчанию выключен (decisions.md 2026-10-08).
+              AppCard(
+                child: SwitchListTile(
+                  key: const Key('settingPartialLoads'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(t.adminSettingPartialLoads, style: Theme.of(context).textTheme.titleSmall),
+                  subtitle: Text(t.adminSettingPartialLoadsHint),
+                  value: values['partialLoadsEnabled'] == 'true',
+                  onChanged: (v) async {
+                    await ref.read(adminRepositoryProvider).setSetting('partialLoadsEnabled', v ? 'true' : 'false');
+                    ref.invalidate(adminSettingsProvider);
+                    ref.invalidate(referenceDataProvider);
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
               const _LoginCodeChannelsCard(),
               const SizedBox(height: 12),
               _RatesCard(rates: refDataAsync.valueOrNull?.exchangeRates ?? const []),

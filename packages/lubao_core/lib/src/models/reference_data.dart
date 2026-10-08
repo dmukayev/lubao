@@ -334,7 +334,11 @@ class ReferenceData {
     this.supportWhatsapp,
     this.supportWechat,
     this.supportEmail,
+    this.partialLoadsEnabled = false,
   });
+
+  /// 049 п.1: догруз (сборные грузы) за флагом, по умолчанию выключен.
+  final bool partialLoadsEnabled;
 
   final List<Country> countries;
   final List<Region> regions;

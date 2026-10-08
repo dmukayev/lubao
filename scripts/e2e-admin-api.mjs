@@ -208,7 +208,13 @@ const feed = await api('GET', '/cargos?limit=2&offset=0', { token: d6 });
 assert(Array.isArray(feed.json.items) && feed.json.items.length === 2 && feed.json.total >= 7 && feed.json.limit === 2, 'лента: страница {items,total,limit} вместо голого массива', JSON.stringify(Object.keys(feed.json)));
 assert(feed.json.originCityId === almatyPoint.cityId && feed.json.originSource === 'arrival', 'лента считается от города анонса (Алматы)', `${feed.json.originCityId} ${feed.json.originSource}`);
 assert(feed.json.items[0].id === '11111111-1111-4111-8111-111111111006' && feed.json.items[0].pickupRank === 0, 'первым — груз из Алматы (город анонса = город погрузки)', feed.json.items[0].id);
-assert(feed.json.items[0].allowPartial === true, 'груз 6 помечен «можно догрузом»');
+// 049 п.1: догруз за флагом (по умолчанию выкл.) — пометка не отдаётся; включили — видна.
+assert(feed.json.items[0].allowPartial === false && (await api('GET', '/reference-data')).json.partialLoadsEnabled === false, 'догруз выключен по умолчанию: бейджа нет');
+assert((await api('PATCH', '/admin/settings/partialLoadsEnabled', { token, body: { value: 'true', reason: 'E2E 049' } })).status < 300, 'админ включает догруз');
+await new Promise((r) => setTimeout(r, 5200)); // кэш флага в ленте — 5 с
+assert((await api('GET', '/cargos?limit=2&offset=0', { token: d6 })).json.items[0].allowPartial === true, 'догруз включён — груз 6 «можно догрузом»');
+assert((await api('PATCH', '/admin/settings/partialLoadsEnabled', { token, body: { value: 'false', reason: 'E2E 049' } })).status < 300, 'админ выключает догруз обратно');
+await new Promise((r) => setTimeout(r, 5200));
 const page2 = await api('GET', '/cargos?limit=2&offset=2', { token: d6 });
 assert(page2.json.items.length === 2 && !page2.json.items.some((c) => feed.json.items.map((x) => x.id).includes(c.id)), 'вторая страница ленты без повторов');
 assert(page2.json.items.every((c) => c.pickupRank >= 0), 'каждая карточка ленты несёт ранг города');

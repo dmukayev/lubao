@@ -1400,5 +1400,9 @@
   "@tonnageUpTo": { "placeholders": {"tons": {"type": "int"}} },
   "tonnageOver": "больше 10 т",
   "adminCargoCategoriesTitle": "Категории груза",
-  "adminCsvSaved": "CSV сохранён"
+  "adminCsvSaved": "CSV сохранён",
+  "dealVehicleOneDealTitle": "Машина занята",
+  "dealVehicleOneDealBody": "Для этой машины одна перевозка за раз — завершите текущую.",
+  "adminSettingPartialLoads": "Догруз (сборные грузы)",
+  "adminSettingPartialLoadsHint": "Выключен — одна перевозка на машину, без пометки «можно догрузом». Включён — догруз только для тента, изотерма и рефа."
 }

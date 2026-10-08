@@ -1,14 +1,16 @@
 import { Cargo, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { toDateOnly } from '../common/date-only';
+import { partialLoadsEnabled } from '../app-settings/partial-loads';
 
 export const ACTIVE_HAUL_STATUSES = ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'CANCEL_REQUESTED', 'DISPUTED'] as const;
 
-export type VehicleLoadVerdict = 'NONE' | 'OK' | 'NEXT_TRIP' | 'FULL';
+export type VehicleLoadVerdict = 'NONE' | 'OK' | 'NEXT_TRIP' | 'FULL' | 'ONE_DEAL_PER_VEHICLE';
 
 export interface VehicleLoad {
   /// NONE — активных сделок нет (догруз не обсуждается); OK — помещается;
-  /// NEXT_TRIP — другое окно дат (следующий рейс); FULL — не помещается.
+  /// NEXT_TRIP — другое окно дат (следующий рейс); FULL — не помещается;
+  /// ONE_DEAL_PER_VEHICLE — догруз выключен или кузов не объёмный (049 п.1).
   verdict: VehicleLoadVerdict;
   activeDealsCount: number;
   usedWeightKg: number;
@@ -39,6 +41,9 @@ export async function evaluateVehicleLoad(
     trailerId: string | null;
     cargo: Pick<Cargo, 'weightKg' | 'volumeM3' | 'palletCount' | 'readyDate'>;
     excludeDealId?: string;
+    /// Флаг `partialLoadsEnabled` (049 п.1): выключен — одна активная сделка на
+    /// машину. Не передан — читается из app_settings (только если сделки есть).
+    partialLoadsEnabled?: boolean;
   },
 ): Promise<VehicleLoad> {
   const { driverId, tractorId, trailerId, cargo, excludeDealId } = params;
@@ -64,7 +69,7 @@ export async function evaluateVehicleLoad(
   }
 
   const bodyVehicleId = trailerId ?? tractorId;
-  const vehicle = bodyVehicleId ? await db.vehicle.findUnique({ where: { id: bodyVehicleId } }) : null;
+  const vehicle = bodyVehicleId ? await db.vehicle.findUnique({ where: { id: bodyVehicleId }, include: { bodyType: { select: { profile: true } } } }) : null;
   const capacityKg = vehicle?.capacityTons != null ? Number(vehicle.capacityTons) * 1000 : null;
 
   const allCargos = [cargo, ...activeDeals.map((d) => d.cargo).filter((c): c is NonNullable<typeof c> => c != null)];
@@ -77,6 +82,12 @@ export async function evaluateVehicleLoad(
   }));
   const usedWeightKg = activeDeals.reduce((sum, d) => sum + (d.cargo?.weightKg != null ? Number(d.cargo.weightKg) : 0), 0);
   const result = (verdict: VehicleLoadVerdict): VehicleLoad => ({ verdict, activeDealsCount: activeDeals.length, usedWeightKg, capacityKg, deals });
+
+  // 049 п.1: догруз выключен — одна перевозка за раз для всех кузовов; включён —
+  // суммирование по тоннажу только для объёмных (тент/изотерм/реф, 048):
+  // цистерна, самосвал, автовоз, контейнеровоз, платформа — одна сделка.
+  const enabled = params.partialLoadsEnabled ?? (await partialLoadsEnabled(db));
+  if (!enabled || vehicle?.bodyType?.profile !== 'VOLUME') return result('ONE_DEAL_PER_VEHICLE');
 
   const DAY_MS = 24 * 60 * 60 * 1000;
   const newReady = cargo.readyDate.getTime();
