@@ -165,7 +165,10 @@ void main() {
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
       await goTab(tester, t.navFeed);
-      await waitFor(tester, find.byKey(const Key('driverStatus-lookingHere')));
+      // Второй рейс ещё «загружен» — статус «В рейсе», а анонс «Ищу груз из
+      // Алматы» уже стоит (виден логистам, когда водитель освободится).
+      await waitFor(tester, find.byKey(const Key('driverStatus-inTrip')));
+      await waitFor(tester, find.byWidgetPredicate((w) => w is Text && w.key == const Key('anonsCityName') && w.data == 'Алматы'));
     });
   });
 }

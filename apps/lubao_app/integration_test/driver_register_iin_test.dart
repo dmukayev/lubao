@@ -72,7 +72,7 @@ void main() {
           await tester.tap(find.byKey(const Key('directionRegionsDone')));
           await tester.pumpAndSettle();
           expect(find.descendant(of: regions, matching: find.text(t.directionRegionsCount(1))), findsOneWidget);
-          expect(find.text(t.driverSetupPermitsOptional), findsOneWidget);
+          await waitAndReveal(tester, find.text(t.driverSetupPermitsOptional));
           expectNoOverflow(tester);
         }
         await reveal(tester, find.byKey(const Key('driverSetupNext')));

@@ -117,7 +117,8 @@ void main() {
       // (наверху), потом первая карточка ленты — прокрутка вниз к ней
       // выгружает анонс из дерева.
       await waitAndReveal(tester, find.byKey(const Key('anonsCityName')));
-      expect(tester.widget<Text>(find.byKey(const Key('anonsCityName'))).data, 'Астана');
+      // Карточка во время обновления показывает прежний город — ждём новый.
+      await waitFor(tester, find.byWidgetPredicate((w) => w is Text && w.key == const Key('anonsCityName') && w.data == 'Астана'));
       await waitAndReveal(tester, find.byWidgetPredicate((w) => w.key is ValueKey && '${(w.key! as ValueKey).value}'.startsWith('feedCargoCard-')).first);
       // Теперь первым — груз из Астаны, груз из Алматы ушёл вниз.
       expect(firstFeedCargoId(tester), e2eCargo7);
