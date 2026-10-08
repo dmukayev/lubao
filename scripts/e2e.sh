@@ -393,8 +393,11 @@ run_ios() {
   elif [[ $code -eq 124 ]]; then
     row "$name" "❌ TIMEOUT" "лимит 20 мин — процесс убит (см. $(basename "$log"))"
     TIMEOUTS=$((TIMEOUTS + 1)); FAILED=$((FAILED + 1))
+    mkdir -p "$SHOTS/$DEVICE_SLUG"
     if [[ -n "$IS_ANDROID" ]]; then
       "$ADB" -s "$EMU_SERIAL" exec-out screencap -p >"$SHOTS/$DEVICE_SLUG/$name-timeout.png" 2>/dev/null || true
+      # Что делало приложение, когда встало (Flutter/ANR/память) — для разбора.
+      "$ADB" -s "$EMU_SERIAL" logcat -d -t 400 >"$RESULTS/$DEVICE_SLUG-$name-timeout-logcat.txt" 2>/dev/null || true
     else
       xcrun simctl io "$UDID" screenshot "$SHOTS/$DEVICE_SLUG/$name-timeout.png" >/dev/null 2>&1 || true
     fi
@@ -508,6 +511,11 @@ for DEVICE in "${DEVICES[@]}"; do
 
   if [[ -n "$IS_ANDROID" ]]; then
     echo "== эмулятор ($DEVICE) =="
+    # 8 ГБ RAM: перед эмулятором освобождаем память от прошлого устройства —
+    # симуляторы, Chromium Playwright, демоны Gradle/Kotlin прошлых сборок.
+    xcrun simctl shutdown all >/dev/null 2>&1 || true
+    pkill -f ms-playwright >/dev/null 2>&1 || true
+    (cd apps/lubao_app/android && ./gradlew --stop >/dev/null 2>&1) || true
     prepare_emulator "${DEVICE#android:}"
   else
     echo "== симулятор ($DEVICE) =="

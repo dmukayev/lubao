@@ -120,7 +120,9 @@ Future<void> _settle(WidgetTester tester) async {
 Future<void> clearPersistedSession() async {
   final container = ProviderContainer();
   try {
-    await container.read(authRepositoryProvider).logout();
+    // Таймаут: на только что загруженном Android-эмуляторе хранилище ключей
+    // и сеть иногда отвечают очень долго — сценарий не должен стоять 20 минут.
+    await container.read(authRepositoryProvider).logout().timeout(e2eHttpTimeout);
   } catch (_) {
     // нет сети/токена — важно лишь, что tokenStorage.clear() выполнился
   } finally {
@@ -128,7 +130,7 @@ Future<void> clearPersistedSession() async {
   }
   // Согласия на геопозицию тоже в Keychain и переживают `uninstall` (041, п.11):
   // без чистки согласие прошлого сценария скрыло бы шторку в следующем.
-  await TrackingConsentStore().clear();
+  await TrackingConsentStore().clear().timeout(e2eHttpTimeout, onTimeout: () => debugPrint('E2E: TrackingConsentStore.clear — таймаут'));
 }
 
 /// Роль «водитель» → телефон → код 1111 → ждём главного экрана (кнопка

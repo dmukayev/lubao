@@ -335,15 +335,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: Column(
         children: [
           if (thread != null && referenceData != null)
-            _CargoActionBar(
+            // Не больше 40 % высоты: с клавиатурой и крупным шрифтом лента и
+            // поле ввода всегда остаются видны, лишнее в карточке прокручивается.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: (MediaQuery.sizeOf(context).height - MediaQuery.viewInsetsOf(context).bottom) * 0.4),
+              child: SingleChildScrollView(
+                child: _CargoActionBar(
               chatId: widget.chatId,
               thread: thread,
               deal: deal,
               refData: referenceData,
               isDriver: isDriver,
-              // Клавиатура открыта — карточка в одну строку: на узком экране с
-              // крупным шрифтом (iPhone SE) иначе не помещаются лента и ввод.
-              collapsed: _cardCollapsed || MediaQuery.viewInsetsOf(context).bottom > 0,
+              collapsed: _cardCollapsed,
+              // Клавиатура открыта — без строки деталей и статистики, кнопка
+              // действия остаётся: на узком экране с крупным шрифтом (iPhone SE)
+              // иначе не помещаются лента и ввод.
+              compact: MediaQuery.viewInsetsOf(context).bottom > 0,
+                ),
+              ),
             ),
           Expanded(
             child: messagesAsync.when(
@@ -568,7 +577,11 @@ class _CargoActionBar extends ConsumerStatefulWidget {
     required this.refData,
     required this.isDriver,
     required this.collapsed,
+    this.compact = false,
   });
+
+  /// Открыта клавиатура: только маршрут и кнопка действия.
+  final bool compact;
 
   final String chatId;
   final ChatThread thread;
@@ -866,7 +879,7 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
               ),
               // Свёрнута при прокрутке (038, п.13) — только строка выше.
               if (!widget.collapsed) ...[
-                if (detailParts.isNotEmpty) ...[
+                if (detailParts.isNotEmpty && !widget.compact) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     detailParts.join(' · '),
@@ -876,7 +889,7 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
                   ),
                 ],
                 // 046 п.3: отмены второй стороны — водителю компании, логисту водителя.
-                if (cancelStatsText(t, widget.isDriver ? (deal?.companyCancelStats ?? cargo.companyCancelStats) : deal?.driverCancelStats) case final stats?) ...[
+                if ((widget.compact ? null : cancelStatsText(t, widget.isDriver ? (deal?.companyCancelStats ?? cargo.companyCancelStats) : deal?.driverCancelStats)) case final stats?) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(stats, key: const Key('chatCancelStats'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
