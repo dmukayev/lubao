@@ -1,40 +1,76 @@
 #!/usr/bin/env bash
-# Карта для OSRM (047 п.2, decisions.md 2026-10-08 «Расстояния — свой OSRM»).
-# Разово на сервере (~30 мин, ~2 ГБ в volume): скачать выдержки OSM с Geofabrik
-# (Казахстан, Кыргызстан, Узбекистан, приграничные округа РФ, Синьцзян из КНР),
-# склеить, подготовить для профиля car (extract + contract). Данные — в docker
-# volume `osrmdata`, не в репозитории. Повторный запуск обновляет карту.
+# Карта для OSRM (047 п.2, 049 п.11; decisions.md 2026-10-08 «Расстояния — свой OSRM»).
 #
-#   infra/osrm/prepare.sh                      # dev (docker-compose.yml)
-#   COMPOSE_FILE=docker-compose.prod.yml infra/osrm/prepare.sh
+# Собирается ОДИН раз (обновление — раз в полгода) на машине с большой памятью:
+# полная выдержка OSM — Казахстан, Кыргызстан, Узбекистан, Китай, приграничные
+# федеральные округа РФ (Сибирский, Уральский, Приволжский, Южный). Карту не
+# урезаем. Ресурсы: ~3,5 ГБ pbf, 16–32 ГБ RAM на extract/contract, 1–2 часа,
+# ~10 ГБ диска. На Маке/проде сборку не запускать — туда копируется готовая
+# папка (сервису osrm хватает 2–4 ГБ RAM).
+#
+#   infra/osrm/prepare.sh                         # Docker (по умолчанию, если есть)
+#   OSRM_MODE=native infra/osrm/prepare.sh        # без Docker: osmium, osrm-extract, osrm-contract в PATH
+#   OUT_DIR=/data/osrm infra/osrm/prepare.sh      # куда сложить результат (по умолчанию ./osrm-build)
+#   REGIONS="asia/kazakhstan" infra/osrm/prepare.sh   # только для отладки скрипта — не для прода
+#
+# Результат: $OUT_DIR/region.osrm* — скопировать в volume `osrm-data` (см. конец вывода).
 set -euo pipefail
 
-cd "$(dirname "$0")/../.."
-PROJECT="${COMPOSE_PROJECT_NAME:-$(basename "$PWD" | tr '[:upper:]' '[:lower:]')}"
-VOLUME="${OSRM_VOLUME:-${PROJECT}_osrmdata}"
-OSRM_IMAGE="${OSRM_IMAGE:-osrm/osrm-backend:v5.27.1}"
+OUT_DIR="$(mkdir -p "${OUT_DIR:-./osrm-build}" && cd "${OUT_DIR:-./osrm-build}" && pwd)"
+OSRM_IMAGE="${OSRM_IMAGE:-ghcr.io/project-osrm/osrm-backend:v5.27.1}"
+OSMIUM_IMAGE="${OSMIUM_IMAGE:-debian:bookworm-slim}"
 GEOFABRIK="https://download.geofabrik.de"
-# Синьцзян — прямоугольником из файла КНР: Geofabrik не режет Китай по провинциям.
-XINJIANG_BBOX="73.4,34.3,96.4,49.2"
+REGIONS="${REGIONS:-asia/kazakhstan asia/kyrgyzstan asia/uzbekistan asia/china russia/siberian-fed-district russia/ural-fed-district russia/volga-fed-district russia/south-fed-district}"
+if [[ -z "${OSRM_MODE:-}" ]]; then
+  if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then OSRM_MODE=docker; else OSRM_MODE=native; fi
+fi
+started=$(date +%s)
+echo "== режим: $OSRM_MODE · папка: $OUT_DIR"
+echo "== регионы: $REGIONS"
 
-docker volume create "$VOLUME" >/dev/null
+# Выполнить команду в окружении сборки; пути — относительно $OUT_DIR (в Docker — /data).
+run() {
+  local image="$1"; shift
+  if [[ "$OSRM_MODE" == docker ]]; then
+    docker run --rm -v "$OUT_DIR:/data" -w /data "$image" "$@"
+  else
+    (cd "$OUT_DIR" && "$@")
+  fi
+}
+profile() { [[ "$OSRM_MODE" == docker ]] && echo /opt/car.lua || echo "${OSRM_PROFILE:-/usr/local/share/osrm/profiles/car.lua}"; }
 
-echo "== скачивание и склейка (osmium) =="
-docker run --rm -v "$VOLUME:/data" debian:bookworm-slim bash -euo pipefail -c "
-  apt-get update -qq && apt-get install -y -qq osmium-tool wget ca-certificates >/dev/null
-  cd /data && mkdir -p src && cd src
-  for path in asia/kazakhstan asia/kyrgyzstan asia/uzbekistan asia/china \
-              russia/siberian-fed-district russia/ural-fed-district russia/volga-fed-district; do
-    wget -q -N '$GEOFABRIK/'\$path'-latest.osm.pbf'
-  done
-  osmium extract --overwrite -b '$XINJIANG_BBOX' china-latest.osm.pbf -o xinjiang.osm.pbf
-  osmium merge --overwrite kazakhstan-latest.osm.pbf kyrgyzstan-latest.osm.pbf uzbekistan-latest.osm.pbf \
-    siberian-fed-district-latest.osm.pbf ural-fed-district-latest.osm.pbf volga-fed-district-latest.osm.pbf \
-    xinjiang.osm.pbf -o ../region.osm.pbf
-"
+echo "== 1/4 скачивание (Geofabrik, докачка по -N)"
+mkdir -p "$OUT_DIR/src"
+for path in $REGIONS; do
+  (cd "$OUT_DIR/src" && curl -fsSL -z "$(basename "$path")-latest.osm.pbf" -o "$(basename "$path")-latest.osm.pbf" "$GEOFABRIK/$path-latest.osm.pbf")
+done
+ls -lh "$OUT_DIR/src"
 
-echo "== osrm-extract / osrm-contract (профиль car) =="
-docker run --rm -v "$VOLUME:/data" "$OSRM_IMAGE" osrm-extract -p /opt/car.lua /data/region.osm.pbf
-docker run --rm -v "$VOLUME:/data" "$OSRM_IMAGE" osrm-contract /data/region.osrm
+echo "== 2/4 склейка (osmium merge)"
+files=""
+for path in $REGIONS; do files="$files src/$(basename "$path")-latest.osm.pbf"; done
+if [[ "$OSRM_MODE" == docker ]]; then
+  docker run --rm -v "$OUT_DIR:/data" -w /data "$OSMIUM_IMAGE" bash -c \
+    "apt-get update -qq && apt-get install -y -qq osmium-tool >/dev/null && osmium merge --overwrite $files -o region.osm.pbf"
+else
+  (cd "$OUT_DIR" && osmium merge --overwrite $files -o region.osm.pbf)
+fi
 
-echo "Готово. Перезапустите сервис osrm: docker compose restart osrm"
+echo "== 3/4 osrm-extract (профиль car) — самый тяжёлый шаг по памяти"
+run "$OSRM_IMAGE" osrm-extract -p "$(profile)" region.osm.pbf
+echo "== 4/4 osrm-contract"
+run "$OSRM_IMAGE" osrm-contract region.osrm
+
+elapsed=$(( $(date +%s) - started ))
+echo
+echo "Готово за $((elapsed / 60)) мин. Карта: $(du -ch "$OUT_DIR"/region.osrm* | tail -1 | cut -f1)"
+cat <<INSTR
+
+Дальше — на сервере с бэкендом (или на Маке):
+  1) скопировать папку:   rsync -a $OUT_DIR/region.osrm* <сервер>:/tmp/osrm/
+  2) положить в volume:   docker volume create osrm-data
+                          docker run --rm -v osrm-data:/data -v /tmp/osrm:/src alpine sh -c 'cp /src/region.osrm* /data/'
+  3) перезапустить:       docker compose -f docker-compose.prod.yml restart osrm
+  4) проверка (≈ 1 200 км): docker compose -f docker-compose.prod.yml exec backend \\
+       wget -qO- 'http://osrm:5000/route/v1/driving/76.9286,43.2567;71.4704,51.1605?overview=false'
+INSTR

@@ -62,14 +62,14 @@ services:
       - "8000"
 
   # Расстояние по дороге между городами (047 п.2): свой OSRM, без внешних API.
-  # Карта готовится разово: infra/osrm/prepare.sh. Пока её нет — ждёт, а
+  # Карта собирается на внешней машине (infra/osrm/prepare.sh) и копируется в volume osrm-data. Пока её нет — ждёт, а
   # бэкенд показывает «—» и досчитывает планировщиком.
   osrm:
-    image: osrm/osrm-backend:v5.27.1
+    image: ghcr.io/project-osrm/osrm-backend:v5.27.1
     restart: unless-stopped
-    command: ["sh", "-c", "while [ ! -f /data/region.osrm.hsgr ]; do echo 'osrm: нет карты, запустите infra/osrm/prepare.sh'; sleep 300; done; exec osrm-routed --algorithm ch --max-table-size 1000 /data/region.osrm"]
+    command: ["sh", "-c", "while [ ! -f /data/region.osrm.hsgr ]; do echo 'osrm: нет карты в volume osrm-data — docs/release.md п.2.6a'; sleep 300; done; exec osrm-routed --algorithm ch --max-table-size 1000 /data/region.osrm"]
     volumes:
-      - osrmdata:/data
+      - osrm-data:/data
     expose:
       - "5000"
 
@@ -133,7 +133,9 @@ services:
       - "${NGINX_PORT:-80}:80"
 
 volumes:
-  osrmdata:
+  # 049 п.11: имя без префикса проекта — в него копируется готовая карта.
+  osrm-data:
+    name: osrm-data
   pgdata:
   redisdata:
   miniodata:

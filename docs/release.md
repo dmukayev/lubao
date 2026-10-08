@@ -105,11 +105,18 @@ docker compose -f docker-compose.prod.yml exec backend npx prisma db seed
 ```
 
 ```bash
-# 2.6a Карта для расстояний (OSRM, 047): разово, ~30 мин, ~2 ГБ в volume osrmdata.
-# Пока карты нет, сервис osrm ждёт, а в ленте вместо км — «—» (досчитается планировщиком).
-COMPOSE_FILE=docker-compose.prod.yml infra/osrm/prepare.sh
+# 2.6a Карта для расстояний (OSRM, 047/049 п.11). Карту НЕ урезаем: РК, КГ, УЗ, Китай,
+# приграничные ФО РФ (Сибирский, Уральский, Приволжский, Южный). Сборка — ОДИН раз (обновление
+# раз в полгода) на внешней машине с большой памятью: ~3,5 ГБ pbf, 16–32 ГБ RAM, 1–2 ч, ~10 ГБ диска.
+# С Docker или без (бинарники osmium/osrm-extract/osrm-contract в PATH: OSRM_MODE=native).
+#   на внешней машине:  OUT_DIR=/data/osrm infra/osrm/prepare.sh
+# Сервер/Мак ничего не собирает — получает готовую папку region.osrm* (сервису 2–4 ГБ RAM):
+#   rsync -a /data/osrm/region.osrm* <сервер>:/tmp/osrm/
+#   docker volume create osrm-data
+#   docker run --rm -v osrm-data:/data -v /tmp/osrm:/src alpine sh -c 'cp /src/region.osrm* /data/'
 docker compose -f docker-compose.prod.yml restart osrm
-# проверка изнутри сети: Алматы → Астана, ответ с "distance"
+# Пока карты нет, сервис osrm ждёт, а в ленте вместо км — «—» (досчитается планировщиком).
+# Проверка изнутри сети: Алматы → Астана ≈ 1 200 км (поле "distance" в метрах)
 docker compose -f docker-compose.prod.yml exec backend wget -qO- 'http://osrm:5000/route/v1/driving/76.9286,43.2567;71.4704,51.1605?overview=false'
 ```
 

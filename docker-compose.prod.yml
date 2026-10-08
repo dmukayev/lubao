@@ -63,13 +63,13 @@ services:
     networks: [internal]
 
   # 047 п.2: расстояния по дороге — свой OSRM, только во внутренней сети.
-  # Карта — разово infra/osrm/prepare.sh (docs/release.md).
+  # Карта — готовая, в volume osrm-data (docs/release.md п.2.6a).
   osrm:
-    image: osrm/osrm-backend:v5.27.1
+    image: ghcr.io/project-osrm/osrm-backend:v5.27.1
     restart: unless-stopped
-    command: ["sh", "-c", "while [ ! -f /data/region.osrm.hsgr ]; do echo 'osrm: нет карты, запустите infra/osrm/prepare.sh'; sleep 300; done; exec osrm-routed --algorithm ch --max-table-size 1000 /data/region.osrm"]
+    command: ["sh", "-c", "while [ ! -f /data/region.osrm.hsgr ]; do echo 'osrm: нет карты в volume osrm-data — docs/release.md п.2.6a'; sleep 300; done; exec osrm-routed --algorithm ch --max-table-size 1000 /data/region.osrm"]
     volumes:
-      - osrmdata:/data
+      - osrm-data:/data
     networks: [internal]
 
   backend:
@@ -162,7 +162,9 @@ services:
     networks: [internal, edge]
 
 volumes:
-  osrmdata:
+  # 049 п.11: имя без префикса проекта — в него копируется готовая карта.
+  osrm-data:
+    name: osrm-data
   pgdata:
   redisdata:
   miniodata:
