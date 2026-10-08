@@ -3577,4 +3577,21 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String adminRecognitionDuplicateOf(String name) {
     return 'Duplicate of $name';
   }
+
+  @override
+  String get driverLoginTelegram => 'Sign in with Telegram';
+
+  @override
+  String get driverLoginTelegramWaiting =>
+      'Open Telegram, tap “Start”, then “Share my number” — you’ll be signed in automatically';
+
+  @override
+  String get driverLoginTelegramExpired =>
+      'The sign-in link expired — tap “Sign in with Telegram” again';
+
+  @override
+  String get driverLoginOrPhone => 'or with your phone number';
+
+  @override
+  String get loginChannelTelegramBot => 'Telegram bot (sign in without a code)';
 }

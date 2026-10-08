@@ -1238,5 +1238,10 @@
   "dealVehicleOneDealBody": "该车辆一次只能承运一单——请先完成当前运输。",
   "adminSettingPartialLoads": "拼货（零担）",
   "adminSettingPartialLoadsHint": "关闭——每车一次一单，不显示“可拼货”。开启——仅篷布车、保温车和冷藏车可拼货。",
-  "adminRecognitionDuplicateOf": "与 {name} 重复"
+  "adminRecognitionDuplicateOf": "与 {name} 重复",
+  "driverLoginTelegram": "通过 Telegram 登录",
+  "driverLoginTelegramWaiting": "打开 Telegram，点击“开始”，再点击“分享号码”——将自动登录",
+  "driverLoginTelegramExpired": "登录链接已过期——请再次点击“通过 Telegram 登录”",
+  "driverLoginOrPhone": "或使用手机号",
+  "loginChannelTelegramBot": "Telegram 机器人（免验证码登录）"
 }

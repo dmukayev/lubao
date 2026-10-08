@@ -3492,4 +3492,20 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String adminRecognitionDuplicateOf(String name) {
     return '与 $name 重复';
   }
+
+  @override
+  String get driverLoginTelegram => '通过 Telegram 登录';
+
+  @override
+  String get driverLoginTelegramWaiting =>
+      '打开 Telegram，点击“开始”，再点击“分享号码”——将自动登录';
+
+  @override
+  String get driverLoginTelegramExpired => '登录链接已过期——请再次点击“通过 Telegram 登录”';
+
+  @override
+  String get driverLoginOrPhone => '或使用手机号';
+
+  @override
+  String get loginChannelTelegramBot => 'Telegram 机器人（免验证码登录）';
 }

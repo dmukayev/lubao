@@ -1406,5 +1406,10 @@
   "adminSettingPartialLoads": "Догруз (сборные грузы)",
   "adminSettingPartialLoadsHint": "Выключен — одна перевозка на машину, без пометки «можно догрузом». Включён — догруз только для тента, изотерма и рефа.",
   "adminRecognitionDuplicateOf": "Дубликат у {name}",
-  "@adminRecognitionDuplicateOf": { "placeholders": { "name": { "type": "String" } } }
+  "@adminRecognitionDuplicateOf": { "placeholders": { "name": { "type": "String" } } },
+  "driverLoginTelegram": "Войти через Telegram",
+  "driverLoginTelegramWaiting": "Откройте Telegram, нажмите «Старт», затем «Поделиться номером» — вход произойдёт сам",
+  "driverLoginTelegramExpired": "Ссылка для входа устарела — нажмите «Войти через Telegram» ещё раз",
+  "driverLoginOrPhone": "или по номеру телефона",
+  "loginChannelTelegramBot": "Бот Telegram (вход без кода)"
 }

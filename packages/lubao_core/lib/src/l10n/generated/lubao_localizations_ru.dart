@@ -3562,4 +3562,21 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String adminRecognitionDuplicateOf(String name) {
     return 'Дубликат у $name';
   }
+
+  @override
+  String get driverLoginTelegram => 'Войти через Telegram';
+
+  @override
+  String get driverLoginTelegramWaiting =>
+      'Откройте Telegram, нажмите «Старт», затем «Поделиться номером» — вход произойдёт сам';
+
+  @override
+  String get driverLoginTelegramExpired =>
+      'Ссылка для входа устарела — нажмите «Войти через Telegram» ещё раз';
+
+  @override
+  String get driverLoginOrPhone => 'или по номеру телефона';
+
+  @override
+  String get loginChannelTelegramBot => 'Бот Telegram (вход без кода)';
 }

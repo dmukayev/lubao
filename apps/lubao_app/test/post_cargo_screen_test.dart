@@ -47,7 +47,8 @@ class _FakeRecentPoints extends RecentPointsStore {
 const _almaty = LoadingPoint(id: 'p-almaty', cityId: 'c-almaty', name: I18nText(kk: 'Алматы', ru: 'Алматы', zh: '阿拉木图', en: 'Almaty'), isActive: true);
 const _astana = LoadingPoint(id: 'p-astana', cityId: 'c-astana', name: I18nText(kk: 'Астана', ru: 'Астана', zh: '阿斯塔纳', en: 'Astana'), isActive: true);
 
-final _refData = ReferenceData(
+ReferenceData _refDataWith({bool partialLoads = false}) => ReferenceData(
+  partialLoadsEnabled: partialLoads,
   countries: const [Country(id: 'uz', code: 'UZ', name: I18nText(kk: 'Өзбекстан', ru: 'Узбекистан', zh: '乌兹别克斯坦'), isCisMember: true)],
   cities: const [],
   bodyTypes: const [BodyType(id: 'bt1', code: 'TENT', name: I18nText(kk: 'Тент', ru: 'Тент', zh: '篷布'))],
@@ -70,7 +71,7 @@ Cargo _previous(String pointId) => Cargo(
       expiresAt: DateTime(2026, 10, 3),
     );
 
-Future<_FakeCargoRepository> _pump(WidgetTester tester, {List<Cargo> previous = const []}) async {
+Future<_FakeCargoRepository> _pump(WidgetTester tester, {List<Cargo> previous = const [], bool partialLoads = false}) async {
   tester.view.physicalSize = const Size(390, 2400) * 3;
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
@@ -79,7 +80,7 @@ Future<_FakeCargoRepository> _pump(WidgetTester tester, {List<Cargo> previous = 
     overrides: [
       cargoRepositoryProvider.overrideWithValue(repo),
       recentPointsStoreProvider.overrideWithValue(_FakeRecentPoints()),
-      referenceDataProvider.overrideWith((ref) async => _refData),
+      referenceDataProvider.overrideWith((ref) async => _refDataWith(partialLoads: partialLoads)),
       myCargosProvider.overrideWith((ref) async => previous),
     ],
     child: MaterialApp(
@@ -108,8 +109,13 @@ void main() {
     expect(find.text('Выберите город'), findsOneWidget);
   });
 
-  testWidgets('выбор города через поиск; «Можно догрузом» — переключатель на экране', (tester) async {
+  testWidgets('049 п.1: догруз выключен (по умолчанию) — переключателя «Можно догрузом» нет', (tester) async {
     await _pump(tester);
+    expect(find.byKey(const Key('postCargoAllowPartial')), findsNothing);
+  });
+
+  testWidgets('выбор города через поиск; догруз включён — «Можно догрузом» переключатель на экране', (tester) async {
+    await _pump(tester, partialLoads: true);
 
     await tester.tap(find.byKey(const Key('postCargoPickupCity')));
     await tester.pumpAndSettle();

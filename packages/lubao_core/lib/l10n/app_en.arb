@@ -1363,5 +1363,10 @@
   "dealVehicleOneDealBody": "This vehicle takes one haul at a time — finish the current one first.",
   "adminSettingPartialLoads": "Partial loads (groupage)",
   "adminSettingPartialLoadsHint": "Off — one haul per vehicle, no “partial load” option. On — partial loads only for tent, isotherm and reefer.",
-  "adminRecognitionDuplicateOf": "Duplicate of {name}"
+  "adminRecognitionDuplicateOf": "Duplicate of {name}",
+  "driverLoginTelegram": "Sign in with Telegram",
+  "driverLoginTelegramWaiting": "Open Telegram, tap “Start”, then “Share my number” — you’ll be signed in automatically",
+  "driverLoginTelegramExpired": "The sign-in link expired — tap “Sign in with Telegram” again",
+  "driverLoginOrPhone": "or with your phone number",
+  "loginChannelTelegramBot": "Telegram bot (sign in without a code)"
 }

@@ -10,6 +10,7 @@ import '../../providers/locale_provider.dart';
 import '../shared/status_helpers.dart';
 import '../shared/error_feedback.dart';
 import '../shared/pd_consent.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const _codeLength = 4;
 
@@ -43,6 +44,12 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
   String? _channel;
   String? _sentVia;
 
+  /// 050: способы входа по порядку из админки (`telegram_bot` — вход через бота).
+  List<String> _methods = const [];
+  Timer? _telegramPoll;
+  bool _telegramWaiting = false;
+  bool _telegramStarting = false;
+
   @override
   void initState() {
     super.initState();
@@ -51,8 +58,15 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
 
   Future<void> _loadChannels() async {
     try {
-      final channels = await ref.read(authRepositoryProvider).driverCodeChannels();
-      if (mounted) setState(() => _channels = channels);
+      final repo = ref.read(authRepositoryProvider);
+      final channels = await repo.driverCodeChannels();
+      final methods = await repo.driverLoginMethods();
+      if (mounted) {
+        setState(() {
+          _channels = channels;
+          _methods = methods;
+        });
+      }
     } catch (e) {
       // Без списка — обычный запрос: сервер сам возьмёт первый канал.
       debugPrint('DriverLoginScreen: channels: $e');
@@ -63,6 +77,7 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
 
   @override
   void dispose() {
+    _telegramPoll?.cancel();
     _phoneController.dispose();
     for (final c in _codeControllers) {
       c.dispose();
@@ -140,6 +155,53 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
     }
   }
 
+  /// 050: «Войти через Telegram» → бот → «Поделиться номером»; приложение
+  /// опрашивает сервер раз в 2 с и входит само, как после кода.
+  Future<void> _startTelegram() async {
+    final t = context.l10n;
+    setState(() => _telegramStarting = true);
+    try {
+      final start = await ref.read(authRepositoryProvider).startTelegramLogin();
+      await launchUrl(start.url, mode: LaunchMode.externalApplication);
+      if (!mounted) return;
+      setState(() => _telegramWaiting = true);
+      _telegramPoll?.cancel();
+      _telegramPoll = Timer.periodic(const Duration(seconds: 2), (timer) async {
+        try {
+          final done = await ref.read(sessionProvider.notifier).pollTelegramLogin(start.nonce);
+          if (done) timer.cancel();
+        } catch (e) {
+          // 410/409 — ссылка устарела или уже использована: начать заново.
+          timer.cancel();
+          if (mounted) {
+            setState(() => _telegramWaiting = false);
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.driverLoginTelegramExpired)));
+          }
+        }
+      });
+    } catch (e) {
+      if (mounted) showApiError(context, e);
+    } finally {
+      if (mounted) setState(() => _telegramStarting = false);
+    }
+  }
+
+  Widget _telegramBlock(LubaoLocalizations t) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          OutlinedButton.icon(
+            key: const Key('driverLoginTelegramButton'),
+            onPressed: _telegramStarting ? null : _startTelegram,
+            icon: const Icon(Icons.send_rounded),
+            label: Text(t.driverLoginTelegram),
+          ),
+          if (_telegramWaiting) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(t.driverLoginTelegramWaiting, key: const Key('driverLoginTelegramWaiting'), style: AppTextStyles.caption, textAlign: TextAlign.center),
+          ],
+        ],
+      );
+
   Future<void> _verify(String code) async {
     final t = context.l10n;
     setState(() => _verifying = true);
@@ -189,6 +251,13 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
           children: [
             const LubaoLogo(height: 36),
             const SizedBox(height: AppSpacing.lg),
+            // 050: бот Telegram первым в «Каналах входа» — кнопка над номером.
+            if (!_codeRequested && _methods.isNotEmpty && _methods.first == 'telegram_bot') ...[
+              _telegramBlock(t),
+              const SizedBox(height: AppSpacing.md),
+              Text(t.driverLoginOrPhone, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+              const SizedBox(height: AppSpacing.md),
+            ],
             referenceData.when(
               loading: () => const LoadingView(),
               error: (e, st) {
@@ -270,6 +339,11 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
                 loading: _sendingCode,
                 onPressed: _requestCode,
               ),
+              // 050: бот Telegram включён, но не первым — кнопка под отправкой кода.
+              if (_methods.contains('telegram_bot') && _methods.first != 'telegram_bot') ...[
+                const SizedBox(height: AppSpacing.md),
+                _telegramBlock(t),
+              ],
               const SizedBox(height: AppSpacing.md),
               const LegalNotice(),
             ] else ...[

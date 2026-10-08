@@ -240,6 +240,7 @@ class _LoginCodeChannelsCard extends ConsumerWidget {
   const _LoginCodeChannelsCard();
 
   String _label(LubaoLocalizations t, String id) => switch (id) {
+        'telegram_bot' => t.loginChannelTelegramBot,
         'whatsapp' => t.loginChannelWhatsapp,
         'telegram' => t.loginChannelTelegram,
         _ => t.loginChannelSms,

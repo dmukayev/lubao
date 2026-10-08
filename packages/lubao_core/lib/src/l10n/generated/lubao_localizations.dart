@@ -6683,6 +6683,36 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Дубликат у {name}'**
   String adminRecognitionDuplicateOf(String name);
+
+  /// No description provided for @driverLoginTelegram.
+  ///
+  /// In ru, this message translates to:
+  /// **'Войти через Telegram'**
+  String get driverLoginTelegram;
+
+  /// No description provided for @driverLoginTelegramWaiting.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откройте Telegram, нажмите «Старт», затем «Поделиться номером» — вход произойдёт сам'**
+  String get driverLoginTelegramWaiting;
+
+  /// No description provided for @driverLoginTelegramExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылка для входа устарела — нажмите «Войти через Telegram» ещё раз'**
+  String get driverLoginTelegramExpired;
+
+  /// No description provided for @driverLoginOrPhone.
+  ///
+  /// In ru, this message translates to:
+  /// **'или по номеру телефона'**
+  String get driverLoginOrPhone;
+
+  /// No description provided for @loginChannelTelegramBot.
+  ///
+  /// In ru, this message translates to:
+  /// **'Бот Telegram (вход без кода)'**
+  String get loginChannelTelegramBot;
 }
 
 class _LubaoLocalizationsDelegate

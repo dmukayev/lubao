@@ -3575,4 +3575,21 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String adminRecognitionDuplicateOf(String name) {
     return '$name иесінде қайталанады';
   }
+
+  @override
+  String get driverLoginTelegram => 'Telegram арқылы кіру';
+
+  @override
+  String get driverLoginTelegramWaiting =>
+      'Telegram-ды ашып, «Старт», содан кейін «Нөмірмен бөлісу» түймесін басыңыз — кіру өздігінен болады';
+
+  @override
+  String get driverLoginTelegramExpired =>
+      'Кіру сілтемесінің мерзімі өтті — «Telegram арқылы кіру» түймесін қайта басыңыз';
+
+  @override
+  String get driverLoginOrPhone => 'немесе телефон нөмірі бойынша';
+
+  @override
+  String get loginChannelTelegramBot => 'Telegram боты (кодсыз кіру)';
 }

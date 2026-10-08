@@ -23,6 +23,31 @@ class AuthRepository {
     return ((res.data as Map)['channels'] as List).cast<String>();
   }
 
+  /// 050: способы входа в порядке из админки — `telegram_bot` (вход через бота
+  /// без кода) и каналы кода. Старый сервер без `methods` — только каналы кода.
+  Future<List<String>> driverLoginMethods() async {
+    final res = await _client.dio.get('/auth/phone/channels');
+    final data = res.data as Map;
+    return ((data['methods'] ?? data['channels']) as List).cast<String>();
+  }
+
+  /// 050: начать вход через бот Telegram — одноразовый nonce и ссылка t.me.
+  Future<({String nonce, Uri url})> startTelegramLogin() async {
+    final device = DeviceInfo.current();
+    final res = await _client.dio.post('/auth/telegram/start', data: {'deviceName': device.name, 'platform': device.platform});
+    final data = res.data as Map<String, dynamic>;
+    return (nonce: data['nonce'] as String, url: Uri.parse(data['url'] as String));
+  }
+
+  /// 050: опрос входа через бота — `null`, пока водитель не поделился номером;
+  /// 410 — ссылка устарела, 409 — уже использована (DioException наверх).
+  Future<Session?> pollTelegramLogin(String nonce) async {
+    final res = await _client.dio.get('/auth/telegram/$nonce');
+    final data = res.data as Map<String, dynamic>;
+    if (data['status'] != 'READY') return null;
+    return _sessionFromTokenResponse(data);
+  }
+
   /// Отправляет код; `channel` — куда (выбор водителя или «отправить
   /// по-другому»). Возвращает канал, куда код ушёл на самом деле: при сбое
   /// сервер берёт следующий по порядку.

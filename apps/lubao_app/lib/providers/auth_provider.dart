@@ -55,6 +55,15 @@ class SessionController extends StateNotifier<Session?> {
     _applyUserLocale(session.user.locale);
   }
 
+  /// 050: вход через бот Telegram — true, когда водитель поделился номером.
+  Future<bool> pollTelegramLogin(String nonce) async {
+    final session = await _ref.read(authRepositoryProvider).pollTelegramLogin(nonce);
+    if (session == null) return false;
+    state = session;
+    _applyUserLocale(session.user.locale);
+    return true;
+  }
+
   Future<Session> loginCompany(String email, String password) async {
     final session = await _ref.read(authRepositoryProvider).loginCompany(email: email, password: password);
     state = session;

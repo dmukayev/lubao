@@ -56,6 +56,10 @@ IOS_APP_ID=28Y4B2FLZ7.kz.darkhan.lubao
 ANDROID_PACKAGE=kz.darkhan.lubao
 ANDROID_CERT_SHA256=                  # отпечаток релизного ключа: keytool -list -v -keystore … (п. 3.2)
 
+# Вход через бот Telegram (050): BotFather → токен; TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME,
+# TELEGRAM_WEBHOOK_SECRET (случайная строка) в .env.prod; webhook — один раз:
+#   curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://$APP_HOST/api/telegram/webhook&secret_token=$TELEGRAM_WEBHOOK_SECRET&allowed_updates=%5B%22message%22%5D"
+# Порядок/вкл кнопки — админка «Настройки → Каналы входа».
 # Push (раздел 5)
 PUSH_PROVIDER=real
 FCM_SERVICE_ACCOUNT_JSON=             # JSON сервисного аккаунта Firebase одной строкой

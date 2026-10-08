@@ -144,7 +144,8 @@ export class TelegramLoginService {
   private async send(chatId: number, text: string, replyMarkup?: Record<string, unknown>) {
     const token = process.env.TELEGRAM_BOT_TOKEN;
     if (!token) return;
-    const res = await this.fetchFn(`https://api.telegram.org/bot${token}/sendMessage`, {
+    // TELEGRAM_API_URL — только для e2e (адрес, который сразу отказывает); иначе Bot API.
+    const res = await this.fetchFn(`${process.env.TELEGRAM_API_URL || 'https://api.telegram.org'}/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chatId, text, ...(replyMarkup ? { reply_markup: replyMarkup } : {}) }),
