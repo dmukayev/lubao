@@ -278,7 +278,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                   key: const Key('addVehicleBodyType'),
                   initialValue: _bodyTypeId,
                   decoration: InputDecoration(labelText: t.driverSetupVehicleBodyType),
-                  items: refData.bodyTypes.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name.forLanguageCode(locale)))).toList(),
+                  items: refData.bodyTypes.map((b) => DropdownMenuItem(key: Key('addVehicleBodyType-${b.code}'), value: b.id, child: Text(b.name.forLanguageCode(locale)))).toList(),
                   onChanged: (v) => setState(() {
                     _bodyTypeId = v;
                     _specs = {};

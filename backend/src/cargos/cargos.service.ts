@@ -229,19 +229,6 @@ export class CargosService {
     return new Map(rows.map((r) => [r.id, r.profile]));
   }
 
-  /// Задача 033, п.8 — груз скрывается, только когда известно И ТО И
-  /// ДРУГОЕ (параметр груза и параметр машины) и груз больше машины; у
-  /// машины без размера отсекаем только по весу.
-  static cargoFitsVehicle(
-    cargo: { weightKg: unknown; volumeM3: unknown; palletCount: number | null },
-    body: { capacityTons: number | null; volumeM3: number | null; palletsEuro: number | null },
-  ): boolean {
-    if (cargo.weightKg != null && body.capacityTons != null && Number(cargo.weightKg) > body.capacityTons * 1000) return false;
-    if (cargo.volumeM3 != null && body.volumeM3 != null && Number(cargo.volumeM3) > body.volumeM3) return false;
-    if (cargo.palletCount != null && body.palletsEuro != null && cargo.palletCount > body.palletsEuro) return false;
-    return true;
-  }
-
   private static num(v: unknown): number | null {
     return v == null ? null : Number(v);
   }
@@ -453,7 +440,7 @@ export class CargosService {
 
   /// Задача 033, п.10 — подсказка при публикации: «подходит N водителям на
   /// точке». Простой счётчик по активным анонсам, те же правила отсева,
-  /// что у ленты (cargoFitsVehicle).
+  /// что у ленты (cargoFitsBody).
   async fitCount(params: { weightKg?: number; volumeM3?: number; palletCount?: number; pointId?: string; bodyTypeIds?: string[]; specs?: Record<string, unknown> }) {
     const arrivals = await this.prisma.arrival.findMany({
       where: { status: { in: ['PLANNED', 'ON_SITE'] }, ...(params.pointId ? { pointId: params.pointId } : {}) },

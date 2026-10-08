@@ -1,3 +1,4 @@
+import { cargoFitsBody, DriverBody } from '../body-types/profile-fit';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { CargosService } from './cargos.service';
 
@@ -191,32 +192,35 @@ describe('CargosService.feed — hides blocked companies\' cargo (задача 0
 });
 
 describe('CargosService — отсев грузов по размеру машины (задача 033, п.8/13)', () => {
-  const body = { capacityTons: 20, volumeM3: 90, palletsEuro: 33 };
+  // 049 п.10: отсев — единая функция профиля (cargoFitsBody), объёмный кузов.
+  const body = { profile: 'VOLUME' as const, capacityTons: 20, volumeM3: 90, palletsEuro: 33, specs: null };
+  const fits = (cargo: { weightKg: number | null; volumeM3: number | null; palletCount: number | null }, b: DriverBody) =>
+    cargoFitsBody({ profiles: [], specs: null, ...cargo }, b);
 
   it('отсекает по весу: 25 т груза против 20 т машины', () => {
-    expect(CargosService.cargoFitsVehicle({ weightKg: 25000, volumeM3: null, palletCount: null }, body)).toBe(false);
+    expect(fits({ weightKg: 25000, volumeM3: null, palletCount: null }, body)).toBe(false);
   });
 
   it('отсекает по объёму: 100 м³ против «Стандарта» 90 м³', () => {
-    expect(CargosService.cargoFitsVehicle({ weightKg: null, volumeM3: 100, palletCount: null }, body)).toBe(false);
+    expect(fits({ weightKg: null, volumeM3: 100, palletCount: null }, body)).toBe(false);
   });
 
   it('пропускает 100 м³ для «Меги» 100 м³ (граница включительно)', () => {
-    expect(CargosService.cargoFitsVehicle({ weightKg: null, volumeM3: 100, palletCount: null }, { ...body, volumeM3: 100 })).toBe(true);
+    expect(fits({ weightKg: null, volumeM3: 100, palletCount: null }, { ...body, volumeM3: 100 })).toBe(true);
   });
 
   it('отсекает по паллетам: 38 против 33', () => {
-    expect(CargosService.cargoFitsVehicle({ weightKg: null, volumeM3: null, palletCount: 38 }, body)).toBe(false);
+    expect(fits({ weightKg: null, volumeM3: null, palletCount: 38 }, body)).toBe(false);
   });
 
   it('машина без размера НЕ отсекается по объёму/паллетам — только по весу', () => {
-    const noSize = { capacityTons: 20, volumeM3: null, palletsEuro: null };
-    expect(CargosService.cargoFitsVehicle({ weightKg: null, volumeM3: 150, palletCount: 50 }, noSize)).toBe(true);
-    expect(CargosService.cargoFitsVehicle({ weightKg: 25000, volumeM3: 150, palletCount: 50 }, noSize)).toBe(false);
+    const noSize = { profile: 'VOLUME' as const, capacityTons: 20, volumeM3: null, palletsEuro: null, specs: null };
+    expect(fits({ weightKg: null, volumeM3: 150, palletCount: 50 }, noSize)).toBe(true);
+    expect(fits({ weightKg: 25000, volumeM3: 150, palletCount: 50 }, noSize)).toBe(false);
   });
 
   it('груз без параметров всегда проходит', () => {
-    expect(CargosService.cargoFitsVehicle({ weightKg: null, volumeM3: null, palletCount: null }, body)).toBe(true);
+    expect(fits({ weightKg: null, volumeM3: null, palletCount: null }, body)).toBe(true);
   });
 
   it('feed() без driverId (аноним/не водитель) не фильтрует вовсе', async () => {

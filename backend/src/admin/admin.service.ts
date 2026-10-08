@@ -2968,6 +2968,11 @@ export class AdminService {
       const label = f?.label as Record<string, unknown> | undefined;
       if (!label || typeof label.ru !== 'string' || !label.ru) errors.push(`#${i}: label.ru`);
       if (typeof f?.forVehicle !== 'boolean' || typeof f?.forCargo !== 'boolean') errors.push(`#${i}: forVehicle/forCargo`);
+      // 049 п.10: границы — числа, только у числового поля, min ≤ max.
+      const bound = (v: unknown) => v === undefined || v === null || (typeof v === 'number' && Number.isFinite(v));
+      if (!bound(f?.min) || !bound(f?.max)) errors.push(`#${i}: min/max must be numbers`);
+      else if (f?.kind !== 'number' && (f?.min != null || f?.max != null)) errors.push(`#${i}: min/max only for number fields`);
+      else if (typeof f?.min === 'number' && typeof f?.max === 'number' && f.min > f.max) errors.push(`#${i}: min > max`);
       if ((f?.kind === 'enum' || f?.kind === 'multi') && (!Array.isArray(f.options) || f.options.length === 0 || !f.options.every((o: any) => typeof o?.code === 'string' && typeof o?.label?.ru === 'string'))) {
         errors.push(`#${i}: options`);
       }

@@ -50,7 +50,8 @@ void main() {
     await run.step(tester, 'форма-цистерны-без-паллет', () async {
       await tester.tap(find.byKey(const Key('addVehicleBodyType')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Цистерна').last);
+      // По коду справочника, не по тексту (049 п.10): от языка не зависит.
+      await tester.tap(find.byKey(const Key('addVehicleBodyType-TANK')).last);
       await tester.pumpAndSettle();
       await waitAndReveal(tester, find.byKey(const Key('spec-liters')));
       expect(find.byKey(const Key('spec-product-FOOD')), findsOneWidget);

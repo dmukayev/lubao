@@ -2547,4 +2547,20 @@ describe('AdminService.updateBodyTypeProfile (048 п.1)', () => {
     ).rejects.toMatchObject({ response: { code: 'INVALID_BODY_FIELDS', errors: ['#1: duplicate key liters', '#2: key', '#2: kind', '#2: label.ru', '#3: options'] } });
     expect(prisma.bodyType.update).not.toHaveBeenCalled();
   });
+
+  it('049 п.10: границы — числа, min ≤ max, только у числового поля', async () => {
+    const { prisma, service } = setup();
+    await expect(
+      service.updateBodyTypeProfile('bt1', 'admin1', {
+        profile: 'TANK',
+        fields: [
+          { ...good, key: 'a', min: 100, max: 10 },
+          { ...good, key: 'b', min: '5' },
+          { key: 'c', kind: 'bool', label: { ru: 'Флаг' }, forVehicle: true, forCargo: false, min: 1 },
+        ],
+        reason: 'E2E',
+      }),
+    ).rejects.toMatchObject({ response: { code: 'INVALID_BODY_FIELDS', errors: ['#0: min > max', '#1: min/max must be numbers', '#2: min/max only for number fields'] } });
+    expect(prisma.bodyType.update).not.toHaveBeenCalled();
+  });
 });

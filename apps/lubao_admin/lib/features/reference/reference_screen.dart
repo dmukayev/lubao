@@ -326,6 +326,21 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
       messenger.showSnackBar(SnackBar(content: Text(t.adminBodyTypeFieldsInvalid('JSON'))));
       return;
     }
+    // 049 п.10: границы числового поля — числа и min ≤ max (сервер проверит тоже).
+    final badBounds = <String>[];
+    for (final (i, f) in fields.indexed) {
+      if (f is! Map) continue;
+      final min = f['min'], max = f['max'];
+      if ((min != null && min is! num) || (max != null && max is! num)) {
+        badBounds.add('#$i: min/max');
+      } else if (min is num && max is num && min > max) {
+        badBounds.add('#$i: min > max');
+      }
+    }
+    if (badBounds.isNotEmpty) {
+      messenger.showSnackBar(SnackBar(content: Text(t.adminBodyTypeFieldsInvalid(badBounds.join(', ')))));
+      return;
+    }
     try {
       await ref.read(adminRepositoryProvider).updateBodyTypeProfile(item.id, profile: profile, fields: fields, reason: reasonController.text.trim().isEmpty ? '—' : reasonController.text.trim());
       ref.invalidate(referenceDataProvider);
