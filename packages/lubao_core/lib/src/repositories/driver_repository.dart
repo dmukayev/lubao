@@ -144,6 +144,12 @@ class DriverRepository {
     return GarageVehicle.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// 048 п.3: параметры уже добавленной машины по профилю кузова.
+  Future<GarageVehicle> setVehicleSpecs(String vehicleId, Map<String, dynamic> specs) async {
+    final res = await _client.dio.patch('/drivers/me/vehicles/$vehicleId/specs', data: {'specs': specs});
+    return GarageVehicle.fromJson(res.data as Map<String, dynamic>);
+  }
+
   /// Размер кузова существующей машины (задача 033, п.5) — шаблон ИЛИ
   /// «свой размер» (все три габарита); сервер копирует/считает сам.
   Future<GarageVehicle> setVehicleSize(

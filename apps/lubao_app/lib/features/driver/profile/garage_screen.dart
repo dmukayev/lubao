@@ -15,6 +15,43 @@ import '../../shared/pd_consent.dart';
 class GarageScreen extends ConsumerWidget {
   const GarageScreen({super.key});
 
+  /// 048 п.3: параметры машины по профилю кузова (цистерна, автовоз…).
+  Future<void> _editSpecs(BuildContext context, WidgetRef ref, GarageVehicle vehicle, BodyType bodyType) async {
+    var values = <String, dynamic>{...?vehicle.specs};
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: StatefulBuilder(
+          builder: (sheetContext, setSheet) => SingleChildScrollView(
+            key: const Key('vehicleSpecsSheet'),
+            padding: EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.lg, AppSpacing.screen, AppSpacing.xl + MediaQuery.of(sheetContext).viewInsets.bottom),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(sheetContext.l10n.bodySpecsTitle, style: AppTextStyles.headline),
+                const SizedBox(height: AppSpacing.md),
+                SpecsForm(fields: bodyType.vehicleFields, values: values, onChanged: (v) => setSheet(() => values = v)),
+                PrimaryButton(key: const Key('vehicleSpecsSave'), label: sheetContext.l10n.commonSave, onPressed: () => Navigator.pop(sheetContext, true)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (saved != true || !context.mounted) return;
+    try {
+      await ref.read(driverRepositoryProvider).setVehicleSpecs(vehicle.id, values);
+      ref.invalidate(garageVehiclesProvider);
+    } catch (e) {
+      debugPrint('GarageScreen: specs: $e');
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.garageAddFailed)));
+    }
+  }
+
   Future<void> _addPhotos(BuildContext context, WidgetRef ref, GarageVehicle vehicle) async {
     await showVehiclePhotosSheet(context, ref, vehicle);
     ref.invalidate(garageVehiclesProvider);
@@ -268,6 +305,7 @@ class GarageScreen extends ConsumerWidget {
                     vehicle: v,
                     bodyTypeCode: codeOf(v.bodyTypeId),
                     bodyType: typeOf(v.bodyTypeId),
+                    onEditSpecs: typeOf(v.bodyTypeId) != null && !typeOf(v.bodyTypeId)!.isVolume ? () => _editSpecs(context, ref, v, typeOf(v.bodyTypeId)!) : null,
                     onArchive: () => _archive(context, ref, v),
                     onAddDocument: () => _addDocument(context, ref, v),
                     onAddPhotos: () => _addPhotos(context, ref, v),
@@ -327,7 +365,10 @@ class _EmptyRow extends StatelessWidget {
 }
 
 class _VehicleCard extends StatelessWidget {
-  const _VehicleCard({required this.vehicle, required this.onArchive, required this.onAddDocument, this.onSetSize, this.bodyTypeCode, this.bodyType, this.onAddPhotos});
+  const _VehicleCard({required this.vehicle, required this.onArchive, required this.onAddDocument, this.onSetSize, this.bodyTypeCode, this.bodyType, this.onAddPhotos, this.onEditSpecs});
+
+  /// 048 п.3: «Параметры кузова» у необъёмных.
+  final VoidCallback? onEditSpecs;
 
   /// «Добавьте фото машины» (044 п.7) — мягкое напоминание, если фото нет.
   final VoidCallback? onAddPhotos;
@@ -404,6 +445,14 @@ class _VehicleCard extends StatelessWidget {
                     key: Key('garageAddDocument-${vehicle.id}'),
                     onTap: onAddDocument,
                     child: Text(context.l10n.garageAddDocument, style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
+                  ),
+                ],
+                if (onEditSpecs != null) ...[
+                  const SizedBox(height: 2),
+                  GestureDetector(
+                    key: Key('garageEditSpecs-${vehicle.id}'),
+                    onTap: onEditSpecs,
+                    child: Text(context.l10n.bodySpecsTitle, style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
                   ),
                 ],
                 if (onAddPhotos != null && (!vehicle.hasPhotoFront || !vehicle.hasPhotoSide)) ...[

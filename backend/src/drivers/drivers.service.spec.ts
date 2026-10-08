@@ -382,3 +382,21 @@ describe('DriversService.updateProfile — «основа» кузова по п
   });
 });
 
+describe('DriversService.setVehicleSpecs (048 п.3)', () => {
+  const { BODY_TYPE_PROFILES } = require('../../prisma/body-type-profiles');
+  it('цистерна: параметры по профилю сохраняются, чужая машина — 404, неверные — 400', async () => {
+    const prisma: any = {
+      vehicle: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'v1', driverId: 'd1', volumeM3: null, palletsEuro: null, bodyType: { profile: 'TANK', fields: BODY_TYPE_PROFILES.TANK.fields } }),
+        update: jest.fn(async ({ data }: any) => ({ id: 'v1', kind: 'TRAILER', bodyTypeId: 'bt', plateNumber: null, vin: null, brand: null, capacityTons: null, lengthM: null, isOwner: true, isVerified: false, isArchived: false, createdAt: new Date(), ...data })),
+      },
+    };
+    const service = new DriversService(prisma);
+    const dto: any = await service.setVehicleSpecs('d1', 'v1', { liters: 25000, product: 'FUEL', palletsEuro: 33 });
+    expect(prisma.vehicle.update.mock.calls[0][0].data.specs).toEqual({ liters: 25000, product: 'FUEL' });
+    expect(dto.specs).toEqual({ liters: 25000, product: 'FUEL' });
+    await expect(service.setVehicleSpecs('other', 'v1', {})).rejects.toThrow('Vehicle not found');
+    await expect(service.setVehicleSpecs('d1', 'v1', { liters: 25000 })).rejects.toMatchObject({ response: { code: 'INVALID_SPECS' } });
+  });
+});
+

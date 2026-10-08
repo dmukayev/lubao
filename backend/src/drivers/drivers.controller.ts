@@ -6,7 +6,7 @@ import { RevealContactDto } from '../contact-events/dto/reveal-contact.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
-import { CreateVehicleDto, SetVehicleSizeDto } from './dto/create-vehicle.dto';
+import { CreateVehicleDto, SetVehicleSizeDto, SetVehicleSpecsDto } from './dto/create-vehicle.dto';
 import { CreateVerificationDocumentDto } from './dto/create-verification-document.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
@@ -133,6 +133,13 @@ export class DriversController {
   archiveVehicle(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');
     return this.drivers.archiveVehicle(ctx.driver.id, id);
+  }
+
+  /// 048 п.3: параметры машины по профилю кузова.
+  @Patch('me/vehicles/:id/specs')
+  setVehicleSpecs(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: SetVehicleSpecsDto) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.drivers.setVehicleSpecs(ctx.driver.id, id, dto.specs);
   }
 
   @Patch('me/vehicles/:id/size')

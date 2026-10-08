@@ -521,6 +521,31 @@ export class DriversService {
   /// Задача 033, п.5/6 — размер кузова существующей машины (у машин,
   /// созданных до 033, его нет — водитель выбирает при следующем открытии
   /// гаража). Только TRAILER/RIGID.
+  /// 048 п.3: параметры уже добавленной машины по профилю её кузова (цистерна,
+  /// автовоз, контейнеровоз…). Объёмным — колонки обновляются из specs.
+  async setVehicleSpecs(driverId: string, vehicleId: string, specsInput: Record<string, unknown>) {
+    const vehicle = await this.prisma.vehicle.findUnique({ where: { id: vehicleId }, include: { bodyType: { select: { profile: true, fields: true } } } });
+    if (!vehicle || vehicle.driverId !== driverId) throw new NotFoundException('Vehicle not found');
+    if (!vehicle.bodyType) throw new BadRequestException('Vehicle has no body type');
+    const specs = validateSpecs(vehicle.bodyType.fields, specsInput, 'vehicle');
+    const capacityTons = typeof specs.capacityTons === 'number' ? specs.capacityTons : null;
+    const volume = vehicle.bodyType.profile === 'VOLUME';
+    const updated = await this.prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: {
+        specs,
+        capacityTons,
+        ...(volume
+          ? {
+              volumeM3: (specs.volumeM3 as number | undefined) ?? vehicle.volumeM3,
+              palletsEuro: (specs.palletsEuro as number | undefined) ?? vehicle.palletsEuro,
+            }
+          : {}),
+      },
+    });
+    return this.vehicleToDto(updated);
+  }
+
   async setVehicleSize(driverId: string, vehicleId: string, dto: SetVehicleSizeDto) {
     const vehicle = await this.prisma.vehicle.findUnique({ where: { id: vehicleId } });
     if (!vehicle || vehicle.driverId !== driverId) throw new NotFoundException('Vehicle not found');

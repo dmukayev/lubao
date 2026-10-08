@@ -97,3 +97,9 @@ export class SetVehicleSizeDto {
   innerHeightM?: number;
 
 }
+
+/// 048 п.3: параметры машины по профилю кузова.
+export class SetVehicleSpecsDto {
+  @IsObject()
+  specs!: Record<string, unknown>;
+}
