@@ -3579,4 +3579,37 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get loginChannelTelegramBot => 'Бот Telegram (вход без кода)';
+
+  @override
+  String get vehiclePhotoFrontTitle => 'Спереди';
+
+  @override
+  String get vehiclePhotoFrontHint => 'Чтобы читался госномер';
+
+  @override
+  String get vehiclePhotoSideTitle => 'Сбоку';
+
+  @override
+  String get vehiclePhotoSideHint => 'Вся машина целиком, с прицепом';
+
+  @override
+  String get vehiclePhotoTake => 'Сфотографировать';
+
+  @override
+  String get vehiclePhotoRetake => 'Переснять';
+
+  @override
+  String get vehiclePhotoFailed => 'Не отправилось';
+
+  @override
+  String profileAddVehicleRegistered(String details) {
+    return 'При регистрации: $details. Без госномера и техпаспорта логист не видит вашу машину и не отдаст груз.';
+  }
+
+  @override
+  String get profileAddVehiclePlain =>
+      'Без госномера и техпаспорта логист не видит вашу машину и не отдаст груз.';
+
+  @override
+  String get garageAddPhotoChip => 'Добавьте фото';
 }

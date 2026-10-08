@@ -14,6 +14,7 @@ import 'tracking_consent_sheet.dart';
 import 'map_links.dart';
 import '../driver/feed/driver_status.dart';
 import 'driver_documents_block.dart';
+import '../driver/profile/vehicle_photos.dart';
 
 class DealDetailScreen extends ConsumerStatefulWidget {
   const DealDetailScreen({super.key, required this.dealId});
@@ -385,6 +386,8 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                   DriverDocumentsBlock(deal: deal),
                 ],
                 if (isDriver) DriverDocsOpenedRow(deal: deal),
+                // 053 п.4: машина рейса у водителя — фото спереди вместо иконки.
+                if (isDriver) _TripVehicles(deal: deal),
                 if (!isDriver) ...[
                   const Divider(height: 32),
                   Text(t.dealDriverLocationTitle, style: Theme.of(context).textTheme.titleSmall),
@@ -578,6 +581,45 @@ class _ReviewsSection extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+
+/// Машины рейса у водителя (053 п.4): фото спереди (или иконка кузова) и номер.
+class _TripVehicles extends ConsumerWidget {
+  const _TripVehicles({required this.deal});
+  final Deal deal;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ids = [deal.tractorId, deal.trailerId].whereType<String>().toSet();
+    if (ids.isEmpty) return const SizedBox.shrink();
+    final vehicles = (ref.watch(garageVehiclesProvider).valueOrNull ?? const <GarageVehicle>[]).where((v) => ids.contains(v.id)).toList();
+    if (vehicles.isEmpty) return const SizedBox.shrink();
+    final refData = ref.watch(referenceDataProvider).valueOrNull;
+    return Padding(
+      key: const Key('dealTripVehicles'),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Wrap(
+        spacing: AppSpacing.md,
+        runSpacing: AppSpacing.sm,
+        children: [
+          for (final v in vehicles)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                VehicleFrontThumb(
+                  vehicle: v,
+                  bodyTypeCode: v.bodyTypeId == null ? null : refData?.bodyTypes.where((b) => b.id == v.bodyTypeId).firstOrNull?.code,
+                  width: 56,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(v.plateNumber ?? context.l10n.garageNoPlate, style: AppTextStyles.bodyStrong),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }

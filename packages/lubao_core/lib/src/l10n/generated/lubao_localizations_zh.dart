@@ -3508,4 +3508,36 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get loginChannelTelegramBot => 'Telegram 机器人（免验证码登录）';
+
+  @override
+  String get vehiclePhotoFrontTitle => '正面';
+
+  @override
+  String get vehiclePhotoFrontHint => '车牌号要清晰可读';
+
+  @override
+  String get vehiclePhotoSideTitle => '侧面';
+
+  @override
+  String get vehiclePhotoSideHint => '整车入镜，含挂车';
+
+  @override
+  String get vehiclePhotoTake => '拍照';
+
+  @override
+  String get vehiclePhotoRetake => '重拍';
+
+  @override
+  String get vehiclePhotoFailed => '未上传';
+
+  @override
+  String profileAddVehicleRegistered(String details) {
+    return '注册时：$details。没有车牌号和行驶证，物流方看不到您的车辆，也不会派货。';
+  }
+
+  @override
+  String get profileAddVehiclePlain => '没有车牌号和行驶证，物流方看不到您的车辆，也不会派货。';
+
+  @override
+  String get garageAddPhotoChip => '添加照片';
 }

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" width="160" height="120">
+  <!-- Подсказка «фото спереди»: кабина анфас, номер выделен. Рамка видоискателя. -->
+  <g fill="none" stroke="#1F4FFF" stroke-width="4" stroke-linecap="round"><path d="M6 24 V6 H24"/><path d="M136 6 H154 V24"/><path d="M154 96 V114 H136"/><path d="M24 114 H6 V96"/></g>
+  <rect x="40" y="14" width="80" height="86" rx="10" fill="#0E1526"/>
+  <rect x="47" y="22" width="66" height="30" rx="5" fill="#E6EBFF"/>
+  <path d="M80 22 v30" stroke="#0E1526" stroke-width="2"/>
+  <rect x="34" y="30" width="6" height="14" rx="2" fill="#0E1526"/><rect x="120" y="30" width="6" height="14" rx="2" fill="#0E1526"/>
+  <g stroke="#5A6170" stroke-width="2.5"><path d="M56 62 H104 M56 68 H104 M56 74 H104"/></g>
+  <rect x="44" y="60" width="9" height="7" rx="2" fill="#FFB020"/><rect x="107" y="60" width="9" height="7" rx="2" fill="#FFB020"/>
+  <rect x="58" y="82" width="44" height="12" rx="2" fill="#FFFFFF" stroke="#FFB020" stroke-width="3"/>
+  <path d="M63 88 H97" stroke="#0E1526" stroke-width="2.5" stroke-dasharray="4 3"/>
+  <rect x="42" y="100" width="12" height="12" rx="3" fill="#0E1526"/><rect x="106" y="100" width="12" height="12" rx="3" fill="#0E1526"/>
+</svg>

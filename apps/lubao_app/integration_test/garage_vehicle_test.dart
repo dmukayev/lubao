@@ -2,7 +2,6 @@
 // техпаспорта, выбрать шаблон размера (033) → прицеп «на проверке»; документ
 // распознан (OCR): госномер, VIN и грузоподъёмность достались из фото.
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -89,7 +88,9 @@ void main() {
       await reveal(tester, gallery);
       await tester.tap(gallery);
       await acceptPdConsentIfAsked(tester);
-      expect(find.text('trailer-passport.png'), findsOneWidget);
+      // 053 п.3: миниатюра техпаспорта — сразу, из байтов на телефоне.
+      await waitFor(tester, find.byKey(const Key('addVehiclePassportThumb')));
+      expect(find.byKey(const Key('addVehiclePassportRetake')), findsOneWidget);
     });
 
     await run.step(tester, 'отправка-на-проверку', () async {
@@ -99,11 +100,24 @@ void main() {
       // 044 п.7: шаг «Сфотографируйте машину» — спереди снимаем, сбоку пропускаем.
       await waitFor(tester, find.byKey(const Key('vehiclePhotosSheet')));
       expectInsideSafeZone(tester);
-      await tester.tap(find.byKey(const Key('vehiclePhoto-vehiclePhotoFront')));
+      // 053 п.2: подсказки спереди и сбоку разные.
+      expect(find.text(t.vehiclePhotoFrontHint), findsOneWidget);
+      expect(find.text(t.vehiclePhotoSideHint), findsOneWidget);
+      final take = find.byKey(const Key('vehiclePhotoTake-vehiclePhotoFront'));
+      await reveal(tester, take);
+      await tester.tap(take);
       await acceptPdConsentIfAsked(tester);
-      await waitFor(tester, find.descendant(of: find.byKey(const Key('vehiclePhoto-vehiclePhotoFront')), matching: find.byIcon(LucideIcons.checkCircle2)));
-      await tester.tap(find.byKey(const Key('vehiclePhotosDone')));
+      // 053 п.3: снимок виден сразу, после загрузки — ✓ и «Переснять».
+      await waitFor(tester, find.byKey(const Key('vehiclePhotoDone-vehiclePhotoFront')));
+      expect(find.descendant(of: find.byKey(const Key('vehiclePhoto-vehiclePhotoFront')), matching: find.byType(Image)), findsWidgets);
+      expect(find.byKey(const Key('vehiclePhotoRetake-vehiclePhotoFront')), findsOneWidget);
+      expectNoOverflow(tester);
+      final done = find.byKey(const Key('vehiclePhotosDone'));
+      await reveal(tester, done);
+      await tester.tap(done);
       await waitFor(tester, find.text(t.garagePending));
+      // 053 п.4: в гараже фото спереди вместо иконки кузова.
+      await waitAndReveal(tester, find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('vehicleFrontPhoto-')), timeout: const Duration(seconds: 30));
       expect(find.text(t.garagePending), findsWidgets);
       // Сбоку фото нет — мягкое напоминание в карточке.
       expect(find.text(t.garagePhotosReminder), findsWidgets);

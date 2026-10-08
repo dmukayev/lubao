@@ -6713,6 +6713,66 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Бот Telegram (вход без кода)'**
   String get loginChannelTelegramBot;
+
+  /// No description provided for @vehiclePhotoFrontTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Спереди'**
+  String get vehiclePhotoFrontTitle;
+
+  /// No description provided for @vehiclePhotoFrontHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Чтобы читался госномер'**
+  String get vehiclePhotoFrontHint;
+
+  /// No description provided for @vehiclePhotoSideTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сбоку'**
+  String get vehiclePhotoSideTitle;
+
+  /// No description provided for @vehiclePhotoSideHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вся машина целиком, с прицепом'**
+  String get vehiclePhotoSideHint;
+
+  /// No description provided for @vehiclePhotoTake.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сфотографировать'**
+  String get vehiclePhotoTake;
+
+  /// No description provided for @vehiclePhotoRetake.
+  ///
+  /// In ru, this message translates to:
+  /// **'Переснять'**
+  String get vehiclePhotoRetake;
+
+  /// No description provided for @vehiclePhotoFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не отправилось'**
+  String get vehiclePhotoFailed;
+
+  /// No description provided for @profileAddVehicleRegistered.
+  ///
+  /// In ru, this message translates to:
+  /// **'При регистрации: {details}. Без госномера и техпаспорта логист не видит вашу машину и не отдаст груз.'**
+  String profileAddVehicleRegistered(String details);
+
+  /// No description provided for @profileAddVehiclePlain.
+  ///
+  /// In ru, this message translates to:
+  /// **'Без госномера и техпаспорта логист не видит вашу машину и не отдаст груз.'**
+  String get profileAddVehiclePlain;
+
+  /// No description provided for @garageAddPhotoChip.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавьте фото'**
+  String get garageAddPhotoChip;
 }
 
 class _LubaoLocalizationsDelegate

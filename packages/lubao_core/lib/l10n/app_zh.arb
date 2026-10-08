@@ -1243,5 +1243,15 @@
   "driverLoginTelegramWaiting": "打开 Telegram，点击“开始”，再点击“分享号码”——将自动登录",
   "driverLoginTelegramExpired": "登录链接已过期——请再次点击“通过 Telegram 登录”",
   "driverLoginOrPhone": "或使用手机号",
-  "loginChannelTelegramBot": "Telegram 机器人（免验证码登录）"
+  "loginChannelTelegramBot": "Telegram 机器人（免验证码登录）",
+  "vehiclePhotoFrontTitle": "正面",
+  "vehiclePhotoFrontHint": "车牌号要清晰可读",
+  "vehiclePhotoSideTitle": "侧面",
+  "vehiclePhotoSideHint": "整车入镜，含挂车",
+  "vehiclePhotoTake": "拍照",
+  "vehiclePhotoRetake": "重拍",
+  "vehiclePhotoFailed": "未上传",
+  "profileAddVehicleRegistered": "注册时：{details}。没有车牌号和行驶证，物流方看不到您的车辆，也不会派货。",
+  "profileAddVehiclePlain": "没有车牌号和行驶证，物流方看不到您的车辆，也不会派货。",
+  "garageAddPhotoChip": "添加照片"
 }

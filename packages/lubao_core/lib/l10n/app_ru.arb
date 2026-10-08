@@ -1411,5 +1411,16 @@
   "driverLoginTelegramWaiting": "Откройте Telegram, нажмите «Старт», затем «Поделиться номером» — вход произойдёт сам",
   "driverLoginTelegramExpired": "Ссылка для входа устарела — нажмите «Войти через Telegram» ещё раз",
   "driverLoginOrPhone": "или по номеру телефона",
-  "loginChannelTelegramBot": "Бот Telegram (вход без кода)"
+  "loginChannelTelegramBot": "Бот Telegram (вход без кода)",
+  "vehiclePhotoFrontTitle": "Спереди",
+  "vehiclePhotoFrontHint": "Чтобы читался госномер",
+  "vehiclePhotoSideTitle": "Сбоку",
+  "vehiclePhotoSideHint": "Вся машина целиком, с прицепом",
+  "vehiclePhotoTake": "Сфотографировать",
+  "vehiclePhotoRetake": "Переснять",
+  "vehiclePhotoFailed": "Не отправилось",
+  "profileAddVehicleRegistered": "При регистрации: {details}. Без госномера и техпаспорта логист не видит вашу машину и не отдаст груз.",
+  "@profileAddVehicleRegistered": { "placeholders": {"details": {"type": "String"}} },
+  "profileAddVehiclePlain": "Без госномера и техпаспорта логист не видит вашу машину и не отдаст груз.",
+  "garageAddPhotoChip": "Добавьте фото"
 }

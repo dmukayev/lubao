@@ -111,6 +111,8 @@ class GarageVehicle {
     this.hasDocument = true,
     this.hasPhotoFront = false,
     this.hasPhotoSide = false,
+    this.photoFrontId,
+    this.photoSideId,
     this.specs,
   });
 
@@ -141,6 +143,10 @@ class GarageVehicle {
   final bool hasPhotoFront;
   final bool hasPhotoSide;
 
+  /// 053 п.5: id последнего фото — ключ миниатюры (обновляется после «Переснять»).
+  final String? photoFrontId;
+  final String? photoSideId;
+
   /// 048: параметры по профилю кузова.
   final Map<String, dynamic>? specs;
 
@@ -165,6 +171,8 @@ class GarageVehicle {
         hasDocument: json['hasDocument'] as bool? ?? true,
         hasPhotoFront: json['hasPhotoFront'] as bool? ?? false,
         hasPhotoSide: json['hasPhotoSide'] as bool? ?? false,
+        photoFrontId: json['photoFrontId'] as String?,
+        photoSideId: json['photoSideId'] as String?,
         specs: json['specs'] as Map<String, dynamic>?,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
@@ -214,6 +222,7 @@ class Driver {
     this.location,
     this.preferredBodyTypeId,
     this.preferredCapacityTons,
+    this.preferredSpecs,
     this.directionRegionIds = const [],
     this.licenseFullName,
   });
@@ -237,6 +246,9 @@ class Driver {
   final String? preferredBodyTypeId;
   final double? preferredCapacityTons;
 
+  /// 048 п.7 / 053 п.1: «основа» кузова из регистрации (литры, места…).
+  final Map<String, dynamic>? preferredSpecs;
+
   /// Области внутри стран направлений (045 п.7).
   final List<String> directionRegionIds;
 
@@ -259,6 +271,7 @@ class Driver {
         location: json['location'] == null ? null : DriverLocation.fromJson(json['location'] as Map<String, dynamic>),
         preferredBodyTypeId: json['preferredBodyTypeId'] as String?,
         preferredCapacityTons: (json['preferredCapacityTons'] as num?)?.toDouble(),
+        preferredSpecs: json['preferredSpecs'] as Map<String, dynamic>?,
         directionRegionIds: (json['directionRegionIds'] as List<dynamic>? ?? []).cast<String>(),
         licenseFullName: json['licenseFullName'] as String?,
       );

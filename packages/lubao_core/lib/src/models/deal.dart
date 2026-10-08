@@ -28,7 +28,13 @@ class Deal {
     this.cancelRequest,
     this.driverCancelStats,
     this.companyCancelStats,
+    this.tractorId,
+    this.trailerId,
   });
+
+  /// 053 п.4: машины рейса (связка водителя на эту сделку).
+  final String? tractorId;
+  final String? trailerId;
 
   /// 046: этап отмены (BEFORE_CONFIRM / AFTER_CONFIRM / AFTER_LOAD / IN_TRANSIT) и сторона вины.
   final String? cancelStage;
@@ -99,6 +105,8 @@ class Deal {
         cancelRequest: json['cancelRequest'] == null ? null : DealCancelRequest.fromJson(json['cancelRequest'] as Map<String, dynamic>),
         driverCancelStats: CancelStats.fromJson(json['driverCancelStats']),
         companyCancelStats: CancelStats.fromJson(json['companyCancelStats']),
+        tractorId: json['tractorId'] as String?,
+        trailerId: json['trailerId'] as String?,
       );
 
   static const List<DealStatus> driverProgression = [

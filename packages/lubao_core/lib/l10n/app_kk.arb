@@ -1243,5 +1243,15 @@
   "driverLoginTelegramWaiting": "Telegram-ды ашып, «Старт», содан кейін «Нөмірмен бөлісу» түймесін басыңыз — кіру өздігінен болады",
   "driverLoginTelegramExpired": "Кіру сілтемесінің мерзімі өтті — «Telegram арқылы кіру» түймесін қайта басыңыз",
   "driverLoginOrPhone": "немесе телефон нөмірі бойынша",
-  "loginChannelTelegramBot": "Telegram боты (кодсыз кіру)"
+  "loginChannelTelegramBot": "Telegram боты (кодсыз кіру)",
+  "vehiclePhotoFrontTitle": "Алдынан",
+  "vehiclePhotoFrontHint": "Мемлекеттік нөмір оқылатындай",
+  "vehiclePhotoSideTitle": "Бүйірінен",
+  "vehiclePhotoSideHint": "Көлік толық, тіркемесімен",
+  "vehiclePhotoTake": "Суретке түсіру",
+  "vehiclePhotoRetake": "Қайта түсіру",
+  "vehiclePhotoFailed": "Жіберілмеді",
+  "profileAddVehicleRegistered": "Тіркелу кезінде: {details}. Мемлекеттік нөмір мен техпаспортсыз логист көлігіңізді көрмейді және жүк бермейді.",
+  "profileAddVehiclePlain": "Мемлекеттік нөмір мен техпаспортсыз логист көлігіңізді көрмейді және жүк бермейді.",
+  "garageAddPhotoChip": "Сурет қосыңыз"
 }

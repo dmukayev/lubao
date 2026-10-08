@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
+import '../profile/vehicle_photos.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
@@ -340,6 +341,8 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
                               children: [
                                 for (final v in tractors)
                                   SelectableTile(
+                                    // 053 п.4: фото спереди вместо иконки, если есть.
+                                    leading: v.photoFrontId == null ? null : VehicleFrontThumb(vehicle: v, width: 40),
                                     label: _comboLabel(
                                       [v.brand, v.plateNumber].whereType<String>().join(' · '),
                                       t.garageKindTractor,
@@ -365,6 +368,7 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
                               children: [
                                 for (final v in trailers)
                                   SelectableTile(
+                                    leading: v.photoFrontId == null ? null : VehicleFrontThumb(vehicle: v, width: 40),
                                     label: _comboLabel(
                                       [
                                         if (v.capacityTons != null) '${v.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',

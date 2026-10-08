@@ -8,6 +8,8 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/photo_picker.dart';
 import 'add_vehicle_sheet.dart';
+import 'add_vehicle_banner.dart';
+import 'vehicle_photos.dart';
 import '../../shared/pd_consent.dart';
 
 /// «Мой гараж» (задача 031, этап B, макет 26) — тягачи и прицепы по
@@ -251,26 +253,8 @@ class GarageScreen extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.all(AppSpacing.screen),
               children: [
-                AppCard(
-                  key: const Key('garageEmptyCta'),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(LucideIcons.truck, size: 40, color: AppColors.primary),
-                      const SizedBox(height: AppSpacing.md),
-                      Text(t.garageEmptyTitle, style: AppTextStyles.title),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(t.garageEmptyBody, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
-                      const SizedBox(height: AppSpacing.lg),
-                      PrimaryButton(
-                        key: const Key('garageAddVehicle'),
-                        label: t.garageAddVehicle,
-                        icon: LucideIcons.camera,
-                        onPressed: () => _addVehicle(context, ref),
-                      ),
-                    ],
-                  ),
-                ),
+                // 053 п.1: та же плашка, что в профиле (кузов из регистрации).
+                const AddVehicleBanner(key: Key('garageEmptyCta'), buttonKey: Key('garageAddVehicle')),
               ],
             );
           }
@@ -419,8 +403,8 @@ class _VehicleCard extends StatelessWidget {
     return AppCard(
       child: Row(
         children: [
-          // 045 п.4: миниатюра кузова (тягач — без прицепа, прицеп — по типу кузова).
-          BodyTypeIcon(bodyTypeCode: bodyTypeCode, vehicleKind: vehicle.kind, width: 56),
+          // 053 п.4: фото спереди вместо иконки; нет фото — миниатюра кузова (045 п.4).
+          VehicleFrontThumb(vehicle: vehicle, bodyTypeCode: bodyTypeCode, width: 72),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -455,7 +439,19 @@ class _VehicleCard extends StatelessWidget {
                     child: Text(context.l10n.bodySpecsTitle, style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
                   ),
                 ],
-                if (onAddPhotos != null && (!vehicle.hasPhotoFront || !vehicle.hasPhotoSide)) ...[
+                // 053 п.4: нет фото — плашка «Добавьте фото →», есть одно из двух — ссылка.
+                if (onAddPhotos != null && !vehicle.hasPhotoFront) ...[
+                  const SizedBox(height: 4),
+                  GestureDetector(
+                    key: Key('garageAddPhotos-${vehicle.id}'),
+                    onTap: onAddPhotos,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                      decoration: BoxDecoration(color: AppColors.accentSoft, borderRadius: BorderRadius.circular(999)),
+                      child: Text('${context.l10n.garageAddPhotoChip} →', style: AppTextStyles.small.copyWith(color: AppColors.accentText, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ] else if (onAddPhotos != null && !vehicle.hasPhotoSide) ...[
                   const SizedBox(height: 2),
                   GestureDetector(
                     key: Key('garageAddPhotos-${vehicle.id}'),

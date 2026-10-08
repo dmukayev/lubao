@@ -104,6 +104,25 @@ void main() {
       if (tag == 'A') {
         // 045 п.5: регистрация не создаёт машин-заглушек — гараж пуст, одна
         // карточка-призыв; лента при этом уже показывает грузы (по предпочтению).
+        // 053 п.1: в профиле первым блоком — жёлтая плашка «Добавьте машину»,
+        // у «Гаража» — «!»; форма открывается с кузовом и тоннажем из регистрации.
+        await run.step(tester, '$tag-плашка-добавьте-машину', () async {
+          await goTab(tester, t.profileTitle);
+          await waitFor(tester, find.byKey(const Key('profileAddVehicleBanner')));
+          expect(find.byKey(const Key('profileGarageAlert')), findsOneWidget);
+          expectInsideSafeZone(tester);
+          expectNoOverflow(tester);
+          await tester.tap(find.byKey(const Key('profileAddVehicle')));
+          await waitFor(tester, find.byKey(const Key('addVehicleBodyType')));
+          final body = tester.widget<DropdownButtonFormField<String>>(find.byKey(const Key('addVehicleBodyType')));
+          expect(body.initialValue, isNotNull, reason: 'кузов подставлен из регистрации');
+          expect(find.descendant(of: find.byKey(const Key('addVehicleBodyType')), matching: find.text('Тентованный')), findsOneWidget);
+          expect(tester.widget<TextField>(find.descendant(of: find.byKey(const Key('addVehicleCapacity')), matching: find.byType(TextField))).controller?.text, '20');
+          expectNoOverflow(tester);
+          await tester.pageBack();
+          await tester.pumpAndSettle();
+          expect(find.byKey(const Key('profileAddVehicleBanner')), findsOneWidget);
+        });
         await run.step(tester, '$tag-гараж-пуст-после-регистрации', () async {
           await goTab(tester, t.profileTitle);
           final garage = find.text(t.garageGoToGarage);

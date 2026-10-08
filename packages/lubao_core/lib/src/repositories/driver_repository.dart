@@ -1,3 +1,7 @@
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
+
 import '../api/api_client.dart';
 import '../models/admin.dart';
 import '../models/common.dart';
@@ -102,6 +106,15 @@ class DriverRepository {
   }
 
   // -- Гараж (задача 031, этап B, макет 26) --------------------------------
+
+  /// 053 п.5: своё фото машины (`front` / `side` / `passport`) — для миниатюр.
+  Future<Uint8List> ownVehiclePhoto(String vehicleId, String type) async {
+    final res = await _client.dio.get<List<int>>(
+      '/drivers/me/vehicles/$vehicleId/photos/$type',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return Uint8List.fromList(res.data ?? const []);
+  }
 
   Future<List<GarageVehicle>> vehicles() async {
     final res = await _client.dio.get('/drivers/me/vehicles');

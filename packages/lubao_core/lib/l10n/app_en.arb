@@ -1368,5 +1368,15 @@
   "driverLoginTelegramWaiting": "Open Telegram, tap “Start”, then “Share my number” — you’ll be signed in automatically",
   "driverLoginTelegramExpired": "The sign-in link expired — tap “Sign in with Telegram” again",
   "driverLoginOrPhone": "or with your phone number",
-  "loginChannelTelegramBot": "Telegram bot (sign in without a code)"
+  "loginChannelTelegramBot": "Telegram bot (sign in without a code)",
+  "vehiclePhotoFrontTitle": "Front",
+  "vehiclePhotoFrontHint": "So the plate number is readable",
+  "vehiclePhotoSideTitle": "Side",
+  "vehiclePhotoSideHint": "The whole vehicle, with the trailer",
+  "vehiclePhotoTake": "Take a photo",
+  "vehiclePhotoRetake": "Retake",
+  "vehiclePhotoFailed": "Not sent",
+  "profileAddVehicleRegistered": "At sign-up: {details}. Without a plate number and registration document, logistics companies can’t see your vehicle and won’t give you cargo.",
+  "profileAddVehiclePlain": "Without a plate number and registration document, logistics companies can’t see your vehicle and won’t give you cargo.",
+  "garageAddPhotoChip": "Add a photo"
 }

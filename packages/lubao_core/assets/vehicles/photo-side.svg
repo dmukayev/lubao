@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" width="160" height="120">
+  <!-- Подсказка «фото сбоку»: вся машина целиком в рамке. В приложении внутрь рамки ставится иконка кузова водителя (tent, refrigerator…); здесь — тент. -->
+  <g fill="none" stroke="#1F4FFF" stroke-width="4" stroke-linecap="round"><path d="M6 24 V6 H24"/><path d="M136 6 H154 V24"/><path d="M154 96 V114 H136"/><path d="M24 114 H6 V96"/></g>
+  <g transform="translate(4 22)"><path d="M8 58 V46 l10-14 h18 q6 0 6 6 v20 z" fill="#0E1526"/><path d="M14 44 l7-9 h12 v9 z" fill="#E6EBFF"/><rect x="44" y="22" width="108" height="36" rx="4" fill="#1F4FFF"/><path d="M52 22 v36 M68 22 v36 M84 22 v36 M100 22 v36 M116 22 v36 M132 22 v36" stroke="#FFFFFF" stroke-width="2" opacity=".55"/><circle cx="22" cy="66" r="9" fill="#0E1526"/><circle cx="22" cy="66" r="3.5" fill="#FFFFFF"/><circle cx="96" cy="66" r="9" fill="#0E1526"/><circle cx="96" cy="66" r="3.5" fill="#FFFFFF"/><circle cx="118" cy="66" r="9" fill="#0E1526"/><circle cx="118" cy="66" r="3.5" fill="#FFFFFF"/><circle cx="140" cy="66" r="9" fill="#0E1526"/><circle cx="140" cy="66" r="3.5" fill="#FFFFFF"/></g>
+  <path d="M14 108 H146" stroke="#8A8F9C" stroke-width="2" stroke-dasharray="5 4"/>
+  <path d="M14 104 l-6 4 6 4 M146 104 l6 4 -6 4" fill="none" stroke="#8A8F9C" stroke-width="2"/>
+</svg>

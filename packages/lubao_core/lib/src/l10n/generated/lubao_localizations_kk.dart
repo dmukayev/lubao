@@ -3592,4 +3592,37 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get loginChannelTelegramBot => 'Telegram боты (кодсыз кіру)';
+
+  @override
+  String get vehiclePhotoFrontTitle => 'Алдынан';
+
+  @override
+  String get vehiclePhotoFrontHint => 'Мемлекеттік нөмір оқылатындай';
+
+  @override
+  String get vehiclePhotoSideTitle => 'Бүйірінен';
+
+  @override
+  String get vehiclePhotoSideHint => 'Көлік толық, тіркемесімен';
+
+  @override
+  String get vehiclePhotoTake => 'Суретке түсіру';
+
+  @override
+  String get vehiclePhotoRetake => 'Қайта түсіру';
+
+  @override
+  String get vehiclePhotoFailed => 'Жіберілмеді';
+
+  @override
+  String profileAddVehicleRegistered(String details) {
+    return 'Тіркелу кезінде: $details. Мемлекеттік нөмір мен техпаспортсыз логист көлігіңізді көрмейді және жүк бермейді.';
+  }
+
+  @override
+  String get profileAddVehiclePlain =>
+      'Мемлекеттік нөмір мен техпаспортсыз логист көлігіңізді көрмейді және жүк бермейді.';
+
+  @override
+  String get garageAddPhotoChip => 'Сурет қосыңыз';
 }

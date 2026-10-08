@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,6 +10,7 @@ import '../../../providers/api_providers.dart';
 import '../../shared/photo_picker.dart';
 import '../../shared/pd_consent.dart';
 import '../../../providers/auth_provider.dart';
+import 'vehicle_photos.dart';
 
 /// Добавление машины в гараж (задача 031, этап B, п.8) — без распознавания
 /// (этап D) поля заполняются вручную, ничего не блокируется. Возвращает
@@ -45,55 +48,19 @@ class _VehiclePhotosSheet extends ConsumerStatefulWidget {
   ConsumerState<_VehiclePhotosSheet> createState() => _VehiclePhotosSheetState();
 }
 
+/// «Фото машины» (053 п.2–3, эталон 31): две карточки — «Спереди» и «Сбоку»
+/// с разными подсказками; фото видно сразу после съёмки.
 class _VehiclePhotosSheetState extends ConsumerState<_VehiclePhotosSheet> {
   late bool _front = widget.vehicle.hasPhotoFront;
   late bool _side = widget.vehicle.hasPhotoSide;
-  VerificationDocType? _uploading;
-
-  Future<void> _take(VerificationDocType type) async {
-    if (!await ensurePdConsent(context, ref) || !mounted) return;
-    final picked = await pickPhoto(ImageSource.camera);
-    if (picked == null) return;
-    setState(() => _uploading = type);
-    try {
-      final bytes = await picked.readAsBytes();
-      final key = await ref.read(uploadsRepositoryProvider).uploadDocument(bytes, filename: picked.name);
-      await ref.read(driverRepositoryProvider).submitVerificationDocument(type: type, fileUrl: key, vehicleId: widget.vehicle.id);
-      if (mounted) setState(() => type == VerificationDocType.vehiclePhotoFront ? _front = true : _side = true);
-    } catch (e) {
-      debugPrint('VehiclePhotosSheet: $e');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.commonError)));
-    } finally {
-      if (mounted) setState(() => _uploading = null);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
     final refData = ref.watch(referenceDataProvider).valueOrNull;
     final code = widget.vehicle.bodyTypeId == null ? null : refData?.bodyTypes.where((b) => b.id == widget.vehicle.bodyTypeId).firstOrNull?.code;
-    Widget slot(VerificationDocType type, String label, bool done) => Expanded(
-          child: OutlinedButton(
-            key: Key('vehiclePhoto-${type.name}'),
-            onPressed: _uploading != null ? null : () => _take(type),
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(AppSpacing.md)),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Подсказка-силуэт — миниатюра этого кузова.
-                Opacity(opacity: done ? 1 : 0.35, child: BodyTypeIcon(bodyTypeCode: code, vehicleKind: widget.vehicle.kind, width: 96)),
-                const SizedBox(height: AppSpacing.sm),
-                if (_uploading == type)
-                  const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                else
-                  Icon(done ? LucideIcons.checkCircle2 : LucideIcons.camera, color: done ? AppColors.success : AppColors.primary),
-                const SizedBox(height: AppSpacing.xs),
-                Text(label, textAlign: TextAlign.center, style: AppTextStyles.caption),
-              ],
-            ),
-          ),
-        );
+    final frontCard = VehiclePhotoCaptureCard(vehicle: widget.vehicle, angle: VehiclePhotoAngle.front, bodyTypeCode: code, onUploaded: () => setState(() => _front = true));
+    final sideCard = VehiclePhotoCaptureCard(vehicle: widget.vehicle, angle: VehiclePhotoAngle.side, bodyTypeCode: code, onUploaded: () => setState(() => _side = true));
     return SingleChildScrollView(
       key: const Key('vehiclePhotosSheet'),
       padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.lg, AppSpacing.screen, AppSpacing.xl),
@@ -105,12 +72,14 @@ class _VehiclePhotosSheetState extends ConsumerState<_VehiclePhotosSheet> {
           const SizedBox(height: AppSpacing.sm),
           Text(t.vehiclePhotoStepHint, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.lg),
-          Row(
-            children: [
-              slot(VerificationDocType.vehiclePhotoFront, t.vehiclePhotoFront, _front),
-              const SizedBox(width: AppSpacing.sm),
-              slot(VerificationDocType.vehiclePhotoSide, t.vehiclePhotoSide, _side),
-            ],
+          // Узкий экран с крупным шрифтом — карточки друг под другом.
+          LayoutBuilder(
+            builder: (context, constraints) => constraints.maxWidth / MediaQuery.textScalerOf(context).scale(1) < 320
+                ? Column(children: [frontCard, const SizedBox(height: AppSpacing.sm), sideCard])
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [Expanded(child: frontCard), const SizedBox(width: AppSpacing.sm), Expanded(child: sideCard)],
+                  ),
           ),
           const SizedBox(height: AppSpacing.lg),
           PrimaryButton(
@@ -147,6 +116,9 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   final _innerWidthController = TextEditingController();
   final _innerHeightController = TextEditingController();
   XFile? _photo;
+  /// 053 п.3: байты техпаспорта — миниатюра сразу после выбора; ошибка отправки.
+  Uint8List? _photoBytes;
+  bool _photoFailed = false;
   /// 048: параметры по профилю кузова (не объёмные — литры, места, контейнеры…).
   Map<String, dynamic> _specs = {};
   bool _submitting = false;
@@ -167,6 +139,10 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
     super.initState();
     final driver = ref.read(sessionProvider)?.driver;
     _bodyTypeId = driver?.preferredBodyTypeId;
+    // 053 п.1: кузов из регистрации — это прицеп/кузов, а не тягач; параметры
+    // профиля (литры, места…) — тоже из регистрации.
+    if (_bodyTypeId != null) _kind = VehicleKind.trailer;
+    _specs = {...?driver?.preferredSpecs};
     final tons = driver?.preferredCapacityTons;
     if (tons != null) _capacityController.text = tons == tons.roundToDouble() ? tons.toStringAsFixed(0) : tons.toString();
   }
@@ -187,7 +163,14 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   Future<void> _pickPhoto(ImageSource source) async {
     if (!await ensurePdConsent(context, ref) || !mounted) return;
     final picked = await pickPhoto(source);
-    if (picked != null) setState(() { _photo = picked; _photoError = null; });
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    setState(() {
+      _photo = picked;
+      _photoBytes = bytes;
+      _photoError = null;
+      _photoFailed = false;
+    });
   }
 
   Future<void> _submit() async {
@@ -197,14 +180,23 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
       return;
     }
 
-    setState(() => _submitting = true);
+    setState(() {
+      _submitting = true;
+      _photoFailed = false;
+    });
     try {
       final isTractor = _kind == VehicleKind.tractor;
       // 032 п.12 (038) — сначала файл, потом машина+документ ОДНИМ запросом
       // (сервер создаёт их в транзакции): обрыв между шагами больше не
       // оставляет машину без техпаспорта.
-      final bytes = await _photo!.readAsBytes();
-      final key = await ref.read(uploadsRepositoryProvider).uploadDocument(bytes, filename: _photo!.name);
+      final bytes = _photoBytes ?? await _photo!.readAsBytes();
+      final String key;
+      try {
+        key = await ref.read(uploadsRepositoryProvider).uploadDocument(bytes, filename: _photo!.name);
+      } catch (_) {
+        if (mounted) setState(() => _photoFailed = true);
+        rethrow;
+      }
       final vehicle = await ref.read(driverRepositoryProvider).addVehicle(
             kind: _kind,
             documentFileUrl: key,
@@ -348,14 +340,45 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
               const SizedBox(height: AppSpacing.lg),
               Text(t.garagePhotoRequired, style: AppTextStyles.bodyStrong),
               const SizedBox(height: AppSpacing.sm),
-              if (_photo != null)
+              // 053 п.3: миниатюра сразу после выбора, поверх — отправка.
+              if (_photoBytes != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Icon(LucideIcons.checkCircle2, size: 16, color: AppColors.success),
-                      const SizedBox(width: AppSpacing.xs),
-                      Expanded(child: Text(_photo!.name, overflow: TextOverflow.ellipsis)),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(AppRadius.field),
+                        child: SizedBox(
+                          key: const Key('addVehiclePassportThumb'),
+                          width: 96,
+                          height: 72,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.memory(_photoBytes!, fit: BoxFit.cover),
+                              if (_submitting) Container(color: Colors.black26, child: const Center(child: CircularProgressIndicator(color: Colors.white))),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: _photoFailed
+                            ? Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: AppSpacing.xs,
+                                children: [
+                                  Text(t.vehiclePhotoFailed, style: AppTextStyles.caption.copyWith(color: StatusBadge.danger)),
+                                  TextButton(onPressed: _submitting ? null : _submit, child: Text(t.commonRetry)),
+                                ],
+                              )
+                            : TextButton(
+                                key: const Key('addVehiclePassportRetake'),
+                                onPressed: _submitting ? null : () => _pickPhoto(ImageSource.camera),
+                                child: Text(t.vehiclePhotoRetake),
+                              ),
+                      ),
                     ],
                   ),
                 ),

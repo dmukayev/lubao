@@ -3594,4 +3594,37 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get loginChannelTelegramBot => 'Telegram bot (sign in without a code)';
+
+  @override
+  String get vehiclePhotoFrontTitle => 'Front';
+
+  @override
+  String get vehiclePhotoFrontHint => 'So the plate number is readable';
+
+  @override
+  String get vehiclePhotoSideTitle => 'Side';
+
+  @override
+  String get vehiclePhotoSideHint => 'The whole vehicle, with the trailer';
+
+  @override
+  String get vehiclePhotoTake => 'Take a photo';
+
+  @override
+  String get vehiclePhotoRetake => 'Retake';
+
+  @override
+  String get vehiclePhotoFailed => 'Not sent';
+
+  @override
+  String profileAddVehicleRegistered(String details) {
+    return 'At sign-up: $details. Without a plate number and registration document, logistics companies can’t see your vehicle and won’t give you cargo.';
+  }
+
+  @override
+  String get profileAddVehiclePlain =>
+      'Without a plate number and registration document, logistics companies can’t see your vehicle and won’t give you cargo.';
+
+  @override
+  String get garageAddPhotoChip => 'Add a photo';
 }

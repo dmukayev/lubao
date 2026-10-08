@@ -82,6 +82,9 @@ export class DealsService {
       cargoId: deal.cargoId,
       driverId: deal.driverId,
       driverName: deal.driver.fullName,
+      // 053 п.4: машины рейса — водитель видит в сделке фото спереди своей машины.
+      tractorId: deal.tractorId,
+      trailerId: deal.trailerId,
       companyId: deal.companyId,
       companyName: deal.company.name,
       status: deal.status,

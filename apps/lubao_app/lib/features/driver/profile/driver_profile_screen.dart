@@ -8,6 +8,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../../providers/locale_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'add_vehicle_banner.dart';
 
 class DriverProfileScreen extends ConsumerStatefulWidget {
   const DriverProfileScreen({super.key});
@@ -52,6 +53,8 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
     final session = ref.watch(sessionProvider);
     final driver = session?.driver;
     final locale = ref.watch(localeProvider);
+    // 053 п.1: машин нет — плашка «Добавьте машину» первым блоком и «!» у гаража.
+    final noVehicles = ref.watch(garageVehiclesProvider).valueOrNull?.isEmpty ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -89,6 +92,10 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
               ),
             ),
           ],
+          if (noVehicles) ...[
+            const SizedBox(height: AppSpacing.lg),
+            const AddVehicleBanner(key: Key('profileAddVehicleBanner'), buttonKey: Key('profileAddVehicle')),
+          ],
           if (!(driver?.isVerified ?? false)) ...[
             const SizedBox(height: AppSpacing.lg),
             _CompletenessBanner(driver: driver),
@@ -116,8 +123,17 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
             ),
           ),
           ListTile(
+            key: const Key('profileGarageItem'),
             leading: const Icon(LucideIcons.truck),
             title: Text(t.garageGoToGarage),
+            trailing: noVehicles
+                ? const CircleAvatar(
+                    key: Key('profileGarageAlert'),
+                    radius: 11,
+                    backgroundColor: AppColors.accent,
+                    child: Text('!', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w700)),
+                  )
+                : null,
             onTap: () => context.push('/driver/garage'),
           ),
           ListTile(
