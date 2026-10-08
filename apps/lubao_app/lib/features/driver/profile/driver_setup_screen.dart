@@ -77,7 +77,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setSheet) => Column(
+        builder: (sheetContext, setSheet) => SafeArea(top: false, child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
@@ -109,7 +109,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
               child: PrimaryButton(key: const Key('directionRegionsDone'), label: t.commonDone, onPressed: () => Navigator.pop(sheetContext, picked)),
             ),
           ],
-        ),
+        )),
       ),
     );
     if (result == null) return;

@@ -196,7 +196,7 @@ class DriverDocsOpenedRow extends ConsumerWidget {
         if (!context.mounted) return;
         await showModalBottomSheet<void>(
           context: context,
-          builder: (sheetContext) => ListView(
+          builder: (sheetContext) => SafeArea(top: false, child: ListView(
             shrinkWrap: true,
             padding: const EdgeInsets.all(AppSpacing.screen),
             children: [
@@ -209,7 +209,7 @@ class DriverDocsOpenedRow extends ConsumerWidget {
                   trailing: Text(formatDateTime(row.at), style: AppTextStyles.caption),
                 ),
             ],
-          ),
+          )),
         );
       },
       child: Padding(

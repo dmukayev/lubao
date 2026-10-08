@@ -114,7 +114,7 @@ Future<void> showWhereNowSheet(BuildContext context, WidgetRef ref, {required Re
           }
         }
 
-        return SingleChildScrollView(
+        return SafeArea(top: false, child: SingleChildScrollView(
           key: const Key('whereNowSheet'),
           padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.lg, AppSpacing.screen, AppSpacing.xl),
           child: Column(
@@ -194,7 +194,7 @@ Future<void> showWhereNowSheet(BuildContext context, WidgetRef ref, {required Re
               ),
             ],
           ),
-        );
+        ));
       },
     ),
   );

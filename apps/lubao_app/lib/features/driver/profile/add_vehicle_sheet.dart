@@ -33,7 +33,7 @@ Future<void> showVehiclePhotosSheet(BuildContext context, WidgetRef ref, GarageV
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: AppColors.surface,
-    builder: (context) => _VehiclePhotosSheet(vehicle: vehicle),
+    builder: (context) => SafeArea(top: false, child: _VehiclePhotosSheet(vehicle: vehicle)),
   );
 }
 

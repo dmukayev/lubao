@@ -22,7 +22,7 @@ Future<void> showDriverVehiclePhotos(BuildContext context, {required String driv
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (sheetContext) => _PhotosSheet(driverId: driverId, driverName: driverName),
+    builder: (sheetContext) => SafeArea(top: false, child: _PhotosSheet(driverId: driverId, driverName: driverName)),
   );
 }
 

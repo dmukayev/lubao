@@ -25,7 +25,7 @@ Future<bool> ensurePdConsent(BuildContext context, WidgetRef ref) async {
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (_) => const _PdConsentSheet(),
+    builder: (_) => const SafeArea(top: false, child: _PdConsentSheet()),
   );
   return accepted == true;
 }
