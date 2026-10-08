@@ -754,7 +754,11 @@ class _DriverCard extends StatelessWidget {
     final countries = driver.anyCountry
         ? t.driverSetupAnyCountry
         : driver.directionCountryIds.map((id) => refData.countryById(id).code).join(' ');
-    final spec = [
+    // 048 п.6: необъёмный кузов — строка по профилю («Цистерна · 30 000 л · Пищевое»).
+    final profileLine = bodyType != null && !bodyType.isVolume && driver.specs != null ? specsSummary(t, locale, bodyType, driver.specs) : null;
+    final spec = profileLine != null
+        ? [profileLine, if (countries.isNotEmpty) countries].join(' · ')
+        : [
       if (bodyType != null) bodyType.name.forLanguageCode(locale),
       if (driver.capacityTons != null) '${driver.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
       // 045 п.6: «м³ · пал.» — только у объёмных кузовов.

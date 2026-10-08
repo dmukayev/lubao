@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
@@ -245,6 +247,93 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
           radiusM: kind == PointKind.terminal ? radiusM : null,
         );
     ref.invalidate(referenceDataProvider);
+  }
+
+  /// Тип кузова: название/порядок или профиль и поля (048 п.1).
+  Future<void> _bodyTypeActions(BodyType item) async {
+    final t = context.l10n;
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(leading: const Icon(LucideIcons.pencil), title: Text(t.adminBodyTypeNameEdit), onTap: () => Navigator.pop(sheetContext, 'name')),
+            ListTile(
+              key: const Key('adminBodyTypeProfileEdit'),
+              leading: const Icon(LucideIcons.listChecks),
+              title: Text(t.adminBodyTypeProfileEdit),
+              onTap: () => Navigator.pop(sheetContext, 'profile'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (choice == 'name') await _editBodyType(item);
+    if (choice == 'profile') await _editBodyTypeProfile(item);
+  }
+
+  Future<void> _editBodyTypeProfile(BodyType item) async {
+    final t = context.l10n;
+    var profile = item.profile;
+    final fieldsController = TextEditingController(text: const JsonEncoder.withIndent('  ').convert(item.rawFields));
+    final reasonController = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) => AlertDialog(
+          title: Text('${t.adminBodyTypeProfileEdit}: ${item.name.forLanguageCode(Localizations.localeOf(dialogContext).languageCode)}'),
+          content: SizedBox(
+            width: 640,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: profile,
+                    decoration: InputDecoration(labelText: t.adminBodyTypeProfile),
+                    items: [for (final p in const ['VOLUME', 'PLATFORM', 'CONTAINER', 'BULK', 'TANK', 'CAR_CARRIER']) DropdownMenuItem(value: p, child: Text(p))],
+                    onChanged: (v) => setState(() => profile = v ?? profile),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const Key('adminBodyTypeFields'),
+                    controller: fieldsController,
+                    maxLines: 18,
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                    decoration: InputDecoration(labelText: t.adminBodyTypeFieldsJson, border: const OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(label: t.adminReasonLabel, controller: reasonController),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.commonCancel)),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(t.commonSave)),
+          ],
+        ),
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    List<dynamic> fields;
+    try {
+      fields = jsonDecode(fieldsController.text) as List<dynamic>;
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(t.adminBodyTypeFieldsInvalid('JSON'))));
+      return;
+    }
+    try {
+      await ref.read(adminRepositoryProvider).updateBodyTypeProfile(item.id, profile: profile, fields: fields, reason: reasonController.text.trim().isEmpty ? '—' : reasonController.text.trim());
+      ref.invalidate(referenceDataProvider);
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      final errors = data is Map && data['errors'] is List ? (data['errors'] as List).join(', ') : e.message ?? '';
+      messenger.showSnackBar(SnackBar(content: Text(t.adminBodyTypeFieldsInvalid(errors))));
+    }
   }
 
   Future<void> _editBodyType(BodyType item) async {
@@ -565,7 +654,7 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
           controller: _tabController,
           children: [
             _SimpleList(
-              items: refData.bodyTypes.map((b) => (b.id, b.name.forLanguageCode(locale), b.isActive, () => _editBodyType(b))).toList(),
+              items: refData.bodyTypes.map((b) => (b.id, '${b.name.forLanguageCode(locale)} · ${b.profile}', b.isActive, () => _bodyTypeActions(b))).toList(),
               onAdd: _addBodyType,
               addLabel: t.adminAddBodyType,
             ),

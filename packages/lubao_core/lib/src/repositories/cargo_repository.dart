@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -64,9 +65,12 @@ class CargoRepository {
   }
 
   /// «Подходит N водителям на точке» при публикации (задача 033, п.10).
-  Future<int> fitCount({double? weightKg, double? volumeM3, int? palletCount, String? pointId}) async {
+  Future<int> fitCount({double? weightKg, double? volumeM3, int? palletCount, String? pointId, List<String> bodyTypeIds = const [], Map<String, dynamic>? specs}) async {
     final res = await _client.dio.get('/cargos/fit-count', queryParameters: {
       if (pointId != null) 'pointId': pointId,
+      // 048 п.4: «подходит N» — по профилю выбранных кузовов и параметрам груза.
+      if (bodyTypeIds.isNotEmpty) 'bodyTypeIds': bodyTypeIds.join(','),
+      if (specs != null && specs.isNotEmpty) 'specs': jsonEncode(specs),
       if (weightKg != null) 'weightKg': weightKg,
       if (volumeM3 != null) 'volumeM3': volumeM3,
       if (palletCount != null) 'palletCount': palletCount,

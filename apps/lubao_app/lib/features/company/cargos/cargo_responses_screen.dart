@@ -269,7 +269,10 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
                 ],
                 Expanded(
                   child: Text(
-                    [
+                    // 048 п.6: необъёмный кузов — строка по профилю.
+                    (response.bodyTypeId != null && widget.refData != null && !widget.refData!.bodyTypeById(response.bodyTypeId!).isVolume && response.specs != null)
+                        ? specsSummary(t, Localizations.localeOf(context).languageCode, widget.refData!.bodyTypeById(response.bodyTypeId!), response.specs)
+                        : [
                       if (response.bodyTypeId != null && widget.refData != null)
                         widget.refData!.bodyTypeById(response.bodyTypeId!).name.forLanguageCode(Localizations.localeOf(context).languageCode),
                       if (response.capacityTons != null) '${response.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',

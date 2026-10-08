@@ -11,6 +11,7 @@ class DriverSetupInput {
     required this.directionCountryIds,
     required this.permitIds,
     this.directionRegionIds = const [],
+    this.preferredSpecs,
     this.bodyTypeId,
     this.plateNumber,
     this.capacityTons,
@@ -25,6 +26,9 @@ class DriverSetupInput {
   /// Области внутри выбранных стран (045 п.7); у страны без областей — вся страна.
   final List<String> directionRegionIds;
 
+  /// 048 п.7: «основа» кузова по профилю (литры, места, контейнеры).
+  final Map<String, dynamic>? preferredSpecs;
+
   /// Кузов и тоннаж — предпочтение из регистрации (045 п.5), машины — в гараже.
   final String? bodyTypeId;
   final String? plateNumber;
@@ -37,6 +41,7 @@ class DriverSetupInput {
         'directionCountryIds': directionCountryIds,
         'permitIds': permitIds,
         'directionRegionIds': directionRegionIds,
+        if (preferredSpecs != null && preferredSpecs!.isNotEmpty) 'preferredSpecs': preferredSpecs,
         if (bodyTypeId != null) 'bodyTypeId': bodyTypeId,
         if (plateNumber != null) 'plateNumber': plateNumber,
         if (capacityTons != null) 'capacityTons': capacityTons,
@@ -116,8 +121,11 @@ class DriverRepository {
     double? innerWidthM,
     double? innerHeightM,
     String? documentFileUrl,
+    Map<String, dynamic>? specs,
   }) async {
     final res = await _client.dio.post('/drivers/me/vehicles', data: {
+      // 048: параметры по профилю кузова (литры, продукт, места…).
+      if (specs != null && specs.isNotEmpty) 'specs': specs,
       'kind': vehicleKindToJson(kind),
       // 032 п.12 (038) — техпаспорт в том же запросе: машина и документ
       // создаются на сервере одной транзакцией.

@@ -111,6 +111,7 @@ class GarageVehicle {
     this.hasDocument = true,
     this.hasPhotoFront = false,
     this.hasPhotoSide = false,
+    this.specs,
   });
 
   final String id;
@@ -140,6 +141,9 @@ class GarageVehicle {
   final bool hasPhotoFront;
   final bool hasPhotoSide;
 
+  /// 048: параметры по профилю кузова.
+  final Map<String, dynamic>? specs;
+
   factory GarageVehicle.fromJson(Map<String, dynamic> json) => GarageVehicle(
         id: json['id'] as String,
         kind: vehicleKindFromJson(json['kind'] as String),
@@ -161,6 +165,7 @@ class GarageVehicle {
         hasDocument: json['hasDocument'] as bool? ?? true,
         hasPhotoFront: json['hasPhotoFront'] as bool? ?? false,
         hasPhotoSide: json['hasPhotoSide'] as bool? ?? false,
+        specs: json['specs'] as Map<String, dynamic>?,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 }

@@ -11,6 +11,7 @@ class CargoResponse {
     required this.createdAt,
     this.capacityTons,
     this.bodyTypeId,
+    this.specs,
     this.volumeM3,
     this.palletsEuro,
     this.committedWeightKg = 0,
@@ -39,6 +40,9 @@ class CargoResponse {
   /// Кузов связки (или из регистрации) — миниатюра у логиста (045 п.4).
   final String? bodyTypeId;
 
+  /// 048: параметры машины по профилю кузова — строка машины у логиста.
+  final Map<String, dynamic>? specs;
+
   /// Объём/паллеты связки водителя (033 п.9 / 038 п.14).
   final double? volumeM3;
   final int? palletsEuro;
@@ -63,6 +67,7 @@ class CargoResponse {
         createdAt: DateTime.parse(json['createdAt'] as String),
         capacityTons: (json['capacityTons'] as num?)?.toDouble(),
         bodyTypeId: json['bodyTypeId'] as String?,
+        specs: json['specs'] as Map<String, dynamic>?,
         volumeM3: (json['volumeM3'] as num?)?.toDouble(),
         palletsEuro: json['palletsEuro'] as int?,
         committedWeightKg: (json['committedWeightKg'] as num?)?.toDouble() ?? 0,

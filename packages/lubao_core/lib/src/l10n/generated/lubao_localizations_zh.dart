@@ -3188,4 +3188,54 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String deliveredAskTitle(String city) {
     return '您在$city。要从这里找货吗？';
   }
+
+  @override
+  String get unitM => '米';
+
+  @override
+  String get unitLiters => '升';
+
+  @override
+  String get unitCelsius => '°C';
+
+  @override
+  String get unitCars => '辆';
+
+  @override
+  String get unitSlots => '个';
+
+  @override
+  String get unitSections => '仓';
+
+  @override
+  String get bodySpecsTitle => '车厢参数';
+
+  @override
+  String get cargoSpecsTitle => '货物参数';
+
+  @override
+  String get cargoExtraBodyTypes => '也可使用';
+
+  @override
+  String get specYes => '是';
+
+  @override
+  String get specNo => '否';
+
+  @override
+  String get adminBodyTypeNameEdit => '名称与排序';
+
+  @override
+  String get adminBodyTypeProfileEdit => '类型与字段';
+
+  @override
+  String get adminBodyTypeProfile => '类型';
+
+  @override
+  String get adminBodyTypeFieldsJson => '字段（JSON）';
+
+  @override
+  String adminBodyTypeFieldsInvalid(String errors) {
+    return '字段未保存：$errors';
+  }
 }

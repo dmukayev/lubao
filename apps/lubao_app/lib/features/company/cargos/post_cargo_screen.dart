@@ -41,6 +41,9 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   String? _countryId;
   String? _cityId;
   String? _bodyTypeId;
+  /// 048: параметры груза по профилю кузова и другие подходящие кузова.
+  Map<String, dynamic> _specs = {};
+  final _extraBodyTypeIds = <String>{};
   Currency _currency = Currency.usd;
   DateTime _readyDate = DateTime.now();
   String? _destinationError;
@@ -64,6 +67,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       _countryId = cargo.destinationCountryId;
       _cityId = cargo.destinationCityId;
       _bodyTypeId = cargo.bodyTypeId;
+      _specs = {...?cargo.cargoSpecs};
+      _extraBodyTypeIds.addAll(cargo.extraBodyTypeIds);
       _currency = cargo.currency;
       _readyDate = cargo.readyDate;
       _photoUrls.addAll(cargo.photoUrls);
@@ -118,6 +123,14 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
 
   void _removePhoto(String url) => setState(() => _photoUrls.remove(url));
 
+  BodyType? _bodyType(ReferenceData refData) => _bodyTypeId == null ? null : refData.bodyTypes.where((b) => b.id == _bodyTypeId).firstOrNull;
+  bool _showVolume(ReferenceData refData) {
+    final bt = _bodyType(refData);
+    return bt == null || bt.isVolume || bt.profile == 'BULK';
+  }
+
+  bool _showPallets(ReferenceData refData) => _bodyType(refData)?.isVolume ?? true;
+
   /// Тонны из поля → кг (запятая как разделитель допускается).
   double? _weightKg() {
     final tons = double.tryParse(_weightController.text.trim().replaceAll(',', '.'));
@@ -128,13 +141,21 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     final weightKg = _weightKg();
     final volumeM3 = double.tryParse(_volumeController.text);
     final palletCount = int.tryParse(_palletController.text);
-    if (volumeM3 == null && palletCount == null) {
+    if (volumeM3 == null && palletCount == null && _specs.isEmpty) {
       setState(() => _fitCount = null);
       return;
     }
     setState(() => _fitCountLoading = true);
     try {
-      final count = await ref.read(cargoRepositoryProvider).fitCount(weightKg: weightKg, volumeM3: volumeM3, palletCount: palletCount, pointId: _pointId);
+      final count = await ref.read(cargoRepositoryProvider).fitCount(
+            weightKg: weightKg,
+            volumeM3: volumeM3,
+            palletCount: palletCount,
+            pointId: _pointId,
+            // 048 п.4: «подходит N» — по профилю выбранных кузовов.
+            bodyTypeIds: [if (_bodyTypeId != null) _bodyTypeId!, ..._extraBodyTypeIds],
+            specs: _specs,
+          );
       if (mounted) setState(() => _fitCount = count);
     } catch (e) {
       // Подсказка best-effort: при сбое просто не показываем (но в лог пишем).
@@ -168,6 +189,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   Future<void> _submit() async {
     if (!_isEditing && !(ref.read(sessionProvider)?.company?.isVerified ?? false)) return;
     final t = context.l10n;
+    final refData = ref.read(referenceDataProvider).valueOrNull;
     final price = double.tryParse(_priceController.text.trim().replaceAll(',', '.'));
     setState(() {
       _pointError = _pointId == null ? t.postCargoPickupCityError : null;
@@ -190,13 +212,15 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         destinationCityId: _cityId,
         bodyTypeId: _bodyTypeId!,
         weightKg: _weightKg(),
-        volumeM3: double.tryParse(_volumeController.text),
-        palletCount: int.tryParse(_palletController.text),
+        volumeM3: refData == null || _showVolume(refData) ? double.tryParse(_volumeController.text) : null,
+        palletCount: refData == null || _showPallets(refData) ? int.tryParse(_palletController.text) : null,
         photoUrls: _photoUrls,
         price: price!,
         currency: _currency,
         readyDate: _readyDate,
         description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
+        specs: _specs.isEmpty ? null : _specs,
+        extraBodyTypeIds: _extraBodyTypeIds.where((id) => id != _bodyTypeId).toList(),
       );
       if (_isEditing) {
         await ref.read(cargoRepositoryProvider).update(widget.cargo!.id, input);
@@ -300,11 +324,52 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 items: refData.bodyTypes
                     .map((b) => DropdownMenuItem(value: b.id, child: Text(b.name.forLanguageCode(locale))))
                     .toList(),
-                onChanged: (value) => setState(() => _bodyTypeId = value),
+                onChanged: (value) => setState(() {
+                  _bodyTypeId = value;
+                  _specs = {};
+                }),
               ),
               const SizedBox(height: 12),
+              // 048 п.4: поля груза по профилю выбранного кузова (продукт и литры,
+              // тип контейнера, число машин…) и другие подходящие кузова.
+              if (_bodyTypeId != null && refData.bodyTypeById(_bodyTypeId!).cargoFields.isNotEmpty) ...[
+                Text(t.cargoSpecsTitle, style: AppTextStyles.bodyStrong),
+                const SizedBox(height: 8),
+                SpecsForm(
+                  key: ValueKey('cargoSpecs-$_bodyTypeId'),
+                  fields: refData.bodyTypeById(_bodyTypeId!).cargoFields,
+                  values: _specs,
+                  onChanged: (v) {
+                    setState(() => _specs = v);
+                    _refreshFitCount();
+                  },
+                ),
+              ],
+              if (_bodyTypeId != null) ...[
+                Text(t.cargoExtraBodyTypes, style: AppTextStyles.bodyStrong),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final b in refData.bodyTypes.where((b) => b.isActive && b.id != _bodyTypeId))
+                      SelectableTile(
+                        key: Key('postCargoExtraBody-${b.code}'),
+                        label: b.name.forLanguageCode(locale),
+                        selected: _extraBodyTypeIds.contains(b.id),
+                        onTap: () {
+                          setState(() => _extraBodyTypeIds.contains(b.id) ? _extraBodyTypeIds.remove(b.id) : _extraBodyTypeIds.add(b.id));
+                          _refreshFitCount();
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
               Row(
                 children: [
+                  // 048 п.4: м³ — объёмным и насыпным, паллеты — только объёмным.
+                  if (_showVolume(refData))
                   Expanded(
                     child: AppTextField(
                       key: const Key('postCargoVolume'),
@@ -314,7 +379,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                       onChanged: (_) => _refreshFitCount(),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  if (_showVolume(refData)) const SizedBox(width: 12),
                   Expanded(
                     child: AppTextField(
                       key: const Key('postCargoWeight'),
@@ -326,13 +391,15 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              AppTextField(
-                label: t.postCargoPallets,
-                controller: _palletController,
-                keyboardType: TextInputType.number,
-                onChanged: (_) => _refreshFitCount(),
-              ),
+              if (_showPallets(refData)) ...[
+                const SizedBox(height: 12),
+                AppTextField(
+                  label: t.postCargoPallets,
+                  controller: _palletController,
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) => _refreshFitCount(),
+                ),
+              ],
               if (_fitCount != null && !_fitCountLoading) ...[
                 const SizedBox(height: 4),
                 Text(t.postCargoFitCount(_fitCount!), style: AppTextStyles.caption.copyWith(color: AppColors.primary)),

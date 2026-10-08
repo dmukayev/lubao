@@ -1272,5 +1272,21 @@
   "whereNowNotLooking": "Not looking for now",
   "whereNowOtherCity": "I’m in another city",
   "whereNowGpsHint": "Are you in {city} now?",
-  "deliveredAskTitle": "You’re in {city}. Looking for cargo from here?"
+  "deliveredAskTitle": "You’re in {city}. Looking for cargo from here?",
+  "unitM": "m",
+  "unitLiters": "L",
+  "unitCelsius": "°C",
+  "unitCars": "cars",
+  "unitSlots": "pcs",
+  "unitSections": "comp.",
+  "bodySpecsTitle": "Body details",
+  "cargoSpecsTitle": "Cargo details",
+  "cargoExtraBodyTypes": "Also suitable",
+  "specYes": "yes",
+  "specNo": "no",
+  "adminBodyTypeNameEdit": "Name and order",
+  "adminBodyTypeProfileEdit": "Profile and fields",
+  "adminBodyTypeProfile": "Profile",
+  "adminBodyTypeFieldsJson": "Fields (JSON)",
+  "adminBodyTypeFieldsInvalid": "Fields not saved: {errors}"
 }

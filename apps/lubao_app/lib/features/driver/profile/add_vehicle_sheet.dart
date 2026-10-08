@@ -147,8 +147,13 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   final _innerWidthController = TextEditingController();
   final _innerHeightController = TextEditingController();
   XFile? _photo;
+  /// 048: параметры по профилю кузова (не объёмные — литры, места, контейнеры…).
+  Map<String, dynamic> _specs = {};
   bool _submitting = false;
   String? _photoError;
+
+  BodyType? _selectedBodyType(ReferenceData? refData) =>
+      _bodyTypeId == null ? null : refData?.bodyTypes.where((b) => b.id == _bodyTypeId).firstOrNull;
 
   bool get _isVolume {
     final refData = ref.read(referenceDataProvider).valueOrNull;
@@ -207,12 +212,13 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
             plateNumber: _plateController.text.trim().isEmpty ? null : _plateController.text.trim(),
             vin: _vinController.text.trim().isEmpty ? null : _vinController.text.trim(),
             brand: _brandController.text.trim().isEmpty ? null : _brandController.text.trim(),
-            capacityTons: isTractor ? null : double.tryParse(_capacityController.text.trim()),
-            lengthM: isTractor ? null : double.tryParse(_lengthController.text.trim()),
+            capacityTons: isTractor || !_isVolume ? null : double.tryParse(_capacityController.text.trim()),
+            lengthM: isTractor || !_isVolume ? null : double.tryParse(_lengthController.text.trim()),
             sizePresetId: isTractor || _customSize || !_isVolume ? null : _sizePresetId,
             innerLengthM: isTractor || !_customSize || !_isVolume ? null : double.tryParse(_innerLengthController.text.trim()),
             innerWidthM: isTractor || !_customSize || !_isVolume ? null : double.tryParse(_innerWidthController.text.trim()),
             innerHeightM: isTractor || !_customSize || !_isVolume ? null : double.tryParse(_innerHeightController.text.trim()),
+            specs: isTractor || _isVolume ? null : _specs,
           );
 
       if (mounted) Navigator.of(context).pop(vehicle);
@@ -273,9 +279,23 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                   initialValue: _bodyTypeId,
                   decoration: InputDecoration(labelText: t.driverSetupVehicleBodyType),
                   items: refData.bodyTypes.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name.forLanguageCode(locale)))).toList(),
-                  onChanged: (v) => setState(() => _bodyTypeId = v),
+                  onChanged: (v) => setState(() {
+                    _bodyTypeId = v;
+                    _specs = {};
+                  }),
                 ),
                 const SizedBox(height: AppSpacing.md),
+                // 048: у необъёмных кузовов — свои поля по профилю вместо тоннажа/длины/размера.
+                if (_selectedBodyType(refData) != null && !_selectedBodyType(refData)!.isVolume) ...[
+                  Text(t.bodySpecsTitle, style: AppTextStyles.bodyStrong),
+                  const SizedBox(height: AppSpacing.sm),
+                  SpecsForm(
+                    key: ValueKey('specs-${_bodyTypeId}'),
+                    fields: _selectedBodyType(refData)!.vehicleFields,
+                    values: _specs,
+                    onChanged: (v) => setState(() => _specs = v),
+                  ),
+                ] else ...[
                 AppTextField(key: const Key('addVehicleCapacity'), label: t.driverSetupCapacity, controller: _capacityController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(key: const Key('addVehicleLength'), label: t.garageLength, controller: _lengthController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
@@ -314,6 +334,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                   AppTextField(label: t.garageSizeWidth, controller: _innerWidthController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                   const SizedBox(height: AppSpacing.md),
                   AppTextField(label: t.garageSizeHeight, controller: _innerHeightController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                ],
                 ],
                 ],
                 const SizedBox(height: AppSpacing.md),

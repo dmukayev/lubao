@@ -332,4 +332,34 @@ assert(noOffer.status === 400, 'без оферты компания не рег
 const oldOffer = await api('POST', '/auth/company/register', { body: { email: `e2e-oldoffer-${Date.now()}@lubao-test.kz`, password: 'E2eLubao2026!', ownerName: 'Тест Офертов', companyName: 'Old Offer LLC', countryId: cnId, offerVersion: '2000-01-01' } });
 assert(oldOffer.status === 400, 'старая редакция оферты не принимается', `status=${oldOffer.status}`);
 
+// 048: профили кузова — груз «цистерна, 20 000 л» виден цистерне и не виден тенту;
+// у цистерны без литров груз не публикуется; сломанные поля админка не сохраняет.
+const ref048 = (await api('GET', '/reference-data')).json;
+const tankType = ref048.bodyTypes.find((b) => b.code === 'TANK');
+const tentType = ref048.bodyTypes.find((b) => b.code === 'TENT');
+assert(tankType?.profile === 'TANK' && tankType.fields.some((f) => f.key === 'liters') && !tankType.fields.some((f) => f.key === 'palletsEuro'), 'у цистерны свои поля (литры), без паллет');
+const almaty048 = ref048.points.find((p) => p.name.ru === 'Алматы');
+async function newDriver(phone, bodyTypeId, extra) {
+  await api('POST', '/auth/phone/request-code', { body: { phone } });
+  const reg = (await api('POST', '/auth/phone/verify', { body: { phone, code: '1111', deviceName: 'e2e', platform: 'ios' } })).json;
+  const prof = await api('PATCH', '/drivers/me', { token: reg.accessToken, body: { fullName: 'Тест Профилев', homeCityId: almaty048.cityId, anyCountry: true, directionCountryIds: [], permitIds: [], bodyTypeId, ...extra } });
+  return { token: reg.accessToken, prof };
+}
+const tankDriver = await newDriver('+77010000096', tankType.id, { preferredSpecs: { liters: 30000, product: 'FOOD' } });
+assert(tankDriver.prof.status < 300 && tankDriver.prof.json.preferredSpecs?.liters === 30000 && tankDriver.prof.json.preferredCapacityTons == null, 'водитель цистерны: «основа» — литры и продукт, без тоннажа', JSON.stringify(tankDriver.prof.json.preferredSpecs));
+const tentDriver = await newDriver('+77010000095', tentType.id, { capacityTons: 20 });
+const kzOwner048 = (await api('POST', '/auth/company/login', { body: { email: 'e2e-owner@lubao-test.kz', password: 'E2eLubao2026!', deviceName: 'e2e', platform: 'ios' } })).json.accessToken;
+const tankCargoBody = { pointId: almaty048.id, destinationCountryId: ref048.countries.find((c) => c.code === 'KZ').id, bodyTypeId: tankType.id, price: 900, currency: 'USD', readyDate: '2030-02-01' };
+const noLiters = await api('POST', '/cargos', { token: kzOwner048, body: { ...tankCargoBody, specs: { cargoProduct: 'FOOD' } } });
+assert(noLiters.status === 400 && noLiters.json.code === 'INVALID_SPECS', 'груз для цистерны без литров не публикуется', `status=${noLiters.status}`);
+const tankCargo = await api('POST', '/cargos', { token: kzOwner048, body: { ...tankCargoBody, specs: { cargoProduct: 'FOOD', cargoLiters: 20000 } } });
+assert(tankCargo.status < 300 && tankCargo.json.specs?.cargoLiters === 20000, 'груз «цистерна, 20 000 л, пищевое» опубликован', `status=${tankCargo.status}`);
+const feedIds = async (token) => (await api('GET', '/cargos?limit=50', { token })).json.items.map((c) => c.id);
+assert((await feedIds(tankDriver.token)).includes(tankCargo.json.id), 'груз виден водителю цистерны');
+assert(!(await feedIds(tentDriver.token)).includes(tankCargo.json.id), 'груз не виден водителю тента');
+const fit = (await api('GET', `/cargos/fit-count?bodyTypeIds=${tankType.id}&specs=${encodeURIComponent(JSON.stringify({ cargoProduct: 'FOOD', cargoLiters: 20000 }))}`, { token: kzOwner048 })).json;
+assert(typeof fit.count === 'number', '«подходит N водителям» считает по профилю', JSON.stringify(fit));
+const badFields = await api('PATCH', `/admin/reference/body-types/${tankType.id}/profile`, { token, body: { profile: 'TANK', fields: [{ key: '1x', kind: 'text' }], reason: 'E2E' } });
+assert(badFields.status === 400 && badFields.json.code === 'INVALID_BODY_FIELDS', 'сломанные поля типа кузова админка не сохраняет', `status=${badFields.status}`);
+
 console.log(`Готово: ${checks} проверок.`);

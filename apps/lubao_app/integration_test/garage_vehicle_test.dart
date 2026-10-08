@@ -46,7 +46,21 @@ void main() {
       expectInsideSafeZone(tester);
     });
 
+    // 048: у цистерны своя форма — литры и продукт, без тоннажа и паллет.
+    await run.step(tester, 'форма-цистерны-без-паллет', () async {
+      await tester.tap(find.byKey(const Key('addVehicleBodyType')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Цистерна').last);
+      await tester.pumpAndSettle();
+      await waitAndReveal(tester, find.byKey(const Key('spec-liters')));
+      expect(find.byKey(const Key('spec-product-FOOD')), findsOneWidget);
+      expect(find.byKey(const Key('addVehicleCapacity')), findsNothing);
+      expect(find.textContaining(t.unitPallets), findsNothing);
+      expectInsideSafeZone(tester);
+    });
+
     await run.step(tester, 'поля-прицепа', () async {
+      await reveal(tester, find.byKey(const Key('addVehicleBodyType')));
       await tester.tap(find.byKey(const Key('addVehicleBodyType')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Тентованный').last);

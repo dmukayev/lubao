@@ -6137,6 +6137,102 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Вы в {city}. Ищете груз отсюда?'**
   String deliveredAskTitle(String city);
+
+  /// No description provided for @unitM.
+  ///
+  /// In ru, this message translates to:
+  /// **'м'**
+  String get unitM;
+
+  /// No description provided for @unitLiters.
+  ///
+  /// In ru, this message translates to:
+  /// **'л'**
+  String get unitLiters;
+
+  /// No description provided for @unitCelsius.
+  ///
+  /// In ru, this message translates to:
+  /// **'°C'**
+  String get unitCelsius;
+
+  /// No description provided for @unitCars.
+  ///
+  /// In ru, this message translates to:
+  /// **'маш.'**
+  String get unitCars;
+
+  /// No description provided for @unitSlots.
+  ///
+  /// In ru, this message translates to:
+  /// **'шт.'**
+  String get unitSlots;
+
+  /// No description provided for @unitSections.
+  ///
+  /// In ru, this message translates to:
+  /// **'секц.'**
+  String get unitSections;
+
+  /// No description provided for @bodySpecsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Параметры кузова'**
+  String get bodySpecsTitle;
+
+  /// No description provided for @cargoSpecsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Параметры груза'**
+  String get cargoSpecsTitle;
+
+  /// No description provided for @cargoExtraBodyTypes.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подходят также'**
+  String get cargoExtraBodyTypes;
+
+  /// No description provided for @specYes.
+  ///
+  /// In ru, this message translates to:
+  /// **'да'**
+  String get specYes;
+
+  /// No description provided for @specNo.
+  ///
+  /// In ru, this message translates to:
+  /// **'нет'**
+  String get specNo;
+
+  /// No description provided for @adminBodyTypeNameEdit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название и порядок'**
+  String get adminBodyTypeNameEdit;
+
+  /// No description provided for @adminBodyTypeProfileEdit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Профиль и поля'**
+  String get adminBodyTypeProfileEdit;
+
+  /// No description provided for @adminBodyTypeProfile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Профиль'**
+  String get adminBodyTypeProfile;
+
+  /// No description provided for @adminBodyTypeFieldsJson.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поля (JSON)'**
+  String get adminBodyTypeFieldsJson;
+
+  /// No description provided for @adminBodyTypeFieldsInvalid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поля не сохранены: {errors}'**
+  String adminBodyTypeFieldsInvalid(String errors);
 }
 
 class _LubaoLocalizationsDelegate

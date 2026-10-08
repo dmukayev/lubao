@@ -1300,5 +1300,22 @@
   "whereNowGpsHint": "Вы теперь в {city}?",
   "@whereNowGpsHint": {"placeholders": {"city": {"type": "String"}}},
   "deliveredAskTitle": "Вы в {city}. Ищете груз отсюда?",
-  "@deliveredAskTitle": {"placeholders": {"city": {"type": "String"}}}
+  "@deliveredAskTitle": {"placeholders": {"city": {"type": "String"}}},
+  "unitM": "м",
+  "unitLiters": "л",
+  "unitCelsius": "°C",
+  "unitCars": "маш.",
+  "unitSlots": "шт.",
+  "unitSections": "секц.",
+  "bodySpecsTitle": "Параметры кузова",
+  "cargoSpecsTitle": "Параметры груза",
+  "cargoExtraBodyTypes": "Подходят также",
+  "specYes": "да",
+  "specNo": "нет",
+  "adminBodyTypeNameEdit": "Название и порядок",
+  "adminBodyTypeProfileEdit": "Профиль и поля",
+  "adminBodyTypeProfile": "Профиль",
+  "adminBodyTypeFieldsJson": "Поля (JSON)",
+  "adminBodyTypeFieldsInvalid": "Поля не сохранены: {errors}",
+  "@adminBodyTypeFieldsInvalid": {"placeholders": {"errors": {"type": "String"}}}
 }

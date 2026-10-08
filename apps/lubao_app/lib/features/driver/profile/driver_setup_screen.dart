@@ -34,6 +34,11 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
   final _selectedPermits = <String>{};
   /// Области внутри выбранных стран (045 п.7); у страны без своих областей — вся страна.
   final _selectedRegions = <String>{};
+  /// 048 п.7: «основа» кузова по профилю (литры и продукт, места, контейнеры).
+  Map<String, dynamic> _preferredSpecs = {};
+
+  BodyType? _selectedBodyType(ReferenceData refData) =>
+      _bodyTypeId == null ? null : refData.bodyTypes.where((b) => b.id == _bodyTypeId).firstOrNull;
   bool _initialized = false;
   bool _saving = false;
   TextEditingController? _cityFieldController;
@@ -174,6 +179,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
               directionCountryIds: _anyCountry ? [] : _selectedCountries.toList(),
               permitIds: _selectedPermits.toList(),
               directionRegionIds: _anyCountry ? const [] : _selectedRegions.toList(),
+              preferredSpecs: widget.isRegistration && _preferredSpecs.isNotEmpty ? _preferredSpecs : null,
               bodyTypeId: widget.isRegistration ? _bodyTypeId : null,
               plateNumber: null,
               capacityTons: _capacityTons,
@@ -330,7 +336,10 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                             bodyTypeCode: refData.bodyTypes[i].code,
                             label: refData.bodyTypes[i].name.forLanguageCode(locale),
                             selected: _bodyTypeId == refData.bodyTypes[i].id,
-                            onTap: () => setState(() => _bodyTypeId = refData.bodyTypes[i].id),
+                            onTap: () => setState(() {
+                              _bodyTypeId = refData.bodyTypes[i].id;
+                              _preferredSpecs = {};
+                            }),
                           ),
                         ),
                         const SizedBox(width: AppSpacing.sm),
@@ -340,7 +349,10 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                               bodyTypeCode: refData.bodyTypes[i + 1].code,
                               label: refData.bodyTypes[i + 1].name.forLanguageCode(locale),
                               selected: _bodyTypeId == refData.bodyTypes[i + 1].id,
-                              onTap: () => setState(() => _bodyTypeId = refData.bodyTypes[i + 1].id),
+                              onTap: () => setState(() {
+                                _bodyTypeId = refData.bodyTypes[i + 1].id;
+                                _preferredSpecs = {};
+                              }),
                             ),
                           )
                         else
@@ -353,22 +365,36 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                 Text(_bodyTypeError!, style: AppTextStyles.caption.copyWith(color: AppColors.error)),
                 const SizedBox(height: AppSpacing.sm),
               ],
-              const SizedBox(height: AppSpacing.md),
-              Text(t.driverSetupCapacity, style: AppTextStyles.bodyStrong),
-              const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  for (final capacity in _capacityPresets)
-                    SelectableTile(
-                      key: Key('driverSetupCapacity-${capacity.toStringAsFixed(0)}'),
-                      label: '${capacity.toStringAsFixed(0)} ${t.unitTon}',
-                      selected: _capacityTons == capacity,
-                      onTap: () => setState(() => _capacityTons = capacity),
-                    ),
-                ],
-              ),
+              // 048 п.7: «основа» типа кузова — тоннаж только там, где он поле
+              // профиля (у автовоза и контейнеровоза его нет), остальное — по профилю.
+              if (_selectedBodyType(refData)?.hasCapacity ?? true) ...[
+                const SizedBox(height: AppSpacing.md),
+                Text(t.driverSetupCapacity, style: AppTextStyles.bodyStrong),
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    for (final capacity in _capacityPresets)
+                      SelectableTile(
+                        key: Key('driverSetupCapacity-${capacity.toStringAsFixed(0)}'),
+                        label: '${capacity.toStringAsFixed(0)} ${t.unitTon}',
+                        selected: _capacityTons == capacity,
+                        onTap: () => setState(() => _capacityTons = capacity),
+                      ),
+                  ],
+                ),
+              ],
+              if (_selectedBodyType(refData) != null &&
+                  _selectedBodyType(refData)!.primaryFields.any((f) => f.key != 'capacityTons')) ...[
+                const SizedBox(height: AppSpacing.md),
+                SpecsForm(
+                  key: ValueKey('preferredSpecs-$_bodyTypeId'),
+                  fields: _selectedBodyType(refData)!.primaryFields.where((f) => f.key != 'capacityTons').toList(),
+                  values: _preferredSpecs,
+                  onChanged: (v) => setState(() => _preferredSpecs = v),
+                ),
+              ],
             ],
             if (!widget.isRegistration) ...[
               // Машины правятся в гараже (041, п.6) — здесь только допуски.

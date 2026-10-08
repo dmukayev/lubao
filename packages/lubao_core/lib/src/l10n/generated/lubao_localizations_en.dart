@@ -3264,4 +3264,54 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String deliveredAskTitle(String city) {
     return 'You’re in $city. Looking for cargo from here?';
   }
+
+  @override
+  String get unitM => 'm';
+
+  @override
+  String get unitLiters => 'L';
+
+  @override
+  String get unitCelsius => '°C';
+
+  @override
+  String get unitCars => 'cars';
+
+  @override
+  String get unitSlots => 'pcs';
+
+  @override
+  String get unitSections => 'comp.';
+
+  @override
+  String get bodySpecsTitle => 'Body details';
+
+  @override
+  String get cargoSpecsTitle => 'Cargo details';
+
+  @override
+  String get cargoExtraBodyTypes => 'Also suitable';
+
+  @override
+  String get specYes => 'yes';
+
+  @override
+  String get specNo => 'no';
+
+  @override
+  String get adminBodyTypeNameEdit => 'Name and order';
+
+  @override
+  String get adminBodyTypeProfileEdit => 'Profile and fields';
+
+  @override
+  String get adminBodyTypeProfile => 'Profile';
+
+  @override
+  String get adminBodyTypeFieldsJson => 'Fields (JSON)';
+
+  @override
+  String adminBodyTypeFieldsInvalid(String errors) {
+    return 'Fields not saved: $errors';
+  }
 }

@@ -76,13 +76,69 @@ class Region {
 }
 
 /// Объёмные кузова (тент, изотерм, реф) — только у них «м³ · пал.», шаблоны и
-/// шаг «Размер кузова» (045 п.6). До профилей кузова (048) — по коду;
-/// неизвестный тип считаем объёмным, чтобы ничего не спрятать по ошибке.
+/// шаг «Размер кузова» (045 п.6). С 048 — по профилю типа кузова
+/// ([BodyType.isVolume]); по коду — запасной путь для старых данных.
 const _nonVolumeBodyCodes = {'FLATBED', 'CONTAINER', 'DUMP', 'LOWLOADER', 'CARCARRIER', 'GRAIN', 'TANK'};
 bool isVolumeBodyType(String? code) => !_nonVolumeBodyCodes.contains(code);
 
+/// Поле профиля кузова (048): что спрашивать у машины/груза и как проверять.
+class BodyField {
+  const BodyField({
+    required this.key,
+    required this.kind,
+    required this.label,
+    this.unit,
+    this.forVehicle = false,
+    this.forCargo = false,
+    this.required = false,
+    this.primary = false,
+    this.min,
+    this.max,
+    this.options = const [],
+  });
+
+  final String key;
+  /// number | enum | multi | bool
+  final String kind;
+  final I18nText label;
+  final String? unit;
+  final bool forVehicle;
+  final bool forCargo;
+  final bool required;
+  final bool primary;
+  final double? min;
+  final double? max;
+  final List<({String code, I18nText label})> options;
+
+  factory BodyField.fromJson(Map<String, dynamic> json) => BodyField(
+        key: json['key'] as String,
+        kind: json['kind'] as String,
+        label: I18nText.fromJson(json['label'] as Map<String, dynamic>? ?? const {}),
+        unit: json['unit'] as String?,
+        forVehicle: json['forVehicle'] as bool? ?? false,
+        forCargo: json['forCargo'] as bool? ?? false,
+        required: json['required'] as bool? ?? false,
+        primary: json['primary'] as bool? ?? false,
+        min: (json['min'] as num?)?.toDouble(),
+        max: (json['max'] as num?)?.toDouble(),
+        options: [
+          for (final o in json['options'] as List<dynamic>? ?? const [])
+            (code: (o as Map<String, dynamic>)['code'] as String, label: I18nText.fromJson(o['label'] as Map<String, dynamic>? ?? const {})),
+        ],
+      );
+}
+
 class BodyType {
-  const BodyType({required this.id, required this.code, required this.name, this.isActive = true, this.sortOrder = 0});
+  const BodyType({
+    required this.id,
+    required this.code,
+    required this.name,
+    this.isActive = true,
+    this.sortOrder = 0,
+    this.profile = 'VOLUME',
+    this.fields = const [],
+    this.rawFields = const [],
+  });
 
   final String id;
   final String code;
@@ -90,12 +146,28 @@ class BodyType {
   final bool isActive;
   final int sortOrder;
 
+  /// 048: VOLUME | PLATFORM | CONTAINER | BULK | TANK | CAR_CARRIER.
+  final String profile;
+  final List<BodyField> fields;
+
+  /// Поля как в справочнике (JSON) — для редактора в админке.
+  final List<dynamic> rawFields;
+
+  bool get isVolume => profile == 'VOLUME';
+  List<BodyField> get vehicleFields => fields.where((f) => f.forVehicle).toList();
+  List<BodyField> get cargoFields => fields.where((f) => f.forCargo).toList();
+  List<BodyField> get primaryFields => fields.where((f) => f.forVehicle && f.primary).toList();
+  bool get hasCapacity => fields.isEmpty || fields.any((f) => f.key == 'capacityTons');
+
   factory BodyType.fromJson(Map<String, dynamic> json) => BodyType(
         id: json['id'] as String,
         code: json['code'] as String,
         name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
         isActive: json['isActive'] as bool? ?? true,
         sortOrder: json['sortOrder'] as int? ?? 0,
+        profile: json['profile'] as String? ?? 'VOLUME',
+        fields: [for (final f in json['fields'] as List<dynamic>? ?? const []) BodyField.fromJson(f as Map<String, dynamic>)],
+        rawFields: json['fields'] as List<dynamic>? ?? const [],
       );
 }
 

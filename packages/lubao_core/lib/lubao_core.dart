@@ -19,6 +19,7 @@ export 'src/theme/app_theme.dart';
 
 export 'src/widgets/primary_button.dart';
 export 'src/widgets/body_type_icon.dart';
+export 'src/widgets/specs_form.dart';
 export 'src/widgets/lubao_brand.dart';
 export 'src/widgets/whatsapp_icon.dart';
 export 'src/widgets/app_card.dart';

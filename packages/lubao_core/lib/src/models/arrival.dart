@@ -28,6 +28,7 @@ class ArrivalListing {
     required this.driverId,
     required this.driverName,
     this.hasPhone = false,
+    this.specs,
     required this.isVerified,
     required this.ratingAvg,
     required this.ratingCount,
@@ -57,6 +58,9 @@ class ArrivalListing {
   final String driverName;
   /// Номер водителя — только по нажатию (043 п.11, `revealDriverContact`).
   final bool hasPhone;
+
+  /// 048: параметры машины по профилю кузова — строка машины у логиста.
+  final Map<String, dynamic>? specs;
   final bool isVerified;
   final double ratingAvg;
   final int ratingCount;
@@ -98,6 +102,7 @@ class ArrivalListing {
         driverId: json['driverId'] as String,
         driverName: json['driverName'] as String? ?? '',
         hasPhone: json['hasPhone'] as bool? ?? false,
+        specs: json['specs'] as Map<String, dynamic>?,
         isVerified: json['isVerified'] as bool? ?? false,
         ratingAvg: (json['ratingAvg'] as num?)?.toDouble() ?? 0,
         ratingCount: json['ratingCount'] as int? ?? 0,

@@ -3250,4 +3250,54 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String deliveredAskTitle(String city) {
     return 'Вы в $city. Ищете груз отсюда?';
   }
+
+  @override
+  String get unitM => 'м';
+
+  @override
+  String get unitLiters => 'л';
+
+  @override
+  String get unitCelsius => '°C';
+
+  @override
+  String get unitCars => 'маш.';
+
+  @override
+  String get unitSlots => 'шт.';
+
+  @override
+  String get unitSections => 'секц.';
+
+  @override
+  String get bodySpecsTitle => 'Параметры кузова';
+
+  @override
+  String get cargoSpecsTitle => 'Параметры груза';
+
+  @override
+  String get cargoExtraBodyTypes => 'Подходят также';
+
+  @override
+  String get specYes => 'да';
+
+  @override
+  String get specNo => 'нет';
+
+  @override
+  String get adminBodyTypeNameEdit => 'Название и порядок';
+
+  @override
+  String get adminBodyTypeProfileEdit => 'Профиль и поля';
+
+  @override
+  String get adminBodyTypeProfile => 'Профиль';
+
+  @override
+  String get adminBodyTypeFieldsJson => 'Поля (JSON)';
+
+  @override
+  String adminBodyTypeFieldsInvalid(String errors) {
+    return 'Поля не сохранены: $errors';
+  }
 }

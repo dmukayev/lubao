@@ -69,6 +69,8 @@ class DriverDocumentsBlock extends ConsumerWidget {
                 [v.plateNumber ?? t.garageNoPlate, if (v.brand != null) v.brand!, if (v.vin != null) 'VIN ${v.vin}'].join(' · '),
                 style: AppTextStyles.bodyStrong,
               ),
+              // 048 п.6: параметры машины по профилю кузова.
+              if (_bodyLine(ref, context, v) != null) Text(_bodyLine(ref, context, v)!, style: AppTextStyles.caption),
               if (!v.isVerified) StatusBadge(label: t.driverDocsVehiclePending, color: StatusBadge.warning),
             ],
             const SizedBox(height: AppSpacing.md),
@@ -102,6 +104,13 @@ class DriverDocumentsBlock extends ConsumerWidget {
       ),
     );
   }
+}
+
+String? _bodyLine(WidgetRef ref, BuildContext context, DriverDocsVehicle v) {
+  final refData = ref.watch(referenceDataProvider).valueOrNull;
+  final bodyType = v.bodyTypeId == null ? null : refData?.bodyTypes.where((b) => b.id == v.bodyTypeId).firstOrNull;
+  if (bodyType == null) return null;
+  return specsSummary(context.l10n, Localizations.localeOf(context).languageCode, bodyType, v.specs);
 }
 
 class _Shell extends StatelessWidget {

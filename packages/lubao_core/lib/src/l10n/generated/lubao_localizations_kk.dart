@@ -3263,4 +3263,54 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String deliveredAskTitle(String city) {
     return 'Сіз $city қаласындасыз. Осы жерден жүк іздейсіз бе?';
   }
+
+  @override
+  String get unitM => 'м';
+
+  @override
+  String get unitLiters => 'л';
+
+  @override
+  String get unitCelsius => '°C';
+
+  @override
+  String get unitCars => 'көлік';
+
+  @override
+  String get unitSlots => 'дана';
+
+  @override
+  String get unitSections => 'секц.';
+
+  @override
+  String get bodySpecsTitle => 'Шанақ параметрлері';
+
+  @override
+  String get cargoSpecsTitle => 'Жүк параметрлері';
+
+  @override
+  String get cargoExtraBodyTypes => 'Сондай-ақ сәйкес келеді';
+
+  @override
+  String get specYes => 'иә';
+
+  @override
+  String get specNo => 'жоқ';
+
+  @override
+  String get adminBodyTypeNameEdit => 'Атауы мен реті';
+
+  @override
+  String get adminBodyTypeProfileEdit => 'Профиль және өрістер';
+
+  @override
+  String get adminBodyTypeProfile => 'Профиль';
+
+  @override
+  String get adminBodyTypeFieldsJson => 'Өрістер (JSON)';
+
+  @override
+  String adminBodyTypeFieldsInvalid(String errors) {
+    return 'Өрістер сақталмады: $errors';
+  }
 }

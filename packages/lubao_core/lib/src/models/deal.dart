@@ -105,7 +105,9 @@ class DriverDocRef {
 }
 
 class DriverDocsVehicle {
-  const DriverDocsVehicle({required this.id, required this.kind, this.plateNumber, this.vin, this.brand, required this.isVerified, this.passport, this.photoFront, this.photoSide});
+  const DriverDocsVehicle({required this.id, required this.kind, this.plateNumber, this.vin, this.brand, required this.isVerified, this.passport, this.photoFront, this.photoSide, this.bodyTypeId, this.specs});
+  final String? bodyTypeId;
+  final Map<String, dynamic>? specs;
   final String id;
   final VehicleKind kind;
   final String? plateNumber;
@@ -126,6 +128,8 @@ class DriverDocsVehicle {
         passport: DriverDocRef.fromJson(json['passport']),
         photoFront: DriverDocRef.fromJson(json['photoFront']),
         photoSide: DriverDocRef.fromJson(json['photoSide']),
+        bodyTypeId: json['bodyTypeId'] as String?,
+        specs: json['specs'] as Map<String, dynamic>?,
       );
 }
 

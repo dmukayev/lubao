@@ -203,8 +203,8 @@ class GarageScreen extends ConsumerWidget {
         },
         data: (vehicles) {
           final refData = ref.watch(referenceDataProvider).valueOrNull;
-          String? codeOf(String? bodyTypeId) =>
-              bodyTypeId == null ? null : refData?.bodyTypes.where((b) => b.id == bodyTypeId).firstOrNull?.code;
+          BodyType? typeOf(String? bodyTypeId) => bodyTypeId == null ? null : refData?.bodyTypes.where((b) => b.id == bodyTypeId).firstOrNull;
+          String? codeOf(String? bodyTypeId) => typeOf(bodyTypeId)?.code;
           final tractors = vehicles.where((v) => v.kind == VehicleKind.tractor || v.kind == VehicleKind.rigid).toList();
           final trailers = vehicles.where((v) => v.kind == VehicleKind.trailer).toList();
 
@@ -267,12 +267,13 @@ class GarageScreen extends ConsumerWidget {
                   _VehicleCard(
                     vehicle: v,
                     bodyTypeCode: codeOf(v.bodyTypeId),
+                    bodyType: typeOf(v.bodyTypeId),
                     onArchive: () => _archive(context, ref, v),
                     onAddDocument: () => _addDocument(context, ref, v),
                     onAddPhotos: () => _addPhotos(context, ref, v),
                     // Размер можно сменить и позже (033 п.6 / 038 п.14) — только
                     // у объёмных кузовов (045 п.6).
-                    onSetSize: isVolumeBodyType(codeOf(v.bodyTypeId)) ? () => _setSize(context, ref, v) : null,
+                    onSetSize: (typeOf(v.bodyTypeId)?.isVolume ?? isVolumeBodyType(codeOf(v.bodyTypeId))) ? () => _setSize(context, ref, v) : null,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                 ],
@@ -326,13 +327,14 @@ class _EmptyRow extends StatelessWidget {
 }
 
 class _VehicleCard extends StatelessWidget {
-  const _VehicleCard({required this.vehicle, required this.onArchive, required this.onAddDocument, this.onSetSize, this.bodyTypeCode, this.onAddPhotos});
+  const _VehicleCard({required this.vehicle, required this.onArchive, required this.onAddDocument, this.onSetSize, this.bodyTypeCode, this.bodyType, this.onAddPhotos});
 
   /// «Добавьте фото машины» (044 п.7) — мягкое напоминание, если фото нет.
   final VoidCallback? onAddPhotos;
 
   final GarageVehicle vehicle;
   final String? bodyTypeCode;
+  final BodyType? bodyType;
   final VoidCallback onArchive;
   final VoidCallback onAddDocument;
 
@@ -346,9 +348,14 @@ class _VehicleCard extends StatelessWidget {
     return plate != null && plate.isNotEmpty ? plate : context.l10n.garageNoPlate;
   }
 
-  /// Под номером — тип и параметры: «Тягач · MAN», «Прицеп · 20 т · 90 м³ · 33 пал.».
+  /// Под номером — тип и параметры: «Тягач · MAN», «Прицеп · 20 т · 90 м³ · 33 пал.»,
+  /// у необъёмных — по профилю: «Цистерна · 30 000 л · Пищевое» (048 п.3).
   String? _subtitle(BuildContext context) {
     final t = context.l10n;
+    final bt = bodyType;
+    if (bt != null && !bt.isVolume && vehicle.specs != null) {
+      return specsSummary(t, Localizations.localeOf(context).languageCode, bt, vehicle.specs);
+    }
     final parts = <String>[
       vehicle.kind == VehicleKind.trailer ? t.garageKindTrailer : t.garageKindTractor,
       if (vehicle.brand != null) vehicle.brand!,

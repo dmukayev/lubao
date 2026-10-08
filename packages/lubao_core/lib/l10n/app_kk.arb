@@ -1147,5 +1147,21 @@
   "whereNowNotLooking": "Әзірге іздемеймін",
   "whereNowOtherCity": "Мен басқа қаладамын",
   "whereNowGpsHint": "Сіз қазір {city} қаласындасыз ба?",
-  "deliveredAskTitle": "Сіз {city} қаласындасыз. Осы жерден жүк іздейсіз бе?"
+  "deliveredAskTitle": "Сіз {city} қаласындасыз. Осы жерден жүк іздейсіз бе?",
+  "unitM": "м",
+  "unitLiters": "л",
+  "unitCelsius": "°C",
+  "unitCars": "көлік",
+  "unitSlots": "дана",
+  "unitSections": "секц.",
+  "bodySpecsTitle": "Шанақ параметрлері",
+  "cargoSpecsTitle": "Жүк параметрлері",
+  "cargoExtraBodyTypes": "Сондай-ақ сәйкес келеді",
+  "specYes": "иә",
+  "specNo": "жоқ",
+  "adminBodyTypeNameEdit": "Атауы мен реті",
+  "adminBodyTypeProfileEdit": "Профиль және өрістер",
+  "adminBodyTypeProfile": "Профиль",
+  "adminBodyTypeFieldsJson": "Өрістер (JSON)",
+  "adminBodyTypeFieldsInvalid": "Өрістер сақталмады: {errors}"
 }

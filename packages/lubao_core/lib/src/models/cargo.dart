@@ -38,6 +38,8 @@ class Cargo {
     this.myResponseStatus,
     this.responsesCount = 0,
     this.activeDeal,
+    this.cargoSpecs,
+    this.extraBodyTypeIds = const [],
   });
 
   final String id;
@@ -97,6 +99,10 @@ class Cargo {
   /// Список грузов логиста (044 п.3): сделка по грузу — водитель и статус.
   final CargoActiveDeal? activeDeal;
 
+  /// 048: параметры груза по профилю и другие подходящие кузова.
+  final Map<String, dynamic>? cargoSpecs;
+  final List<String> extraBodyTypeIds;
+
   factory Cargo.fromJson(Map<String, dynamic> json) => Cargo(
         id: json['id'] as String,
         companyId: json['companyId'] as String,
@@ -132,6 +138,8 @@ class Cargo {
         myResponseStatus: json['myResponseStatus'] == null ? null : responseStatusFromJson(json['myResponseStatus'] as String),
         responsesCount: json['responsesCount'] as int? ?? 0,
         activeDeal: json['activeDeal'] == null ? null : CargoActiveDeal.fromJson(json['activeDeal'] as Map<String, dynamic>),
+        cargoSpecs: json['specs'] as Map<String, dynamic>?,
+        extraBodyTypeIds: (json['extraBodyTypeIds'] as List<dynamic>? ?? const []).cast<String>(),
         feedSection: switch (json['feedSection']) {
           'home' => CargoFeedSection.home,
           'selected' => CargoFeedSection.selected,
@@ -204,6 +212,8 @@ class CreateCargoInput {
     this.weightKg,
     this.volumeM3,
     this.palletCount,
+    this.specs,
+    this.extraBodyTypeIds = const [],
     this.photoUrls = const [],
     required this.price,
     required this.currency,
@@ -226,6 +236,10 @@ class CreateCargoInput {
   final DateTime readyDate;
   final String? description;
 
+  /// 048: параметры груза по профилю и другие подходящие кузова.
+  final Map<String, dynamic>? specs;
+  final List<String> extraBodyTypeIds;
+
   Map<String, dynamic> toJson() => {
         'pointId': pointId,
         'allowPartial': allowPartial,
@@ -235,6 +249,8 @@ class CreateCargoInput {
         if (weightKg != null) 'weightKg': weightKg,
         if (volumeM3 != null) 'volumeM3': volumeM3,
         if (palletCount != null) 'palletCount': palletCount,
+        if (specs != null) 'specs': specs,
+        'extraBodyTypeIds': extraBodyTypeIds,
         if (photoUrls.isNotEmpty) 'photoUrls': photoUrls,
         'price': price,
         'currency': currencyToJson(currency),

@@ -637,6 +637,11 @@ class AdminRepository {
     });
   }
 
+  /// 048: профиль и поля типа кузова; ошибки структуры — 400 INVALID_BODY_FIELDS со списком.
+  Future<void> updateBodyTypeProfile(String id, {required String profile, required List<dynamic> fields, required String reason}) async {
+    await _client.dio.patch('/admin/reference/body-types/$id/profile', data: {'profile': profile, 'fields': fields, 'reason': reason});
+  }
+
   Future<void> updateBodyType(String id, {I18nText? name, bool? isActive, int? sortOrder, required String reason}) async {
     await _client.dio.patch('/admin/reference/body-types/$id', data: {
       if (name != null) 'name': name.toJson(),

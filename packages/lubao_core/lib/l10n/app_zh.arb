@@ -1147,5 +1147,21 @@
   "whereNowNotLooking": "暂时不找",
   "whereNowOtherCity": "我在其他城市",
   "whereNowGpsHint": "您现在在{city}吗？",
-  "deliveredAskTitle": "您在{city}。要从这里找货吗？"
+  "deliveredAskTitle": "您在{city}。要从这里找货吗？",
+  "unitM": "米",
+  "unitLiters": "升",
+  "unitCelsius": "°C",
+  "unitCars": "辆",
+  "unitSlots": "个",
+  "unitSections": "仓",
+  "bodySpecsTitle": "车厢参数",
+  "cargoSpecsTitle": "货物参数",
+  "cargoExtraBodyTypes": "也可使用",
+  "specYes": "是",
+  "specNo": "否",
+  "adminBodyTypeNameEdit": "名称与排序",
+  "adminBodyTypeProfileEdit": "类型与字段",
+  "adminBodyTypeProfile": "类型",
+  "adminBodyTypeFieldsJson": "字段（JSON）",
+  "adminBodyTypeFieldsInvalid": "字段未保存：{errors}"
 }
