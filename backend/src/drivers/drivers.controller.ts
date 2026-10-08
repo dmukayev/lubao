@@ -21,11 +21,25 @@ export class DriversController {
     private readonly uploads: UploadsService,
   ) {}
 
+  /// 049 п.6: фото и номера машин — только проверенной компании, которой водитель
+  /// виден (анонс, отклик, сделка); суточный лимит как у номеров (свой счётчик).
+  private async assertMayViewVehiclePhotos(ctx: RequestContext, driverId: string) {
+    if (!ctx.companyMember) throw new ForbiddenException('Only company accounts');
+    this.contactPolicy.assertCompanyMayContactDriver(ctx.companyMember.company);
+    if (!(await this.contactPolicy.driverVisibleToCompany(driverId, ctx.companyMember.companyId))) {
+      throw new NotFoundException('Driver not found');
+    }
+  }
+
   /// Фото машин водителя для логиста (044 п.7): «Кто свободен», отклик. Пусто —
-  /// у логиста «Фото нет». Только машины в работе (не архив).
+  /// у логиста «Фото нет». Только машины в работе (не архив). Каждое открытие — в журнал.
   @Get(':id/vehicle-photos')
   async vehiclePhotos(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
-    if (!ctx.companyMember) throw new ForbiddenException('Only company accounts');
+    await this.assertMayViewVehiclePhotos(ctx, id);
+    await this.contactPolicy.consume(ctx.user.id, `driver:${id}`, 'vehicle-photos');
+    await this.prisma.auditLog.create({
+      data: { actorUserId: ctx.user.id, action: 'VEHICLE_PHOTOS_VIEWED', entityType: 'Driver', entityId: id, metadata: { companyId: ctx.companyMember!.companyId } },
+    });
     const photos = await this.prisma.verificationDocument.findMany({
       where: { driverId: id, type: { in: ['VEHICLE_PHOTO_FRONT', 'VEHICLE_PHOTO_SIDE'] }, vehicle: { isArchived: false } },
       orderBy: { createdAt: 'desc' },
@@ -36,7 +50,7 @@ export class DriversController {
 
   @Get(':id/vehicle-photos/:documentId')
   async vehiclePhotoFile(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Param('documentId') documentId: string, @Res() res: Response) {
-    if (!ctx.companyMember) throw new ForbiddenException('Only company accounts');
+    await this.assertMayViewVehiclePhotos(ctx, id);
     const doc = await this.prisma.verificationDocument.findFirst({
       where: { id: documentId, driverId: id, type: { in: ['VEHICLE_PHOTO_FRONT', 'VEHICLE_PHOTO_SIDE'] } },
       select: { fileUrl: true },

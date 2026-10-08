@@ -32,6 +32,17 @@ export class ContactPolicyService {
   }
 
   /// Логист видит номер водителя только из проверенной компании.
+  /// 049 п.6: водитель «виден» компании — у него активный анонс («Кто свободен»),
+  /// отклик на её груз или сделка с ней. Иначе фото машин и номера ей не отдаём.
+  async driverVisibleToCompany(driverId: string, companyId: string): Promise<boolean> {
+    const [arrival, response, deal] = await Promise.all([
+      this.prisma.arrival.findFirst({ where: { driverId, status: { in: ['PLANNED', 'ON_SITE'] } }, select: { id: true } }),
+      this.prisma.response.findFirst({ where: { driverId, cargo: { companyId } }, select: { id: true } }),
+      this.prisma.deal.findFirst({ where: { driverId, companyId }, select: { id: true } }),
+    ]);
+    return !!(arrival || response || deal);
+  }
+
   assertCompanyMayContactDriver(company: { isVerified: boolean }): void {
     if (!company.isVerified) {
       throw new ForbiddenException({ code: 'COMPANY_NOT_VERIFIED', message: 'Company must be verified to see driver phones' });
@@ -41,8 +52,10 @@ export class ContactPolicyService {
   /// Суточный лимит разных номеров: повторное открытие того же номера в тот же
   /// день не считается. Превышение → 429 и запись в журнал (3 за сутки —
   /// «Требует внимания» в админке).
-  async consume(userId: string, target: string): Promise<void> {
-    const key = `contacts:${userId}:${new Date().toISOString().slice(0, 10)}`;
+  /// `scope` — отдельный суточный счётчик (049 п.6: фото машин — свой лимит,
+  /// не съедает лимит номеров).
+  async consume(userId: string, target: string, scope = 'contacts'): Promise<void> {
+    const key = `${scope}:${userId}:${new Date().toISOString().slice(0, 10)}`;
     const client = this.redis.client;
     const added = await client.sadd(key, target);
     await client.expire(key, 2 * DAY_SECONDS);
