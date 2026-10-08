@@ -23,6 +23,30 @@ const e2eApiBase = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://
 const e2eShotDir = String.fromEnvironment('E2E_SHOT_DIR');
 const e2eDevice = String.fromEnvironment('E2E_DEVICE', defaultValue: 'device');
 
+/// 049 п.13: Android-эмулятор не видит каталог Мака, а приложение удаляется
+/// после прогона — файлы уходят по HTTP в приёмник e2e.sh (adb reverse).
+/// Пути в steps.jsonl — те же, что на Маке.
+const e2eShotSink = String.fromEnvironment('E2E_SHOT_SINK');
+
+/// Записать файл отчёта: на iOS — прямо в каталог Мака, на Android — в приёмник.
+Future<void> e2eWriteFile(String hostPath, List<int> bytes, {bool append = false}) async {
+  if (e2eShotSink.isEmpty) {
+    final file = File(hostPath);
+    await file.parent.create(recursive: true);
+    await file.writeAsBytes(bytes, mode: append ? FileMode.append : FileMode.write);
+    return;
+  }
+  final rel = hostPath.startsWith(e2eShotDir) ? hostPath.substring(e2eShotDir.length) : '/$hostPath';
+  final client = HttpClient();
+  try {
+    final request = await client.openUrl(append ? 'POST' : 'PUT', Uri.parse('$e2eShotSink${Uri.encodeFull(rel)}'));
+    request.add(bytes);
+    await (await request.close()).drain<void>();
+  } finally {
+    client.close();
+  }
+}
+
 const e2eDevCode = '1111';
 const e2eCompanyEmail = 'e2e-owner@lubao-test.cn';
 const e2ePassword = 'E2eLubao2026!';
@@ -272,6 +296,11 @@ class E2eRun {
 
   String get _dir => '$e2eShotDir/$e2eDevice/$scenario';
 
+  /// Android: снимок кадра возможен только после перевода поверхности в
+  /// изображение (integration_test) — один раз на процесс теста.
+  static bool _surfaceConverted = false;
+  static Future<void> _pending = Future.value();
+
   Future<void> step(WidgetTester tester, String name, Future<void> Function() body) async {
     _n++;
     final id = '${_n.toString().padLeft(2, '0')}-$name';
@@ -286,35 +315,36 @@ class E2eRun {
       }
     } catch (error) {
       final shot = await _shoot(tester, '$id-FAIL');
-      _record(id, ok: false, shot: shot, error: error.toString().split('\n').take(3).join(' '));
+      await _record(id, ok: false, shot: shot, error: error.toString().split('\n').take(3).join(' '));
       rethrow;
     }
-    _record(id, ok: true, shot: await _shoot(tester, id));
+    await _record(id, ok: true, shot: await _shoot(tester, id));
   }
 
   Future<String?> _shoot(WidgetTester tester, String name) async {
     if (e2eShotDir.isEmpty) return null;
     try {
+      if (Platform.isAndroid && !_surfaceConverted) {
+        await binding.convertFlutterSurfaceToImage();
+        _surfaceConverted = true;
+      }
       await tester.pump(const Duration(milliseconds: 200));
       final bytes = await binding.takeScreenshot('$scenario-$name');
-      final file = File('$_dir/$name.png');
-      await file.parent.create(recursive: true);
-      await file.writeAsBytes(bytes);
-      return file.path;
+      final path = '$_dir/$name.png';
+      await e2eWriteFile(path, bytes);
+      return path;
     } catch (e) {
       debugPrint('E2E: скриншот $name не снят: $e');
       return null;
     }
   }
 
-  void _record(String id, {required bool ok, String? shot, String? error}) {
+  Future<void> _record(String id, {required bool ok, String? shot, String? error}) async {
     if (e2eShotDir.isEmpty) return;
-    final file = File('$e2eShotDir/$e2eDevice/steps.jsonl');
-    file.parent.createSync(recursive: true);
-    file.writeAsStringSync(
-      '${jsonEncode({'scenario': scenario, 'step': id, 'ok': ok, 'shot': shot, 'error': error})}\n',
-      mode: FileMode.append,
-    );
+    final line = '${jsonEncode({'scenario': scenario, 'step': id, 'ok': ok, 'shot': shot, 'error': error})}\n';
+    // Порядок строк важен — дописываем по очереди, без ожидания в вызывающем коде.
+    _pending = _pending.then((_) => e2eWriteFile('$e2eShotDir/$e2eDevice/steps.jsonl', utf8.encode(line), append: true));
+    await _pending;
   }
 }
 
@@ -362,9 +392,7 @@ Future<XFile> makeSyntheticDocument(String fileName, List<String> lines) async {
   final file = File('${Directory.systemTemp.path}/$fileName');
   await file.writeAsBytes(data!.buffer.asUint8List());
   if (e2eShotDir.isNotEmpty) {
-    final copy = File('$e2eShotDir/$e2eDevice/documents/$fileName');
-    await copy.parent.create(recursive: true);
-    await copy.writeAsBytes(data.buffer.asUint8List());
+    await e2eWriteFile('$e2eShotDir/$e2eDevice/documents/$fileName', data.buffer.asUint8List());
   }
   return XFile(file.path, name: fileName);
 }

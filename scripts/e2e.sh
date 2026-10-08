@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Задача 034 — сквозные сценарии одной командой, с защитой от зависаний.
 #
-# На каждом устройстве (по умолчанию iPhone 17, затем iPhone 16e) с нуля:
+# На каждом устройстве (по умолчанию iPhone SE с крупным шрифтом, затем
+# Android-эмулятор 360 dp с font_scale 1.3 — 049 п.13) с нуля:
 # пересоздаёт БД `lubao_e2e`, сидит детерминированные данные, поднимает
 # backend на отдельном порту и OCR-контейнер, затем
 #   1. API-смоук админки;
@@ -19,8 +20,9 @@
 # учёт по PID, чужие `flutter test` не трогаем.
 #
 # Использование:
-#   scripts/e2e.sh                      # iPhone 17 и iPhone 16e
-#   scripts/e2e.sh -d "iPhone 16e"      # одно устройство
+#   scripts/e2e.sh                      # iPhone SE (крупный шрифт) и Android 360 dp
+#   scripts/e2e.sh -d "iPhone 17"       # одно устройство (iPhone 17 — только так)
+#   scripts/e2e.sh -d android:lubao_e2e_360   # Android-эмулятор (AVD), headless
 #   scripts/e2e.sh -d "iPhone SE (3rd generation)"   # узкий экран + крупный шрифт (по умолчанию для SE)
 #   E2E_CONTENT_SIZE=extra-extra-extra-large scripts/e2e.sh -d "iPhone 17"   # крупный системный шрифт на любом
 #   E2E_ONLY="driver_flow_test" scripts/e2e.sh   # dev: один сценарий (код 3)
@@ -29,7 +31,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
 
-DEVICES=("iPhone 17" "iPhone 16e")
+DEVICES=("iPhone SE (3rd generation)" "android:${E2E_ANDROID_AVD:-lubao_e2e_360}")
 if [[ "${1:-}" == "-d" ]]; then DEVICES=("$2"); fi
 
 export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
@@ -50,6 +52,17 @@ OWN_PIDS=()
 BACKEND_PID=""
 STATIC_PID=""
 BOOTED_UDIDS=()
+# Android (049 п.13): эмулятор без окна, свой порт; гасится на выходе.
+ANDROID_SDK="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
+ADB="$ANDROID_SDK/platform-tools/adb"
+EMULATOR_BIN="$ANDROID_SDK/emulator/emulator"
+EMU_PORT="${E2E_EMULATOR_PORT:-5580}"
+EMU_SERIAL="emulator-$EMU_PORT"
+EMU_PID=""
+APP_ID="kz.darkhan.lubao"
+# Приёмник скриншотов/шагов с эмулятора (scripts/e2e-shot-sink.mjs, adb reverse).
+SINK_PORT="${E2E_SHOT_SINK_PORT:-3301}"
+SINK_PID=""
 STARTED_OCR=0
 FAILED=0
 SKIPPED=0
@@ -110,6 +123,8 @@ cleanup() {
   [[ -n "$BACKEND_PID" ]] && kill_tree "$BACKEND_PID"
   [[ -n "$STATIC_PID" ]] && kill_tree "$STATIC_PID"
   for u in "${BOOTED_UDIDS[@]:-}"; do [[ -n "$u" ]] && xcrun simctl shutdown "$u" >/dev/null 2>&1; done
+  if [[ -n "$EMU_PID" ]]; then "$ADB" -s "$EMU_SERIAL" emu kill >/dev/null 2>&1; kill_tree "$EMU_PID"; fi
+  [[ -n "$SINK_PID" ]] && kill_tree "$SINK_PID"
   if [[ $STARTED_OCR -eq 1 ]]; then docker rm -f "$OCR_CONTAINER" >/dev/null 2>&1 || true; fi
 }
 trap cleanup EXIT
@@ -293,7 +308,63 @@ prepare_simulator() {
   fi
 }
 
-# run_ios <имя теста> — один сценарий Flutter на симуляторе.
+# Android-эмулятор (049 п.13): AVD 360×800 dp, API 34, без окна и звука;
+# крупный шрифт (font_scale 1.3), бэкенд — через `adb reverse` на тот же localhost.
+prepare_emulator() {
+  local avd="$1"
+  IOS_ENV_FAILURES=0
+  IOS_READY=0
+  UDID="$EMU_SERIAL"
+  if ! "$EMULATOR_BIN" -list-avds 2>/dev/null | grep -qx "$avd"; then
+    row "окружение: эмулятор" "⏭ пропущено (окружение)" "AVD «$avd» не найден (avdmanager create avd …)"
+    IOS_ENV_FAILURES=2; return
+  fi
+  "$ADB" -s "$EMU_SERIAL" emu kill >/dev/null 2>&1 || true
+  "$EMULATOR_BIN" -avd "$avd" -port "$EMU_PORT" -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data -gpu swiftshader_indirect \
+    >"$RESULTS/emulator.log" 2>&1 &
+  EMU_PID=$!
+  local booted=""
+  for _ in $(seq 1 150); do
+    [[ "$("$ADB" -s "$EMU_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]] && { booted=1; break; }
+    sleep 2
+  done
+  if [[ -z "$booted" ]]; then
+    row "окружение: эмулятор" "⏭ пропущено (окружение)" "эмулятор не загрузился за 5 мин (см. emulator.log)"
+    IOS_ENV_FAILURES=2; return
+  fi
+  # Язык системы — русский, как у симуляторов (иначе сценарии видят en до входа
+  # и ru после). Образ google_apis даёт root: свойство + перезапуск zygote.
+  local locale="${E2E_ANDROID_LOCALE:-ru-RU}"
+  if [[ "$("$ADB" -s "$EMU_SERIAL" shell getprop persist.sys.locale | tr -d '\r')" != "$locale" ]]; then
+    "$ADB" -s "$EMU_SERIAL" root >/dev/null 2>&1; "$ADB" -s "$EMU_SERIAL" wait-for-device
+    "$ADB" -s "$EMU_SERIAL" shell "setprop persist.sys.locale $locale; setprop ctl.restart zygote"
+    sleep 5
+    for _ in $(seq 1 90); do
+      [[ "$("$ADB" -s "$EMU_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]] && break
+      sleep 2
+    done
+  fi
+  "$ADB" -s "$EMU_SERIAL" shell settings put system font_scale "${E2E_ANDROID_FONT_SCALE:-1.3}"
+  # Анимации системы не мешают ожиданиям теста.
+  for k in window_animation_scale transition_animation_scale animator_duration_scale; do "$ADB" -s "$EMU_SERIAL" shell settings put global "$k" 0; done
+  "$ADB" -s "$EMU_SERIAL" reverse "tcp:$E2E_PORT" "tcp:$E2E_PORT" >/dev/null
+  # Скриншоты: приложение после `flutter test` удаляется, каталог Мака эмулятор
+  # не видит — тест шлёт файлы в приёмник на Маке.
+  [[ -n "$SINK_PID" ]] || { node scripts/e2e-shot-sink.mjs "$SHOTS" "$SINK_PORT" >"$RESULTS/shot-sink.log" 2>&1 & SINK_PID=$!; }
+  "$ADB" -s "$EMU_SERIAL" reverse "tcp:$SINK_PORT" "tcp:$SINK_PORT" >/dev/null
+  "$ADB" -s "$EMU_SERIAL" reverse "tcp:${MINIO_PORT:-9000}" "tcp:${MINIO_PORT:-9000}" >/dev/null 2>&1 || true
+  echo "  эмулятор: $avd ($EMU_SERIAL), $("$ADB" -s "$EMU_SERIAL" shell getprop persist.sys.locale | tr -d '\r'), font_scale $("$ADB" -s "$EMU_SERIAL" shell settings get system font_scale | tr -d '\r'), $("$ADB" -s "$EMU_SERIAL" shell wm size | tr -d '\r' | tail -1)"
+  IOS_READY=1
+}
+
+stop_emulator() {
+  [[ -z "$EMU_PID" ]] && return
+  "$ADB" -s "$EMU_SERIAL" emu kill >/dev/null 2>&1 || true
+  for _ in $(seq 1 20); do kill -0 "$EMU_PID" 2>/dev/null || break; sleep 1; done
+  kill_tree "$EMU_PID"; EMU_PID=""
+}
+
+# run_ios <имя теста> — один сценарий Flutter на симуляторе или эмуляторе.
 run_ios() {
   local name="$1" log="$RESULTS/$DEVICE_SLUG-$1.log"
   if [[ $IOS_ENV_FAILURES -ge 2 || $IOS_READY -eq 0 ]]; then
@@ -302,11 +373,16 @@ run_ios() {
   fi
   # Сброс установленного приложения: чистое состояние (Keychain сессии
   # чистит сам тест — iOS не стирает его при uninstall).
-  xcrun simctl uninstall "$UDID" kz.darkhan.lubao >/dev/null 2>&1 || true
+  if [[ -n "$IS_ANDROID" ]]; then
+    "$ADB" -s "$EMU_SERIAL" uninstall "$APP_ID" >/dev/null 2>&1 || true
+  else
+    xcrun simctl uninstall "$UDID" kz.darkhan.lubao >/dev/null 2>&1 || true
+  fi
   RWT_DIR=apps/lubao_app run_with_timeout 1200 "$log" flutter test "integration_test/${name}.dart" -d "$UDID" \
     --dart-define=API_BASE_URL="$E2E_API_URL" \
     --dart-define=E2E_SHOT_DIR="$SHOTS" \
-    --dart-define=E2E_DEVICE="$DEVICE_SLUG"
+    --dart-define=E2E_DEVICE="$DEVICE_SLUG" \
+    ${IS_ANDROID:+--dart-define=E2E_SHOT_SINK=http://127.0.0.1:$SINK_PORT}
   local code=$?
   if [[ $code -eq 0 ]]; then
     row "$name" "✅" "$(grep -oE '\+[0-9]+: All tests passed' "$log" | tail -1)"
@@ -314,9 +390,13 @@ run_ios() {
   elif [[ $code -eq 124 ]]; then
     row "$name" "❌ TIMEOUT" "лимит 20 мин — процесс убит (см. $(basename "$log"))"
     TIMEOUTS=$((TIMEOUTS + 1)); FAILED=$((FAILED + 1))
-    xcrun simctl io "$UDID" screenshot "$SHOTS/$DEVICE_SLUG/$name-timeout.png" >/dev/null 2>&1 || true
+    if [[ -n "$IS_ANDROID" ]]; then
+      "$ADB" -s "$EMU_SERIAL" exec-out screencap -p >"$SHOTS/$DEVICE_SLUG/$name-timeout.png" 2>/dev/null || true
+    else
+      xcrun simctl io "$UDID" screenshot "$SHOTS/$DEVICE_SLUG/$name-timeout.png" >/dev/null 2>&1 || true
+    fi
     IOS_ENV_FAILURES=$((IOS_ENV_FAILURES + 1))
-  elif grep -qE "Failed to load|Unable to start the app|Xcode build failed|Could not build|xcodebuild.*failed" "$log"; then
+  elif grep -qE "Failed to load|Unable to start the app|Xcode build failed|Could not build|xcodebuild.*failed|Gradle task assembleDebug failed|BUILD FAILED" "$log"; then
     row "$name" "⏭ пропущено (окружение)" "сборка/запуск на симуляторе не удались (см. $(basename "$log"))"
     IOS_ENV_FAILURES=$((IOS_ENV_FAILURES + 1)); SKIPPED=$((SKIPPED + 1))
   else
@@ -356,7 +436,10 @@ run_admin_ui() {
 # --------------------------------------------------------- прогон устройства --
 
 for DEVICE in "${DEVICES[@]}"; do
-  DEVICE_SLUG="$(echo "$DEVICE" | tr '[:upper:] ' '[:lower:]-')"
+  IS_ANDROID=""
+  [[ "$DEVICE" == android:* ]] && IS_ANDROID=1
+  DEVICE_SLUG="$(echo "${DEVICE#android:}" | tr '[:upper:] ' '[:lower:]-')"
+  [[ -n "$IS_ANDROID" ]] && DEVICE_SLUG="android-$DEVICE_SLUG"
   echo
   echo "================ $DEVICE ================"
   table_header "$DEVICE"
@@ -420,8 +503,13 @@ for DEVICE in "${DEVICES[@]}"; do
     continue
   fi
 
-  echo "== симулятор ($DEVICE) =="
-  prepare_simulator "$DEVICE"
+  if [[ -n "$IS_ANDROID" ]]; then
+    echo "== эмулятор ($DEVICE) =="
+    prepare_emulator "${DEVICE#android:}"
+  else
+    echo "== симулятор ($DEVICE) =="
+    prepare_simulator "$DEVICE"
+  fi
 
   echo "== сценарии приложения: часть 1 =="
   for name in "${PHASE1[@]}"; do run_ios "$name"; done
@@ -433,7 +521,7 @@ for DEVICE in "${DEVICES[@]}"; do
   for name in "${PHASE3[@]:-}"; do [[ -n "$name" ]] && run_ios "$name"; done
   for name in "${PHASE4[@]:-}"; do [[ -n "$name" ]] && run_ios "$name"; done
 
-  xcrun simctl shutdown "$UDID" >/dev/null 2>&1 || true
+  if [[ -n "$IS_ANDROID" ]]; then stop_emulator; else xcrun simctl shutdown "$UDID" >/dev/null 2>&1 || true; fi
   append_steps "$DEVICE_SLUG"
 done
 
