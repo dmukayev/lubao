@@ -422,6 +422,9 @@ model Driver {
   preferredBodyTypeId   String?
   preferredBodyType     BodyType? @relation("DriverPreferredBodyType", fields: [preferredBodyTypeId], references: [id])
   preferredCapacityTons Decimal?  @db.Decimal(6, 2)
+  /// ФИО из водительского удостоверения (045 п.10) — при регистрации водитель
+  /// пишет только имя; после одобрения прав предлагаем подставить полное ФИО.
+  licenseFullName       String?
   isVerified   Boolean  @default(false)
   ratingAvg    Decimal  @default(0) @db.Decimal(3, 2)
   ratingCount  Int      @default(0)
@@ -452,6 +455,8 @@ model DriverDirection {
   driver    Driver   @relation(fields: [driverId], references: [id])
   countryId String
   country   Country  @relation(fields: [countryId], references: [id])
+  /// Области внутри страны (045 п.7); пусто — вся страна.
+  regionIds String[] @default([])
   createdAt DateTime @default(now())
 
   @@unique([driverId, countryId])

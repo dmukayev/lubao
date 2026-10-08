@@ -1252,6 +1252,13 @@ export class AdminService {
           const hit = await this.confirmFieldlessDriverIdentifiers(recognizedFields, dto.confirmedFields, updated.driverId, id, adminUserId, tx);
           if (hit) blacklistHit = hit;
 
+          // 045 п.10: при регистрации водитель пишет только имя — полное ФИО
+          // из одобренных прав предлагаем ему подставить в профиль.
+          if (updated.type === 'DRIVER_LICENSE') {
+            const licenseName = (dto.confirmedFields?.fullName ?? recognizedFields.fullName?.value)?.trim();
+            if (licenseName) await tx.driver.update({ where: { id: updated.driverId }, data: { licenseFullName: licenseName } });
+          }
+
           // Верифицирован, только когда одобрены ВСЕ обязательные документы
           // личности (селфи + права) — задача 031, этап A: машины (техпаспорта
           // тягача/прицепа) проверяются отдельно, см. блок ниже.

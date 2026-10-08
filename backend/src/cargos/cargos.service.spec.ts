@@ -568,3 +568,34 @@ describe('CargosService.feed — моё состояние и конкурент
     expect(prisma.response.groupBy.mock.calls[0][0].where).toMatchObject({ driverId: { not: 'd1' }, status: { in: ['PENDING', 'SELECTED'] } });
   });
 });
+
+// 045 п.7: страна с уточнёнными областями — «в выбранное» только по своим областям.
+describe('CargosService.feed — области направлений', () => {
+  it('груз в выбранную область — раньше груза в другую область той же страны', async () => {
+    const mk = (id: string, regionId: string, day: string) =>
+      baseCargo({ id, destinationCountryId: 'kz', destinationCity: { regionId }, readyDate: new Date(day), point: { cityId: 'p', lat: null, lng: null, city: { id: 'p', regionId: 'x', lat: null, lng: null } } });
+    const prisma: any = {
+      cargo: { findMany: jest.fn().mockResolvedValue([mk('other-region', 'r-astana', '2030-01-01'), mk('my-region', 'r-almaty', '2030-01-05')]) },
+      deal: { count: jest.fn().mockResolvedValue(0) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+      arrival: { findFirst: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
+      vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
+      driver: {
+        findUnique: jest.fn().mockResolvedValue({
+          homeCity: { id: 'h', countryId: 'cn', regionId: 'y', lat: null, lng: null },
+          directions: [{ countryId: 'kz', regionIds: ['r-almaty'] }],
+          anyCountry: false,
+          preferredCapacityTons: null,
+        }),
+      },
+      response: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
+    };
+    const service = new CargosService(prisma, {} as any, {} as any);
+    const { items } = await service.feed('d1');
+    expect(items.map((i: any) => [i.id, i.feedSection])).toEqual([
+      ['my-region', 'selected'],
+      ['other-region', 'other'],
+    ]);
+  });
+});
+

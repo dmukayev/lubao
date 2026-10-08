@@ -21,7 +21,15 @@ export class UpdateDriverDto {
   @IsString({ each: true })
   permitIds!: string[];
 
-  /// Нужен при регистрации (мастер создаёт машины); при правке профиля игнорируется (041, п.6).
+  /// Области внутри выбранных стран (045 п.7) — плоский список; сервер
+  /// раскладывает по странам. Страна без своих областей — «вся страна».
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  directionRegionIds?: string[];
+
+  /// Нужен при регистрации — предпочтение водителя (045 п.5), машины не создаются.
   @IsOptional()
   @IsString()
   bodyTypeId?: string;

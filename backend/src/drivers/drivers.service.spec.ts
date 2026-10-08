@@ -272,6 +272,7 @@ describe('DriversService.updateProfile — машины при регистра�
       driverDirection: { deleteMany: jest.fn(), createMany: jest.fn() },
       driverPermit: { deleteMany: jest.fn(), createMany: jest.fn() },
       vehicle: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
+      region: { findMany: jest.fn().mockResolvedValue([{ id: 'r-almaty', countryId: 'kz' }, { id: 'r-osh', countryId: 'kg' }]) },
     };
     const prisma: any = {
       city: { findUnique: jest.fn().mockResolvedValue({ id: 'city-1' }) },
@@ -294,6 +295,17 @@ describe('DriversService.updateProfile — машины при регистра�
     expect(tx.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { preferredBodyTypeId: 'b1', preferredCapacityTons: 20 } });
   });
 
+  it('045 п.7: области раскладываются по своим странам, у страны без областей — вся страна', async () => {
+    const { tx, service } = setup(null);
+    await service.updateProfile('u1', { ...input, anyCountry: false, directionCountryIds: ['kz', 'uz'], directionRegionIds: ['r-almaty', 'r-osh'] });
+    expect(tx.driverDirection.createMany).toHaveBeenCalledWith({
+      data: [
+        { driverId: 'd1', countryId: 'kz', regionIds: ['r-almaty'] },
+        { driverId: 'd1', countryId: 'uz', regionIds: [] },
+      ],
+    });
+  });
+
   it('регистрация без кузова — 400', async () => {
     const { service } = setup(null);
     await expect(service.updateProfile('u1', { ...input, bodyTypeId: undefined })).rejects.toThrow('bodyTypeId is required');
@@ -306,3 +318,24 @@ describe('DriversService.updateProfile — машины при регистра�
     expect(tx.vehicle.update).not.toHaveBeenCalled();
   });
 });
+
+describe('DriversService.acceptLicenseName (045 п.10)', () => {
+  it('подставляет ФИО из прав в профиль; без ФИО из прав — 400', async () => {
+    const prisma: any = {
+      driver: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'd1', userId: 'u1', fullName: 'Ерлан', licenseFullName: 'Тестов Ерлан Серикович' }),
+        update: jest.fn().mockResolvedValue({ id: 'd1', userId: 'u1', fullName: 'Тестов Ерлан Серикович', licenseFullName: 'Тестов Ерлан Серикович', isVerified: true, ratingAvg: 0, ratingCount: 0 }),
+      },
+      driverDirection: { findMany: jest.fn().mockResolvedValue([]) },
+      driverPermit: { findMany: jest.fn().mockResolvedValue([]) },
+      vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
+      verificationDocument: { findFirst: jest.fn().mockResolvedValue(null) },
+    };
+    const service = new DriversService(prisma);
+    await service.acceptLicenseName('u1');
+    expect(prisma.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { fullName: 'Тестов Ерлан Серикович' } });
+    prisma.driver.findUnique.mockResolvedValue({ id: 'd1', userId: 'u1', fullName: 'Ерлан', licenseFullName: null });
+    await expect(service.acceptLicenseName('u1')).rejects.toThrow('No full name from the licence');
+  });
+});
+

@@ -57,6 +57,14 @@ export class DriversController {
     return this.drivers.updateLocation(ctx.user.id, dto.lat, dto.lng);
   }
 
+  /// 045 п.10: подставить ФИО из одобренных прав.
+  @Post('me/accept-license-name')
+  @HttpCode(200)
+  acceptLicenseName(@CurrentUser() ctx: RequestContext) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.drivers.acceptLicenseName(ctx.user.id);
+  }
+
   @Get('me/verification-documents')
   verificationDocuments(@CurrentUser() ctx: RequestContext) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');

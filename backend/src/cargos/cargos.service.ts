@@ -234,7 +234,7 @@ export class CargosService {
     // водителя, пока компанию не разблокируют.
     const cargos = await this.prisma.cargo.findMany({
       where: { status: 'PUBLISHED', company: { isBlocked: false } },
-      include: { ...this.includeForDto, point: { include: { city: true } } },
+      include: { ...this.includeForDto, point: { include: { city: true } }, destinationCity: { select: { regionId: true } } },
       orderBy: { readyDate: 'asc' },
     });
     const body = driverId ? await this.driverCargoBody(driverId) : null;
@@ -248,13 +248,22 @@ export class CargosService {
       : [{ origin: null, source: null }, null];
     const homeCountryId = driver?.homeCity?.countryId ?? null;
     const selected = new Set(driver?.directions?.map((d) => d.countryId) ?? []);
+    // 045 п.7: страна с уточнёнными областями — груз «в выбранное», только если
+    // город назначения в одной из них (груз без города — по стране).
+    const regionsByCountry = new Map((driver?.directions ?? []).filter((d) => (d.regionIds?.length ?? 0) > 0).map((d) => [d.countryId, new Set(d.regionIds)]));
+    const inSelected = (cargo: { destinationCountryId: string; destinationCity: { regionId: string | null } | null }) => {
+      if (!selected.has(cargo.destinationCountryId)) return false;
+      const regions = regionsByCountry.get(cargo.destinationCountryId);
+      if (!regions || !cargo.destinationCity?.regionId) return true;
+      return regions.has(cargo.destinationCity.regionId);
+    };
 
     const ranked = fitting.map((cargo) => {
       const pickupRank = origin ? CargosService.pickupRank(cargo.point, origin) : 2;
       const section: 'home' | 'selected' | 'other' =
         homeCountryId && cargo.destinationCountryId === homeCountryId
           ? 'home'
-          : (driver?.anyCountry ?? true) || selected.has(cargo.destinationCountryId)
+          : (driver?.anyCountry ?? true) || inSelected(cargo)
             ? 'selected'
             : 'other';
       return { cargo, pickupRank, section };

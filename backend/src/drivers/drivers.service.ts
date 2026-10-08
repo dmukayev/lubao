@@ -71,6 +71,8 @@ export class DriversService {
             }
           : null,
       directionCountryIds: directions.map((d) => d.countryId),
+      directionRegionIds: directions.flatMap((d) => d.regionIds),
+      licenseFullName: driver.licenseFullName && driver.licenseFullName !== driver.fullName ? driver.licenseFullName : null,
       permitIds: permits.map((p) => p.permitId),
       preferredBodyTypeId: driver.preferredBodyTypeId,
       preferredCapacityTons: driver.preferredCapacityTons != null ? Number(driver.preferredCapacityTons) : null,
@@ -124,8 +126,16 @@ export class DriversService {
 
       await tx.driverDirection.deleteMany({ where: { driverId: driver.id } });
       if (!input.anyCountry && input.directionCountryIds.length > 0) {
+        // 045 п.7: области — только внутри выбранных стран; чужие молча отбрасываем.
+        const regions = input.directionRegionIds?.length
+          ? await tx.region.findMany({ where: { id: { in: input.directionRegionIds } }, select: { id: true, countryId: true } })
+          : [];
         await tx.driverDirection.createMany({
-          data: input.directionCountryIds.map((countryId) => ({ driverId: driver.id, countryId })),
+          data: input.directionCountryIds.map((countryId) => ({
+            driverId: driver.id,
+            countryId,
+            regionIds: regions.filter((r) => r.countryId === countryId).map((r) => r.id),
+          })),
         });
       }
 
@@ -173,6 +183,15 @@ export class DriversService {
     }
 
     const updated = await this.prisma.driver.findUniqueOrThrow({ where: { id: driverId } });
+    return this.toDto(updated);
+  }
+
+  /// «Да, это я» на ФИО из прав (045 п.10): подставляем в профиль.
+  async acceptLicenseName(userId: string) {
+    const driver = await this.prisma.driver.findUnique({ where: { userId } });
+    if (!driver) throw new NotFoundException('Driver profile not found');
+    if (!driver.licenseFullName) throw new BadRequestException({ code: 'NO_LICENSE_NAME', message: 'No full name from the licence yet' });
+    const updated = await this.prisma.driver.update({ where: { id: driver.id }, data: { fullName: driver.licenseFullName } });
     return this.toDto(updated);
   }
 
