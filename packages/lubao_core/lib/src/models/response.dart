@@ -6,6 +6,7 @@ class CargoResponse {
     required this.cargoId,
     required this.driverId,
     required this.driverName,
+    this.avatarVersion,
     this.message,
     required this.status,
     required this.createdAt,
@@ -29,6 +30,7 @@ class CargoResponse {
   final String cargoId;
   final String driverId;
   final String driverName;
+  final String? avatarVersion;
   final String? message;
   final ResponseStatus status;
   final DateTime createdAt;
@@ -66,6 +68,7 @@ class CargoResponse {
         cargoId: json['cargoId'] as String,
         driverId: json['driverId'] as String,
         driverName: json['driverName'] as String? ?? '',
+        avatarVersion: json['avatarVersion'] as String?,
         message: json['message'] as String?,
         status: responseStatusFromJson(json['status'] as String),
         createdAt: DateTime.parse(json['createdAt'] as String),

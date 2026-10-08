@@ -533,6 +533,24 @@ Future<Dio> adminApi() async {
   return dio;
 }
 
+/// 054: у водителя принятое селфи (синтетическая картинка, не лицо) — чтобы
+/// в профиле появилось «Поставить это фото в профиль?». Всё через API.
+Future<void> approvedSelfieViaApi(String phoneLocal) async {
+  final dio = Dio(BaseOptions(baseUrl: e2eApiBase, connectTimeout: e2eHttpTimeout, receiveTimeout: e2eHttpTimeout, validateStatus: (_) => true));
+  await dio.post('/auth/phone/request-code', data: {'phone': '+7$phoneLocal'});
+  final login = await dio.post('/auth/phone/verify', data: {'phone': '+7$phoneLocal', 'code': e2eDevCode, 'deviceName': 'e2e', 'platform': 'ios'});
+  if (login.statusCode! >= 300) fail('Вход водителя через API не удался: ${login.statusCode}');
+  dio.options.headers['Authorization'] = 'Bearer ${(login.data as Map)['accessToken']}';
+  final image = await makeSyntheticDocument('selfie.png', ['SYNTHETIC SELFIE', 'E2E']);
+  final upload = await dio.post('/uploads/document', data: FormData.fromMap({'file': MultipartFile.fromBytes(await image.readAsBytes(), filename: 'selfie.png')}));
+  if (upload.statusCode! >= 300) fail('Загрузка селфи не удалась: ${upload.statusCode}');
+  final doc = await dio.post('/drivers/me/verification-documents', data: {'type': 'SELFIE', 'fileUrl': (upload.data as Map)['key']});
+  if (doc.statusCode! >= 300) fail('Селфи не отправилось: ${doc.statusCode} ${doc.data}');
+  final admin = await adminApi();
+  final review = await admin.patch('/admin/verification-documents/${(doc.data as Map)['id']}', data: {'status': 'APPROVED'});
+  if (review.statusCode! >= 300) fail('Админ не принял селфи: ${review.statusCode} ${review.data}');
+}
+
 /// Дождаться элемента ленивого списка и прокрутить к нему: на узком экране с
 /// крупным шрифтом (iPhone SE в e2e) он ниже края и ещё не построен — простой
 /// waitFor его не видит.

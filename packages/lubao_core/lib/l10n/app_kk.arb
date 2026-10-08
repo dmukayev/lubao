@@ -1252,5 +1252,15 @@
   "vehiclePhotoFailed": "Жіберілмеді",
   "profileAddVehicleRegistered": "Тіркелу кезінде: {details}. Мемлекеттік нөмір мен техпаспортсыз логист көлігіңізді көрмейді және жүк бермейді.",
   "profileAddVehiclePlain": "Мемлекеттік нөмір мен техпаспортсыз логист көлігіңізді көрмейді және жүк бермейді.",
-  "garageAddPhotoChip": "Сурет қосыңыз"
+  "garageAddPhotoChip": "Сурет қосыңыз",
+  "avatarOfferTitle": "Осы суретті профильге қоясыз ба?",
+  "avatarOfferBody": "Логистер оны көреді",
+  "avatarOfferYes": "Иә",
+  "avatarOfferOther": "Басқасын түсіру",
+  "avatarOfferLater": "Қазір емес",
+  "avatarAdd": "Сурет қосу",
+  "avatarChange": "Суретті ауыстыру",
+  "avatarRemove": "Суретті алып тастау",
+  "avatarHint": "Логистер суретті атыңыздың жанынан көреді",
+  "adminAvatarRemoveReason": "Себебі (мысалы, суретке шағым)"
 }

@@ -457,4 +457,46 @@ assert(prices.status === 200 && Array.isArray(prices.json), 'админка: «�
 const csv = await api('GET', '/admin/route-prices.csv', { token });
 assert(csv.status === 200 && csv.text.includes('median_kzt_per_km'), 'админка: выгрузка CSV', `status=${csv.status}`);
 
+// 054: фото профиля водителя. Синтетическая картинка (не лицо) → селфи принято →
+// «Да» → миниатюра 200 px. Видят только вошедшие: компания (и непроверенная), сам
+// водитель, админ; без токена — 401, другой водитель — 404, после «Убрать» — 404.
+{
+  const { createRequire } = await import('node:module');
+  const Jimp = createRequire(import.meta.url)('../backend/node_modules/jimp');
+  const big = await new Jimp(900, 1200, 0x3366ccff).getBufferAsync(Jimp.MIME_JPEG);
+  const avatarDriver = await newDriver('+77010000093', tentType.id, { capacityTons: 20 });
+  const meId = (await api('GET', '/drivers/me', { token: avatarDriver.token })).json.id;
+  const form = new FormData();
+  form.append('file', new Blob([big], { type: 'image/jpeg' }), 'selfie.jpg');
+  const up = await fetch(`${BASE}/uploads/document`, { method: 'POST', headers: { Authorization: `Bearer ${avatarDriver.token}` }, body: form }).then((r) => r.json());
+  const selfie = await api('POST', '/drivers/me/verification-documents', { token: avatarDriver.token, body: { type: 'SELFIE', fileUrl: up.key } });
+  assert(selfie.status < 300, 'водитель отправил селфи (синтетика)', `status=${selfie.status}`);
+  assert((await api('GET', '/drivers/me', { token: avatarDriver.token })).json.avatarOffer === false, 'до проверки селфи фото не предлагаем');
+  await api('PATCH', `/admin/verification-documents/${selfie.json.id}`, { token, body: { status: 'APPROVED' } });
+  assert((await api('GET', '/drivers/me', { token: avatarDriver.token })).json.avatarOffer === true, 'селфи принято → «Поставить это фото в профиль?»');
+  const yes = await api('POST', '/drivers/me/avatar/from-selfie', { token: avatarDriver.token });
+  assert(yes.status === 200 && !!yes.json.avatarVersion, '«Да» — фото профиля из селфи', `status=${yes.status}`);
+  const me054 = (await api('GET', '/drivers/me', { token: avatarDriver.token })).json;
+  assert(me054.avatarVersion && me054.avatarOffer === false, 'после «Да» предложение больше не показывается');
+  const noToken = await fetch(`${BASE}/drivers/${meId}/avatar`);
+  assert(noToken.status === 401, 'без входа фото не отдаётся (401)', `status=${noToken.status}`);
+  const asCompany = await fetch(`${BASE}/drivers/${meId}/avatar`, { headers: { Authorization: `Bearer ${newCo.json.accessToken}` } });
+  const thumb = Buffer.from(await asCompany.arrayBuffer());
+  assert(asCompany.status === 200 && /private/.test(asCompany.headers.get('cache-control') ?? ''), 'непроверенная компания видит фото, Cache-Control private', `status=${asCompany.status}`);
+  const size = (await Jimp.read(thumb)).bitmap;
+  assert(size.width === 200 && size.height === 200 && thumb.length < big.length, 'отдаётся миниатюра 200×200, не исходный снимок', `${size.width}×${size.height}`);
+  const otherDriver = await fetch(`${BASE}/drivers/${meId}/avatar`, { headers: { Authorization: `Bearer ${tentDriver.token}` } });
+  assert(otherDriver.status === 404, 'другой водитель фото не видит', `status=${otherDriver.status}`);
+  const kzList = (await api('GET', '/arrivals', { token: kzOwner })).json;
+  assert(Array.isArray(kzList) && kzList.every((a) => 'avatarVersion' in a), '«Кто свободен» отдаёт версию фото водителя');
+  const noReasonDel = await api('DELETE', `/admin/drivers/${meId}/avatar`, { token, body: {} });
+  assert(noReasonDel.status === 400, 'админ «Убрать фото» — только с причиной', `status=${noReasonDel.status}`);
+  const adminDel = await api('DELETE', `/admin/drivers/${meId}/avatar`, { token, body: { reason: 'E2E: жалоба на фото' } });
+  assert(adminDel.status === 200, 'админ убрал фото с причиной', `status=${adminDel.status}`);
+  const gone = await fetch(`${BASE}/drivers/${meId}/avatar`, { headers: { Authorization: `Bearer ${newCo.json.accessToken}` } });
+  assert(gone.status === 404, 'после «Убрать» — 404', `status=${gone.status}`);
+  const audit = (await get(`/admin/drivers/${meId}`)).json.auditLog ?? [];
+  assert(JSON.stringify(audit).includes('DRIVER_AVATAR_SET') && JSON.stringify(audit).includes('DRIVER_AVATAR_REMOVED_BY_ADMIN'), 'согласие и снятие фото — в журнале', JSON.stringify(audit.map((a) => a.action)).slice(0, 200));
+}
+
 console.log(`Готово: ${checks} проверок.`);

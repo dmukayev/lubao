@@ -10,6 +10,7 @@ import '../../shared/status_helpers.dart';
 import '../haul_hint.dart';
 import 'cargo_close_dialog.dart';
 import '../../shared/driver_vehicle_photos.dart';
+import '../../shared/driver_avatar.dart';
 
 class CargoResponsesScreen extends ConsumerWidget {
   const CargoResponsesScreen({super.key, required this.cargoId});
@@ -246,6 +247,8 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              DriverAvatar(driverId: response.driverId, name: response.driverName, version: response.avatarVersion, radius: 20),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(child: Text(response.driverName, style: AppTextStyles.bodyStrong)),
               StatusBadge(label: statusLabel, color: statusColor),
               const SizedBox(width: AppSpacing.sm),

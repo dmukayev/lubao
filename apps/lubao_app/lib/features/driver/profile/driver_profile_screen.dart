@@ -9,6 +9,7 @@ import '../../../providers/data_providers.dart';
 import '../../../providers/locale_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'add_vehicle_banner.dart';
+import 'profile_avatar.dart';
 
 class DriverProfileScreen extends ConsumerStatefulWidget {
   const DriverProfileScreen({super.key});
@@ -64,19 +65,43 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(driver?.fullName ?? '', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 4),
+          // 054 п.3: фото рядом с именем; нажатие — сменить / убрать.
           Row(
             children: [
-              const Icon(LucideIcons.star, size: 16, color: Colors.amber),
-              Text(driver == null ? ' —' : ' ${formatRating(driver.ratingAvg, driver.ratingCount)}${driver.ratingCount == 0 ? '' : ' (${driver.ratingCount})'}'),
-              const SizedBox(width: 12),
-              StatusBadge(
-                label: (driver?.isVerified ?? false) ? t.profileVerified : t.profileNotVerified,
-                color: (driver?.isVerified ?? false) ? StatusBadge.success : StatusBadge.neutral,
+              if (driver != null) ...[ProfileAvatar(driver: driver), const SizedBox(width: AppSpacing.md)],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(driver?.fullName ?? '', style: Theme.of(context).textTheme.headlineSmall),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 12,
+                      runSpacing: 4,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(LucideIcons.star, size: 16, color: Colors.amber),
+                            Text(driver == null ? ' —' : ' ${formatRating(driver.ratingAvg, driver.ratingCount)}${driver.ratingCount == 0 ? '' : ' (${driver.ratingCount})'}'),
+                          ],
+                        ),
+                        StatusBadge(
+                          label: (driver?.isVerified ?? false) ? t.profileVerified : t.profileNotVerified,
+                          color: (driver?.isVerified ?? false) ? StatusBadge.success : StatusBadge.neutral,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
+          if (driver?.avatarOffer ?? false) ...[
+            const SizedBox(height: AppSpacing.lg),
+            const AvatarOfferCard(),
+          ],
           // 045 п.10: ФИО из одобренных прав — подставить одним нажатием.
           if (driver?.licenseFullName != null) ...[
             const SizedBox(height: AppSpacing.lg),

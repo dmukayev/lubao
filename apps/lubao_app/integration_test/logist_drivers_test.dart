@@ -17,6 +17,7 @@ const _d3Card = Key('driversAtPointCard-dddddddd-dddd-4ddd-8ddd-ddddddddd003');
 const _d4Card = Key('driversAtPointCard-dddddddd-dddd-4ddd-8ddd-ddddddddd004');
 /// D6 — «свободен в Алматы» на сегодня (040).
 const _d6Card = Key('driversAtPointCard-dddddddd-dddd-4ddd-8ddd-ddddddddd006');
+const _d3Id = 'dddddddd-dddd-4ddd-8ddd-ddddddddd003';
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -151,15 +152,37 @@ void main() {
       await waitFor(tester, find.text(t.chatResponseSentLabel));
     });
 
-    await run.step(tester, 'выход-водителя', () async {
+    // 054: селфи принято → в профиле «Поставить это фото в профиль?» → «Да» →
+    // фото рядом с именем; предложение больше не показывается.
+    await run.step(tester, 'фото-профиля-из-селфи', () async {
+      await approvedSelfieViaApi('7010000003');
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
+      await goTab(tester, t.profileTitle);
+      await waitAndReveal(tester, find.byKey(const Key('avatarOfferCard')));
+      expect(find.text(t.avatarOfferTitle), findsOneWidget);
+      expectNoOverflow(tester);
+      await tester.tap(find.byKey(const Key('avatarOfferYes')));
+      await waitFor(tester, find.byKey(const Key('driverAvatar-$_d3Id-photo')), timeout: const Duration(seconds: 30));
+      expect(find.byKey(const Key('avatarOfferCard')), findsNothing);
+      expectInsideSafeZone(tester);
+    });
+
+    await run.step(tester, 'выход-водителя', () async {
       await logoutViaProfile(tester, driver: true);
     });
 
-    await run.step(tester, 'логист-выбирает-согласившегося', () async {
+    // 054 п.4: логист видит лицо водителя в «Водителях» и в чатах.
+    await run.step(tester, 'логист-видит-фото-водителя', () async {
       await loginLogist(tester);
       await waitFor(tester, find.text(t.navDrivers));
+      await tester.tap(find.text(t.navDrivers));
+      await waitAndReveal(tester, find.byKey(_d3Card));
+      await waitFor(tester, find.descendant(of: find.byKey(_d3Card), matching: find.byKey(const Key('driverAvatar-$_d3Id-photo'))), timeout: const Duration(seconds: 30));
+      expectNoOverflow(tester);
+    });
+
+    await run.step(tester, 'логист-выбирает-согласившегося', () async {
       await goTab(tester, t.navChats);
       await waitFor(tester, find.textContaining('Борис'));
       await tester.tap(find.textContaining('Борис').first);

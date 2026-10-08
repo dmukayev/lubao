@@ -728,6 +728,7 @@ class AdminDriverDetail {
     this.cancellations = const [],
     required this.id,
     required this.fullName,
+    this.avatarVersion,
     required this.isVerified,
     required this.userId,
     this.phone,
@@ -755,6 +756,8 @@ class AdminDriverDetail {
 
   final String id;
   final String fullName;
+  /// 054 п.5: фото профиля (null — нет).
+  final String? avatarVersion;
   final bool isVerified;
 
   /// Телефон водителя в чёрном списке (039, п.24) — явный ⛔ в карточке.
@@ -792,6 +795,7 @@ class AdminDriverDetail {
       cancellations: AdminCancellation.listFromJson(json['cancellations']),
       id: json['id'] as String,
       fullName: json['fullName'] as String,
+      avatarVersion: json['avatarVersion'] as String?,
       isVerified: json['isVerified'] as bool,
       userId: user['id'] as String,
       phone: user['phone'] as String?,

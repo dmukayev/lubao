@@ -116,6 +116,27 @@ class DriverRepository {
     return Uint8List.fromList(res.data ?? const []);
   }
 
+  /// 054: фото профиля водителя (миниатюра ~200 px). Логист, админ и сам
+  /// водитель; 404 — фото нет.
+  Future<Uint8List> driverAvatar(String driverId) async {
+    final res = await _client.dio.get<List<int>>(
+      '/drivers/$driverId/avatar',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return Uint8List.fromList(res.data ?? const []);
+  }
+
+  /// «Да» на предложении — принятое селфи становится фото профиля.
+  Future<void> setAvatarFromSelfie() => _client.dio.post('/drivers/me/avatar/from-selfie');
+
+  /// Своё фото: ключ из `POST /uploads/document`.
+  Future<void> setAvatar(String fileKey) => _client.dio.post('/drivers/me/avatar', data: {'fileKey': fileKey});
+
+  Future<void> removeAvatar() => _client.dio.delete('/drivers/me/avatar');
+
+  /// «Не сейчас» — больше не предлагать.
+  Future<void> dismissAvatarOffer() => _client.dio.post('/drivers/me/avatar/dismiss-offer');
+
   Future<List<GarageVehicle>> vehicles() async {
     final res = await _client.dio.get('/drivers/me/vehicles');
     return (res.data as List<dynamic>).map((e) => GarageVehicle.fromJson(e as Map<String, dynamic>)).toList();

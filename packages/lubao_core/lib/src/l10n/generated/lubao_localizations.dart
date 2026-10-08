@@ -6767,6 +6767,66 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Добавьте фото'**
   String get garageAddPhotoChip;
+
+  /// No description provided for @avatarOfferTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поставить это фото в профиль?'**
+  String get avatarOfferTitle;
+
+  /// No description provided for @avatarOfferBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логисты будут видеть его'**
+  String get avatarOfferBody;
+
+  /// No description provided for @avatarOfferYes.
+  ///
+  /// In ru, this message translates to:
+  /// **'Да'**
+  String get avatarOfferYes;
+
+  /// No description provided for @avatarOfferOther.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделать другое'**
+  String get avatarOfferOther;
+
+  /// No description provided for @avatarOfferLater.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не сейчас'**
+  String get avatarOfferLater;
+
+  /// No description provided for @avatarAdd.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить фото'**
+  String get avatarAdd;
+
+  /// No description provided for @avatarChange.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сменить фото'**
+  String get avatarChange;
+
+  /// No description provided for @avatarRemove.
+  ///
+  /// In ru, this message translates to:
+  /// **'Убрать фото'**
+  String get avatarRemove;
+
+  /// No description provided for @avatarHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логисты видят фото рядом с вашим именем'**
+  String get avatarHint;
+
+  /// No description provided for @adminAvatarRemoveReason.
+  ///
+  /// In ru, this message translates to:
+  /// **'Причина (например, жалоба на фото)'**
+  String get adminAvatarRemoveReason;
 }
 
 class _LubaoLocalizationsDelegate

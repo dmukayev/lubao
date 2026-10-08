@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
@@ -557,6 +559,16 @@ class AdminRepository {
 
   Future<void> unblockUser(String userId, {required String reason}) async {
     await _client.dio.post('/admin/users/$userId/unblock', data: {'reason': reason});
+  }
+
+  /// 054 п.5: фото профиля водителя в карточке; «Убрать фото» — с причиной в журнал.
+  Future<Uint8List> driverAvatar(String driverId) async {
+    final res = await _client.dio.get<List<int>>('/drivers/$driverId/avatar', options: Options(responseType: ResponseType.bytes));
+    return Uint8List.fromList(res.data ?? const []);
+  }
+
+  Future<void> removeDriverAvatar(String driverId, {required String reason}) async {
+    await _client.dio.delete('/admin/drivers/$driverId/avatar', data: {'reason': reason});
   }
 
   Future<void> revokeSessions(String userId) async {

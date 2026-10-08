@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -77,6 +79,15 @@ class DriverDetailScreen extends ConsumerWidget {
     if (confirmed != true || reason.isEmpty) return;
     final selectedTypes = [for (final e in types.entries) if (e.value.$2) e.key];
     await ref.read(adminRepositoryProvider).blockUser(driver.userId, reason: reason, identifierTypes: selectedTypes);
+    await _reload(ref);
+  }
+
+  /// 054 п.5: «Убрать фото» (жалоба на неподходящее фото) — причина в журнал.
+  Future<void> _removeAvatar(BuildContext context, WidgetRef ref, AdminDriverDetail driver) async {
+    final t = context.l10n;
+    final reason = await showReasonDialog(context, title: t.avatarRemove, confirmLabel: t.avatarRemove, danger: true);
+    if (reason == null) return;
+    await ref.read(adminRepositoryProvider).removeDriverAvatar(driver.id, reason: reason);
     await _reload(ref);
   }
 
@@ -193,6 +204,7 @@ class DriverDetailScreen extends ConsumerWidget {
                 onUnblock: () => _unblock(context, ref, driver),
                 onEndSessions: () => _endSessions(context, ref, driver),
                 onToggleVerified: () => _toggleVerified(context, ref, driver),
+                onRemoveAvatar: () => _removeAvatar(context, ref, driver),
               ),
               const SizedBox(height: 16),
               _StatsRow(driver: driver),
@@ -236,6 +248,7 @@ class _Header extends StatelessWidget {
     required this.onUnblock,
     required this.onEndSessions,
     required this.onToggleVerified,
+    required this.onRemoveAvatar,
   });
 
   final AdminDriverDetail driver;
@@ -244,6 +257,7 @@ class _Header extends StatelessWidget {
   final VoidCallback onUnblock;
   final VoidCallback onEndSessions;
   final VoidCallback onToggleVerified;
+  final VoidCallback onRemoveAvatar;
 
   @override
   Widget build(BuildContext context) {
@@ -266,7 +280,18 @@ class _Header extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(radius: 28, child: Text(initials)),
+              Column(
+                children: [
+                  _AdminDriverAvatar(driver: driver, initials: initials),
+                  if (driver.avatarVersion != null)
+                    TextButton(
+                      key: const Key('adminDriverAvatarRemove'),
+                      style: TextButton.styleFrom(foregroundColor: StatusBadge.danger, minimumSize: const Size(0, 32), padding: const EdgeInsets.symmetric(horizontal: 6)),
+                      onPressed: onRemoveAvatar,
+                      child: Text(t.avatarRemove, style: AppTextStyles.small.copyWith(color: StatusBadge.danger)),
+                    ),
+                ],
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -661,6 +686,30 @@ class _ReviewsTab extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+/// 054 п.5: фото профиля водителя (по версии — после «Убрать» не висит старое).
+final _adminDriverAvatarProvider = FutureProvider.family<Uint8List?, ({String id, String version})>((ref, key) async {
+  try {
+    return await ref.watch(adminRepositoryProvider).driverAvatar(key.id);
+  } catch (_) {
+    return null;
+  }
+});
+
+class _AdminDriverAvatar extends ConsumerWidget {
+  const _AdminDriverAvatar({required this.driver, required this.initials});
+
+  final AdminDriverDetail driver;
+  final String initials;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final v = driver.avatarVersion;
+    final bytes = v == null ? null : ref.watch(_adminDriverAvatarProvider((id: driver.id, version: v))).valueOrNull;
+    if (bytes == null) return CircleAvatar(radius: 28, child: Text(initials));
+    return Semantics(label: driver.fullName, image: true, child: PersonAvatar(key: const Key('adminDriverAvatarPhoto'), name: driver.fullName, bytes: bytes, radius: 28));
   }
 }
 

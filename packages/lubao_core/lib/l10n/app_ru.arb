@@ -1421,5 +1421,15 @@
   "profileAddVehicleRegistered": "При регистрации: {details}. Без госномера и техпаспорта логист не видит вашу машину и не отдаст груз.",
   "@profileAddVehicleRegistered": { "placeholders": {"details": {"type": "String"}} },
   "profileAddVehiclePlain": "Без госномера и техпаспорта логист не видит вашу машину и не отдаст груз.",
-  "garageAddPhotoChip": "Добавьте фото"
+  "garageAddPhotoChip": "Добавьте фото",
+  "avatarOfferTitle": "Поставить это фото в профиль?",
+  "avatarOfferBody": "Логисты будут видеть его",
+  "avatarOfferYes": "Да",
+  "avatarOfferOther": "Сделать другое",
+  "avatarOfferLater": "Не сейчас",
+  "avatarAdd": "Добавить фото",
+  "avatarChange": "Сменить фото",
+  "avatarRemove": "Убрать фото",
+  "avatarHint": "Логисты видят фото рядом с вашим именем",
+  "adminAvatarRemoveReason": "Причина (например, жалоба на фото)"
 }

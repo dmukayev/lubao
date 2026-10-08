@@ -3537,4 +3537,34 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get garageAddPhotoChip => '添加照片';
+
+  @override
+  String get avatarOfferTitle => '将这张照片设为头像？';
+
+  @override
+  String get avatarOfferBody => '物流方将能看到它';
+
+  @override
+  String get avatarOfferYes => '是';
+
+  @override
+  String get avatarOfferOther => '重新拍一张';
+
+  @override
+  String get avatarOfferLater => '以后再说';
+
+  @override
+  String get avatarAdd => '添加照片';
+
+  @override
+  String get avatarChange => '更换照片';
+
+  @override
+  String get avatarRemove => '移除照片';
+
+  @override
+  String get avatarHint => '物流方会在您的名字旁看到照片';
+
+  @override
+  String get adminAvatarRemoveReason => '原因（例如：照片被投诉）';
 }

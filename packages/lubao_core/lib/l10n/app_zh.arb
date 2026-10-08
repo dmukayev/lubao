@@ -1252,5 +1252,15 @@
   "vehiclePhotoFailed": "未上传",
   "profileAddVehicleRegistered": "注册时：{details}。没有车牌号和行驶证，物流方看不到您的车辆，也不会派货。",
   "profileAddVehiclePlain": "没有车牌号和行驶证，物流方看不到您的车辆，也不会派货。",
-  "garageAddPhotoChip": "添加照片"
+  "garageAddPhotoChip": "添加照片",
+  "avatarOfferTitle": "将这张照片设为头像？",
+  "avatarOfferBody": "物流方将能看到它",
+  "avatarOfferYes": "是",
+  "avatarOfferOther": "重新拍一张",
+  "avatarOfferLater": "以后再说",
+  "avatarAdd": "添加照片",
+  "avatarChange": "更换照片",
+  "avatarRemove": "移除照片",
+  "avatarHint": "物流方会在您的名字旁看到照片",
+  "adminAvatarRemoveReason": "原因（例如：照片被投诉）"
 }

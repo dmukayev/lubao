@@ -9,6 +9,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
 import 'status_helpers.dart';
+import 'driver_avatar.dart';
 
 /// Вкладка «Чаты» (задача 017, п.1) — общая для водителя и логиста:
 /// чат теперь существует до сделки, нужен отдельный список, не только
@@ -76,9 +77,16 @@ class _MyChatsScreenState extends ConsumerState<MyChatsScreen> {
                 final name = entry.thread.counterpartName;
                 return ListTile(
                   key: Key('chatListEntry-${entry.thread.id}'),
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.accentSoft,
-                    child: Text(name.isEmpty ? '' : name.substring(0, 1).toUpperCase(), style: AppTextStyles.bodyStrong.copyWith(color: AppColors.accentText)),
+                  // 054: логист видит фото водителя; у водителя версия всегда null — буква.
+                  leading: DriverAvatar(
+                    driverId: entry.thread.driverId,
+                    name: name,
+                    version: entry.thread.counterpartAvatarVersion,
+                    radius: 20,
+                    fallback: CircleAvatar(
+                      backgroundColor: AppColors.accentSoft,
+                      child: Text(name.isEmpty ? '' : name.substring(0, 1).toUpperCase(), style: AppTextStyles.bodyStrong.copyWith(color: AppColors.accentText)),
+                    ),
                   ),
                   title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text(

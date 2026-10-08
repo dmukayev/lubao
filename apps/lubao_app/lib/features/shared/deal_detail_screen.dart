@@ -15,6 +15,7 @@ import 'map_links.dart';
 import '../driver/feed/driver_status.dart';
 import 'driver_documents_block.dart';
 import '../driver/profile/vehicle_photos.dart';
+import 'driver_avatar.dart';
 
 class DealDetailScreen extends ConsumerStatefulWidget {
   const DealDetailScreen({super.key, required this.dealId});
@@ -336,6 +337,10 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    if (!isDriver) ...[
+                      DriverAvatar(driverId: deal.driverId, name: deal.driverName, version: deal.driverAvatarVersion, radius: 22),
+                      const SizedBox(width: AppSpacing.sm),
+                    ],
                     Expanded(child: Text(isDriver ? deal.companyName : deal.driverName, style: Theme.of(context).textTheme.titleLarge)),
                     StatusBadge(label: statusLabel, color: statusColor),
                   ],

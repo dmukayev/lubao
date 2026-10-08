@@ -15,6 +15,7 @@ import 'status_helpers.dart';
 import 'error_feedback.dart';
 import 'location_permission.dart';
 import 'tracking_consent_sheet.dart';
+import 'driver_avatar.dart';
 
 /// Название языка для «Пишет на …» — из ARB на языке читателя (041, п.9).
 String? _languageName(LubaoLocalizations t, String? code) => switch (code) {
@@ -292,12 +293,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         titleSpacing: 0,
         title: Row(
           children: [
-            CircleAvatar(
+            DriverAvatar(
+              driverId: thread?.driverId ?? '',
+              name: thread?.counterpartName ?? '',
+              version: thread?.counterpartAvatarVersion,
               radius: 18,
-              backgroundColor: AppColors.accentSoft,
-              child: Text(
-                (thread?.counterpartName ?? '').isEmpty ? '' : thread!.counterpartName.substring(0, 1).toUpperCase(),
-                style: AppTextStyles.bodyStrong.copyWith(color: AppColors.accentText),
+              fallback: CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.accentSoft,
+                child: Text(
+                  (thread?.counterpartName ?? '').isEmpty ? '' : thread!.counterpartName.substring(0, 1).toUpperCase(),
+                  style: AppTextStyles.bodyStrong.copyWith(color: AppColors.accentText),
+                ),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),

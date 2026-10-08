@@ -8,6 +8,7 @@ class ChatThread {
     required this.driverId,
     required this.companyId,
     required this.counterpartName,
+    this.counterpartAvatarVersion,
     this.counterpartLocale,
     this.counterpartHasPhone = false,
     this.counterpartWechatId,
@@ -22,6 +23,7 @@ class ChatThread {
   final String driverId;
   final String companyId;
   final String counterpartName;
+  final String? counterpartAvatarVersion;
   final String? counterpartLocale;
   /// Номер собеседника — только по нажатию (043 п.11, `ChatRepository.revealContact`).
   final bool counterpartHasPhone;
@@ -43,6 +45,7 @@ class ChatThread {
         driverId: json['driverId'] as String,
         companyId: json['companyId'] as String,
         counterpartName: json['counterpartName'] as String? ?? '',
+        counterpartAvatarVersion: json['counterpartAvatarVersion'] as String?,
         counterpartLocale: json['counterpartLocale'] as String?,
         counterpartHasPhone: json['counterpartHasPhone'] as bool? ?? false,
         counterpartWechatId: json['counterpartWechatId'] as String?,

@@ -3622,4 +3622,34 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get garageAddPhotoChip => 'Сурет қосыңыз';
+
+  @override
+  String get avatarOfferTitle => 'Осы суретті профильге қоясыз ба?';
+
+  @override
+  String get avatarOfferBody => 'Логистер оны көреді';
+
+  @override
+  String get avatarOfferYes => 'Иә';
+
+  @override
+  String get avatarOfferOther => 'Басқасын түсіру';
+
+  @override
+  String get avatarOfferLater => 'Қазір емес';
+
+  @override
+  String get avatarAdd => 'Сурет қосу';
+
+  @override
+  String get avatarChange => 'Суретті ауыстыру';
+
+  @override
+  String get avatarRemove => 'Суретті алып тастау';
+
+  @override
+  String get avatarHint => 'Логистер суретті атыңыздың жанынан көреді';
+
+  @override
+  String get adminAvatarRemoveReason => 'Себебі (мысалы, суретке шағым)';
 }

@@ -8,6 +8,7 @@ class Deal {
     required this.cargoId,
     required this.driverId,
     required this.driverName,
+    this.driverAvatarVersion,
     required this.companyId,
     required this.companyName,
     required this.status,
@@ -55,6 +56,7 @@ class Deal {
   final String cargoId;
   final String driverId;
   final String driverName;
+  final String? driverAvatarVersion;
   final String companyId;
   final String companyName;
   final DealStatus status;
@@ -83,6 +85,7 @@ class Deal {
         cargoId: json['cargoId'] as String,
         driverId: json['driverId'] as String,
         driverName: json['driverName'] as String? ?? '',
+        driverAvatarVersion: json['driverAvatarVersion'] as String?,
         companyId: json['companyId'] as String,
         companyName: json['companyName'] as String? ?? '',
         status: dealStatusFromJson(json['status'] as String),

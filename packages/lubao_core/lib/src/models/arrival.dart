@@ -29,6 +29,7 @@ class ArrivalListing {
     required this.arrivalId,
     required this.driverId,
     required this.driverName,
+    this.avatarVersion,
     this.hasPhone = false,
     this.specs,
     required this.isVerified,
@@ -59,6 +60,7 @@ class ArrivalListing {
   final String arrivalId;
   final String driverId;
   final String driverName;
+  final String? avatarVersion;
   /// Номер водителя — только по нажатию (043 п.11, `revealDriverContact`).
   final bool hasPhone;
 
@@ -107,6 +109,7 @@ class ArrivalListing {
         arrivalId: json['arrivalId'] as String,
         driverId: json['driverId'] as String,
         driverName: json['driverName'] as String? ?? '',
+        avatarVersion: json['avatarVersion'] as String?,
         hasPhone: json['hasPhone'] as bool? ?? false,
         specs: json['specs'] as Map<String, dynamic>?,
         isVerified: json['isVerified'] as bool? ?? false,

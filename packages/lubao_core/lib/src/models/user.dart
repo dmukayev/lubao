@@ -216,6 +216,8 @@ class Driver {
     this.verificationStatus = DriverVerificationStatus.none,
     required this.ratingAvg,
     required this.ratingCount,
+    this.avatarVersion,
+    this.avatarOffer = false,
     required this.directionCountryIds,
     required this.permitIds,
     this.vehicle,
@@ -236,6 +238,10 @@ class Driver {
   final DriverVerificationStatus verificationStatus;
   final double ratingAvg;
   final int ratingCount;
+  final String? avatarVersion;
+
+  /// 054 п.2: предложить «Поставить это фото в профиль?» (селфи принято).
+  final bool avatarOffer;
   final List<String> directionCountryIds;
   final List<String> permitIds;
   final Vehicle? vehicle;
@@ -265,6 +271,8 @@ class Driver {
         verificationStatus: driverVerificationStatusFromJson(json['verificationStatus'] as String?),
         ratingAvg: (json['ratingAvg'] as num?)?.toDouble() ?? 0,
         ratingCount: json['ratingCount'] as int? ?? 0,
+        avatarVersion: json['avatarVersion'] as String?,
+        avatarOffer: json['avatarOffer'] as bool? ?? false,
         directionCountryIds: (json['directionCountryIds'] as List<dynamic>? ?? []).cast<String>(),
         permitIds: (json['permitIds'] as List<dynamic>? ?? []).cast<String>(),
         vehicle: json['vehicle'] == null ? null : Vehicle.fromJson(json['vehicle'] as Map<String, dynamic>),

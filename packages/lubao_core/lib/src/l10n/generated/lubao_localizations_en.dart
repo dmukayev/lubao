@@ -3624,4 +3624,35 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get garageAddPhotoChip => 'Add a photo';
+
+  @override
+  String get avatarOfferTitle => 'Use this photo in your profile?';
+
+  @override
+  String get avatarOfferBody => 'Logists will see it';
+
+  @override
+  String get avatarOfferYes => 'Yes';
+
+  @override
+  String get avatarOfferOther => 'Take another';
+
+  @override
+  String get avatarOfferLater => 'Not now';
+
+  @override
+  String get avatarAdd => 'Add photo';
+
+  @override
+  String get avatarChange => 'Change photo';
+
+  @override
+  String get avatarRemove => 'Remove photo';
+
+  @override
+  String get avatarHint => 'Logists see the photo next to your name';
+
+  @override
+  String get adminAvatarRemoveReason =>
+      'Reason (e.g. a complaint about the photo)';
 }

@@ -15,6 +15,7 @@ import '../../shared/city_picking.dart';
 import '../../shared/status_helpers.dart';
 import '../haul_hint.dart';
 import '../../shared/driver_vehicle_photos.dart';
+import '../../shared/driver_avatar.dart';
 
 class DriversAtPointScreen extends ConsumerStatefulWidget {
   const DriversAtPointScreen({super.key});
@@ -846,12 +847,19 @@ class _DriverCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              CircleAvatar(
+              // 054 п.4: фото профиля водителя, нет — цветной кружок с буквами.
+              DriverAvatar(
+                driverId: driver.driverId,
+                name: driver.driverName,
+                version: driver.avatarVersion,
                 radius: 22,
-                backgroundColor: _avatarColor(driver.driverId),
-                child: Text(
-                  _initials(driver.driverName),
-                  style: AppTextStyles.bodyStrong.copyWith(color: Colors.white),
+                fallback: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: _avatarColor(driver.driverId),
+                  child: Text(
+                    _initials(driver.driverName),
+                    style: AppTextStyles.bodyStrong.copyWith(color: Colors.white),
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),

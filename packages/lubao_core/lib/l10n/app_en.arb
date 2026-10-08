@@ -1377,5 +1377,15 @@
   "vehiclePhotoFailed": "Not sent",
   "profileAddVehicleRegistered": "At sign-up: {details}. Without a plate number and registration document, logistics companies can’t see your vehicle and won’t give you cargo.",
   "profileAddVehiclePlain": "Without a plate number and registration document, logistics companies can’t see your vehicle and won’t give you cargo.",
-  "garageAddPhotoChip": "Add a photo"
+  "garageAddPhotoChip": "Add a photo",
+  "avatarOfferTitle": "Use this photo in your profile?",
+  "avatarOfferBody": "Logists will see it",
+  "avatarOfferYes": "Yes",
+  "avatarOfferOther": "Take another",
+  "avatarOfferLater": "Not now",
+  "avatarAdd": "Add photo",
+  "avatarChange": "Change photo",
+  "avatarRemove": "Remove photo",
+  "avatarHint": "Logists see the photo next to your name",
+  "adminAvatarRemoveReason": "Reason (e.g. a complaint about the photo)"
 }

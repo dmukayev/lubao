@@ -3609,4 +3609,34 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get garageAddPhotoChip => 'Добавьте фото';
+
+  @override
+  String get avatarOfferTitle => 'Поставить это фото в профиль?';
+
+  @override
+  String get avatarOfferBody => 'Логисты будут видеть его';
+
+  @override
+  String get avatarOfferYes => 'Да';
+
+  @override
+  String get avatarOfferOther => 'Сделать другое';
+
+  @override
+  String get avatarOfferLater => 'Не сейчас';
+
+  @override
+  String get avatarAdd => 'Добавить фото';
+
+  @override
+  String get avatarChange => 'Сменить фото';
+
+  @override
+  String get avatarRemove => 'Убрать фото';
+
+  @override
+  String get avatarHint => 'Логисты видят фото рядом с вашим именем';
+
+  @override
+  String get adminAvatarRemoveReason => 'Причина (например, жалоба на фото)';
 }
