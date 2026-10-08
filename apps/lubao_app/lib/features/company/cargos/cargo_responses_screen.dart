@@ -252,15 +252,28 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
           ),
           // 033 п.9 / 038 п.14 — вместимость связки водителя в отклике:
           // «20 т · 90 м³ · 33 пал.».
-          if (response.capacityTons != null || response.volumeM3 != null || response.palletsEuro != null) ...[
+          if (response.bodyTypeId != null || response.capacityTons != null || response.volumeM3 != null || response.palletsEuro != null) ...[
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              [
-                if (response.capacityTons != null) '${response.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
-                if (response.volumeM3 != null) '${response.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
-                if (response.palletsEuro != null) '${response.palletsEuro} ${t.unitPallets}',
-              ].join(' · '),
-              style: AppTextStyles.caption,
+            Row(
+              children: [
+                // 045 п.4: миниатюра кузова водителя.
+                if (response.bodyTypeId != null) ...[
+                  BodyTypeIcon(bodyTypeCode: widget.refData?.bodyTypes.where((b) => b.id == response.bodyTypeId).firstOrNull?.code, width: 40),
+                  const SizedBox(width: AppSpacing.xs),
+                ],
+                Expanded(
+                  child: Text(
+                    [
+                      if (response.bodyTypeId != null && widget.refData != null)
+                        widget.refData!.bodyTypeById(response.bodyTypeId!).name.forLanguageCode(Localizations.localeOf(context).languageCode),
+                      if (response.capacityTons != null) '${response.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
+                      if (response.volumeM3 != null) '${response.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+                      if (response.palletsEuro != null) '${response.palletsEuro} ${t.unitPallets}',
+                    ].join(' · '),
+                    style: AppTextStyles.caption,
+                  ),
+                ),
+              ],
             ),
           ],
           if (haulHint != null) ...[

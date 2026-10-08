@@ -885,7 +885,14 @@ class _DriverCard extends StatelessWidget {
                       ],
                     ),
                     if (spec.isNotEmpty)
-                      Text(spec, style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      // 045 п.4: миниатюра кузова (40 px) перед строкой машины.
+                      Row(
+                        children: [
+                          BodyTypeIcon(bodyTypeCode: bodyType?.code, width: 40),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(child: Text(spec, style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        ],
+                      ),
                   ],
                 ),
               ),

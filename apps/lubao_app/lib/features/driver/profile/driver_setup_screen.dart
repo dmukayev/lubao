@@ -249,7 +249,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                         Expanded(
                           child: _VehicleTile(
                             key: Key('driverSetupBody-${refData.bodyTypes[i].code}'),
-                            icon: _bodyTypeIcon(refData.bodyTypes[i].code),
+                            bodyTypeCode: refData.bodyTypes[i].code,
                             label: refData.bodyTypes[i].name.forLanguageCode(locale),
                             selected: _bodyTypeId == refData.bodyTypes[i].id,
                             onTap: () => setState(() => _bodyTypeId = refData.bodyTypes[i].id),
@@ -259,7 +259,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                         if (i + 1 < refData.bodyTypes.length)
                           Expanded(
                             child: _VehicleTile(
-                              icon: _bodyTypeIcon(refData.bodyTypes[i + 1].code),
+                              bodyTypeCode: refData.bodyTypes[i + 1].code,
                               label: refData.bodyTypes[i + 1].name.forLanguageCode(locale),
                               selected: _bodyTypeId == refData.bodyTypes[i + 1].id,
                               onTap: () => setState(() => _bodyTypeId = refData.bodyTypes[i + 1].id),
@@ -442,37 +442,12 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
 /// У `BodyType` нет поля под картинку/иконку (только `code`/`name`) — вместо
 /// добавления ассета на бэкенд сопоставляем по коду справочника локально;
 /// коду без пары — обычный грузовик, чтобы новый тип не остался без иконки.
-IconData _bodyTypeIcon(String code) {
-  switch (code) {
-    case 'TENT':
-      return LucideIcons.truck;
-    case 'REFRIGERATOR':
-      return LucideIcons.snowflake;
-    case 'ISOTHERM':
-      return LucideIcons.thermometerSnowflake;
-    case 'FLATBED':
-      return LucideIcons.layers;
-    case 'CONTAINER':
-      return LucideIcons.container;
-    case 'DUMP':
-      return LucideIcons.mountain;
-    case 'LOWLOADER':
-      return LucideIcons.package2;
-    case 'CARCARRIER':
-      return LucideIcons.car;
-    case 'GRAIN':
-      return LucideIcons.wheat;
-    case 'TANK':
-      return LucideIcons.fuel;
-    default:
-      return LucideIcons.truck;
-  }
-}
 
 class _VehicleTile extends StatelessWidget {
-  const _VehicleTile({super.key, required this.icon, required this.label, required this.selected, required this.onTap});
+  const _VehicleTile({super.key, required this.bodyTypeCode, required this.label, required this.selected, required this.onTap});
 
-  final IconData icon;
+  /// Миниатюра кузова по коду справочника (045 п.4, эталон 29).
+  final String bodyTypeCode;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -492,12 +467,12 @@ class _VehicleTile extends StatelessWidget {
             border: Border.all(color: selected ? AppColors.primary : AppColors.border, width: selected ? 2 : 1),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 32, color: selected ? AppColors.primary : AppColors.textSecondary),
-              const SizedBox(height: AppSpacing.md),
+              BodyTypeIcon(bodyTypeCode: bodyTypeCode, width: 120),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 label,
+                textAlign: TextAlign.center,
                 style: AppTextStyles.bodyStrong.copyWith(color: selected ? AppColors.primary : AppColors.text),
               ),
             ],

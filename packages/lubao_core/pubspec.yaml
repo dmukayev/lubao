@@ -20,6 +20,7 @@ dependencies:
   skeletonizer: ^3.0.0
   flutter_animate: ^4.5.2
   socket_io_client: ^3.1.6
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -36,6 +37,8 @@ flutter:
   # Фирменный знак (design/brand, утверждён 2026-10-07).
   assets:
     - assets/brand/
+    # Миниатюры типов кузова (045 п.4, design/brand/vehicles, эталон 29).
+    - assets/vehicles/
 
   fonts:
     - family: Onest

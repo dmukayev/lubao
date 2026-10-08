@@ -197,6 +197,9 @@ class GarageScreen extends ConsumerWidget {
           return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(garageVehiclesProvider));
         },
         data: (vehicles) {
+          final refData = ref.watch(referenceDataProvider).valueOrNull;
+          String? codeOf(String? bodyTypeId) =>
+              bodyTypeId == null ? null : refData?.bodyTypes.where((b) => b.id == bodyTypeId).firstOrNull?.code;
           final tractors = vehicles.where((v) => v.kind == VehicleKind.tractor || v.kind == VehicleKind.rigid).toList();
           final trailers = vehicles.where((v) => v.kind == VehicleKind.trailer).toList();
 
@@ -239,7 +242,12 @@ class GarageScreen extends ConsumerWidget {
                 _EmptyRow(t.garageEmptyTractors)
               else
                 for (final v in tractors) ...[
-                  _VehicleCard(vehicle: v, onArchive: () => _archive(context, ref, v), onAddDocument: () => _addDocument(context, ref, v)),
+                  _VehicleCard(
+                    vehicle: v,
+                    bodyTypeCode: codeOf(v.bodyTypeId),
+                    onArchive: () => _archive(context, ref, v),
+                    onAddDocument: () => _addDocument(context, ref, v),
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                 ],
               const SizedBox(height: AppSpacing.lg),
@@ -251,6 +259,7 @@ class GarageScreen extends ConsumerWidget {
                 for (final v in trailers) ...[
                   _VehicleCard(
                     vehicle: v,
+                    bodyTypeCode: codeOf(v.bodyTypeId),
                     onArchive: () => _archive(context, ref, v),
                     onAddDocument: () => _addDocument(context, ref, v),
                     // Размер можно сменить и позже (033 п.6 / 038 п.14).
@@ -308,9 +317,10 @@ class _EmptyRow extends StatelessWidget {
 }
 
 class _VehicleCard extends StatelessWidget {
-  const _VehicleCard({required this.vehicle, required this.onArchive, required this.onAddDocument, this.onSetSize});
+  const _VehicleCard({required this.vehicle, required this.onArchive, required this.onAddDocument, this.onSetSize, this.bodyTypeCode});
 
   final GarageVehicle vehicle;
+  final String? bodyTypeCode;
   final VoidCallback onArchive;
   final VoidCallback onAddDocument;
 
@@ -348,15 +358,8 @@ class _VehicleCard extends StatelessWidget {
     return AppCard(
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(AppRadius.field)),
-            child: Icon(
-              vehicle.kind == VehicleKind.trailer ? LucideIcons.package : LucideIcons.truck,
-              color: AppColors.primary,
-            ),
-          ),
+          // 045 п.4: миниатюра кузова (тягач — без прицепа, прицеп — по типу кузова).
+          BodyTypeIcon(bodyTypeCode: bodyTypeCode, vehicleKind: vehicle.kind, width: 56),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(

@@ -382,7 +382,7 @@ class _CargoDetailBody extends ConsumerWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: _DetailChip(label: t.cargoBodyType, value: bodyType.name.forLanguageCode(locale)),
+                  child: _DetailChip(label: t.cargoBodyType, value: bodyType.name.forLanguageCode(locale), leading: BodyTypeIcon(bodyTypeCode: bodyType.code, width: 40)),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 if (cargo.weightKg != null)
@@ -577,10 +577,13 @@ class _RoutePoint extends StatelessWidget {
 }
 
 class _DetailChip extends StatelessWidget {
-  const _DetailChip({required this.label, required this.value});
+  const _DetailChip({required this.label, required this.value, this.leading});
 
   final String label;
   final String value;
+
+  /// Миниатюра кузова у «Тип кузова» (045 п.4).
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
@@ -592,6 +595,7 @@ class _DetailChip extends StatelessWidget {
         children: [
           Text(label, style: AppTextStyles.caption),
           const SizedBox(height: AppSpacing.xs),
+          if (leading != null) ...[leading!, const SizedBox(height: AppSpacing.xs)],
           Text(value, style: AppTextStyles.bodyStrong),
         ],
       ),

@@ -10,6 +10,7 @@ class CargoResponse {
     required this.status,
     required this.createdAt,
     this.capacityTons,
+    this.bodyTypeId,
     this.volumeM3,
     this.palletsEuro,
     this.committedWeightKg = 0,
@@ -35,6 +36,9 @@ class CargoResponse {
   /// предупреждает, если груз не помещается.
   final double? capacityTons;
 
+  /// Кузов связки (или из регистрации) — миниатюра у логиста (045 п.4).
+  final String? bodyTypeId;
+
   /// Объём/паллеты связки водителя (033 п.9 / 038 п.14).
   final double? volumeM3;
   final int? palletsEuro;
@@ -58,6 +62,7 @@ class CargoResponse {
         status: responseStatusFromJson(json['status'] as String),
         createdAt: DateTime.parse(json['createdAt'] as String),
         capacityTons: (json['capacityTons'] as num?)?.toDouble(),
+        bodyTypeId: json['bodyTypeId'] as String?,
         volumeM3: (json['volumeM3'] as num?)?.toDouble(),
         palletsEuro: json['palletsEuro'] as int?,
         committedWeightKg: (json['committedWeightKg'] as num?)?.toDouble() ?? 0,
