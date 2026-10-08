@@ -220,6 +220,7 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
         : responseStatusPresentation(t, response.status);
     // Задача 038, п.8 — занятость водителя видна прямо в отклике (у выбранного
     // она включает этот же груз — «уже везёт» здесь только путает).
+    final bodyCode = widget.refData?.bodyTypes.where((b) => b.id == response.bodyTypeId).firstOrNull?.code;
     final haulHint = widget.refData == null || response.dealId != null
         ? null
         : haulHintText(
@@ -258,7 +259,7 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
               children: [
                 // 045 п.4: миниатюра кузова водителя.
                 if (response.bodyTypeId != null) ...[
-                  BodyTypeIcon(bodyTypeCode: widget.refData?.bodyTypes.where((b) => b.id == response.bodyTypeId).firstOrNull?.code, width: 40),
+                  BodyTypeIcon(bodyTypeCode: bodyCode, width: 40),
                   const SizedBox(width: AppSpacing.xs),
                 ],
                 Expanded(
@@ -267,8 +268,8 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
                       if (response.bodyTypeId != null && widget.refData != null)
                         widget.refData!.bodyTypeById(response.bodyTypeId!).name.forLanguageCode(Localizations.localeOf(context).languageCode),
                       if (response.capacityTons != null) '${response.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
-                      if (response.volumeM3 != null) '${response.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
-                      if (response.palletsEuro != null) '${response.palletsEuro} ${t.unitPallets}',
+                      if (response.volumeM3 != null && isVolumeBodyType(bodyCode)) '${response.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+                      if (response.palletsEuro != null && isVolumeBodyType(bodyCode)) '${response.palletsEuro} ${t.unitPallets}',
                     ].join(' · '),
                     style: AppTextStyles.caption,
                   ),

@@ -49,6 +49,12 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   bool _submitting = false;
   String? _photoError;
 
+  bool get _isVolume {
+    final refData = ref.read(referenceDataProvider).valueOrNull;
+    final code = _bodyTypeId == null || refData == null ? null : refData.bodyTypeById(_bodyTypeId!).code;
+    return isVolumeBodyType(code);
+  }
+
   /// 045 п.5: кузов и тоннаж из регистрации подставляются в первую машину.
   @override
   void initState() {
@@ -102,10 +108,10 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
             brand: _brandController.text.trim().isEmpty ? null : _brandController.text.trim(),
             capacityTons: isTractor ? null : double.tryParse(_capacityController.text.trim()),
             lengthM: isTractor ? null : double.tryParse(_lengthController.text.trim()),
-            sizePresetId: isTractor || _customSize ? null : _sizePresetId,
-            innerLengthM: isTractor || !_customSize ? null : double.tryParse(_innerLengthController.text.trim()),
-            innerWidthM: isTractor || !_customSize ? null : double.tryParse(_innerWidthController.text.trim()),
-            innerHeightM: isTractor || !_customSize ? null : double.tryParse(_innerHeightController.text.trim()),
+            sizePresetId: isTractor || _customSize || !_isVolume ? null : _sizePresetId,
+            innerLengthM: isTractor || !_customSize || !_isVolume ? null : double.tryParse(_innerLengthController.text.trim()),
+            innerWidthM: isTractor || !_customSize || !_isVolume ? null : double.tryParse(_innerWidthController.text.trim()),
+            innerHeightM: isTractor || !_customSize || !_isVolume ? null : double.tryParse(_innerHeightController.text.trim()),
           );
 
       if (mounted) Navigator.of(context).pop(true);
@@ -173,6 +179,8 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(key: const Key('addVehicleLength'), label: t.garageLength, controller: _lengthController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                 const SizedBox(height: AppSpacing.md),
+                // 045 п.6: размер/шаблоны — только у объёмных кузовов.
+                if (isVolumeBodyType(_bodyTypeId == null ? null : refData.bodyTypeById(_bodyTypeId!).code)) ...[
                 Text(t.garageSizeTitle, style: AppTextStyles.bodyStrong),
                 const SizedBox(height: AppSpacing.sm),
                 Wrap(
@@ -205,6 +213,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                   AppTextField(label: t.garageSizeWidth, controller: _innerWidthController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                   const SizedBox(height: AppSpacing.md),
                   AppTextField(label: t.garageSizeHeight, controller: _innerHeightController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                ],
                 ],
                 const SizedBox(height: AppSpacing.md),
               ] else ...[

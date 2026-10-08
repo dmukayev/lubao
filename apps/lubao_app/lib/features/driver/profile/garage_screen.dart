@@ -262,8 +262,9 @@ class GarageScreen extends ConsumerWidget {
                     bodyTypeCode: codeOf(v.bodyTypeId),
                     onArchive: () => _archive(context, ref, v),
                     onAddDocument: () => _addDocument(context, ref, v),
-                    // Размер можно сменить и позже (033 п.6 / 038 п.14).
-                    onSetSize: () => _setSize(context, ref, v),
+                    // Размер можно сменить и позже (033 п.6 / 038 п.14) — только
+                    // у объёмных кузовов (045 п.6).
+                    onSetSize: isVolumeBodyType(codeOf(v.bodyTypeId)) ? () => _setSize(context, ref, v) : null,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                 ],
@@ -342,8 +343,9 @@ class _VehicleCard extends StatelessWidget {
       if (vehicle.brand != null) vehicle.brand!,
       if (vehicle.kind == VehicleKind.trailer) ...[
         if (vehicle.capacityTons != null) '${vehicle.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
-        if (vehicle.volumeM3 != null) '${vehicle.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
-        if (vehicle.palletsEuro != null) '${vehicle.palletsEuro} ${t.unitPallets}',
+        // 045 п.6: «м³ · пал.» — только у объёмных кузовов.
+        if (vehicle.volumeM3 != null && isVolumeBodyType(bodyTypeCode)) '${vehicle.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+        if (vehicle.palletsEuro != null && isVolumeBodyType(bodyTypeCode)) '${vehicle.palletsEuro} ${t.unitPallets}',
       ] else if (vehicle.vin != null && vehicle.vin!.length > 4)
         '${t.garageVin} …${vehicle.vin!.substring(vehicle.vin!.length - 4)}',
     ];

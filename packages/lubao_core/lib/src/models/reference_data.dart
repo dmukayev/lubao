@@ -75,6 +75,12 @@ class Region {
       );
 }
 
+/// Объёмные кузова (тент, изотерм, реф) — только у них «м³ · пал.», шаблоны и
+/// шаг «Размер кузова» (045 п.6). До профилей кузова (048) — по коду;
+/// неизвестный тип считаем объёмным, чтобы ничего не спрятать по ошибке.
+const _nonVolumeBodyCodes = {'FLATBED', 'CONTAINER', 'DUMP', 'LOWLOADER', 'CARCARRIER', 'GRAIN', 'TANK'};
+bool isVolumeBodyType(String? code) => !_nonVolumeBodyCodes.contains(code);
+
 class BodyType {
   const BodyType({required this.id, required this.code, required this.name, this.isActive = true, this.sortOrder = 0});
 

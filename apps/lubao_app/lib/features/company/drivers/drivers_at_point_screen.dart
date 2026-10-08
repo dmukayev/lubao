@@ -756,8 +756,9 @@ class _DriverCard extends StatelessWidget {
     final spec = [
       if (bodyType != null) bodyType.name.forLanguageCode(locale),
       if (driver.capacityTons != null) '${driver.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
-      if (driver.volumeM3 != null) '${driver.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
-      if (driver.palletsEuro != null) '${driver.palletsEuro} ${t.unitPallets}',
+      // 045 п.6: «м³ · пал.» — только у объёмных кузовов.
+      if (driver.volumeM3 != null && isVolumeBodyType(bodyType?.code)) '${driver.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+      if (driver.palletsEuro != null && isVolumeBodyType(bodyType?.code)) '${driver.palletsEuro} ${t.unitPallets}',
       if (countries.isNotEmpty) countries,
     ].join(' · ');
 
