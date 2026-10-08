@@ -199,50 +199,38 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
         children: [
           Text(origin == null ? destination : '$origin → $destination', style: AppTextStyles.route, maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: AppSpacing.xs),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
+          // 049 п.13: на узком экране с крупным шрифтом (360 dp × 1,3) колонка цены
+          // сжимала атрибуты до разрыва слова («Стройматериал|ы») — тогда цена и
+          // ₸/км уходят отдельной строкой под атрибуты.
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final details = _feedDetails(category, weight, bodyType.name.forLanguageCode(locale), cargo, t, grey, blue, small, companyLine);
+              final price = Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceCard);
+              final perKm = perKmKzt == null ? null : Text(t.perKmKzt(formatThousands(perKmKzt.round())), key: Key('feedCargoPerKm-${cargo.id}'), style: blue);
+              final narrow = constraints.maxWidth / MediaQuery.textScalerOf(context).scale(1) < 260;
+              if (narrow) {
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text.rich(
-                      TextSpan(
-                        children: [
-                          if (category != null) TextSpan(text: category, style: AppTextStyles.bodyStrong),
-                          TextSpan(
-                            text: [if (category != null) '', if (weight != null) weight, bodyType.name.forLanguageCode(locale)].join(' · '),
-                            style: grey,
-                          ),
-                        ],
-                      ),
+                    details,
+                    const SizedBox(height: AppSpacing.xs),
+                    Wrap(
+                      spacing: AppSpacing.md,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [price, ?perKm],
                     ),
-                    Text.rich(
-                      key: Key('feedCargoKm-${cargo.id}'),
-                      TextSpan(
-                        children: [
-                          if (cargo.distanceKm != null && cargo.distanceKm! > 0) ...[
-                            TextSpan(text: '${formatThousands(cargo.distanceKm!)} ${t.unitKm}', style: blue),
-                            TextSpan(text: ' · ', style: grey),
-                          ],
-                          TextSpan(text: loadingDayLabel(t, cargo.readyDate), style: grey),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(companyLine, style: small, maxLines: 2, overflow: TextOverflow.ellipsis),
                   ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceCard),
-                  if (perKmKzt != null) Text(t.perKmKzt(formatThousands(perKmKzt.round())), key: Key('feedCargoPerKm-${cargo.id}'), style: blue),
+                  Expanded(child: details),
+                  const SizedBox(width: AppSpacing.md),
+                  Column(crossAxisAlignment: CrossAxisAlignment.end, children: [price, ?perKm]),
                 ],
-              ),
-            ],
+              );
+            },
           ),
           if (isHomeSection || cargo.allowPartial || stateLabel != null) ...[
             const SizedBox(height: AppSpacing.sm),
@@ -258,6 +246,36 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _feedDetails(String? category, String? weight, String bodyName, Cargo cargo, LubaoLocalizations t, TextStyle grey, TextStyle blue, TextStyle small, String companyLine) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text.rich(
+          TextSpan(
+            children: [
+              if (category != null) TextSpan(text: category, style: AppTextStyles.bodyStrong),
+              TextSpan(text: [if (category != null) '', ?weight, bodyName].join(' · '), style: grey),
+            ],
+          ),
+        ),
+        Text.rich(
+          key: Key('feedCargoKm-${cargo.id}'),
+          TextSpan(
+            children: [
+              if (cargo.distanceKm != null && cargo.distanceKm! > 0) ...[
+                TextSpan(text: '${formatThousands(cargo.distanceKm!)} ${t.unitKm}', style: blue),
+                TextSpan(text: ' · ', style: grey),
+              ],
+              TextSpan(text: loadingDayLabel(t, cargo.readyDate), style: grey),
+            ],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(companyLine, style: small, maxLines: 2, overflow: TextOverflow.ellipsis),
+      ],
     );
   }
 
