@@ -2232,6 +2232,8 @@ export class AdminService {
     const cancels = await this.cancellations('DRIVER', driver.id);
     return {
       ...cancels,
+      // 049 п.9: штраф за отмены, накопленный до первого отзыва.
+      pendingPenalty: Number(driver.pendingPenalty),
       id: driver.id,
       fullName: driver.fullName,
       isVerified: driver.isVerified,
@@ -2361,6 +2363,7 @@ export class AdminService {
     const cancels = await this.cancellations('COMPANY', company.id);
     return {
       ...cancels,
+      pendingPenalty: Number(company.pendingPenalty),
       id: company.id,
       name: company.name,
       nameRu: company.nameRu,

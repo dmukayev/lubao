@@ -398,7 +398,9 @@ const respList = (await api('GET', `/cargos/${d1.cargoId}/responses`, { token: k
 const stats1 = respList.find((r) => r.dealId === d1.dealId)?.cancelStats;
 assert(stats1?.cancelled === 1 && stats1?.afterLoad === 1, 'у логиста в карточке водителя «отменил 1 · после загрузки 1»', JSON.stringify(stats1));
 const me046 = (await api('GET', '/drivers/me', { token: cancelDriver.token })).json;
-assert(Number(me046.ratingAvg) === 1 && me046.ratingCount === 0, 'отмена по своей вине после загрузки бьёт по рейтингу (×3 оценки 1★)', JSON.stringify({ r: me046.ratingAvg, c: me046.ratingCount }));
+// 049 п.9: отзывов ещё нет — среднее 0 («—»), штраф ×3 копится до первого отзыва.
+const card046 = (await get(`/admin/drivers/${me046.id}`)).json;
+assert(Number(me046.ratingAvg) === 0 && me046.ratingCount === 0 && card046.pendingPenalty === 3, 'отмена по своей вине после загрузки: штраф ×3 копится до первого отзыва', JSON.stringify({ r: me046.ratingAvg, c: me046.ratingCount, p: card046.pendingPenalty }));
 const complaint = await api('POST', `/deals/${d1.dealId}/complaint`, { token: kzOwner048, body: { reason: 'E2E 046: отмена с грузом в машине' } });
 assert(complaint.status < 300, '«Пожаловаться» после отмены с грузом — жалоба по сделке', `status=${complaint.status}`);
 assert((await api('POST', `/deals/${d1.dealId}/complaint`, { token: kzOwner048, body: { reason: 'повтор' } })).status === 409, 'вторая открытая жалоба на ту же сделку — 409');
