@@ -31,7 +31,8 @@ void main() {
       await goTab(tester, t.profileTitle);
       await reveal(tester, find.text(t.garageGoToGarage));
       await tester.tap(find.text(t.garageGoToGarage));
-      await waitFor(tester, find.byKey(const Key('garageAddVehicle')));
+      // Список машин длиннее экрана SE с крупным шрифтом — кнопка внизу.
+      await waitAndReveal(tester, find.byKey(const Key('garageAddVehicle')));
       expectInsideSafeZone(tester);
     });
 

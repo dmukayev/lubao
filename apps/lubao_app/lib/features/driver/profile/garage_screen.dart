@@ -239,6 +239,7 @@ class GarageScreen extends ConsumerWidget {
           }
 
           return ListView(
+            key: const Key('garageList'),
             padding: const EdgeInsets.all(AppSpacing.screen),
             children: [
               _SectionLabel(t.garageTractorsSection),
