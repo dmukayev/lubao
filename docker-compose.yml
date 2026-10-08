@@ -61,6 +61,18 @@ services:
     expose:
       - "8000"
 
+  # Расстояние по дороге между городами (047 п.2): свой OSRM, без внешних API.
+  # Карта готовится разово: infra/osrm/prepare.sh. Пока её нет — ждёт, а
+  # бэкенд показывает «—» и досчитывает планировщиком.
+  osrm:
+    image: osrm/osrm-backend:v5.27.1
+    restart: unless-stopped
+    command: ["sh", "-c", "while [ ! -f /data/region.osrm.hsgr ]; do echo 'osrm: нет карты, запустите infra/osrm/prepare.sh'; sleep 300; done; exec osrm-routed --algorithm ch --max-table-size 1000 /data/region.osrm"]
+    volumes:
+      - osrmdata:/data
+    expose:
+      - "5000"
+
   backend:
     build:
       context: ./backend
@@ -101,6 +113,7 @@ services:
       IDENTIFIER_PEPPER: ${IDENTIFIER_PEPPER}
       IDENTIFIER_KEY: ${IDENTIFIER_KEY}
       OCR_SERVICE_URL: ${OCR_SERVICE_URL:-}
+      OSRM_URL: ${OSRM_URL:-http://osrm:5000}
       NODE_ENV: ${NODE_ENV:-development}
     ports:
       - "${BACKEND_PORT:-3000}:3000"
@@ -120,6 +133,7 @@ services:
       - "${NGINX_PORT:-80}:80"
 
 volumes:
+  osrmdata:
   pgdata:
   redisdata:
   miniodata:

@@ -62,6 +62,16 @@ services:
     restart: unless-stopped
     networks: [internal]
 
+  # 047 п.2: расстояния по дороге — свой OSRM, только во внутренней сети.
+  # Карта — разово infra/osrm/prepare.sh (docs/release.md).
+  osrm:
+    image: osrm/osrm-backend:v5.27.1
+    restart: unless-stopped
+    command: ["sh", "-c", "while [ ! -f /data/region.osrm.hsgr ]; do echo 'osrm: нет карты, запустите infra/osrm/prepare.sh'; sleep 300; done; exec osrm-routed --algorithm ch --max-table-size 1000 /data/region.osrm"]
+    volumes:
+      - osrmdata:/data
+    networks: [internal]
+
   backend:
     build:
       context: ./backend
@@ -84,6 +94,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       OCR_SERVICE_URL: http://ocr:8000
+      OSRM_URL: http://osrm:5000
     # internal — к БД/Redis/MinIO/OCR; edge — выход в интернет (SMS, почта, WhatsApp, курс НБ РК, перевод).
     networks: [internal, edge]
     healthcheck:
@@ -151,6 +162,7 @@ services:
     networks: [internal, edge]
 
 volumes:
+  osrmdata:
   pgdata:
   redisdata:
   miniodata:

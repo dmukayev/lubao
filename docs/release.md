@@ -104,6 +104,15 @@ docker compose -f docker-compose.prod.yml exec backend \
 docker compose -f docker-compose.prod.yml exec backend npx prisma db seed
 ```
 
+```bash
+# 2.6a Карта для расстояний (OSRM, 047): разово, ~30 мин, ~2 ГБ в volume osrmdata.
+# Пока карты нет, сервис osrm ждёт, а в ленте вместо км — «—» (досчитается планировщиком).
+COMPOSE_FILE=docker-compose.prod.yml infra/osrm/prepare.sh
+docker compose -f docker-compose.prod.yml restart osrm
+# проверка изнутри сети: Алматы → Астана, ответ с "distance"
+docker compose -f docker-compose.prod.yml exec backend wget -qO- 'http://osrm:5000/route/v1/driving/76.9286,43.2567;71.4704,51.1605?overview=false'
+```
+
 > `prisma db seed` нужен один раз на пустой базе. `seed-e2e.ts` и `seed-demo.ts` в проде запускать нельзя (e2e-сид сам отказывается при `NODE_ENV=production`).
 
 ### 2.7 Чек-лист первого деплоя (по порядку)
