@@ -54,7 +54,11 @@ void main() {
       expect(find.byKey(const Key('driverLoginChannel-sms')), findsOneWidget);
       await tester.tap(find.byKey(const Key('driverLoginChannel-telegram')));
       await tester.pumpAndSettle();
-      await tester.enterText(find.byKey(const Key('driverLoginPhoneField')), '7010000001');
+      final phone = find.byKey(const Key('driverLoginPhoneField'));
+      await waitAndReveal(tester, phone);
+      await tester.tap(phone);
+      await tester.pumpAndSettle();
+      await tester.enterText(phone, '7010000001');
       await tester.pumpAndSettle();
       final send = find.byKey(const Key('driverLoginSendCodeButton'));
       await reveal(tester, send);

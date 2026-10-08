@@ -130,8 +130,15 @@ Future<void> loginDriver(WidgetTester tester, String phoneLocal) async {
   await waitFor(tester, find.byKey(const Key('roleSelectDriverButton')));
   await tester.tap(find.byKey(const Key('roleSelectDriverButton')));
   await tester.pumpAndSettle();
-  await tester.enterText(find.byKey(const Key('driverLoginPhoneField')), phoneLocal);
+  // Над номером может стоять кнопка входа через бота (050) — на узком экране
+  // с крупным шрифтом поле ниже края: на экран, фокус, потом ввод.
+  final phone = find.byKey(const Key('driverLoginPhoneField'));
+  await waitAndReveal(tester, phone);
+  await tester.tap(phone);
   await tester.pumpAndSettle();
+  await tester.enterText(phone, phoneLocal);
+  await tester.pumpAndSettle();
+  expect(find.text(phoneLocal), findsWidgets, reason: 'номер введён в поле');
   // Узкий экран + крупный шрифт (iPhone SE в e2e): кнопка и ячейки кода
   // могут быть ниже края — сначала на экран, потом нажатие/ввод.
   final send = find.byKey(const Key('driverLoginSendCodeButton'));
