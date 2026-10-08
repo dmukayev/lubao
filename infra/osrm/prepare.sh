@@ -12,6 +12,7 @@
 #   OSRM_MODE=native infra/osrm/prepare.sh        # без Docker: osmium, osrm-extract, osrm-contract в PATH
 #   OUT_DIR=/data/osrm infra/osrm/prepare.sh      # куда сложить результат (по умолчанию ./osrm-build)
 #   REGIONS="asia/kazakhstan" infra/osrm/prepare.sh   # только для отладки скрипта — не для прода
+#   PBF=/path/region.osm.pbf infra/osrm/prepare.sh    # pbf уже склеен — сразу extract/contract
 #
 # Результат: $OUT_DIR/region.osrm* — скопировать в volume `osrm-data` (см. конец вывода).
 set -euo pipefail
@@ -39,21 +40,28 @@ run() {
 }
 profile() { [[ "$OSRM_MODE" == docker ]] && echo /opt/car.lua || echo "${OSRM_PROFILE:-/usr/local/share/osrm/profiles/car.lua}"; }
 
-echo "== 1/4 скачивание (Geofabrik, докачка по -N)"
-mkdir -p "$OUT_DIR/src"
-for path in $REGIONS; do
-  (cd "$OUT_DIR/src" && curl -fsSL -z "$(basename "$path")-latest.osm.pbf" -o "$(basename "$path")-latest.osm.pbf" "$GEOFABRIK/$path-latest.osm.pbf")
-done
-ls -lh "$OUT_DIR/src"
-
-echo "== 2/4 склейка (osmium merge)"
-files=""
-for path in $REGIONS; do files="$files src/$(basename "$path")-latest.osm.pbf"; done
-if [[ "$OSRM_MODE" == docker ]]; then
-  docker run --rm -v "$OUT_DIR:/data" -w /data "$OSMIUM_IMAGE" bash -c \
-    "apt-get update -qq && apt-get install -y -qq osmium-tool >/dev/null && osmium merge --overwrite $files -o region.osm.pbf"
+if [[ -n "${PBF:-}" ]]; then
+  # Готовый склеенный pbf (например, собранный заранее) — шаги 1–2 пропускаем.
+  echo "== 1–2/4 пропущены: беру $PBF"
+  [[ "$(cd "$(dirname "$PBF")" && pwd)/$(basename "$PBF")" == "$OUT_DIR/region.osm.pbf" ]] || cp "$PBF" "$OUT_DIR/region.osm.pbf"
 else
-  (cd "$OUT_DIR" && osmium merge --overwrite $files -o region.osm.pbf)
+  echo "== 1/4 скачивание (Geofabrik, докачка по -N)"
+  mkdir -p "$OUT_DIR/src"
+  for path in $REGIONS; do
+    (cd "$OUT_DIR/src" && curl -fsSL -z "$(basename "$path")-latest.osm.pbf" -o "$(basename "$path")-latest.osm.pbf" "$GEOFABRIK/$path-latest.osm.pbf")
+  done
+  ls -lh "$OUT_DIR/src"
+
+  echo "== 2/4 склейка (osmium merge)"
+  files=""
+  for path in $REGIONS; do files="$files src/$(basename "$path")-latest.osm.pbf"; done
+  if [[ "$OSRM_MODE" == docker ]]; then
+    docker run --rm -v "$OUT_DIR:/data" -w /data "$OSMIUM_IMAGE" bash -c \
+      "apt-get update -qq && apt-get install -y -qq osmium-tool >/dev/null && osmium merge --overwrite $files -o region.osm.pbf"
+  else
+    (cd "$OUT_DIR" && osmium merge --overwrite $files -o region.osm.pbf)
+  fi
+
 fi
 
 echo "== 3/4 osrm-extract (профиль car) — самый тяжёлый шаг по памяти"

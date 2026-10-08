@@ -50,3 +50,7 @@ test-results/
 apps/lubao_app/android/app/google-services.json
 apps/lubao_app/ios/Runner/GoogleService-Info.plist
 backend/secrets/
+
+# Карта OSRM (049 п.11): pbf и region.osrm* — несколько ГБ, только локально / в volume osrm-data
+backend/lubao-osrm/
+osrm-build/
