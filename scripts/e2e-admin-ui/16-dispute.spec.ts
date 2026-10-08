@@ -43,7 +43,8 @@ test('спор об отмене: «Требует внимания» → кар
 
   await steps.step('карточка-сделки-вернуть-в-путь', async () => {
     await openRoute(page, `/deals/${dealId}`);
-    await expect(page.getByText(/Возражение: E2E: груз в пути/).first()).toBeVisible();
+    // Flutter склеивает карточку в одну группу — ищем по её имени.
+    await expect(page.getByRole('group', { name: /Возражение: E2E: груз в пути/ }).first()).toBeVisible();
     await page.getByRole('button', { name: 'Вернуть в «В пути»' }).click();
     const dialog = page.getByRole('alertdialog');
     await typeInto(page, dialog.getByRole('textbox').first(), 'E2E: груз едет, отмены нет');
