@@ -40,8 +40,9 @@ test('обход экранов админки: ни одного белого �
       // проверяем по кнопкам и переключателям).
       if (name === 'settings') {
         await expect(page.getByRole('button', { name: 'Ниже' }).first()).toBeVisible();
-        expect(await page.getByRole('button', { name: 'Ниже' }).count()).toBe(3);
-        expect(await page.getByRole('button', { name: 'Выше' }).count()).toBe(3);
+        // 050: четыре способа входа — бот Telegram и три канала кода.
+        expect(await page.getByRole('button', { name: 'Ниже' }).count()).toBe(4);
+        expect(await page.getByRole('button', { name: 'Выше' }).count()).toBe(4);
         expect(await page.getByRole('switch').count()).toBeGreaterThanOrEqual(3);
         // 042 п.4: курсы НБ РК — правка USD и CNY (на 1280 карточка в кадре).
         if ((page.viewportSize()?.width ?? 0) >= 800) {

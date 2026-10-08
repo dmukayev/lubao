@@ -252,11 +252,12 @@ assert(unreg.status < 300, 'водитель снимает свой push-ток
 
 // 042 п.3: каналы кода входа из админки — порядок/вкл без релиза.
 const channelsAdmin = await get('/admin/login-code-channels');
-assert(channelsAdmin.status === 200 && channelsAdmin.json.map((c) => c.id).join() === 'whatsapp,telegram,sms' && channelsAdmin.json.every((c) => c.configured), 'каналы кода: три, по умолчанию все настроены (e2e — консольные)', JSON.stringify(channelsAdmin.json));
+assert(channelsAdmin.status === 200 && channelsAdmin.json.map((c) => c.id).join() === 'telegram_bot,whatsapp,telegram,sms' && channelsAdmin.json.every((c) => c.configured), 'каналы входа: бот Telegram (050) и три канала кода, по умолчанию все настроены (e2e — консольные/заглушка бота)', JSON.stringify(channelsAdmin.json));
 const setChannels = (value) => api('PATCH', '/admin/settings/loginCodeChannels', { token, body: { value: JSON.stringify(value), reason: 'E2E' } });
 assert((await setChannels([{ id: 'telegram', enabled: true }, { id: 'whatsapp', enabled: false }, { id: 'sms', enabled: true }])).status < 300, 'админ меняет порядок и выключает WhatsApp');
 const publicChannels = await api('GET', '/auth/phone/channels');
 assert(publicChannels.json.channels.join() === 'telegram,sms', 'водитель видит только включённые, в порядке из админки', JSON.stringify(publicChannels.json));
+assert(publicChannels.json.methods.join() === 'telegram_bot,telegram,sms', '050: кнопки входа — бот Telegram первым, затем каналы кода', JSON.stringify(publicChannels.json.methods));
 const viaDefault = await api('POST', '/auth/phone/request-code', { body: { phone: '+77010000060' } });
 assert(viaDefault.status < 300 && viaDefault.json.channel === 'telegram', 'код уходит первым включённым (Telegram)', JSON.stringify(viaDefault.json));
 const viaOff = await api('POST', '/auth/phone/request-code', { body: { phone: '+77010000061', channel: 'whatsapp' } });

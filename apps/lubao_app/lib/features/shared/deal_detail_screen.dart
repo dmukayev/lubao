@@ -230,7 +230,8 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
       builder: (dialogContext) => AlertDialog(
         key: const Key('complaintOffer'),
         title: Text(t.complaintOfferTitle),
-        content: Column(
+        // Узкий экран + крупный шрифт + клавиатура (iPhone SE): прокрутка, а не переполнение.
+        content: SingleChildScrollView(child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -238,7 +239,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
             const SizedBox(height: AppSpacing.sm),
             AppTextField(key: const Key('complaintText'), label: t.complaintReasonLabel, controller: controller, maxLines: 3),
           ],
-        ),
+        )),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
           FilledButton(key: const Key('complaintSubmit'), onPressed: () => Navigator.pop(dialogContext, controller.text), child: Text(t.complaintSend)),
