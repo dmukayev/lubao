@@ -277,6 +277,13 @@ async function main() {
     { id: E2E_FIXTURES.cargo4Id, weightKg: 5000, price: 700, note: 'E2E — груз 4 (5 т, приглашение из чата)', pointId: khorgos.id, allowPartial: false },
     { id: E2E_FIXTURES.cargo5Id, weightKg: 3000, price: 600, note: 'E2E — груз 5 (3 т, отклик новичка)', pointId: khorgos.id, allowPartial: false },
   ];
+  // 047: OSRM в e2e нет — расстояния по дороге синтетические, в кэше пар
+  // городов (так же их получит груз, опубликованный в сценарии).
+  const roadKm = new Map([[khorgos.cityId, 340], [astanaPoint.cityId, 1230]]);
+  for (const [cityId, km] of roadKm) {
+    const [fromCityId, toCityId] = cityId < almaty.id ? [cityId, almaty.id] : [almaty.id, cityId];
+    await prisma.cityDistance.upsert({ where: { fromCityId_toCityId: { fromCityId, toCityId } }, update: { km }, create: { fromCityId, toCityId, km, source: 'e2e' } });
+  }
   const cargoIds = cargoDefs.map((c) => c.id);
   await prisma.deal.deleteMany({ where: { cargoId: { in: cargoIds } } });
   await prisma.message.deleteMany({ where: { chat: { cargoId: { in: cargoIds } } } });
@@ -292,6 +299,11 @@ async function main() {
       weightKg: def.weightKg,
       price: def.price,
       currency: Currency.USD,
+      distanceKm: roadKm.get(def.pointId === khorgos.id ? khorgos.cityId : def.pointId === astanaPoint.id ? astanaPoint.cityId : '') ?? null,
+      pricePerKm: (() => {
+        const km = roadKm.get(def.pointId === khorgos.id ? khorgos.cityId : def.pointId === astanaPoint.id ? astanaPoint.cityId : '');
+        return km ? Math.round((def.price / km) * 100) / 100 : null;
+      })(),
       readyDate,
       expiresAt: daysFromNow(3),
       archivedAt: null,
