@@ -54,6 +54,12 @@ function setup(deal: unknown) {
       set: jest.fn(async (k: string, v: string) => store.set(k, v)),
       get: jest.fn(async (k: string) => store.get(k) ?? null),
       del: jest.fn(async (k: string) => store.delete(k)),
+      // Атомарно, как в Redis: значение отдаётся ровно одному вызову.
+      getdel: jest.fn(async (k: string) => {
+        const v = store.get(k) ?? null;
+        store.delete(k);
+        return v;
+      }),
     },
   };
   return { prisma, uploads, redis, service: new DriverDocumentsService(prisma, uploads, redis) };
@@ -126,6 +132,15 @@ describe('DriverDocumentsService', () => {
     const ctx = await service.consumePdfLink('deal1', token2);
     expect(ctx.user.id).toBe('u-logist');
     await expect(service.consumePdfLink('deal1', token2)).rejects.toMatchObject({ response: { code: 'LINK_EXPIRED' } });
+  });
+
+  it('049 п.2: два параллельных запроса по одной ссылке — PDF получает только один', async () => {
+    const { prisma, service } = setup(dealRow());
+    prisma.user = { findUnique: jest.fn().mockResolvedValue({ id: 'u-logist', isActive: true, isBlocked: false }) };
+    prisma.companyMember = { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', company: {} }) };
+    const { token } = await service.createPdfLink('deal1', logist);
+    const results = await Promise.allSettled([service.consumePdfLink('deal1', token), service.consumePdfLink('deal1', token)]);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
   });
 
   it('ссылку чужой компании не выдаём', async () => {

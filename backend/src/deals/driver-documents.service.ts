@@ -44,10 +44,10 @@ export class DriverDocumentsService {
 
   /// Контекст по одноразовой ссылке — тот же, что у вошедшего логиста.
   async consumePdfLink(dealId: string, token: string): Promise<RequestContext> {
-    const key = `docs-pdf:${token}`;
-    const raw = await this.redis.client.get(key);
+    // 049 п.2: GETDEL — прочитать и погасить одной командой: два параллельных
+    // запроса по одной ссылке не получат PDF оба (раньше GET + DEL).
+    const raw = await this.redis.client.getdel(`docs-pdf:${token}`);
     if (!raw) throw new ForbiddenException({ code: 'LINK_EXPIRED', message: 'Download link expired' });
-    await this.redis.client.del(key);
     const { dealId: linkDeal, userId } = JSON.parse(raw) as { dealId: string; userId: string };
     if (linkDeal !== dealId) throw new ForbiddenException({ code: 'LINK_EXPIRED', message: 'Download link expired' });
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
