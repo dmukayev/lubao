@@ -61,6 +61,9 @@ void main() {
       await tester.pumpAndSettle();
       await tester.enterText(phone, '7010000001');
       await tester.pumpAndSettle();
+      // Android 360 dp: клавиатура закрывает кнопку — прячем её до нажатия.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle(const Duration(milliseconds: 500));
       final send = find.byKey(const Key('driverLoginSendCodeButton'));
       await reveal(tester, send);
       await tester.tap(send);

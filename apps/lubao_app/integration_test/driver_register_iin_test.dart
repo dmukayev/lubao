@@ -109,9 +109,9 @@ void main() {
         await run.step(tester, '$tag-плашка-добавьте-машину', () async {
           await goTab(tester, t.profileTitle);
           await waitFor(tester, find.byKey(const Key('profileAddVehicleBanner')));
-          expect(find.byKey(const Key('profileGarageAlert')), findsOneWidget);
           expectInsideSafeZone(tester);
           expectNoOverflow(tester);
+          await reveal(tester, find.byKey(const Key('profileAddVehicle')));
           await tester.tap(find.byKey(const Key('profileAddVehicle')));
           await waitFor(tester, find.byKey(const Key('addVehicleBodyType')));
           final body = tester.widget<DropdownButtonFormField<String>>(find.byKey(const Key('addVehicleBodyType')));
@@ -119,9 +119,12 @@ void main() {
           expect(find.descendant(of: find.byKey(const Key('addVehicleBodyType')), matching: find.text('Тентованный')), findsOneWidget);
           expect(tester.widget<TextField>(find.descendant(of: find.byKey(const Key('addVehicleCapacity')), matching: find.byType(TextField))).controller?.text, '20');
           expectNoOverflow(tester);
-          await tester.pageBack();
+          // Закрыть шторку, не добавляя машину, — плашка остаётся.
+          Navigator.of(tester.element(find.byKey(const Key('addVehicleBodyType')))).pop();
           await tester.pumpAndSettle();
           expect(find.byKey(const Key('profileAddVehicleBanner')), findsOneWidget);
+          // «!» у пункта «Гараж» — ниже плашки, на SE за краем экрана.
+          await waitAndReveal(tester, find.byKey(const Key('profileGarageAlert')));
         });
         await run.step(tester, '$tag-гараж-пуст-после-регистрации', () async {
           await goTab(tester, t.profileTitle);
