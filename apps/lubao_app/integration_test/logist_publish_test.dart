@@ -48,6 +48,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.textContaining('Алматы').last);
       await tester.pumpAndSettle();
+      // Узкий экран с крупным шрифтом (Android 360 dp): закрыть подсказки и
+      // клавиатуру, кузов — ниже чипов категорий, сначала на экран.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await reveal(tester, find.byKey(const Key('postCargoBodyType')));
       await tester.tap(find.byKey(const Key('postCargoBodyType')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Тентованный').last);
