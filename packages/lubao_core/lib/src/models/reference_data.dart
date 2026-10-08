@@ -189,6 +189,25 @@ class Permit {
       );
 }
 
+/// Категория груза (047 п.1) — справочник, названия на 4 языках.
+class CargoCategory {
+  const CargoCategory({required this.id, required this.code, required this.name, this.isActive = true, this.sortOrder = 0});
+
+  final String id;
+  final String code;
+  final I18nText name;
+  final bool isActive;
+  final int sortOrder;
+
+  factory CargoCategory.fromJson(Map<String, dynamic> json) => CargoCategory(
+        id: json['id'] as String,
+        code: json['code'] as String,
+        name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
+        isActive: json['isActive'] as bool? ?? true,
+        sortOrder: json['sortOrder'] as int? ?? 0,
+      );
+}
+
 /// Вид точки погрузки (задача 040): обычный город или терминал с геозоной.
 enum PointKind { city, terminal }
 
@@ -308,6 +327,7 @@ class ReferenceData {
     required this.bodyTypes,
     this.bodySizePresets = const [],
     required this.permits,
+    this.cargoCategories = const [],
     required this.points,
     this.exchangeRates = const [],
     this.defaultPointCityId,
@@ -322,6 +342,9 @@ class ReferenceData {
   final List<BodyType> bodyTypes;
   final List<BodySizePreset> bodySizePresets;
   final List<Permit> permits;
+
+  /// 047: категории груза (стройматериалы, продукты…).
+  final List<CargoCategory> cargoCategories;
   final List<LoadingPoint> points;
   final List<ExchangeRate> exchangeRates;
 
@@ -339,6 +362,7 @@ class ReferenceData {
 
   Country countryById(String id) => countries.firstWhere((c) => c.id == id, orElse: () => countries.first);
   City? cityById(String? id) => id == null ? null : cities.where((c) => c.id == id).firstOrNull;
+  CargoCategory? categoryById(String? id) => id == null ? null : cargoCategories.where((c) => c.id == id).firstOrNull;
   BodyType bodyTypeById(String id) => bodyTypes.firstWhere((b) => b.id == id, orElse: () => bodyTypes.first);
   /// Город погрузки по id; `null` — точку выключили в справочнике (не
   /// подставлять «первую попавшуюся», когда точек десятки — 040).

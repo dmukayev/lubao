@@ -64,6 +64,17 @@ class CargoRepository {
     await _client.dio.post('/cargos/$cargoId/close', data: {'outcome': outcome, if (driverId != null) 'driverId': driverId});
   }
 
+  /// 047 п.7: «По этому маршруту за месяц: медиана 690 ₸/км, 8 сделок».
+  Future<RouteMarket?> marketHint({required String pointId, required String destinationCountryId, String? destinationCityId, double? weightKg}) async {
+    final res = await _client.dio.get('/cargos/market-hint', queryParameters: {
+      'pointId': pointId,
+      'destinationCountryId': destinationCountryId,
+      if (destinationCityId != null) 'destinationCityId': destinationCityId,
+      if (weightKg != null) 'weightKg': weightKg,
+    });
+    return RouteMarket.fromJson((res.data as Map<String, dynamic>)['market']);
+  }
+
   /// «Подходит N водителям на точке» при публикации (задача 033, п.10).
   Future<int> fitCount({double? weightKg, double? volumeM3, int? palletCount, String? pointId, List<String> bodyTypeIds = const [], Map<String, dynamic>? specs}) async {
     final res = await _client.dio.get('/cargos/fit-count', queryParameters: {

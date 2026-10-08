@@ -191,7 +191,8 @@ assert(!!almatyRow && almatyRow.arrivals >= 1 && almatyRow.cargos >= 1, 'сво�
 const ownerLogin = await api('POST', '/auth/company/login', { body: { email: 'e2e-owner@lubao-test.cn', password: 'E2eLubao2026!', deviceName: 'e2e', platform: 'ios' } });
 const ownerToken = ownerLogin.json.accessToken;
 const refCountry = ref040.countries.find((c) => c.code === 'KZ');
-const cargoBody = { destinationCountryId: refCountry.id, bodyTypeId: ref040.bodyTypes[0].id, price: 100, currency: 'USD', readyDate: '2030-01-01' };
+const otherCategoryId = ref040.cargoCategories.find((c) => c.code === 'OTHER').id;
+const cargoBody = { destinationCountryId: refCountry.id, bodyTypeId: ref040.bodyTypes[0].id, categoryId: otherCategoryId, price: 100, currency: 'USD', readyDate: '2030-01-01' };
 const noPoint = await api('POST', '/cargos', { token: ownerToken, body: cargoBody });
 assert(noPoint.status === 400, 'груз без города погрузки отклоняется (400)', `status=${noPoint.status}`);
 const badPoint = await api('POST', '/cargos', { token: ownerToken, body: { ...cargoBody, pointId: cityPoint.json.id } });
@@ -349,7 +350,7 @@ const tankDriver = await newDriver('+77010000096', tankType.id, { preferredSpecs
 assert(tankDriver.prof.status < 300 && tankDriver.prof.json.preferredSpecs?.liters === 30000 && tankDriver.prof.json.preferredCapacityTons == null, 'водитель цистерны: «основа» — литры и продукт, без тоннажа', JSON.stringify(tankDriver.prof.json.preferredSpecs));
 const tentDriver = await newDriver('+77010000095', tentType.id, { capacityTons: 20 });
 const kzOwner048 = (await api('POST', '/auth/company/login', { body: { email: 'e2e-owner@lubao-test.kz', password: 'E2eLubao2026!', deviceName: 'e2e', platform: 'ios' } })).json.accessToken;
-const tankCargoBody = { pointId: almaty048.id, destinationCountryId: ref048.countries.find((c) => c.code === 'KZ').id, bodyTypeId: tankType.id, price: 900, currency: 'USD', readyDate: '2030-02-01' };
+const tankCargoBody = { pointId: almaty048.id, destinationCountryId: ref048.countries.find((c) => c.code === 'KZ').id, bodyTypeId: tankType.id, categoryId: otherCategoryId, price: 900, currency: 'USD', readyDate: '2030-02-01' };
 const noLiters = await api('POST', '/cargos', { token: kzOwner048, body: { ...tankCargoBody, specs: { cargoProduct: 'FOOD' } } });
 assert(noLiters.status === 400 && noLiters.json.code === 'INVALID_SPECS', 'груз для цистерны без литров не публикуется', `status=${noLiters.status}`);
 const tankCargo = await api('POST', '/cargos', { token: kzOwner048, body: { ...tankCargoBody, specs: { cargoProduct: 'FOOD', cargoLiters: 20000 } } });
@@ -367,7 +368,7 @@ assert(badFields.status === 400 && badFields.json.code === 'INVALID_BODY_FIELDS'
 const kz046 = ref048.countries.find((c) => c.code === 'KZ').id;
 const cancelDriver = await newDriver('+77010000094', tentType.id, { capacityTons: 20 });
 async function dealFor(price) {
-  const cargo = await api('POST', '/cargos', { token: kzOwner048, body: { pointId: almaty048.id, destinationCountryId: kz046, bodyTypeId: tentType.id, price, currency: 'USD', readyDate: '2030-03-01' } });
+  const cargo = await api('POST', '/cargos', { token: kzOwner048, body: { pointId: almaty048.id, destinationCountryId: kz046, bodyTypeId: tentType.id, categoryId: otherCategoryId, price, currency: 'USD', readyDate: '2030-03-01' } });
   const resp = await api('POST', `/cargos/${cargo.json.id}/responses`, { token: cancelDriver.token, body: {} });
   const sel = await api('PATCH', `/responses/${resp.json.id}`, { token: kzOwner048, body: { status: 'SELECTED' } });
   const deal = (await api('GET', '/deals/mine', { token: cancelDriver.token })).json.find((d) => d.cargoId === cargo.json.id);
@@ -413,5 +414,25 @@ assert(resolved046.status < 300 && resolved046.json.status === 'CANCELLED' && re
 assert(!(await get('/admin/attention')).json.disputedDeals.some((d) => d.dealId === d2.dealId), 'закрытый спор ушёл из «Требует внимания»');
 const coCard = (await get(`/admin/companies/${companyCard.companyId}`)).json;
 assert((coCard.cancelStats?.selfFault ?? 0) >= 1 && coCard.cancellations.some((c) => c.dealId === d2.dealId && c.atFault), 'в админке у компании — отмены с причинами и виной', JSON.stringify(coCard.cancelStats));
+
+// 047: категория обязательна; км и ₸/км по городам; цены по маршрутам в админке.
+const ref047 = (await api('GET', '/reference-data')).json;
+assert(ref047.cargoCategories.length >= 8 && ref047.cargoCategories.some((c) => c.code === 'CONSTRUCTION' && c.name.zh), 'справочник категорий груза (4 языка) в /reference-data');
+const astana047 = ref047.points.find((p) => p.name.ru === 'Астана');
+const almatyCity047 = ref047.cities.find((c) => c.name.ru === 'Алматы');
+const routeBody = { pointId: astana047.id, destinationCountryId: kz046, destinationCityId: almatyCity047.id, bodyTypeId: tentType.id, price: 1230000, currency: 'KZT', readyDate: '2030-05-01', weightKg: 20000 };
+const noCategory = await api('POST', '/cargos', { token: kzOwner048, body: routeBody });
+assert(noCategory.status === 400 && /CATEGORY_REQUIRED/.test(noCategory.text), 'груз без категории не публикуется', `status=${noCategory.status}`);
+const constructionId = ref047.cargoCategories.find((c) => c.code === 'CONSTRUCTION').id;
+const routed = await api('POST', '/cargos', { token: kzOwner048, body: { ...routeBody, categoryId: constructionId } });
+assert(routed.status < 300 && routed.json.categoryId === constructionId && routed.json.distanceKm === 1230 && routed.json.pricePerKm === 1000, 'Астана → Алматы: 1 230 км, 1 000 ₸/км', JSON.stringify({ s: routed.status, km: routed.json?.distanceKm, perKm: routed.json?.pricePerKm }));
+const feedRow = (await api('GET', '/cargos?limit=100', { token: tentDriver.token })).json.items.find((c) => c.id === routed.json.id);
+assert(feedRow && feedRow.distanceKm === 1230 && feedRow.pricePerKm === 1000, 'в ленте у груза км и ₸/км', JSON.stringify(feedRow ?? {}).slice(0, 120));
+const hint047 = await api('GET', `/cargos/market-hint?pointId=${astana047.id}&destinationCountryId=${kz046}&destinationCityId=${almatyCity047.id}&weightKg=20000`, { token: kzOwner048 });
+assert(hint047.status === 200 && hint047.json.market === null, 'мало точек по маршруту — подсказки «рынок» нет', JSON.stringify(hint047.json));
+const prices = await get('/admin/route-prices');
+assert(prices.status === 200 && Array.isArray(prices.json), 'админка: «Цены по маршрутам» отвечает', `status=${prices.status}`);
+const csv = await api('GET', '/admin/route-prices.csv', { token });
+assert(csv.status === 200 && csv.text.includes('median_kzt_per_km'), 'админка: выгрузка CSV', `status=${csv.status}`);
 
 console.log(`Готово: ${checks} проверок.`);

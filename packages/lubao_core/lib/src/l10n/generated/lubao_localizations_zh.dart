@@ -3381,4 +3381,97 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get cancelAtFault => '本方责任';
+
+  @override
+  String get unitKm => '公里';
+
+  @override
+  String get feedLoadToday => '今天装货';
+
+  @override
+  String get feedLoadTomorrow => '明天装货';
+
+  @override
+  String feedLoadOn(String date) {
+    return '$date 装货';
+  }
+
+  @override
+  String perKmKzt(String value) {
+    return '$value ₸/公里';
+  }
+
+  @override
+  String feedRespondedCount(int count) {
+    return '$count 人已响应';
+  }
+
+  @override
+  String cargoMarketMonth(String from, String to) {
+    return '近一个月行情：$from–$to ₸/公里';
+  }
+
+  @override
+  String get postCargoCategory => '货物类别';
+
+  @override
+  String get postCargoCategoryRequired => '请选择货物类别';
+
+  @override
+  String postCargoMarketHint(String median, int deals) {
+    return '该线路近一个月：中位数 $median ₸/公里，成交 $deals 笔';
+  }
+
+  @override
+  String get adminRoutePricesTitle => '线路价格';
+
+  @override
+  String get adminRoutePricesEmpty => '数据不足：线路一个月内有5个以上数据点才显示统计';
+
+  @override
+  String get adminColBucket => '方向';
+
+  @override
+  String get adminColTonnage => '吨位';
+
+  @override
+  String get adminColMedian => '中位数 ₸/公里';
+
+  @override
+  String get adminColRange => 'P25–P75';
+
+  @override
+  String get adminColPoints => '数据点';
+
+  @override
+  String get adminColDealPoints => '其中成交';
+
+  @override
+  String get adminExportCsv => '导出 CSV';
+
+  @override
+  String get adminAllFilter => '全部';
+
+  @override
+  String get bucketKz => '哈国境内';
+
+  @override
+  String get bucketCis => '独联体';
+
+  @override
+  String get bucketCnFar => '中国/远程';
+
+  @override
+  String tonnageUpTo(int tons) {
+    return '$tons 吨以内';
+  }
+
+  @override
+  String get tonnageOver => '10 吨以上';
+
+  @override
+  String get adminCargoCategoriesTitle => '货物类别';
+
+  @override
+  String get adminCsvSaved => 'CSV 已保存';
 }

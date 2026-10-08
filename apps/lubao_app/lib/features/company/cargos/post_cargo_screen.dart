@@ -12,6 +12,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../shared/city_picking.dart';
 import '../../shared/photo_picker.dart';
 import '../../shared/error_feedback.dart';
+import '../../shared/status_helpers.dart';
 import '../../../services/push_service.dart';
 
 class PostCargoScreen extends ConsumerStatefulWidget {
@@ -41,6 +42,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   String? _countryId;
   String? _cityId;
   String? _bodyTypeId;
+  /// 047: категория груза (обязательна) и «рынок за месяц» по маршруту.
+  String? _categoryId;
+  String? _categoryError;
+  RouteMarket? _market;
   /// 048: параметры груза по профилю кузова и другие подходящие кузова.
   Map<String, dynamic> _specs = {};
   final _extraBodyTypeIds = <String>{};
@@ -62,11 +67,13 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     final cargo = widget.cargo;
     _pointId = cargo?.pointId;
     if (cargo == null) _defaultPointFromLastCargo();
+    if (cargo != null) WidgetsBinding.instance.addPostFrameCallback((_) => _loadMarket());
     if (cargo != null) {
       _allowPartial = cargo.allowPartial;
       _countryId = cargo.destinationCountryId;
       _cityId = cargo.destinationCityId;
       _bodyTypeId = cargo.bodyTypeId;
+      _categoryId = cargo.categoryId;
       _specs = {...?cargo.cargoSpecs};
       _extraBodyTypeIds.addAll(cargo.extraBodyTypeIds);
       _currency = cargo.currency;
@@ -173,6 +180,26 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         _pointId = picked.id;
         _pointError = null;
       });
+      unawaited(_loadMarket());
+    }
+  }
+
+  /// 047 п.7: медиана ₸/км по маршруту — подсказка, при сбое просто не показываем.
+  Future<void> _loadMarket() async {
+    if (_pointId == null || _countryId == null || _cityId == null) {
+      if (_market != null) setState(() => _market = null);
+      return;
+    }
+    try {
+      final market = await ref.read(cargoRepositoryProvider).marketHint(
+            pointId: _pointId!,
+            destinationCountryId: _countryId!,
+            destinationCityId: _cityId,
+            weightKg: _weightKg(),
+          );
+      if (mounted) setState(() => _market = market);
+    } catch (e) {
+      debugPrint('PostCargoScreen: marketHint failed: $e');
     }
   }
 
@@ -195,6 +222,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       _pointError = _pointId == null ? t.postCargoPickupCityError : null;
       _destinationError = _countryId == null ? t.postCargoDestinationError : null;
       _bodyTypeError = _bodyTypeId == null ? t.postCargoBodyTypeError : null;
+      _categoryError = _categoryId == null ? t.postCargoCategoryRequired : null;
       _priceError = price == null ? t.postCargoPriceError : null;
       // Вес — в тоннах: «20000» по привычке к килограммам давало груз в
       // 20 000 т (живая проверка 2026-10-07). Пусто — можно, иначе 0 < т ≤ 60.
@@ -202,7 +230,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       final tons = double.tryParse(weightText.replaceAll(',', '.'));
       _weightError = weightText.isEmpty || (tons != null && tons > 0 && tons <= maxCargoTons) ? null : t.postCargoWeightError;
     });
-    if (_pointError != null || _destinationError != null || _bodyTypeError != null || _priceError != null || _weightError != null) return;
+    if (_pointError != null || _destinationError != null || _bodyTypeError != null || _categoryError != null || _priceError != null || _weightError != null) return;
     setState(() => _saving = true);
     try {
       final input = CreateCargoInput(
@@ -211,6 +239,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         destinationCountryId: _countryId!,
         destinationCityId: _cityId,
         bodyTypeId: _bodyTypeId!,
+        categoryId: _categoryId,
         weightKg: _weightKg(),
         volumeM3: refData == null || _showVolume(refData) ? double.tryParse(_volumeController.text) : null,
         palletCount: refData == null || _showPallets(refData) ? int.tryParse(_palletController.text) : null,
@@ -302,10 +331,13 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   final query = value.text.toLowerCase();
                   return destinationOptions.where((o) => o.label.toLowerCase().contains(query));
                 },
-                onSelected: (option) => setState(() {
-                  _countryId = option.countryId;
-                  _cityId = option.cityId;
-                }),
+                onSelected: (option) {
+                  setState(() {
+                    _countryId = option.countryId;
+                    _cityId = option.cityId;
+                  });
+                  unawaited(_loadMarket());
+                },
                 fieldViewBuilder: (context, controller, focusNode, onSubmitted) => AppTextField(
                   key: const Key('postCargoDestination'),
                   label: t.cargoDestination,
@@ -316,6 +348,30 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   onSubmitted: (_) => onSubmitted(),
                 ),
               ),
+              const SizedBox(height: 12),
+              // 047 п.1, 7: категория — чипами, обязательна.
+              Text(t.postCargoCategory, style: AppTextStyles.bodyStrong),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final c in refData.cargoCategories.where((c) => c.isActive || c.id == _categoryId))
+                    ChoiceChip(
+                      key: Key('postCargoCategory-${c.code}'),
+                      label: Text(c.name.forLanguageCode(locale)),
+                      selected: _categoryId == c.id,
+                      onSelected: (_) => setState(() {
+                        _categoryId = c.id;
+                        _categoryError = null;
+                      }),
+                    ),
+                ],
+              ),
+              if (_categoryError != null) ...[
+                const SizedBox(height: 4),
+                Text(_categoryError!, key: const Key('postCargoCategoryError'), style: AppTextStyles.caption.copyWith(color: Theme.of(context).colorScheme.error)),
+              ],
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 key: const Key('postCargoBodyType'),
@@ -413,6 +469,14 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 onChanged: (value) => setState(() => _allowPartial = value),
               ),
               const SizedBox(height: 12),
+              if (_market != null) ...[
+                Text(
+                  t.postCargoMarketHint(formatThousands(_market!.median.round()), _market!.dealPoints),
+                  key: const Key('postCargoMarketHint'),
+                  style: AppTextStyles.caption.copyWith(color: AppColors.primary),
+                ),
+                const SizedBox(height: 8),
+              ],
               Row(
                 children: [
                   Expanded(

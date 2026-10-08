@@ -573,6 +573,37 @@ class AdminRepository {
     return Permit.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// 047 п.1: категории груза.
+  Future<CargoCategory> createCargoCategory(String code, I18nText name) async {
+    final res = await _client.dio.post('/admin/reference/cargo-categories', data: {'code': code, 'name': name.toJson()});
+    return CargoCategory.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> updateCargoCategory(String id, {I18nText? name, bool? isActive, int? sortOrder, required String reason}) async {
+    await _client.dio.patch('/admin/reference/cargo-categories/$id', data: {
+      if (name != null) 'name': name.toJson(),
+      if (isActive != null) 'isActive': isActive,
+      if (sortOrder != null) 'sortOrder': sortOrder,
+      'reason': reason,
+    });
+  }
+
+  /// 047 п.8: «Цены по маршрутам».
+  Future<List<AdminRoutePrice>> routePrices({String? bucket, int? tonnageClass}) async {
+    final res = await _client.dio.get('/admin/route-prices', queryParameters: {
+      if (bucket != null) 'bucket': bucket,
+      if (tonnageClass != null) 'tonnageClass': tonnageClass,
+    });
+    return (res.data as List<dynamic>).map((e) => AdminRoutePrice.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<int>> routePricesCsv({String? bucket, int? tonnageClass}) async {
+    final res = await _client.dio.get<List<int>>('/admin/route-prices.csv',
+        queryParameters: {if (bucket != null) 'bucket': bucket, if (tonnageClass != null) 'tonnageClass': tonnageClass},
+        options: Options(responseType: ResponseType.bytes));
+    return res.data ?? const [];
+  }
+
   Future<LoadingPoint> createPoint(
     String cityId,
     I18nText name, {

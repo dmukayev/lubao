@@ -1785,3 +1785,29 @@ class CityStatsRow {
         dealsDelivered: json['dealsDelivered'] as int? ?? 0,
       );
 }
+
+/// Строка «Цены по маршрутам» (047 п.8).
+class AdminRoutePrice {
+  const AdminRoutePrice({required this.fromName, required this.toName, required this.bucket, required this.tonnageClass, required this.median, required this.p25, required this.p75, required this.points, required this.dealPoints});
+  final I18nText? fromName;
+  final I18nText? toName;
+  final String bucket;
+  final int tonnageClass;
+  final double median;
+  final double p25;
+  final double p75;
+  final int points;
+  final int dealPoints;
+
+  factory AdminRoutePrice.fromJson(Map<String, dynamic> json) => AdminRoutePrice(
+        fromName: json['fromName'] == null ? null : I18nText.fromJson(json['fromName'] as Map<String, dynamic>),
+        toName: json['toName'] == null ? null : I18nText.fromJson(json['toName'] as Map<String, dynamic>),
+        bucket: json['bucket'] as String,
+        tonnageClass: json['tonnageClass'] as int,
+        median: (json['median'] as num).toDouble(),
+        p25: (json['p25'] as num).toDouble(),
+        p75: (json['p75'] as num).toDouble(),
+        points: json['points'] as int,
+        dealPoints: json['dealPoints'] as int? ?? 0,
+      );
+}

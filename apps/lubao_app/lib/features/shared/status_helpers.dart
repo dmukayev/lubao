@@ -81,6 +81,19 @@ String _groupThousands(int value) {
   return value < 0 ? '-${buffer.toString()}' : buffer.toString();
 }
 
+/// «1 230» — разряды пробелом (км, ₸/км в ленте, 047).
+String formatThousands(int value) => _groupThousands(value);
+
+/// «погрузка сегодня / завтра / 10.10» (047 п.5, эталон 28).
+String loadingDayLabel(LubaoLocalizations t, DateTime readyDate, {DateTime? now}) {
+  final today = DateUtils.dateOnly(now ?? DateTime.now());
+  final day = DateUtils.dateOnly(readyDate);
+  final diff = day.difference(today).inDays;
+  if (diff <= 0) return t.feedLoadToday;
+  if (diff == 1) return t.feedLoadTomorrow;
+  return t.feedLoadOn(formatDate(readyDate));
+}
+
 String formatMoney(double price, Currency currency) {
   return '${currencySymbol(currency)}${_groupThousands(price.round())}';
 }

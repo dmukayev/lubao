@@ -3464,4 +3464,98 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get cancelAtFault => 'own fault';
+
+  @override
+  String get unitKm => 'km';
+
+  @override
+  String get feedLoadToday => 'loading today';
+
+  @override
+  String get feedLoadTomorrow => 'loading tomorrow';
+
+  @override
+  String feedLoadOn(String date) {
+    return 'loading $date';
+  }
+
+  @override
+  String perKmKzt(String value) {
+    return '$value ₸/km';
+  }
+
+  @override
+  String feedRespondedCount(int count) {
+    return '$count responded';
+  }
+
+  @override
+  String cargoMarketMonth(String from, String to) {
+    return 'Market this month: $from–$to ₸/km';
+  }
+
+  @override
+  String get postCargoCategory => 'What are you shipping';
+
+  @override
+  String get postCargoCategoryRequired => 'Choose a cargo category';
+
+  @override
+  String postCargoMarketHint(String median, int deals) {
+    return 'This route this month: median $median ₸/km, $deals deals';
+  }
+
+  @override
+  String get adminRoutePricesTitle => 'Route prices';
+
+  @override
+  String get adminRoutePricesEmpty =>
+      'Not enough data yet: stats appear with 5+ points per route in a month';
+
+  @override
+  String get adminColBucket => 'Direction';
+
+  @override
+  String get adminColTonnage => 'Tonnage';
+
+  @override
+  String get adminColMedian => 'Median ₸/km';
+
+  @override
+  String get adminColRange => 'P25–P75';
+
+  @override
+  String get adminColPoints => 'Points';
+
+  @override
+  String get adminColDealPoints => 'Of them deals';
+
+  @override
+  String get adminExportCsv => 'Export CSV';
+
+  @override
+  String get adminAllFilter => 'All';
+
+  @override
+  String get bucketKz => 'Within Kazakhstan';
+
+  @override
+  String get bucketCis => 'CIS';
+
+  @override
+  String get bucketCnFar => 'China / long haul';
+
+  @override
+  String tonnageUpTo(int tons) {
+    return 'up to $tons t';
+  }
+
+  @override
+  String get tonnageOver => 'over 10 t';
+
+  @override
+  String get adminCargoCategoriesTitle => 'Cargo categories';
+
+  @override
+  String get adminCsvSaved => 'CSV saved';
 }

@@ -159,40 +159,113 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
     );
   }
 
+  /// Строка груза по эталону 28 (047 п.5): маршрут во всю ширину; слева —
+  /// «Категория · 20 т · тент», «1 230 км · погрузка завтра», компания мелко;
+  /// справа — цена и «690 ₸/км» синим. Плашки — только состояние для водителя.
   Widget _feedCard(BuildContext context, ReferenceData refData, Cargo cargo) {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final country = refData.countryById(cargo.destinationCountryId);
     final city = refData.cityById(cargo.destinationCityId);
-    final destinationLabel =
-        [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
+    final origin = refData.pointOrNull(cargo.pointId)?.name.forLanguageCode(locale);
+    final destination = city?.name.forLanguageCode(locale) ?? country.name.forLanguageCode(locale);
     final bodyType = refData.bodyTypeById(cargo.bodyTypeId);
-    final (statusLabel, statusColor) = feedStatePresentation(t, cargo);
-    final isHere = cargo.pickupRank == 0;
+    final category = refData.categoryById(cargo.categoryId)?.name.forLanguageCode(locale);
     final isHomeSection = cargo.feedSection == CargoFeedSection.home;
+    final accent = cargo.pickupRank == 0 || isHomeSection;
+    final (stateLabel, stateColor) = switch (cargo.myResponseStatus) {
+      ResponseStatus.selected => (t.feedStateSelected, StatusBadge.info),
+      ResponseStatus.invited => (t.feedStateInvited, StatusBadge.warning),
+      ResponseStatus.pending => (t.feedStateResponded, StatusBadge.success),
+      _ => (null, StatusBadge.neutral),
+    };
+    final perKmKzt = cargo.pricePerKm == null ? null : refData.convertToKzt(cargo.pricePerKm!, cargo.currency);
+    final weight = cargo.weightKg == null ? null : '${(cargo.weightKg! / 1000).toStringAsFixed(cargo.weightKg! % 1000 == 0 ? 0 : 1)} ${t.unitTon}';
+    final grey = AppTextStyles.body.copyWith(color: AppColors.textSecondary);
+    final blue = AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600);
+    final small = AppTextStyles.small.copyWith(color: AppColors.textSecondary);
+    final companyLine = [
+      cargo.companyName,
+      if (cargo.companyRatingCount > 0) '★ ${cargo.companyRatingAvg.toStringAsFixed(1)}',
+      if (cargo.responsesCount > 0 && cargo.myResponseStatus == null) t.feedRespondedCount(cargo.responsesCount),
+    ].join(' · ');
 
-    return CargoCard(
+    return AppCard(
       key: Key('feedCargoCard-${cargo.id}'),
-      originLabel: refData.pointOrNull(cargo.pointId)?.name.forLanguageCode(locale),
-      destinationLabel: destinationLabel,
-      bodyTypeLabel: bodyType.name.forLanguageCode(locale),
-      priceLabel: formatMoney(cargo.price, cargo.currency),
-      secondaryPriceLabel: formatKztConversion(refData.convertToKzt(cargo.price, cargo.currency)),
-      readyDateLabel: formatDate(cargo.readyDate),
-      statusLabel: statusLabel,
-      statusColor: statusColor,
-      partialLabel: cargo.allowPartial ? t.feedBadgePartial : null,
-      accentBorder: isHere || isHomeSection,
-      badge: isHomeSection
-          ? Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-              decoration: BoxDecoration(color: AppColors.accentSoft, borderRadius: BorderRadius.circular(999)),
-              child: Text(t.feedSectionHome, style: AppTextStyles.small.copyWith(color: AppColors.accentText)),
-            )
-          : CountryCode(code: country.code),
       onTap: () => context.push('/driver/cargo/${cargo.id}'),
+      borderColor: accent ? AppColors.accent : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(origin == null ? destination : '$origin → $destination', style: AppTextStyles.route, maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          if (category != null) TextSpan(text: category, style: AppTextStyles.bodyStrong),
+                          TextSpan(
+                            text: [if (category != null) '', if (weight != null) weight, bodyType.name.forLanguageCode(locale)].join(' · '),
+                            style: grey,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text.rich(
+                      key: Key('feedCargoKm-${cargo.id}'),
+                      TextSpan(
+                        children: [
+                          if (cargo.distanceKm != null && cargo.distanceKm! > 0) ...[
+                            TextSpan(text: '${formatThousands(cargo.distanceKm!)} ${t.unitKm}', style: blue),
+                            TextSpan(text: ' · ', style: grey),
+                          ],
+                          TextSpan(text: loadingDayLabel(t, cargo.readyDate), style: grey),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(companyLine, style: small, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceCard),
+                  if (perKmKzt != null) Text(t.perKmKzt(formatThousands(perKmKzt.round())), key: Key('feedCargoPerKm-${cargo.id}'), style: blue),
+                ],
+              ),
+            ],
+          ),
+          if (isHomeSection || cargo.allowPartial || stateLabel != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.xs,
+              children: [
+                if (isHomeSection) _pill(t.feedSectionHome, AppColors.accentSoft, AppColors.accentText),
+                if (cargo.allowPartial) _pill(t.feedBadgePartial, AppColors.primarySoft, AppColors.primary),
+                if (stateLabel != null) StatusBadge(label: stateLabel, color: stateColor),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
+
+  Widget _pill(String label, Color bg, Color fg) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
+    child: Text(label, style: AppTextStyles.small.copyWith(color: fg)),
+  );
 }
 
 /// «Ваши отклики: 3 · ждут ответа 2 · приглашение 1» (045 п.3) — тап открывает

@@ -16,6 +16,8 @@ const ROUTES: Array<[string, string]> = [
   ['audit', '/audit'],
   ['settings', '/settings'],
   ['reference', '/reference'],
+  // 047 п.8: цены по маршрутам.
+  ['route-prices', '/route-prices'],
 ];
 
 test('обход экранов админки: ни одного белого экрана', async ({ page }, info) => {

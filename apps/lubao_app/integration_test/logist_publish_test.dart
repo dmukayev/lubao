@@ -74,6 +74,9 @@ void main() {
       await tester.drag(find.byType(ListView).first, const Offset(0, 3000));
       await tester.pumpAndSettle();
       expect(find.text(t.postCargoPickupCityError), findsOneWidget);
+      // 047 п.1: без категории тоже не публикуется.
+      await reveal(tester, find.byKey(const Key('postCargoCategoryError')));
+      expect(find.text(t.postCargoCategoryRequired), findsOneWidget);
     });
 
     await run.step(tester, 'выбор-города-погрузки-и-догруз', () async {
@@ -82,6 +85,11 @@ void main() {
       await tester.tap(field);
       await pickCityByName(tester, 'Astana', 'Астана');
       expect(find.text(t.postCargoPickupCityError), findsNothing);
+      final category = find.byKey(const Key('postCargoCategory-CONSTRUCTION'));
+      await reveal(tester, category);
+      await tester.tap(category);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('postCargoCategoryError')), findsNothing);
       final partial = find.byKey(const Key('postCargoAllowPartial'));
       await reveal(tester, partial);
       await tester.tap(partial);
@@ -103,6 +111,10 @@ void main() {
       expect(cargo.allowPartial, isTrue, reason: '«Можно догрузом» ушло на сервер');
       final refData = await container.read(referenceDataProvider.future);
       expect(refData.pointOrNull(cargo.pointId)?.name.ru, 'Астана', reason: 'город погрузки — из выбора, не первая точка');
+      // 047: категория ушла, расстояние Астана → Алматы посчитано (в e2e — из кэша пар городов).
+      expect(refData.categoryById(cargo.categoryId)?.code, 'CONSTRUCTION');
+      expect(cargo.distanceKm, 1230);
+      expect(cargo.pricePerKm, closeTo(1500 / 1230, 0.01));
       cargoId = cargo.id;
       expectNoOverflow(tester);
     });

@@ -129,6 +129,12 @@ void main() {
       final cargoCard = find.byKey(const Key('feedCargoCard-$e2eCargo1'));
       await reveal(tester, cargoCard);
       await tester.pumpAndSettle();
+      // 047, эталон 28: в строке — категория, км по дороге и ₸/км, без «Опубликован».
+      final km = tester.widget<Text>(find.byKey(const Key('feedCargoKm-$e2eCargo1')));
+      expect(km.textSpan!.toPlainText(), contains('340 ${t.unitKm}'));
+      expect(find.byKey(const Key('feedCargoPerKm-$e2eCargo1')), findsOneWidget);
+      expect(find.descendant(of: cargoCard, matching: find.textContaining('Стройматериалы', findRichText: true)), findsOneWidget);
+      expect(find.descendant(of: cargoCard, matching: find.text(t.cargoStatusPublished)), findsNothing);
       await tester.tap(cargoCard);
       await waitFor(tester, find.byKey(const Key('cargoDetailChatButton')));
       expectInsideSafeZone(tester);

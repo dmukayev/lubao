@@ -335,7 +335,12 @@ class _CargoDetailBody extends ConsumerWidget {
                 _RoutePoint(
                   color: AppColors.primary,
                   title: pointName,
-                  subtitle: formatDate(cargo.readyDate),
+                  // 047: категория и км по дороге — как в строке ленты.
+                  subtitle: [
+                    if (refData.categoryById(cargo.categoryId) case final c?) c.name.forLanguageCode(locale),
+                    if (cargo.distanceKm != null && cargo.distanceKm! > 0) '${formatThousands(cargo.distanceKm!)} ${t.unitKm}',
+                    formatDate(cargo.readyDate),
+                  ].join(' · '),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
@@ -362,10 +367,25 @@ class _CargoDetailBody extends ConsumerWidget {
                         if (formatKztConversion(kzt) != null)
                           Text(formatKztConversion(kzt)!, style: AppTextStyles.caption),
                         if (usd != null) Text(formatMoney(usd, Currency.usd), style: AppTextStyles.caption),
+                        if ((cargo.pricePerKm == null ? null : refData.convertToKzt(cargo.pricePerKm!, cargo.currency)) case final perKm?)
+                          Text(
+                            t.perKmKzt(formatThousands(perKm.round())),
+                            key: const Key('cargoDetailPerKm'),
+                            style: AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
+                          ),
                       ],
                     ),
                   ],
                 ),
+                // 047 п.6: «Рынок за месяц: 650–720 ₸/км» — если есть статистика по маршруту.
+                if (cargo.market != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    t.cargoMarketMonth(formatThousands(cargo.market!.p25.round()), formatThousands(cargo.market!.p75.round())),
+                    key: const Key('cargoDetailMarket'),
+                    style: AppTextStyles.caption,
+                  ),
+                ],
               ],
             ),
           ),

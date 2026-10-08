@@ -3449,4 +3449,98 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get cancelAtFault => 'по своей вине';
+
+  @override
+  String get unitKm => 'км';
+
+  @override
+  String get feedLoadToday => 'погрузка сегодня';
+
+  @override
+  String get feedLoadTomorrow => 'погрузка завтра';
+
+  @override
+  String feedLoadOn(String date) {
+    return 'погрузка $date';
+  }
+
+  @override
+  String perKmKzt(String value) {
+    return '$value ₸/км';
+  }
+
+  @override
+  String feedRespondedCount(int count) {
+    return 'откликнулись $count';
+  }
+
+  @override
+  String cargoMarketMonth(String from, String to) {
+    return 'Рынок за месяц: $from–$to ₸/км';
+  }
+
+  @override
+  String get postCargoCategory => 'Что везёте';
+
+  @override
+  String get postCargoCategoryRequired => 'Выберите категорию груза';
+
+  @override
+  String postCargoMarketHint(String median, int deals) {
+    return 'По этому маршруту за месяц: медиана $median ₸/км, сделок $deals';
+  }
+
+  @override
+  String get adminRoutePricesTitle => 'Цены по маршрутам';
+
+  @override
+  String get adminRoutePricesEmpty =>
+      'Пока мало данных: статистика появляется при 5+ точках по маршруту за месяц';
+
+  @override
+  String get adminColBucket => 'Направление';
+
+  @override
+  String get adminColTonnage => 'Тоннаж';
+
+  @override
+  String get adminColMedian => 'Медиана ₸/км';
+
+  @override
+  String get adminColRange => 'P25–P75';
+
+  @override
+  String get adminColPoints => 'Точек';
+
+  @override
+  String get adminColDealPoints => 'Из них сделок';
+
+  @override
+  String get adminExportCsv => 'Выгрузить CSV';
+
+  @override
+  String get adminAllFilter => 'Все';
+
+  @override
+  String get bucketKz => 'Внутри РК';
+
+  @override
+  String get bucketCis => 'СНГ';
+
+  @override
+  String get bucketCnFar => 'Китай / дальнее';
+
+  @override
+  String tonnageUpTo(int tons) {
+    return 'до $tons т';
+  }
+
+  @override
+  String get tonnageOver => 'больше 10 т';
+
+  @override
+  String get adminCargoCategoriesTitle => 'Категории груза';
+
+  @override
+  String get adminCsvSaved => 'CSV сохранён';
 }

@@ -22,6 +22,7 @@ class AdminMoreScreen extends ConsumerWidget {
       (LucideIcons.truck, t.adminNavCargos, '/cargos'),
       (LucideIcons.fileCheck2, t.adminNavDeals, '/deals'),
       (LucideIcons.clipboardList, t.adminNavReference, '/reference'),
+      (LucideIcons.lineChart, t.adminRoutePricesTitle, '/route-prices'),
       (LucideIcons.ban, t.adminNavBlacklist, '/blacklist'),
       (LucideIcons.settings, t.adminNavSettings, '/settings'),
       (LucideIcons.listTree, t.adminAuditLogLink, '/audit'),

@@ -41,7 +41,18 @@ class Cargo {
     this.activeDeal,
     this.cargoSpecs,
     this.extraBodyTypeIds = const [],
+    this.categoryId,
+    this.distanceKm,
+    this.pricePerKm,
+    this.market,
   });
+
+  /// 047: категория (справочник), км по дороге и цена за км в валюте груза;
+  /// `market` — «рынок за месяц» по маршруту (только в карточке).
+  final String? categoryId;
+  final int? distanceKm;
+  final double? pricePerKm;
+  final RouteMarket? market;
 
   final String id;
   final String companyId;
@@ -145,6 +156,10 @@ class Cargo {
         activeDeal: json['activeDeal'] == null ? null : CargoActiveDeal.fromJson(json['activeDeal'] as Map<String, dynamic>),
         cargoSpecs: json['specs'] as Map<String, dynamic>?,
         extraBodyTypeIds: (json['extraBodyTypeIds'] as List<dynamic>? ?? const []).cast<String>(),
+        categoryId: json['categoryId'] as String?,
+        distanceKm: json['distanceKm'] as int?,
+        pricePerKm: (json['pricePerKm'] as num?)?.toDouble(),
+        market: RouteMarket.fromJson(json['market']),
         feedSection: switch (json['feedSection']) {
           'home' => CargoFeedSection.home,
           'selected' => CargoFeedSection.selected,
@@ -219,6 +234,7 @@ class CreateCargoInput {
     this.palletCount,
     this.specs,
     this.extraBodyTypeIds = const [],
+    this.categoryId,
     this.photoUrls = const [],
     required this.price,
     required this.currency,
@@ -245,7 +261,11 @@ class CreateCargoInput {
   final Map<String, dynamic>? specs;
   final List<String> extraBodyTypeIds;
 
+  /// 047: категория груза — обязательна при публикации.
+  final String? categoryId;
+
   Map<String, dynamic> toJson() => {
+        if (categoryId != null) 'categoryId': categoryId,
         'pointId': pointId,
         'allowPartial': allowPartial,
         'destinationCountryId': destinationCountryId,
@@ -278,3 +298,24 @@ class CargoActiveDeal {
       CargoActiveDeal(id: json['id'] as String, status: dealStatusFromJson(json['status'] as String), driverName: json['driverName'] as String);
 }
 
+
+/// «Рынок за месяц» по маршруту (047 п.6–7): медиана и P25–P75 ₸/км.
+class RouteMarket {
+  const RouteMarket({required this.median, required this.p25, required this.p75, required this.points, this.dealPoints = 0});
+  final double median;
+  final double p25;
+  final double p75;
+  final int points;
+  final int dealPoints;
+
+  static RouteMarket? fromJson(dynamic json) {
+    if (json is! Map<String, dynamic>) return null;
+    return RouteMarket(
+      median: (json['median'] as num).toDouble(),
+      p25: (json['p25'] as num).toDouble(),
+      p75: (json['p75'] as num).toDouble(),
+      points: json['points'] as int? ?? 0,
+      dealPoints: json['dealPoints'] as int? ?? 0,
+    );
+  }
+}

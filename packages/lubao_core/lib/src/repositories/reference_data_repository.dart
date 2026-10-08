@@ -25,6 +25,7 @@ class ReferenceDataRepository {
               .toList() ??
           const [],
       permits: (data['permits'] as List<dynamic>).map((e) => Permit.fromJson(e as Map<String, dynamic>)).toList(),
+      cargoCategories: (data['cargoCategories'] as List<dynamic>? ?? const []).map((e) => CargoCategory.fromJson(e as Map<String, dynamic>)).toList(),
       points:
           (data['points'] as List<dynamic>).map((e) => LoadingPoint.fromJson(e as Map<String, dynamic>)).toList(),
       exchangeRates: (data['exchangeRates'] as List<dynamic>?)

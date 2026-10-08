@@ -6491,6 +6491,168 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'по своей вине'**
   String get cancelAtFault;
+
+  /// No description provided for @unitKm.
+  ///
+  /// In ru, this message translates to:
+  /// **'км'**
+  String get unitKm;
+
+  /// No description provided for @feedLoadToday.
+  ///
+  /// In ru, this message translates to:
+  /// **'погрузка сегодня'**
+  String get feedLoadToday;
+
+  /// No description provided for @feedLoadTomorrow.
+  ///
+  /// In ru, this message translates to:
+  /// **'погрузка завтра'**
+  String get feedLoadTomorrow;
+
+  /// No description provided for @feedLoadOn.
+  ///
+  /// In ru, this message translates to:
+  /// **'погрузка {date}'**
+  String feedLoadOn(String date);
+
+  /// No description provided for @perKmKzt.
+  ///
+  /// In ru, this message translates to:
+  /// **'{value} ₸/км'**
+  String perKmKzt(String value);
+
+  /// No description provided for @feedRespondedCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'откликнулись {count}'**
+  String feedRespondedCount(int count);
+
+  /// No description provided for @cargoMarketMonth.
+  ///
+  /// In ru, this message translates to:
+  /// **'Рынок за месяц: {from}–{to} ₸/км'**
+  String cargoMarketMonth(String from, String to);
+
+  /// No description provided for @postCargoCategory.
+  ///
+  /// In ru, this message translates to:
+  /// **'Что везёте'**
+  String get postCargoCategory;
+
+  /// No description provided for @postCargoCategoryRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите категорию груза'**
+  String get postCargoCategoryRequired;
+
+  /// No description provided for @postCargoMarketHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'По этому маршруту за месяц: медиана {median} ₸/км, сделок {deals}'**
+  String postCargoMarketHint(String median, int deals);
+
+  /// No description provided for @adminRoutePricesTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цены по маршрутам'**
+  String get adminRoutePricesTitle;
+
+  /// No description provided for @adminRoutePricesEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пока мало данных: статистика появляется при 5+ точках по маршруту за месяц'**
+  String get adminRoutePricesEmpty;
+
+  /// No description provided for @adminColBucket.
+  ///
+  /// In ru, this message translates to:
+  /// **'Направление'**
+  String get adminColBucket;
+
+  /// No description provided for @adminColTonnage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Тоннаж'**
+  String get adminColTonnage;
+
+  /// No description provided for @adminColMedian.
+  ///
+  /// In ru, this message translates to:
+  /// **'Медиана ₸/км'**
+  String get adminColMedian;
+
+  /// No description provided for @adminColRange.
+  ///
+  /// In ru, this message translates to:
+  /// **'P25–P75'**
+  String get adminColRange;
+
+  /// No description provided for @adminColPoints.
+  ///
+  /// In ru, this message translates to:
+  /// **'Точек'**
+  String get adminColPoints;
+
+  /// No description provided for @adminColDealPoints.
+  ///
+  /// In ru, this message translates to:
+  /// **'Из них сделок'**
+  String get adminColDealPoints;
+
+  /// No description provided for @adminExportCsv.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выгрузить CSV'**
+  String get adminExportCsv;
+
+  /// No description provided for @adminAllFilter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все'**
+  String get adminAllFilter;
+
+  /// No description provided for @bucketKz.
+  ///
+  /// In ru, this message translates to:
+  /// **'Внутри РК'**
+  String get bucketKz;
+
+  /// No description provided for @bucketCis.
+  ///
+  /// In ru, this message translates to:
+  /// **'СНГ'**
+  String get bucketCis;
+
+  /// No description provided for @bucketCnFar.
+  ///
+  /// In ru, this message translates to:
+  /// **'Китай / дальнее'**
+  String get bucketCnFar;
+
+  /// No description provided for @tonnageUpTo.
+  ///
+  /// In ru, this message translates to:
+  /// **'до {tons} т'**
+  String tonnageUpTo(int tons);
+
+  /// No description provided for @tonnageOver.
+  ///
+  /// In ru, this message translates to:
+  /// **'больше 10 т'**
+  String get tonnageOver;
+
+  /// No description provided for @adminCargoCategoriesTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Категории груза'**
+  String get adminCargoCategoriesTitle;
+
+  /// No description provided for @adminCsvSaved.
+  ///
+  /// In ru, this message translates to:
+  /// **'CSV сохранён'**
+  String get adminCsvSaved;
 }
 
 class _LubaoLocalizationsDelegate

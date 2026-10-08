@@ -3462,4 +3462,98 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get cancelAtFault => 'өз кінәсінен';
+
+  @override
+  String get unitKm => 'км';
+
+  @override
+  String get feedLoadToday => 'тиеу бүгін';
+
+  @override
+  String get feedLoadTomorrow => 'тиеу ертең';
+
+  @override
+  String feedLoadOn(String date) {
+    return 'тиеу $date';
+  }
+
+  @override
+  String perKmKzt(String value) {
+    return '$value ₸/км';
+  }
+
+  @override
+  String feedRespondedCount(int count) {
+    return '$count жауап берді';
+  }
+
+  @override
+  String cargoMarketMonth(String from, String to) {
+    return 'Айлық нарық: $from–$to ₸/км';
+  }
+
+  @override
+  String get postCargoCategory => 'Не тасымалдайсыз';
+
+  @override
+  String get postCargoCategoryRequired => 'Жүк санатын таңдаңыз';
+
+  @override
+  String postCargoMarketHint(String median, int deals) {
+    return 'Осы бағыт бойынша айына: медиана $median ₸/км, мәмілелер $deals';
+  }
+
+  @override
+  String get adminRoutePricesTitle => 'Бағыттар бойынша бағалар';
+
+  @override
+  String get adminRoutePricesEmpty =>
+      'Деректер аз: статистика бағыт бойынша айына 5+ нүктеде шығады';
+
+  @override
+  String get adminColBucket => 'Бағыт';
+
+  @override
+  String get adminColTonnage => 'Тоннаж';
+
+  @override
+  String get adminColMedian => 'Медиана ₸/км';
+
+  @override
+  String get adminColRange => 'P25–P75';
+
+  @override
+  String get adminColPoints => 'Нүктелер';
+
+  @override
+  String get adminColDealPoints => 'Оның ішінде мәмілелер';
+
+  @override
+  String get adminExportCsv => 'CSV жүктеу';
+
+  @override
+  String get adminAllFilter => 'Барлығы';
+
+  @override
+  String get bucketKz => 'ҚР ішінде';
+
+  @override
+  String get bucketCis => 'ТМД';
+
+  @override
+  String get bucketCnFar => 'Қытай / алыс';
+
+  @override
+  String tonnageUpTo(int tons) {
+    return '$tons т дейін';
+  }
+
+  @override
+  String get tonnageOver => '10 т-дан астам';
+
+  @override
+  String get adminCargoCategoriesTitle => 'Жүк санаттары';
+
+  @override
+  String get adminCsvSaved => 'CSV сақталды';
 }

@@ -86,7 +86,7 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
   }
 
   @override
@@ -340,6 +340,24 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
     final result = await _showReferenceItemEditPanel(context, title: item.name.forLanguageCode(Localizations.localeOf(context).languageCode), initialName: item.name, initialActive: item.isActive, initialSortOrder: item.sortOrder);
     if (result == null) return;
     await ref.read(adminRepositoryProvider).updateBodyType(item.id, name: result.name, isActive: result.isActive, sortOrder: result.sortOrder, reason: result.reason);
+    ref.invalidate(referenceDataProvider);
+  }
+
+  Future<void> _addCategory() async {
+    final t = context.l10n;
+    final result = await _showNameDialog(context, title: t.adminCargoCategoriesTitle);
+    if (result == null) return;
+    await ref.read(adminRepositoryProvider).createCargoCategory(
+          result['code']!,
+          I18nText(kk: result['kk']!, ru: result['ru']!, zh: result['zh']!),
+        );
+    ref.invalidate(referenceDataProvider);
+  }
+
+  Future<void> _editCategory(CargoCategory item) async {
+    final result = await _showReferenceItemEditPanel(context, title: item.name.forLanguageCode(Localizations.localeOf(context).languageCode), initialName: item.name, initialActive: item.isActive, initialSortOrder: item.sortOrder);
+    if (result == null) return;
+    await ref.read(adminRepositoryProvider).updateCargoCategory(item.id, name: result.name, isActive: result.isActive, sortOrder: result.sortOrder, reason: result.reason);
     ref.invalidate(referenceDataProvider);
   }
 
@@ -642,6 +660,7 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
           Tab(text: t.driverSetupVehicleBodyType),
           Tab(text: t.adminBodySizePresetsTab),
           Tab(text: t.driverSetupPermits),
+          Tab(text: t.adminCargoCategoriesTitle),
           Tab(text: t.navFeed),
           Tab(text: t.adminCitiesTab),
           Tab(text: t.adminPendingCitiesTab),
@@ -678,6 +697,12 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
               items: refData.permits.map((p) => (p.id, p.name.forLanguageCode(locale), p.isActive, () => _editPermit(p))).toList(),
               onAdd: _addPermit,
               addLabel: t.adminAddPermit,
+            ),
+            // 047 п.1: категории груза.
+            _SimpleList(
+              items: refData.cargoCategories.map((c) => (c.id, c.name.forLanguageCode(locale), c.isActive, () => _editCategory(c))).toList(),
+              onAdd: _addCategory,
+              addLabel: t.adminCargoCategoriesTitle,
             ),
             _PointsList(
               points: refData.points,

@@ -19,7 +19,7 @@ test('спор об отмене: «Требует внимания» → кар
     const driver = (await api('POST', '/auth/phone/verify', { body: { phone, code: '1111', deviceName: 'e2e', platform: 'ios' } })).json.accessToken;
     await api('PATCH', '/drivers/me', { token: driver, body: { fullName: 'Тест Спорный', homeCityId: almaty.cityId, anyCountry: true, directionCountryIds: [], permitIds: [], bodyTypeId: tent.id, capacityTons: 20 } });
     const owner = (await api('POST', '/auth/company/login', { body: { email: 'e2e-owner@lubao-test.kz', password: 'E2eLubao2026!', deviceName: 'e2e', platform: 'ios' } })).json.accessToken;
-    const cargo = (await api('POST', '/cargos', { token: owner, body: { pointId: almaty.id, destinationCountryId: kz.id, bodyTypeId: tent.id, price: 3046, currency: 'USD', readyDate: '2030-04-01' } })).json;
+    const cargo = (await api('POST', '/cargos', { token: owner, body: { pointId: almaty.id, destinationCountryId: kz.id, bodyTypeId: tent.id, categoryId: ref.cargoCategories.find((c: { code: string }) => c.code === 'OTHER').id, price: 3046, currency: 'USD', readyDate: '2030-04-01' } })).json;
     const resp = (await api('POST', `/cargos/${cargo.id}/responses`, { token: driver, body: {} })).json;
     await api('PATCH', `/responses/${resp.id}`, { token: owner, body: { status: 'SELECTED' } });
     dealId = (await api('GET', '/deals/mine', { token: driver })).json.find((d: { cargoId: string }) => d.cargoId === cargo.id).id;

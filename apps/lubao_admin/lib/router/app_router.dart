@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
+import '../features/prices/route_prices_screen.dart';
 import '../features/login/admin_login_screen.dart';
 import '../features/login/admin_splash_screen.dart';
 import '../features/shell/admin_shell.dart';
@@ -114,6 +115,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/blacklist', builder: (context, state) => const BlacklistScreen()),
           GoRoute(path: '/settings', builder: (context, state) => const AdminSettingsScreen()),
           GoRoute(path: '/reference', builder: (context, state) => const ReferenceScreen()),
+          GoRoute(path: '/route-prices', builder: (context, state) => const RoutePricesScreen()),
         ],
       ),
     ],
