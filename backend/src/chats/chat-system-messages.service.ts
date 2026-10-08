@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { CANCEL_REASON_LABEL } from '../notifications/notification-events';
 
 /// Системные сообщения чата (задача 038, п.11) — «водитель готов взять»,
 /// «выбран водитель», «перевозка подтверждена», «отклик отозван»,
@@ -39,7 +40,11 @@ const RU_FALLBACK: Record<ChatSystemCode, (params: Record<string, string>) => st
   INVITATION_DECLINED: (p) => `${p.driverName ?? 'Водитель'} отказался от приглашения`,
   CARGO_TAKEN: () => 'Груз ушёл другому водителю',
   INVITATION_EXPIRED: () => 'Приглашение истекло: водитель не ответил за 24 часа',
-  CANCEL_REQUESTED: (p) => `Запрошена отмена сделки${p.reason ? `: ${p.reason}` : ''}. Без ответа за 24 часа отмена пройдёт`,
+  // 049 п.9: причина — по коду (русская подпись), текст — только для «Другое».
+  CANCEL_REQUESTED: (p) => {
+    const reason = (p.reasonCode && CANCEL_REASON_LABEL[p.reasonCode]?.ru) || p.reason;
+    return `Запрошена отмена сделки${reason ? `: ${reason}` : ''}. Без ответа за 24 часа отмена пройдёт`;
+  },
   CANCEL_CONFIRMED: () => 'Отмена подтверждена — сделка отменена',
   CANCEL_DISPUTED: () => 'Отмена оспорена — решит администратор',
   CANCEL_RESOLVED: () => 'Администратор отменил сделку',

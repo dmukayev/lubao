@@ -1,4 +1,4 @@
-import { cancelStatsFor, faultFor, parseCancelRatingWeights, penalizedRating, stageForStatus } from './cancel-policy';
+import { cancelStatsFor, faultFor, parseCancelRatingWeights, penalizedRating, pendingPenaltyFor, stageForStatus } from './cancel-policy';
 
 describe('cancel-policy (046)', () => {
   it('этап по статусу в момент отмены', () => {
@@ -22,9 +22,11 @@ describe('cancel-policy (046)', () => {
     expect(parseCancelRatingWeights('nope').AFTER_LOAD).toBe(3);
   });
 
-  it('штраф без отзывов — рейтинг 1, без штрафа и отзывов — 0', () => {
-    expect(penalizedRating(0, 0, 3)).toBe(1);
-    expect(penalizedRating(0, 0, 0)).toBe(0);
+  it('049 п.9: без отзывов среднее 0 — штраф не показывается как «1.0», копится отдельно', () => {
+    expect(penalizedRating(0, 0, 3)).toBe(0);
+    expect(pendingPenaltyFor(0, 3)).toBe(3);
+    expect(penalizedRating(5, 1, 3)).toBe(2);
+    expect(pendingPenaltyFor(1, 3)).toBe(0);
   });
 
   it('«отменил 1 из 3 · после загрузки 1 · по своей вине 1»', async () => {

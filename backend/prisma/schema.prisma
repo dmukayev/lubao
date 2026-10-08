@@ -463,6 +463,9 @@ model Driver {
   isVerified            Boolean   @default(false)
   ratingAvg             Decimal   @default(0) @db.Decimal(3, 2)
   ratingCount           Int       @default(0)
+  /// 049 п.9: штраф за отмены, пока отзывов нет (ratingCount = 0), — копится
+  /// и применяется к среднему с первым отзывом.
+  pendingPenalty        Decimal   @default(0) @db.Decimal(6, 2)
   currentLat            Decimal?  @db.Decimal(9, 6)
   currentLng            Decimal?  @db.Decimal(9, 6)
   locationUpdatedAt     DateTime?
@@ -586,6 +589,8 @@ model Company {
   isBlocked       Boolean   @default(false)
   ratingAvg       Decimal   @default(0) @db.Decimal(3, 2)
   ratingCount     Int       @default(0)
+  /// 049 п.9: см. Driver.pendingPenalty.
+  pendingPenalty  Decimal   @default(0) @db.Decimal(6, 2)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

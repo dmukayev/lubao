@@ -83,10 +83,15 @@ export function parseCancelRatingWeights(raw: string | null | undefined): Cancel
 }
 
 /// Средняя оценка с учётом штрафа: каждая единица веса — оценка 1★.
+/// 049 п.9: без отзывов штраф не превращается в «1.0» — среднее 0 (клиент
+/// рисует «—»), а штраф копится в `pendingPenalty` до первого отзыва.
 export function penalizedRating(sumStars: number, count: number, penalty: number): number {
-  const n = count + penalty;
-  if (n <= 0) return 0;
-  return Number(((sumStars + penalty) / n).toFixed(2));
+  if (count <= 0) return 0;
+  return Number(((sumStars + penalty) / (count + penalty)).toFixed(2));
+}
+
+export function pendingPenaltyFor(count: number, penalty: number): number {
+  return count <= 0 ? penalty : 0;
 }
 
 type CancelledDeal = {
@@ -132,8 +137,9 @@ export async function recomputeDriverRating(tx: Tx, driverId: string): Promise<v
     weights(tx),
   ]);
   const count = agg._count.rating;
-  const ratingAvg = penalizedRating(agg._sum.rating ?? 0, count, cancelPenalty(cancelled, 'DRIVER', w));
-  await tx.driver.update({ where: { id: driverId }, data: { ratingAvg, ratingCount: count } });
+  const penalty = cancelPenalty(cancelled, 'DRIVER', w);
+  const ratingAvg = penalizedRating(agg._sum.rating ?? 0, count, penalty);
+  await tx.driver.update({ where: { id: driverId }, data: { ratingAvg, ratingCount: count, pendingPenalty: pendingPenaltyFor(count, penalty) } });
 }
 
 /// То же для компании: отзывы водителей + штраф за отмены по её вине.
@@ -144,8 +150,9 @@ export async function recomputeCompanyRating(tx: Tx, companyId: string): Promise
     weights(tx),
   ]);
   const count = agg._count.rating;
-  const ratingAvg = penalizedRating(agg._sum.rating ?? 0, count, cancelPenalty(cancelled, 'COMPANY', w));
-  await tx.company.update({ where: { id: companyId }, data: { ratingAvg, ratingCount: count } });
+  const penalty = cancelPenalty(cancelled, 'COMPANY', w);
+  const ratingAvg = penalizedRating(agg._sum.rating ?? 0, count, penalty);
+  await tx.company.update({ where: { id: companyId }, data: { ratingAvg, ratingCount: count, pendingPenalty: pendingPenaltyFor(count, penalty) } });
 }
 
 export type CancelStats = { total: number; cancelled: number; afterLoad: number; selfFault: number };
