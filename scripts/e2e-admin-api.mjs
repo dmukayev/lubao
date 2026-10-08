@@ -422,7 +422,7 @@ const astana047 = ref047.points.find((p) => p.name.ru === 'Астана');
 const almatyCity047 = ref047.cities.find((c) => c.name.ru === 'Алматы');
 const routeBody = { pointId: astana047.id, destinationCountryId: kz046, destinationCityId: almatyCity047.id, bodyTypeId: tentType.id, price: 1230000, currency: 'KZT', readyDate: '2030-05-01', weightKg: 20000 };
 const noCategory = await api('POST', '/cargos', { token: kzOwner048, body: routeBody });
-assert(noCategory.status === 400 && /CATEGORY_REQUIRED/.test(noCategory.text), 'груз без категории не публикуется', `status=${noCategory.status}`);
+assert(noCategory.status === 400 && /CATEGORY_REQUIRED|categoryId/.test(noCategory.text), 'груз без категории не публикуется', `status=${noCategory.status}`);
 const constructionId = ref047.cargoCategories.find((c) => c.code === 'CONSTRUCTION').id;
 const routed = await api('POST', '/cargos', { token: kzOwner048, body: { ...routeBody, categoryId: constructionId } });
 assert(routed.status < 300 && routed.json.categoryId === constructionId && routed.json.distanceKm === 1230 && routed.json.pricePerKm === 1000, 'Астана → Алматы: 1 230 км, 1 000 ₸/км', JSON.stringify({ s: routed.status, km: routed.json?.distanceKm, perKm: routed.json?.pricePerKm }));

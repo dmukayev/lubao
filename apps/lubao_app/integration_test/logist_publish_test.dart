@@ -77,6 +77,9 @@ void main() {
       // 047 п.1: без категории тоже не публикуется.
       await reveal(tester, find.byKey(const Key('postCargoCategoryError')));
       expect(find.text(t.postCargoCategoryRequired), findsOneWidget);
+      // Назад наверх — поле города ленивое, следующий шаг начинается с него.
+      await tester.drag(find.byType(ListView).first, const Offset(0, 3000));
+      await tester.pumpAndSettle();
     });
 
     await run.step(tester, 'выбор-города-погрузки-и-догруз', () async {
