@@ -2564,3 +2564,16 @@ describe('AdminService.updateBodyTypeProfile (048 п.1)', () => {
     expect(prisma.bodyType.update).not.toHaveBeenCalled();
   });
 });
+
+describe('AdminService.createCargoCategory (049 п.11)', () => {
+  it('порядок — в конец списка до «Другое», создание — в журнал', async () => {
+    const prisma: any = {
+      cargoCategory: { findFirst: jest.fn().mockResolvedValue({ sortOrder: 70 }), create: jest.fn(async ({ data }: any) => ({ id: 'cat9', ...data })) },
+      auditLog: { create: jest.fn() },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    await service.createCargoCategory({ code: 'FURNITURE', name: { kk: 'Жиһаз', ru: 'Мебель', zh: '家具', en: 'Furniture' } } as any, 'admin-1');
+    expect(prisma.cargoCategory.create.mock.calls[0][0].data.sortOrder).toBe(80);
+    expect(prisma.auditLog.create.mock.calls[0][0].data).toMatchObject({ action: 'CARGO_CATEGORY_CREATED', entityId: 'cat9' });
+  });
+});

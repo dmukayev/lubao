@@ -46,6 +46,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   String? _categoryId;
   String? _categoryError;
   RouteMarket? _market;
+  Timer? _marketDebounce;
   /// 048: параметры груза по профилю кузова и другие подходящие кузова.
   Map<String, dynamic> _specs = {};
   final _extraBodyTypeIds = <String>{};
@@ -105,6 +106,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
 
   @override
   void dispose() {
+    _marketDebounce?.cancel();
     _volumeController.dispose();
     _weightController.dispose();
     _palletController.dispose();
@@ -443,6 +445,11 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                       errorText: _weightError,
                       controller: _weightController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      // 049 п.11: класс тоннажа меняет «рынок» — пересчёт после паузы в вводе.
+                      onChanged: (_) {
+                        _marketDebounce?.cancel();
+                        _marketDebounce = Timer(const Duration(milliseconds: 600), _loadMarket);
+                      },
                     ),
                   ),
                 ],

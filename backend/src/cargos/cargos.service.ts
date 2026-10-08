@@ -71,7 +71,9 @@ export class CargosService {
     if (!cargo) return;
     const { distanceKm, pricePerKm } = await this.pricing.distanceFor(cargo);
     await this.prisma.cargo.update({ where: { id: cargoId }, data: { distanceKm, pricePerKm } });
+    // 049 п.11: при публикации — новая точка, при правке цены/маршрута — та же обновляется.
     if (listed) await this.pricing.recordPoint('LISTED', { ...cargo, distanceKm });
+    else await this.pricing.upsertListedPoint({ ...cargo, distanceKm });
   }
 
   /// Водитель звонит/пишет конкретному логисту, опубликовавшему груз, а не

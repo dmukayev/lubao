@@ -22,6 +22,7 @@ import {
   AdminBodyTypeProfileDto,
   AdminChangeMemberEmailDto,
   AdminDealStatusDto,
+  CreateCargoCategoryDto,
   AdminSetMemberRoleDto,
   AdminUpdateCargoDto,
   AdminUpdateBodySizePresetDto,
@@ -2987,10 +2988,18 @@ export class AdminService {
     return this.updateReferenceItem('permit', 'Permit', id, adminUserId, dto);
   }
 
-  async createCargoCategory(dto: CreatePermitDto) {
-    return this.prisma.cargoCategory.create({
-      data: { code: dto.code, name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en } },
+  async createCargoCategory(dto: CreateCargoCategoryDto, adminUserId: string) {
+    // 049 п.11: порядок — с конца списка (до «Другое»), если не задан; в журнал.
+    const last = await this.prisma.cargoCategory.findFirst({ where: { code: { not: 'OTHER' } }, orderBy: { sortOrder: 'desc' }, select: { sortOrder: true } });
+    const created = await this.prisma.cargoCategory.create({
+      data: {
+        code: dto.code,
+        name: { kk: dto.name.kk, ru: dto.name.ru, zh: dto.name.zh, en: dto.name.en },
+        sortOrder: dto.sortOrder ?? (last?.sortOrder ?? 0) + 10,
+      },
     });
+    await this.logAudit(adminUserId, 'CARGO_CATEGORY_CREATED', 'CargoCategory', created.id, { code: dto.code, name: dto.name, reason: dto.reason ?? null });
+    return created;
   }
 
   async updateCargoCategory(id: string, adminUserId: string, dto: AdminUpdateReferenceItemDto) {

@@ -9,6 +9,7 @@ import { AdminService } from './admin.service';
 import { DealsService } from '../deals/deals.service';
 import {
   AdminResolveDisputeDto,
+  CreateCargoCategoryDto,
   AdminBodyTypeProfileDto,
   AdminChangeMemberEmailDto,
   AdminDealStatusDto,
@@ -504,9 +505,9 @@ export class AdminController {
 
   /// 047 п.1: категории груза — справочник без релиза.
   @Post('reference/cargo-categories')
-  createCargoCategory(@CurrentUser() ctx: RequestContext, @Body() dto: CreatePermitDto) {
+  createCargoCategory(@CurrentUser() ctx: RequestContext, @Body() dto: CreateCargoCategoryDto) {
     assertAdmin(ctx);
-    return this.admin.createCargoCategory(dto);
+    return this.admin.createCargoCategory(dto, ctx.user.id);
   }
 
   @Patch('reference/cargo-categories/:id')

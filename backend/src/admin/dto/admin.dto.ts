@@ -142,6 +142,20 @@ export class CreatePermitDto {
   name!: UpsertI18nNameDto;
 }
 
+/// 047/049 п.11: категория груза — код, названия, порядок; в журнал с причиной.
+export class CreateCargoCategoryDto extends CreatePermitDto {
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100000)
+  sortOrder?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}
+
 /// Шаблон размера кузова (задача 033, п.11) — CRUD в админке, без релиза.
 export class CreateBodySizePresetDto {
   @IsString()

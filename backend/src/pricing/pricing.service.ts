@@ -40,6 +40,30 @@ export class PricingService {
     return { distanceKm: km, pricePerKm: pricePerKm(Number(cargo.price), km) };
   }
 
+  /// 049 п.11: точка объявления (LISTED) — одна на груз: появились км (OSRM
+  /// досчитал) — создать, сменилась цена или маршрут — обновить. Только для
+  /// проверенной компании (так и публикуются грузы).
+  async upsertListedPoint(cargo: CargoForPricing & { distanceKm: number | null }) {
+    const existing = await this.prisma.pricePoint.findFirst({ where: { cargoId: cargo.id, kind: 'LISTED' }, select: { id: true } });
+    if (!existing) return this.recordPoint('LISTED', cargo);
+    const rate = await this.kztRate(cargo.currency);
+    const perKm = cargo.destinationCityId && cargo.distanceKm ? pricePerKm(Number(cargo.price) * (rate ?? NaN), cargo.distanceKm) : null;
+    if (perKm == null || !Number.isFinite(perKm)) {
+      await this.prisma.pricePoint.delete({ where: { id: existing.id } });
+      return;
+    }
+    await this.prisma.pricePoint.update({
+      where: { id: existing.id },
+      data: {
+        fromCityId: cargo.point.cityId,
+        toCityId: cargo.destinationCityId!,
+        bucket: bucketForCountry(cargo.destinationCountry.code),
+        tonnageClass: tonnageClass(cargo.weightKg == null ? null : Number(cargo.weightKg)),
+        pricePerKmKzt: perKm,
+      },
+    });
+  }
+
   /// Точка статистики: объявление проверенной компании (LISTED) или сделка (DEAL).
   async recordPoint(kind: 'LISTED' | 'DEAL', cargo: CargoForPricing & { distanceKm: number | null }, extra: { driverId?: string; dealId?: string } = {}) {
     try {
@@ -110,7 +134,7 @@ export class PricingService {
   async fillMissingDistances(limit = 200): Promise<{ filled: number }> {
     const cargos = await this.prisma.cargo.findMany({
       where: { distanceKm: null, destinationCityId: { not: null }, status: { in: ['PUBLISHED', 'IN_DEAL'] } },
-      select: { id: true, price: true, destinationCityId: true, point: { select: { cityId: true } } },
+      include: { point: { select: { cityId: true } }, destinationCountry: { select: { code: true } }, company: { select: { isVerified: true } } },
       take: limit,
     });
     let filled = 0;
@@ -118,6 +142,8 @@ export class PricingService {
       const d = await this.distanceFor(c);
       if (d.distanceKm == null) continue;
       await this.prisma.cargo.update({ where: { id: c.id }, data: { distanceKm: d.distanceKm, pricePerKm: d.pricePerKm } });
+      // 049 п.11: км появились — груз попадает в статистику цен.
+      if (c.company.isVerified) await this.upsertListedPoint({ ...c, distanceKm: d.distanceKm });
       filled += 1;
     }
     return { filled };

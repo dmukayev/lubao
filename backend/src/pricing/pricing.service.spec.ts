@@ -74,3 +74,25 @@ describe('PricingService (047 п.4)', () => {
     expect(prisma.routePriceStat.delete).toHaveBeenCalledWith({ where: { fromCityId_toCityId_bucket_tonnageClass: { fromCityId: 'x', toCityId: 'y', bucket: 'KZ', tonnageClass: 5 } } });
   });
 });
+
+describe('PricingService — точка объявления (049 п.11)', () => {
+  const cargo = { id: 'c', companyId: 'co', price: 1000, currency: 'KZT', weightKg: 20000, destinationCityId: 'b', point: { cityId: 'a' }, destinationCountry: { code: 'KZ' } };
+
+  it('сменилась цена — существующая LISTED-точка обновляется, новая не создаётся', async () => {
+    const prisma: any = { pricePoint: { findFirst: jest.fn().mockResolvedValue({ id: 'p1' }), update: jest.fn(), create: jest.fn() }, exchangeRate: { findFirst: jest.fn() } };
+    await new PricingService(prisma, {} as any).upsertListedPoint({ ...cargo, price: 1500, distanceKm: 1 });
+    expect(prisma.pricePoint.update).toHaveBeenCalledWith({ where: { id: 'p1' }, data: expect.objectContaining({ pricePerKmKzt: 1500 }) });
+    expect(prisma.pricePoint.create).not.toHaveBeenCalled();
+  });
+
+  it('OSRM досчитал км — у груза проверенной компании появляется точка', async () => {
+    const prisma: any = {
+      cargo: { findMany: jest.fn().mockResolvedValue([{ ...cargo, company: { isVerified: true } }]), update: jest.fn() },
+      pricePoint: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn() },
+      exchangeRate: { findFirst: jest.fn() },
+    };
+    const distance: any = { roadKm: jest.fn().mockResolvedValue(500) };
+    expect(await new PricingService(prisma, distance).fillMissingDistances()).toEqual({ filled: 1 });
+    expect(prisma.pricePoint.create).toHaveBeenCalledWith({ data: expect.objectContaining({ kind: 'LISTED', cargoId: 'c', pricePerKmKzt: 2 }) });
+  });
+});
