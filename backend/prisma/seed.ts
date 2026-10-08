@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { BODY_TYPE_PROFILES } from './body-type-profiles';
 
 const prisma = new PrismaClient();
 
@@ -355,10 +356,13 @@ async function main() {
   await seedPoints();
 
   for (const bt of bodyTypes) {
+    // 048: профиль и поля — из prisma/body-type-profiles.ts.
+    const profile = BODY_TYPE_PROFILES[bt.code];
+    const extra = profile ? { profile: profile.profile, fields: profile.fields as unknown as Prisma.InputJsonValue } : {};
     await prisma.bodyType.upsert({
       where: { code: bt.code },
-      update: { name: bt.name, sortOrder: bt.sortOrder },
-      create: bt,
+      update: { name: bt.name, sortOrder: bt.sortOrder, ...extra },
+      create: { ...bt, ...extra },
     });
   }
 

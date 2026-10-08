@@ -124,6 +124,16 @@ enum VerificationDocType {
   VEHICLE_PHOTO_SIDE
 }
 
+/// Профиль типа кузова (048): какие поля у машины и груза и как отсеивать ленту.
+enum BodyTypeProfile {
+  VOLUME
+  PLATFORM
+  CONTAINER
+  BULK
+  TANK
+  CAR_CARRIER
+}
+
 /// Кто подтвердил машину (044 п.6): админ вручную или автопроверка техпаспорта.
 enum VehicleVerifier {
   ADMIN
@@ -281,6 +291,10 @@ model BodyType {
   name      Json
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
+  /// 048: профиль и поля (JSON: [{key, kind, unit, label, forVehicle, forCargo,
+  /// required, primary, min, max, options}]) — правятся в админке без релиза.
+  profile   BodyTypeProfile @default(VOLUME)
+  fields    Json            @default("[]")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -422,6 +436,8 @@ model Driver {
   preferredBodyTypeId   String?
   preferredBodyType     BodyType? @relation("DriverPreferredBodyType", fields: [preferredBodyTypeId], references: [id])
   preferredCapacityTons Decimal?  @db.Decimal(6, 2)
+  /// 048 п.7: «основа» кузова из регистрации по профилю (литры, места, контейнеры).
+  preferredSpecs        Json?
   /// ФИО из водительского удостоверения (045 п.10) — при регистрации водитель
   /// пишет только имя; после одобрения прав предлагаем подставить полное ФИО.
   licenseFullName       String?
@@ -499,7 +515,11 @@ model Vehicle {
   innerHeightM  Decimal?    @db.Decimal(4, 2)
   volumeM3      Decimal?    @db.Decimal(6, 1)
   palletsEuro   Int?
+  /// 048: параметры по профилю кузова (литры, продукт, места под машины…);
+  /// у объёмных — проекция и в колонки volumeM3/palletsEuro/inner*.
+  specs         Json?
   /// Водитель — собственник или работает на чужой машине.
+
   isOwner       Boolean     @default(true)
   /// Техпаспорт одобрен (ставится при approve соответствующего документа,
   /// см. admin.service.ts) — отдельно от Driver.isVerified (селфи+права).
@@ -819,6 +839,10 @@ model Cargo {
   volumeM3              Decimal?    @db.Decimal(7, 2)
   /// Паллеты (задача 033) — логист может указать вместо/вместе с объёмом.
   palletCount           Int?
+  /// 048: другие подходящие кузова (кроме основного bodyTypeId) и параметры
+  /// груза по профилю (продукт и литры, тип контейнера, число машин…).
+  extraBodyTypeIds      String[]    @default([])
+  specs                 Json?
   photoUrls             String[]    @default([])
   price                 Decimal     @db.Decimal(12, 2)
   currency              Currency
