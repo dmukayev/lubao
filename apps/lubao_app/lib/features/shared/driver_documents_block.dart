@@ -18,7 +18,7 @@ final _fileProvider = FutureProvider.autoDispose.family<Uint8List, (String, Stri
   (ref, key) => ref.watch(dealRepositoryProvider).driverDocumentFile(key.$1, key.$2),
 );
 
-const _docsOpenStatuses = {DealStatus.confirmedByDriver, DealStatus.loaded, DealStatus.inTransit, DealStatus.delivered};
+const _docsOpenStatuses = {DealStatus.confirmedByDriver, DealStatus.loaded, DealStatus.inTransit, DealStatus.cancelRequested, DealStatus.disputed, DealStatus.delivered};
 
 /// «Документы водителя» в карточке сделки логиста (044 п.2): после «Подтверждаю
 /// перевозку» — ФИО, ИИН, права, машины, превью и «Скачать PDF»; до — «Откроются

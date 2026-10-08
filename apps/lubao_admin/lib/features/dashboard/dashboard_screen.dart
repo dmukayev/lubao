@@ -268,7 +268,8 @@ class _AttentionBlock extends ConsumerWidget {
     ];
 
     final suspicious = attention.suspiciousContacts;
-    if (rows.isEmpty && suspicious.isEmpty) {
+    final disputes = attention.disputedDeals;
+    if (rows.isEmpty && suspicious.isEmpty && disputes.isEmpty) {
       return AppCard(child: Text(t.adminAttentionEmpty));
     }
 
@@ -282,6 +283,20 @@ class _AttentionBlock extends ConsumerWidget {
               title: Text(label),
               trailing: const Icon(LucideIcons.chevronRight),
               onTap: () => context.go(route),
+            ),
+          // 046 п.5: спор об отмене после «В пути» — обе позиции, решение в карточке сделки.
+          for (final d in disputes)
+            ListTile(
+              key: Key('disputedDeal-${d.dealId}'),
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(LucideIcons.scale, color: StatusBadge.danger),
+              title: Text('${t.adminDisputesTitle}: ${d.driverName} · ${d.companyName}'),
+              subtitle: Text([
+                t.adminDisputeRequested(cancelledByRoleLabel(t, d.requestedByRole ?? ''), cancelReasonLabel(t, d.reasonCode, text: d.reason)),
+                if (d.disputeReason != null) t.adminDisputeObjection(d.disputeReason!),
+              ].join('\n')),
+              trailing: const Icon(LucideIcons.chevronRight),
+              onTap: () => context.go('/deals/${d.dealId}'),
             ),
           // 043 п.11: «Похоже на парсинг» — «Заблокировать» ведёт в карточку
           // (там блокировка с идентификаторами), «Всё в порядке» прячет на 7 дней.

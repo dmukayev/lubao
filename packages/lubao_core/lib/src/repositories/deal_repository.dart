@@ -51,13 +51,34 @@ class DealRepository {
     return Deal.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// `reasonCode` — код пресета причины (038, п.15): «взял другой груз» и
-  /// т.п. считаются в статистике по коду, не по переведённой строке.
-  Future<Deal> cancel(String id, {required String reason, String? reasonCode}) async {
+  /// Причина — код из списка (046 п.1, `cancelReasonCodes`), текст — только
+  /// для «Другое». После «В пути» сервер не отменяет, а создаёт запрос
+  /// (статус `cancelRequested`).
+  Future<Deal> cancel(String id, {required String reasonCode, String? reason}) async {
     final res = await _client.dio.patch('/deals/$id/cancel', data: {
-      'reason': reason,
-      if (reasonCode != null) 'reasonCode': reasonCode,
+      'reasonCode': reasonCode,
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
     });
+    return Deal.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// Вторая сторона согласна с запросом отмены (046 п.5).
+  Future<Deal> confirmCancel(String id) async {
+    final res = await _client.dio.post('/deals/$id/cancel-request/confirm');
+    return Deal.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// Жалоба по сделке (046 п.6) — в очередь жалоб админки.
+  Future<void> complain(String id, {required String reason, String? description}) async {
+    await _client.dio.post('/deals/$id/complaint', data: {
+      'reason': reason,
+      if (description != null && description.trim().isNotEmpty) 'description': description.trim(),
+    });
+  }
+
+  /// …или оспаривает — спор уходит админу.
+  Future<Deal> disputeCancel(String id, {required String reason}) async {
+    final res = await _client.dio.post('/deals/$id/cancel-request/dispute', data: {'reason': reason});
     return Deal.fromJson(res.data as Map<String, dynamic>);
   }
 }

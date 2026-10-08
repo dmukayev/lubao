@@ -22,6 +22,7 @@ class CargoResponse {
     this.committedReadyDate,
     this.dealId,
     this.dealStatus,
+    this.cancelStats,
   });
 
   final String id;
@@ -57,6 +58,9 @@ class CargoResponse {
   final String? dealId;
   final DealStatus? dealStatus;
 
+  /// 046 п.3: отмены водителя в карточке отклика.
+  final CancelStats? cancelStats;
+
   factory CargoResponse.fromJson(Map<String, dynamic> json) => CargoResponse(
         id: json['id'] as String,
         cargoId: json['cargoId'] as String,
@@ -78,6 +82,7 @@ class CargoResponse {
         committedReadyDate: json['committedReadyDate'] == null ? null : DateTime.parse(json['committedReadyDate'] as String),
         dealId: json['dealId'] as String?,
         dealStatus: json['dealStatus'] == null ? null : dealStatusFromJson(json['dealStatus'] as String),
+        cancelStats: CancelStats.fromJson(json['cancelStats']),
       );
 }
 

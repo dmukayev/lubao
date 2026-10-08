@@ -1,4 +1,5 @@
 import 'common.dart';
+import 'deal.dart';
 
 class AdminStatsGrowth {
   const AdminStatsGrowth({required this.drivers, required this.companies, required this.cargos, required this.delivered});
@@ -718,6 +719,8 @@ class AdminDriverStats {
 
 class AdminDriverDetail {
   const AdminDriverDetail({
+    this.cancelStats,
+    this.cancellations = const [],
     required this.id,
     required this.fullName,
     required this.isVerified,
@@ -773,9 +776,15 @@ class AdminDriverDetail {
   final List<AdminIdentifierEntry> identifiers;
   final List<AdminIdentifierBlockEntry> identifierBlockHistory;
 
+  /// 046 п.3: те же цифры отмен, что видит вторая сторона, и список с причинами.
+  final CancelStats? cancelStats;
+  final List<AdminCancellation> cancellations;
+
   factory AdminDriverDetail.fromJson(Map<String, dynamic> json) {
     final user = json['user'] as Map<String, dynamic>;
     return AdminDriverDetail(
+      cancelStats: CancelStats.fromJson(json['cancelStats']),
+      cancellations: AdminCancellation.listFromJson(json['cancellations']),
       id: json['id'] as String,
       fullName: json['fullName'] as String,
       isVerified: json['isVerified'] as bool,
@@ -957,6 +966,8 @@ class AdminCompanyDealEntry {
 
 class AdminCompanyDetail {
   const AdminCompanyDetail({
+    this.cancelStats,
+    this.cancellations = const [],
     required this.id,
     required this.name,
     this.nameRu,
@@ -1004,7 +1015,13 @@ class AdminCompanyDetail {
   final List<AdminIdentifierEntry> identifiers;
   final List<AdminIdentifierBlockEntry> identifierBlockHistory;
 
+  /// 046 п.3.
+  final CancelStats? cancelStats;
+  final List<AdminCancellation> cancellations;
+
   factory AdminCompanyDetail.fromJson(Map<String, dynamic> json) => AdminCompanyDetail(
+        cancelStats: CancelStats.fromJson(json['cancelStats']),
+        cancellations: AdminCancellation.listFromJson(json['cancellations']),
         id: json['id'] as String,
         name: json['name'] as String,
         nameRu: json['nameRu'] as String?,
@@ -1103,6 +1120,55 @@ class AdminSuspiciousContact {
       );
 }
 
+/// Спор об отмене (046 п.5): кто просил и почему, возражение второй стороны.
+class AdminDisputedDeal {
+  const AdminDisputedDeal({required this.dealId, required this.driverName, required this.companyName, this.requestedByRole, this.reasonCode, this.reason, this.disputeReason});
+  final String dealId;
+  final String driverName;
+  final String companyName;
+  final String? requestedByRole;
+  final String? reasonCode;
+  final String? reason;
+  final String? disputeReason;
+
+  factory AdminDisputedDeal.fromJson(Map<String, dynamic> json) => AdminDisputedDeal(
+        dealId: json['dealId'] as String,
+        driverName: json['driverName'] as String? ?? '',
+        companyName: json['companyName'] as String? ?? '',
+        requestedByRole: json['requestedByRole'] as String?,
+        reasonCode: json['reasonCode'] as String?,
+        reason: json['reason'] as String?,
+        disputeReason: json['disputeReason'] as String?,
+      );
+}
+
+/// Отмена в карточке водителя/компании (046 п.3).
+class AdminCancellation {
+  const AdminCancellation({required this.dealId, this.cancelledByRole, this.reasonCode, this.reason, this.stage, this.faultSide, this.atFault = false, required this.at});
+  final String dealId;
+  final String? cancelledByRole;
+  final String? reasonCode;
+  final String? reason;
+  final String? stage;
+  final String? faultSide;
+  final bool atFault;
+  final DateTime at;
+
+  factory AdminCancellation.fromJson(Map<String, dynamic> json) => AdminCancellation(
+        dealId: json['dealId'] as String,
+        cancelledByRole: json['cancelledByRole'] as String?,
+        reasonCode: json['reasonCode'] as String?,
+        reason: json['reason'] as String?,
+        stage: json['stage'] as String?,
+        faultSide: json['faultSide'] as String?,
+        atFault: json['atFault'] as bool? ?? false,
+        at: DateTime.parse(json['at'] as String),
+      );
+
+  static List<AdminCancellation> listFromJson(dynamic json) =>
+      [for (final row in (json as List<dynamic>? ?? const [])) AdminCancellation.fromJson(row as Map<String, dynamic>)];
+}
+
 class AdminAttention {
   const AdminAttention({
     required this.pendingVerificationCount,
@@ -1113,7 +1179,11 @@ class AdminAttention {
     required this.pendingCities,
     this.blacklistMatches = 0,
     this.suspiciousContacts = const [],
+    this.disputedDeals = const [],
   });
+
+  /// 046 п.5: споры об отмене после «В пути» — обе позиции.
+  final List<AdminDisputedDeal> disputedDeals;
 
   final int pendingVerificationCount;
   final int pendingVerificationOldestAgeHours;
@@ -1140,6 +1210,9 @@ class AdminAttention {
       blacklistMatches: json['blacklistMatches'] as int? ?? 0,
       suspiciousContacts: [
         for (final row in (json['suspiciousContacts'] as List<dynamic>? ?? const [])) AdminSuspiciousContact.fromJson(row as Map<String, dynamic>),
+      ],
+      disputedDeals: [
+        for (final row in (json['disputedDeals'] as List<dynamic>? ?? const [])) AdminDisputedDeal.fromJson(row as Map<String, dynamic>),
       ],
     );
   }
@@ -1565,6 +1638,10 @@ class AdminDealDetail {
     required this.status,
     this.cancelReason,
     this.cancelledByRole,
+    this.cancelReasonCode,
+    this.cancelStage,
+    this.faultSide,
+    this.cancelRequest,
     required this.staleDays,
     required this.statusHistory,
     required this.calls,
@@ -1586,6 +1663,12 @@ class AdminDealDetail {
   final String status;
   final String? cancelReason;
   final String? cancelledByRole;
+
+  /// 046: код причины, этап и вина; запрос отмены и возражение при споре.
+  final String? cancelReasonCode;
+  final String? cancelStage;
+  final String? faultSide;
+  final DealCancelRequest? cancelRequest;
   final int staleDays;
   final List<AdminDealStatusHistoryEntry> statusHistory;
   final List<AdminDealCallEntry> calls;
@@ -1607,6 +1690,10 @@ class AdminDealDetail {
         status: json['status'] as String,
         cancelReason: json['cancelReason'] as String?,
         cancelledByRole: json['cancelledByRole'] as String?,
+        cancelReasonCode: json['cancelReasonCode'] as String?,
+        cancelStage: json['cancelStage'] as String?,
+        faultSide: json['faultSide'] as String?,
+        cancelRequest: json['cancelRequest'] == null ? null : DealCancelRequest.fromJson(json['cancelRequest'] as Map<String, dynamic>),
         staleDays: json['staleDays'] as int,
         statusHistory: (json['statusHistory'] as List<dynamic>).map((e) => AdminDealStatusHistoryEntry.fromJson(e as Map<String, dynamic>)).toList(),
         calls: (json['calls'] as List<dynamic>).map((e) => AdminDealCallEntry.fromJson(e as Map<String, dynamic>)).toList(),

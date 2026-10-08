@@ -291,6 +291,11 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
             const SizedBox(height: AppSpacing.xs),
             Text(haulHint, style: AppTextStyles.caption.copyWith(color: AppColors.accentText)),
           ],
+          // 046 п.3: «отменил 1 из 15 · после загрузки 1».
+          if (cancelStatsText(t, response.cancelStats) case final stats?) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(stats, key: const Key('responseCancelStats'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+          ],
           if (response.message != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(response.message!, style: AppTextStyles.body),

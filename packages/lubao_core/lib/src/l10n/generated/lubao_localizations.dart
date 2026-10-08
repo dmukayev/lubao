@@ -6233,6 +6233,264 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Поля не сохранены: {errors}'**
   String adminBodyTypeFieldsInvalid(String errors);
+
+  /// No description provided for @dealStatusCancelRequested.
+  ///
+  /// In ru, this message translates to:
+  /// **'Запрошена отмена'**
+  String get dealStatusCancelRequested;
+
+  /// No description provided for @dealStatusDisputed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отмена оспорена'**
+  String get dealStatusDisputed;
+
+  /// No description provided for @cancelReasonVehicleBreakdown.
+  ///
+  /// In ru, this message translates to:
+  /// **'Машина сломалась'**
+  String get cancelReasonVehicleBreakdown;
+
+  /// No description provided for @cancelReasonCargoNotReady.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз не готов'**
+  String get cancelReasonCargoNotReady;
+
+  /// No description provided for @cancelReasonOtherPartyUnresponsive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вторая сторона не отвечает'**
+  String get cancelReasonOtherPartyUnresponsive;
+
+  /// No description provided for @cancelReasonTermsChanged.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменились условия'**
+  String get cancelReasonTermsChanged;
+
+  /// No description provided for @cancelReasonOther.
+  ///
+  /// In ru, this message translates to:
+  /// **'Другое'**
+  String get cancelReasonOther;
+
+  /// No description provided for @dealCancelReasonPick.
+  ///
+  /// In ru, this message translates to:
+  /// **'Почему отменяете?'**
+  String get dealCancelReasonPick;
+
+  /// No description provided for @dealCancelOtherHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опишите причину'**
+  String get dealCancelOtherHint;
+
+  /// No description provided for @dealCancelRequestNotice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз уже в пути — отмена только с согласия второй стороны. Без ответа за 24 часа она пройдёт сама.'**
+  String get dealCancelRequestNotice;
+
+  /// No description provided for @dealCancelRequestSend.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отправить запрос'**
+  String get dealCancelRequestSend;
+
+  /// No description provided for @dealCancelRequestedByMe.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы запросили отмену. Ждём ответа до {time}'**
+  String dealCancelRequestedByMe(String time);
+
+  /// No description provided for @dealCancelRequestedByOther.
+  ///
+  /// In ru, this message translates to:
+  /// **'{name} просит отменить сделку: {reason}. Без ответа до {time} отмена пройдёт'**
+  String dealCancelRequestedByOther(String name, String reason, String time);
+
+  /// No description provided for @dealCancelConfirm.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтвердить отмену'**
+  String get dealCancelConfirm;
+
+  /// No description provided for @dealCancelDispute.
+  ///
+  /// In ru, this message translates to:
+  /// **'Оспорить'**
+  String get dealCancelDispute;
+
+  /// No description provided for @dealDisputeReasonLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Почему вы не согласны?'**
+  String get dealDisputeReasonLabel;
+
+  /// No description provided for @dealDisputedNotice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отмена оспорена — решит администратор'**
+  String get dealDisputedNotice;
+
+  /// No description provided for @cancelStatsLine.
+  ///
+  /// In ru, this message translates to:
+  /// **'отменил {cancelled} из {total}'**
+  String cancelStatsLine(int cancelled, int total);
+
+  /// No description provided for @cancelStatsAfterLoad.
+  ///
+  /// In ru, this message translates to:
+  /// **'после загрузки {count}'**
+  String cancelStatsAfterLoad(int count);
+
+  /// No description provided for @complaintOfferTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пожаловаться?'**
+  String get complaintOfferTitle;
+
+  /// No description provided for @complaintOfferBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделку отменили, когда груз уже был в машине. Расскажите администратору, что случилось.'**
+  String get complaintOfferBody;
+
+  /// No description provided for @complaintReasonLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Что случилось'**
+  String get complaintReasonLabel;
+
+  /// No description provided for @complaintSend.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пожаловаться'**
+  String get complaintSend;
+
+  /// No description provided for @complaintSent.
+  ///
+  /// In ru, this message translates to:
+  /// **'Жалоба отправлена'**
+  String get complaintSent;
+
+  /// No description provided for @chatSystemCancelRequested.
+  ///
+  /// In ru, this message translates to:
+  /// **'Запрошена отмена сделки: {reason}. Без ответа за 24 часа отмена пройдёт'**
+  String chatSystemCancelRequested(String reason);
+
+  /// No description provided for @chatSystemCancelConfirmed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отмена подтверждена — сделка отменена'**
+  String get chatSystemCancelConfirmed;
+
+  /// No description provided for @chatSystemCancelDisputed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отмена оспорена — решит администратор'**
+  String get chatSystemCancelDisputed;
+
+  /// No description provided for @chatSystemCancelResolved.
+  ///
+  /// In ru, this message translates to:
+  /// **'Администратор отменил сделку'**
+  String get chatSystemCancelResolved;
+
+  /// No description provided for @chatSystemCancelResumed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Администратор вернул сделку в «В пути»'**
+  String get chatSystemCancelResumed;
+
+  /// No description provided for @chatSystemCancelAuto.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ответа на запрос отмены не было 24 часа — сделка отменена'**
+  String get chatSystemCancelAuto;
+
+  /// No description provided for @adminDisputesTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Споры об отмене'**
+  String get adminDisputesTitle;
+
+  /// No description provided for @adminDisputeRequested.
+  ///
+  /// In ru, this message translates to:
+  /// **'{who} просит отмену: {reason}'**
+  String adminDisputeRequested(String who, String reason);
+
+  /// No description provided for @adminDisputeObjection.
+  ///
+  /// In ru, this message translates to:
+  /// **'Возражение: {reason}'**
+  String adminDisputeObjection(String reason);
+
+  /// No description provided for @adminDisputeCancelDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменить — виноват водитель'**
+  String get adminDisputeCancelDriver;
+
+  /// No description provided for @adminDisputeCancelCompany.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменить — виновата компания'**
+  String get adminDisputeCancelCompany;
+
+  /// No description provided for @adminDisputeCancelNeutral.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отменить — без вины'**
+  String get adminDisputeCancelNeutral;
+
+  /// No description provided for @adminDisputeResume.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вернуть в «В пути»'**
+  String get adminDisputeResume;
+
+  /// No description provided for @adminCancellationsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отмены'**
+  String get adminCancellationsTitle;
+
+  /// No description provided for @cancelStageBeforeConfirm.
+  ///
+  /// In ru, this message translates to:
+  /// **'до подтверждения'**
+  String get cancelStageBeforeConfirm;
+
+  /// No description provided for @cancelStageAfterConfirm.
+  ///
+  /// In ru, this message translates to:
+  /// **'после подтверждения'**
+  String get cancelStageAfterConfirm;
+
+  /// No description provided for @cancelStageAfterLoad.
+  ///
+  /// In ru, this message translates to:
+  /// **'после загрузки'**
+  String get cancelStageAfterLoad;
+
+  /// No description provided for @cancelStageInTransit.
+  ///
+  /// In ru, this message translates to:
+  /// **'в пути'**
+  String get cancelStageInTransit;
+
+  /// No description provided for @cancelAtFault.
+  ///
+  /// In ru, this message translates to:
+  /// **'по своей вине'**
+  String get cancelAtFault;
 }
 
 class _LubaoLocalizationsDelegate

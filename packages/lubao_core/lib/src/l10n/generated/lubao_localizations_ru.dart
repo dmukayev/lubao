@@ -3300,4 +3300,153 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String adminBodyTypeFieldsInvalid(String errors) {
     return 'Поля не сохранены: $errors';
   }
+
+  @override
+  String get dealStatusCancelRequested => 'Запрошена отмена';
+
+  @override
+  String get dealStatusDisputed => 'Отмена оспорена';
+
+  @override
+  String get cancelReasonVehicleBreakdown => 'Машина сломалась';
+
+  @override
+  String get cancelReasonCargoNotReady => 'Груз не готов';
+
+  @override
+  String get cancelReasonOtherPartyUnresponsive => 'Вторая сторона не отвечает';
+
+  @override
+  String get cancelReasonTermsChanged => 'Изменились условия';
+
+  @override
+  String get cancelReasonOther => 'Другое';
+
+  @override
+  String get dealCancelReasonPick => 'Почему отменяете?';
+
+  @override
+  String get dealCancelOtherHint => 'Опишите причину';
+
+  @override
+  String get dealCancelRequestNotice =>
+      'Груз уже в пути — отмена только с согласия второй стороны. Без ответа за 24 часа она пройдёт сама.';
+
+  @override
+  String get dealCancelRequestSend => 'Отправить запрос';
+
+  @override
+  String dealCancelRequestedByMe(String time) {
+    return 'Вы запросили отмену. Ждём ответа до $time';
+  }
+
+  @override
+  String dealCancelRequestedByOther(String name, String reason, String time) {
+    return '$name просит отменить сделку: $reason. Без ответа до $time отмена пройдёт';
+  }
+
+  @override
+  String get dealCancelConfirm => 'Подтвердить отмену';
+
+  @override
+  String get dealCancelDispute => 'Оспорить';
+
+  @override
+  String get dealDisputeReasonLabel => 'Почему вы не согласны?';
+
+  @override
+  String get dealDisputedNotice => 'Отмена оспорена — решит администратор';
+
+  @override
+  String cancelStatsLine(int cancelled, int total) {
+    return 'отменил $cancelled из $total';
+  }
+
+  @override
+  String cancelStatsAfterLoad(int count) {
+    return 'после загрузки $count';
+  }
+
+  @override
+  String get complaintOfferTitle => 'Пожаловаться?';
+
+  @override
+  String get complaintOfferBody =>
+      'Сделку отменили, когда груз уже был в машине. Расскажите администратору, что случилось.';
+
+  @override
+  String get complaintReasonLabel => 'Что случилось';
+
+  @override
+  String get complaintSend => 'Пожаловаться';
+
+  @override
+  String get complaintSent => 'Жалоба отправлена';
+
+  @override
+  String chatSystemCancelRequested(String reason) {
+    return 'Запрошена отмена сделки: $reason. Без ответа за 24 часа отмена пройдёт';
+  }
+
+  @override
+  String get chatSystemCancelConfirmed =>
+      'Отмена подтверждена — сделка отменена';
+
+  @override
+  String get chatSystemCancelDisputed =>
+      'Отмена оспорена — решит администратор';
+
+  @override
+  String get chatSystemCancelResolved => 'Администратор отменил сделку';
+
+  @override
+  String get chatSystemCancelResumed =>
+      'Администратор вернул сделку в «В пути»';
+
+  @override
+  String get chatSystemCancelAuto =>
+      'Ответа на запрос отмены не было 24 часа — сделка отменена';
+
+  @override
+  String get adminDisputesTitle => 'Споры об отмене';
+
+  @override
+  String adminDisputeRequested(String who, String reason) {
+    return '$who просит отмену: $reason';
+  }
+
+  @override
+  String adminDisputeObjection(String reason) {
+    return 'Возражение: $reason';
+  }
+
+  @override
+  String get adminDisputeCancelDriver => 'Отменить — виноват водитель';
+
+  @override
+  String get adminDisputeCancelCompany => 'Отменить — виновата компания';
+
+  @override
+  String get adminDisputeCancelNeutral => 'Отменить — без вины';
+
+  @override
+  String get adminDisputeResume => 'Вернуть в «В пути»';
+
+  @override
+  String get adminCancellationsTitle => 'Отмены';
+
+  @override
+  String get cancelStageBeforeConfirm => 'до подтверждения';
+
+  @override
+  String get cancelStageAfterConfirm => 'после подтверждения';
+
+  @override
+  String get cancelStageAfterLoad => 'после загрузки';
+
+  @override
+  String get cancelStageInTransit => 'в пути';
+
+  @override
+  String get cancelAtFault => 'по своей вине';
 }

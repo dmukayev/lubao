@@ -308,6 +308,15 @@ class AdminRepository {
     await _client.dio.post('/admin/deals/$id/cancel', data: {'reason': reason});
   }
 
+  /// Спор об отмене (046 п.5): `resolution` — CANCEL/RESUME, `guilty` — DRIVER/COMPANY или null (без вины).
+  Future<void> resolveDispute(String id, {required String resolution, String? guilty, required String reason}) async {
+    await _client.dio.post('/admin/deals/$id/resolve-dispute', data: {
+      'resolution': resolution,
+      if (guilty != null) 'guilty': guilty,
+      'reason': reason,
+    });
+  }
+
   /// `tab` — NEW/IN_REVIEW/CLOSED (задача 028, п.24a; раньше запрашивали
   /// только `status=OPEN`, и жалоба пропадала из вида после «В работе»).
   Future<List<AdminComplaint>> complaints({String? tab, bool mine = false}) async {

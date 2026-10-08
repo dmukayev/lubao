@@ -10,6 +10,7 @@ class Cargo {
     this.companyRatingAvg = 0,
     this.companyRatingCount = 0,
     this.companyCompletedDeals = 0,
+    this.companyCancelStats,
     required this.pointId,
     required this.destinationCountryId,
     this.destinationCityId,
@@ -49,6 +50,9 @@ class Cargo {
   final double companyRatingAvg;
   final int companyRatingCount;
   final int companyCompletedDeals;
+
+  /// 046 п.3: отмены компании — водителю в карточке груза.
+  final CancelStats? companyCancelStats;
   final String pointId;
   final String destinationCountryId;
   final String? destinationCityId;
@@ -111,6 +115,7 @@ class Cargo {
         companyRatingAvg: (json['companyRatingAvg'] as num?)?.toDouble() ?? 0,
         companyRatingCount: json['companyRatingCount'] as int? ?? 0,
         companyCompletedDeals: json['companyCompletedDeals'] as int? ?? 0,
+        companyCancelStats: CancelStats.fromJson(json['companyCancelStats']),
         pointId: json['pointId'] as String,
         destinationCountryId: json['destinationCountryId'] as String,
         destinationCityId: json['destinationCityId'] as String?,

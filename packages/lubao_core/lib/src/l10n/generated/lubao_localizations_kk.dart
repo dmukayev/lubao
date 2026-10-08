@@ -3313,4 +3313,153 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String adminBodyTypeFieldsInvalid(String errors) {
     return 'Өрістер сақталмады: $errors';
   }
+
+  @override
+  String get dealStatusCancelRequested => 'Болдырмау сұралды';
+
+  @override
+  String get dealStatusDisputed => 'Болдырмау даулы';
+
+  @override
+  String get cancelReasonVehicleBreakdown => 'Көлік бұзылды';
+
+  @override
+  String get cancelReasonCargoNotReady => 'Жүк дайын емес';
+
+  @override
+  String get cancelReasonOtherPartyUnresponsive =>
+      'Екінші тарап жауап бермейді';
+
+  @override
+  String get cancelReasonTermsChanged => 'Шарттар өзгерді';
+
+  @override
+  String get cancelReasonOther => 'Басқа';
+
+  @override
+  String get dealCancelReasonPick => 'Неге болдырмайсыз?';
+
+  @override
+  String get dealCancelOtherHint => 'Себебін жазыңыз';
+
+  @override
+  String get dealCancelRequestNotice =>
+      'Жүк жолда — болдырмау тек екінші тараптың келісімімен. 24 сағат жауап болмаса, өзі өтеді.';
+
+  @override
+  String get dealCancelRequestSend => 'Сұрау жіберу';
+
+  @override
+  String dealCancelRequestedByMe(String time) {
+    return 'Сіз болдырмауды сұрадыңыз. $time дейін жауап күтеміз';
+  }
+
+  @override
+  String dealCancelRequestedByOther(String name, String reason, String time) {
+    return '$name мәмілені болдырмауды сұрайды: $reason. $time дейін жауап болмаса, болдырылмайды';
+  }
+
+  @override
+  String get dealCancelConfirm => 'Болдырмауды растау';
+
+  @override
+  String get dealCancelDispute => 'Дауласу';
+
+  @override
+  String get dealDisputeReasonLabel => 'Неге келіспейсіз?';
+
+  @override
+  String get dealDisputedNotice => 'Болдырмау даулы — әкімші шешеді';
+
+  @override
+  String cancelStatsLine(int cancelled, int total) {
+    return '$total ішінен $cancelled болдырмады';
+  }
+
+  @override
+  String cancelStatsAfterLoad(int count) {
+    return 'тиелгеннен кейін $count';
+  }
+
+  @override
+  String get complaintOfferTitle => 'Шағымдану керек пе?';
+
+  @override
+  String get complaintOfferBody =>
+      'Мәміле жүк көлікте болғанда болдырылмады. Әкімшіге не болғанын айтыңыз.';
+
+  @override
+  String get complaintReasonLabel => 'Не болды';
+
+  @override
+  String get complaintSend => 'Шағымдану';
+
+  @override
+  String get complaintSent => 'Шағым жіберілді';
+
+  @override
+  String chatSystemCancelRequested(String reason) {
+    return 'Мәмілені болдырмау сұралды: $reason. 24 сағат жауап болмаса, болдырылмайды';
+  }
+
+  @override
+  String get chatSystemCancelConfirmed =>
+      'Болдырмау расталды — мәміле болдырылмады';
+
+  @override
+  String get chatSystemCancelDisputed => 'Болдырмау даулы — әкімші шешеді';
+
+  @override
+  String get chatSystemCancelResolved => 'Әкімші мәмілені болдырмады';
+
+  @override
+  String get chatSystemCancelResumed =>
+      'Әкімші мәмілені «Жолда» күйіне қайтарды';
+
+  @override
+  String get chatSystemCancelAuto =>
+      'Болдырмау сұрауына 24 сағат жауап болмады — мәміле болдырылмады';
+
+  @override
+  String get adminDisputesTitle => 'Болдырмау даулары';
+
+  @override
+  String adminDisputeRequested(String who, String reason) {
+    return '$who болдырмауды сұрайды: $reason';
+  }
+
+  @override
+  String adminDisputeObjection(String reason) {
+    return 'Қарсылық: $reason';
+  }
+
+  @override
+  String get adminDisputeCancelDriver => 'Болдырмау — жүргізуші кінәлі';
+
+  @override
+  String get adminDisputeCancelCompany => 'Болдырмау — компания кінәлі';
+
+  @override
+  String get adminDisputeCancelNeutral => 'Болдырмау — кінәсіз';
+
+  @override
+  String get adminDisputeResume => '«Жолда» күйіне қайтару';
+
+  @override
+  String get adminCancellationsTitle => 'Болдырмаулар';
+
+  @override
+  String get cancelStageBeforeConfirm => 'растауға дейін';
+
+  @override
+  String get cancelStageAfterConfirm => 'растаудан кейін';
+
+  @override
+  String get cancelStageAfterLoad => 'тиелгеннен кейін';
+
+  @override
+  String get cancelStageInTransit => 'жолда';
+
+  @override
+  String get cancelAtFault => 'өз кінәсінен';
 }

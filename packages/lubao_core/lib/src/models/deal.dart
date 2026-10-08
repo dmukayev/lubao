@@ -23,7 +23,26 @@ class Deal {
     this.driverLocation,
     this.vehiclesVerified = true,
     this.driverDocsOpenedAt,
+    this.cancelStage,
+    this.faultSide,
+    this.cancelRequest,
+    this.driverCancelStats,
+    this.companyCancelStats,
   });
+
+  /// 046: этап отмены (BEFORE_CONFIRM / AFTER_CONFIRM / AFTER_LOAD / IN_TRANSIT) и сторона вины.
+  final String? cancelStage;
+  final String? faultSide;
+
+  /// 046 п.5: запрос отмены после «В пути» (и спор, если оспорен).
+  final DealCancelRequest? cancelRequest;
+
+  /// 046 п.3: отмены сторон — каждая видит статистику другой.
+  final CancelStats? driverCancelStats;
+  final CancelStats? companyCancelStats;
+
+  /// Отмена на этапе «после загрузки» или «в пути» — повод предложить жалобу (046 п.6).
+  bool get cancelledAfterLoad => cancelStage == 'AFTER_LOAD' || cancelStage == 'IN_TRANSIT';
 
   final String id;
   final String responseId;
@@ -75,6 +94,11 @@ class Deal {
             : DriverLocation.fromJson(json['driverLocation'] as Map<String, dynamic>),
         vehiclesVerified: json['vehiclesVerified'] as bool? ?? true,
         driverDocsOpenedAt: json['driverDocsOpenedAt'] == null ? null : DateTime.parse(json['driverDocsOpenedAt'] as String),
+        cancelStage: json['cancelStage'] as String?,
+        faultSide: json['faultSide'] as String?,
+        cancelRequest: json['cancelRequest'] == null ? null : DealCancelRequest.fromJson(json['cancelRequest'] as Map<String, dynamic>),
+        driverCancelStats: CancelStats.fromJson(json['driverCancelStats']),
+        companyCancelStats: CancelStats.fromJson(json['companyCancelStats']),
       );
 
   static const List<DealStatus> driverProgression = [
@@ -91,7 +115,44 @@ class Deal {
     return driverProgression[idx + 1];
   }
 
-  bool get isCancellable => status != DealStatus.delivered && status != DealStatus.cancelled;
+  /// Пока ждём ответа на запрос отмены или идёт спор — новую отмену не начать.
+  bool get isCancellable =>
+      status != DealStatus.delivered &&
+      status != DealStatus.cancelled &&
+      status != DealStatus.cancelRequested &&
+      status != DealStatus.disputed;
+
+  /// После «В пути» отмена — только запросом через вторую сторону (046 п.5).
+  bool get cancelNeedsConsent => status == DealStatus.inTransit;
+}
+
+class DealCancelRequest {
+  const DealCancelRequest({
+    required this.byRole,
+    this.reasonCode,
+    this.reason,
+    required this.requestedAt,
+    this.expiresAt,
+    this.disputeReason,
+    this.disputedAt,
+  });
+  final UserRole byRole;
+  final String? reasonCode;
+  final String? reason;
+  final DateTime requestedAt;
+  final DateTime? expiresAt;
+  final String? disputeReason;
+  final DateTime? disputedAt;
+
+  factory DealCancelRequest.fromJson(Map<String, dynamic> json) => DealCancelRequest(
+        byRole: userRoleFromJson(json['byRole'] as String? ?? 'DRIVER'),
+        reasonCode: json['reasonCode'] as String?,
+        reason: json['reason'] as String?,
+        requestedAt: DateTime.parse(json['requestedAt'] as String),
+        expiresAt: json['expiresAt'] == null ? null : DateTime.parse(json['expiresAt'] as String),
+        disputeReason: json['disputeReason'] as String?,
+        disputedAt: json['disputedAt'] == null ? null : DateTime.parse(json['disputedAt'] as String),
+      );
 }
 
 /// Документ в пакете водителя (044 п.1): id для превью и статус проверки.

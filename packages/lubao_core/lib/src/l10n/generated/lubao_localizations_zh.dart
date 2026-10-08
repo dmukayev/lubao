@@ -3238,4 +3238,147 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String adminBodyTypeFieldsInvalid(String errors) {
     return '字段未保存：$errors';
   }
+
+  @override
+  String get dealStatusCancelRequested => '已申请取消';
+
+  @override
+  String get dealStatusDisputed => '取消有争议';
+
+  @override
+  String get cancelReasonVehicleBreakdown => '车辆故障';
+
+  @override
+  String get cancelReasonCargoNotReady => '货物未备好';
+
+  @override
+  String get cancelReasonOtherPartyUnresponsive => '对方无回应';
+
+  @override
+  String get cancelReasonTermsChanged => '条件变更';
+
+  @override
+  String get cancelReasonOther => '其他';
+
+  @override
+  String get dealCancelReasonPick => '取消原因？';
+
+  @override
+  String get dealCancelOtherHint => '请说明原因';
+
+  @override
+  String get dealCancelRequestNotice => '货物已在途中——取消需经对方同意。24小时内无回应将自动取消。';
+
+  @override
+  String get dealCancelRequestSend => '发送申请';
+
+  @override
+  String dealCancelRequestedByMe(String time) {
+    return '您已申请取消，等待对方在 $time 前回复';
+  }
+
+  @override
+  String dealCancelRequestedByOther(String name, String reason, String time) {
+    return '$name 申请取消交易：$reason。如在 $time 前未回复，将自动取消';
+  }
+
+  @override
+  String get dealCancelConfirm => '确认取消';
+
+  @override
+  String get dealCancelDispute => '提出异议';
+
+  @override
+  String get dealDisputeReasonLabel => '您为何不同意？';
+
+  @override
+  String get dealDisputedNotice => '取消有争议——由管理员处理';
+
+  @override
+  String cancelStatsLine(int cancelled, int total) {
+    return '取消 $cancelled/$total';
+  }
+
+  @override
+  String cancelStatsAfterLoad(int count) {
+    return '装货后 $count';
+  }
+
+  @override
+  String get complaintOfferTitle => '要投诉吗？';
+
+  @override
+  String get complaintOfferBody => '货物已装车后交易被取消。请告诉管理员发生了什么。';
+
+  @override
+  String get complaintReasonLabel => '发生了什么';
+
+  @override
+  String get complaintSend => '投诉';
+
+  @override
+  String get complaintSent => '投诉已提交';
+
+  @override
+  String chatSystemCancelRequested(String reason) {
+    return '已申请取消交易：$reason。24小时内无回复将自动取消';
+  }
+
+  @override
+  String get chatSystemCancelConfirmed => '已确认取消——交易已取消';
+
+  @override
+  String get chatSystemCancelDisputed => '取消有争议——由管理员处理';
+
+  @override
+  String get chatSystemCancelResolved => '管理员已取消交易';
+
+  @override
+  String get chatSystemCancelResumed => '管理员已将交易恢复为“运输中”';
+
+  @override
+  String get chatSystemCancelAuto => '取消申请24小时未获回复——交易已取消';
+
+  @override
+  String get adminDisputesTitle => '取消争议';
+
+  @override
+  String adminDisputeRequested(String who, String reason) {
+    return '$who 申请取消：$reason';
+  }
+
+  @override
+  String adminDisputeObjection(String reason) {
+    return '异议：$reason';
+  }
+
+  @override
+  String get adminDisputeCancelDriver => '取消——司机责任';
+
+  @override
+  String get adminDisputeCancelCompany => '取消——公司责任';
+
+  @override
+  String get adminDisputeCancelNeutral => '取消——无责';
+
+  @override
+  String get adminDisputeResume => '恢复为“运输中”';
+
+  @override
+  String get adminCancellationsTitle => '取消记录';
+
+  @override
+  String get cancelStageBeforeConfirm => '确认前';
+
+  @override
+  String get cancelStageAfterConfirm => '确认后';
+
+  @override
+  String get cancelStageAfterLoad => '装货后';
+
+  @override
+  String get cancelStageInTransit => '运输中';
+
+  @override
+  String get cancelAtFault => '本方责任';
 }

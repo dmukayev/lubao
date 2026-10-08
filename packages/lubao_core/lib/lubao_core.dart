@@ -1,5 +1,6 @@
 export 'src/l10n/generated/lubao_localizations.dart';
 export 'src/l10n/context_extension.dart';
+export 'src/l10n/cancel_texts.dart';
 
 export 'src/models/common.dart';
 export 'src/models/reference_data.dart';

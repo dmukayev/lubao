@@ -151,7 +151,9 @@ VerificationDocStatus verificationDocStatusFromJson(String value) => Verificatio
       orElse: () => VerificationDocStatus.pending,
     );
 
-enum DealStatus { selected, confirmedByDriver, loaded, inTransit, delivered, cancelled }
+/// 046: `cancelRequested` — после «В пути» одна сторона просит отмену и
+/// ждёт ответа второй; `disputed` — вторая оспорила, решает админ.
+enum DealStatus { selected, confirmedByDriver, loaded, inTransit, delivered, cancelled, cancelRequested, disputed }
 
 DealStatus dealStatusFromJson(String value) {
   switch (value.toUpperCase()) {
@@ -167,6 +169,10 @@ DealStatus dealStatusFromJson(String value) {
       return DealStatus.delivered;
     case 'CANCELLED':
       return DealStatus.cancelled;
+    case 'CANCEL_REQUESTED':
+      return DealStatus.cancelRequested;
+    case 'DISPUTED':
+      return DealStatus.disputed;
     default:
       return DealStatus.selected;
   }
@@ -186,6 +192,10 @@ String dealStatusToJson(DealStatus status) {
       return 'DELIVERED';
     case DealStatus.cancelled:
       return 'CANCELLED';
+    case DealStatus.cancelRequested:
+      return 'CANCEL_REQUESTED';
+    case DealStatus.disputed:
+      return 'DISPUTED';
   }
 }
 
@@ -202,3 +212,32 @@ CityStatus cityStatusFromJson(String value) => CityStatus.values.firstWhere(
 enum ContactEventType { call, whatsapp }
 
 String contactEventTypeToJson(ContactEventType type) => type.name.toUpperCase();
+
+/// Причины отмены сделки (046 п.1) — коды API; тексты в ARB.
+const cancelReasonCodes = [
+  'VEHICLE_BREAKDOWN',
+  'CARGO_NOT_READY',
+  'OTHER_PARTY_UNRESPONSIVE',
+  'TERMS_CHANGED',
+  'TOOK_OTHER_CARGO',
+  'OTHER',
+];
+
+/// «Отменил 1 из 15 · после загрузки 1» (046 п.3).
+class CancelStats {
+  const CancelStats({this.total = 0, this.cancelled = 0, this.afterLoad = 0, this.selfFault = 0});
+  final int total;
+  final int cancelled;
+  final int afterLoad;
+  final int selfFault;
+
+  static CancelStats? fromJson(dynamic json) {
+    if (json is! Map<String, dynamic>) return null;
+    return CancelStats(
+      total: json['total'] as int? ?? 0,
+      cancelled: json['cancelled'] as int? ?? 0,
+      afterLoad: json['afterLoad'] as int? ?? 0,
+      selfFault: json['selfFault'] as int? ?? 0,
+    );
+  }
+}

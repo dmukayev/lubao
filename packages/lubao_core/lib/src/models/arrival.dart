@@ -1,3 +1,5 @@
+import 'common.dart';
+
 /// Статус анонса прибытия (задача 015): PLANNED — «буду», ON_SITE — «на
 /// месте», COMPLETED/CANCELLED — завершён, EXPIRED — угас по правилу
 /// свежести (040). Неизвестное значение с бэкенда не должно падать клиент —
@@ -49,6 +51,7 @@ class ArrivalListing {
     this.committedReadyDate,
     this.dealsTotal = 0,
     this.dealsCancelledByDriver = 0,
+    this.cancelStats,
     required this.anyCountry,
     required this.directionCountryIds,
   });
@@ -94,6 +97,9 @@ class ArrivalListing {
   /// «Отменил 1 из 15 сделок» (задача 038, п.15) — доля отмен водителем.
   final int dealsTotal;
   final int dealsCancelledByDriver;
+
+  /// 046 п.3: «отменил 1 из 15 · после загрузки 1».
+  final CancelStats? cancelStats;
   final bool anyCountry;
   final List<String> directionCountryIds;
 
@@ -123,6 +129,7 @@ class ArrivalListing {
         committedReadyDate: json['committedReadyDate'] == null ? null : DateTime.parse(json['committedReadyDate'] as String),
         dealsTotal: json['dealsTotal'] as int? ?? 0,
         dealsCancelledByDriver: json['dealsCancelledByDriver'] as int? ?? 0,
+        cancelStats: CancelStats.fromJson(json['cancelStats']),
         anyCountry: json['anyCountry'] as bool? ?? false,
         directionCountryIds:
             (json['directionCountryIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],

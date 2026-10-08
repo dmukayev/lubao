@@ -105,62 +105,152 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
   // см. showVehicleFullSheet в status_helpers.dart.
   Future<void> _showVehicleFullSheet(VehicleFullError full) => showVehicleFullSheet(context, full);
 
-  Future<void> _cancel() async {
+  /// Отмена (046 п.1, 5–6): причина — чипом из списка, текст только для
+  /// «Другое». После «В пути» — это запрос второй стороне. Отменили после
+  /// загрузки — сразу предлагаем «Пожаловаться».
+  Future<void> _cancel(Deal deal, {required bool isDriver}) async {
     final t = context.l10n;
     final controller = TextEditingController();
-    // Код причины (038, п.15): пресет «Взял другой груз» уходит на сервер
-    // кодом TOOK_OTHER_CARGO — статистика не зависит от языка интерфейса.
-    // Ручная правка текста после нажатия пресета сбрасывает код.
-    var presetCode = null as String?;
-    final reason = await showDialog<String>(
+    final codes = cancelReasonCodes.where((c) => isDriver || c != 'TOOK_OTHER_CARGO').toList();
+    String? code;
+    final submitted = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
-          title: Text(t.dealCancel),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppTextField(
-                label: t.dealCancelReasonLabel,
-                controller: controller,
-                maxLines: 3,
-                onChanged: (value) {
-                  if (presetCode != null && value != t.dealCancelReasonTookAnother) {
-                    setDialogState(() => presetCode = null);
-                  }
-                },
+        builder: (dialogContext, setDialogState) {
+          final canSubmit = code != null && (code != 'OTHER' || controller.text.trim().isNotEmpty);
+          return AlertDialog(
+            title: Text(t.dealCancel),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (deal.cancelNeedsConsent) ...[
+                    Text(t.dealCancelRequestNotice, key: const Key('dealCancelRequestNotice'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
+                  Text(t.dealCancelReasonPick, style: AppTextStyles.bodyStrong),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: [
+                      for (final c in codes)
+                        ChoiceChip(
+                          key: Key('cancelReason_$c'),
+                          label: Text(cancelReasonLabel(t, c)),
+                          selected: code == c,
+                          onSelected: (_) => setDialogState(() => code = c),
+                        ),
+                    ],
+                  ),
+                  if (code == 'OTHER') ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    AppTextField(
+                      key: const Key('cancelOtherText'),
+                      label: t.dealCancelOtherHint,
+                      controller: controller,
+                      maxLines: 3,
+                      onChanged: (_) => setDialogState(() {}),
+                    ),
+                  ],
+                ],
               ),
-              const SizedBox(height: AppSpacing.sm),
-              // Задача 037, п.8 — частая причина отмены после подтверждения;
-              // пресет заполняет поле, админ видит её отдельно в статистике.
-              ActionChip(
-                label: Text(t.dealCancelReasonTookAnother),
-                onPressed: () => setDialogState(() {
-                  controller.text = t.dealCancelReasonTookAnother;
-                  presetCode = 'TOOK_OTHER_CARGO';
-                }),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.commonCancel)),
+              FilledButton(
+                key: const Key('cancelSubmit'),
+                onPressed: canSubmit ? () => Navigator.pop(dialogContext, true) : null,
+                child: Text(deal.cancelNeedsConsent ? t.dealCancelRequestSend : t.dealCancel),
               ),
             ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
-            FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text), child: Text(t.commonDone)),
-          ],
-        ),
+          );
+        },
       ),
     );
-    if (reason == null || reason.trim().isEmpty) return;
+    if (submitted != true || code == null) return;
 
     setState(() => _busy = true);
+    Deal? result;
     try {
-      await ref.read(dealRepositoryProvider).cancel(widget.dealId, reason: reason.trim(), reasonCode: presetCode);
+      result = await ref.read(dealRepositoryProvider).cancel(widget.dealId, reasonCode: code!, reason: code == 'OTHER' ? controller.text : null);
       ref.invalidate(dealByIdProvider(widget.dealId));
       ref.invalidate(dealsMineProvider);
     } catch (e) {
       if (mounted) showApiError(context, e);
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+    if (result != null && result.status == DealStatus.cancelled && result.cancelledAfterLoad && mounted) {
+      await _offerComplaint();
+    }
+  }
+
+  /// Ответ на запрос отмены: подтвердить или оспорить (046 п.5).
+  Future<void> _answerCancelRequest({required bool confirm}) async {
+    final t = context.l10n;
+    String? reason;
+    if (!confirm) {
+      final controller = TextEditingController();
+      reason = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(t.dealCancelDispute),
+          content: AppTextField(key: const Key('disputeReasonField'), label: t.dealDisputeReasonLabel, controller: controller, maxLines: 3),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
+            FilledButton(key: const Key('disputeSubmit'), onPressed: () => Navigator.pop(dialogContext, controller.text), child: Text(t.dealCancelDispute)),
+          ],
+        ),
+      );
+      if (reason == null || reason.trim().isEmpty) return;
+    }
+    setState(() => _busy = true);
+    Deal? result;
+    try {
+      final repo = ref.read(dealRepositoryProvider);
+      result = confirm ? await repo.confirmCancel(widget.dealId) : await repo.disputeCancel(widget.dealId, reason: reason!.trim());
+      ref.invalidate(dealByIdProvider(widget.dealId));
+      ref.invalidate(dealsMineProvider);
+    } catch (e) {
+      if (mounted) showApiError(context, e);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+    if (result != null && result.status == DealStatus.cancelled && mounted) await _offerComplaint();
+  }
+
+  /// «Пожаловаться» с предзаполненной сделкой (046 п.6) — в очередь жалоб админки.
+  Future<void> _offerComplaint() async {
+    final t = context.l10n;
+    final controller = TextEditingController();
+    final text = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        key: const Key('complaintOffer'),
+        title: Text(t.complaintOfferTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.complaintOfferBody, style: AppTextStyles.body),
+            const SizedBox(height: AppSpacing.sm),
+            AppTextField(key: const Key('complaintText'), label: t.complaintReasonLabel, controller: controller, maxLines: 3),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
+          FilledButton(key: const Key('complaintSubmit'), onPressed: () => Navigator.pop(dialogContext, controller.text), child: Text(t.complaintSend)),
+        ],
+      ),
+    );
+    if (text == null || text.trim().isEmpty) return;
+    try {
+      await ref.read(dealRepositoryProvider).complain(widget.dealId, reason: text.trim());
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.complaintSent)));
+    } catch (e) {
+      if (mounted) showApiError(context, e);
     }
   }
 
@@ -248,6 +338,15 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                     StatusBadge(label: statusLabel, color: statusColor),
                   ],
                 ),
+                // 046 п.3: отмены второй стороны — «отменил 1 из 15 · после загрузки 1».
+                if (cancelStatsText(t, isDriver ? deal.companyCancelStats : deal.driverCancelStats) case final stats?) ...[
+                  const SizedBox(height: 4),
+                  Text(stats, key: const Key('dealCancelStats'), style: AppTextStyles.caption.copyWith(color: StatusBadge.warning)),
+                ],
+                if (deal.cancelRequest != null && (deal.status == DealStatus.cancelRequested || deal.status == DealStatus.disputed)) ...[
+                  const SizedBox(height: 12),
+                  _cancelRequestBanner(context, deal, isDriver: isDriver),
+                ],
                 if (deal.cargo != null) ...[
                   const SizedBox(height: 8),
                   Text(formatMoney(deal.cargo!.price, deal.cargo!.currency), style: Theme.of(context).textTheme.headlineSmall),
@@ -256,9 +355,24 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                 Text(t.dealTimelineTitle, style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 8),
                 _timeline(context, deal),
-                if (deal.status == DealStatus.cancelled && deal.cancelReason != null) ...[
+                if (deal.status == DealStatus.cancelled && (deal.cancelReason != null || deal.cancelReasonCode != null)) ...[
                   const SizedBox(height: 16),
-                  Text('${t.dealCancelReasonLabel}: ${deal.cancelReason}'),
+                  Text(
+                    [
+                      '${t.dealCancelReasonLabel}: ${cancelReasonLabel(t, deal.cancelReasonCode, text: deal.cancelReason)}',
+                      if (cancelStageLabel(t, deal.cancelStage) case final stage?) stage,
+                    ].join(' · '),
+                    key: const Key('dealCancelReason'),
+                  ),
+                  if (deal.cancelledAfterLoad) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      key: const Key('dealComplain'),
+                      onPressed: _offerComplaint,
+                      icon: const Icon(LucideIcons.flag, size: 18),
+                      label: Text(t.complaintSend),
+                    ),
+                  ],
                 ],
                 // 044 п.5: машина рейса ещё на проверке — видно обоим.
                 if (!deal.vehiclesVerified && deal.status != DealStatus.cancelled) ...[
@@ -331,7 +445,11 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                   const SizedBox(height: 8),
                 ],
                 if (deal.isCancellable)
-                  OutlinedButton(onPressed: _busy ? null : _cancel, child: Text(t.dealCancel)),
+                  OutlinedButton(
+                    key: const Key('dealCancelButton'),
+                    onPressed: _busy ? null : () => _cancel(deal, isDriver: isDriver),
+                    child: Text(t.dealCancel),
+                  ),
                 if (deal.status == DealStatus.delivered) ...[
                   const SizedBox(height: 24),
                   Text(t.reviewsReceivedTitle, style: Theme.of(context).textTheme.titleSmall),
@@ -342,6 +460,43 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  /// Запрос отмены после «В пути»: инициатор ждёт, вторая сторона отвечает; спор — у админа.
+  Widget _cancelRequestBanner(BuildContext context, Deal deal, {required bool isDriver}) {
+    final t = context.l10n;
+    final req = deal.cancelRequest!;
+    final mine = req.byRole == (isDriver ? UserRole.driver : UserRole.company);
+    final until = req.expiresAt == null ? '' : formatDateTime(req.expiresAt!);
+    final reason = cancelReasonLabel(t, req.reasonCode, text: req.reason);
+    return AppCard(
+      key: const Key('dealCancelRequestBanner'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (deal.status == DealStatus.disputed)
+            Text(t.dealDisputedNotice, style: AppTextStyles.bodyStrong)
+          else if (mine)
+            Text(t.dealCancelRequestedByMe(until), style: AppTextStyles.body)
+          else ...[
+            Text(t.dealCancelRequestedByOther(isDriver ? deal.companyName : deal.driverName, reason, until), style: AppTextStyles.body),
+            const SizedBox(height: AppSpacing.md),
+            PrimaryButton(
+              key: const Key('dealCancelConfirm'),
+              label: t.dealCancelConfirm,
+              loading: _busy,
+              onPressed: () => _answerCancelRequest(confirm: true),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton(
+              key: const Key('dealCancelDispute'),
+              onPressed: _busy ? null : () => _answerCancelRequest(confirm: false),
+              child: Text(t.dealCancelDispute),
+            ),
+          ],
+        ],
       ),
     );
   }

@@ -919,7 +919,10 @@ class _DriverCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ],
-          if (driver.dealsCancelledByDriver > 0)
+          // 046 п.3: «отменил 1 из 15 · после загрузки 1»; старый сервер — прежняя строка.
+          if (cancelStatsText(t, driver.cancelStats) case final stats?)
+            Text(stats, key: const Key('driverCancelStats'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary))
+          else if (driver.cancelStats == null && driver.dealsCancelledByDriver > 0)
             Text(
               t.driverCancelShare(driver.dealsCancelledByDriver, driver.dealsTotal),
               style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),

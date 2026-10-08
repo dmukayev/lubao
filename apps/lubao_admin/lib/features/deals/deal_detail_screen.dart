@@ -35,6 +35,15 @@ class DealDetailScreen extends ConsumerWidget {
     await _reload(ref);
   }
 
+  /// 046 п.5: решение спора — отменить с виновной стороной или вернуть в «В пути».
+  Future<void> _resolve(BuildContext context, WidgetRef ref, String resolution, String? guilty, String label) async {
+    final reason = await showReasonDialog(context, title: label, confirmLabel: label, danger: resolution == 'CANCEL');
+    if (reason == null) return;
+    await ref.read(adminRepositoryProvider).resolveDispute(id, resolution: resolution, guilty: guilty, reason: reason);
+    ref.invalidate(adminAttentionProvider);
+    await _reload(ref);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
@@ -60,6 +69,10 @@ class DealDetailScreen extends ConsumerWidget {
                 onFixStatus: () => _fixStatus(context, ref, deal),
                 onCancel: () => _cancel(context, ref),
               ),
+              if (deal.cancelRequest != null && (deal.status == 'DISPUTED' || deal.status == 'CANCEL_REQUESTED')) ...[
+                const SizedBox(height: 16),
+                _DisputeCard(deal: deal, onResolve: (resolution, guilty, label) => _resolve(context, ref, resolution, guilty, label)),
+              ],
               const SizedBox(height: 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,11 +135,13 @@ class _Header extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, AppSizes.buttonHeight)),
-                  onPressed: onFixStatus,
-                  child: Text(t.adminDealFixStatus),
-                ),
+                // Пока решается отмена «в пути» — статус не правим, только решение спора.
+                if (deal.status != 'DISPUTED' && deal.status != 'CANCEL_REQUESTED')
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(minimumSize: const Size(0, AppSizes.buttonHeight)),
+                    onPressed: onFixStatus,
+                    child: Text(t.adminDealFixStatus),
+                  ),
                 FilledButton(
                   style: FilledButton.styleFrom(backgroundColor: StatusBadge.danger, minimumSize: const Size(0, AppSizes.buttonHeight)),
                   onPressed: onCancel,
@@ -146,10 +161,65 @@ class _Header extends StatelessWidget {
                 ? '${formatMoney(deal.price, currencyFromJson(deal.currency))} (≈ ${formatMoney(deal.priceInKzt!, Currency.kzt)})'
                 : formatMoney(deal.price, currencyFromJson(deal.currency)),
           ),
-          if (deal.cancelReason != null) ...[
+          if (deal.status == 'CANCELLED' && (deal.cancelReason != null || deal.cancelReasonCode != null)) ...[
             const SizedBox(height: 8),
-            Text('${t.adminDealCancelledBy(cancelledByRoleLabel(t, deal.cancelledByRole ?? ''))}: ${deal.cancelReason}', style: const TextStyle(color: StatusBadge.danger)),
+            Text(
+              [
+                '${t.adminDealCancelledBy(cancelledByRoleLabel(t, deal.cancelledByRole ?? ''))}: ${cancelReasonLabel(t, deal.cancelReasonCode, text: deal.cancelReason)}',
+                if (cancelStageLabel(t, deal.cancelStage) case final stage?) stage,
+              ].join(' · '),
+              style: const TextStyle(color: StatusBadge.danger),
+            ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DisputeCard extends StatelessWidget {
+  const _DisputeCard({required this.deal, required this.onResolve});
+
+  final AdminDealDetail deal;
+  final void Function(String resolution, String? guilty, String label) onResolve;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final req = deal.cancelRequest!;
+    final byRole = req.byRole == UserRole.driver ? 'DRIVER' : 'COMPANY';
+    Widget button(String key, String label, String resolution, String? guilty, {bool danger = false}) => OutlinedButton(
+          key: Key(key),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(0, AppSizes.buttonHeight),
+            foregroundColor: danger ? StatusBadge.danger : null,
+          ),
+          onPressed: () => onResolve(resolution, guilty, label),
+          child: Text(label),
+        );
+    return AppCard(
+      key: const Key('adminDisputeCard'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(t.adminDisputesTitle, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(t.adminDisputeRequested(cancelledByRoleLabel(t, byRole), cancelReasonLabel(t, req.reasonCode, text: req.reason))),
+          if (req.disputeReason != null) ...[
+            const SizedBox(height: 4),
+            Text(t.adminDisputeObjection(req.disputeReason!)),
+          ],
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              button('disputeCancelDriver', t.adminDisputeCancelDriver, 'CANCEL', 'DRIVER', danger: true),
+              button('disputeCancelCompany', t.adminDisputeCancelCompany, 'CANCEL', 'COMPANY', danger: true),
+              button('disputeCancelNeutral', t.adminDisputeCancelNeutral, 'CANCEL', null),
+              button('disputeResume', t.adminDisputeResume, 'RESUME', null),
+            ],
+          ),
         ],
       ),
     );

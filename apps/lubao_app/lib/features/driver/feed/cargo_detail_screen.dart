@@ -470,6 +470,8 @@ class _CargoDetailBody extends ConsumerWidget {
                                 ] else
                                   TextSpan(text: t.cargoDetailNoReviews),
                                 TextSpan(text: ' · ${t.cargoDetailCompanyDeals(cargo.companyCompletedDeals)}'),
+                                // 046 п.3: отмены компании видны водителю.
+                                if (cancelStatsText(t, cargo.companyCancelStats) case final stats?) TextSpan(text: ' · $stats'),
                               ],
                             ),
                           ),

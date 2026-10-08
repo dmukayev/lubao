@@ -77,7 +77,8 @@ class LocationReporter {
     try {
       final deals = await _ref.read(dealRepositoryProvider).mine();
       final was = _hasTrackedDeal;
-      _hasTrackedDeal = deals.any((d) => d.status == DealStatus.loaded || d.status == DealStatus.inTransit);
+      // 046: пока решается отмена «в пути», груз всё ещё в машине — трекинг идёт.
+      _hasTrackedDeal = deals.any((d) => const {DealStatus.loaded, DealStatus.inTransit, DealStatus.cancelRequested, DealStatus.disputed}.contains(d.status));
       if (_hasTrackedDeal && !was) _tick();
     } catch (e) {
       // best-effort: сеть пропала — оставляем прежнее состояние до следующего обновления

@@ -15,6 +15,10 @@ import 'package:lubao_core/lubao_core.dart';
       return (t.dealStatusDelivered, StatusBadge.success);
     case DealStatus.cancelled:
       return (t.dealStatusCancelled, StatusBadge.danger);
+    case DealStatus.cancelRequested:
+      return (t.dealStatusCancelRequested, StatusBadge.warning);
+    case DealStatus.disputed:
+      return (t.dealStatusDisputed, StatusBadge.danger);
   }
 }
 
@@ -34,6 +38,10 @@ String dealStatusLabel(LubaoLocalizations t, String status) {
       return t.dealStatusDelivered;
     case 'CANCELLED':
       return t.dealStatusCancelled;
+    case 'CANCEL_REQUESTED':
+      return t.dealStatusCancelRequested;
+    case 'DISPUTED':
+      return t.dealStatusDisputed;
     default:
       return status;
   }

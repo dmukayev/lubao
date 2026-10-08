@@ -64,6 +64,10 @@ import '../../providers/api_providers.dart';
       return (t.dealStatusDelivered, StatusBadge.success);
     case DealStatus.cancelled:
       return (t.dealStatusCancelled, StatusBadge.danger);
+    case DealStatus.cancelRequested:
+      return (t.dealStatusCancelRequested, StatusBadge.warning);
+    case DealStatus.disputed:
+      return (t.dealStatusDisputed, StatusBadge.danger);
   }
 }
 
@@ -367,6 +371,13 @@ String systemMessageText(LubaoLocalizations t, String? code, Map<String, String>
     'INVITATION_DECLINED' => tidy(t.chatSystemInvitationDeclined(name)),
     'CARGO_TAKEN' => t.chatSystemCargoTaken,
     'DRIVER_SAYS_AGREED' => tidy(t.chatSystemDriverSaysAgreed(name)),
+    // 046 п.5: запрос отмены после «В пути» и его исход.
+    'CANCEL_REQUESTED' => t.chatSystemCancelRequested(cancelReasonLabel(t, params['reasonCode'], text: params['reason'])),
+    'CANCEL_CONFIRMED' => t.chatSystemCancelConfirmed,
+    'CANCEL_DISPUTED' => t.chatSystemCancelDisputed,
+    'CANCEL_RESOLVED' => t.chatSystemCancelResolved,
+    'CANCEL_RESUMED' => t.chatSystemCancelResumed,
+    'CANCEL_AUTO' => t.chatSystemCancelAuto,
     _ => fallback,
   };
 }

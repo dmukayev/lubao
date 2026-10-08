@@ -16,7 +16,7 @@ import 'announce_arrival_sheet.dart';
 /// капотом — те же анонсы и правила свежести 040, меняется только интерфейс.
 enum DriverStatusKind { lookingHere, onTheWay, inTrip, notLooking }
 
-const _tripStatuses = {DealStatus.confirmedByDriver, DealStatus.loaded, DealStatus.inTransit};
+const _tripStatuses = {DealStatus.confirmedByDriver, DealStatus.loaded, DealStatus.inTransit, DealStatus.cancelRequested, DealStatus.disputed};
 
 DriverStatusKind driverStatusOf(MyArrivals? arrivals, List<Deal>? deals) {
   if (deals != null && deals.any((d) => _tripStatuses.contains(d.status))) return DriverStatusKind.inTrip;

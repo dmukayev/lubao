@@ -3314,4 +3314,154 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String adminBodyTypeFieldsInvalid(String errors) {
     return 'Fields not saved: $errors';
   }
+
+  @override
+  String get dealStatusCancelRequested => 'Cancellation requested';
+
+  @override
+  String get dealStatusDisputed => 'Cancellation disputed';
+
+  @override
+  String get cancelReasonVehicleBreakdown => 'Vehicle broke down';
+
+  @override
+  String get cancelReasonCargoNotReady => 'Cargo not ready';
+
+  @override
+  String get cancelReasonOtherPartyUnresponsive => 'Other party not responding';
+
+  @override
+  String get cancelReasonTermsChanged => 'Terms changed';
+
+  @override
+  String get cancelReasonOther => 'Other';
+
+  @override
+  String get dealCancelReasonPick => 'Why are you cancelling?';
+
+  @override
+  String get dealCancelOtherHint => 'Describe the reason';
+
+  @override
+  String get dealCancelRequestNotice =>
+      'The cargo is already on the way — cancelling needs the other party\'s consent. Without a reply in 24 hours it goes through.';
+
+  @override
+  String get dealCancelRequestSend => 'Send request';
+
+  @override
+  String dealCancelRequestedByMe(String time) {
+    return 'You requested cancellation. Waiting for a reply until $time';
+  }
+
+  @override
+  String dealCancelRequestedByOther(String name, String reason, String time) {
+    return '$name asks to cancel the deal: $reason. Without a reply by $time it will be cancelled';
+  }
+
+  @override
+  String get dealCancelConfirm => 'Confirm cancellation';
+
+  @override
+  String get dealCancelDispute => 'Dispute';
+
+  @override
+  String get dealDisputeReasonLabel => 'Why do you disagree?';
+
+  @override
+  String get dealDisputedNotice =>
+      'Cancellation disputed — an admin will decide';
+
+  @override
+  String cancelStatsLine(int cancelled, int total) {
+    return 'cancelled $cancelled of $total';
+  }
+
+  @override
+  String cancelStatsAfterLoad(int count) {
+    return 'after loading $count';
+  }
+
+  @override
+  String get complaintOfferTitle => 'File a complaint?';
+
+  @override
+  String get complaintOfferBody =>
+      'The deal was cancelled with the cargo already loaded. Tell an admin what happened.';
+
+  @override
+  String get complaintReasonLabel => 'What happened';
+
+  @override
+  String get complaintSend => 'Complain';
+
+  @override
+  String get complaintSent => 'Complaint sent';
+
+  @override
+  String chatSystemCancelRequested(String reason) {
+    return 'Cancellation requested: $reason. Without a reply in 24 hours it goes through';
+  }
+
+  @override
+  String get chatSystemCancelConfirmed =>
+      'Cancellation confirmed — deal cancelled';
+
+  @override
+  String get chatSystemCancelDisputed =>
+      'Cancellation disputed — an admin will decide';
+
+  @override
+  String get chatSystemCancelResolved => 'An admin cancelled the deal';
+
+  @override
+  String get chatSystemCancelResumed =>
+      'An admin returned the deal to “In transit”';
+
+  @override
+  String get chatSystemCancelAuto =>
+      'No reply to the cancellation request in 24 hours — deal cancelled';
+
+  @override
+  String get adminDisputesTitle => 'Cancellation disputes';
+
+  @override
+  String adminDisputeRequested(String who, String reason) {
+    return '$who requests cancellation: $reason';
+  }
+
+  @override
+  String adminDisputeObjection(String reason) {
+    return 'Objection: $reason';
+  }
+
+  @override
+  String get adminDisputeCancelDriver => 'Cancel — driver at fault';
+
+  @override
+  String get adminDisputeCancelCompany => 'Cancel — company at fault';
+
+  @override
+  String get adminDisputeCancelNeutral => 'Cancel — no fault';
+
+  @override
+  String get adminDisputeResume => 'Return to “In transit”';
+
+  @override
+  String get adminCancellationsTitle => 'Cancellations';
+
+  @override
+  String get cancelStageBeforeConfirm => 'before confirmation';
+
+  @override
+  String get cancelStageAfterConfirm => 'after confirmation';
+
+  @override
+  String get cancelStageAfterLoad => 'after loading';
+
+  @override
+  String get cancelStageInTransit => 'in transit';
+
+  @override
+  String get cancelAtFault => 'own fault';
 }

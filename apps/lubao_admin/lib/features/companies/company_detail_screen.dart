@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
+import '../shared/cancellations_card.dart';
 import '../shared/admin_dialogs.dart';
 import '../shared/admin_document_image.dart';
 import '../shared/admin_status_helpers.dart';
@@ -220,6 +221,7 @@ class CompanyDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               _StatsRow(company: company),
+              CancellationsCard(stats: company.cancelStats, items: company.cancellations),
               const SizedBox(height: 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -873,6 +873,11 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
+                // 046 п.3: отмены второй стороны — водителю компании, логисту водителя.
+                if (cancelStatsText(t, widget.isDriver ? (deal?.companyCancelStats ?? cargo.companyCancelStats) : deal?.driverCancelStats) case final stats?) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(stats, key: const Key('chatCancelStats'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
                 if (actionRow != null) ...[
                   const SizedBox(height: AppSpacing.sm),
                   actionRow,

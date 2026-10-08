@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
+import '../shared/cancellations_card.dart';
 import '../shared/admin_dialogs.dart';
 import '../shared/admin_document_image.dart';
 import '../shared/admin_status_helpers.dart';
@@ -195,6 +196,7 @@ class DriverDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               _StatsRow(driver: driver),
+              CancellationsCard(stats: driver.cancelStats, items: driver.cancellations),
               const SizedBox(height: 16),
               ResponsiveTwoColumn(
                 left: Column(
