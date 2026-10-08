@@ -123,6 +123,42 @@ function route(p: NotificationPayload, locale: Loc): string {
   const to = place(p, 'destination', locale);
   return from && to ? `${from} → ${to}` : to || from;
 }
+/// 053 п.6а: «₸850 000 · 20 т · тентованный · погрузка 10 окт» — цена как в
+/// ленте (символ и разряды пробелом), город/кузов из справочника.
+const CURRENCY_SYMBOL: Record<string, string> = { USD: '$', CNY: '¥', KZT: '₸' };
+const MONTHS: Record<Loc, string[]> = {
+  ru: ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'],
+  kk: ['қаң', 'ақп', 'нау', 'сәу', 'мам', 'мау', 'шіл', 'там', 'қыр', 'қаз', 'қар', 'жел'],
+  zh: [],
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+};
+const TON: Record<Loc, string> = { ru: 'т', kk: 'т', zh: '吨', en: 't' };
+const LOADING: Record<Loc, (date: string) => string> = {
+  ru: (d) => `погрузка ${d}`,
+  kk: (d) => `тиеу ${d}`,
+  zh: (d) => `装货 ${d}`,
+  en: (d) => `loading ${d}`,
+};
+function groupThousands(value: number): string {
+  return Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+function shortDate(iso: string, locale: Loc): string {
+  const [, m, d] = iso.split('-').map(Number);
+  if (!m || !d) return iso;
+  if (locale === 'zh') return `${m}月${d}日`;
+  if (locale === 'en') return `${MONTHS.en[m - 1]} ${d}`;
+  return `${d} ${MONTHS[locale][m - 1]}`;
+}
+export function cargoLine(p: NotificationPayload, locale: Loc): string {
+  const tons = p.weightKg != null ? Number(p.weightKg) / 1000 : null;
+  const body = p.bodyType ? pickLocaleText(p.bodyType, locale) : '';
+  return [
+    `${CURRENCY_SYMBOL[p.currency] ?? ''}${groupThousands(Number(p.price))}${CURRENCY_SYMBOL[p.currency] ? '' : ` ${p.currency ?? ''}`}`.trim(),
+    tons != null ? `${Number.isInteger(tons) ? tons : tons.toFixed(1)} ${TON[locale]}` : '',
+    locale === 'zh' || !body ? body : body.toLocaleLowerCase(locale),
+    p.readyDate ? LOADING[locale](shortDate(p.readyDate, locale)) : '',
+  ].filter((part) => !!part).join(' · ');
+}
 const LOGIST_STATUS: Record<Loc, (p: NotificationPayload) => { title: string; body: string }> = {
   ru: (p) => {
     const flow = CANCEL_FLOW.ru(p, p.driverName);
@@ -220,11 +256,14 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
     zh: (p) => ({ title: '附近有新货物', body: `${p.routeLabel} · ${p.price} ${p.currency}` }),
     en: (p) => ({ title: 'New cargo nearby', body: `${p.routeLabel} · ${p.price} ${p.currency}` }),
   },
+  /// 053 п.6а: по push должно быть понятно, стоит ли открывать — маршрут в
+  /// заголовке, цена/вес/кузов/погрузка и компания в тексте. Без сводки
+  /// (старый payload) — прежний общий текст.
   CARGO_INVITE: {
-    ru: (p) => ({ title: 'Приглашение на груз', body: `${p.companyName} приглашает вас на груз` }),
-    kk: (p) => ({ title: 'Жүкке шақыру', body: `${p.companyName} сізді жүкке шақырады` }),
-    zh: (p) => ({ title: '货物邀请', body: `${p.companyName} 邀请您承运货物` }),
-    en: (p) => ({ title: 'Cargo invitation', body: `${p.companyName} invited you to a cargo` }),
+    ru: (p) => (p.price != null ? { title: `Приглашение: ${route(p, 'ru')}`, body: `${cargoLine(p, 'ru')} — ${p.companyName}` } : { title: 'Приглашение на груз', body: `${p.companyName} приглашает вас на груз` }),
+    kk: (p) => (p.price != null ? { title: `Шақыру: ${route(p, 'kk')}`, body: `${cargoLine(p, 'kk')} — ${p.companyName}` } : { title: 'Жүкке шақыру', body: `${p.companyName} сізді жүкке шақырады` }),
+    zh: (p) => (p.price != null ? { title: `邀请：${route(p, 'zh')}`, body: `${cargoLine(p, 'zh')} — ${p.companyName}` } : { title: '货物邀请', body: `${p.companyName} 邀请您承运货物` }),
+    en: (p) => (p.price != null ? { title: `Invitation: ${route(p, 'en')}`, body: `${cargoLine(p, 'en')} — ${p.companyName}` } : { title: 'Cargo invitation', body: `${p.companyName} invited you to a cargo` }),
   },
   /// Задача 029, п.11 — если отправитель и получатель на разных языках,
   /// перевод в момент отправки ещё не готов (п.6: он всегда асинхронный),
@@ -269,10 +308,10 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
   DEAL_FOR_LOGIST: LOGIST_STATUS,
   DEAL_FOR_DRIVER: DRIVER_STATUS,
   DEAL_SELECTED: {
-    ru: () => ({ title: 'Вас выбрали', body: 'Логист выбрал вас на груз. Подтвердите перевозку в приложении.' }),
-    kk: () => ({ title: 'Сізді таңдады', body: 'Логист сізді жүкке таңдады. Тасымалды қолданбада растаңыз.' }),
-    zh: () => ({ title: '您已被选中', body: '物流方已为该货物选择了您。请在应用中确认运输。' }),
-    en: () => ({ title: 'You were selected', body: 'A logistician selected you for the cargo. Confirm the haul in the app.' }),
+    ru: (p) => (p.price != null ? { title: `Вас выбрали: ${route(p, 'ru')}`, body: `${cargoLine(p, 'ru')} — ${p.companyName}. Подтвердите перевозку` } : { title: 'Вас выбрали', body: 'Логист выбрал вас на груз. Подтвердите перевозку в приложении.' }),
+    kk: (p) => (p.price != null ? { title: `Сізді таңдады: ${route(p, 'kk')}`, body: `${cargoLine(p, 'kk')} — ${p.companyName}. Тасымалды растаңыз` } : { title: 'Сізді таңдады', body: 'Логист сізді жүкке таңдады. Тасымалды қолданбада растаңыз.' }),
+    zh: (p) => (p.price != null ? { title: `您已被选中：${route(p, 'zh')}`, body: `${cargoLine(p, 'zh')} — ${p.companyName}。请确认运输` } : { title: '您已被选中', body: '物流方已为该货物选择了您。请在应用中确认运输。' }),
+    en: (p) => (p.price != null ? { title: `You were selected: ${route(p, 'en')}`, body: `${cargoLine(p, 'en')} — ${p.companyName}. Confirm the haul` } : { title: 'You were selected', body: 'A logistician selected you for the cargo. Confirm the haul in the app.' }),
   },
   DEAL_STATUS: {
     ru: (p) => ({ title: 'Статус сделки изменился', body: DEAL_STATUS_LABEL[p.status]?.ru ?? p.status }),

@@ -5,6 +5,7 @@ import { ChatSystemMessagesService } from '../chats/chat-system-messages.service
 import { haulInfoByDriver } from '../deals/haul-summary';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
+import { loadCargoPushSummary } from '../notifications/cargo-push-summary';
 import { IdentifiersService } from '../identifiers/identifiers.service';
 import { toDateOnly } from '../common/date-only';
 import { cancelStatsFor } from '../deals/cancel-policy';
@@ -404,6 +405,7 @@ export class ResponsesService {
     }).catch((e) => this.rethrowUnique(e));
 
     await this.notifications.notify({ userIds: [updated.selected.driver.userId] }, 'DEAL_SELECTED', {
+      ...(await loadCargoPushSummary(this.prisma, updated.selected.cargoId)),
       dealId: updated.deal.id,
     });
 
@@ -492,6 +494,7 @@ export class ResponsesService {
     if (!created) return this.toDto(response);
 
     await this.notifications.notify({ userIds: [response.driver.userId] }, 'CARGO_INVITE', {
+      ...(await loadCargoPushSummary(this.prisma, cargoId)),
       cargoId,
       companyName: cargo.company.name,
     });
@@ -560,6 +563,7 @@ export class ResponsesService {
     const selectedResponse = updated.selected;
 
     await this.notifications.notify({ userIds: [selectedResponse.driver.userId] }, 'CARGO_INVITE', {
+      ...(await loadCargoPushSummary(this.prisma, cargoId)),
       cargoId,
       companyName: cargo.company.name,
     });

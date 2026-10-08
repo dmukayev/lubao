@@ -78,3 +78,47 @@ describe('статус сделки по роли (042 п.8)', () => {
     }
   });
 });
+
+/// 053 п.6а: «Вас пригласили» и «Вас выбрали» — с сутью груза, чтобы по
+/// push было понятно, стоит ли открывать.
+describe('CARGO_INVITE / DEAL_SELECTED — маршрут, цена, вес, кузов, погрузка (053 п.6а)', () => {
+  const payload = {
+    cargoId: 'cargo1',
+    dealId: 'deal1',
+    companyName: 'ТОО X',
+    origin: { ru: 'Алматы', kk: 'Алматы', zh: '阿拉木图', en: 'Almaty' },
+    destination: { ru: 'Астана', kk: 'Астана', zh: '阿斯塔纳', en: 'Astana' },
+    price: 850000,
+    currency: 'KZT',
+    weightKg: 20000,
+    bodyType: { ru: 'Тент', kk: 'Тент', zh: '篷布车', en: 'Tent' },
+    readyDate: '2026-10-10',
+  };
+
+  it('ru: заголовок с маршрутом, текст — цена как в ленте, тонны, кузов, дата, компания', () => {
+    expect(NOTIFICATION_EVENTS.CARGO_INVITE.render('ru', payload)).toEqual({
+      title: 'Приглашение: Алматы → Астана',
+      body: '₸850 000 · 20 т · тент · погрузка 10 окт — ТОО X',
+    });
+    expect(NOTIFICATION_EVENTS.DEAL_SELECTED.render('ru', payload).title).toBe('Вас выбрали: Алматы → Астана');
+    expect(NOTIFICATION_EVENTS.DEAL_SELECTED.render('ru', payload).body).toContain('₸850 000 · 20 т');
+  });
+
+  it('kk/zh/en — города и кузов из справочника на языке получателя', () => {
+    expect(NOTIFICATION_EVENTS.CARGO_INVITE.render('kk', payload).body).toBe('₸850 000 · 20 т · тент · тиеу 10 қаз — ТОО X');
+    expect(NOTIFICATION_EVENTS.CARGO_INVITE.render('zh', payload)).toEqual({
+      title: '邀请：阿拉木图 → 阿斯塔纳',
+      body: '₸850 000 · 20 吨 · 篷布车 · 装货 10月10日 — ТОО X',
+    });
+    expect(NOTIFICATION_EVENTS.CARGO_INVITE.render('en', { ...payload, currency: 'USD', price: 1500, weightKg: 12500 }).body).toBe(
+      '$1 500 · 12.5 t · tent · loading Oct 10 — ТОО X',
+    );
+  });
+
+  it('без сводки (сбой чтения груза) — прежний общий текст, тап всё равно ведёт на груз', () => {
+    const r = NOTIFICATION_EVENTS.CARGO_INVITE.render('ru', { cargoId: 'cargo1', companyName: 'ТОО X' });
+    expect(r).toEqual({ title: 'Приглашение на груз', body: 'ТОО X приглашает вас на груз' });
+    expect(NOTIFICATION_EVENTS.CARGO_INVITE.deepLink(payload)).toBe('/driver/cargo/cargo1');
+    expect(NOTIFICATION_EVENTS.DEAL_SELECTED.deepLink(payload)).toBe('/deal/deal1');
+  });
+});
