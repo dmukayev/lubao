@@ -741,3 +741,18 @@ export class AdminBodyTypeProfileDto {
   reason!: string;
 }
 
+
+/// Решение спора об отмене (046 п.5): отменить с виновной стороной или вернуть в «В пути».
+export class AdminResolveDisputeDto {
+  @IsIn(['CANCEL', 'RESUME'])
+  resolution!: 'CANCEL' | 'RESUME';
+
+  @IsOptional()
+  @IsIn(['DRIVER', 'COMPANY'])
+  guilty?: 'DRIVER' | 'COMPANY';
+
+  @IsNotEmpty()
+  @MaxLength(1000)
+  @IsString()
+  reason!: string;
+}

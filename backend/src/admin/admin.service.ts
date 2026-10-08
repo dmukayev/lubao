@@ -1,4 +1,5 @@
 import { notifyDealStatus } from '../deals/deal-status-notify';
+import { stageForStatus } from '../deals/cancel-policy';
 import { CARGO_ARCHIVE_AFTER_MS } from '../cargos/cargo-lifecycle';
 import { isValidChannelSetting } from '../sms/login-code-channels';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
@@ -65,7 +66,21 @@ export const APP_SETTING_KEYS: Record<string, (value: string) => boolean> = {
   minAppVersion: (v) => v === '' || /^\d+\.\d+\.\d+$/.test(v),
   /// Каналы кода входа: порядок и вкл/выкл (042 п.3) — JSON `[{id, enabled}]`.
   loginCodeChannels: isValidChannelSetting,
+  /// Вес отмены по своей вине в рейтинге по этапам (046 п.4) — JSON
+  /// `{BEFORE_CONFIRM, AFTER_CONFIRM, AFTER_LOAD, IN_TRANSIT}`, числа 0–20.
+  cancelRatingWeights: isValidCancelWeights,
 };
+
+function isValidCancelWeights(v: string): boolean {
+  try {
+    const o = JSON.parse(v) as Record<string, unknown>;
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return false;
+    const stages = ['BEFORE_CONFIRM', 'AFTER_CONFIRM', 'AFTER_LOAD', 'IN_TRANSIT'];
+    return Object.entries(o).every(([k, n]) => stages.includes(k) && typeof n === 'number' && n >= 0 && n <= 20);
+  } catch {
+    return false;
+  }
+}
 
 /// Пороги «похоже на парсинг» (043 п.11).
 export const SUSPICIOUS_OPENS_PER_DAY = 20;
@@ -347,7 +362,29 @@ export class AdminService {
       pendingCities,
       blacklistMatches,
       suspiciousContacts: await this.suspiciousContacts(),
+      disputedDeals: await this.disputedDeals(),
     };
+  }
+
+  /// «Требует внимания» → споры об отмене после «В пути» (046 п.5): обе позиции.
+  async disputedDeals() {
+    const rows = await this.prisma.deal.findMany({
+      where: { status: 'DISPUTED' },
+      orderBy: { disputedAt: 'asc' },
+      take: 50,
+      include: { driver: { select: { fullName: true } }, company: { select: { name: true } } },
+    });
+    return rows.map((d) => ({
+      dealId: d.id,
+      driverName: d.driver.fullName,
+      companyName: d.company.name,
+      requestedByRole: d.cancelRequestedByRole,
+      reasonCode: d.cancelRequestReasonCode,
+      reason: d.cancelRequestReason,
+      requestedAt: d.cancelRequestedAt,
+      disputeReason: d.disputeReason,
+      disputedAt: d.disputedAt,
+    }));
   }
 
   /// «Требует внимания» → похоже на парсинг (043 п.11): за сутки открыл
@@ -842,6 +879,19 @@ export class AdminService {
       status: deal.status,
       cancelReason: deal.cancelReason,
       cancelledByRole: deal.cancelledByRole,
+      cancelReasonCode: deal.cancelReasonCode,
+      cancelStage: deal.cancelStage,
+      faultSide: deal.faultSide,
+      cancelRequest: deal.cancelRequestedAt
+        ? {
+            byRole: deal.cancelRequestedByRole,
+            reasonCode: deal.cancelRequestReasonCode,
+            reason: deal.cancelRequestReason,
+            requestedAt: deal.cancelRequestedAt,
+            disputeReason: deal.disputeReason,
+            disputedAt: deal.disputedAt,
+          }
+        : null,
       staleDays:
         deal.status === 'DELIVERED' || deal.status === 'CANCELLED'
           ? 0
@@ -948,7 +998,8 @@ export class AdminService {
 
     await this.prisma.deal.update({
       where: { id },
-      data: { status: 'CANCELLED', cancelReason: reason, cancelledByRole: 'ADMIN' },
+      // 046: этап — по статусу; вина админской отмены нейтральна и в рейтинг не идёт.
+      data: { status: 'CANCELLED', cancelReason: reason, cancelledByRole: 'ADMIN', cancelReasonCode: 'OTHER', cancelStage: stageForStatus(deal.status), faultSide: 'NEUTRAL' },
     });
     await this.prisma.cargo.updateMany({ where: { id: deal.cargoId, status: 'IN_DEAL' }, data: { status: 'PUBLISHED' } });
     await this.logAudit(adminUserId, 'DEAL_CANCELLED_BY_ADMIN', 'Deal', id, { reason });

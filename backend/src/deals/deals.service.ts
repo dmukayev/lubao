@@ -1,15 +1,30 @@
 import { DealActor, notifyDealStatus } from './deal-status-notify';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Company, Deal, Driver, Prisma } from '@prisma/client';
+import { CancelStage, Company, Deal, DealStatus, Driver, FaultSide, Prisma, ReviewAuthorRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { completeArrivalForConfirmedDeal } from '../arrivals/arrival-lifecycle';
 import { evaluateVehicleLoad } from './vehicle-load';
 import { CargosService } from '../cargos/cargos.service';
-import { ChatSystemMessagesService } from '../chats/chat-system-messages.service';
+import { ChatSystemCode, ChatSystemMessagesService } from '../chats/chat-system-messages.service';
+import {
+  CANCEL_REQUEST_TIMEOUT_HOURS,
+  CancelReasonCode,
+  DRIVER_ONLY_REASONS,
+  faultFor,
+  needsCounterpartyConsent,
+  recomputeCompanyRating,
+  recomputeDriverRating,
+  stageForStatus,
+} from './cancel-policy';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
 import { toDateOnly } from '../common/date-only';
+
+function rethrowStatusRace(e: unknown): never {
+  if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') throw new ConflictException('DEAL_STATUS_CHANGED');
+  throw e;
+}
 
 const PROGRESSION = ['SELECTED', 'CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED'] as const;
 
@@ -65,6 +80,20 @@ export class DealsService {
       cancelReason: deal.cancelReason,
       cancelReasonCode: deal.cancelReasonCode,
       cancelledByRole: deal.cancelledByRole,
+      // 046: этап и вина отмены; запрос отмены после «В пути» и спор.
+      cancelStage: deal.cancelStage,
+      faultSide: deal.faultSide,
+      cancelRequest: deal.cancelRequestedAt
+        ? {
+            byRole: deal.cancelRequestedByRole,
+            reasonCode: deal.cancelRequestReasonCode,
+            reason: deal.cancelRequestReason,
+            requestedAt: deal.cancelRequestedAt,
+            expiresAt: new Date(deal.cancelRequestedAt.getTime() + CANCEL_REQUEST_TIMEOUT_HOURS * 60 * 60 * 1000),
+            disputeReason: deal.disputeReason,
+            disputedAt: deal.disputedAt,
+          }
+        : null,
       confirmedAt: deal.confirmedAt,
       loadedAt: deal.loadedAt,
       inTransitAt: deal.inTransitAt,
@@ -235,29 +264,197 @@ export class DealsService {
     return this.toDto(updated);
   }
 
-  async cancel(id: string, ctx: { driverId?: string; companyId?: string }, reason: string, reasonCode?: string) {
+  /// Отмена сделки (046). До «В пути» — сразу, с этапом и стороной вины;
+  /// после — только запросом: вторая сторона подтверждает или оспаривает,
+  /// без ответа 24 ч отмена проходит сама (JobsService).
+  async cancel(id: string, ctx: { driverId?: string; companyId?: string }, reason: string | undefined, reasonCode?: CancelReasonCode) {
     const deal = await this.findEntity(id);
     this.assertParty(deal, ctx);
+    const by: ReviewAuthorRole = ctx.driverId ? 'DRIVER' : 'COMPANY';
+    const code: CancelReasonCode = reasonCode ?? 'OTHER';
+    if (DRIVER_ONLY_REASONS.has(code) && by !== 'DRIVER') throw new BadRequestException('REASON_NOT_ALLOWED');
+    const text = reason?.trim() || null;
+    if (code === 'OTHER' && !text) throw new BadRequestException('REASON_TEXT_REQUIRED');
+
+    if (deal.status === 'CANCEL_REQUESTED' || deal.status === 'DISPUTED') {
+      throw new ConflictException('CANCEL_ALREADY_REQUESTED');
+    }
     if (deal.status === 'DELIVERED' || deal.status === 'CANCELLED') {
       throw new BadRequestException('This deal can no longer be cancelled');
     }
 
+    if (needsCounterpartyConsent(deal.status)) {
+      const updated = await this.prisma.deal.update({
+        where: { id, status: deal.status },
+        data: {
+          status: 'CANCEL_REQUESTED',
+          cancelRequestedAt: new Date(),
+          cancelRequestedByRole: by,
+          cancelRequestReasonCode: code,
+          cancelRequestReason: text,
+        },
+        include: this.include,
+      }).catch(rethrowStatusRace);
+      await this.postCancelLine(updated, by === 'DRIVER' ? updated.driver.userId : null, 'CANCEL_REQUESTED', { reasonCode: code, ...(text ? { reason: text } : {}) });
+      await this.notifyStatusChange(updated, 'CANCEL_REQUESTED', by);
+      return this.toDto(updated);
+    }
+
+    const updated = await this.closeCancelled(deal, {
+      by,
+      code,
+      text,
+      stage: stageForStatus(deal.status),
+      faultSide: faultFor(code, by),
+    });
+    await this.notifyStatusChange(updated, 'CANCELLED', by);
+    return this.toDto(updated);
+  }
+
+  /// Вторая сторона согласна с запросом отмены → CANCELLED, вина — по причине.
+  async confirmCancel(id: string, ctx: { driverId?: string; companyId?: string }) {
+    const deal = await this.findEntity(id);
+    this.assertParty(deal, ctx);
+    const me: ReviewAuthorRole = ctx.driverId ? 'DRIVER' : 'COMPANY';
+    if (deal.status !== 'CANCEL_REQUESTED') throw new ConflictException('NO_CANCEL_REQUEST');
+    if (deal.cancelRequestedByRole === me) throw new ForbiddenException('OWN_CANCEL_REQUEST');
+    const by = deal.cancelRequestedByRole as ReviewAuthorRole;
+    const updated = await this.closeCancelled(deal, {
+      by,
+      code: deal.cancelRequestReasonCode,
+      text: deal.cancelRequestReason,
+      stage: 'IN_TRANSIT',
+      faultSide: faultFor(deal.cancelRequestReasonCode, by),
+      expectStatus: 'CANCEL_REQUESTED',
+    });
+    await this.postCancelLine(updated, me === 'DRIVER' ? updated.driver.userId : null, 'CANCEL_CONFIRMED');
+    await this.notifyStatusChange(updated, 'CANCELLED', me);
+    return this.toDto(updated);
+  }
+
+  /// «Оспорить» → DISPUTED: строка в «Требует внимания» админа с обеими позициями.
+  async disputeCancel(id: string, ctx: { driverId?: string; companyId?: string }, reason: string) {
+    const deal = await this.findEntity(id);
+    this.assertParty(deal, ctx);
+    const me: ReviewAuthorRole = ctx.driverId ? 'DRIVER' : 'COMPANY';
+    if (deal.status !== 'CANCEL_REQUESTED') throw new ConflictException('NO_CANCEL_REQUEST');
+    if (deal.cancelRequestedByRole === me) throw new ForbiddenException('OWN_CANCEL_REQUEST');
     const updated = await this.prisma.deal.update({
-      where: { id },
+      where: { id, status: 'CANCEL_REQUESTED' },
+      data: { status: 'DISPUTED', disputedAt: new Date(), disputeReason: reason.trim() },
+      include: this.include,
+    }).catch(rethrowStatusRace);
+    await this.postCancelLine(updated, me === 'DRIVER' ? updated.driver.userId : null, 'CANCEL_DISPUTED');
+    await this.notifyStatusChange(updated, 'DISPUTED', me);
+    return this.toDto(updated);
+  }
+
+  /// Админ закрывает спор (046 п.5): отменить с виновной стороной или вернуть в «В пути».
+  async resolveDispute(id: string, adminUserId: string, resolution: 'CANCEL' | 'RESUME', guilty: ReviewAuthorRole | null, note: string) {
+    const deal = await this.findEntity(id);
+    if (deal.status !== 'DISPUTED' && deal.status !== 'CANCEL_REQUESTED') throw new ConflictException('NO_DISPUTE');
+    let updated: DealWithRelations;
+    if (resolution === 'RESUME') {
+      updated = await this.prisma.deal.update({
+        where: { id, status: deal.status },
+        data: {
+          status: 'IN_TRANSIT',
+          cancelRequestedAt: null,
+          cancelRequestedByRole: null,
+          cancelRequestReasonCode: null,
+          cancelRequestReason: null,
+          disputedAt: null,
+          disputeReason: null,
+        },
+        include: this.include,
+      }).catch(rethrowStatusRace);
+      await this.postCancelLine(updated, adminUserId, 'CANCEL_RESUMED');
+      await this.notifyStatusChange(updated, 'IN_TRANSIT', 'ADMIN');
+    } else {
+      const by = (deal.cancelRequestedByRole ?? 'DRIVER') as ReviewAuthorRole;
+      const faultSide: FaultSide = guilty == null ? 'NEUTRAL' : guilty === by ? 'SELF' : 'OTHER_PARTY';
+      updated = await this.closeCancelled(deal, {
+        by,
+        code: deal.cancelRequestReasonCode,
+        text: deal.cancelRequestReason,
+        stage: 'IN_TRANSIT',
+        faultSide,
+        expectStatus: deal.status,
+      });
+      await this.postCancelLine(updated, adminUserId, 'CANCEL_RESOLVED');
+      await this.notifyStatusChange(updated, 'CANCELLED', 'ADMIN');
+    }
+    await this.prisma.auditLog.create({
       data: {
-        status: 'CANCELLED',
-        cancelReason: reason,
-        // Код причины (038, п.15) — «взял другой груз» и т.п. считаются
-        // в статистике по коду, не по переведённой строке.
-        // п.28 (038): код «взял другой груз» — признак ВОДИТЕЛЯ; от компании/админа игнорируется.
-        cancelReasonCode: ctx.driverId ? (reasonCode ?? null) : null,
-        cancelledByRole: ctx.driverId ? 'DRIVER' : 'COMPANY',
+        actorUserId: adminUserId,
+        action: 'DEAL_DISPUTE_RESOLVED',
+        entityType: 'Deal',
+        entityId: id,
+        metadata: { resolution, guilty, note } as Prisma.InputJsonValue,
       },
+    });
+    return this.toDto(updated);
+  }
+
+  /// Запрос отмены без ответа 24 ч → отмена проходит, вина — на молчавшем.
+  async expireCancelRequests(now = new Date()): Promise<{ cancelled: number }> {
+    const before = new Date(now.getTime() - CANCEL_REQUEST_TIMEOUT_HOURS * 60 * 60 * 1000);
+    const due = await this.prisma.deal.findMany({
+      where: { status: 'CANCEL_REQUESTED', cancelRequestedAt: { lt: before } },
       include: this.include,
     });
-    // Сделка отменена → груз снова в ленте, если он не был закрыт (041, п.2).
-    await this.prisma.cargo.updateMany({ where: { id: updated.cargoId, status: 'IN_DEAL' }, data: { status: 'PUBLISHED' } });
-    await this.notifyStatusChange(updated, 'CANCELLED', ctx.driverId ? 'DRIVER' : 'COMPANY');
-    return this.toDto(updated);
+    let cancelled = 0;
+    for (const deal of due) {
+      try {
+        const updated = await this.closeCancelled(deal, {
+          by: (deal.cancelRequestedByRole ?? 'DRIVER') as ReviewAuthorRole,
+          code: deal.cancelRequestReasonCode,
+          text: deal.cancelRequestReason,
+          stage: 'IN_TRANSIT',
+          faultSide: 'OTHER_PARTY',
+          expectStatus: 'CANCEL_REQUESTED',
+        });
+        await this.postCancelLine(updated, null, 'CANCEL_AUTO');
+        await this.notifyStatusChange(updated, 'CANCELLED', 'ADMIN');
+        cancelled += 1;
+      } catch {
+        // Ответ пришёл между выборкой и записью — сделка уже не в запросе.
+      }
+    }
+    return { cancelled };
+  }
+
+  /// Запись отмены: этап, сторона вины, груз снова в ленте, рейтинг обеих сторон.
+  private async closeCancelled(
+    deal: DealWithRelations,
+    p: { by: ReviewAuthorRole; code: string | null; text: string | null; stage: CancelStage; faultSide: FaultSide; expectStatus?: DealStatus },
+  ): Promise<DealWithRelations> {
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.deal.update({
+        // Статус мог смениться параллельно (ответ второй стороны, таймаут) — тогда P2025 → 409.
+        where: { id: deal.id, status: p.expectStatus ?? deal.status },
+        data: {
+          status: 'CANCELLED',
+          cancelReason: p.text,
+          cancelReasonCode: p.code ?? 'OTHER',
+          cancelledByRole: p.by,
+          cancelStage: p.stage,
+          faultSide: p.faultSide,
+        },
+        include: this.include,
+      });
+      // Сделка отменена → груз снова в ленте, если он не был закрыт (041, п.2).
+      await tx.cargo.updateMany({ where: { id: updated.cargoId, status: 'IN_DEAL' }, data: { status: 'PUBLISHED' } });
+      await recomputeDriverRating(tx, updated.driverId);
+      await recomputeCompanyRating(tx, updated.companyId);
+      return updated;
+    }).catch(rethrowStatusRace);
+  }
+
+  private async postCancelLine(deal: DealWithRelations, actorUserId: string | null, code: ChatSystemCode, systemParams: Record<string, string> = {}) {
+    const chat = await this.prisma.chat.findFirst({ where: { dealId: deal.id }, select: { id: true } });
+    const actor = actorUserId ?? (await resolveCargoContactUserId(this.prisma, deal.cargo)) ?? deal.driver.userId;
+    if (chat) await this.chatSystem.postToChat(chat.id, actor, code, systemParams);
+    else await this.chatSystem.post({ driverId: deal.driverId, companyId: deal.companyId, cargoId: deal.cargoId, actorUserId: actor, code, systemParams });
   }
 }

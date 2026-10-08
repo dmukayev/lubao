@@ -3,6 +3,14 @@ import { DealsService } from './deals.service';
 const FAKE_CHAT_SYSTEM = { post: jest.fn(), postToChat: jest.fn() };
 const FAKE_REALTIME = { emitDealUpdated: jest.fn(), emitDealUpdatedToUser: jest.fn() };
 
+/// Пересчёт рейтинга при отмене (046 п.4): отзывы, отменённые сделки, вес из app_settings.
+const RATING_MOCKS = () => ({
+  review: { aggregate: jest.fn().mockResolvedValue({ _sum: { rating: 0 }, _count: { rating: 0 } }) },
+  appSetting: { findUnique: jest.fn().mockResolvedValue(null) },
+  driver: { findUnique: jest.fn().mockResolvedValue({ userId: 'user-d1', fullName: 'Ерлан' }), update: jest.fn() },
+  company: { findUnique: jest.fn().mockResolvedValue({ name: 'Acme' }), update: jest.fn() },
+});
+
 function dealFixture(overrides: Record<string, unknown> = {}) {
   return {
     id: 'deal1',
@@ -39,10 +47,9 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
         updateMany: jest.fn(),
         findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', publishedByUserId: 'logist-1', point: { name: { ru: 'Хоргос' } }, destinationCity: { name: { ru: 'Алматы' } }, destinationCountry: null }),
       },
-      driver: { findUnique: jest.fn().mockResolvedValue({ userId: 'user-d1', fullName: 'Ерлан' }) },
-      company: { findUnique: jest.fn().mockResolvedValue({ name: 'Acme' }) },
       companyMember: { findFirst: jest.fn() },
       chat: { findFirst: jest.fn().mockResolvedValue(null) },
+      ...RATING_MOCKS(),
       vehicle: {
         findUnique: jest.fn().mockResolvedValue({ isVerified: true, kind: 'TRACTOR' }),
         findMany: jest.fn().mockResolvedValue([
@@ -354,7 +361,7 @@ describe('DealsService — догруз разрешён, «бронь всег�
 
     expect(prisma.deal.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ status: { in: ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT'] } }),
+        where: expect.objectContaining({ status: { in: ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'CANCEL_REQUESTED', 'DISPUTED'] } }),
       }),
     );
     expect(prisma.deal.update).toHaveBeenCalled();
@@ -427,25 +434,145 @@ describe('DealsService — догруз разрешён, «бронь всег�
   });
 });
 
-describe('DealsService.cancel — код причины только от водителя (задача 038, п.28)', () => {
-  function setup() {
-    const prisma: any = { deal: { findUnique: jest.fn(), update: jest.fn() }, cargo: { updateMany: jest.fn() }, companyMember: { findFirst: jest.fn() }, chat: { findFirst: jest.fn().mockResolvedValue(null) } };
-    prisma.deal.findUnique.mockResolvedValue(dealFixture());
-    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CANCELLED' }));
+describe('DealsService.cancel — причина из списка, этап и вина (046 п.1–2; 038 п.28)', () => {
+  function setup(status = 'SELECTED') {
+    const prisma: any = {
+      deal: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+      cargo: { updateMany: jest.fn(), findUnique: jest.fn().mockResolvedValue(null) },
+      companyMember: { findFirst: jest.fn() },
+      chat: { findFirst: jest.fn().mockResolvedValue(null) },
+      ...RATING_MOCKS(),
+    };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
+    prisma.deal.findUnique.mockResolvedValue(dealFixture({ status }));
+    prisma.deal.update.mockImplementation(async ({ data }: any) => dealFixture(data));
     const service = new DealsService(prisma, { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) } as any, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);
     return { prisma, service };
   }
+  const data = (prisma: any) => prisma.deal.update.mock.calls[0][0].data;
 
-  it('водитель: TOOK_OTHER_CARGO сохраняется', async () => {
-    const { prisma, service } = setup();
-    await service.cancel('deal1', { driverId: 'd1' }, 'Взял другой груз', 'TOOK_OTHER_CARGO');
-    expect(prisma.deal.update.mock.calls[0][0].data.cancelReasonCode).toBe('TOOK_OTHER_CARGO');
+  it('водитель: TOOK_OTHER_CARGO сохраняется, своя вина', async () => {
+    const { prisma, service } = setup('CONFIRMED_BY_DRIVER');
+    await service.cancel('deal1', { driverId: 'd1' }, undefined, 'TOOK_OTHER_CARGO');
+    expect(data(prisma)).toMatchObject({ status: 'CANCELLED', cancelReasonCode: 'TOOK_OTHER_CARGO', cancelStage: 'AFTER_CONFIRM', faultSide: 'SELF', cancelledByRole: 'DRIVER' });
   });
 
-  it('компания: тот же код игнорируется (не искажает статистику водителя)', async () => {
+  it('компания: «взял другой груз» недоступен — 400 (не искажает статистику водителя)', async () => {
     const { prisma, service } = setup();
-    await service.cancel('deal1', { companyId: 'c1' }, 'Взял другой груз', 'TOOK_OTHER_CARGO');
-    expect(prisma.deal.update.mock.calls[0][0].data.cancelReasonCode).toBeNull();
+    await expect(service.cancel('deal1', { companyId: 'c1' }, undefined, 'TOOK_OTHER_CARGO')).rejects.toThrow('REASON_NOT_ALLOWED');
+    expect(prisma.deal.update).not.toHaveBeenCalled();
+  });
+
+  it('«Другое» без текста — 400; старый клиент только с текстом → OTHER', async () => {
+    const a = setup();
+    await expect(a.service.cancel('deal1', { driverId: 'd1' }, '  ', 'OTHER')).rejects.toThrow('REASON_TEXT_REQUIRED');
+    const b = setup();
+    await b.service.cancel('deal1', { driverId: 'd1' }, 'Не получилось');
+    expect(data(b.prisma)).toMatchObject({ cancelReasonCode: 'OTHER', cancelReason: 'Не получилось', faultSide: 'NEUTRAL', cancelStage: 'BEFORE_CONFIRM' });
+  });
+
+  it.each([
+    ['SELECTED', 'BEFORE_CONFIRM'],
+    ['CONFIRMED_BY_DRIVER', 'AFTER_CONFIRM'],
+    ['LOADED', 'AFTER_LOAD'],
+  ])('этап по статусу: %s → %s', async (status, stage) => {
+    const { prisma, service } = setup(status);
+    await service.cancel('deal1', { companyId: 'c1' }, undefined, 'CARGO_NOT_READY');
+    expect(data(prisma)).toMatchObject({ cancelStage: stage, faultSide: 'SELF', cancelledByRole: 'COMPANY' });
+  });
+
+  it('вина относительно отменившего: «машина сломалась» у компании — вина водителя', async () => {
+    const { prisma, service } = setup('LOADED');
+    await service.cancel('deal1', { companyId: 'c1' }, undefined, 'VEHICLE_BREAKDOWN');
+    expect(data(prisma).faultSide).toBe('OTHER_PARTY');
+  });
+
+  it('отмена пересчитывает рейтинг обеих сторон', async () => {
+    const { prisma, service } = setup('LOADED');
+    await service.cancel('deal1', { driverId: 'd1' }, undefined, 'VEHICLE_BREAKDOWN');
+    expect(prisma.driver.update).toHaveBeenCalled();
+    expect(prisma.company.update).toHaveBeenCalled();
+  });
+
+  it('после «В пути» — не отмена, а запрос: CANCEL_REQUESTED, push второй стороне', async () => {
+    const { prisma, service } = setup('IN_TRANSIT');
+    await service.cancel('deal1', { driverId: 'd1' }, undefined, 'VEHICLE_BREAKDOWN');
+    expect(data(prisma)).toMatchObject({ status: 'CANCEL_REQUESTED', cancelRequestedByRole: 'DRIVER', cancelRequestReasonCode: 'VEHICLE_BREAKDOWN' });
+    expect(prisma.cargo.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('повторный запрос, пока ждём ответа — 409', async () => {
+    const { service } = setup('CANCEL_REQUESTED');
+    await expect(service.cancel('deal1', { companyId: 'c1' }, undefined, 'TERMS_CHANGED')).rejects.toThrow('CANCEL_ALREADY_REQUESTED');
+  });
+});
+
+describe('DealsService — запрос отмены после «В пути»: подтверждение, спор, админ, таймаут (046 п.5)', () => {
+  const requested = (overrides: Record<string, unknown> = {}) =>
+    dealFixture({
+      status: 'CANCEL_REQUESTED',
+      cancelRequestedAt: new Date('2030-01-01T10:00:00Z'),
+      cancelRequestedByRole: 'DRIVER',
+      cancelRequestReasonCode: 'VEHICLE_BREAKDOWN',
+      cancelRequestReason: null,
+      ...overrides,
+    });
+  function setup(deal: any) {
+    const prisma: any = {
+      deal: { findUnique: jest.fn().mockResolvedValue(deal), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+      cargo: { updateMany: jest.fn(), findUnique: jest.fn().mockResolvedValue(null) },
+      companyMember: { findFirst: jest.fn() },
+      chat: { findFirst: jest.fn().mockResolvedValue(null) },
+      auditLog: { create: jest.fn() },
+      ...RATING_MOCKS(),
+    };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
+    prisma.deal.update.mockImplementation(async ({ data }: any) => ({ ...deal, ...data }));
+    const service = new DealsService(prisma, { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) } as any, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);
+    return { prisma, service };
+  }
+  const data = (prisma: any) => prisma.deal.update.mock.calls[0][0].data;
+
+  it('вторая сторона подтверждает → CANCELLED, этап «в пути», вина по причине запроса', async () => {
+    const { prisma, service } = setup(requested());
+    await service.confirmCancel('deal1', { companyId: 'c1' });
+    expect(data(prisma)).toMatchObject({ status: 'CANCELLED', cancelStage: 'IN_TRANSIT', faultSide: 'SELF', cancelledByRole: 'DRIVER', cancelReasonCode: 'VEHICLE_BREAKDOWN' });
+    expect(prisma.cargo.updateMany).toHaveBeenCalled();
+  });
+
+  it('инициатор сам себе не подтверждает и не оспаривает — 403', async () => {
+    const { service } = setup(requested());
+    await expect(service.confirmCancel('deal1', { driverId: 'd1' })).rejects.toThrow('OWN_CANCEL_REQUEST');
+    await expect(service.disputeCancel('deal1', { driverId: 'd1' }, 'нет')).rejects.toThrow('OWN_CANCEL_REQUEST');
+  });
+
+  it('«Оспорить» → DISPUTED с позицией второй стороны', async () => {
+    const { prisma, service } = setup(requested());
+    await service.disputeCancel('deal1', { companyId: 'c1' }, 'Машина на ходу, груз в пути');
+    expect(data(prisma)).toMatchObject({ status: 'DISPUTED', disputeReason: 'Машина на ходу, груз в пути' });
+    expect(prisma.deal.update.mock.calls[0][0].where).toEqual({ id: 'deal1', status: 'CANCEL_REQUESTED' });
+  });
+
+  it('админ: отменить, виновата компания (инициатор — водитель) → OTHER_PARTY, в журнал', async () => {
+    const { prisma, service } = setup(requested({ status: 'DISPUTED' }));
+    await service.resolveDispute('deal1', 'admin-1', 'CANCEL', 'COMPANY', 'проверили');
+    expect(data(prisma)).toMatchObject({ status: 'CANCELLED', faultSide: 'OTHER_PARTY', cancelledByRole: 'DRIVER' });
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: 'DEAL_DISPUTE_RESOLVED' }) }));
+  });
+
+  it('админ: вернуть в «В пути» — запрос и спор стираются', async () => {
+    const { prisma, service } = setup(requested({ status: 'DISPUTED', disputeReason: 'x' }));
+    await service.resolveDispute('deal1', 'admin-1', 'RESUME', null, 'груз едет');
+    expect(data(prisma)).toMatchObject({ status: 'IN_TRANSIT', cancelRequestedAt: null, disputeReason: null });
+  });
+
+  it('без ответа 24 ч → отмена проходит, вина на молчавшем', async () => {
+    const { prisma, service } = setup(requested());
+    prisma.deal.findMany.mockImplementation(async (args: any) => (args.where.status === 'CANCEL_REQUESTED' ? [requested()] : []));
+    const res = await service.expireCancelRequests(new Date('2030-01-02T11:00:00Z'));
+    expect(res).toEqual({ cancelled: 1 });
+    expect(prisma.deal.findMany.mock.calls[0][0].where.cancelRequestedAt).toEqual({ lt: new Date('2030-01-01T11:00:00Z') });
+    expect(data(prisma)).toMatchObject({ status: 'CANCELLED', faultSide: 'OTHER_PARTY', cancelStage: 'IN_TRANSIT' });
   });
 });
 

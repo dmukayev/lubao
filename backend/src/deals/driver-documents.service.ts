@@ -10,7 +10,7 @@ import { I18nName, pickLocaleText } from '../notifications/notification-events';
 import { PdfImage, buildDriverDocumentsPdf } from './driver-documents.pdf';
 
 /// Пакет открыт, пока сделка обоюдная (водитель подтвердил) и ещё 30 дней после доставки.
-const OPEN_STATUSES: DealStatus[] = ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED'];
+const OPEN_STATUSES: DealStatus[] = ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'CANCEL_REQUESTED', 'DISPUTED', 'DELIVERED'];
 export const DOCS_AFTER_DELIVERY_MS = 30 * 24 * 60 * 60 * 1000;
 const PDF_LINK_TTL_SECONDS = 5 * 60;
 

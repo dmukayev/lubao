@@ -12,6 +12,9 @@ type DealForNotify = {
   driverId: string;
   status?: string;
   cancelReason?: string | null;
+  cancelReasonCode?: string | null;
+  cancelRequestReason?: string | null;
+  cancelRequestReasonCode?: string | null;
 };
 
 /// Push о статусе сделки — по роли и по-человечески (042 п.8): тот, кто
@@ -63,7 +66,9 @@ async function send(
     companyName: company?.name ?? '',
     origin: cargo.point?.name ?? null,
     destination: cargo.destinationCity?.name ?? cargo.destinationCountry?.name ?? null,
-    reason: deal.cancelReason ?? '',
+    // 046: причина — кодом из списка (текст подставит шаблон на языке получателя), «Другое» — текстом.
+    reason: (status === 'CANCEL_REQUESTED' || status === 'DISPUTED' ? deal.cancelRequestReason : deal.cancelReason) ?? '',
+    reasonCode: (status === 'CANCEL_REQUESTED' || status === 'DISPUTED' ? deal.cancelRequestReasonCode : deal.cancelReasonCode) ?? null,
   };
 
   if (actor !== 'DRIVER') {

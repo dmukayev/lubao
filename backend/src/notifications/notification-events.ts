@@ -46,6 +46,40 @@ export const DEAL_STATUS_LABEL: Record<string, Record<Locale, string>> = {
   IN_TRANSIT: { ru: 'В пути', kk: 'Жолда', zh: '运输中', en: 'In transit' },
   DELIVERED: { ru: 'Доставлено', kk: 'Жеткізілді', zh: '已送达', en: 'Delivered' },
   CANCELLED: { ru: 'Сделка отменена', kk: 'Мәміле болдырылмады', zh: '交易已取消', en: 'Deal cancelled' },
+  CANCEL_REQUESTED: { ru: 'Запрошена отмена', kk: 'Болдырмау сұралды', zh: '已申请取消', en: 'Cancellation requested' },
+  DISPUTED: { ru: 'Отмена оспорена', kk: 'Болдырмау даулы', zh: '取消有争议', en: 'Cancellation disputed' },
+};
+
+/// 046 п.1: причины отмены — по коду на языке получателя.
+export const CANCEL_REASON_LABEL: Record<string, Record<Locale, string>> = {
+  VEHICLE_BREAKDOWN: { ru: 'Машина сломалась', kk: 'Көлік бұзылды', zh: '车辆故障', en: 'Vehicle broke down' },
+  CARGO_NOT_READY: { ru: 'Груз не готов', kk: 'Жүк дайын емес', zh: '货物未备好', en: 'Cargo not ready' },
+  OTHER_PARTY_UNRESPONSIVE: { ru: 'Вторая сторона не отвечает', kk: 'Екінші тарап жауап бермейді', zh: '对方无回应', en: 'Other party not responding' },
+  TERMS_CHANGED: { ru: 'Изменились условия', kk: 'Шарттар өзгерді', zh: '条件变更', en: 'Terms changed' },
+  TOOK_OTHER_CARGO: { ru: 'Взял другой груз', kk: 'Басқа жүк алды', zh: '接了其他货', en: 'Took another cargo' },
+};
+function reasonText(p: NotificationPayload, locale: Loc): string {
+  const label = p.reasonCode ? CANCEL_REASON_LABEL[p.reasonCode]?.[locale] : undefined;
+  return label ?? p.reason ?? '';
+}
+/// Запрос отмены / спор — одинаково для обеих ролей: имя второй стороны и причина.
+const CANCEL_FLOW: Record<Loc, (p: NotificationPayload, who: string) => { title: string; body: string } | null> = {
+  ru: (p, who) =>
+    p.status === 'CANCEL_REQUESTED' ? { title: 'Просят отменить сделку', body: `${who}: ${reasonText(p, 'ru')}. Подтвердите или оспорьте за 24 часа` }
+    : p.status === 'DISPUTED' ? { title: 'Отмена оспорена', body: `${who} не согласен с отменой — решит администратор` }
+    : null,
+  kk: (p, who) =>
+    p.status === 'CANCEL_REQUESTED' ? { title: 'Мәмілені болдырмау сұралды', body: `${who}: ${reasonText(p, 'kk')}. 24 сағат ішінде растаңыз не дауласыңыз` }
+    : p.status === 'DISPUTED' ? { title: 'Болдырмау даулы', body: `${who} болдырмаумен келіспейді — әкімші шешеді` }
+    : null,
+  zh: (p, who) =>
+    p.status === 'CANCEL_REQUESTED' ? { title: '对方申请取消交易', body: `${who}：${reasonText(p, 'zh')}。请在24小时内确认或提出异议` }
+    : p.status === 'DISPUTED' ? { title: '取消有争议', body: `${who} 不同意取消 — 由管理员处理` }
+    : null,
+  en: (p, who) =>
+    p.status === 'CANCEL_REQUESTED' ? { title: 'Cancellation requested', body: `${who}: ${reasonText(p, 'en')}. Confirm or dispute within 24 hours` }
+    : p.status === 'DISPUTED' ? { title: 'Cancellation disputed', body: `${who} disagrees with the cancellation — an admin will decide` }
+    : null,
 };
 
 export type DeliveryChannel = 'PUSH' | 'WECOM';
@@ -91,63 +125,75 @@ function route(p: NotificationPayload, locale: Loc): string {
 }
 const LOGIST_STATUS: Record<Loc, (p: NotificationPayload) => { title: string; body: string }> = {
   ru: (p) => {
+    const flow = CANCEL_FLOW.ru(p, p.driverName);
+    if (flow) return flow;
     switch (p.status) {
       case 'CONFIRMED_BY_DRIVER': return { title: 'Перевозка подтверждена', body: `${p.driverName} подтвердил перевозку ${route(p, 'ru')}`.trim() };
       case 'LOADED': return { title: 'Загрузился', body: `${p.driverName} загрузился, едет в ${place(p, 'destination', 'ru')}`.trim() };
       case 'IN_TRANSIT': return { title: 'В пути', body: `${p.driverName} в пути в ${place(p, 'destination', 'ru')}`.trim() };
       case 'DELIVERED': return { title: 'Груз доставлен', body: `${p.driverName} доставил груз — оцените водителя` };
-      case 'CANCELLED': return { title: 'Сделка отменена', body: p.reason ? `${p.driverName}: ${p.reason}` : p.driverName };
+      case 'CANCELLED': return { title: 'Сделка отменена', body: reasonText(p, 'ru') ? `${p.driverName}: ${reasonText(p, 'ru')}` : p.driverName };
       default: return { title: 'Сделка', body: DEAL_STATUS_LABEL[p.status]?.ru ?? p.status };
     }
   },
   kk: (p) => {
+    const flow = CANCEL_FLOW.kk(p, p.driverName);
+    if (flow) return flow;
     switch (p.status) {
       case 'CONFIRMED_BY_DRIVER': return { title: 'Тасымал расталды', body: `${p.driverName} тасымалды растады ${route(p, 'kk')}`.trim() };
       case 'LOADED': return { title: 'Тиелді', body: `${p.driverName} жүк тиеді, ${place(p, 'destination', 'kk')} бағытына барады`.trim() };
       case 'IN_TRANSIT': return { title: 'Жолда', body: `${p.driverName} ${place(p, 'destination', 'kk')} бағытында жолда`.trim() };
       case 'DELIVERED': return { title: 'Жүк жеткізілді', body: `${p.driverName} жүкті жеткізді — жүргізушіні бағалаңыз` };
-      case 'CANCELLED': return { title: 'Мәміле болдырылмады', body: p.reason ? `${p.driverName}: ${p.reason}` : p.driverName };
+      case 'CANCELLED': return { title: 'Мәміле болдырылмады', body: reasonText(p, 'kk') ? `${p.driverName}: ${reasonText(p, 'kk')}` : p.driverName };
       default: return { title: 'Мәміле', body: DEAL_STATUS_LABEL[p.status]?.kk ?? p.status };
     }
   },
   zh: (p) => {
+    const flow = CANCEL_FLOW.zh(p, p.driverName);
+    if (flow) return flow;
     switch (p.status) {
       case 'CONFIRMED_BY_DRIVER': return { title: '运输已确认', body: `${p.driverName} 已确认运输 ${route(p, 'zh')}`.trim() };
       case 'LOADED': return { title: '已装货', body: `${p.driverName} 已装货，正前往${place(p, 'destination', 'zh')}` };
       case 'IN_TRANSIT': return { title: '运输中', body: `${p.driverName} 正在前往${place(p, 'destination', 'zh')}` };
       case 'DELIVERED': return { title: '货物已送达', body: `${p.driverName} 已送达货物 — 请评价司机` };
-      case 'CANCELLED': return { title: '交易已取消', body: p.reason ? `${p.driverName}：${p.reason}` : p.driverName };
+      case 'CANCELLED': return { title: '交易已取消', body: reasonText(p, 'zh') ? `${p.driverName}：${reasonText(p, 'zh')}` : p.driverName };
       default: return { title: '交易', body: DEAL_STATUS_LABEL[p.status]?.zh ?? p.status };
     }
   },
   en: (p) => {
+    const flow = CANCEL_FLOW.en(p, p.driverName);
+    if (flow) return flow;
     switch (p.status) {
       case 'CONFIRMED_BY_DRIVER': return { title: 'Haul confirmed', body: `${p.driverName} confirmed the haul ${route(p, 'en')}`.trim() };
       case 'LOADED': return { title: 'Loaded', body: `${p.driverName} has loaded and is heading to ${place(p, 'destination', 'en')}`.trim() };
       case 'IN_TRANSIT': return { title: 'In transit', body: `${p.driverName} is on the way to ${place(p, 'destination', 'en')}`.trim() };
       case 'DELIVERED': return { title: 'Cargo delivered', body: `${p.driverName} delivered the cargo — rate the driver` };
-      case 'CANCELLED': return { title: 'Deal cancelled', body: p.reason ? `${p.driverName}: ${p.reason}` : p.driverName };
+      case 'CANCELLED': return { title: 'Deal cancelled', body: reasonText(p, 'en') ? `${p.driverName}: ${reasonText(p, 'en')}` : p.driverName };
       default: return { title: 'Deal', body: DEAL_STATUS_LABEL[p.status]?.en ?? p.status };
     }
   },
 };
 const DRIVER_STATUS: Record<Loc, (p: NotificationPayload) => { title: string; body: string }> = {
   ru: (p) =>
-    p.status === 'DELIVERED' ? { title: 'Доставка отмечена', body: `${p.companyName} отметила доставку — оставьте отзыв` }
-    : p.status === 'CANCELLED' ? { title: 'Сделка отменена', body: p.reason ? `Причина: ${p.reason}` : p.companyName }
-    : { title: p.companyName, body: DEAL_STATUS_LABEL[p.status]?.ru ?? p.status },
+    CANCEL_FLOW.ru(p, p.companyName) ??
+    (p.status === 'DELIVERED' ? { title: 'Доставка отмечена', body: `${p.companyName} отметила доставку — оставьте отзыв` }
+    : p.status === 'CANCELLED' ? { title: 'Сделка отменена', body: reasonText(p, 'ru') ? `Причина: ${reasonText(p, 'ru')}` : p.companyName }
+    : { title: p.companyName, body: DEAL_STATUS_LABEL[p.status]?.ru ?? p.status }),
   kk: (p) =>
-    p.status === 'DELIVERED' ? { title: 'Жеткізу белгіленді', body: `${p.companyName} жеткізуді белгіледі — пікір қалдырыңыз` }
-    : p.status === 'CANCELLED' ? { title: 'Мәміле болдырылмады', body: p.reason ? `Себебі: ${p.reason}` : p.companyName }
-    : { title: p.companyName, body: DEAL_STATUS_LABEL[p.status]?.kk ?? p.status },
+    CANCEL_FLOW.kk(p, p.companyName) ??
+    (p.status === 'DELIVERED' ? { title: 'Жеткізу белгіленді', body: `${p.companyName} жеткізуді белгіледі — пікір қалдырыңыз` }
+    : p.status === 'CANCELLED' ? { title: 'Мәміле болдырылмады', body: reasonText(p, 'kk') ? `Себебі: ${reasonText(p, 'kk')}` : p.companyName }
+    : { title: p.companyName, body: DEAL_STATUS_LABEL[p.status]?.kk ?? p.status }),
   zh: (p) =>
-    p.status === 'DELIVERED' ? { title: '已确认送达', body: `${p.companyName} 已确认送达 — 请留下评价` }
-    : p.status === 'CANCELLED' ? { title: '交易已取消', body: p.reason ? `原因：${p.reason}` : p.companyName }
-    : { title: p.companyName, body: DEAL_STATUS_LABEL[p.status]?.zh ?? p.status },
+    CANCEL_FLOW.zh(p, p.companyName) ??
+    (p.status === 'DELIVERED' ? { title: '已确认送达', body: `${p.companyName} 已确认送达 — 请留下评价` }
+    : p.status === 'CANCELLED' ? { title: '交易已取消', body: reasonText(p, 'zh') ? `原因：${reasonText(p, 'zh')}` : p.companyName }
+    : { title: p.companyName, body: DEAL_STATUS_LABEL[p.status]?.zh ?? p.status }),
   en: (p) =>
-    p.status === 'DELIVERED' ? { title: 'Delivery confirmed', body: `${p.companyName} marked the delivery — leave a review` }
-    : p.status === 'CANCELLED' ? { title: 'Deal cancelled', body: p.reason ? `Reason: ${p.reason}` : p.companyName }
-    : { title: p.companyName, body: DEAL_STATUS_LABEL[p.status]?.en ?? p.status },
+    CANCEL_FLOW.en(p, p.companyName) ??
+    (p.status === 'DELIVERED' ? { title: 'Delivery confirmed', body: `${p.companyName} marked the delivery — leave a review` }
+    : p.status === 'CANCELLED' ? { title: 'Deal cancelled', body: reasonText(p, 'en') ? `Reason: ${reasonText(p, 'en')}` : p.companyName }
+    : { title: p.companyName, body: DEAL_STATUS_LABEL[p.status]?.en ?? p.status }),
 };
 
 export interface NotificationEventDef {

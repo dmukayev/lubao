@@ -1,4 +1,5 @@
-import { IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
+import { CANCEL_REASON_CODES, CancelReasonCode } from '../cancel-policy';
 
 export class UpdateDealStatusDto {
   @IsIn(['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'DELIVERED'])
@@ -6,14 +7,23 @@ export class UpdateDealStatusDto {
 }
 
 export class CancelDealDto {
+  /// Причина из списка (046 п.1). Старые клиенты шлют только текст — тогда «Другое».
+  @IsOptional()
+  @IsIn(CANCEL_REASON_CODES as unknown as string[])
+  reasonCode?: CancelReasonCode;
+
+  /// Текст обязателен только для «Другое».
+  @ValidateIf((o: CancelDealDto) => !o.reasonCode || o.reasonCode === 'OTHER' || o.reason != null)
+  @IsNotEmpty()
+  @MaxLength(1000)
+  @IsString()
+  reason?: string;
+}
+
+/// «Оспорить» запрос отмены (046 п.5) — позиция второй стороны для админа.
+export class DisputeCancelDto {
   @IsNotEmpty()
   @MaxLength(1000)
   @IsString()
   reason!: string;
-
-  /// Код причины (задача 038, п.15) — статистика по причинам считается
-  /// кодом, а не переведённой строкой. Пока единственный пресет.
-  @IsOptional()
-  @IsIn(['TOOK_OTHER_CARGO'])
-  reasonCode?: 'TOOK_OTHER_CARGO';
 }

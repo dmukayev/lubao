@@ -6,7 +6,9 @@ import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { AdminService } from './admin.service';
+import { DealsService } from '../deals/deals.service';
 import {
+  AdminResolveDisputeDto,
   AdminBodyTypeProfileDto,
   AdminChangeMemberEmailDto,
   AdminDealStatusDto,
@@ -49,6 +51,7 @@ export class AdminController {
     private readonly admin: AdminService,
     private readonly appSettings: AppSettingsService,
     private readonly sms: SmsService,
+    private readonly deals: DealsService,
   ) {}
 
   /// Каналы кода входа для блока в Настройках (042 п.3): порядок, вкл/выкл
@@ -219,6 +222,13 @@ export class AdminController {
   cancelDeal(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminReasonDto) {
     assertAdmin(ctx);
     return this.admin.cancelDealByAdmin(id, ctx.user.id, dto.reason);
+  }
+
+  /// Спор об отмене после «В пути» (046 п.5): отменить с виновной стороной / вернуть в путь.
+  @Post('deals/:id/resolve-dispute')
+  resolveDispute(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminResolveDisputeDto) {
+    assertAdmin(ctx);
+    return this.deals.resolveDispute(id, ctx.user.id, dto.resolution, dto.resolution === 'CANCEL' ? (dto.guilty ?? null) : null, dto.reason);
   }
 
   @Patch('verification-documents/:id')

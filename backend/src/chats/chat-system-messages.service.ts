@@ -19,7 +19,14 @@ export type ChatSystemCode =
   | 'INVITATION_DECLINED'
   | 'CARGO_TAKEN'
   | 'INVITATION_EXPIRED'
-  | 'DRIVER_SAYS_AGREED';
+  | 'DRIVER_SAYS_AGREED'
+  // 046 п.5: запрос отмены после «В пути» и его исход.
+  | 'CANCEL_REQUESTED'
+  | 'CANCEL_CONFIRMED'
+  | 'CANCEL_DISPUTED'
+  | 'CANCEL_RESOLVED'
+  | 'CANCEL_RESUMED'
+  | 'CANCEL_AUTO';
 
 const RU_FALLBACK: Record<ChatSystemCode, (params: Record<string, string>) => string> = {
   DRIVER_READY: (p) => `${p.driverName ?? 'Водитель'} готов взять груз`,
@@ -32,6 +39,12 @@ const RU_FALLBACK: Record<ChatSystemCode, (params: Record<string, string>) => st
   INVITATION_DECLINED: (p) => `${p.driverName ?? 'Водитель'} отказался от приглашения`,
   CARGO_TAKEN: () => 'Груз ушёл другому водителю',
   INVITATION_EXPIRED: () => 'Приглашение истекло: водитель не ответил за 24 часа',
+  CANCEL_REQUESTED: (p) => `Запрошена отмена сделки${p.reason ? `: ${p.reason}` : ''}. Без ответа за 24 часа отмена пройдёт`,
+  CANCEL_CONFIRMED: () => 'Отмена подтверждена — сделка отменена',
+  CANCEL_DISPUTED: () => 'Отмена оспорена — решит администратор',
+  CANCEL_RESOLVED: () => 'Администратор отменил сделку',
+  CANCEL_RESUMED: () => 'Администратор вернул сделку в «В пути»',
+  CANCEL_AUTO: () => 'Ответа на запрос отмены не было 24 часа — сделка отменена',
   DRIVER_SAYS_AGREED: (p) => `${p.driverName ?? 'Водитель'}: договорились — выберите водителя, чтобы сделка пошла по шагам`,
 };
 

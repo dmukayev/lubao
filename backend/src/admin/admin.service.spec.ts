@@ -750,7 +750,7 @@ describe('AdminService.attention (задача 028, п.4)', () => {
         findFirst: jest.fn().mockResolvedValue({ createdAt: oldest }),
       },
       complaint: { count: jest.fn().mockResolvedValue(2) },
-      deal: { count: jest.fn().mockResolvedValue(1) },
+      deal: { count: jest.fn().mockResolvedValue(1), findMany: jest.fn().mockResolvedValue([]) },
       company: { count: jest.fn().mockResolvedValue(3) },
       city: { count: jest.fn().mockResolvedValue(0) },
       // 038 (032 п.11) — «Совпадения с чёрным списком» на сводке.
@@ -1407,7 +1407,8 @@ describe('AdminService.dealDetail / dealChat / advanceDealStatusByAdmin / cancel
 
     expect(prisma.deal.update).toHaveBeenCalledWith({
       where: { id: 'deal1' },
-      data: { status: 'CANCELLED', cancelReason: 'Груз утрачен', cancelledByRole: 'ADMIN' },
+      // 046: этап по статусу, вина админской отмены — нейтральная.
+      data: { status: 'CANCELLED', cancelReason: 'Груз утрачен', cancelledByRole: 'ADMIN', cancelReasonCode: 'OTHER', cancelStage: 'AFTER_LOAD', faultSide: 'NEUTRAL' },
     });
   });
 

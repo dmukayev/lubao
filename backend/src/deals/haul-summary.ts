@@ -43,7 +43,7 @@ export async function haulInfoByDriver(
   const deals = await prisma.deal.findMany({
     where: {
       driverId: { in: [...new Set(drivers.map((d) => d.driverId))] },
-      status: { in: ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT'] },
+      status: { in: ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'CANCEL_REQUESTED', 'DISPUTED'] },
     },
     select: {
       driverId: true,

@@ -3,7 +3,7 @@ import { Public } from '../common/public.decorator';
 import type { Response } from 'express';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
-import { CancelDealDto, UpdateDealStatusDto } from './dto/deal-status.dto';
+import { CancelDealDto, DisputeCancelDto, UpdateDealStatusDto } from './dto/deal-status.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { DealsService } from './deals.service';
 import { ReviewsService } from './reviews.service';
@@ -88,6 +88,18 @@ export class DealsController {
   @Patch(':id/cancel')
   cancel(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: CancelDealDto) {
     return this.deals.cancel(id, partyContext(ctx), dto.reason, dto.reasonCode);
+  }
+
+  /// 046 п.5: вторая сторона подтверждает запрос отмены после «В пути».
+  @Post(':id/cancel-request/confirm')
+  confirmCancel(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    return this.deals.confirmCancel(id, partyContext(ctx));
+  }
+
+  /// …или оспаривает — спор уходит админу.
+  @Post(':id/cancel-request/dispute')
+  disputeCancel(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: DisputeCancelDto) {
+    return this.deals.disputeCancel(id, partyContext(ctx), dto.reason);
   }
 
   @Get(':id/reviews')

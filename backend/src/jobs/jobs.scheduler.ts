@@ -2,6 +2,7 @@ import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { JobLockService } from './job-lock.service';
 import { JobsService } from './jobs.service';
+import { DealsService } from '../deals/deals.service';
 
 const TIME_ZONE = process.env.APP_TIMEZONE || 'Asia/Almaty';
 
@@ -15,6 +16,7 @@ export class JobsScheduler implements OnApplicationBootstrap {
   constructor(
     private readonly jobs: JobsService,
     private readonly lock: JobLockService,
+    private readonly deals: DealsService,
   ) {}
 
   private async run(name: string, ttlSeconds: number, task: () => Promise<unknown>) {
@@ -40,6 +42,12 @@ export class JobsScheduler implements OnApplicationBootstrap {
   @Cron('*/5 * * * *')
   agreedChecks() {
     return this.guarded('agreed-checks', 240, () => this.jobs.sendAgreedChecks());
+  }
+
+  /// 046 п.5: запрос отмены без ответа 24 ч — отмена проходит сама.
+  @Cron('*/10 * * * *')
+  cancelRequests() {
+    return this.guarded('expire-cancel-requests', 540, () => this.deals.expireCancelRequests());
   }
 
   @Cron('0 9 * * *', { timeZone: TIME_ZONE })

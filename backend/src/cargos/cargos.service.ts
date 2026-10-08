@@ -347,7 +347,7 @@ export class CargosService {
     if (!cargo) throw new NotFoundException('Cargo not found');
 
     const lastDeal = await this.prisma.deal.findFirst({
-      where: { driverId, status: { in: ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT'] } },
+      where: { driverId, status: { in: ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'CANCEL_REQUESTED', 'DISPUTED'] } },
       orderBy: { createdAt: 'desc' },
     });
     if (!lastDeal) return { hint: null };

@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Review } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { recomputeCompanyRating, recomputeDriverRating } from './cancel-policy';
 
 @Injectable()
 export class ReviewsService {
@@ -39,13 +40,9 @@ export class ReviewsService {
     // оценивает компания, компанию — водитель.
     const review = await this.prisma.$transaction(async (tx) => {
       const created = await tx.review.create({ data: { dealId, authorUserId, authorRole, rating, comment } });
-      if (authorRole === 'COMPANY') {
-        const agg = await tx.review.aggregate({ where: { authorRole: 'COMPANY', deal: { driverId: deal.driverId } }, _avg: { rating: true }, _count: { rating: true } });
-        await tx.driver.update({ where: { id: deal.driverId }, data: { ratingAvg: Number((agg._avg.rating ?? 0).toFixed(2)), ratingCount: agg._count.rating } });
-      } else {
-        const agg = await tx.review.aggregate({ where: { authorRole: 'DRIVER', deal: { companyId: deal.companyId } }, _avg: { rating: true }, _count: { rating: true } });
-        await tx.company.update({ where: { id: deal.companyId }, data: { ratingAvg: Number((agg._avg.rating ?? 0).toFixed(2)), ratingCount: agg._count.rating } });
-      }
+      // 046 п.4: средняя — с учётом штрафа за отмены по своей вине.
+      if (authorRole === 'COMPANY') await recomputeDriverRating(tx, deal.driverId);
+      else await recomputeCompanyRating(tx, deal.companyId);
       return created;
     });
     return this.toDto(review);

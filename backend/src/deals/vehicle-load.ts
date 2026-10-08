@@ -2,7 +2,7 @@ import { Cargo, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { toDateOnly } from '../common/date-only';
 
-export const ACTIVE_HAUL_STATUSES = ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT'] as const;
+export const ACTIVE_HAUL_STATUSES = ['CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'CANCEL_REQUESTED', 'DISPUTED'] as const;
 
 export type VehicleLoadVerdict = 'NONE' | 'OK' | 'NEXT_TRIP' | 'FULL';
 

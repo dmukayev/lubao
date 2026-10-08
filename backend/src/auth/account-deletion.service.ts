@@ -3,7 +3,7 @@ import { DealStatus, IdentifierOwnerType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
 
-const ACTIVE_DEAL_STATUSES: DealStatus[] = ['SELECTED', 'CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT'];
+const ACTIVE_DEAL_STATUSES: DealStatus[] = ['SELECTED', 'CONFIRMED_BY_DRIVER', 'LOADED', 'IN_TRANSIT', 'CANCEL_REQUESTED', 'DISPUTED'];
 
 /// Имя-заглушка вместо ФИО удалённого водителя: `Driver.fullName` NOT NULL,
 /// а сделки и отзывы остаются (043 п.1) — клиенты показывают его как есть.
