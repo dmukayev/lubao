@@ -472,6 +472,8 @@ export class ArrivalsService {
         const body = {
           bodyTypeId: vehicle?.bodyTypeId ?? arrival.driver.preferredBodyTypeId ?? null,
           capacityTons: vehicle?.capacityTons ?? arrival.driver.preferredCapacityTons ?? null,
+          // 048 п.6: строка машины у логиста — по профилю кузова.
+          specs: (vehicle ? vehicle.specs : arrival.driver.preferredSpecs) ?? null,
         };
         return { arrival, vehicle, body };
       }),
@@ -541,6 +543,7 @@ export class ArrivalsService {
       plannedDay: toDateOnly(r.arrival.plannedDay),
       arrivedAt: r.arrival.arrivedAt,
       bodyTypeId: r.body.bodyTypeId,
+      specs: r.body.specs,
       capacityTons: r.body.capacityTons != null ? Number(r.body.capacityTons) : null,
       // Задача 033, п.9 — «тент · 20 т · 90 м³ · 33 пал.» в «Кто будет».
       volumeM3: r.vehicle?.volumeM3 != null ? Number(r.vehicle.volumeM3) : null,

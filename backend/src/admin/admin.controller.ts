@@ -7,6 +7,7 @@ import { RequestContext } from '../common/request-context';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { AdminService } from './admin.service';
 import {
+  AdminBodyTypeProfileDto,
   AdminChangeMemberEmailDto,
   AdminDealStatusDto,
   AdminReasonDto,
@@ -459,6 +460,12 @@ export class AdminController {
   updateBodyType(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminUpdateReferenceItemDto) {
     assertAdmin(ctx);
     return this.admin.updateBodyType(id, ctx.user.id, dto);
+  }
+
+  @Patch('reference/body-types/:id/profile')
+  updateBodyTypeProfile(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminBodyTypeProfileDto) {
+    assertAdmin(ctx);
+    return this.admin.updateBodyTypeProfile(id, ctx.user.id, dto);
   }
 
   @Post('reference/body-size-presets')

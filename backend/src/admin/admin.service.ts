@@ -18,6 +18,7 @@ import { decryptIdentifier, maskIdentifier } from '../identifiers/crypto';
 import { normalizeIdentifier, type IdentifierTypeValue } from '../identifiers/normalize';
 import { RECOGNIZED_FIELD_IDENTIFIER_TYPE } from '../recognition/extract-fields';
 import {
+  AdminBodyTypeProfileDto,
   AdminChangeMemberEmailDto,
   AdminDealStatusDto,
   AdminSetMemberRoleDto,
@@ -2852,6 +2853,31 @@ export class AdminService {
   /// из них сегодня нет DELETE-эндпоинта).
   async updateBodyType(id: string, adminUserId: string, dto: AdminUpdateReferenceItemDto) {
     return this.updateReferenceItem('bodyType', 'BodyType', id, adminUserId, dto);
+  }
+
+  /// 048: профиль и поля типа кузова. Поля проверяются по структуре (ключ,
+  /// вид, подпись, варианты у списков) — сломанное поле не попадёт в формы.
+  async updateBodyTypeProfile(id: string, adminUserId: string, dto: AdminBodyTypeProfileDto) {
+    const errors: string[] = [];
+    const keys = new Set<string>();
+    dto.fields.forEach((raw, i) => {
+      const f = raw as Record<string, unknown>;
+      const key = typeof f?.key === 'string' ? f.key : '';
+      if (!/^[a-zA-Z][a-zA-Z0-9]{0,39}$/.test(key)) errors.push(`#${i}: key`);
+      else if (keys.has(key)) errors.push(`#${i}: duplicate key ${key}`);
+      keys.add(key);
+      if (!['number', 'enum', 'multi', 'bool'].includes(f?.kind as string)) errors.push(`#${i}: kind`);
+      const label = f?.label as Record<string, unknown> | undefined;
+      if (!label || typeof label.ru !== 'string' || !label.ru) errors.push(`#${i}: label.ru`);
+      if (typeof f?.forVehicle !== 'boolean' || typeof f?.forCargo !== 'boolean') errors.push(`#${i}: forVehicle/forCargo`);
+      if ((f?.kind === 'enum' || f?.kind === 'multi') && (!Array.isArray(f.options) || f.options.length === 0 || !f.options.every((o: any) => typeof o?.code === 'string' && typeof o?.label?.ru === 'string'))) {
+        errors.push(`#${i}: options`);
+      }
+    });
+    if (errors.length) throw new BadRequestException({ code: 'INVALID_BODY_FIELDS', message: 'Invalid body type fields', errors });
+    const updated = await this.prisma.bodyType.update({ where: { id }, data: { profile: dto.profile, fields: dto.fields as Prisma.InputJsonValue } });
+    await this.logAudit(adminUserId, 'BODY_TYPE_PROFILE_UPDATED', 'BodyType', id, { profile: dto.profile, fields: dto.fields.length, reason: dto.reason });
+    return updated;
   }
 
   async updatePermit(id: string, adminUserId: string, dto: AdminUpdateReferenceItemDto) {

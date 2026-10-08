@@ -93,7 +93,7 @@ export class ResponsesService {
     const bodies = bodyIds.length
       ? await this.prisma.vehicle.findMany({
           where: { id: { in: bodyIds } },
-          select: { id: true, bodyTypeId: true, capacityTons: true, volumeM3: true, palletsEuro: true },
+          select: { id: true, bodyTypeId: true, capacityTons: true, volumeM3: true, palletsEuro: true, specs: true },
         })
       : [];
     const bodyByVehicle = new Map(bodies.map((v) => [v.id, v]));
@@ -114,6 +114,7 @@ export class ResponsesService {
         ...this.toDto(r),
         // 045 п.4–5: кузов для миниатюры; машины нет — кузов и тоннаж из регистрации.
         bodyTypeId: body?.bodyTypeId ?? r.driver.preferredBodyTypeId ?? null,
+        specs: (body ? body.specs : r.driver.preferredSpecs) ?? null,
         capacityTons: body?.capacityTons != null ? Number(body.capacityTons) : r.driver.preferredCapacityTons != null ? Number(r.driver.preferredCapacityTons) : null,
         // 033 п.9 (хвост, 038 п.14) — объём/паллеты связки в отклике.
         volumeM3: body?.volumeM3 != null ? Number(body.volumeM3) : null,

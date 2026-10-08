@@ -125,6 +125,8 @@ export class DriverDocumentsService {
         plateNumber: v.plateNumber,
         vin: v.vin,
         brand: v.brand,
+        bodyTypeId: v.bodyTypeId,
+        specs: v.specs ?? null,
         isVerified: v.isVerified,
         passport: ref(latest(vehicleDocs.filter((d) => d.vehicleId === v.id), v.kind === 'TRAILER' ? 'TRAILER_PASSPORT' : 'VEHICLE_PASSPORT')),
         // 044 п.7: фото машины — «Фото нет», если водитель не добавил.

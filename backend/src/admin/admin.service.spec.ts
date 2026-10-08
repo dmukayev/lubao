@@ -2519,3 +2519,30 @@ describe('AdminService.revokeVehicleVerification (044 п.6)', () => {
     expect(prisma.auditLog.create.mock.calls[0][0].data).toMatchObject({ action: 'VEHICLE_VERIFICATION_REVOKED', entityId: 'v1' });
   });
 });
+
+describe('AdminService.updateBodyTypeProfile (048 п.1)', () => {
+  function setup() {
+    const prisma: any = { bodyType: { update: jest.fn().mockResolvedValue({ id: 'bt1' }) }, auditLog: { create: jest.fn() } };
+    return { prisma, service: new AdminService(prisma, {} as any, fakeUploads() as any) };
+  }
+  const good = { key: 'liters', kind: 'number', unit: 'l', label: { ru: 'Литры' }, forVehicle: true, forCargo: false };
+
+  it('корректные поля сохраняются, правка — в журнал', async () => {
+    const { prisma, service } = setup();
+    await service.updateBodyTypeProfile('bt1', 'admin1', { profile: 'TANK', fields: [good], reason: 'E2E' });
+    expect(prisma.bodyType.update).toHaveBeenCalledWith({ where: { id: 'bt1' }, data: { profile: 'TANK', fields: [good] } });
+    expect(prisma.auditLog.create.mock.calls[0][0].data).toMatchObject({ action: 'BODY_TYPE_PROFILE_UPDATED' });
+  });
+
+  it('сломанное поле не сохраняется: ключ, вид, подпись, варианты списка, дубль', async () => {
+    const { prisma, service } = setup();
+    await expect(
+      service.updateBodyTypeProfile('bt1', 'admin1', {
+        profile: 'TANK',
+        fields: [good, good, { key: '1bad', kind: 'text', label: {}, forVehicle: true, forCargo: true }, { key: 'product', kind: 'enum', label: { ru: 'Продукт' }, forVehicle: true, forCargo: false, options: [] }],
+        reason: 'E2E',
+      }),
+    ).rejects.toMatchObject({ response: { code: 'INVALID_BODY_FIELDS', errors: ['#1: duplicate key liters', '#2: key', '#2: kind', '#2: label.ru', '#3: options'] } });
+    expect(prisma.bodyType.update).not.toHaveBeenCalled();
+  });
+});

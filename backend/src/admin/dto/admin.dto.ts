@@ -727,3 +727,17 @@ export class LiftBlockedIdentifierDto {
   reason!: string;
 }
 
+/// 048: профиль и поля типа кузова — правятся без релиза.
+export class AdminBodyTypeProfileDto {
+  @IsIn(['VOLUME', 'PLATFORM', 'CONTAINER', 'BULK', 'TANK', 'CAR_CARRIER'])
+  profile!: 'VOLUME' | 'PLATFORM' | 'CONTAINER' | 'BULK' | 'TANK' | 'CAR_CARRIER';
+
+  @IsArray()
+  fields!: unknown[];
+
+  @IsNotEmpty()
+  @MaxLength(1000)
+  @IsString()
+  reason!: string;
+}
+
