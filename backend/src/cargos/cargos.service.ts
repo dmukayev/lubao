@@ -341,7 +341,26 @@ export class CargosService {
       include: this.includeForDto,
       orderBy: { createdAt: 'desc' },
     });
-    return Promise.all(cargos.map((c) => this.toDto(c)));
+    // 044 п.3: «Водитель: <имя> · подтвердил / ждём подтверждения» + «Документы» —
+    // последняя неотменённая сделка по грузу, одним запросом.
+    const deals = cargos.length
+      ? await this.prisma.deal.findMany({
+          where: { cargoId: { in: cargos.map((c) => c.id) }, status: { not: 'CANCELLED' } },
+          orderBy: { createdAt: 'desc' },
+          select: { id: true, cargoId: true, status: true, driver: { select: { fullName: true } } },
+        })
+      : [];
+    const dealByCargo = new Map<string, (typeof deals)[number]>();
+    for (const d of deals) if (!dealByCargo.has(d.cargoId)) dealByCargo.set(d.cargoId, d);
+    return Promise.all(
+      cargos.map(async (c) => {
+        const deal = dealByCargo.get(c.id);
+        return {
+          ...(await this.toDto(c)),
+          activeDeal: deal ? { id: deal.id, status: deal.status, driverName: deal.driver.fullName } : null,
+        };
+      }),
+    );
   }
 
   /// Задача 033, п.10 — подсказка при публикации: «подходит N водителям на

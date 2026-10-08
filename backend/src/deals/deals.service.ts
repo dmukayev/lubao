@@ -100,7 +100,22 @@ export class DealsService {
   async byId(id: string, ctx: { driverId?: string; companyId?: string }) {
     const deal = await this.findEntity(id);
     this.assertParty(deal, ctx);
-    return this.toDto(deal);
+    // 044 п.2, 4–5: в карточке сделки — проверены ли машины рейса (плашка
+    // «Машина ещё на проверке») и когда логист последний раз открыл документы.
+    const vehicleIds = [deal.tractorId, deal.trailerId].filter((v): v is string => !!v);
+    const [vehicles, lastDocsAccess] = await Promise.all([
+      vehicleIds.length ? this.prisma.vehicle.findMany({ where: { id: { in: vehicleIds } }, select: { isVerified: true } }) : Promise.resolve([] as Array<{ isVerified: boolean }>),
+      this.prisma.auditLog.findFirst({
+        where: { entityType: 'Deal', entityId: deal.id, action: { in: ['DRIVER_DOCS_VIEWED', 'DRIVER_DOCS_DOWNLOADED'] } },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true },
+      }),
+    ]);
+    return {
+      ...(await this.toDto(deal)),
+      vehiclesVerified: vehicles.length > 0 && vehicles.every((v) => v.isVerified),
+      driverDocsOpenedAt: lastDocsAccess?.createdAt ?? null,
+    };
   }
 
   private assertParty(deal: Deal, ctx: { driverId?: string; companyId?: string }) {

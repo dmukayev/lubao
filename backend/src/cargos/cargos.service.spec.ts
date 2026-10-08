@@ -599,3 +599,22 @@ describe('CargosService.feed — области направлений', () => {
   });
 });
 
+// 044 п.3: в списке грузов логиста — водитель сделки и её статус.
+describe('CargosService.mine — сделка по грузу', () => {
+  it('у груза со сделкой — водитель и статус, отменённые сделки не считаются', async () => {
+    const prisma: any = {
+      cargo: { findMany: jest.fn().mockResolvedValue([baseCargo({ id: 'c1' }), baseCargo({ id: 'c2' })]) },
+      deal: {
+        count: jest.fn().mockResolvedValue(0),
+        findMany: jest.fn().mockResolvedValue([{ id: 'deal1', cargoId: 'c1', status: 'CONFIRMED_BY_DRIVER', driver: { fullName: 'Ерлан' } }]),
+      },
+      companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+    };
+    const service = new CargosService(prisma, {} as any, {} as any);
+    const list: any[] = await service.mine('company1');
+    expect(list.find((c) => c.id === 'c1').activeDeal).toEqual({ id: 'deal1', status: 'CONFIRMED_BY_DRIVER', driverName: 'Ерлан' });
+    expect(list.find((c) => c.id === 'c2').activeDeal).toBeNull();
+    expect(prisma.deal.findMany.mock.calls[0][0].where).toMatchObject({ status: { not: 'CANCELLED' } });
+  });
+});
+

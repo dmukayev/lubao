@@ -1,4 +1,6 @@
-import { Body, Controller, ForbiddenException, Get, HttpCode, NotFoundException, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, HttpCode, NotFoundException, Param, Patch, Post, Res } from '@nestjs/common';
+import type { Response } from 'express';
+import { UploadsService } from '../uploads/uploads.service';
 import { ContactPolicyService } from '../contact-events/contact-policy.service';
 import { RevealContactDto } from '../contact-events/dto/reveal-contact.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -16,7 +18,39 @@ export class DriversController {
     private readonly drivers: DriversService,
     private readonly prisma: PrismaService,
     private readonly contactPolicy: ContactPolicyService,
+    private readonly uploads: UploadsService,
   ) {}
+
+  /// Фото машин водителя для логиста (044 п.7): «Кто свободен», отклик. Пусто —
+  /// у логиста «Фото нет». Только машины в работе (не архив).
+  @Get(':id/vehicle-photos')
+  async vehiclePhotos(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    if (!ctx.companyMember) throw new ForbiddenException('Only company accounts');
+    const photos = await this.prisma.verificationDocument.findMany({
+      where: { driverId: id, type: { in: ['VEHICLE_PHOTO_FRONT', 'VEHICLE_PHOTO_SIDE'] }, vehicle: { isArchived: false } },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, type: true, vehicle: { select: { id: true, kind: true, plateNumber: true } } },
+    });
+    return photos.map((p) => ({ documentId: p.id, type: p.type, vehicleId: p.vehicle?.id ?? null, kind: p.vehicle?.kind ?? null, plateNumber: p.vehicle?.plateNumber ?? null }));
+  }
+
+  @Get(':id/vehicle-photos/:documentId')
+  async vehiclePhotoFile(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Param('documentId') documentId: string, @Res() res: Response) {
+    if (!ctx.companyMember) throw new ForbiddenException('Only company accounts');
+    const doc = await this.prisma.verificationDocument.findFirst({
+      where: { id: documentId, driverId: id, type: { in: ['VEHICLE_PHOTO_FRONT', 'VEHICLE_PHOTO_SIDE'] } },
+      select: { fileUrl: true },
+    });
+    if (!doc) throw new NotFoundException('Photo not found');
+    if (/^https?:\/\//.test(doc.fileUrl)) {
+      res.redirect(doc.fileUrl);
+      return;
+    }
+    const source = await this.uploads.getDocumentStream(doc.fileUrl);
+    res.setHeader('Content-Type', source.contentType);
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    source.stream.pipe(res);
+  }
 
   /// «Позвонить»/WhatsApp логиста (043 п.11): номер водителя — по нажатию,
   /// только проверенной компании, с суточным лимитом; в списках номера нет.

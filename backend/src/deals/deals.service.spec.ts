@@ -448,3 +448,20 @@ describe('DealsService.cancel — код причины только от вод
     expect(prisma.deal.update.mock.calls[0][0].data.cancelReasonCode).toBeNull();
   });
 });
+
+// 044 п.2, 4–5: карточка сделки — машины проверены? когда логист открыл документы?
+describe('DealsService.byId — плашки пакета документов', () => {
+  it('машина на проверке → vehiclesVerified=false; последнее открытие документов', async () => {
+    const opened = new Date('2030-01-01T10:00:00Z');
+    const prisma: any = {
+      deal: { findUnique: jest.fn().mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' })) },
+      vehicle: { findMany: jest.fn().mockResolvedValue([{ isVerified: true }, { isVerified: false }]) },
+      auditLog: { findFirst: jest.fn().mockResolvedValue({ createdAt: opened }) },
+    };
+    const service = new DealsService(prisma, { toDto: jest.fn().mockResolvedValue({ id: 'cargo1' }) } as any, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);
+    const dto: any = await service.byId('deal1', { driverId: 'd1' });
+    expect(dto.vehiclesVerified).toBe(false);
+    expect(dto.driverDocsOpenedAt).toEqual(opened);
+    expect(prisma.auditLog.findFirst.mock.calls[0][0].where).toMatchObject({ entityType: 'Deal', entityId: 'deal1' });
+  });
+});
