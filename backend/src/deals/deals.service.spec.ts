@@ -592,3 +592,25 @@ describe('DealsService.byId — плашки пакета документов',
     expect(prisma.auditLog.findFirst.mock.calls[0][0].where).toMatchObject({ entityType: 'Deal', entityId: 'deal1' });
   });
 });
+
+describe('DealsService.complain — жалоба по сделке (046 п.6)', () => {
+  function setup(open: unknown = null) {
+    const prisma: any = {
+      deal: { findUnique: jest.fn().mockResolvedValue(dealFixture({ status: 'CANCELLED' })) },
+      complaint: { findFirst: jest.fn().mockResolvedValue(open), create: jest.fn().mockResolvedValue({ id: 'cmp1', status: 'OPEN' }) },
+    };
+    const service = new DealsService(prisma, {} as any, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);
+    return { prisma, service };
+  }
+
+  it('сторона сделки подаёт жалобу — в очередь DEAL', async () => {
+    const { prisma, service } = setup();
+    await expect(service.complain('deal1', { companyId: 'c1' }, 'logist-1', 'Отменил с грузом в машине')).resolves.toEqual({ id: 'cmp1', status: 'OPEN' });
+    expect(prisma.complaint.create).toHaveBeenCalledWith({ data: expect.objectContaining({ targetType: 'DEAL', targetId: 'deal1', reporterUserId: 'logist-1' }) });
+  });
+
+  it('чужая сделка — 403, повторная открытая — 409', async () => {
+    await expect(setup().service.complain('deal1', { companyId: 'other' }, 'u', 'x')).rejects.toThrow('Not a party');
+    await expect(setup({ id: 'old' }).service.complain('deal1', { driverId: 'd1' }, 'u', 'x')).rejects.toThrow('COMPLAINT_ALREADY_OPEN');
+  });
+});

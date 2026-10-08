@@ -20,6 +20,19 @@ export class CancelDealDto {
   reason?: string;
 }
 
+/// «Пожаловаться» по сделке (046 п.6) — сразу после отмены после загрузки.
+export class DealComplaintDto {
+  @IsNotEmpty()
+  @MaxLength(200)
+  @IsString()
+  reason!: string;
+
+  @IsOptional()
+  @MaxLength(2000)
+  @IsString()
+  description?: string;
+}
+
 /// «Оспорить» запрос отмены (046 п.5) — позиция второй стороны для админа.
 export class DisputeCancelDto {
   @IsNotEmpty()

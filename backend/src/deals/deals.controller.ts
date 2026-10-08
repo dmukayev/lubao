@@ -3,7 +3,7 @@ import { Public } from '../common/public.decorator';
 import type { Response } from 'express';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
-import { CancelDealDto, DisputeCancelDto, UpdateDealStatusDto } from './dto/deal-status.dto';
+import { CancelDealDto, DealComplaintDto, DisputeCancelDto, UpdateDealStatusDto } from './dto/deal-status.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { DealsService } from './deals.service';
 import { ReviewsService } from './reviews.service';
@@ -94,6 +94,12 @@ export class DealsController {
   @Post(':id/cancel-request/confirm')
   confirmCancel(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
     return this.deals.confirmCancel(id, partyContext(ctx));
+  }
+
+  /// Жалоба по сделке (046 п.6) — в очередь жалоб админки.
+  @Post(':id/complaint')
+  complain(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: DealComplaintDto) {
+    return this.deals.complain(id, partyContext(ctx), ctx.user.id, dto.reason, dto.description);
   }
 
   /// …или оспаривает — спор уходит админу.

@@ -319,6 +319,21 @@ export class DealsService {
     return this.toDto(updated);
   }
 
+  /// Жалоба по сделке (046 п.6): одна открытая от автора на сделку.
+  async complain(id: string, ctx: { driverId?: string; companyId?: string }, reporterUserId: string, reason: string, description?: string) {
+    const deal = await this.findEntity(id);
+    this.assertParty(deal, ctx);
+    const open = await this.prisma.complaint.findFirst({
+      where: { reporterUserId, targetType: 'DEAL', targetId: id, status: { in: ['OPEN', 'IN_REVIEW'] } },
+      select: { id: true },
+    });
+    if (open) throw new ConflictException('COMPLAINT_ALREADY_OPEN');
+    const created = await this.prisma.complaint.create({
+      data: { reporterUserId, targetType: 'DEAL', targetId: id, reason: reason.trim(), description: description?.trim() || null },
+    });
+    return { id: created.id, status: created.status };
+  }
+
   /// Вторая сторона согласна с запросом отмены → CANCELLED, вина — по причине.
   async confirmCancel(id: string, ctx: { driverId?: string; companyId?: string }) {
     const deal = await this.findEntity(id);
