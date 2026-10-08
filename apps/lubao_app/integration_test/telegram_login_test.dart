@@ -25,7 +25,7 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: LubaoApp()));
     await waitFor(tester, find.byKey(const Key('roleSelectDriverButton')));
     final t = tester.element(find.byType(Scaffold).first).l10n;
-    final bot = Dio(BaseOptions(baseUrl: e2eApiBase, headers: {'X-Telegram-Bot-Api-Secret-Token': 'e2e-telegram-secret'}));
+    final bot = Dio(BaseOptions(baseUrl: e2eApiBase, connectTimeout: e2eHttpTimeout, receiveTimeout: e2eHttpTimeout, headers: {'X-Telegram-Bot-Api-Secret-Token': 'e2e-telegram-secret'}));
     Future<void> update(Map<String, dynamic> message) =>
         bot.post('/telegram/webhook', data: {'update_id': DateTime.now().microsecondsSinceEpoch, 'message': {'chat': {'id': _telegramUserId}, 'from': {'id': _telegramUserId, 'language_code': 'ru'}, ...message}});
 
@@ -54,7 +54,7 @@ void main() {
       await update({'contact': {'phone_number': _phone, 'user_id': _telegramUserId}});
       // Новый номер — сразу анкета водителя, как после SMS-кода.
       await waitFor(tester, find.byKey(const Key('driverSetupFullName')), timeout: const Duration(seconds: 20));
-      final reuse = await Dio(BaseOptions(baseUrl: e2eApiBase, validateStatus: (_) => true)).get('/auth/telegram/$nonce');
+      final reuse = await Dio(BaseOptions(baseUrl: e2eApiBase, connectTimeout: e2eHttpTimeout, receiveTimeout: e2eHttpTimeout, validateStatus: (_) => true)).get('/auth/telegram/$nonce');
       expect(reuse.statusCode, 409, reason: 'nonce одноразовый');
       expectNoOverflow(tester);
     });

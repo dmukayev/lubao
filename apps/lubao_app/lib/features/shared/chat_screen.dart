@@ -341,7 +341,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               deal: deal,
               refData: referenceData,
               isDriver: isDriver,
-              collapsed: _cardCollapsed,
+              // Клавиатура открыта — карточка в одну строку: на узком экране с
+              // крупным шрифтом (iPhone SE) иначе не помещаются лента и ввод.
+              collapsed: _cardCollapsed || MediaQuery.viewInsetsOf(context).bottom > 0,
             ),
           Expanded(
             child: messagesAsync.when(

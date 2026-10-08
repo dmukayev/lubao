@@ -92,7 +92,7 @@ void main() {
           await tester.tap(looking);
           await waitFor(tester, find.byKey(const Key('driverStatus-lookingHere')));
           // Логист видит его в «Кто свободен».
-          final logist = Dio(BaseOptions(baseUrl: e2eApiBase, validateStatus: (_) => true));
+          final logist = Dio(BaseOptions(baseUrl: e2eApiBase, connectTimeout: e2eHttpTimeout, receiveTimeout: e2eHttpTimeout, validateStatus: (_) => true));
           final login = await logist.post('/auth/company/login', data: {'email': 'e2e-owner@lubao-test.kz', 'password': e2ePassword, 'deviceName': 'e2e', 'platform': 'ios'});
           final rows = (await logist.get('/arrivals', options: Options(headers: {'authorization': 'Bearer ${login.data['accessToken']}'}))).data as List<dynamic>;
           expect(rows.any((r) => r['driverName'] == fullName), isTrue, reason: '«Ищу груз из Алматы» — виден логисту');

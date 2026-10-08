@@ -28,6 +28,10 @@ const e2eDevice = String.fromEnvironment('E2E_DEVICE', defaultValue: 'device');
 /// Пути в steps.jsonl — те же, что на Маке.
 const e2eShotSink = String.fromEnvironment('E2E_SHOT_SINK');
 
+/// Таймаут запросов сценария к бэкенду и приёмнику: висящий запрос (сеть
+/// эмулятора, adb reverse) падает ошибкой шага, а не съедает 20 минут.
+const e2eHttpTimeout = Duration(seconds: 30);
+
 /// Записать файл отчёта: на iOS — прямо в каталог Мака, на Android — в приёмник.
 Future<void> e2eWriteFile(String hostPath, List<int> bytes, {bool append = false}) async {
   if (e2eShotSink.isEmpty) {
@@ -37,13 +41,16 @@ Future<void> e2eWriteFile(String hostPath, List<int> bytes, {bool append = false
     return;
   }
   final rel = hostPath.startsWith(e2eShotDir) ? hostPath.substring(e2eShotDir.length) : '/$hostPath';
-  final client = HttpClient();
+  final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
   try {
     final request = await client.openUrl(append ? 'POST' : 'PUT', Uri.parse('$e2eShotSink${Uri.encodeFull(rel)}'));
     request.add(bytes);
-    await (await request.close()).drain<void>();
+    await (await request.close()).drain<void>().timeout(const Duration(seconds: 15));
+  } catch (e) {
+    // Отчёт — не повод ронять сценарий: без скриншота, но дальше.
+    debugPrint('E2E: файл отчёта не отправлен: $e');
   } finally {
-    client.close();
+    client.close(force: true);
   }
 }
 
@@ -170,7 +177,7 @@ class LogistApi {
   final Dio _dio;
 
   static Future<LogistApi> login() async {
-    final dio = Dio(BaseOptions(baseUrl: e2eApiBase, validateStatus: (_) => true));
+    final dio = Dio(BaseOptions(baseUrl: e2eApiBase, connectTimeout: e2eHttpTimeout, receiveTimeout: e2eHttpTimeout, validateStatus: (_) => true));
     final res = await dio.post('/auth/company/login', data: {
       'email': e2eCompanyEmail,
       'password': e2ePassword,
@@ -194,7 +201,7 @@ class LogistApi {
   Future<List<int>> driverDocumentsPdf(String dealId) async {
     final link = await _dio.post('/deals/$dealId/driver-documents/pdf-link');
     final token = (link.data as Map)['token'] as String;
-    final pdf = await Dio(BaseOptions(baseUrl: e2eApiBase, validateStatus: (_) => true))
+    final pdf = await Dio(BaseOptions(baseUrl: e2eApiBase, connectTimeout: e2eHttpTimeout, receiveTimeout: e2eHttpTimeout, validateStatus: (_) => true))
         .get<List<int>>('/deals/$dealId/driver-documents.pdf', queryParameters: {'token': token}, options: Options(responseType: ResponseType.bytes));
     return pdf.data ?? const [];
   }
@@ -418,7 +425,7 @@ class DriverApi {
   final Dio _dio;
 
   static Future<DriverApi> login(String phone) async {
-    final dio = Dio(BaseOptions(baseUrl: e2eApiBase, validateStatus: (_) => true));
+    final dio = Dio(BaseOptions(baseUrl: e2eApiBase, connectTimeout: e2eHttpTimeout, receiveTimeout: e2eHttpTimeout, validateStatus: (_) => true));
     await dio.post('/auth/phone/request-code', data: {'phone': phone});
     final res = await dio.post('/auth/phone/verify', data: {'phone': phone, 'code': e2eDevCode, 'deviceName': 'e2e', 'platform': 'ios'});
     if (res.statusCode! >= 300) fail('Вход водителя через API не удался: ${res.statusCode} ${res.data}');
@@ -517,7 +524,7 @@ FakeUrlLauncher useFakeUrlLauncher() {
 
 /// Админ через API — только для проверок в сценариях приложения.
 Future<Dio> adminApi() async {
-  final dio = Dio(BaseOptions(baseUrl: e2eApiBase, validateStatus: (_) => true));
+  final dio = Dio(BaseOptions(baseUrl: e2eApiBase, connectTimeout: e2eHttpTimeout, receiveTimeout: e2eHttpTimeout, validateStatus: (_) => true));
   final res = await dio.post('/auth/admin/login', data: {'email': 'e2e-admin@lubao-test.kz', 'password': e2ePassword, 'deviceName': 'e2e', 'platform': 'web'});
   if (res.statusCode! >= 300) fail('Вход админа через API не удался: ${res.statusCode}');
   dio.options.headers['Authorization'] = 'Bearer ${(res.data as Map)['accessToken']}';

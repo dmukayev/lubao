@@ -384,6 +384,9 @@ run_ios() {
     --dart-define=E2E_DEVICE="$DEVICE_SLUG" \
     ${IS_ANDROID:+--dart-define=E2E_SHOT_SINK=http://127.0.0.1:$SINK_PORT}
   local code=$?
+  # Сценарий оборвался посреди шага «Обновите приложение» (043 п.8) — версия
+  # осталась бы поднятой, и все следующие сценарии упёрлись бы в этот экран.
+  quick 20 docker exec lubao-postgres-1 psql -U lubao -d lubao_e2e -qc "DELETE FROM app_settings WHERE key = 'minAppVersion'" || true
   if [[ $code -eq 0 ]]; then
     row "$name" "✅" "$(grep -oE '\+[0-9]+: All tests passed' "$log" | tail -1)"
     IOS_ENV_FAILURES=0
