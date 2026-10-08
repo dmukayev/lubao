@@ -541,6 +541,8 @@ Future<void> approvedSelfieViaApi(String phoneLocal) async {
   final login = await dio.post('/auth/phone/verify', data: {'phone': '+7$phoneLocal', 'code': e2eDevCode, 'deviceName': 'e2e', 'platform': 'ios'});
   if (login.statusCode! >= 300) fail('Вход водителя через API не удался: ${login.statusCode}');
   dio.options.headers['Authorization'] = 'Bearer ${(login.data as Map)['accessToken']}';
+  // Документы — только после согласия на обработку ПДн (043).
+  await dio.post('/auth/me/pd-consent', data: {'version': '2026-10-08'});
   final image = await makeSyntheticDocument('selfie.png', ['SYNTHETIC SELFIE', 'E2E']);
   final upload = await dio.post('/uploads/document', data: FormData.fromMap({'file': MultipartFile.fromBytes(await image.readAsBytes(), filename: 'selfie.png')}));
   if (upload.statusCode! >= 300) fail('Загрузка селфи не удалась: ${upload.statusCode}');

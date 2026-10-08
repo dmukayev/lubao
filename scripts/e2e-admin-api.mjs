@@ -466,6 +466,8 @@ assert(csv.status === 200 && csv.text.includes('median_kzt_per_km'), 'админ
   const big = await new Jimp(900, 1200, 0x3366ccff).getBufferAsync(Jimp.MIME_JPEG);
   const avatarDriver = await newDriver('+77010000093', tentType.id, { capacityTons: 20 });
   const meId = (await api('GET', '/drivers/me', { token: avatarDriver.token })).json.id;
+  // Документы — только после согласия на обработку ПДн (043).
+  await api('POST', '/auth/me/pd-consent', { token: avatarDriver.token, body: { version: '2026-10-08' } });
   const form = new FormData();
   form.append('file', new Blob([big], { type: 'image/jpeg' }), 'selfie.jpg');
   const up = await fetch(`${BASE}/uploads/document`, { method: 'POST', headers: { Authorization: `Bearer ${avatarDriver.token}` }, body: form }).then((r) => r.json());

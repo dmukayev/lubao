@@ -163,7 +163,10 @@ void main() {
       expect(find.text(t.avatarOfferTitle), findsOneWidget);
       expectNoOverflow(tester);
       await tester.tap(find.byKey(const Key('avatarOfferYes')));
-      await waitFor(tester, find.byKey(const Key('driverAvatar-$_d3Id-photo')), timeout: const Duration(seconds: 30));
+      // Фото — в шапке профиля, список прокручен к карточке: возвращаемся наверх.
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, 2000));
+      await tester.pumpAndSettle();
+      await waitAndReveal(tester, find.byKey(const Key('driverAvatar-$_d3Id-photo')), timeout: const Duration(seconds: 30));
       expect(find.byKey(const Key('avatarOfferCard')), findsNothing);
       expectInsideSafeZone(tester);
     });
