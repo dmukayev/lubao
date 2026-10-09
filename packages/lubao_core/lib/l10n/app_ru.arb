@@ -1521,5 +1521,10 @@
   "shareOpenFailed": "Ссылка не открылась — возможно, она устарела",
   "shareCompanyCargosTitle": "Грузы компании",
   "adminShareStats": "Поделились: {links} · открытий: {opens} · пришло по ссылкам: {came}",
-  "@adminShareStats": {"placeholders": {"links": {"type": "int"}, "opens": {"type": "int"}, "came": {"type": "int"}}}
+  "@adminShareStats": {"placeholders": {"links": {"type": "int"}, "opens": {"type": "int"}, "came": {"type": "int"}}},
+  "driverCardTitle": "Водитель",
+  "driverCardNotLooking": "Сейчас не ищет груз",
+  "driverCardTrips": "Рейсов в Lubao: {count}",
+  "@driverCardTrips": {"placeholders": {"count": {"type": "int"}}},
+  "driverCardChat": "Написать"
 }

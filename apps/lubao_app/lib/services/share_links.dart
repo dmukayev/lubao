@@ -70,7 +70,15 @@ class ShareLinkHandler {
       final code = await _takeCode(checkClipboard: checkClipboard);
       if (code == null) return;
       final target = await _ref.read(shareRepositoryProvider).claim(code);
-      _ref.read(routerProvider).go(targetPath(target, isDriver: session.user.role == UserRole.driver, companyId: session.companyMember?.companyId));
+      var ownCargo = false;
+      // 057 п.6: свой груз логиста — экран этого груза, чужой — «Грузы».
+      if (target.kind == ShareKind.cargo && session.user.role != UserRole.driver) {
+        try {
+          final cargo = await _ref.read(cargoRepositoryProvider).byId(target.targetId);
+          ownCargo = cargo.companyId == session.companyMember?.companyId;
+        } catch (_) {}
+      }
+      _ref.read(routerProvider).go(targetPath(target, isDriver: session.user.role == UserRole.driver, ownCargo: ownCargo));
     } catch (_) {
       // Ссылка устарела или сеть — остаёмся на текущем экране.
     } finally {
@@ -79,11 +87,11 @@ class ShareLinkHandler {
   }
 
   /// Куда ведёт ссылка: водителю — груз / грузы компании; логисту — свой груз
-  /// (чужой — «Грузы») / «Водители».
-  static String targetPath(ShareTarget target, {required bool isDriver, String? companyId}) => switch (target.kind) {
-        ShareKind.cargo => isDriver ? '/driver/cargo/${target.targetId}' : '/company/cargos',
+  /// (экран груза; чужой — «Грузы») / карточка этого водителя (057 п.6).
+  static String targetPath(ShareTarget target, {required bool isDriver, bool ownCargo = false}) => switch (target.kind) {
+        ShareKind.cargo => isDriver ? '/driver/cargo/${target.targetId}' : (ownCargo ? '/company/cargos/${target.targetId}/responses' : '/company/cargos'),
         ShareKind.company => isDriver ? '/driver/company/${target.targetId}' : '/company/cargos',
-        ShareKind.driver => isDriver ? '/driver/feed' : '/company/drivers',
+        ShareKind.driver => isDriver ? '/driver/feed' : '/company/driver/${target.targetId}',
       };
 }
 

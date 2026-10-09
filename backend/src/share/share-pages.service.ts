@@ -15,6 +15,18 @@ const cargoInclude = {
 } as const;
 type CargoRow = Prisma.CargoGetPayload<{ include: typeof cargoInclude }>;
 
+/// Android + встроенный браузер мессенджера (Telegram, WeChat).
+export function androidInAppBrowser(ua: string): boolean {
+  return /Android/i.test(ua) && /(Telegram|MicroMessenger|WeChat)/i.test(ua);
+}
+
+/// `intent://<хост>/open/…#Intent;scheme=https;package=…;S.browser_fallback_url=…;end`.
+export function androidIntentUrl(httpsUrl: string): string {
+  const u = new URL(httpsUrl);
+  const pkg = process.env.ANDROID_PACKAGE || 'kz.darkhan.lubao';
+  return `intent://${u.host}${u.pathname}#Intent;scheme=https;package=${pkg};S.browser_fallback_url=${encodeURIComponent(httpsUrl)};end`;
+}
+
 /// «Ерлан Сейткали» → «Ерлан С.»; одно слово — как есть.
 export function publicName(full: string): string {
   const parts = full.trim().split(/\s+/).filter(Boolean);
@@ -50,13 +62,16 @@ export class SharePagesService {
     private readonly shares: ShareService,
   ) {}
 
-  links(link: Pick<ShareLink, 'type' | 'code'>): PageLinks {
+  links(link: Pick<ShareLink, 'type' | 'code'>, userAgent = ''): PageLinks {
     const app = (process.env.APP_PUBLIC_URL || shareBaseUrl()).replace(/\/+$/, '');
     const path = `/${SHARE_PATH[link.type]}/${link.code}`;
+    const openUrl = `${app}/open${path}`;
     return {
-      // С этой страницы — в веб-приложение (/open/…): сам /c/… отдаёт эту страницу.
-      // Установленное приложение перехватывает /c|co|d/… ещё до неё (App/Universal Links).
-      appUrl: `${app}/open${path}`,
+      // С этой страницы — /open/… (входит в App Links: приложение откроется, нет —
+      // веб-приложение); сам /c/… отдаёт эту страницу.
+      // 057 п.5: встроенные браузеры Telegram/WeChat на Android App Links не
+      // открывают — intent:// с переходом на тот же адрес, если приложения нет.
+      appUrl: androidInAppBrowser(userAgent) ? androidIntentUrl(openUrl) : openUrl,
       androidUrl: process.env.ANDROID_STORE_URL || `${app}/app`,
       iosUrl: process.env.IOS_STORE_URL || `${app}/app`,
       code: link.code,
@@ -65,11 +80,11 @@ export class SharePagesService {
   }
 
   /// null — ссылки нет (404).
-  async render(code: string, locale: PageLocale): Promise<string | null> {
+  async render(code: string, locale: PageLocale, userAgent = ''): Promise<string | null> {
     const link = await this.shares.findByCode(code);
     if (!link) return null;
     await this.shares.countOpen(link.id);
-    const links = this.links(link);
+    const links = this.links(link, userAgent);
     // Похожие и грузы компании открываются в приложении по id груза.
     const app = (process.env.APP_PUBLIC_URL || shareBaseUrl()).replace(/\/+$/, '');
     const cargoHref = (c: PageCargo) => `${app}/driver/cargo/${c.id}`;

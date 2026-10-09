@@ -7271,6 +7271,30 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Поделились: {links} · открытий: {opens} · пришло по ссылкам: {came}'**
   String adminShareStats(int links, int opens, int came);
+
+  /// No description provided for @driverCardTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель'**
+  String get driverCardTitle;
+
+  /// No description provided for @driverCardNotLooking.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сейчас не ищет груз'**
+  String get driverCardNotLooking;
+
+  /// No description provided for @driverCardTrips.
+  ///
+  /// In ru, this message translates to:
+  /// **'Рейсов в Lubao: {count}'**
+  String driverCardTrips(int count);
+
+  /// No description provided for @driverCardChat.
+  ///
+  /// In ru, this message translates to:
+  /// **'Написать'**
+  String get driverCardChat;
 }
 
 class _LubaoLocalizationsDelegate

@@ -3821,4 +3821,18 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String adminShareStats(int links, int opens, int came) {
     return '分享：$links · 打开：$opens · 通过链接加入：$came';
   }
+
+  @override
+  String get driverCardTitle => '司机';
+
+  @override
+  String get driverCardNotLooking => '目前不在找货';
+
+  @override
+  String driverCardTrips(int count) {
+    return 'Lubao 行程：$count';
+  }
+
+  @override
+  String get driverCardChat => '发消息';
 }

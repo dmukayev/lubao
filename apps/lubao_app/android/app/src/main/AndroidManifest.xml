@@ -36,6 +36,7 @@
                 <data android:scheme="https" android:host="${appLinkHost}" android:pathPrefix="/c/"/>
                 <data android:scheme="https" android:host="${appLinkHost}" android:pathPrefix="/co/"/>
                 <data android:scheme="https" android:host="${appLinkHost}" android:pathPrefix="/d/"/>
+                <data android:scheme="https" android:host="${appLinkHost}" android:pathPrefix="/open/"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

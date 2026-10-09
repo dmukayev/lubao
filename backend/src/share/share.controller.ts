@@ -48,7 +48,7 @@ export class SharePageController {
   @Get([':kind/:code'])
   async page(@Param('kind') kind: string, @Param('code') code: string, @Req() req: Request, @Res() res: Response) {
     if (kind !== 'c' && kind !== 'co' && kind !== 'd') throw new NotFoundException();
-    const html = await this.pages.render(code, pageLocale(req.headers['accept-language']));
+    const html = await this.pages.render(code, pageLocale(req.headers['accept-language']), req.headers['user-agent'] ?? '');
     if (!html) throw new NotFoundException('Link not found');
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');

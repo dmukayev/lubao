@@ -3910,4 +3910,18 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String adminShareStats(int links, int opens, int came) {
     return 'Shared: $links · opens: $opens · joined via links: $came';
   }
+
+  @override
+  String get driverCardTitle => 'Driver';
+
+  @override
+  String get driverCardNotLooking => 'Not looking for cargo right now';
+
+  @override
+  String driverCardTrips(int count) {
+    return 'Trips in Lubao: $count';
+  }
+
+  @override
+  String get driverCardChat => 'Message';
 }

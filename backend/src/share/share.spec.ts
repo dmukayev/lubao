@@ -132,3 +132,18 @@ describe('publicName (057 п.11)', () => {
     expect(publicName('  ')).toBe('');
   });
 });
+
+describe('057 п.5: Android во встроенном браузере мессенджера — intent://', () => {
+  const { androidInAppBrowser, androidIntentUrl } = require('./share-pages.service');
+  it('Telegram/WeChat на Android — да; обычный Chrome и iPhone — нет', () => {
+    expect(androidInAppBrowser('Mozilla/5.0 (Linux; Android 13) ... Telegram-Android/10.0')).toBe(true);
+    expect(androidInAppBrowser('Mozilla/5.0 (Linux; Android 12) ... MicroMessenger/8.0')).toBe(true);
+    expect(androidInAppBrowser('Mozilla/5.0 (Linux; Android 13) Chrome/120 Mobile')).toBe(false);
+    expect(androidInAppBrowser('Mozilla/5.0 (iPhone; CPU iPhone OS 17) MicroMessenger/8.0')).toBe(false);
+  });
+  it('intent с пакетом и переходом на тот же адрес, если приложения нет', () => {
+    expect(androidIntentUrl('https://app.lubao.kz/open/c/Abc2345')).toBe(
+      'intent://app.lubao.kz/open/c/Abc2345#Intent;scheme=https;package=kz.darkhan.lubao;S.browser_fallback_url=https%3A%2F%2Fapp.lubao.kz%2Fopen%2Fc%2FAbc2345;end',
+    );
+  });
+});

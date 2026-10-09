@@ -1336,5 +1336,9 @@
   "shareVerified": "Тексерілген",
   "shareOpenFailed": "Сілтеме ашылмады — ескірген болуы мүмкін",
   "shareCompanyCargosTitle": "Компания жүктері",
-  "adminShareStats": "Бөлісті: {links} · ашылды: {opens} · сілтемемен келді: {came}"
+  "adminShareStats": "Бөлісті: {links} · ашылды: {opens} · сілтемемен келді: {came}",
+  "driverCardTitle": "Жүргізуші",
+  "driverCardNotLooking": "Қазір жүк іздемейді",
+  "driverCardTrips": "Lubao-дағы рейстер: {count}",
+  "driverCardChat": "Жазу"
 }

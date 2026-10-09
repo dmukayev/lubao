@@ -3907,4 +3907,18 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String adminShareStats(int links, int opens, int came) {
     return 'Бөлісті: $links · ашылды: $opens · сілтемемен келді: $came';
   }
+
+  @override
+  String get driverCardTitle => 'Жүргізуші';
+
+  @override
+  String get driverCardNotLooking => 'Қазір жүк іздемейді';
+
+  @override
+  String driverCardTrips(int count) {
+    return 'Lubao-дағы рейстер: $count';
+  }
+
+  @override
+  String get driverCardChat => 'Жазу';
 }

@@ -126,6 +126,12 @@ class DriverRepository {
     return Uint8List.fromList(res.data ?? const []);
   }
 
+  /// 057 п.6: карточка водителя для логиста (ссылка «Поделиться» /d/…).
+  Future<DriverCard> card(String driverId) async {
+    final res = await _client.dio.get('/drivers/$driverId/card');
+    return DriverCard.fromJson(res.data as Map<String, dynamic>);
+  }
+
   /// «Да» на предложении — принятое селфи становится фото профиля.
   Future<void> setAvatarFromSelfie() => _client.dio.post('/drivers/me/avatar/from-selfie');
 

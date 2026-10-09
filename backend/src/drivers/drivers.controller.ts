@@ -13,6 +13,7 @@ import { UpdateLocationDto } from './dto/update-location.dto';
 import { DriversService } from './drivers.service';
 import { DriverAvatarService } from './driver-avatar.service';
 import { SetAvatarDto } from './dto/set-avatar.dto';
+import { avatarVersion } from './avatar-version';
 
 @Controller('drivers')
 export class DriversController {
@@ -52,6 +53,40 @@ export class DriversController {
   async dismissAvatarOffer(@CurrentUser() ctx: RequestContext) {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');
     await this.avatars.dismissOffer(ctx.driver.id);
+  }
+
+  /// 057 п.6: карточка водителя для логиста (ссылка «Поделиться» /d/…): имя,
+  /// фото, «Проверен», рейтинг, рейсы, текущий анонс и машина. Без телефона и
+  /// документов — номер по-прежнему только по «Позвонить».
+  @Get(':id/card')
+  async card(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    if (!ctx.companyMember) throw new ForbiddenException('Only company accounts');
+    const driver = await this.prisma.driver.findUnique({ where: { id }, include: { user: { select: { deletedAt: true, isBlocked: true } } } });
+    if (!driver || driver.user.deletedAt) throw new NotFoundException('Driver not found');
+    const [arrival, trips] = await Promise.all([
+      this.prisma.arrival.findFirst({
+        where: { driverId: id, status: { in: ['PLANNED', 'ON_SITE'] } },
+        orderBy: { createdAt: 'desc' },
+        include: { directions: true, trailer: true, tractor: true },
+      }),
+      this.prisma.deal.count({ where: { driverId: id, status: 'DELIVERED' } }),
+    ]);
+    const vehicle = arrival?.trailer ?? arrival?.tractor ?? null;
+    return {
+      id: driver.id,
+      fullName: driver.fullName,
+      avatarVersion: avatarVersion(driver),
+      isVerified: driver.isVerified,
+      ratingAvg: Number(driver.ratingAvg),
+      ratingCount: driver.ratingCount,
+      trips,
+      bodyTypeId: vehicle?.bodyTypeId ?? driver.preferredBodyTypeId ?? null,
+      capacityTons: vehicle?.capacityTons != null ? Number(vehicle.capacityTons) : driver.preferredCapacityTons != null ? Number(driver.preferredCapacityTons) : null,
+      volumeM3: vehicle?.volumeM3 != null ? Number(vehicle.volumeM3) : null,
+      arrival: arrival
+        ? { pointId: arrival.pointId, status: arrival.status, plannedDay: arrival.plannedDay.toISOString().slice(0, 10), anyCountry: arrival.anyCountry, countryIds: arrival.directions.map((d) => d.countryId) }
+        : null,
+    };
   }
 
   /// 054 п.4: фото видят все вошедшие сотрудники компаний (и непроверенных),

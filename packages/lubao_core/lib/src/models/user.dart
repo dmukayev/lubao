@@ -386,3 +386,60 @@ class Session {
         companyMember: companyMember ?? this.companyMember,
       );
 }
+
+
+/// 057 п.6: карточка водителя для логиста — без телефона и документов.
+class DriverCard {
+  const DriverCard({
+    required this.id,
+    required this.fullName,
+    this.avatarVersion,
+    this.isVerified = false,
+    this.ratingAvg = 0,
+    this.ratingCount = 0,
+    this.trips = 0,
+    this.bodyTypeId,
+    this.capacityTons,
+    this.volumeM3,
+    this.pointId,
+    this.plannedDay,
+    this.anyCountry = false,
+    this.countryIds = const [],
+  });
+
+  final String id;
+  final String fullName;
+  final String? avatarVersion;
+  final bool isVerified;
+  final double ratingAvg;
+  final int ratingCount;
+  final int trips;
+  final String? bodyTypeId;
+  final double? capacityTons;
+  final double? volumeM3;
+  /// Анонс: город и дата; null — сейчас не ищет груз.
+  final String? pointId;
+  final DateTime? plannedDay;
+  final bool anyCountry;
+  final List<String> countryIds;
+
+  factory DriverCard.fromJson(Map<String, dynamic> json) {
+    final arrival = json['arrival'] as Map<String, dynamic>?;
+    return DriverCard(
+      id: json['id'] as String,
+      fullName: json['fullName'] as String? ?? '',
+      avatarVersion: json['avatarVersion'] as String?,
+      isVerified: json['isVerified'] as bool? ?? false,
+      ratingAvg: (json['ratingAvg'] as num?)?.toDouble() ?? 0,
+      ratingCount: json['ratingCount'] as int? ?? 0,
+      trips: json['trips'] as int? ?? 0,
+      bodyTypeId: json['bodyTypeId'] as String?,
+      capacityTons: (json['capacityTons'] as num?)?.toDouble(),
+      volumeM3: (json['volumeM3'] as num?)?.toDouble(),
+      pointId: arrival?['pointId'] as String?,
+      plannedDay: arrival?['plannedDay'] == null ? null : DateTime.parse(arrival!['plannedDay'] as String),
+      anyCountry: arrival?['anyCountry'] as bool? ?? false,
+      countryIds: ((arrival?['countryIds'] as List<dynamic>?) ?? const []).cast<String>(),
+    );
+  }
+}

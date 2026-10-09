@@ -31,7 +31,7 @@ server {
     # (042 п.2): iOS universal links и Android App Links проверяют эти файлы.
     location = /.well-known/apple-app-site-association {
         default_type application/json;
-        return 200 '{"applinks":{"apps":[],"details":[{"appIDs":["${IOS_APP_ID}"],"paths":["/invite/*","/c/*","/co/*","/d/*"],"components":[{"/":"/invite/*"},{"/":"/c/*"},{"/":"/co/*"},{"/":"/d/*"}]}]}}';
+        return 200 '{"applinks":{"apps":[],"details":[{"appIDs":["${IOS_APP_ID}"],"paths":["/invite/*","/c/*","/co/*","/d/*","/open/*"],"components":[{"/":"/invite/*"},{"/":"/c/*"},{"/":"/co/*"},{"/":"/d/*"},{"/":"/open/*"}]}]}}';
     }
     location = /.well-known/assetlinks.json {
         default_type application/json;

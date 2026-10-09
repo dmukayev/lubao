@@ -36,6 +36,7 @@ import '../features/shared/about_screen.dart';
 import '../features/shared/update_required_screen.dart';
 import '../services/share_links.dart';
 import '../features/driver/feed/company_cargos_public_screen.dart';
+import '../features/company/drivers/driver_card_screen.dart';
 
 class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
@@ -201,6 +202,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/company/cargos/repeat',
         builder: (context, state) => PostCargoScreen(template: state.extra as Cargo?),
       ),
+      GoRoute(path: '/company/driver/:id', builder: (context, state) => DriverCardScreen(driverId: state.pathParameters['id']!)),
       GoRoute(
         path: '/company/cargos/:id/responses',
         builder: (context, state) => CargoResponsesScreen(cargoId: state.pathParameters['id']!),

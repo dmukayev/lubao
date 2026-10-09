@@ -1336,5 +1336,9 @@
   "shareVerified": "已认证",
   "shareOpenFailed": "链接无法打开 — 可能已失效",
   "shareCompanyCargosTitle": "公司货物",
-  "adminShareStats": "分享：{links} · 打开：{opens} · 通过链接加入：{came}"
+  "adminShareStats": "分享：{links} · 打开：{opens} · 通过链接加入：{came}",
+  "driverCardTitle": "司机",
+  "driverCardNotLooking": "目前不在找货",
+  "driverCardTrips": "Lubao 行程：{count}",
+  "driverCardChat": "发消息"
 }

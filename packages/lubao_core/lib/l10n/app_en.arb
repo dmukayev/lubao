@@ -1461,5 +1461,9 @@
   "shareVerified": "Verified",
   "shareOpenFailed": "The link did not open — it may be outdated",
   "shareCompanyCargosTitle": "Company cargo",
-  "adminShareStats": "Shared: {links} · opens: {opens} · joined via links: {came}"
+  "adminShareStats": "Shared: {links} · opens: {opens} · joined via links: {came}",
+  "driverCardTitle": "Driver",
+  "driverCardNotLooking": "Not looking for cargo right now",
+  "driverCardTrips": "Trips in Lubao: {count}",
+  "driverCardChat": "Message"
 }
