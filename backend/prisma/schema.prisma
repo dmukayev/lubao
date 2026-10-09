@@ -438,6 +438,8 @@ model User {
   identifiersBlocked        BlockedIdentifier[]        @relation("IdentifierBlockedBy")
   identifiersLifted         BlockedIdentifier[]        @relation("IdentifierLiftedBy")
 
+  cargoResponsesSeen CargoResponsesSeen[]
+
   @@map("users")
 }
 
@@ -459,41 +461,41 @@ model Session {
 }
 
 model Driver {
-  id                    String    @id @default(uuid())
-  userId                String    @unique
-  user                  User      @relation(fields: [userId], references: [id])
-  fullName              String
-  homeCityId            String
-  homeCity              City      @relation(fields: [homeCityId], references: [id])
-  anyCountry            Boolean   @default(false)
+  id                     String    @id @default(uuid())
+  userId                 String    @unique
+  user                   User      @relation(fields: [userId], references: [id])
+  fullName               String
+  homeCityId             String
+  homeCity               City      @relation(fields: [homeCityId], references: [id])
+  anyCountry             Boolean   @default(false)
   /// Кузов и тоннаж из регистрации (045 п.5) — предпочтение для ленты и «Кто
   /// свободен», пока в гараже нет настоящей машины; машины при регистрации не создаются.
-  preferredBodyTypeId   String?
-  preferredBodyType     BodyType? @relation("DriverPreferredBodyType", fields: [preferredBodyTypeId], references: [id])
-  preferredCapacityTons Decimal?  @db.Decimal(6, 2)
+  preferredBodyTypeId    String?
+  preferredBodyType      BodyType? @relation("DriverPreferredBodyType", fields: [preferredBodyTypeId], references: [id])
+  preferredCapacityTons  Decimal?  @db.Decimal(6, 2)
   /// 048 п.7: «основа» кузова из регистрации по профилю (литры, места, контейнеры).
-  preferredSpecs        Json?
+  preferredSpecs         Json?
   /// ФИО из водительского удостоверения (045 п.10) — при регистрации водитель
   /// пишет только имя; после одобрения прав предлагаем подставить полное ФИО.
-  licenseFullName       String?
+  licenseFullName        String?
   /// 054: фото профиля — отдельный объект в приватном бакете (миниатюра
   /// ~200 px), ставится только с согласия водителя; селфи проверки — не оно.
-  avatarFileKey         String?
+  avatarFileKey          String?
   /// Версия фото для кэша клиентов (меняется при смене/удалении).
-  avatarUpdatedAt       DateTime?
+  avatarUpdatedAt        DateTime?
   /// «Не сейчас» на предложении поставить селфи в профиль — больше не предлагаем.
   avatarOfferDismissedAt DateTime?
-  isVerified            Boolean   @default(false)
-  ratingAvg             Decimal   @default(0) @db.Decimal(3, 2)
-  ratingCount           Int       @default(0)
+  isVerified             Boolean   @default(false)
+  ratingAvg              Decimal   @default(0) @db.Decimal(3, 2)
+  ratingCount            Int       @default(0)
   /// 049 п.9: штраф за отмены, пока отзывов нет (ratingCount = 0), — копится
   /// и применяется к среднему с первым отзывом.
-  pendingPenalty        Decimal   @default(0) @db.Decimal(6, 2)
-  currentLat            Decimal?  @db.Decimal(9, 6)
-  currentLng            Decimal?  @db.Decimal(9, 6)
-  locationUpdatedAt     DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  pendingPenalty         Decimal   @default(0) @db.Decimal(6, 2)
+  currentLat             Decimal?  @db.Decimal(9, 6)
+  currentLng             Decimal?  @db.Decimal(9, 6)
+  locationUpdatedAt      DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   directions            DriverDirection[]
   permits               DriverPermit[]
@@ -920,6 +922,8 @@ model Cargo {
   chats         Chat[]
   contactEvents ContactEvent[]
 
+  responsesSeen CargoResponsesSeen[]
+
   @@index([status, pointId, destinationCountryId])
   @@index([companyId])
   @@map("cargos")
@@ -998,16 +1002,16 @@ model RoutePriceStat {
 }
 
 model Response {
-  id        String         @id @default(uuid())
-  cargoId   String
-  cargo     Cargo          @relation(fields: [cargoId], references: [id])
-  driverId  String
-  driver    Driver         @relation(fields: [driverId], references: [id])
-  message   String?
-  status    ResponseStatus @default(PENDING)
+  id          String               @id @default(uuid())
+  cargoId     String
+  cargo       Cargo                @relation(fields: [cargoId], references: [id])
+  driverId    String
+  driver      Driver               @relation(fields: [driverId], references: [id])
+  message     String?
+  status      ResponseStatus       @default(PENDING)
   closeReason ResponseCloseReason?
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 
   deal Deal?
 
@@ -1391,4 +1395,18 @@ model Payment {
   @@index([companyId])
   @@index([driverId])
   @@map("payments")
+}
+
+/// 056 п.5: когда сотрудник компании последний раз открывал отклики груза —
+/// «новые» отклики (PENDING позже этой отметки) у каждого сотрудника свои.
+model CargoResponsesSeen {
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cargoId String
+  cargo   Cargo    @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+  seenAt  DateTime @default(now())
+
+  @@id([userId, cargoId])
+  @@index([cargoId])
+  @@map("cargo_responses_seen")
 }

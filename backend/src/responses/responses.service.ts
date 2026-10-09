@@ -11,6 +11,7 @@ import { toDateOnly } from '../common/date-only';
 import { cancelStatsFor } from '../deals/cancel-policy';
 import { avatarVersion } from '../drivers/avatar-version';
 import { INVITATION_TTL_HOURS } from './invitation-ttl';
+import { markResponsesSeen } from './new-responses';
 
 type ResponseWithDriver = CargoResponseEntity & { driver: Driver };
 
@@ -93,13 +94,43 @@ export class ResponsesService {
   /// сводку «Уже везёт…» по текущей связке водителя + вместимость прицепа:
   /// логист видит занятость ДО выбора, клиент мягко предупреждает, если
   /// груз, похоже, не поместится (водитель всё равно не сможет подтвердить).
-  async listForCargo(cargoId: string) {
-    const responses = await this.prisma.response.findMany({
-      where: { cargoId },
-      include: { driver: true },
-      orderBy: { createdAt: 'desc' },
+  /// 056 п.5: порядок — выбранный, затем ждут решения (на месте в городе
+  /// погрузки → проверенные → рейтинг → кто откликнулся раньше), ниже
+  /// приглашённые, в конце неактивные. «Новые» — для этого сотрудника; открыл
+  /// список — отметка «видел» (новые гаснут).
+  async listForCargo(cargoId: string, viewerUserId?: string) {
+    const [found, cargo, seen] = await Promise.all([
+      this.prisma.response.findMany({
+        where: { cargoId },
+        include: { driver: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.cargo.findUnique({ where: { id: cargoId }, select: { pointId: true } }),
+      viewerUserId ? this.prisma.cargoResponsesSeen.findUnique({ where: { userId_cargoId: { userId: viewerUserId, cargoId } } }) : Promise.resolve(null),
+    ]);
+    if (viewerUserId) await markResponsesSeen(this.prisma, viewerUserId, cargoId);
+    if (found.length === 0) return [];
+    const onSite = new Set(
+      cargo
+        ? (
+            await this.prisma.arrival.findMany({
+              where: { driverId: { in: found.map((r) => r.driverId) }, pointId: cargo.pointId, status: 'ON_SITE' },
+              select: { driverId: true },
+            })
+          ).map((a) => a.driverId)
+        : [],
+    );
+    const rank: Record<string, number> = { SELECTED: 0, PENDING: 1, INVITED: 2, REJECTED: 3, CANCELLED: 3 };
+    const responses = [...found].sort((a, b) => {
+      const byStatus = (rank[a.status] ?? 9) - (rank[b.status] ?? 9);
+      if (byStatus !== 0 || a.status !== 'PENDING') return byStatus || a.createdAt.getTime() - b.createdAt.getTime();
+      return (
+        Number(onSite.has(b.driverId)) - Number(onSite.has(a.driverId)) ||
+        Number(b.driver.isVerified) - Number(a.driver.isVerified) ||
+        Number(b.driver.ratingAvg) - Number(a.driver.ratingAvg) ||
+        a.createdAt.getTime() - b.createdAt.getTime()
+      );
     });
-    if (responses.length === 0) return [];
 
     const combos = new Map<string, { tractorId: string | null; trailerId: string | null }>();
     for (const r of responses) {
@@ -152,6 +183,11 @@ export class ResponsesService {
         dealId: dealByResponse.get(r.id)?.id ?? null,
         dealStatus: dealByResponse.get(r.id)?.status ?? null,
         cancelStats: cancelStats.get(r.driverId) ?? null,
+        driverVerified: r.driver.isVerified,
+        driverRatingAvg: Number(r.driver.ratingAvg),
+        driverRatingCount: r.driver.ratingCount,
+        onSiteAtPoint: onSite.has(r.driverId),
+        isNew: r.status === 'PENDING' && (!seen || r.updatedAt > seen.seenAt),
       };
     });
   }

@@ -3801,4 +3801,15 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get profileTripHistory => 'Рейстер тарихы';
+
+  @override
+  String responsesInactive(int count) {
+    return 'Белсенді емес · $count';
+  }
+
+  @override
+  String get responsesWaitingDriver => 'жүргізушінің жауабын күтеміз';
+
+  @override
+  String get responsesNewDot => 'Жаңа жауап';
 }

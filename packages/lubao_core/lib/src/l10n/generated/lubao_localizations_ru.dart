@@ -3796,4 +3796,15 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get profileTripHistory => 'История рейсов';
+
+  @override
+  String responsesInactive(int count) {
+    return 'Неактивные · $count';
+  }
+
+  @override
+  String get responsesWaitingDriver => 'ждём ответа водителя';
+
+  @override
+  String get responsesNewDot => 'Новый отклик';
 }

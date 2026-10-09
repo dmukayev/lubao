@@ -49,6 +49,12 @@ class CargoRepository {
     return CompanyCargoPage.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// 056 п.5: числа на вкладках «Грузов» и новые отклики сотрудника (цифра на вкладке).
+  Future<Map<String, int>> companyCounts() async {
+    final res = await _client.dio.get('/cargos/company/counts');
+    return (res.data as Map<String, dynamic>).map((k, v) => MapEntry(k, (v as num).toInt()));
+  }
+
   Future<Cargo> byId(String id) async {
     final res = await _client.dio.get('/cargos/$id');
     return Cargo.fromJson(res.data as Map<String, dynamic>);

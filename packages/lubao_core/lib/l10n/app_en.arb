@@ -1432,5 +1432,8 @@
   "homeActionSelectedCta": "Confirm in “My trips” →",
   "homeActionInvited": "You were invited to {route} · {hours} h left",
   "homeActionInvitedCta": "Answer →",
-  "profileTripHistory": "Trip history"
+  "profileTripHistory": "Trip history",
+  "responsesInactive": "Inactive · {count}",
+  "responsesWaitingDriver": "waiting for the driver",
+  "responsesNewDot": "New response"
 }

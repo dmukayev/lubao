@@ -1307,5 +1307,8 @@
   "homeActionSelectedCta": "«Менің рейстерімде» растау →",
   "homeActionInvited": "Сізді {route} бағытына шақырды · {hours} сағ қалды",
   "homeActionInvitedCta": "Жауап беру →",
-  "profileTripHistory": "Рейстер тарихы"
+  "profileTripHistory": "Рейстер тарихы",
+  "responsesInactive": "Белсенді емес · {count}",
+  "responsesWaitingDriver": "жүргізушінің жауабын күтеміз",
+  "responsesNewDot": "Жаңа жауап"
 }

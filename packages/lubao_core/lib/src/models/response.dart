@@ -6,6 +6,8 @@ class CargoResponse {
     required this.cargoId,
     required this.driverId,
     required this.driverName,
+    this.isNew = false,
+    this.onSiteAtPoint = false,
     this.avatarVersion,
     this.message,
     required this.status,
@@ -30,6 +32,12 @@ class CargoResponse {
   final String cargoId;
   final String driverId;
   final String driverName;
+
+  /// 056 п.5: этот сотрудник ещё не открывал отклик (точка «новый»).
+  final bool isNew;
+
+  /// Водитель на месте в городе погрузки — такие наверху.
+  final bool onSiteAtPoint;
   final String? avatarVersion;
   final String? message;
   final ResponseStatus status;
@@ -68,6 +76,8 @@ class CargoResponse {
         cargoId: json['cargoId'] as String,
         driverId: json['driverId'] as String,
         driverName: json['driverName'] as String? ?? '',
+        isNew: json['isNew'] as bool? ?? false,
+        onSiteAtPoint: json['onSiteAtPoint'] as bool? ?? false,
         avatarVersion: json['avatarVersion'] as String?,
         message: json['message'] as String?,
         status: responseStatusFromJson(json['status'] as String),

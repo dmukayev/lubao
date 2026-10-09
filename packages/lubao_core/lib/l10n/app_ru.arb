@@ -1483,5 +1483,9 @@
   "homeActionInvited": "Вас пригласили на {route} · осталось {hours} ч",
   "@homeActionInvited": {"placeholders": {"route": {"type": "String"}, "hours": {"type": "int"}}},
   "homeActionInvitedCta": "Ответить →",
-  "profileTripHistory": "История рейсов"
+  "profileTripHistory": "История рейсов",
+  "responsesInactive": "Неактивные · {count}",
+  "@responsesInactive": {"placeholders": {"count": {"type": "int"}}},
+  "responsesWaitingDriver": "ждём ответа водителя",
+  "responsesNewDot": "Новый отклик"
 }

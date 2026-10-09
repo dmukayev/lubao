@@ -7097,6 +7097,24 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'История рейсов'**
   String get profileTripHistory;
+
+  /// No description provided for @responsesInactive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неактивные · {count}'**
+  String responsesInactive(int count);
+
+  /// No description provided for @responsesWaitingDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'ждём ответа водителя'**
+  String get responsesWaitingDriver;
+
+  /// No description provided for @responsesNewDot.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новый отклик'**
+  String get responsesNewDot;
 }
 
 class _LubaoLocalizationsDelegate

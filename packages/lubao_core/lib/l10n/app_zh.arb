@@ -1307,5 +1307,8 @@
   "homeActionSelectedCta": "在“我的行程”中确认 →",
   "homeActionInvited": "您被邀请：{route} · 剩余 {hours} 小时",
   "homeActionInvitedCta": "回复 →",
-  "profileTripHistory": "行程记录"
+  "profileTripHistory": "行程记录",
+  "responsesInactive": "未激活 · {count}",
+  "responsesWaitingDriver": "等待司机回复",
+  "responsesNewDot": "新响应"
 }

@@ -58,7 +58,15 @@ export class CargosController {
       cityId: cityId || undefined,
       from: isDate(from),
       to: isDate(to),
+      userId: ctx.user.id,
     });
+  }
+
+  /// 056 п.5: числа на вкладках и новые отклики сотрудника — цифра на «Грузах».
+  @Get('company/counts')
+  companyCounts(@CurrentUser() ctx: RequestContext) {
+    if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
+    return this.cargos.companyTabCounts(ctx.companyMember.companyId, ctx.user.id);
   }
 
   /// Задача 033, п.10 — «подходит N водителям на точке» при публикации.
@@ -139,7 +147,8 @@ export class CargosController {
   async responsesForCargo(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
     await this.cargos.assertOwnedBy(id, ctx.companyMember.companyId);
-    return this.responses.listForCargo(id);
+    // 056 п.5: открыл отклики — «новые» у этого сотрудника гаснут.
+    return this.responses.listForCargo(id, ctx.user.id);
   }
 
   /// Мой отклик на груз (041): карточка водителя показывает «Откликнуться» /

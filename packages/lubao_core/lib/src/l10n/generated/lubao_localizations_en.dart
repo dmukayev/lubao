@@ -3804,4 +3804,15 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get profileTripHistory => 'Trip history';
+
+  @override
+  String responsesInactive(int count) {
+    return 'Inactive · $count';
+  }
+
+  @override
+  String get responsesWaitingDriver => 'waiting for the driver';
+
+  @override
+  String get responsesNewDot => 'New response';
 }

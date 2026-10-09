@@ -137,26 +137,6 @@ void main() {
       expectNoOverflow(tester);
     });
 
-    // 055: водитель видит вес в тоннах — «18,5 т».
-    await run.step(tester, 'вес-в-ленте-водителя', () async {
-      await logoutViaProfile(tester, driver: false);
-      await loginDriver(tester, '7010000001');
-      await waitFor(tester, find.byType(NavigationBar));
-      final card = find.byKey(Key('feedCargoCard-$cargoId'));
-      await waitAndReveal(tester, card, timeout: const Duration(seconds: 30));
-      expect(find.descendant(of: card, matching: find.textContaining('18,5 ${t.unitTon}')), findsOneWidget);
-      await logoutViaProfile(tester, driver: true);
-      await tester.tap(find.byKey(const Key('roleSelectCompanyButton')));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byKey(const Key('companyLoginEmailField')), e2eNewCompanyEmail);
-      await tester.enterText(find.byKey(const Key('companyLoginPasswordField')), e2ePassword);
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('companyLoginSubmitButton')));
-      await waitFor(tester, find.text(t.navDrivers));
-      await goTab(tester, t.navCargos);
-      await waitAndReveal(tester, find.byKey(Key('companyCargoCard-$cargoId')));
-    });
-
     // 056 п.3: «Повторить» — форма заполнена по старому грузу (маршрут, кузов,
     // вес, цена), дата — сегодня; публикуется новый груз, старый не трогается.
     // 056 п.4: внизу у логиста нет вкладки «Сделки».
@@ -187,9 +167,69 @@ void main() {
       await waitAndReveal(tester, find.byKey(Key('companyCargoCard-$cargoId')));
     });
 
+    // 056 п.1 / п.7: водитель откликнулся на копию, логист её снял — у водителя
+    // отклик уходит в «Историю рейсов» с причиной «Груз снят».
+    late String copyId;
+    await run.step(tester, 'снятый-груз-закрывает-отклик', () async {
+      final container = ProviderScope.containerOf(tester.element(find.byType(LubaoApp)));
+      copyId = (await container.read(myCargosProvider.future)).firstWhere((c) => c.id != cargoId).id;
+      await (await DriverApi.login('+77010000001')).respond(copyId);
+      await container.read(cargoRepositoryProvider).close(copyId, outcome: 'CARGO_CANCELLED');
+    });
+
+    // 055: водитель видит вес в тоннах — «18,5 т».
+    await run.step(tester, 'вес-в-ленте-водителя', () async {
+      await logoutViaProfile(tester, driver: false);
+      await loginDriver(tester, '7010000001');
+      await waitFor(tester, find.byType(NavigationBar));
+      final card = find.byKey(Key('feedCargoCard-$cargoId'));
+      await waitAndReveal(tester, card, timeout: const Duration(seconds: 30));
+      expect(find.descendant(of: card, matching: find.textContaining('18,5 ${t.unitTon}')), findsOneWidget);
+      // 056 п.6: снятый груз — в «Истории рейсов» с причиной.
+      await goTab(tester, t.profileTitle);
+      final history = find.byKey(const Key('profileTripHistory'));
+      await waitAndReveal(tester, history);
+      await tester.tap(history);
+      await waitFor(tester, find.byKey(const Key('historyList')));
+      await waitAndReveal(tester, find.text(t.closeReasonCargoClosed));
+      expectNoOverflow(tester);
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+      await logoutViaProfile(tester, driver: true);
+      await tester.tap(find.byKey(const Key('roleSelectCompanyButton')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('companyLoginEmailField')), e2eNewCompanyEmail);
+      await tester.enterText(find.byKey(const Key('companyLoginPasswordField')), e2ePassword);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('companyLoginSubmitButton')));
+      await waitFor(tester, find.text(t.navDrivers));
+      await goTab(tester, t.navCargos);
+      await waitAndReveal(tester, find.byKey(Key('companyCargoCard-$cargoId')));
+    });
+
     await run.step(tester, 'водитель-откликается', () async {
       final driver = await DriverApi.login('+77010000003');
       await driver.respond(cargoId);
+    });
+
+    // 056 п.5: отклик → «1 новый» на карточке и цифра на «Грузах»; открыл
+    // отклики — точка у нового, после возврата «новых» нет.
+    await run.step(tester, 'новый-отклик-у-логиста', () async {
+      await goTab(tester, t.navDrivers);
+      await goTab(tester, t.navCargos);
+      final line = find.byKey(Key('cargoResponsesLine-$cargoId'));
+      await waitAndReveal(tester, line);
+      await waitFor(tester, find.descendant(of: line, matching: find.textContaining(t.cargoResponsesNew(1))));
+      await waitFor(tester, find.descendant(of: find.byKey(const Key('navCargosBadge')), matching: find.text('1')));
+      await tester.tap(find.byKey(Key('companyCargoCard-$cargoId')));
+      await waitFor(tester, find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('responseNewDot-')));
+      expectNoOverflow(tester);
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+      await goTab(tester, t.navDrivers);
+      await goTab(tester, t.navCargos);
+      await waitAndReveal(tester, line);
+      expect(find.descendant(of: line, matching: find.textContaining(t.cargoResponsesNew(1))), findsNothing);
     });
 
     await run.step(tester, 'выбор-водителя-в-откликах', () async {

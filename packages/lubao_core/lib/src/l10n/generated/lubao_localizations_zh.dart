@@ -3716,4 +3716,15 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get profileTripHistory => '行程记录';
+
+  @override
+  String responsesInactive(int count) {
+    return '未激活 · $count';
+  }
+
+  @override
+  String get responsesWaitingDriver => '等待司机回复';
+
+  @override
+  String get responsesNewDot => '新响应';
 }
