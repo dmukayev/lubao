@@ -169,6 +169,14 @@ void main() {
       await waitFor(tester, find.byKey(const Key('responseSelectButton')));
       expectInsideSafeZone(tester);
       await tester.tap(find.byKey(const Key('responseSelectButton')));
+      await tester.pumpAndSettle();
+      // 055: груз 18,5 т, а D3 уже везёт 5 т из 20 — честное предупреждение
+      // «Машина уже заполнена» (038 п.9); логист выбирает всё равно.
+      final anyway = find.text(t.selectDriverAnywayButton);
+      if (anyway.evaluate().isNotEmpty) {
+        await tester.tap(anyway);
+        await tester.pumpAndSettle();
+      }
       final deadline = DateTime.now().add(const Duration(seconds: 20));
       while (find.byKey(const Key('responseSelectButton')).evaluate().isNotEmpty) {
         if (DateTime.now().isAfter(deadline)) fail('Выбор водителя не создал сделку за 20 с');
