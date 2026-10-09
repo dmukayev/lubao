@@ -14,7 +14,8 @@ import '../features/onboarding/accept_invite_screen.dart';
 import '../features/driver/driver_shell.dart';
 import '../features/driver/feed/cargo_feed_screen.dart';
 import '../features/driver/feed/cargo_detail_screen.dart';
-import '../features/driver/deals/driver_deals_screen.dart';
+import '../features/driver/trips/driver_trips_screen.dart';
+import '../features/driver/trips/trip_history_screen.dart';
 import '../features/driver/profile/driver_profile_screen.dart';
 import '../features/driver/profile/driver_setup_screen.dart';
 import '../features/driver/profile/driver_verification_screen.dart';
@@ -23,7 +24,6 @@ import '../features/company/company_shell.dart';
 import '../features/company/cargos/company_cargos_screen.dart';
 import '../features/company/cargos/post_cargo_screen.dart';
 import '../features/company/cargos/cargo_responses_screen.dart';
-import '../features/company/deals/company_deals_screen.dart';
 import '../features/company/drivers/drivers_at_point_screen.dart';
 import '../features/company/profile/company_profile_screen.dart';
 import '../features/shared/deal_detail_screen.dart';
@@ -34,7 +34,6 @@ import '../features/shared/notification_settings_screen.dart';
 import '../features/shared/splash_screen.dart';
 import '../features/shared/about_screen.dart';
 import '../features/shared/update_required_screen.dart';
-import '../features/driver/deals/my_responses_screen.dart';
 
 class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
@@ -134,7 +133,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: '/driver/feed', builder: (context, state) => const CargoFeedScreen()),
           GoRoute(path: '/driver/chats', builder: (context, state) => const MyChatsScreen()),
-          GoRoute(path: '/driver/deals', builder: (context, state) => const DriverDealsScreen()),
+          // 056 п.6: «Сделки» водителя → «Мои рейсы»; старые ссылки и push — туда же.
+          GoRoute(path: '/driver/trips', builder: (context, state) => const DriverTripsScreen()),
+          GoRoute(path: '/driver/deals', redirect: (context, state) => '/driver/trips'),
           GoRoute(path: '/driver/profile', builder: (context, state) => const DriverProfileScreen()),
         ],
       ),
@@ -158,23 +159,32 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/driver/garage',
         builder: (context, state) => const GarageScreen(),
       ),
-      GoRoute(
-        path: '/driver/responses',
-        builder: (context, state) => const MyResponsesScreen(),
-      ),
+      GoRoute(path: '/driver/responses', redirect: (context, state) => '/driver/trips'),
+      GoRoute(path: '/driver/history', builder: (context, state) => const TripHistoryScreen()),
       ShellRoute(
         builder: (context, state, child) => CompanyShell(child: child),
         routes: [
-          GoRoute(path: '/company/cargos', builder: (context, state) => const CompanyCargosScreen()),
+          GoRoute(
+            path: '/company/cargos',
+            builder: (context, state) => CompanyCargosScreen(
+              key: ValueKey(state.uri.queryParameters['tab']),
+              initialTab: CompanyCargoTab.values.firstWhere((t) => t.name == state.uri.queryParameters['tab'], orElse: () => CompanyCargoTab.active),
+            ),
+          ),
           GoRoute(path: '/company/drivers', builder: (context, state) => const DriversAtPointScreen()),
           GoRoute(path: '/company/chats', builder: (context, state) => const MyChatsScreen()),
-          GoRoute(path: '/company/deals', builder: (context, state) => const CompanyDealsScreen()),
+          // 056 п.4: старые ссылки и push на «Сделки» логиста — «Грузы» → «В работе».
+          GoRoute(path: '/company/deals', redirect: (context, state) => '/company/cargos?tab=work'),
           GoRoute(path: '/company/profile', builder: (context, state) => const CompanyProfileScreen()),
         ],
       ),
       GoRoute(
         path: '/company/cargos/new',
         builder: (context, state) => PostCargoScreen(cargo: state.extra as Cargo?),
+      ),
+      GoRoute(
+        path: '/company/cargos/repeat',
+        builder: (context, state) => PostCargoScreen(template: state.extra as Cargo?),
       ),
       GoRoute(
         path: '/company/cargos/:id/responses',

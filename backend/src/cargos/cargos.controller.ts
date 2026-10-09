@@ -4,7 +4,7 @@ import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
 import { ResponsesService } from '../responses/responses.service';
 import { CreateResponseDto } from '../responses/dto/update-response.dto';
-import { CargosService } from './cargos.service';
+import { CargosService, CompanyCargoTab } from './cargos.service';
 import { CreateCargoDto } from './dto/create-cargo.dto';
 import { UpdateCargoDto } from './dto/update-cargo.dto';
 import { CloseCargoDto } from './dto/close-cargo.dto';
@@ -34,6 +34,39 @@ export class CargosController {
   mine(@CurrentUser() ctx: RequestContext) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
     return this.cargos.mine(ctx.companyMember.companyId);
+  }
+
+  /// 056 п.2: «Грузы» логиста по вкладкам, страницами; в архиве — поиск по
+  /// городу (погрузки или назначения) и периоду погрузки.
+  @Get('company')
+  companyTab(
+    @CurrentUser() ctx: RequestContext,
+    @Query('tab') tab?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('cityId') cityId?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
+    const safeTab: CompanyCargoTab = tab === 'work' || tab === 'archive' ? tab : 'active';
+    const isDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+    return this.cargos.companyTab(ctx.companyMember.companyId, {
+      tab: safeTab,
+      limit: limit ? Number(limit) || undefined : undefined,
+      offset: offset ? Number(offset) || undefined : undefined,
+      cityId: cityId || undefined,
+      from: isDate(from),
+      to: isDate(to),
+      userId: ctx.user.id,
+    });
+  }
+
+  /// 056 п.5: числа на вкладках и новые отклики сотрудника — цифра на «Грузах».
+  @Get('company/counts')
+  companyCounts(@CurrentUser() ctx: RequestContext) {
+    if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
+    return this.cargos.companyTabCounts(ctx.companyMember.companyId, ctx.user.id);
   }
 
   /// Задача 033, п.10 — «подходит N водителям на точке» при публикации.
@@ -114,7 +147,8 @@ export class CargosController {
   async responsesForCargo(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
     await this.cargos.assertOwnedBy(id, ctx.companyMember.companyId);
-    return this.responses.listForCargo(id);
+    // 056 п.5: открыл отклики — «новые» у этого сотрудника гаснут.
+    return this.responses.listForCargo(id, ctx.user.id);
   }
 
   /// Мой отклик на груз (041): карточка водителя показывает «Откликнуться» /

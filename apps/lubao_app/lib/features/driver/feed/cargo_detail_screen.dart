@@ -13,7 +13,7 @@ import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../services/push_service.dart';
-import '../deals/my_responses_screen.dart';
+import '../trips/driver_trips_screen.dart';
 
 class CargoDetailScreen extends ConsumerStatefulWidget {
   const CargoDetailScreen({super.key, required this.cargoId});

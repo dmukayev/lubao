@@ -6,6 +6,8 @@ class CargoResponse {
     required this.cargoId,
     required this.driverId,
     required this.driverName,
+    this.isNew = false,
+    this.onSiteAtPoint = false,
     this.avatarVersion,
     this.message,
     required this.status,
@@ -30,6 +32,12 @@ class CargoResponse {
   final String cargoId;
   final String driverId;
   final String driverName;
+
+  /// 056 п.5: этот сотрудник ещё не открывал отклик (точка «новый»).
+  final bool isNew;
+
+  /// Водитель на месте в городе погрузки — такие наверху.
+  final bool onSiteAtPoint;
   final String? avatarVersion;
   final String? message;
   final ResponseStatus status;
@@ -68,6 +76,8 @@ class CargoResponse {
         cargoId: json['cargoId'] as String,
         driverId: json['driverId'] as String,
         driverName: json['driverName'] as String? ?? '',
+        isNew: json['isNew'] as bool? ?? false,
+        onSiteAtPoint: json['onSiteAtPoint'] as bool? ?? false,
         avatarVersion: json['avatarVersion'] as String?,
         message: json['message'] as String?,
         status: responseStatusFromJson(json['status'] as String),
@@ -102,7 +112,23 @@ class MyCargoResponse {
 }
 
 
+/// 056 п.1: почему отклик закрыт — для «Истории рейсов».
+enum ResponseCloseReason { withdrawn, inviteExpired, cargoArchived, cargoClosed, takenByOther, rejectedByLogist, dealCancelled, accountDeleted }
+
+ResponseCloseReason? responseCloseReasonFromJson(String? value) => switch (value) {
+      'WITHDRAWN' => ResponseCloseReason.withdrawn,
+      'INVITE_EXPIRED' => ResponseCloseReason.inviteExpired,
+      'CARGO_ARCHIVED' => ResponseCloseReason.cargoArchived,
+      'CARGO_CLOSED' => ResponseCloseReason.cargoClosed,
+      'TAKEN_BY_OTHER' => ResponseCloseReason.takenByOther,
+      'REJECTED_BY_LOGIST' => ResponseCloseReason.rejectedByLogist,
+      'DEAL_CANCELLED' => ResponseCloseReason.dealCancelled,
+      'ACCOUNT_DELETED' => ResponseCloseReason.accountDeleted,
+      _ => null,
+    };
+
 /// Строка «Моих откликов» (041, п.9): статус отклика + краткая сводка груза.
+/// 056 п.6: из неё строятся «Мои рейсы» и «История рейсов».
 class MyResponseEntry {
   const MyResponseEntry({
     required this.id,
@@ -115,6 +141,15 @@ class MyResponseEntry {
     required this.price,
     required this.currency,
     required this.readyDate,
+    this.pointId,
+    this.categoryId,
+    this.weightKg,
+    this.companyName = '',
+    this.closeReason,
+    this.inviteExpiresAt,
+    this.dealId,
+    this.dealStatus,
+    this.updatedAt,
   });
 
   final String id;
@@ -127,6 +162,17 @@ class MyResponseEntry {
   final double price;
   final Currency currency;
   final DateTime readyDate;
+  final String? pointId;
+  final String? categoryId;
+  final double? weightKg;
+  final String companyName;
+  final ResponseCloseReason? closeReason;
+
+  /// «Вас пригласили — осталось 18 ч».
+  final DateTime? inviteExpiresAt;
+  final String? dealId;
+  final DealStatus? dealStatus;
+  final DateTime? updatedAt;
 
   factory MyResponseEntry.fromJson(Map<String, dynamic> json) {
     final cargo = json['cargo'] as Map<String, dynamic>;
@@ -141,6 +187,15 @@ class MyResponseEntry {
       price: (cargo['price'] as num).toDouble(),
       currency: currencyFromJson(cargo['currency'] as String),
       readyDate: DateTime.parse(cargo['readyDate'] as String),
+      pointId: cargo['pointId'] as String?,
+      categoryId: cargo['categoryId'] as String?,
+      weightKg: (cargo['weightKg'] as num?)?.toDouble(),
+      companyName: cargo['companyName'] as String? ?? '',
+      closeReason: responseCloseReasonFromJson(json['closeReason'] as String?),
+      inviteExpiresAt: json['inviteExpiresAt'] == null ? null : DateTime.parse(json['inviteExpiresAt'] as String),
+      dealId: json['dealId'] as String?,
+      dealStatus: json['dealStatus'] == null ? null : dealStatusFromJson(json['dealStatus'] as String),
+      updatedAt: json['updatedAt'] == null ? null : DateTime.parse(json['updatedAt'] as String),
     );
   }
 }

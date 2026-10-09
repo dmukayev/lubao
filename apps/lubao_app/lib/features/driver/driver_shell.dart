@@ -8,9 +8,11 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
+import 'trips/driver_trips_screen.dart';
 
 /// 053 п.6: отдельного списка уведомлений нет — непрочитанные сообщения и
-/// сделки, ждущие водителя, цифрами на вкладках; обновляются по сокету.
+/// «Нужно ответить» цифрами на вкладках; обновляются по сокету.
+/// 056 п.6: внизу Грузы · Мои рейсы · Чаты · Профиль.
 class DriverShell extends ConsumerStatefulWidget {
   const DriverShell({super.key, required this.child});
 
@@ -21,7 +23,7 @@ class DriverShell extends ConsumerStatefulWidget {
 }
 
 class _DriverShellState extends ConsumerState<DriverShell> {
-  static const _tabs = ['/driver/feed', '/driver/chats', '/driver/deals', '/driver/profile'];
+  static const _tabs = ['/driver/feed', '/driver/trips', '/driver/chats', '/driver/profile'];
 
   final _subs = <StreamSubscription<Object?>>[];
 
@@ -34,7 +36,10 @@ class _DriverShellState extends ConsumerState<DriverShell> {
       ..add(realtime.onMessageNew.listen(chats))
       ..add(realtime.onMessageRead.listen(chats))
       ..add(realtime.onChatUpdated.listen(chats))
-      ..add(realtime.onDealUpdated.listen((_) => ref.invalidate(dealsMineProvider)));
+      ..add(realtime.onDealUpdated.listen((_) {
+        ref.invalidate(dealsMineProvider);
+        ref.invalidate(myResponsesProvider);
+      }));
   }
 
   @override
@@ -64,22 +69,28 @@ class _DriverShellState extends ConsumerState<DriverShell> {
     final location = GoRouterState.of(context).matchedLocation;
     final currentIndex = _indexForLocation(location);
     final unread = (ref.watch(myChatsProvider).valueOrNull ?? const <MyChatEntry>[]).fold<int>(0, (sum, c) => sum + c.unreadCount);
-    // Сделки, где ход за водителем: выбран — подтвердите.
-    final waiting = (ref.watch(dealsMineProvider).valueOrNull ?? const <Deal>[]).where((d) => d.status == DealStatus.selected).length;
+    // «Нужно ответить»: выбран — подтвердите, приглашён — ответьте.
+    final waiting = tripsNeedAnswerCount(
+      ref.watch(dealsMineProvider).valueOrNull ?? const <Deal>[],
+      ref.watch(myResponsesProvider).valueOrNull ?? const <MyResponseEntry>[],
+    );
 
     return Scaffold(
       body: widget.child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: (index) {
-          if (index == 1) ref.invalidate(myChatsProvider);
-          if (index == 2) ref.invalidate(dealsMineProvider);
+          if (index == 1) {
+            ref.invalidate(dealsMineProvider);
+            ref.invalidate(myResponsesProvider);
+          }
+          if (index == 2) ref.invalidate(myChatsProvider);
           context.go(_tabs[index]);
         },
         destinations: [
           NavigationDestination(icon: const Icon(LucideIcons.truck), label: t.navFeed),
+          NavigationDestination(icon: _counted(tripsTabIcon, waiting, 'navTripsBadge'), label: t.navTrips),
           NavigationDestination(icon: _counted(LucideIcons.messageCircle, unread, 'navChatsBadge'), label: t.navChats),
-          NavigationDestination(icon: _counted(LucideIcons.fileCheck2, waiting, 'navDealsBadge'), label: t.navDeals),
           NavigationDestination(icon: const Icon(LucideIcons.user), label: t.profileTitle),
         ],
       ),

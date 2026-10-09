@@ -41,6 +41,7 @@ describe('deep link push — маршруты приложения (042 п.1)', 
     /^\/company\/cargos\/[^/]+\/responses$/,
     /^\/company\/drivers$/,
     /^\/driver\/responses$/,
+    /^\/driver\/history$/,
     /^\/(verification|arrival|profile)$/,
   ];
   const payload = { cargoId: 'c1', chatId: 'ch1', dealId: 'd1', complaintId: 'cp1', status: 'LOADED' };
@@ -129,7 +130,7 @@ describe('RESPONSE_CARGO_CLOSED — груз снят (056 п.1)', () => {
     expect(NOTIFICATION_EVENTS.RESPONSE_CARGO_CLOSED.render('ru', p)).toEqual({ title: 'Груз снят', body: 'Алматы → Астана — ТОО X. В ленте есть другие грузы.' });
     expect(NOTIFICATION_EVENTS.RESPONSE_CARGO_CLOSED.render('en', p).body).toBe('Almaty → Astana — ТОО X. There are other loads in the feed.');
     expect(NOTIFICATION_EVENTS.RESPONSE_CARGO_CLOSED.render('zh', { companyName: 'ТОО X' }).body).toBe('ТОО X。货源列表中还有其他货物。');
-    expect(NOTIFICATION_EVENTS.RESPONSE_CARGO_CLOSED.deepLink(p)).toBe('/driver/responses');
+    expect(NOTIFICATION_EVENTS.RESPONSE_CARGO_CLOSED.deepLink(p)).toBe('/driver/history');
   });
 });
 

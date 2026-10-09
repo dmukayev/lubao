@@ -82,6 +82,14 @@ class CargoResponsesScreen extends ConsumerWidget {
           return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(cargoResponsesProvider(cargoId)));
         },
         data: (list) {
+          final inactive = list.where((r) => r.status == ResponseStatus.rejected || r.status == ResponseStatus.cancelled).toList();
+          Widget card(CargoResponse response, {bool waitingDriver = false}) => _ResponseCard(
+                response: response,
+                cargoWeightKg: cargo?.weightKg,
+                refData: referenceData.valueOrNull,
+                waitingDriver: waitingDriver,
+                onUpdateStatus: (status) => _updateStatus(context, ref, response.id, status),
+              );
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(cargoResponsesProvider(cargoId)),
             child: ListView(
@@ -95,16 +103,33 @@ class CargoResponsesScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
                     child: EmptyState(message: t.responsesEmpty),
                   )
-                else
-                  for (final response in list) ...[
-                    _ResponseCard(
-                      response: response,
-                      cargoWeightKg: cargo?.weightKg,
-                      refData: referenceData.valueOrNull,
-                      onUpdateStatus: (status) => _updateStatus(context, ref, response.id, status),
-                    ),
+                else ...[
+                  // 056 п.5: сверху — ждут решения (порядок задаёт сервер), ниже
+                  // приглашённые «ждём ответа водителя», неактивные свёрнуты.
+                  for (final response in list.where((r) => r.status == ResponseStatus.selected || r.status == ResponseStatus.pending)) ...[
+                    card(response),
                     const SizedBox(height: AppSpacing.sm),
                   ],
+                  for (final response in list.where((r) => r.status == ResponseStatus.invited)) ...[
+                    card(response, waitingDriver: true),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
+                  if (inactive.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                      child: ExpansionTile(
+                        key: const Key('responsesInactive'),
+                        tilePadding: EdgeInsets.zero,
+                        title: Text(t.responsesInactive(inactive.length), style: AppTextStyles.bodyStrong.copyWith(color: AppColors.textSecondary)),
+                        children: [
+                          for (final response in inactive) ...[
+                            card(response),
+                            const SizedBox(height: AppSpacing.sm),
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
               ],
             ),
           );
@@ -156,9 +181,13 @@ class _ResponseCard extends ConsumerStatefulWidget {
     required this.cargoWeightKg,
     required this.refData,
     required this.onUpdateStatus,
+    this.waitingDriver = false,
   });
 
   final CargoResponse response;
+
+  /// Приглашён, ещё не ответил — пометка «ждём ответа водителя».
+  final bool waitingDriver;
   final double? cargoWeightKg;
   final ReferenceData? refData;
   final ValueChanged<String> onUpdateStatus;
@@ -249,12 +278,24 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
             children: [
               DriverAvatar(driverId: response.driverId, name: response.driverName, version: response.avatarVersion, radius: 20),
               const SizedBox(width: AppSpacing.sm),
+              // 056 п.5: точка у отклика, который сотрудник ещё не открывал.
+              if (response.isNew) ...[
+                Semantics(
+                  label: context.l10n.responsesNewDot,
+                  child: Container(key: Key('responseNewDot-${response.id}'), width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle)),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
               Expanded(child: Text(response.driverName, style: AppTextStyles.bodyStrong)),
               StatusBadge(label: statusLabel, color: statusColor),
               const SizedBox(width: AppSpacing.sm),
               IconSquareButton(icon: LucideIcons.messageSquare, loading: _openingChat, onPressed: _chat),
             ],
           ),
+          if (widget.waitingDriver) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(context.l10n.responsesWaitingDriver, key: Key('responseWaitingDriver-${response.id}'), style: AppTextStyles.caption.copyWith(color: AppColors.accentText)),
+          ],
           // 033 п.9 / 038 п.14 — вместимость связки водителя в отклике:
           // «20 т · 90 м³ · 33 пал.».
           if (response.bodyTypeId != null || response.capacityTons != null || response.volumeM3 != null || response.palletsEuro != null) ...[

@@ -60,14 +60,16 @@ void main() {
     var (dealIds, chatIds) = await myIds();
     await visit('driver-feed', '/driver/feed', expectFinder: find.byKey(const Key('driverStatusBar')));
     await visit('driver-chats', '/driver/chats');
-    await visit('driver-deals', '/driver/deals');
+    await visit('driver-trips', '/driver/trips');
+    await visit('driver-history', '/driver/history');
     await visit('driver-profile', '/driver/profile');
     await visit('driver-cargo', '/driver/cargo/$e2eCargo1', expectFinder: find.byKey(const Key('cargoDetailChatButton')));
     await visit('driver-setup', '/driver/setup');
     await visit('driver-register', '/driver/register');
     await visit('driver-verification', '/driver/verification');
     await visit('driver-garage', '/driver/garage', expectFinder: find.byKey(const Key('garageList')));
-    await visit('driver-responses', '/driver/responses');
+    // 056 п.6: старые ссылки «Сделки» / «Мои отклики» ведут в «Мои рейсы».
+    await visit('driver-responses-redirect', '/driver/responses');
     await visit('devices', '/devices');
     await visit('notification-settings', '/notifications/settings');
     await visit('about', '/about', expectFinder: find.byKey(const Key('profileDeleteAccountButton')));
@@ -88,7 +90,8 @@ void main() {
     await visit('company-cargos', '/company/cargos');
     await visit('company-drivers', '/company/drivers');
     await visit('company-chats', '/company/chats');
-    await visit('company-deals', '/company/deals');
+    // 056 п.4: старая ссылка на «Сделки» логиста ведёт в «Грузы» → «В работе».
+    await visit('company-deals-redirect', '/company/deals');
     await visit('company-profile', '/company/profile');
     await visit('company-cargo-new', '/company/cargos/new');
     await visit('company-cargo-responses', '/company/cargos/$e2eCargo1/responses');

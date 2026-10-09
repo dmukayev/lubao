@@ -704,3 +704,79 @@ describe('CargosService.create — профиль кузова', () => {
   });
 });
 
+
+/// 056 п.2: «Грузы» логиста — три вкладки, страницами, числа на вкладках.
+describe('CargosService.companyTab (056 п.2)', () => {
+  function make() {
+    const prisma: any = {
+      cargo: {
+        findMany: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(7),
+        groupBy: jest.fn().mockResolvedValue([
+          { status: 'PUBLISHED', _count: { _all: 5 } },
+          { status: 'IN_DEAL', _count: { _all: 2 } },
+          { status: 'ARCHIVED', _count: { _all: 3 } },
+          { status: 'CANCELLED', _count: { _all: 1 } },
+          { status: 'EXPIRED', _count: { _all: 1 } },
+        ]),
+      },
+      deal: { findMany: jest.fn().mockResolvedValue([]) },
+      response: { groupBy: jest.fn().mockResolvedValue([]), findMany: jest.fn().mockResolvedValue([]) },
+      cargoResponsesSeen: { findMany: jest.fn().mockResolvedValue([]) },
+    };
+    return { prisma, service: new CargosService(prisma, {} as any, {} as any) };
+  }
+
+  it('Активные — только опубликованные; числа: «Активные 5 · В работе 2 · Архив 5»', async () => {
+    const { prisma, service } = make();
+    const r = await service.companyTab('c1', { tab: 'active' });
+    expect(prisma.cargo.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { companyId: 'c1', status: { in: ['PUBLISHED'] } } }));
+    expect(r.counts).toEqual({ active: 5, work: 2, archive: 5, newResponses: 0 });
+  });
+
+  it('В работе — груз в сделке; лимит страницы не больше 50', async () => {
+    const { prisma, service } = make();
+    await service.companyTab('c1', { tab: 'work', limit: 500, offset: 40 });
+    expect(prisma.cargo.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { companyId: 'c1', status: { in: ['IN_DEAL'] } }, take: 50, skip: 40 }));
+  });
+
+  it('Архив — доставлено/снят/истёк, поиск по городу и периоду погрузки, свежие сверху', async () => {
+    const { prisma, service } = make();
+    await service.companyTab('c1', { tab: 'archive', cityId: 'city1', from: '2026-10-01', to: '2026-10-09' });
+    const arg = prisma.cargo.findMany.mock.calls[0][0];
+    expect(arg.where.status).toEqual({ in: ['ARCHIVED', 'EXPIRED', 'CANCELLED'] });
+    expect(arg.where.OR).toEqual([{ destinationCityId: 'city1' }, { point: { cityId: 'city1' } }]);
+    expect(arg.where.readyDate).toEqual({ gte: new Date('2026-10-01T00:00:00.000Z'), lte: new Date('2026-10-09T00:00:00.000Z') });
+    expect(arg.orderBy).toEqual([{ updatedAt: 'desc' }]);
+  });
+});
+
+describe('CargosService.companyTab — новые отклики наверху (056 п.5)', () => {
+  it('груз с новым откликом этого сотрудника — первым, «1 новый» на карточке, цифра на вкладке', async () => {
+    const old = new Date('2026-10-01T00:00:00Z');
+    const prisma: any = {
+      cargo: {
+        findMany: jest.fn()
+          // все активные id (новые сверху по публикации)
+          .mockResolvedValueOnce([{ id: 'fresh', createdAt: new Date('2026-10-09T00:00:00Z') }, { id: 'withNew', createdAt: old }])
+          // страница по id
+          .mockResolvedValueOnce([{ id: 'fresh' }, { id: 'withNew' }])
+          // companyTabCounts: активные
+          .mockResolvedValueOnce([{ id: 'fresh' }, { id: 'withNew' }]),
+        groupBy: jest.fn().mockResolvedValue([{ status: 'PUBLISHED', _count: { _all: 2 } }]),
+      },
+      deal: { findMany: jest.fn().mockResolvedValue([]) },
+      response: {
+        groupBy: jest.fn().mockResolvedValue([{ cargoId: 'withNew', _count: { _all: 3 } }]),
+        findMany: jest.fn().mockResolvedValue([{ cargoId: 'withNew', updatedAt: new Date('2026-10-09T10:00:00Z') }, { cargoId: 'withNew', updatedAt: new Date('2026-10-08T10:00:00Z') }]),
+      },
+      cargoResponsesSeen: { findMany: jest.fn().mockResolvedValue([{ cargoId: 'withNew', seenAt: new Date('2026-10-09T00:00:00Z') }]) },
+    };
+    const service = new CargosService(prisma, {} as any, {} as any);
+    (service as any).toDto = async (c: any) => ({ id: c.id });
+    const r = await service.companyTab('c1', { tab: 'active', userId: 'u1' });
+    expect(r.items.map((c: any) => c.id)).toEqual(['withNew', 'fresh']);
+    expect(r.items[0]).toMatchObject({ responsesCount: 3, newResponsesCount: 1 });
+    expect(r.counts.newResponses).toBe(1);
+  });
+});

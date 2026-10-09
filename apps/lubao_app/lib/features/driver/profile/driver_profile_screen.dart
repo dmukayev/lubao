@@ -161,6 +161,13 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
                 : null,
             onTap: () => context.push('/driver/garage'),
           ),
+          // 056 п.6: доставленные рейсы и закрытые отклики с причиной.
+          ListTile(
+            key: const Key('profileTripHistory'),
+            leading: const Icon(LucideIcons.history),
+            title: Text(t.profileTripHistory),
+            onTap: () => context.push('/driver/history'),
+          ),
           ListTile(
             leading: const Icon(LucideIcons.smartphone),
             title: Text(t.profileMyDevices),

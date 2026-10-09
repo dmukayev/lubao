@@ -11,7 +11,8 @@ import { nbkRatesUrl, parseNbkRates } from './nbk-rates';
 
 export const AGREED_CHECK_AFTER_HOURS = 2;
 const AGREED_CHECK_WINDOW_HOURS = 26;
-export const INVITATION_TTL_HOURS = 24;
+export { INVITATION_TTL_HOURS } from '../responses/invitation-ttl';
+import { INVITATION_TTL_HOURS } from '../responses/invitation-ttl';
 export const LOCATION_RETENTION_DAYS = 30;
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;

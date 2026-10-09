@@ -3662,4 +3662,154 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String postCargoWeightLooksLikeTons(String tons) {
     return 'Мүмкін, $tons т?';
   }
+
+  @override
+  String get cargosTabActive => 'Белсенді';
+
+  @override
+  String get cargosTabWork => 'Жұмыста';
+
+  @override
+  String get cargosTabArchive => 'Мұрағат';
+
+  @override
+  String get cargosEmptyActive => 'Белсенді жүк жоқ — жүк жариялаңыз';
+
+  @override
+  String get cargosEmptyWork => 'Қазір жұмыстағы жүк жоқ';
+
+  @override
+  String get cargosEmptyArchive => 'Мұрағат бос';
+
+  @override
+  String get cargoRepeat => 'Қайталау';
+
+  @override
+  String get cargosArchiveCity => 'Қала';
+
+  @override
+  String get cargosArchivePeriod => 'Кезең';
+
+  @override
+  String get cargosArchiveReset => 'Тазарту';
+
+  @override
+  String cargoResponsesCount(int count) {
+    return 'Жауаптар: $count';
+  }
+
+  @override
+  String cargoResponsesNew(int count) {
+    return '$count жаңа';
+  }
+
+  @override
+  String get navTrips => 'Менің рейстерім';
+
+  @override
+  String get tripsTitle => 'Менің рейстерім';
+
+  @override
+  String get tripsNeedAnswer => 'Жауап беру керек';
+
+  @override
+  String get tripsWaiting => 'Логистің жауабын күтемін';
+
+  @override
+  String get tripsInWork => 'Жұмыста';
+
+  @override
+  String get tripsSelectedBadge => 'Сізді таңдады — растаңыз';
+
+  @override
+  String get tripsConfirm => 'Рейсті растау';
+
+  @override
+  String tripsInvitedBadge(int hours) {
+    return 'Сізді шақырды · $hours сағ қалды';
+  }
+
+  @override
+  String get tripsAccept => 'Алуға дайынмын';
+
+  @override
+  String get tripsDecline => 'Бас тарту';
+
+  @override
+  String get tripsWithdraw => 'Жауапты қайтарып алу';
+
+  @override
+  String get tripsEmpty => 'Таспадағы жүктерге жауап беріңіз';
+
+  @override
+  String get tripsGoFeed => 'Таспаға';
+
+  @override
+  String get historyTitle => 'Рейстер тарихы';
+
+  @override
+  String get historyAll => 'Барлығы';
+
+  @override
+  String get historyDelivered => 'Жеткізілді';
+
+  @override
+  String get historyFailed => 'Болмады';
+
+  @override
+  String get historyEmpty => 'Мұнда аяқталған рейстер шығады';
+
+  @override
+  String get closeReasonTakenByOther => 'Жүк басқаға кетті';
+
+  @override
+  String get closeReasonRejectedByLogist => 'Логист бас тартты';
+
+  @override
+  String get closeReasonWithdrawn => 'Сіз қайтарып алдыңыз';
+
+  @override
+  String get closeReasonInviteExpired => 'Шақыру мерзімі өтті';
+
+  @override
+  String get closeReasonCargoClosed => 'Жүк алынып тасталды';
+
+  @override
+  String get closeReasonCargoArchived => 'Жүк мұрағатта';
+
+  @override
+  String get closeReasonDealCancelled => 'Мәміле болдырылмады';
+
+  @override
+  String get closeReasonAccountDeleted => 'Аккаунт жойылды';
+
+  @override
+  String homeActionSelected(String route, String price) {
+    return 'Сізді $route бағытына таңдады, $price';
+  }
+
+  @override
+  String get homeActionSelectedCta => '«Менің рейстерімде» растау →';
+
+  @override
+  String homeActionInvited(String route, int hours) {
+    return 'Сізді $route бағытына шақырды · $hours сағ қалды';
+  }
+
+  @override
+  String get homeActionInvitedCta => 'Жауап беру →';
+
+  @override
+  String get profileTripHistory => 'Рейстер тарихы';
+
+  @override
+  String responsesInactive(int count) {
+    return 'Белсенді емес · $count';
+  }
+
+  @override
+  String get responsesWaitingDriver => 'жүргізушінің жауабын күтеміз';
+
+  @override
+  String get responsesNewDot => 'Жаңа жауап';
 }

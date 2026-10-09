@@ -3577,4 +3577,154 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String postCargoWeightLooksLikeTons(String tons) {
     return '是不是 $tons 吨？';
   }
+
+  @override
+  String get cargosTabActive => '进行中';
+
+  @override
+  String get cargosTabWork => '运输中';
+
+  @override
+  String get cargosTabArchive => '归档';
+
+  @override
+  String get cargosEmptyActive => '暂无进行中的货物 — 请发布货物';
+
+  @override
+  String get cargosEmptyWork => '目前没有运输中的货物';
+
+  @override
+  String get cargosEmptyArchive => '归档为空';
+
+  @override
+  String get cargoRepeat => '再发一次';
+
+  @override
+  String get cargosArchiveCity => '城市';
+
+  @override
+  String get cargosArchivePeriod => '时间段';
+
+  @override
+  String get cargosArchiveReset => '重置';
+
+  @override
+  String cargoResponsesCount(int count) {
+    return '响应：$count';
+  }
+
+  @override
+  String cargoResponsesNew(int count) {
+    return '$count 个新';
+  }
+
+  @override
+  String get navTrips => '我的行程';
+
+  @override
+  String get tripsTitle => '我的行程';
+
+  @override
+  String get tripsNeedAnswer => '需要回复';
+
+  @override
+  String get tripsWaiting => '等待物流方回复';
+
+  @override
+  String get tripsInWork => '运输中';
+
+  @override
+  String get tripsSelectedBadge => '您已被选中 — 请确认';
+
+  @override
+  String get tripsConfirm => '确认行程';
+
+  @override
+  String tripsInvitedBadge(int hours) {
+    return '您被邀请 · 剩余 $hours 小时';
+  }
+
+  @override
+  String get tripsAccept => '愿意承运';
+
+  @override
+  String get tripsDecline => '拒绝';
+
+  @override
+  String get tripsWithdraw => '撤回响应';
+
+  @override
+  String get tripsEmpty => '在货源列表中响应货物';
+
+  @override
+  String get tripsGoFeed => '去货源列表';
+
+  @override
+  String get historyTitle => '行程记录';
+
+  @override
+  String get historyAll => '全部';
+
+  @override
+  String get historyDelivered => '已送达';
+
+  @override
+  String get historyFailed => '未成交';
+
+  @override
+  String get historyEmpty => '已完成的行程会显示在这里';
+
+  @override
+  String get closeReasonTakenByOther => '货物已由他人承运';
+
+  @override
+  String get closeReasonRejectedByLogist => '物流方已拒绝';
+
+  @override
+  String get closeReasonWithdrawn => '您已撤回';
+
+  @override
+  String get closeReasonInviteExpired => '邀请已过期';
+
+  @override
+  String get closeReasonCargoClosed => '货物已下架';
+
+  @override
+  String get closeReasonCargoArchived => '货物已归档';
+
+  @override
+  String get closeReasonDealCancelled => '交易已取消';
+
+  @override
+  String get closeReasonAccountDeleted => '账户已删除';
+
+  @override
+  String homeActionSelected(String route, String price) {
+    return '您已被选中：$route，$price';
+  }
+
+  @override
+  String get homeActionSelectedCta => '在“我的行程”中确认 →';
+
+  @override
+  String homeActionInvited(String route, int hours) {
+    return '您被邀请：$route · 剩余 $hours 小时';
+  }
+
+  @override
+  String get homeActionInvitedCta => '回复 →';
+
+  @override
+  String get profileTripHistory => '行程记录';
+
+  @override
+  String responsesInactive(int count) {
+    return '未激活 · $count';
+  }
+
+  @override
+  String get responsesWaitingDriver => '等待司机回复';
+
+  @override
+  String get responsesNewDot => '新响应';
 }

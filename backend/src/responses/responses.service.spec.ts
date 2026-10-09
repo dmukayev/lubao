@@ -684,3 +684,42 @@ describe('ResponsesService.closeForCargo — груз снят (056 п.1)', () =
     expect(notifications.notify).not.toHaveBeenCalled();
   });
 });
+
+/// 056 п.5: отклики груза у логиста — порядок и «новые».
+describe('ResponsesService.listForCargo — порядок и «новые» (056 п.5)', () => {
+  const d = (id: string, isVerified: boolean, ratingAvg: number) => ({ id, userId: `u-${id}`, fullName: id, isVerified, ratingAvg, ratingCount: 1 });
+  const r = (id: string, driverId: string, status: string, createdAt: string, updatedAt = createdAt, verified = false, rating = 0) => ({
+    id, cargoId: 'c1', driverId, status, message: null, closeReason: null,
+    createdAt: new Date(createdAt), updatedAt: new Date(updatedAt), driver: d(driverId, verified, rating),
+  });
+
+  it('выбран → ждут решения (на месте → проверенный → рейтинг → раньше) → приглашённые → неактивные; новые — позже отметки; открыл — отметка', async () => {
+    const responses = [
+      r('rCancelled', 'd9', 'CANCELLED', '2026-10-01T00:00:00Z'),
+      r('rInvited', 'd8', 'INVITED', '2026-10-01T00:00:00Z'),
+      r('rEarly', 'd1', 'PENDING', '2026-10-02T00:00:00Z', '2026-10-02T00:00:00Z', false, 4),
+      r('rVerified', 'd2', 'PENDING', '2026-10-03T00:00:00Z', '2026-10-03T00:00:00Z', true, 3),
+      r('rOnSite', 'd3', 'PENDING', '2026-10-04T00:00:00Z', '2026-10-09T12:00:00Z', false, 1),
+      r('rSelected', 'd4', 'SELECTED', '2026-10-05T00:00:00Z'),
+    ];
+    const prisma: any = {
+      response: { findMany: jest.fn().mockResolvedValue(responses) },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ pointId: 'p1' }) },
+      cargoResponsesSeen: { findUnique: jest.fn().mockResolvedValue({ seenAt: new Date('2026-10-09T00:00:00Z') }), upsert: jest.fn() },
+      arrival: { findMany: jest.fn().mockResolvedValue([{ driverId: 'd3' }]) },
+      vehicle: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
+      deal: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
+    (service as any).currentVehicleCombo = async () => ({ tractorId: null, trailerId: null });
+    jest.spyOn(require('../deals/haul-summary'), 'haulInfoByDriver').mockResolvedValue(new Map());
+    jest.spyOn(require('../deals/cancel-policy'), 'cancelStatsFor').mockResolvedValue(new Map());
+
+    const list = await service.listForCargo('c1', 'logist-1');
+
+    expect(list.map((x: any) => x.id)).toEqual(['rSelected', 'rOnSite', 'rVerified', 'rEarly', 'rInvited', 'rCancelled']);
+    expect(list.find((x: any) => x.id === 'rOnSite')).toMatchObject({ isNew: true, onSiteAtPoint: true });
+    expect(list.find((x: any) => x.id === 'rEarly')).toMatchObject({ isNew: false });
+    expect(prisma.cargoResponsesSeen.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { userId_cargoId: { userId: 'logist-1', cargoId: 'c1' } } }));
+  });
+});

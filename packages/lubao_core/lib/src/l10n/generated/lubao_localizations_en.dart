@@ -3665,4 +3665,154 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String postCargoWeightLooksLikeTons(String tons) {
     return 'Maybe $tons t?';
   }
+
+  @override
+  String get cargosTabActive => 'Active';
+
+  @override
+  String get cargosTabWork => 'In progress';
+
+  @override
+  String get cargosTabArchive => 'Archive';
+
+  @override
+  String get cargosEmptyActive => 'No active cargo — post one';
+
+  @override
+  String get cargosEmptyWork => 'No cargo in progress right now';
+
+  @override
+  String get cargosEmptyArchive => 'The archive is empty';
+
+  @override
+  String get cargoRepeat => 'Repeat';
+
+  @override
+  String get cargosArchiveCity => 'City';
+
+  @override
+  String get cargosArchivePeriod => 'Period';
+
+  @override
+  String get cargosArchiveReset => 'Reset';
+
+  @override
+  String cargoResponsesCount(int count) {
+    return 'Responses: $count';
+  }
+
+  @override
+  String cargoResponsesNew(int count) {
+    return '$count new';
+  }
+
+  @override
+  String get navTrips => 'My trips';
+
+  @override
+  String get tripsTitle => 'My trips';
+
+  @override
+  String get tripsNeedAnswer => 'Needs your answer';
+
+  @override
+  String get tripsWaiting => 'Waiting for the logist';
+
+  @override
+  String get tripsInWork => 'In progress';
+
+  @override
+  String get tripsSelectedBadge => 'You were selected — confirm';
+
+  @override
+  String get tripsConfirm => 'Confirm the trip';
+
+  @override
+  String tripsInvitedBadge(int hours) {
+    return 'You were invited · $hours h left';
+  }
+
+  @override
+  String get tripsAccept => 'Ready to take';
+
+  @override
+  String get tripsDecline => 'Decline';
+
+  @override
+  String get tripsWithdraw => 'Withdraw response';
+
+  @override
+  String get tripsEmpty => 'Respond to cargo in the feed';
+
+  @override
+  String get tripsGoFeed => 'To the feed';
+
+  @override
+  String get historyTitle => 'Trip history';
+
+  @override
+  String get historyAll => 'All';
+
+  @override
+  String get historyDelivered => 'Delivered';
+
+  @override
+  String get historyFailed => 'Did not work out';
+
+  @override
+  String get historyEmpty => 'Finished trips will appear here';
+
+  @override
+  String get closeReasonTakenByOther => 'Went to another driver';
+
+  @override
+  String get closeReasonRejectedByLogist => 'The logist declined';
+
+  @override
+  String get closeReasonWithdrawn => 'You withdrew';
+
+  @override
+  String get closeReasonInviteExpired => 'Invitation expired';
+
+  @override
+  String get closeReasonCargoClosed => 'Cargo withdrawn';
+
+  @override
+  String get closeReasonCargoArchived => 'Cargo archived';
+
+  @override
+  String get closeReasonDealCancelled => 'Deal cancelled';
+
+  @override
+  String get closeReasonAccountDeleted => 'Account deleted';
+
+  @override
+  String homeActionSelected(String route, String price) {
+    return 'You were selected for $route, $price';
+  }
+
+  @override
+  String get homeActionSelectedCta => 'Confirm in “My trips” →';
+
+  @override
+  String homeActionInvited(String route, int hours) {
+    return 'You were invited to $route · $hours h left';
+  }
+
+  @override
+  String get homeActionInvitedCta => 'Answer →';
+
+  @override
+  String get profileTripHistory => 'Trip history';
+
+  @override
+  String responsesInactive(int count) {
+    return 'Inactive · $count';
+  }
+
+  @override
+  String get responsesWaitingDriver => 'waiting for the driver';
+
+  @override
+  String get responsesNewDot => 'New response';
 }
