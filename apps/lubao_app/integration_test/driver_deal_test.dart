@@ -54,11 +54,11 @@ void main() {
       deal2 = await logist.selectFirstResponse(e2eCargo2);
       deal3 = await logist.selectFirstResponse(e2eCargo3);
       await tester.tap(find.text(t.navTrips));
-      await waitAndReveal(tester, find.byKey(Key('driverDealCard-$deal1')));
       // 053 п.6 / 056 п.6: «Нужно ответить» — цифрой на вкладке «Мои рейсы»;
       // выбранные рейсы — в разделе «Нужно ответить» с кнопкой «Подтвердить рейс».
+      await waitFor(tester, find.byKey(const Key('tripsSectionNeedAnswer')));
       await waitFor(tester, find.descendant(of: find.byKey(const Key('navTripsBadge')), matching: find.text('3')));
-      expect(find.byKey(const Key('tripsSectionNeedAnswer')), findsOneWidget);
+      await waitAndReveal(tester, find.byKey(Key('driverDealCard-$deal1')));
       await waitAndReveal(tester, find.byKey(Key('tripConfirm-$deal1')));
       expectInsideSafeZone(tester);
     });

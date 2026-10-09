@@ -220,7 +220,7 @@ void main() {
       await goTab(tester, t.navCargos);
       final line = find.byKey(Key('cargoResponsesLine-$cargoId'));
       await waitAndReveal(tester, line);
-      await waitFor(tester, find.descendant(of: line, matching: find.textContaining(t.cargoResponsesNew(1))));
+      await waitFor(tester, find.descendant(of: line, matching: find.textContaining(t.cargoResponsesNew(1)), matchRoot: true));
       await waitFor(tester, find.descendant(of: find.byKey(const Key('navCargosBadge')), matching: find.text('1')));
       await tester.tap(find.byKey(Key('companyCargoCard-$cargoId')));
       await waitFor(tester, find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('responseNewDot-')));
@@ -230,7 +230,7 @@ void main() {
       await goTab(tester, t.navDrivers);
       await goTab(tester, t.navCargos);
       await waitAndReveal(tester, line);
-      expect(find.descendant(of: line, matching: find.textContaining(t.cargoResponsesNew(1))), findsNothing);
+      expect(find.descendant(of: line, matching: find.textContaining(t.cargoResponsesNew(1)), matchRoot: true), findsNothing);
     });
 
     await run.step(tester, 'выбор-водителя-в-откликах', () async {
