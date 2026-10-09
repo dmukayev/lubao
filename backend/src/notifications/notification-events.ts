@@ -418,13 +418,13 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
     eventGroup: 'DEAL_STATUS',
     channels: ['PUSH'],
     render: (locale, p) => T.RESPONSE_REJECTED[locale](p),
-    deepLink: () => '/driver/responses',
+    deepLink: () => '/driver/history',
   },
   RESPONSE_CARGO_CLOSED: {
     eventGroup: 'DEAL_STATUS',
     channels: ['PUSH'],
     render: (locale, p) => T.RESPONSE_CARGO_CLOSED[locale](p),
-    deepLink: () => '/driver/responses',
+    deepLink: () => '/driver/history',
   },
   NEW_RESPONSE: {
     eventGroup: 'NEW_RESPONSE',

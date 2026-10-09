@@ -10,6 +10,7 @@ import { IdentifiersService } from '../identifiers/identifiers.service';
 import { toDateOnly } from '../common/date-only';
 import { cancelStatsFor } from '../deals/cancel-policy';
 import { avatarVersion } from '../drivers/avatar-version';
+import { INVITATION_TTL_HOURS } from './invitation-ttl';
 
 type ResponseWithDriver = CargoResponseEntity & { driver: Driver };
 
@@ -44,7 +45,13 @@ export class ResponsesService {
       where: { driverId },
       orderBy: { updatedAt: 'desc' },
       include: {
-        cargo: { select: { id: true, status: true, destinationCountryId: true, destinationCityId: true, bodyTypeId: true, price: true, currency: true, readyDate: true } },
+        cargo: {
+          select: {
+            id: true, status: true, pointId: true, destinationCountryId: true, destinationCityId: true, bodyTypeId: true, categoryId: true,
+            weightKg: true, price: true, currency: true, readyDate: true, company: { select: { name: true } },
+          },
+        },
+        deal: { select: { id: true, status: true } },
       },
     });
     return responses.map((r) => ({
@@ -53,12 +60,20 @@ export class ResponsesService {
       status: r.status,
       closeReason: r.closeReason ?? null,
       updatedAt: r.updatedAt,
+      // 056 п.6: «Вас пригласили — осталось 18 ч» (приглашение живёт 24 ч с момента приглашения).
+      inviteExpiresAt: r.status === 'INVITED' ? new Date(r.updatedAt.getTime() + INVITATION_TTL_HOURS * 3600 * 1000) : null,
+      dealId: r.deal?.id ?? null,
+      dealStatus: r.deal?.status ?? null,
       cargo: {
         id: r.cargo.id,
         status: r.cargo.status,
         destinationCountryId: r.cargo.destinationCountryId,
+        pointId: r.cargo.pointId,
         destinationCityId: r.cargo.destinationCityId,
         bodyTypeId: r.cargo.bodyTypeId,
+        categoryId: r.cargo.categoryId,
+        weightKg: r.cargo.weightKg != null ? Number(r.cargo.weightKg) : null,
+        companyName: r.cargo.company.name,
         price: Number(r.cargo.price),
         currency: r.cargo.currency,
         readyDate: toDateOnly(r.cargo.readyDate),
