@@ -553,6 +553,29 @@ Future<void> approvedSelfieViaApi(String phoneLocal) async {
   if (review.statusCode! >= 300) fail('Админ не принял селфи: ${review.statusCode} ${review.data}');
 }
 
+/// Анкета нового водителя (мастер 045): имя, домашний город Алматы, тент 20 т,
+/// направление по умолчанию. После неё приложение уходит на главную.
+Future<void> completeDriverWizard(WidgetTester tester, String fullName) async {
+  await waitFor(tester, find.byKey(const Key('driverSetupFullName')));
+  await tester.enterText(find.byKey(const Key('driverSetupFullName')), fullName);
+  await tester.enterText(find.byKey(const Key('driverSetupHomeCity')), 'Алматы');
+  await tester.pumpAndSettle();
+  await tester.tap(find.textContaining('Алматы').last);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('driverSetupNext')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('driverSetupBody-TENT')));
+  await tester.pumpAndSettle();
+  await reveal(tester, find.byKey(const Key('driverSetupCapacity-20')));
+  await tester.tap(find.byKey(const Key('driverSetupCapacity-20')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('driverSetupNext')));
+  await tester.pumpAndSettle();
+  await reveal(tester, find.byKey(const Key('driverSetupNext')));
+  await tester.tap(find.byKey(const Key('driverSetupNext')));
+  await tester.pumpAndSettle();
+}
+
 /// Дождаться условия вне дерева виджетов (например, вызова подменённого share).
 Future<void> waitForCondition(WidgetTester tester, bool Function() condition, {Duration timeout = const Duration(seconds: 20)}) async {
   final deadline = DateTime.now().add(timeout);

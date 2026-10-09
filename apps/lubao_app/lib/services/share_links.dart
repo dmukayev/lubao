@@ -20,7 +20,12 @@ final shareLinkPath = RegExp(r'^/(?:open/)?(c|co|d)/([A-Za-z0-9]{4,12})$');
 class ShareLinkHandler {
   ShareLinkHandler(this._ref) {
     _ref.listen<Session?>(sessionProvider, (previous, next) {
-      if (next != null && previous == null) unawaited(consume(checkClipboard: true));
+      if (next == null) return;
+      // Вход — или (057 п.1) новый водитель только что заполнил анкету: до неё
+      // профиля нет и экран груза открывать рано, поэтому ждём и этот переход.
+      final loggedIn = previous == null;
+      final registered = previous?.driver == null && next.driver != null && next.user.role == UserRole.driver;
+      if (loggedIn || registered) unawaited(consume(checkClipboard: true));
     });
   }
 

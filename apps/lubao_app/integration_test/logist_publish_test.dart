@@ -174,6 +174,42 @@ void main() {
       expect(page.data, isNot(matches(RegExp(r'\+7\d|tel:'))));
     });
 
+    // 057 п.1: новый водитель открыл ссылку до входа → вход → анкета → сразу
+    // экран этого груза (раньше после анкеты оставался на главной).
+    await run.step(tester, 'новый-водитель-по-ссылке', () async {
+      await logoutViaProfile(tester, driver: false);
+      GoRouter.of(tester.element(find.byType(Scaffold).first)).go(sharePath);
+      await loginDriver(tester, '7010000077');
+      await completeDriverWizard(tester, 'Новый Поссылке');
+      final deadline = DateTime.now().add(const Duration(seconds: 30));
+      while (find.byKey(const Key('cargoDetailShare')).evaluate().isEmpty) {
+        if (DateTime.now().isAfter(deadline)) fail('После анкеты не открылся груз по ссылке');
+        // Шторка «Где вы сейчас?» могла успеть открыться на главной — закрываем.
+        final notLooking = find.byKey(const Key('whereNowNotLooking'));
+        if (notLooking.evaluate().isNotEmpty) await tester.tap(notLooking);
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+      expect(find.byKey(const Key('cargoDetailRespondButton')), findsOneWidget);
+      expectInsideSafeZone(tester);
+      GoRouter.of(tester.element(find.byType(Scaffold).first)).go('/driver/feed');
+      await waitFor(tester, find.byType(NavigationBar));
+      final notLooking = find.byKey(const Key('whereNowNotLooking'));
+      if (notLooking.evaluate().isNotEmpty) {
+        await tester.tap(notLooking);
+        await tester.pumpAndSettle();
+      }
+      await logoutViaProfile(tester, driver: true);
+      await tester.tap(find.byKey(const Key('roleSelectCompanyButton')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('companyLoginEmailField')), e2eNewCompanyEmail);
+      await tester.enterText(find.byKey(const Key('companyLoginPasswordField')), e2ePassword);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('companyLoginSubmitButton')));
+      await waitFor(tester, find.text(t.navDrivers));
+      await goTab(tester, t.navCargos);
+      await waitAndReveal(tester, find.byKey(Key('companyCargoCard-$cargoId')));
+    });
+
     // 056 п.3: «Повторить» — форма заполнена по старому грузу (маршрут, кузов,
     // вес, цена), дата — сегодня; публикуется новый груз, старый не трогается.
     // 056 п.4: внизу у логиста нет вкладки «Сделки».
