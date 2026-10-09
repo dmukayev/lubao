@@ -258,7 +258,7 @@
   "postCargoDestinationCity": "Межелі қала",
   "postCargoBodyType": "Кузов түрі",
   "postCargoVolume": "Көлемі, м³",
-  "postCargoWeight": "Салмағы, т",
+  "postCargoWeight": "Салмағы",
   "postCargoPhotos": "Фотосуреттер",
   "postCargoAddPhotoCamera": "Камера",
   "postCargoAddPhotoGallery": "Галерея",
@@ -1038,7 +1038,7 @@
   "adminMoveDown": "Төмен",
   "adminLoginChannelsSaved": "Арналар сақталды",
   "pushChannelName": "Lubao хабарландырулары",
-  "postCargoWeightError": "Салмақ тоннамен, 60-қа дейін — мысалы 20",
+  "postCargoWeightError": "Салмақ — 60 т-ға дейін (60 000 кг)",
   "companyLoginInvalidCredentials": "Email немесе құпиясөз қате",
   "mapsOpen": "Картада ашу",
   "mapsApple": "Apple Карталар",
@@ -1262,5 +1262,7 @@
   "avatarChange": "Суретті ауыстыру",
   "avatarRemove": "Суретті алып тастау",
   "avatarHint": "Логистер суретті атыңыздың жанынан көреді",
-  "adminAvatarRemoveReason": "Себебі (мысалы, суретке шағым)"
+  "adminAvatarRemoveReason": "Себебі (мысалы, суретке шағым)",
+  "postCargoWeightLooksLikeKg": "Бұл {kg} кг = {tons} т ма?",
+  "postCargoWeightLooksLikeTons": "Мүмкін, {tons} т?"
 }

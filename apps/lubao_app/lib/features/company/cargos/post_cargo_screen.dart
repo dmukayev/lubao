@@ -56,6 +56,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   String? _bodyTypeError;
   String? _priceError;
   String? _weightError;
+  /// 055: единица ввода веса (по умолчанию кг; выбор логиста — на устройстве).
+  WeightUnit _weightUnit = WeightUnit.kg;
   bool _saving = false;
   final List<String> _photoUrls = [];
   bool _uploadingPhoto = false;
@@ -68,6 +70,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     final cargo = widget.cargo;
     _pointId = cargo?.pointId;
     if (cargo == null) _defaultPointFromLastCargo();
+    _loadWeightUnit();
     if (cargo != null) WidgetsBinding.instance.addPostFrameCallback((_) => _loadMarket());
     if (cargo != null) {
       _allowPartial = cargo.allowPartial;
@@ -81,8 +84,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       _readyDate = cargo.readyDate;
       _photoUrls.addAll(cargo.photoUrls);
       if (cargo.volumeM3 != null) _volumeController.text = _trimNum(cargo.volumeM3!);
-      // Вес вводится в тоннах (можно 12,5), хранится в кг (041, п.9).
-      if (cargo.weightKg != null) _weightController.text = _trimNum(cargo.weightKg! / 1000);
+      // 055: вес хранится в кг, в поле — в единице логиста (после загрузки выбора).
+      if (cargo.weightKg != null) _weightController.text = weightKgToInput(cargo.weightKg!, _weightUnit);
       if (cargo.palletCount != null) _palletController.text = cargo.palletCount.toString();
       _priceController.text = _trimNum(cargo.price);
       _descriptionController.text = cargo.description ?? '';
@@ -99,6 +102,47 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     } catch (e) {
       debugPrint('PostCargoScreen: default city failed: $e');
     }
+  }
+
+  Future<void> _loadWeightUnit() async {
+    final unit = await ref.read(weightUnitStoreProvider).load();
+    if (!mounted || unit == _weightUnit) return;
+    _setWeightUnit(unit, remember: false);
+  }
+
+  /// Переключить единицу: число в поле пересчитывается, вес не меняется.
+  void _setWeightUnit(WeightUnit unit, {bool remember = true}) {
+    final kg = _weightKg();
+    setState(() {
+      _weightUnit = unit;
+      if (kg != null) _weightController.text = weightKgToInput(kg, unit, languageCode: Localizations.localeOf(context).languageCode);
+      _weightError = null;
+    });
+    if (remember) ref.read(weightUnitStoreProvider).save(unit);
+    _onWeightChanged();
+  }
+
+  /// Подсказка «лишние нули»: одно нажатие — то же число в другой единице.
+  void _applyWeightHint(WeightHint hint) {
+    final kg = switch (hint) {
+      WeightLooksLikeKg(:final kg) => kg,
+      WeightLooksLikeTons(:final tons) => tons * 1000,
+    };
+    final unit = hint is WeightLooksLikeKg ? WeightUnit.kg : WeightUnit.t;
+    setState(() {
+      _weightUnit = unit;
+      _weightController.text = weightKgToInput(kg, unit, languageCode: Localizations.localeOf(context).languageCode);
+      _weightError = null;
+    });
+    ref.read(weightUnitStoreProvider).save(unit);
+    _onWeightChanged();
+  }
+
+  void _onWeightChanged() {
+    setState(() {});
+    // 049 п.11: класс тоннажа меняет «рынок» — пересчёт после паузы в вводе.
+    _marketDebounce?.cancel();
+    _marketDebounce = Timer(const Duration(milliseconds: 600), _loadMarket);
   }
 
   static String _trimNum(double value) =>
@@ -140,11 +184,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
 
   bool _showPallets(ReferenceData refData) => _bodyType(refData)?.isVolume ?? true;
 
-  /// Тонны из поля → кг (запятая как разделитель допускается).
-  double? _weightKg() {
-    final tons = double.tryParse(_weightController.text.trim().replaceAll(',', '.'));
-    return tons == null ? null : (tons * 1000).roundToDouble();
-  }
+  /// Поле (кг или т) → кг; запятая как разделитель допускается.
+  double? _weightKg() => weightInputToKg(_weightController.text, _weightUnit);
 
   Future<void> _refreshFitCount() async {
     final weightKg = _weightKg();
@@ -226,11 +267,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       _bodyTypeError = _bodyTypeId == null ? t.postCargoBodyTypeError : null;
       _categoryError = _categoryId == null ? t.postCargoCategoryRequired : null;
       _priceError = price == null ? t.postCargoPriceError : null;
-      // Вес — в тоннах: «20000» по привычке к килограммам давало груз в
-      // 20 000 т (живая проверка 2026-10-07). Пусто — можно, иначе 0 < т ≤ 60.
+      // 055: в кг или т; пусто — можно, иначе 0 < вес ≤ 60 т (сервер — свой максимум).
       final weightText = _weightController.text.trim();
-      final tons = double.tryParse(weightText.replaceAll(',', '.'));
-      _weightError = weightText.isEmpty || (tons != null && tons > 0 && tons <= maxCargoTons) ? null : t.postCargoWeightError;
+      final kg = _weightKg();
+      _weightError = weightText.isEmpty || (kg != null && kg > 0 && kg <= maxCargoTons * 1000) ? null : t.postCargoWeightError;
     });
     if (_pointError != null || _destinationError != null || _bodyTypeError != null || _categoryError != null || _priceError != null || _weightError != null) return;
     setState(() => _saving = true);
@@ -267,6 +307,69 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  /// 055: «Вес» — переключатель `кг | т` справа, пересчёт под полем и
+  /// подсказка против лишних нулей (одно нажатие — другая единица).
+  Widget _weightField(LubaoLocalizations t) {
+    final lang = Localizations.localeOf(context).languageCode;
+    final text = _weightController.text;
+    final conversion = weightConversionLine(text, _weightUnit, tonUnit: t.unitTon, kgUnit: t.unitKg, languageCode: lang);
+    final hint = weightHint(text, _weightUnit);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: AppTextField(
+                key: const Key('postCargoWeight'),
+                label: t.postCargoWeight,
+                errorText: _weightError,
+                controller: _weightController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => _onWeightChanged(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: SegmentedButton<WeightUnit>(
+                key: const Key('postCargoWeightUnit'),
+                showSelectedIcon: false,
+                style: SegmentedButton.styleFrom(visualDensity: VisualDensity.compact, tapTargetSize: MaterialTapTargetSize.padded),
+                segments: [
+                  ButtonSegment(value: WeightUnit.kg, label: Text(t.unitKg, key: const Key('postCargoWeightUnit-kg'))),
+                  ButtonSegment(value: WeightUnit.t, label: Text(t.unitTon, key: const Key('postCargoWeightUnit-t'))),
+                ],
+                selected: {_weightUnit},
+                onSelectionChanged: (s) => _setWeightUnit(s.first),
+              ),
+            ),
+          ],
+        ),
+        if (conversion != null && hint == null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 4),
+            child: Text(conversion, key: const Key('postCargoWeightConversion'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+          ),
+        if (hint != null)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              key: const Key('postCargoWeightHint'),
+              icon: const Icon(LucideIcons.helpCircle, size: 18),
+              style: TextButton.styleFrom(foregroundColor: AppColors.accentText, padding: const EdgeInsets.symmetric(horizontal: 4)),
+              onPressed: () => _applyWeightHint(hint),
+              label: Text(switch (hint) {
+                WeightLooksLikeKg(:final kg) => t.postCargoWeightLooksLikeKg(formatWeightKgNumber(kg), formatWeightTonsNumber(kg / 1000, languageCode: lang)),
+                WeightLooksLikeTons(:final tons) => t.postCargoWeightLooksLikeTons(formatWeightTonsNumber(tons, languageCode: lang)),
+              }),
+            ),
+          ),
+      ],
+    );
   }
 
   @override
@@ -437,23 +540,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                       onChanged: (_) => _refreshFitCount(),
                     ),
                   ),
-                  if (_showVolume(refData)) const SizedBox(width: 12),
-                  Expanded(
-                    child: AppTextField(
-                      key: const Key('postCargoWeight'),
-                      label: t.postCargoWeight,
-                      errorText: _weightError,
-                      controller: _weightController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      // 049 п.11: класс тоннажа меняет «рынок» — пересчёт после паузы в вводе.
-                      onChanged: (_) {
-                        _marketDebounce?.cancel();
-                        _marketDebounce = Timer(const Duration(milliseconds: 600), _loadMarket);
-                      },
-                    ),
-                  ),
                 ],
               ),
+              if (_showVolume(refData)) const SizedBox(height: 12),
+              _weightField(t),
               if (_showPallets(refData)) ...[
                 const SizedBox(height: 12),
                 AppTextField(
@@ -583,6 +673,5 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   }
 }
 
-/// Предел веса груза в форме — тягач с полуприцепом в РК везёт до ~40 т;
-/// с запасом 60 т (сервер: CreateCargoDto, @Max 60000 кг).
-const maxCargoTons = 60;
+/// 055: единица ввода веса — на устройстве логиста.
+final weightUnitStoreProvider = Provider((ref) => WeightUnitStore());

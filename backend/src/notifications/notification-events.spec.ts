@@ -1,4 +1,4 @@
-import { NOTIFICATION_EVENTS } from './notification-events';
+import { NOTIFICATION_EVENTS, formatCargoWeight } from './notification-events';
 
 /// Задача 029, п.11 — раньше DEAL_STATUS всегда рендерился на русском
 /// (готовая строка статуса клалась в payload вызывающей стороной), а
@@ -130,5 +130,15 @@ describe('RESPONSE_CARGO_CLOSED — груз снят (056 п.1)', () => {
     expect(NOTIFICATION_EVENTS.RESPONSE_CARGO_CLOSED.render('en', p).body).toBe('Almaty → Astana — ТОО X. There are other loads in the feed.');
     expect(NOTIFICATION_EVENTS.RESPONSE_CARGO_CLOSED.render('zh', { companyName: 'ТОО X' }).body).toBe('ТОО X。货源列表中还有其他货物。');
     expect(NOTIFICATION_EVENTS.RESPONSE_CARGO_CLOSED.deepLink(p)).toBe('/driver/responses');
+  });
+});
+
+describe('formatCargoWeight — вес в push как у водителя (055)', () => {
+  it('тонны до одного знака без лишних нулей, меньше тонны — кг; запятая в ru/kk', () => {
+    expect(formatCargoWeight(18500, 'ru')).toBe('18,5 т');
+    expect(formatCargoWeight(20000, 'ru')).toBe('20 т');
+    expect(formatCargoWeight(800, 'ru')).toBe('800 кг');
+    expect(formatCargoWeight(18500, 'en')).toBe('18.5 t');
+    expect(formatCargoWeight(18540, 'zh')).toBe('18.5 吨');
   });
 });

@@ -341,7 +341,7 @@
   "postCargoDestinationCity": "Город назначения",
   "postCargoBodyType": "Тип кузова",
   "postCargoVolume": "Объём, м³",
-  "postCargoWeight": "Вес, т",
+  "postCargoWeight": "Вес",
   "postCargoPhotos": "Фотографии",
   "postCargoAddPhotoCamera": "Камера",
   "postCargoAddPhotoGallery": "Галерея",
@@ -1170,7 +1170,7 @@
   "adminMoveDown": "Ниже",
   "adminLoginChannelsSaved": "Каналы сохранены",
   "pushChannelName": "Уведомления Lubao",
-  "postCargoWeightError": "Вес в тоннах, до 60 — например 20",
+  "postCargoWeightError": "Вес — до 60 т (60 000 кг)",
   "companyLoginInvalidCredentials": "Неверный email или пароль",
   "mapsOpen": "Открыть в картах",
   "mapsApple": "Apple Карты",
@@ -1431,5 +1431,9 @@
   "avatarChange": "Сменить фото",
   "avatarRemove": "Убрать фото",
   "avatarHint": "Логисты видят фото рядом с вашим именем",
-  "adminAvatarRemoveReason": "Причина (например, жалоба на фото)"
+  "adminAvatarRemoveReason": "Причина (например, жалоба на фото)",
+  "postCargoWeightLooksLikeKg": "Это {kg} кг = {tons} т?",
+  "@postCargoWeightLooksLikeKg": {"placeholders": {"kg": {"type": "String"}, "tons": {"type": "String"}}},
+  "postCargoWeightLooksLikeTons": "Может, {tons} т?",
+  "@postCargoWeightLooksLikeTons": {"placeholders": {"tons": {"type": "String"}}}
 }
