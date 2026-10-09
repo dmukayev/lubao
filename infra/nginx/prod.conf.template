@@ -31,7 +31,7 @@ server {
     # (042 п.2): iOS universal links и Android App Links проверяют эти файлы.
     location = /.well-known/apple-app-site-association {
         default_type application/json;
-        return 200 '{"applinks":{"apps":[],"details":[{"appIDs":["${IOS_APP_ID}"],"paths":["/invite/*"],"components":[{"/":"/invite/*"}]}]}}';
+        return 200 '{"applinks":{"apps":[],"details":[{"appIDs":["${IOS_APP_ID}"],"paths":["/invite/*","/c/*","/co/*","/d/*"],"components":[{"/":"/invite/*"},{"/":"/c/*"},{"/":"/co/*"},{"/":"/d/*"}]}]}}';
     }
     location = /.well-known/assetlinks.json {
         default_type application/json;
@@ -77,6 +77,15 @@ server {
         root /srv/site;
         try_files /app.html =404;
         default_type text/html;
+    }
+
+    # 052: публичные страницы «Поделиться» /c|co|d/<код> — HTML бэкенда (без
+    # входа). Установленное приложение перехватывает эти пути раньше (App Links).
+    location ~ "^/(c|co|d)/[A-Za-z0-9]{4,12}$" {
+        proxy_pass http://backend:3000/p$request_uri;
+        proxy_set_header Host $host;
+        proxy_set_header Accept-Language $http_accept_language;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
     # Веб логиста: путь без «#» (usePathUrlStrategy) → любой неизвестный путь,
