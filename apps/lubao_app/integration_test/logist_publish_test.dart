@@ -157,7 +157,7 @@ void main() {
       final text = shared.single;
       expect(text, contains('→ Алматы'));
       expect(text, contains('18,5 ${t.unitTon}'));
-      expect(text, contains('₸'), reason: 'цена как в ленте');
+      expect(text, contains(r'$1 500'), reason: 'цена как в ленте (груз в долларах)');
       expect(text, isNot(matches(RegExp(r'\+7\d'))), reason: 'телефона в тексте нет');
       final url = RegExp(r'https?://\S+/c/([A-Za-z0-9]{4,12})').firstMatch(text);
       expect(url, isNotNull, reason: 'ссылка /c/<код>: $text');
