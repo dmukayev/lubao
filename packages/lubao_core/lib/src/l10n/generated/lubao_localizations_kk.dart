@@ -3934,4 +3934,12 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get commonPaste => 'Қою';
+
+  @override
+  String get driversInvitePickHint => 'Жүкті белгілеп, «Шақыру» басыңыз';
+
+  @override
+  String driversInviteTitle(String name) {
+    return '$name шақыру';
+  }
 }

@@ -1344,5 +1344,7 @@
   "shareLinkPromptText": "Сілтеме арқылы келдіңіз бе?",
   "shareLinkPromptOpen": "Жүкті ашу",
   "shareLinkPromptNotFound": "Сілтеме табылмады — хабарламадан қайта ашыңыз",
-  "commonPaste": "Қою"
+  "commonPaste": "Қою",
+  "driversInvitePickHint": "Жүкті белгілеп, «Шақыру» басыңыз",
+  "driversInviteTitle": "{name} шақыру"
 }

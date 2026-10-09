@@ -347,7 +347,11 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
       originLabel: refData?.pointOrNull(cargo.pointId)?.name.forLanguageCode(locale),
       partialLabel: cargo.allowPartial ? t.feedBadgePartial : null,
       destinationLabel: destinationLabel,
-      bodyTypeLabel: bodyType?.name.forLanguageCode(locale) ?? '',
+      // Как у водителя в ленте: кузов и расстояние по дорогам («тент · 1 230 км»).
+      bodyTypeLabel: [
+        bodyType?.name.forLanguageCode(locale) ?? '',
+        if (cargo.distanceKm != null) '${formatThousands(cargo.distanceKm!)} ${t.unitKm}',
+      ].where((s) => s.isNotEmpty).join(' · '),
       priceLabel: formatMoney(cargo.price, cargo.currency),
       secondaryPriceLabel: refData == null ? null : formatKztConversion(refData.convertToKzt(cargo.price, cargo.currency)),
       readyDateLabel: formatDate(cargo.readyDate),

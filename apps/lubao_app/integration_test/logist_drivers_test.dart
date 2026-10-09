@@ -60,6 +60,27 @@ void main() {
       );
     });
 
+    // Выбор груза для приглашения: подсказка, кружки, «Пригласить» — после выбора.
+    // Здесь только проверяем выбор и закрываем без приглашения.
+    await run.step(tester, 'пригласить-выбор-груза', () async {
+      final invite = find.byKey(const Key('driversAtPointInvite-dddddddd-dddd-4ddd-8ddd-ddddddddd004'));
+      await waitAndReveal(tester, invite);
+      await tester.tap(invite);
+      await waitFor(tester, find.byKey(const Key('inviteCargoHint')));
+      final submit = find.byKey(const Key('inviteCargoSubmit'));
+      final options = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('inviteCargo-') && (w.key! as ValueKey<String>).value != 'inviteCargoSubmit' && (w.key! as ValueKey<String>).value != 'inviteCargoHint');
+      if (options.evaluate().length > 1) {
+        expect(tester.widget<PrimaryButton>(submit).onPressed, isNull, reason: 'пока груз не отмечен — «Пригласить» неактивна');
+      }
+      await tester.tap(options.first);
+      await tester.pumpAndSettle();
+      expect(tester.widget<PrimaryButton>(submit).onPressed, isNotNull);
+      expectInsideSafeZone(tester);
+      expectNoOverflow(tester);
+      Navigator.of(tester.element(submit)).pop();
+      await tester.pumpAndSettle();
+    });
+
     // 040, п.8: «Кто свободен в <город>» — выбор города сверху; водитель, объявивший
     // «свободен в Алматы», виден только там.
     await run.step(tester, 'кто-свободен-выбор-города-алматы', () async {
@@ -186,8 +207,9 @@ void main() {
     });
 
     await run.step(tester, 'логист-выбирает-согласившегося', () async {
-      // Водитель ответил в чате («Готов взять») — у логиста цифра непрочитанных на «Чатах».
-      await waitFor(tester, find.byWidgetPredicate((w) => w is Badge && w.key == const Key('navChatsBadge') && w.isLabelVisible));
+      // Водитель написал в чат — у логиста цифра непрочитанных на «Чатах».
+      await (await DriverApi.login('+77010000003')).sendToCompanyChat('E2E Test Logistics', 'Готов, жду');
+      await waitFor(tester, find.byWidgetPredicate((w) => w is Badge && w.key == const Key('navChatsBadge') && w.isLabelVisible), timeout: const Duration(seconds: 30));
       await goTab(tester, t.navChats);
       await waitFor(tester, find.textContaining('Борис'));
       await tester.tap(find.textContaining('Борис').first);

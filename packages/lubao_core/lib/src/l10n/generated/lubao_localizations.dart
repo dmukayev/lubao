@@ -7319,6 +7319,18 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Вставить'**
   String get commonPaste;
+
+  /// No description provided for @driversInvitePickHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отметьте груз и нажмите «Пригласить»'**
+  String get driversInvitePickHint;
+
+  /// No description provided for @driversInviteTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пригласить {name}'**
+  String driversInviteTitle(String name);
 }
 
 class _LubaoLocalizationsDelegate

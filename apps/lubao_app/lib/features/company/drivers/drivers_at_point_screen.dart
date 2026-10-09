@@ -16,6 +16,7 @@ import '../../shared/status_helpers.dart';
 import '../haul_hint.dart';
 import '../../shared/driver_vehicle_photos.dart';
 import '../../shared/driver_avatar.dart';
+import 'invite_cargo_picker.dart';
 
 class DriversAtPointScreen extends ConsumerStatefulWidget {
   const DriversAtPointScreen({super.key});
@@ -171,45 +172,8 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     final refData = ref.read(referenceDataProvider).valueOrNull;
     final locale = Localizations.localeOf(context).languageCode;
 
-    final selectedCargo = await showModalBottomSheet<Cargo>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Text(t.driversAtPointPickCargo, style: AppTextStyles.title),
-            ),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  for (final cargo in publishedCargos)
-                    ListTile(
-                      title: Text(
-                        refData == null
-                            ? ''
-                            : [
-                                refData.cityById(cargo.destinationCityId)?.name.forLanguageCode(locale),
-                                refData.countryById(cargo.destinationCountryId).name.forLanguageCode(locale),
-                              ].whereType<String>().join(', '),
-                        style: AppTextStyles.bodyStrong,
-                      ),
-                      subtitle: Text(formatMoney(cargo.price, cargo.currency)),
-                      onTap: () => Navigator.of(context).pop(cargo),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    // Понятный выбор: кружок у каждого груза, подсказка и «Пригласить».
+    final selectedCargo = await showInviteCargoPicker(context, driverName: driver.driverName, cargos: publishedCargos, refData: refData);
     if (selectedCargo == null || !mounted) return;
 
     // Задача 038, п.9 (037, п.3) — водитель уже занят и новый груз, похоже,
@@ -831,6 +795,7 @@ class _DriverCard extends StatelessWidget {
     final invite = SizedBox(
       height: 36,
       child: FilledButton(
+        key: Key('driversAtPointInvite-${driver.driverId}'),
         onPressed: () => onInvite(driver),
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 8),

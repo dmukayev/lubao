@@ -439,6 +439,14 @@ class DriverApi {
     final res = await _dio.post('/cargos/$cargoId/responses', data: {});
     if (res.statusCode! >= 300) fail('Отклик водителя через API не удался: ${res.statusCode} ${res.data}');
   }
+
+  /// Сообщение логисту в чат с компанией (по названию собеседника).
+  Future<void> sendToCompanyChat(String companyName, String text) async {
+    final chats = (await _dio.get('/chats')).data as List<dynamic>;
+    final chat = chats.cast<Map>().firstWhere((c) => '${c['counterpartName']}'.contains(companyName) || '${c['companyName'] ?? ''}'.contains(companyName), orElse: () => chats.first as Map);
+    final res = await _dio.post('/chats/${chat['id']}/messages', data: {'text': text});
+    if (res.statusCode! >= 300) fail('Сообщение водителя через API не ушло: ${res.statusCode} ${res.data}');
+  }
 }
 
 

@@ -1344,5 +1344,7 @@
   "shareLinkPromptText": "是通过链接来的吗？",
   "shareLinkPromptOpen": "打开货物",
   "shareLinkPromptNotFound": "未找到链接 — 请从消息中再次打开",
-  "commonPaste": "粘贴"
+  "commonPaste": "粘贴",
+  "driversInvitePickHint": "选择货物后点击“邀请”",
+  "driversInviteTitle": "邀请 {name}"
 }

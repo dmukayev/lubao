@@ -1469,5 +1469,7 @@
   "shareLinkPromptText": "Came here via a link?",
   "shareLinkPromptOpen": "Open the cargo",
   "shareLinkPromptNotFound": "Link not found — open it again from the message",
-  "commonPaste": "Paste"
+  "commonPaste": "Paste",
+  "driversInvitePickHint": "Pick a cargo and tap “Invite”",
+  "driversInviteTitle": "Invite {name}"
 }

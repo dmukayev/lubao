@@ -3929,4 +3929,12 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get commonPaste => 'Вставить';
+
+  @override
+  String get driversInvitePickHint => 'Отметьте груз и нажмите «Пригласить»';
+
+  @override
+  String driversInviteTitle(String name) {
+    return 'Пригласить $name';
+  }
 }

@@ -3937,4 +3937,12 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get commonPaste => 'Paste';
+
+  @override
+  String get driversInvitePickHint => 'Pick a cargo and tap “Invite”';
+
+  @override
+  String driversInviteTitle(String name) {
+    return 'Invite $name';
+  }
 }

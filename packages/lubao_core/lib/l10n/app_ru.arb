@@ -1530,5 +1530,8 @@
   "shareLinkPromptText": "Пришли по ссылке?",
   "shareLinkPromptOpen": "Открыть груз",
   "shareLinkPromptNotFound": "Ссылка не найдена — откройте её ещё раз из сообщения",
-  "commonPaste": "Вставить"
+  "commonPaste": "Вставить",
+  "driversInvitePickHint": "Отметьте груз и нажмите «Пригласить»",
+  "driversInviteTitle": "Пригласить {name}",
+  "@driversInviteTitle": {"placeholders": {"name": {"type": "String"}}}
 }

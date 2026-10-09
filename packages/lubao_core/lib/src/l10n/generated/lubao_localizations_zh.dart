@@ -3847,4 +3847,12 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get commonPaste => '粘贴';
+
+  @override
+  String get driversInvitePickHint => '选择货物后点击“邀请”';
+
+  @override
+  String driversInviteTitle(String name) {
+    return '邀请 $name';
+  }
 }
