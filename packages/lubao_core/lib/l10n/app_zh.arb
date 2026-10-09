@@ -1340,5 +1340,8 @@
   "driverCardTitle": "司机",
   "driverCardNotLooking": "目前不在找货",
   "driverCardTrips": "Lubao 行程：{count}",
-  "driverCardChat": "发消息"
+  "driverCardChat": "发消息",
+  "shareLinkPromptText": "是通过链接来的吗？",
+  "shareLinkPromptOpen": "打开货物",
+  "shareLinkPromptNotFound": "未找到链接 — 请从消息中再次打开"
 }

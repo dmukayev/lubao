@@ -1340,5 +1340,8 @@
   "driverCardTitle": "Жүргізуші",
   "driverCardNotLooking": "Қазір жүк іздемейді",
   "driverCardTrips": "Lubao-дағы рейстер: {count}",
-  "driverCardChat": "Жазу"
+  "driverCardChat": "Жазу",
+  "shareLinkPromptText": "Сілтеме арқылы келдіңіз бе?",
+  "shareLinkPromptOpen": "Жүкті ашу",
+  "shareLinkPromptNotFound": "Сілтеме табылмады — хабарламадан қайта ашыңыз"
 }

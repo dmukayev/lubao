@@ -13,6 +13,7 @@ import '../../shared/error_feedback.dart';
 import '../../shared/tracking_consent_sheet.dart';
 import '../trips/driver_trips_screen.dart';
 import 'driver_status.dart';
+import '../../shared/share_link_prompt.dart';
 
 class CargoFeedScreen extends ConsumerStatefulWidget {
   const CargoFeedScreen({super.key});
@@ -113,6 +114,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                     // Под ней — «нужно действие», только пока актуально:
                     // пригласили / выбрали (045 п.3), затем анонс с вопросами
                     // «вы на месте?» и «ещё ищете?».
+                    const ShareLinkPrompt(),
                     _ActionCards(refData: refData),
                     if (ref.watch(myArrivalsProvider).valueOrNull?.current != null) ...[
                       const SizedBox(height: AppSpacing.md),

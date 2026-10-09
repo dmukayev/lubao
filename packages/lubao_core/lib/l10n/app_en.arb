@@ -1465,5 +1465,8 @@
   "driverCardTitle": "Driver",
   "driverCardNotLooking": "Not looking for cargo right now",
   "driverCardTrips": "Trips in Lubao: {count}",
-  "driverCardChat": "Message"
+  "driverCardChat": "Message",
+  "shareLinkPromptText": "Came here via a link?",
+  "shareLinkPromptOpen": "Open the cargo",
+  "shareLinkPromptNotFound": "Link not found — open it again from the message"
 }

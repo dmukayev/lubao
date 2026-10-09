@@ -15,6 +15,12 @@ const cargoInclude = {
 } as const;
 type CargoRow = Prisma.CargoGetPayload<{ include: typeof cargoInclude }>;
 
+/// Ссылка на Google Play — с `referrer=share_<код>` (Play Install Referrer).
+export function withPlayReferrer(storeUrl: string, code: string): string {
+  if (!/play\.google\.com/.test(storeUrl)) return storeUrl;
+  return `${storeUrl}${storeUrl.includes('?') ? '&' : '?'}referrer=${encodeURIComponent(`share_${code}`)}`;
+}
+
 /// Android + встроенный браузер мессенджера (Telegram, WeChat).
 export function androidInAppBrowser(ua: string): boolean {
   return /Android/i.test(ua) && /(Telegram|MicroMessenger|WeChat)/i.test(ua);
@@ -72,7 +78,8 @@ export class SharePagesService {
       // 057 п.5: встроенные браузеры Telegram/WeChat на Android App Links не
       // открывают — intent:// с переходом на тот же адрес, если приложения нет.
       appUrl: androidInAppBrowser(userAgent) ? androidIntentUrl(openUrl) : openUrl,
-      androidUrl: process.env.ANDROID_STORE_URL || `${app}/app`,
+      // 057 п.8: Google Play передаёт приложению `referrer` — код без буфера обмена.
+      androidUrl: withPlayReferrer(process.env.ANDROID_STORE_URL || `${app}/app`, link.code),
       iosUrl: process.env.IOS_STORE_URL || `${app}/app`,
       code: link.code,
       canonicalUrl: `${shareBaseUrl()}${path}`,

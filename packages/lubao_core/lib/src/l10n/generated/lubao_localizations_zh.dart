@@ -3835,4 +3835,13 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get driverCardChat => '发消息';
+
+  @override
+  String get shareLinkPromptText => '是通过链接来的吗？';
+
+  @override
+  String get shareLinkPromptOpen => '打开货物';
+
+  @override
+  String get shareLinkPromptNotFound => '未找到链接 — 请从消息中再次打开';
 }

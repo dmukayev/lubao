@@ -7295,6 +7295,24 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Написать'**
   String get driverCardChat;
+
+  /// No description provided for @shareLinkPromptText.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пришли по ссылке?'**
+  String get shareLinkPromptText;
+
+  /// No description provided for @shareLinkPromptOpen.
+  ///
+  /// In ru, this message translates to:
+  /// **'Открыть груз'**
+  String get shareLinkPromptOpen;
+
+  /// No description provided for @shareLinkPromptNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылка не найдена — откройте её ещё раз из сообщения'**
+  String get shareLinkPromptNotFound;
 }
 
 class _LubaoLocalizationsDelegate

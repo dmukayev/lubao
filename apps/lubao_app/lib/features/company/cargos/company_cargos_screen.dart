@@ -10,6 +10,8 @@ import '../../shared/city_picking.dart';
 import '../../shared/share_action.dart';
 import '../../shared/status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../shared/share_link_prompt.dart';
+import '../company_shell.dart';
 
 /// 056 п.2: «Грузы» логиста — Активные (по умолчанию) / В работе / Архив, с
 /// числами на вкладках. Нажатие: в «Активных» — отклики груза; в «В работе» и
@@ -109,18 +111,25 @@ class _CompanyCargosScreenState extends ConsumerState<CompanyCargosScreen> with 
         icon: const Icon(LucideIcons.plus),
         label: Text(t.postCargoTitle),
       ),
-      body: TabBarView(
-        controller: _tabs,
+      body: Column(
         children: [
-          for (final tab in CompanyCargoTab.values)
-            _CargoTabList(
-              key: ValueKey('${tab.name}-$_reload'),
-              tab: tab,
-              onCounts: (counts) {
-                if (mounted && counts.toString() != _counts.toString()) setState(() => _counts = counts);
-              },
-              onRepeat: (cargo) => _openForm('/company/cargos/repeat', extra: cargo),
+          const ShareLinkPrompt(),
+          Expanded(
+            child: TabBarView(
+              controller: _tabs,
+              children: [
+                for (final tab in CompanyCargoTab.values)
+                  _CargoTabList(
+                    key: ValueKey('${tab.name}-$_reload'),
+                    tab: tab,
+                    onCounts: (counts) {
+                      if (mounted && counts.toString() != _counts.toString()) setState(() => _counts = counts);
+                    },
+                    onRepeat: (cargo) => _openForm('/company/cargos/repeat', extra: cargo),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     );
@@ -221,13 +230,18 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
     _load(reset: true);
   }
 
-  void _open(Cargo cargo) {
+  Future<void> _open(Cargo cargo) async {
     final deal = cargo.activeDeal;
     if (widget.tab != CompanyCargoTab.active && deal != null) {
-      context.push('/deal/${deal.id}');
+      await context.push('/deal/${deal.id}');
     } else {
-      context.push('/company/cargos/${cargo.id}/responses');
+      await context.push('/company/cargos/${cargo.id}/responses');
     }
+    // 057 п.17: открыл отклики — «новые» погасли на сервере; список и цифра на
+    // вкладке «Грузы» — заново, без ухода с вкладки.
+    if (!mounted) return;
+    ref.invalidate(companyCargoCountsProvider);
+    _load(reset: true);
   }
 
   @override

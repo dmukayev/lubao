@@ -1526,5 +1526,8 @@
   "driverCardNotLooking": "Сейчас не ищет груз",
   "driverCardTrips": "Рейсов в Lubao: {count}",
   "@driverCardTrips": {"placeholders": {"count": {"type": "int"}}},
-  "driverCardChat": "Написать"
+  "driverCardChat": "Написать",
+  "shareLinkPromptText": "Пришли по ссылке?",
+  "shareLinkPromptOpen": "Открыть груз",
+  "shareLinkPromptNotFound": "Ссылка не найдена — откройте её ещё раз из сообщения"
 }

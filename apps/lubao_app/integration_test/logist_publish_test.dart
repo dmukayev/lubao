@@ -313,10 +313,16 @@ void main() {
       expectNoOverflow(tester);
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
-      await goTab(tester, t.navDrivers);
-      await goTab(tester, t.navCargos);
+      // 057 п.17: «новые» гаснут сразу после возврата — без ухода с вкладки.
       await waitAndReveal(tester, line);
-      expect(find.descendant(of: line, matching: find.textContaining(t.cargoResponsesNew(1)), matchRoot: true), findsNothing);
+      final gone = DateTime.now().add(const Duration(seconds: 20));
+      bool stillNew() =>
+          find.descendant(of: line, matching: find.textContaining(t.cargoResponsesNew(1)), matchRoot: true).evaluate().isNotEmpty ||
+          find.descendant(of: find.byKey(const Key('navCargosBadge')), matching: find.text('1')).evaluate().isNotEmpty;
+      while (stillNew()) {
+        if (DateTime.now().isAfter(gone)) fail('«1 новый» / цифра на «Грузах» не погасли после возврата из откликов');
+        await tester.pump(const Duration(milliseconds: 300));
+      }
     });
 
     await run.step(tester, 'выбор-водителя-в-откликах', () async {

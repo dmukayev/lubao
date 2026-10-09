@@ -3916,4 +3916,14 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get driverCardChat => 'Написать';
+
+  @override
+  String get shareLinkPromptText => 'Пришли по ссылке?';
+
+  @override
+  String get shareLinkPromptOpen => 'Открыть груз';
+
+  @override
+  String get shareLinkPromptNotFound =>
+      'Ссылка не найдена — откройте её ещё раз из сообщения';
 }

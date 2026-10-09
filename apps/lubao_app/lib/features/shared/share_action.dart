@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../providers/api_providers.dart';
 import 'error_feedback.dart';
+import 'web_share_support_stub.dart' if (dart.library.js_interop) 'web_share_support_web.dart';
 
 /// Подмена системного меню в сквозных сценариях: робот не нажмёт кнопки
 /// share sheet, тест получает текст, который ушёл бы в мессенджер.
@@ -39,12 +40,16 @@ Future<void> shareContent(
   if (override != null) return override(text);
   if (!context.mounted) return;
   final desktopWeb = kIsWeb && MediaQuery.sizeOf(context).width >= 700;
-  if (!desktopWeb) {
+  // 057 п.10: браузер телефона без Web Share — сразу своё меню, не mailto:.
+  if (!desktopWeb && browserCanShare()) {
+    // 057 п.9: на iPad системное меню привязывается к кнопке.
+    final box = context.findRenderObject() as RenderBox?;
+    final origin = box != null && box.hasSize ? box.localToGlobal(Offset.zero) & box.size : null;
     try {
-      await SharePlus.instance.share(ShareParams(text: text));
-      return;
+      final result = await SharePlus.instance.share(ShareParams(text: text, sharePositionOrigin: origin));
+      if (result.status != ShareResultStatus.unavailable) return;
     } catch (_) {
-      // Браузер без Web Share — своё меню.
+      // Нет системного меню — своё.
     }
   }
   if (!context.mounted) return;

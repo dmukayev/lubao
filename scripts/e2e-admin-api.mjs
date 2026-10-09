@@ -507,6 +507,13 @@ assert(csv.status === 200 && csv.text.includes('median_kzt_per_km'), 'админ
   assert(gone.status === 404, 'после «Убрать» — 404', `status=${gone.status}`);
   const audit = (await get(`/admin/drivers/${meId}`)).json.auditLog ?? [];
   assert(JSON.stringify(audit).includes('DRIVER_AVATAR_SET') && JSON.stringify(audit).includes('DRIVER_AVATAR_REMOVED_BY_ADMIN'), 'согласие и снятие фото — в журнале', JSON.stringify(audit.map((a) => a.action)).slice(0, 200));
+  // 057 п.12: после «Убрать» предложение «поставить селфи» не всплывает снова.
+  assert((await api('GET', '/drivers/me', { token: avatarDriver.token })).json.avatarOffer === false, 'после «Убрать» селфи не предлагается снова');
+  // 057 п.2: удалил аккаунт — фото профиля больше не отдаётся.
+  assert((await api('POST', '/drivers/me/avatar/from-selfie', { token: avatarDriver.token })).status === 200, 'фото снова поставлено перед удалением аккаунта');
+  assert((await api('DELETE', '/auth/me', { token: avatarDriver.token })).status === 200, 'водитель с фото удалил аккаунт');
+  const afterDelete = await fetch(`${BASE}/drivers/${meId}/avatar`, { headers: { Authorization: `Bearer ${newCo.json.accessToken}` } });
+  assert(afterDelete.status === 404, 'после удаления аккаунта фото — 404', `status=${afterDelete.status}`);
 }
 
 // 052: «Поделиться» — короткая ссылка автора, публичная страница без входа и

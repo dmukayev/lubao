@@ -3921,4 +3921,14 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get driverCardChat => 'Жазу';
+
+  @override
+  String get shareLinkPromptText => 'Сілтеме арқылы келдіңіз бе?';
+
+  @override
+  String get shareLinkPromptOpen => 'Жүкті ашу';
+
+  @override
+  String get shareLinkPromptNotFound =>
+      'Сілтеме табылмады — хабарламадан қайта ашыңыз';
 }
