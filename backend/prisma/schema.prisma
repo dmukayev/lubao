@@ -440,6 +440,11 @@ model User {
 
   cargoResponsesSeen CargoResponsesSeen[]
 
+  /// 052: по чьей ссылке пришёл (первый вход по ссылке «Поделиться»).
+  referredByShareId String?
+  referredByShare   ShareLink?  @relation("ShareLinkReferred", fields: [referredByShareId], references: [id], onDelete: SetNull)
+  shareLinks        ShareLink[] @relation("ShareLinkAuthor")
+
   @@map("users")
 }
 
@@ -1409,4 +1414,32 @@ model CargoResponsesSeen {
   @@id([userId, cargoId])
   @@index([cargoId])
   @@map("cargo_responses_seen")
+}
+
+/// 052: «Поделиться» — что именно (груз, все грузы компании, анонс водителя).
+enum ShareType {
+  CARGO
+  COMPANY
+  DRIVER
+}
+
+/// 052: короткая ссылка `/c|co|d/<код>`; автор — кто поделился (за ним
+/// считаются открытия, входы по ссылке, отклики и сделки пришедших).
+model ShareLink {
+  id           String    @id @default(uuid())
+  code         String    @unique
+  type         ShareType
+  targetId     String
+  authorUserId String
+  author       User      @relation("ShareLinkAuthor", fields: [authorUserId], references: [id], onDelete: Cascade)
+  opens        Int       @default(0)
+  logins       Int       @default(0)
+  responses    Int       @default(0)
+  deals        Int       @default(0)
+  createdAt    DateTime  @default(now())
+  referred     User[]    @relation("ShareLinkReferred")
+
+  @@unique([authorUserId, type, targetId])
+  @@index([type, targetId])
+  @@map("share_links")
 }

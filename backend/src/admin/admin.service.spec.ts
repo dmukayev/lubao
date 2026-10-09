@@ -209,6 +209,8 @@ describe('AdminService.driverDetail / companyDetail — document links go throug
       complaint: { count: jest.fn().mockResolvedValue(0) },
       arrival: { findMany: jest.fn().mockResolvedValue([]) },
       auditLog: { findMany: jest.fn().mockResolvedValue([]) },
+      shareLink: { aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 }, _sum: { opens: null } }) },
+      user: { count: jest.fn().mockResolvedValue(0) },
     };
     const uploads = fakeUploads();
     const service = new AdminService(prisma, {} as any, uploads as any);
@@ -249,6 +251,8 @@ describe('AdminService.driverDetail / companyDetail — document links go throug
       complaint: { count: jest.fn().mockResolvedValue(0) },
       arrival: { findMany: jest.fn().mockResolvedValue([]) },
       auditLog: { findMany: jest.fn().mockResolvedValue([]) },
+      shareLink: { aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 }, _sum: { opens: null } }) },
+      user: { count: jest.fn().mockResolvedValue(0) },
     };
     const identifiers = {
       listForOwner: jest.fn().mockImplementation((ownerType: string, ownerId: string) =>
@@ -306,6 +310,8 @@ describe('AdminService.driverDetail / companyDetail — document links go throug
       review: { findMany: jest.fn().mockResolvedValue([]) },
       complaint: { count: jest.fn().mockResolvedValue(0) },
       auditLog: { findMany: jest.fn().mockResolvedValue([]) },
+      shareLink: { aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 }, _sum: { opens: null } }) },
+      user: { count: jest.fn().mockResolvedValue(0) },
     };
     const uploads = fakeUploads();
     const service = new AdminService(prisma, {} as any, uploads as any);

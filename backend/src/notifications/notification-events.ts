@@ -126,7 +126,7 @@ function route(p: NotificationPayload, locale: Loc): string {
 }
 /// 053 п.6а: «₸850 000 · 20 т · тентованный · погрузка 10 окт» — цена как в
 /// ленте (символ и разряды пробелом), город/кузов из справочника.
-const CURRENCY_SYMBOL: Record<string, string> = { USD: '$', CNY: '¥', KZT: '₸' };
+export const CURRENCY_SYMBOL: Record<string, string> = { USD: '$', CNY: '¥', KZT: '₸' };
 const MONTHS: Record<Loc, string[]> = {
   ru: ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'],
   kk: ['қаң', 'ақп', 'нау', 'сәу', 'мам', 'мау', 'шіл', 'там', 'қыр', 'қаз', 'қар', 'жел'],
@@ -147,7 +147,7 @@ const LOADING: Record<Loc, (date: string) => string> = {
   zh: (d) => `装货 ${d}`,
   en: (d) => `loading ${d}`,
 };
-function groupThousands(value: number): string {
+export function groupThousands(value: number): string {
   return Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 function shortDate(iso: string, locale: Loc): string {
