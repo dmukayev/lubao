@@ -124,6 +124,8 @@ void main() {
       await tester.pumpAndSettle();
       // Поиск не зависит от языка интерфейса: латиницей.
       await pickCityByName(tester, 'Astana', 'Астана');
+      // Город выбран в шторке — до отправки (на Android 360 выбор терялся).
+      await waitFor(tester, find.descendant(of: find.byKey(const Key('announceCityField')), matching: find.text('Астана')));
       final submitButton = find.byKey(const Key('announceArrivalSubmitButton'));
       await reveal(tester, submitButton);
       await tester.tap(submitButton);

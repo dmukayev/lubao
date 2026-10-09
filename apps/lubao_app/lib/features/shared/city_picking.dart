@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -36,6 +38,9 @@ Future<LoadingPoint?> pickCity(
       return nearestPoint(refData.points, position.latitude, position.longitude);
     },
   );
-  if (picked != null) await store.remember(picked.id);
+  // Запись в «недавние» не задерживает выбор: на медленном хранилище (Android)
+  // город доходил до формы после неё, и быстрое «Опубликовать» уходило со
+  // старым городом.
+  if (picked != null) unawaited(store.remember(picked.id).catchError((_) {}));
   return picked;
 }
