@@ -39,3 +39,28 @@ export function readImageHeader(b: Buffer): ImageHeader {
   if (b.length >= 12 && b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP') return { kind: 'webp' };
   return { kind: 'unknown' };
 }
+
+/// Убрать из JPEG метаданные (APP1 — EXIF/XMP, APP13 — IPTC) без
+/// перекодирования. Фото профиля видят все компании: в EXIF селфи бывают
+/// координаты съёмки и модель телефона; а пометка Orientation поверх уже
+/// повёрнутых пикселей поворачивала миниатюру второй раз.
+export function stripJpegMetadata(b: Buffer): Buffer {
+  if (b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8) return b;
+  const parts: Buffer[] = [b.subarray(0, 2)];
+  let i = 2;
+  while (i + 4 <= b.length) {
+    if (b[i] !== 0xff) return b; // неожиданная структура — не трогаем
+    const marker = b[i + 1];
+    // Начало сжатых данных (SOS) — дальше копируем как есть.
+    if (marker === 0xda) {
+      parts.push(b.subarray(i));
+      return Buffer.concat(parts);
+    }
+    const len = b.readUInt16BE(i + 2);
+    if (len < 2 || i + 2 + len > b.length) return b;
+    const drop = marker === 0xe1 || marker === 0xed;
+    if (!drop) parts.push(b.subarray(i, i + 2 + len));
+    i += 2 + len;
+  }
+  return b;
+}

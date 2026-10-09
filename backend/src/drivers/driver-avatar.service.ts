@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import Jimp from 'jimp';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
-import { MAX_AVATAR_PIXELS, readImageHeader } from './image-header';
+import { MAX_AVATAR_PIXELS, readImageHeader, stripJpegMetadata } from './image-header';
 
 /// Сторона миниатюры (054 п.4): список водителей не тянет большие файлы.
 export const AVATAR_SIZE = 200;
@@ -29,9 +29,13 @@ export class DriverAvatarService {
       throw new BadRequestException({ code: 'IMAGE_TOO_LARGE', message: 'Image is too large' });
     }
     try {
+      // Jimp.read уже повернул пиксели по EXIF Orientation; кодер jpeg-js
+      // переносит EXIF исходника в результат — без этого пометка «повернуть»
+      // осталась бы поверх повёрнутых пикселей (фото «лёжа») вместе с GPS.
       const image = await Jimp.read(source);
       image.cover(AVATAR_SIZE, AVATAR_SIZE).quality(82);
-      return await image.getBufferAsync(Jimp.MIME_JPEG);
+      delete (image.bitmap as { exifBuffer?: Buffer }).exifBuffer;
+      return stripJpegMetadata(await image.getBufferAsync(Jimp.MIME_JPEG));
     } catch {
       throw new BadRequestException({ code: 'INVALID_IMAGE', message: 'Not an image' });
     }

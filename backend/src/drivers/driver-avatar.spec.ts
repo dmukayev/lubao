@@ -127,3 +127,56 @@ describe('057 п.13: картинка-бомба и неподдерживаем
     expect(prisma.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { avatarOfferDismissedAt: expect.any(Date) } });
   });
 });
+
+describe('ориентация и метаданные миниатюры (EXIF)', () => {
+  /// EXIF APP1 c одной меткой Orientation (little-endian TIFF).
+  function exifOrientation(value: number): Buffer {
+    const tiff = Buffer.alloc(26);
+    tiff.write('II', 0, 'ascii');
+    tiff.writeUInt16LE(42, 2);
+    tiff.writeUInt32LE(8, 4);
+    tiff.writeUInt16LE(1, 8); // одна запись
+    tiff.writeUInt16LE(0x0112, 10); // Orientation
+    tiff.writeUInt16LE(3, 12); // SHORT
+    tiff.writeUInt32LE(1, 14);
+    tiff.writeUInt16LE(value, 18);
+    tiff.writeUInt32LE(0, 22); // нет следующей IFD
+    const body = Buffer.concat([Buffer.from('Exif\0\0', 'binary'), tiff]);
+    const seg = Buffer.alloc(4);
+    seg.writeUInt16BE(0xffe1, 0);
+    seg.writeUInt16BE(body.length + 2, 2);
+    return Buffer.concat([seg, body]);
+  }
+
+  it('снимок «лёжа» с Orientation=6 → миниатюра повёрнута один раз и без EXIF (ни пометки, ни координат)', async () => {
+    // 40×20: левая половина красная, правая синяя; поворот на 90° по часовой
+    // ставит красное наверх.
+    const src = new Jimp(40, 20, 0x0000ffff);
+    src.scan(0, 0, 20, 20, (_x, _y, idx) => {
+      src.bitmap.data[idx] = 255;
+      src.bitmap.data[idx + 2] = 0;
+    });
+    const plain = await src.getBufferAsync(Jimp.MIME_JPEG);
+    const withExif = Buffer.concat([plain.subarray(0, 2), exifOrientation(6), plain.subarray(2)]);
+    const { service } = makeService();
+    const thumb = await service.toThumbnail(withExif);
+
+    expect(thumb.includes(Buffer.from('Exif\0\0', 'binary'))).toBe(false);
+    const out = await Jimp.read(thumb);
+    const top = Jimp.intToRGBA(out.getPixelColor(100, 10));
+    const bottom = Jimp.intToRGBA(out.getPixelColor(100, 190));
+    expect(top.r).toBeGreaterThan(200);
+    expect(top.b).toBeLessThan(60);
+    expect(bottom.b).toBeGreaterThan(200);
+    expect(bottom.r).toBeLessThan(60);
+  }, 30_000);
+
+  it('stripJpegMetadata убирает APP1 без перекодирования', async () => {
+    const { stripJpegMetadata } = require('./image-header');
+    const plain = await new Jimp(8, 8, 0xffffffff).getBufferAsync(Jimp.MIME_JPEG);
+    const withExif = Buffer.concat([plain.subarray(0, 2), exifOrientation(6), plain.subarray(2)]);
+    const stripped = stripJpegMetadata(withExif);
+    expect(stripped.includes(Buffer.from('Exif\0\0', 'binary'))).toBe(false);
+    expect(stripped.length).toBe(plain.length);
+  });
+});
