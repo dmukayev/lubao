@@ -103,3 +103,27 @@ describe('GET /drivers/:id/avatar — кто видит (054 п.4)', () => {
     await expect(c.avatar({ user: { id: 'l1', role: 'COMPANY' }, companyMember: { company: {} }, driver: null } as any, 'd1', res())).rejects.toThrow(NotFoundException);
   });
 });
+
+describe('057 п.13: картинка-бомба и неподдерживаемые форматы', () => {
+  const { readImageHeader } = require('./image-header');
+  it('размеры PNG и JPEG — из заголовка', async () => {
+    const png = await new Jimp(30, 20, 0xffffffff).getBufferAsync(Jimp.MIME_PNG);
+    const jpg = await new Jimp(30, 20, 0xffffffff).getBufferAsync(Jimp.MIME_JPEG);
+    expect(readImageHeader(png)).toEqual({ kind: 'png', width: 30, height: 20 });
+    expect(readImageHeader(jpg)).toEqual({ kind: 'jpeg', width: 30, height: 20 });
+  });
+  it('PNG с заявленными 50 000×50 000 — отказ до разбора', async () => {
+    const { service } = makeService();
+    const bomb = await new Jimp(2, 2, 0xffffffff).getBufferAsync(Jimp.MIME_PNG);
+    bomb.writeUInt32BE(50000, 16);
+    bomb.writeUInt32BE(50000, 20);
+    await expect(service.toThumbnail(bomb)).rejects.toMatchObject({ response: { code: 'IMAGE_TOO_LARGE' } });
+  });
+  it('HEIC — понятная ошибка, карточка предложения убирается', async () => {
+    const { service, prisma, uploads } = makeService();
+    const heic = Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from('ftypheic'), Buffer.alloc(16)]);
+    uploads.getDocumentBuffer.mockResolvedValue({ buffer: heic, contentType: 'image/heic' });
+    await expect(service.setFromSelfie('d1', 'u1')).rejects.toMatchObject({ response: { code: 'UNSUPPORTED_IMAGE_FORMAT' } });
+    expect(prisma.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { avatarOfferDismissedAt: expect.any(Date) } });
+  });
+});

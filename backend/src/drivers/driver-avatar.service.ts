@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import Jimp from 'jimp';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
+import { MAX_AVATAR_PIXELS, readImageHeader } from './image-header';
 
 /// Сторона миниатюры (054 п.4): список водителей не тянет большие файлы.
 export const AVATAR_SIZE = 200;
@@ -18,6 +19,15 @@ export class DriverAvatarService {
 
   /// Квадрат 200×200 по центру, JPEG — из любого снимка (селфи, камера).
   async toThumbnail(source: Buffer): Promise<Buffer> {
+    // 057 п.13: размеры — из заголовка до разбора; HEIC/WEBP — понятная ошибка.
+    const header = readImageHeader(source);
+    if (header.kind === 'heic' || header.kind === 'webp') {
+      throw new BadRequestException({ code: 'UNSUPPORTED_IMAGE_FORMAT', message: 'HEIC/WEBP are not supported — use JPEG or PNG' });
+    }
+    if (header.kind !== 'png' && header.kind !== 'jpeg') throw new BadRequestException({ code: 'INVALID_IMAGE', message: 'Not an image' });
+    if (header.width * header.height > MAX_AVATAR_PIXELS) {
+      throw new BadRequestException({ code: 'IMAGE_TOO_LARGE', message: 'Image is too large' });
+    }
     try {
       const image = await Jimp.read(source);
       image.cover(AVATAR_SIZE, AVATAR_SIZE).quality(82);
@@ -49,7 +59,16 @@ export class DriverAvatarService {
     if (!selfie) throw new NotFoundException({ code: 'NO_APPROVED_SELFIE', message: 'No approved selfie' });
     if (/^https?:\/\//.test(selfie.fileUrl)) throw new BadRequestException({ code: 'NO_APPROVED_SELFIE', message: 'Legacy selfie cannot be copied' });
     const { buffer } = await this.uploads.getDocumentBuffer(selfie.fileUrl);
-    return this.store(driverId, userId, await this.toThumbnail(buffer), 'SELFIE');
+    let thumb: Buffer;
+    try {
+      thumb = await this.toThumbnail(buffer);
+    } catch (e) {
+      // Селфи в формате, который не разобрать, — карточку предложения убираем:
+      // «Да» всё равно не сработает, остаётся «Сменить фото».
+      await this.prisma.driver.update({ where: { id: driverId }, data: { avatarOfferDismissedAt: new Date() } });
+      throw e;
+    }
+    return this.store(driverId, userId, thumb, 'SELFIE');
   }
 
   /// «Сделать другое» / «Сменить фото»: файл, загруженный водителем через
