@@ -145,9 +145,10 @@ void main() {
       final repeat = find.byKey(Key('cargoRepeat-$cargoId'));
       await waitAndReveal(tester, repeat);
       await tester.tap(repeat);
-      await waitFor(tester, find.byKey(const Key('postCargoSubmit')));
-      expect(find.text('1500'), findsOneWidget, reason: 'цена из старого груза');
-      expect(find.text('18500'), findsOneWidget, reason: 'вес из старого груза, в кг');
+      await waitFor(tester, find.byKey(const Key('postCargoDestination')));
+      // Форма длиннее экрана SE с крупным шрифтом — поля ниже, прокручиваем.
+      await waitAndReveal(tester, find.text('18500'));
+      await waitAndReveal(tester, find.text('1500'));
       expect(find.text(t.postCargoTitle), findsWidgets, reason: 'новый груз, не редактирование');
       expectNoOverflow(tester);
       final submit = find.byKey(const Key('postCargoSubmit'));
