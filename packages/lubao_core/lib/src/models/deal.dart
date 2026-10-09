@@ -4,7 +4,7 @@ import 'cargo.dart';
 class Deal {
   const Deal({
     required this.id,
-    required this.responseId,
+    this.responseId,
     required this.cargoId,
     required this.driverId,
     required this.driverName,
@@ -52,7 +52,8 @@ class Deal {
   bool get cancelledAfterLoad => cancelStage == 'AFTER_LOAD' || cancelStage == 'IN_TRANSIT';
 
   final String id;
-  final String responseId;
+  /// 057 п.3: у отменённой сделки — null (отклик отпущен).
+  final String? responseId;
   final String cargoId;
   final String driverId;
   final String driverName;
@@ -81,7 +82,7 @@ class Deal {
 
   factory Deal.fromJson(Map<String, dynamic> json) => Deal(
         id: json['id'] as String,
-        responseId: json['responseId'] as String,
+        responseId: json['responseId'] as String?,
         cargoId: json['cargoId'] as String,
         driverId: json['driverId'] as String,
         driverName: json['driverName'] as String? ?? '',

@@ -47,13 +47,18 @@ class ShareLinkHandler {
   /// Код из открытой ссылки — помнить до входа (и после перезапуска).
   void remember(String code) {
     _pending = code;
-    unawaited(_storage.write(key: _pendingKey, value: code).catchError((_) {}));
+    _write = _storage.write(key: _pendingKey, value: code).catchError((_) {});
   }
+
+  /// Запись кода в хранилище — асинхронная; удаление ждёт её, иначе код мог
+  /// записаться уже после удаления и сработать при следующем входе (057).
+  Future<void> _write = Future.value();
 
   Future<String?> _takeCode({required bool firstRun}) async {
     var code = _pending;
     _pending = null;
     try {
+      await _write;
       code ??= await _storage.read(key: _pendingKey);
       await _storage.delete(key: _pendingKey);
     } catch (_) {}
@@ -66,7 +71,8 @@ class ShareLinkHandler {
     }
     if (kIsWeb) return null;
     if (defaultTargetPlatform == TargetPlatform.android) return _fromInstallReferrer();
-    if (defaultTargetPlatform == TargetPlatform.iOS) prompt.value = true;
+    // hasStrings на iOS не вызывает запрос «вставить из…»: пустой буфер — без кнопки.
+    if (defaultTargetPlatform == TargetPlatform.iOS && await Clipboard.hasStrings()) prompt.value = true;
     return null;
   }
 

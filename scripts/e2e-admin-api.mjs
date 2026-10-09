@@ -396,7 +396,9 @@ assert(noReason.status === 400, '«Другое» без текста не пр�
 const c1 = await api('PATCH', `/deals/${d1.dealId}/cancel`, { token: cancelDriver.token, body: { reasonCode: 'VEHICLE_BREAKDOWN' } });
 assert(c1.status < 300 && c1.json.status === 'CANCELLED' && c1.json.cancelStage === 'AFTER_LOAD' && c1.json.faultSide === 'SELF', 'отмена после загрузки: этап AFTER_LOAD, своя вина', JSON.stringify({ s: c1.status, st: c1.json?.cancelStage, f: c1.json?.faultSide }));
 const respList = (await api('GET', `/cargos/${d1.cargoId}/responses`, { token: kzOwner048 })).json;
-const stats1 = respList.find((r) => r.dealId === d1.dealId)?.cancelStats;
+// 057 п.3: отменённая сделка отпускает отклик — ищем отклик водителя, не по сделке.
+const cancelDriverId = (await api('GET', '/drivers/me', { token: cancelDriver.token })).json.id;
+const stats1 = respList.find((r) => r.driverId === cancelDriverId)?.cancelStats;
 assert(stats1?.cancelled === 1 && stats1?.afterLoad === 1, 'у логиста в карточке водителя «отменил 1 · после загрузки 1»', JSON.stringify(stats1));
 
 // 056 п.1: зависшие отклики. Сделка отменена → отклик не висит «Вас выбрали»;
