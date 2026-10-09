@@ -3649,4 +3649,52 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String postCargoWeightLooksLikeTons(String tons) {
     return 'Может, $tons т?';
   }
+
+  @override
+  String get cargosTabActive => 'Активные';
+
+  @override
+  String get cargosTabWork => 'В работе';
+
+  @override
+  String get cargosTabArchive => 'Архив';
+
+  @override
+  String get cargosEmptyActive => 'Активных грузов нет — опубликуйте груз';
+
+  @override
+  String get cargosEmptyWork => 'Сейчас нет грузов в работе';
+
+  @override
+  String get cargosEmptyArchive => 'В архиве пусто';
+
+  @override
+  String get cargoRepeat => 'Повторить';
+
+  @override
+  String get cargosArchiveCity => 'Город';
+
+  @override
+  String get cargosArchivePeriod => 'Период';
+
+  @override
+  String get cargosArchiveReset => 'Сбросить';
+
+  @override
+  String cargoResponsesCount(int count) {
+    return 'Отклики: $count';
+  }
+
+  @override
+  String cargoResponsesNew(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count новых',
+      many: '$count новых',
+      few: '$count новых',
+      one: '1 новый',
+    );
+    return '$_temp0';
+  }
 }

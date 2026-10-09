@@ -3577,4 +3577,44 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String postCargoWeightLooksLikeTons(String tons) {
     return '是不是 $tons 吨？';
   }
+
+  @override
+  String get cargosTabActive => '进行中';
+
+  @override
+  String get cargosTabWork => '运输中';
+
+  @override
+  String get cargosTabArchive => '归档';
+
+  @override
+  String get cargosEmptyActive => '暂无进行中的货物 — 请发布货物';
+
+  @override
+  String get cargosEmptyWork => '目前没有运输中的货物';
+
+  @override
+  String get cargosEmptyArchive => '归档为空';
+
+  @override
+  String get cargoRepeat => '再发一次';
+
+  @override
+  String get cargosArchiveCity => '城市';
+
+  @override
+  String get cargosArchivePeriod => '时间段';
+
+  @override
+  String get cargosArchiveReset => '重置';
+
+  @override
+  String cargoResponsesCount(int count) {
+    return '响应：$count';
+  }
+
+  @override
+  String cargoResponsesNew(int count) {
+    return '$count 个新';
+  }
 }

@@ -1264,5 +1264,17 @@
   "avatarHint": "Логистер суретті атыңыздың жанынан көреді",
   "adminAvatarRemoveReason": "Себебі (мысалы, суретке шағым)",
   "postCargoWeightLooksLikeKg": "Бұл {kg} кг = {tons} т ма?",
-  "postCargoWeightLooksLikeTons": "Мүмкін, {tons} т?"
+  "postCargoWeightLooksLikeTons": "Мүмкін, {tons} т?",
+  "cargosTabActive": "Белсенді",
+  "cargosTabWork": "Жұмыста",
+  "cargosTabArchive": "Мұрағат",
+  "cargosEmptyActive": "Белсенді жүк жоқ — жүк жариялаңыз",
+  "cargosEmptyWork": "Қазір жұмыстағы жүк жоқ",
+  "cargosEmptyArchive": "Мұрағат бос",
+  "cargoRepeat": "Қайталау",
+  "cargosArchiveCity": "Қала",
+  "cargosArchivePeriod": "Кезең",
+  "cargosArchiveReset": "Тазарту",
+  "cargoResponsesCount": "Жауаптар: {count}",
+  "cargoResponsesNew": "{count} жаңа"
 }

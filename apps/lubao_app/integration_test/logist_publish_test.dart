@@ -157,6 +157,36 @@ void main() {
       await waitAndReveal(tester, find.byKey(Key('companyCargoCard-$cargoId')));
     });
 
+    // 056 п.3: «Повторить» — форма заполнена по старому грузу (маршрут, кузов,
+    // вес, цена), дата — сегодня; публикуется новый груз, старый не трогается.
+    // 056 п.4: внизу у логиста нет вкладки «Сделки».
+    await run.step(tester, 'повторить-груз', () async {
+      expect(find.descendant(of: find.byType(NavigationBar), matching: find.text(t.navDeals)), findsNothing);
+      final repeat = find.byKey(Key('cargoRepeat-$cargoId'));
+      await waitAndReveal(tester, repeat);
+      await tester.tap(repeat);
+      await waitFor(tester, find.byKey(const Key('postCargoSubmit')));
+      expect(find.text('1500'), findsOneWidget, reason: 'цена из старого груза');
+      expect(find.text('18500'), findsOneWidget, reason: 'вес из старого груза, в кг');
+      expect(find.text(t.postCargoTitle), findsWidgets, reason: 'новый груз, не редактирование');
+      expectNoOverflow(tester);
+      final submit = find.byKey(const Key('postCargoSubmit'));
+      await reveal(tester, submit);
+      await tester.tap(submit);
+      await waitFor(tester, find.byKey(const Key('companyPostCargoFab')));
+      final container = ProviderScope.containerOf(tester.element(find.byType(LubaoApp)));
+      final cargos = await container.read(myCargosProvider.future);
+      final copy = cargos.firstWhere((c) => c.id != cargoId);
+      final original = cargos.firstWhere((c) => c.id == cargoId);
+      expect(copy.price, original.price);
+      expect(copy.weightKg, original.weightKg);
+      expect(copy.pointId, original.pointId);
+      expect(copy.destinationCityId, original.destinationCityId);
+      await waitAndReveal(tester, find.byKey(Key('companyCargoCard-${copy.id}')));
+      expect(find.textContaining('${t.cargosTabActive} 2'), findsOneWidget, reason: 'на вкладке — число активных');
+      await waitAndReveal(tester, find.byKey(Key('companyCargoCard-$cargoId')));
+    });
+
     await run.step(tester, 'водитель-откликается', () async {
       final driver = await DriverApi.login('+77010000003');
       await driver.respond(cargoId);
@@ -188,11 +218,20 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    await run.step(tester, 'сделка-в-списке', () async {
+    // 056 п.2: груз со сделкой — во вкладке «В работе»; нажатие — сделка.
+    await run.step(tester, 'груз-в-работе', () async {
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
-      await goTab(tester, t.navDeals);
-      await waitFor(tester, find.textContaining('Алматы'));
+      await goTab(tester, t.navCargos);
+      await tester.tap(find.byKey(const Key('companyCargosTab-work')));
+      await tester.pumpAndSettle();
+      final card = find.byKey(Key('companyCargoCard-$cargoId'));
+      await waitAndReveal(tester, card);
+      expect(find.byKey(Key('cargoRepeat-$cargoId')), findsNothing, reason: 'в работе «Повторить» нет');
+      await tester.tap(card);
+      await waitFor(tester, find.text(t.dealDetailTitle));
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
       expectInsideSafeZone(tester);
       expectNoOverflow(tester);
     });

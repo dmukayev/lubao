@@ -36,6 +36,19 @@ class CargoRepository {
     return (res.data as List<dynamic>).map((e) => Cargo.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  /// 056 п.2: вкладка «Грузов» логиста страницами; в архиве — город и период.
+  Future<CompanyCargoPage> companyTab(CompanyCargoTab tab, {int offset = 0, int limit = 20, String? cityId, String? from, String? to}) async {
+    final res = await _client.dio.get('/cargos/company', queryParameters: {
+      'tab': tab.name,
+      'offset': offset,
+      'limit': limit,
+      if (cityId != null) 'cityId': cityId,
+      if (from != null) 'from': from,
+      if (to != null) 'to': to,
+    });
+    return CompanyCargoPage.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<Cargo> byId(String id) async {
     final res = await _client.dio.get('/cargos/$id');
     return Cargo.fromJson(res.data as Map<String, dynamic>);

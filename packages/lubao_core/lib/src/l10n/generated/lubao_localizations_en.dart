@@ -3665,4 +3665,44 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String postCargoWeightLooksLikeTons(String tons) {
     return 'Maybe $tons t?';
   }
+
+  @override
+  String get cargosTabActive => 'Active';
+
+  @override
+  String get cargosTabWork => 'In progress';
+
+  @override
+  String get cargosTabArchive => 'Archive';
+
+  @override
+  String get cargosEmptyActive => 'No active cargo — post one';
+
+  @override
+  String get cargosEmptyWork => 'No cargo in progress right now';
+
+  @override
+  String get cargosEmptyArchive => 'The archive is empty';
+
+  @override
+  String get cargoRepeat => 'Repeat';
+
+  @override
+  String get cargosArchiveCity => 'City';
+
+  @override
+  String get cargosArchivePeriod => 'Period';
+
+  @override
+  String get cargosArchiveReset => 'Reset';
+
+  @override
+  String cargoResponsesCount(int count) {
+    return 'Responses: $count';
+  }
+
+  @override
+  String cargoResponsesNew(int count) {
+    return '$count new';
+  }
 }

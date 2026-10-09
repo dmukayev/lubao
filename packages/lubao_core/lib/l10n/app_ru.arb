@@ -1435,5 +1435,19 @@
   "postCargoWeightLooksLikeKg": "Это {kg} кг = {tons} т?",
   "@postCargoWeightLooksLikeKg": {"placeholders": {"kg": {"type": "String"}, "tons": {"type": "String"}}},
   "postCargoWeightLooksLikeTons": "Может, {tons} т?",
-  "@postCargoWeightLooksLikeTons": {"placeholders": {"tons": {"type": "String"}}}
+  "@postCargoWeightLooksLikeTons": {"placeholders": {"tons": {"type": "String"}}},
+  "cargosTabActive": "Активные",
+  "cargosTabWork": "В работе",
+  "cargosTabArchive": "Архив",
+  "cargosEmptyActive": "Активных грузов нет — опубликуйте груз",
+  "cargosEmptyWork": "Сейчас нет грузов в работе",
+  "cargosEmptyArchive": "В архиве пусто",
+  "cargoRepeat": "Повторить",
+  "cargosArchiveCity": "Город",
+  "cargosArchivePeriod": "Период",
+  "cargosArchiveReset": "Сбросить",
+  "cargoResponsesCount": "Отклики: {count}",
+  "@cargoResponsesCount": {"placeholders": {"count": {"type": "int"}}},
+  "cargoResponsesNew": "{count, plural, =1{1 новый} few{{count} новых} many{{count} новых} other{{count} новых}}",
+  "@cargoResponsesNew": {"placeholders": {"count": {"type": "int"}}}
 }

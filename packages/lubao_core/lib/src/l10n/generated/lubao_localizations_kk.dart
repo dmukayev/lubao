@@ -3662,4 +3662,44 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String postCargoWeightLooksLikeTons(String tons) {
     return 'Мүмкін, $tons т?';
   }
+
+  @override
+  String get cargosTabActive => 'Белсенді';
+
+  @override
+  String get cargosTabWork => 'Жұмыста';
+
+  @override
+  String get cargosTabArchive => 'Мұрағат';
+
+  @override
+  String get cargosEmptyActive => 'Белсенді жүк жоқ — жүк жариялаңыз';
+
+  @override
+  String get cargosEmptyWork => 'Қазір жұмыстағы жүк жоқ';
+
+  @override
+  String get cargosEmptyArchive => 'Мұрағат бос';
+
+  @override
+  String get cargoRepeat => 'Қайталау';
+
+  @override
+  String get cargosArchiveCity => 'Қала';
+
+  @override
+  String get cargosArchivePeriod => 'Кезең';
+
+  @override
+  String get cargosArchiveReset => 'Тазарту';
+
+  @override
+  String cargoResponsesCount(int count) {
+    return 'Жауаптар: $count';
+  }
+
+  @override
+  String cargoResponsesNew(int count) {
+    return '$count жаңа';
+  }
 }

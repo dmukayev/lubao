@@ -1389,5 +1389,17 @@
   "avatarHint": "Logists see the photo next to your name",
   "adminAvatarRemoveReason": "Reason (e.g. a complaint about the photo)",
   "postCargoWeightLooksLikeKg": "Is it {kg} kg = {tons} t?",
-  "postCargoWeightLooksLikeTons": "Maybe {tons} t?"
+  "postCargoWeightLooksLikeTons": "Maybe {tons} t?",
+  "cargosTabActive": "Active",
+  "cargosTabWork": "In progress",
+  "cargosTabArchive": "Archive",
+  "cargosEmptyActive": "No active cargo — post one",
+  "cargosEmptyWork": "No cargo in progress right now",
+  "cargosEmptyArchive": "The archive is empty",
+  "cargoRepeat": "Repeat",
+  "cargosArchiveCity": "City",
+  "cargosArchivePeriod": "Period",
+  "cargosArchiveReset": "Reset",
+  "cargoResponsesCount": "Responses: {count}",
+  "cargoResponsesNew": "{count} new"
 }

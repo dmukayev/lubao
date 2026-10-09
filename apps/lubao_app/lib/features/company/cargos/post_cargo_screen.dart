@@ -16,11 +16,15 @@ import '../../shared/status_helpers.dart';
 import '../../../services/push_service.dart';
 
 class PostCargoScreen extends ConsumerStatefulWidget {
-  const PostCargoScreen({super.key, this.cargo});
+  const PostCargoScreen({super.key, this.cargo, this.template});
 
   /// Если передан — экран работает в режиме редактирования существующего
   /// груза (предзаполняет поля, сохраняет через PATCH вместо POST).
   final Cargo? cargo;
+
+  /// 056 п.3 «Повторить»: новый груз, заполненный по старому; дата погрузки —
+  /// сегодня (вечером — завтра). Старый груз не трогается.
+  final Cargo? template;
 
   @override
   ConsumerState<PostCargoScreen> createState() => _PostCargoScreenState();
@@ -67,7 +71,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   @override
   void initState() {
     super.initState();
-    final cargo = widget.cargo;
+    final cargo = widget.cargo ?? widget.template;
     _pointId = cargo?.pointId;
     if (cargo == null) _defaultPointFromLastCargo();
     _loadWeightUnit();
@@ -81,8 +85,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       _specs = {...?cargo.cargoSpecs};
       _extraBodyTypeIds.addAll(cargo.extraBodyTypeIds);
       _currency = cargo.currency;
-      _readyDate = cargo.readyDate;
-      _photoUrls.addAll(cargo.photoUrls);
+      _readyDate = widget.template != null ? repeatReadyDate(DateTime.now()) : cargo.readyDate;
+      if (widget.template == null) _photoUrls.addAll(cargo.photoUrls);
       if (cargo.volumeM3 != null) _volumeController.text = _trimNum(cargo.volumeM3!);
       // 055: вес хранится в кг, в поле — в единице логиста (после загрузки выбора).
       if (cargo.weightKg != null) _weightController.text = weightKgToInput(cargo.weightKg!, _weightUnit);
@@ -675,3 +679,9 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
 
 /// 055: единица ввода веса — на устройстве логиста.
 final weightUnitStoreProvider = Provider((ref) => WeightUnitStore());
+
+/// 056 п.3: дата погрузки повторённого груза — сегодня; после 18:00 — завтра.
+DateTime repeatReadyDate(DateTime now) {
+  final today = DateTime(now.year, now.month, now.day);
+  return now.hour >= 18 ? today.add(const Duration(days: 1)) : today;
+}

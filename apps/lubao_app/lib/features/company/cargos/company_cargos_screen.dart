@@ -5,73 +5,340 @@ import 'package:lubao_core/lubao_core.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
+import '../../shared/city_picking.dart';
 import '../../shared/status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-class CompanyCargosScreen extends ConsumerWidget {
-  const CompanyCargosScreen({super.key});
+/// 056 п.2: «Грузы» логиста — Активные (по умолчанию) / В работе / Архив, с
+/// числами на вкладках. Нажатие: в «Активных» — отклики груза; в «В работе» и
+/// «Архиве» — сделка (если была), иначе экран груза. «Повторить» (п.3) — в
+/// «Активных» и «Архиве».
+class CompanyCargosScreen extends ConsumerStatefulWidget {
+  const CompanyCargosScreen({super.key, this.initialTab = CompanyCargoTab.active});
+
+  final CompanyCargoTab initialTab;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.l10n;
-    final cargos = ref.watch(myCargosProvider);
-    final referenceData = ref.watch(referenceDataProvider);
+  ConsumerState<CompanyCargosScreen> createState() => _CompanyCargosScreenState();
+}
 
+class _CompanyCargosScreenState extends ConsumerState<CompanyCargosScreen> with SingleTickerProviderStateMixin {
+  late final TabController _tabs = TabController(length: CompanyCargoTab.values.length, vsync: this, initialIndex: widget.initialTab.index);
+  Map<CompanyCargoTab, int> _counts = const {};
+  int _reload = 0;
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
+
+  /// Новый/повторённый груз опубликован — списки и числа заново.
+  Future<void> _openForm(String path, {Object? extra}) async {
+    await context.push(path, extra: extra);
+    if (!mounted) return;
+    ref.invalidate(myCargosProvider);
+    setState(() => _reload++);
+  }
+
+  String _tabLabel(LubaoLocalizations t, CompanyCargoTab tab) {
+    final name = switch (tab) {
+      CompanyCargoTab.active => t.cargosTabActive,
+      CompanyCargoTab.work => t.cargosTabWork,
+      CompanyCargoTab.archive => t.cargosTabArchive,
+    };
+    final n = _counts[tab];
+    return n == null || n == 0 || tab == CompanyCargoTab.archive ? name : '$name $n';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(t.myCargosTitle)),
+      appBar: AppBar(
+        title: Text(t.myCargosTitle),
+        bottom: TabBar(
+          controller: _tabs,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          tabs: [
+            for (final tab in CompanyCargoTab.values) Tab(key: Key('companyCargosTab-${tab.name}'), text: _tabLabel(t, tab)),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('companyPostCargoFab'),
-        onPressed: () => context.push('/company/cargos/new'),
+        onPressed: () => _openForm('/company/cargos/new'),
         icon: const Icon(LucideIcons.plus),
         label: Text(t.postCargoTitle),
       ),
-      body: cargos.when(
-        loading: () => const LoadingView(),
-        error: (e, st) {
-          debugPrint('CompanyCargosScreen: $e');
-          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(myCargosProvider));
-        },
-        data: (list) {
-          if (list.isEmpty) return EmptyState(message: t.myCargosEmpty);
-          final refData = referenceData.valueOrNull;
-          final locale = Localizations.localeOf(context).languageCode;
-
-          return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(myCargosProvider),
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: list.length,
-              itemBuilder: (context, index) {
-                final cargo = list[index];
-                final country = refData?.countryById(cargo.destinationCountryId);
-                final city = refData?.cityById(cargo.destinationCityId);
-                final destinationLabel = country == null
-                    ? ''
-                    : [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)]
-                        .whereType<String>()
-                        .join(', ');
-                final bodyType = refData?.bodyTypeById(cargo.bodyTypeId);
-                final (statusLabel, statusColor) = cargoStatusPresentation(t, cargo.status);
-
-                return CargoCard(
-                  key: Key('companyCargoCard-${cargo.id}'),
-                  originLabel: refData?.pointOrNull(cargo.pointId)?.name.forLanguageCode(locale),
-                  partialLabel: cargo.allowPartial ? t.feedBadgePartial : null,
-                  destinationLabel: destinationLabel,
-                  bodyTypeLabel: bodyType?.name.forLanguageCode(locale) ?? '',
-                  priceLabel: formatMoney(cargo.price, cargo.currency),
-                  secondaryPriceLabel:
-                      refData == null ? null : formatKztConversion(refData.convertToKzt(cargo.price, cargo.currency)),
-                  readyDateLabel: formatDate(cargo.readyDate),
-                  statusLabel: statusLabel,
-                  statusColor: statusColor,
-                  onTap: () => context.push('/company/cargos/${cargo.id}/responses'),
-                  trailing: cargo.activeDeal == null ? null : _DealDriverRow(deal: cargo.activeDeal!),
-                );
+      body: TabBarView(
+        controller: _tabs,
+        children: [
+          for (final tab in CompanyCargoTab.values)
+            _CargoTabList(
+              key: ValueKey('${tab.name}-$_reload'),
+              tab: tab,
+              onCounts: (counts) {
+                if (mounted && counts.toString() != _counts.toString()) setState(() => _counts = counts);
               },
+              onRepeat: (cargo) => _openForm('/company/cargos/repeat', extra: cargo),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CargoTabList extends ConsumerStatefulWidget {
+  const _CargoTabList({super.key, required this.tab, required this.onCounts, required this.onRepeat});
+
+  final CompanyCargoTab tab;
+  final ValueChanged<Map<CompanyCargoTab, int>> onCounts;
+  final ValueChanged<Cargo> onRepeat;
+
+  @override
+  ConsumerState<_CargoTabList> createState() => _CargoTabListState();
+}
+
+class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeepAliveClientMixin {
+  final _items = <Cargo>[];
+  final _scroll = ScrollController();
+  int _total = 0;
+  bool _loading = false;
+  Object? _error;
+  // Поиск в архиве: город (погрузки или назначения) и период погрузки.
+  LoadingPoint? _city;
+  DateTimeRange? _period;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(() {
+      if (_scroll.position.extentAfter < 400) _loadMore();
+    });
+    _load(reset: true);
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  String _date(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  Future<void> _load({bool reset = false}) async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final page = await ref.read(cargoRepositoryProvider).companyTab(
+            widget.tab,
+            offset: reset ? 0 : _items.length,
+            cityId: _city?.cityId,
+            from: _period == null ? null : _date(_period!.start),
+            to: _period == null ? null : _date(_period!.end),
+          );
+      if (!mounted) return;
+      setState(() {
+        if (reset) _items.clear();
+        _items.addAll(page.items);
+        _total = page.total;
+      });
+      widget.onCounts(page.counts);
+    } catch (e) {
+      debugPrint('CompanyCargosScreen(${widget.tab.name}): $e');
+      if (mounted) setState(() => _error = e);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _loadMore() {
+    if (!_loading && _items.length < _total) _load();
+  }
+
+  Future<void> _pickCity(ReferenceData refData) async {
+    final picked = await pickCity(context, ref, refData: refData, selectedId: _city?.id, title: context.l10n.cargosArchiveCity);
+    if (picked == null || !mounted) return;
+    setState(() => _city = picked);
+    _load(reset: true);
+  }
+
+  Future<void> _pickPeriod() async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 3),
+      lastDate: DateTime(now.year + 1),
+      initialDateRange: _period,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _period = picked);
+    _load(reset: true);
+  }
+
+  void _open(Cargo cargo) {
+    final deal = cargo.activeDeal;
+    if (widget.tab != CompanyCargoTab.active && deal != null) {
+      context.push('/deal/${deal.id}');
+    } else {
+      context.push('/company/cargos/${cargo.id}/responses');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final t = context.l10n;
+    final refData = ref.watch(referenceDataProvider).valueOrNull;
+    final locale = Localizations.localeOf(context).languageCode;
+    final isArchive = widget.tab == CompanyCargoTab.archive;
+
+    final filters = !isArchive || refData == null
+        ? null
+        : Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 0),
+            child: Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.xs,
+              children: [
+                ActionChip(
+                  key: const Key('cargosArchiveCity'),
+                  avatar: const Icon(LucideIcons.mapPin, size: 16),
+                  label: Text(_city?.name.forLanguageCode(locale) ?? t.cargosArchiveCity),
+                  onPressed: () => _pickCity(refData),
+                ),
+                ActionChip(
+                  key: const Key('cargosArchivePeriod'),
+                  avatar: const Icon(LucideIcons.calendar, size: 16),
+                  label: Text(_period == null ? t.cargosArchivePeriod : '${formatDate(_period!.start)} – ${formatDate(_period!.end)}'),
+                  onPressed: _pickPeriod,
+                ),
+                if (_city != null || _period != null)
+                  TextButton(
+                    key: const Key('cargosArchiveReset'),
+                    onPressed: () {
+                      setState(() {
+                        _city = null;
+                        _period = null;
+                      });
+                      _load(reset: true);
+                    },
+                    child: Text(t.cargosArchiveReset),
+                  ),
+              ],
             ),
           );
+
+    Widget body;
+    if (_items.isEmpty && _loading) {
+      body = const LoadingView();
+    } else if (_items.isEmpty && _error != null) {
+      body = ErrorView(message: t.commonError, onRetry: () => _load(reset: true));
+    } else if (_items.isEmpty) {
+      body = ListView(children: [
+        const SizedBox(height: AppSpacing.xxl),
+        EmptyState(
+          message: switch (widget.tab) {
+            CompanyCargoTab.active => t.cargosEmptyActive,
+            CompanyCargoTab.work => t.cargosEmptyWork,
+            CompanyCargoTab.archive => t.cargosEmptyArchive,
+          },
+        ),
+      ]);
+    } else {
+      body = ListView.builder(
+        key: Key('companyCargosList-${widget.tab.name}'),
+        controller: _scroll,
+        physics: const AlwaysScrollableScrollPhysics(),
+        // Внизу место под кнопку «Опубликовать груз».
+        padding: const EdgeInsets.only(top: 8, bottom: 96),
+        itemCount: _items.length + (_items.length < _total ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index >= _items.length) {
+            return const Padding(padding: EdgeInsets.all(AppSpacing.lg), child: Center(child: CircularProgressIndicator()));
+          }
+          return _card(context, refData, _items[index]);
         },
+      );
+    }
+
+    return Column(
+      children: [
+        if (filters != null) filters,
+        Expanded(child: RefreshIndicator(onRefresh: () => _load(reset: true), child: body)),
+      ],
+    );
+  }
+
+  Widget _card(BuildContext context, ReferenceData? refData, Cargo cargo) {
+    final t = context.l10n;
+    final locale = Localizations.localeOf(context).languageCode;
+    final country = refData?.countryById(cargo.destinationCountryId);
+    final city = refData?.cityById(cargo.destinationCityId);
+    final destinationLabel = country == null
+        ? ''
+        : [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
+    final bodyType = refData?.bodyTypeById(cargo.bodyTypeId);
+    final (statusLabel, statusColor) = cargoStatusPresentation(t, cargo.status);
+    final canRepeat = widget.tab != CompanyCargoTab.work;
+    final showResponses = widget.tab == CompanyCargoTab.active;
+
+    return CargoCard(
+      key: Key('companyCargoCard-${cargo.id}'),
+      originLabel: refData?.pointOrNull(cargo.pointId)?.name.forLanguageCode(locale),
+      partialLabel: cargo.allowPartial ? t.feedBadgePartial : null,
+      destinationLabel: destinationLabel,
+      bodyTypeLabel: bodyType?.name.forLanguageCode(locale) ?? '',
+      priceLabel: formatMoney(cargo.price, cargo.currency),
+      secondaryPriceLabel: refData == null ? null : formatKztConversion(refData.convertToKzt(cargo.price, cargo.currency)),
+      readyDateLabel: formatDate(cargo.readyDate),
+      statusLabel: statusLabel,
+      statusColor: statusColor,
+      onTap: () => _open(cargo),
+      trailing: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (cargo.activeDeal != null) _DealDriverRow(deal: cargo.activeDeal!),
+          if (showResponses || canRepeat)
+            Row(
+              children: [
+                if (showResponses)
+                  Expanded(
+                    child: Text.rich(
+                      key: Key('cargoResponsesLine-${cargo.id}'),
+                      TextSpan(
+                        text: t.cargoResponsesCount(cargo.responsesCount),
+                        children: [
+                          if (cargo.newResponsesCount > 0)
+                            TextSpan(
+                              text: ' · ${t.cargoResponsesNew(cargo.newResponsesCount)}',
+                              style: AppTextStyles.caption.copyWith(color: AppColors.error, fontWeight: FontWeight.w700),
+                            ),
+                        ],
+                      ),
+                      style: AppTextStyles.caption,
+                    ),
+                  )
+                else
+                  const Spacer(),
+                if (canRepeat)
+                  TextButton.icon(
+                    key: Key('cargoRepeat-${cargo.id}'),
+                    onPressed: () => widget.onRepeat(cargo),
+                    icon: const Icon(LucideIcons.rotateCw, size: 16),
+                    label: Text(t.cargoRepeat),
+                  ),
+              ],
+            ),
+        ],
       ),
     );
   }
@@ -109,4 +376,3 @@ class _DealDriverRow extends StatelessWidget {
     );
   }
 }
-

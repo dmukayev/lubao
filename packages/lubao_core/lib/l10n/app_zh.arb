@@ -1264,5 +1264,17 @@
   "avatarHint": "物流方会在您的名字旁看到照片",
   "adminAvatarRemoveReason": "原因（例如：照片被投诉）",
   "postCargoWeightLooksLikeKg": "是 {kg} 公斤 = {tons} 吨吗？",
-  "postCargoWeightLooksLikeTons": "是不是 {tons} 吨？"
+  "postCargoWeightLooksLikeTons": "是不是 {tons} 吨？",
+  "cargosTabActive": "进行中",
+  "cargosTabWork": "运输中",
+  "cargosTabArchive": "归档",
+  "cargosEmptyActive": "暂无进行中的货物 — 请发布货物",
+  "cargosEmptyWork": "目前没有运输中的货物",
+  "cargosEmptyArchive": "归档为空",
+  "cargoRepeat": "再发一次",
+  "cargosArchiveCity": "城市",
+  "cargosArchivePeriod": "时间段",
+  "cargosArchiveReset": "重置",
+  "cargoResponsesCount": "响应：{count}",
+  "cargoResponsesNew": "{count} 个新"
 }

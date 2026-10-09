@@ -88,7 +88,8 @@ void main() {
     await visit('company-cargos', '/company/cargos');
     await visit('company-drivers', '/company/drivers');
     await visit('company-chats', '/company/chats');
-    await visit('company-deals', '/company/deals');
+    // 056 п.4: старая ссылка на «Сделки» логиста ведёт в «Грузы» → «В работе».
+    await visit('company-deals-redirect', '/company/deals');
     await visit('company-profile', '/company/profile');
     await visit('company-cargo-new', '/company/cargos/new');
     await visit('company-cargo-responses', '/company/cargos/$e2eCargo1/responses');

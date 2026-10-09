@@ -6839,6 +6839,78 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Может, {tons} т?'**
   String postCargoWeightLooksLikeTons(String tons);
+
+  /// No description provided for @cargosTabActive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Активные'**
+  String get cargosTabActive;
+
+  /// No description provided for @cargosTabWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'В работе'**
+  String get cargosTabWork;
+
+  /// No description provided for @cargosTabArchive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Архив'**
+  String get cargosTabArchive;
+
+  /// No description provided for @cargosEmptyActive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Активных грузов нет — опубликуйте груз'**
+  String get cargosEmptyActive;
+
+  /// No description provided for @cargosEmptyWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сейчас нет грузов в работе'**
+  String get cargosEmptyWork;
+
+  /// No description provided for @cargosEmptyArchive.
+  ///
+  /// In ru, this message translates to:
+  /// **'В архиве пусто'**
+  String get cargosEmptyArchive;
+
+  /// No description provided for @cargoRepeat.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повторить'**
+  String get cargoRepeat;
+
+  /// No description provided for @cargosArchiveCity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город'**
+  String get cargosArchiveCity;
+
+  /// No description provided for @cargosArchivePeriod.
+  ///
+  /// In ru, this message translates to:
+  /// **'Период'**
+  String get cargosArchivePeriod;
+
+  /// No description provided for @cargosArchiveReset.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сбросить'**
+  String get cargosArchiveReset;
+
+  /// No description provided for @cargoResponsesCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отклики: {count}'**
+  String cargoResponsesCount(int count);
+
+  /// No description provided for @cargoResponsesNew.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, =1{1 новый} few{{count} новых} many{{count} новых} other{{count} новых}}'**
+  String cargoResponsesNew(int count);
 }
 
 class _LubaoLocalizationsDelegate

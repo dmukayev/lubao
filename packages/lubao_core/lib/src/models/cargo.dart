@@ -38,6 +38,7 @@ class Cargo {
     this.feedSection,
     this.myResponseStatus,
     this.responsesCount = 0,
+    this.newResponsesCount = 0,
     this.activeDeal,
     this.cargoSpecs,
     this.extraBodyTypeIds = const [],
@@ -111,6 +112,9 @@ class Cargo {
   final ResponseStatus? myResponseStatus;
   final int responsesCount;
 
+  /// 056 п.5: отклики, которые этот сотрудник ещё не открывал (только логисту).
+  final int newResponsesCount;
+
   /// Список грузов логиста (044 п.3): сделка по грузу — водитель и статус.
   final CargoActiveDeal? activeDeal;
 
@@ -153,6 +157,7 @@ class Cargo {
         pickupRank: json['pickupRank'] as int?,
         myResponseStatus: json['myResponseStatus'] == null ? null : responseStatusFromJson(json['myResponseStatus'] as String),
         responsesCount: json['responsesCount'] as int? ?? 0,
+        newResponsesCount: json['newResponsesCount'] as int? ?? 0,
         activeDeal: json['activeDeal'] == null ? null : CargoActiveDeal.fromJson(json['activeDeal'] as Map<String, dynamic>),
         cargoSpecs: json['specs'] as Map<String, dynamic>?,
         extraBodyTypeIds: (json['extraBodyTypeIds'] as List<dynamic>? ?? const []).cast<String>(),
@@ -188,6 +193,31 @@ class CargoFeedPage {
         offset: json['offset'] as int? ?? 0,
         originCityId: json['originCityId'] as String?,
       );
+}
+
+/// 056 п.2: вкладки «Грузов» логиста.
+enum CompanyCargoTab { active, work, archive }
+
+/// Страница вкладки и числа на всех трёх вкладках («Активные 5 · В работе 2»).
+class CompanyCargoPage {
+  const CompanyCargoPage({required this.items, required this.total, required this.offset, required this.counts});
+
+  final List<Cargo> items;
+  final int total;
+  final int offset;
+  final Map<CompanyCargoTab, int> counts;
+
+  bool get hasMore => offset + items.length < total;
+
+  factory CompanyCargoPage.fromJson(Map<String, dynamic> json) {
+    final counts = (json['counts'] as Map<String, dynamic>?) ?? const {};
+    return CompanyCargoPage(
+      items: (json['items'] as List<dynamic>).map((e) => Cargo.fromJson(e as Map<String, dynamic>)).toList(),
+      total: json['total'] as int? ?? 0,
+      offset: json['offset'] as int? ?? 0,
+      counts: {for (final tab in CompanyCargoTab.values) tab: counts[tab.name] as int? ?? 0},
+    );
+  }
 }
 
 /// Подсказка «Помещается к текущему: 8 т + 10 т из 20 т» (040, п.6).

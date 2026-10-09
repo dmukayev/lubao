@@ -23,7 +23,6 @@ import '../features/company/company_shell.dart';
 import '../features/company/cargos/company_cargos_screen.dart';
 import '../features/company/cargos/post_cargo_screen.dart';
 import '../features/company/cargos/cargo_responses_screen.dart';
-import '../features/company/deals/company_deals_screen.dart';
 import '../features/company/drivers/drivers_at_point_screen.dart';
 import '../features/company/profile/company_profile_screen.dart';
 import '../features/shared/deal_detail_screen.dart';
@@ -165,16 +164,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (context, state, child) => CompanyShell(child: child),
         routes: [
-          GoRoute(path: '/company/cargos', builder: (context, state) => const CompanyCargosScreen()),
+          GoRoute(
+            path: '/company/cargos',
+            builder: (context, state) => CompanyCargosScreen(
+              key: ValueKey(state.uri.queryParameters['tab']),
+              initialTab: CompanyCargoTab.values.firstWhere((t) => t.name == state.uri.queryParameters['tab'], orElse: () => CompanyCargoTab.active),
+            ),
+          ),
           GoRoute(path: '/company/drivers', builder: (context, state) => const DriversAtPointScreen()),
           GoRoute(path: '/company/chats', builder: (context, state) => const MyChatsScreen()),
-          GoRoute(path: '/company/deals', builder: (context, state) => const CompanyDealsScreen()),
+          // 056 п.4: старые ссылки и push на «Сделки» логиста — «Грузы» → «В работе».
+          GoRoute(path: '/company/deals', redirect: (context, state) => '/company/cargos?tab=work'),
           GoRoute(path: '/company/profile', builder: (context, state) => const CompanyProfileScreen()),
         ],
       ),
       GoRoute(
         path: '/company/cargos/new',
         builder: (context, state) => PostCargoScreen(cargo: state.extra as Cargo?),
+      ),
+      GoRoute(
+        path: '/company/cargos/repeat',
+        builder: (context, state) => PostCargoScreen(template: state.extra as Cargo?),
       ),
       GoRoute(
         path: '/company/cargos/:id/responses',
