@@ -11,7 +11,7 @@ import '../../shared/status_helpers.dart';
 import 'announce_arrival_sheet.dart';
 import '../../shared/error_feedback.dart';
 import '../../shared/tracking_consent_sheet.dart';
-import '../deals/my_responses_screen.dart';
+import '../trips/driver_trips_screen.dart';
 import 'driver_status.dart';
 
 class CargoFeedScreen extends ConsumerStatefulWidget {
@@ -99,6 +99,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                   ref.invalidate(cargoFeedProvider);
                   ref.invalidate(myArrivalsProvider);
                   ref.invalidate(myResponsesProvider);
+                  ref.invalidate(dealsMineProvider);
                 },
                 child: ListView(
                   padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.lg),
@@ -112,7 +113,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                     // Под ней — «нужно действие», только пока актуально:
                     // пригласили / выбрали (045 п.3), затем анонс с вопросами
                     // «вы на месте?» и «ещё ищете?».
-                    const _MyResponsesSummary(),
+                    _ActionCards(refData: refData),
                     if (ref.watch(myArrivalsProvider).valueOrNull?.current != null) ...[
                       const SizedBox(height: AppSpacing.md),
                       Padding(
@@ -284,38 +285,65 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
 
 /// «Ваши отклики: 3 · ждут ответа 2 · приглашение 1» (045 п.3) — тап открывает
 /// «Мои отклики»; нет активных откликов — секции нет.
-class _MyResponsesSummary extends ConsumerWidget {
-  const _MyResponsesSummary();
+/// 053 п.6 / 056 п.6: «нужно действие» вверху ленты — только пока актуально:
+/// «Вас выбрали на <маршрут>, <цена> — подтвердить» и «Вас пригласили на
+/// <маршрут> · осталось N ч — ответить». Нажатие — «Мои рейсы».
+class _ActionCards extends ConsumerWidget {
+  const _ActionCards({required this.refData});
+
+  final ReferenceData refData;
+
+  String _route(String locale, String? pointId, String countryId, String? cityId) {
+    final origin = pointId == null ? null : refData.pointOrNull(pointId)?.name.forLanguageCode(locale);
+    final destination = refData.cityById(cityId)?.name.forLanguageCode(locale) ?? refData.countryById(countryId).name.forLanguageCode(locale);
+    return origin == null ? destination : '$origin → $destination';
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
-    final entries = ref.watch(myResponsesProvider).valueOrNull ?? const [];
-    final pending = entries.where((e) => e.status == ResponseStatus.pending).length;
-    final invited = entries.where((e) => e.status == ResponseStatus.invited).length;
-    final selected = entries.where((e) => e.status == ResponseStatus.selected).length;
-    final total = pending + invited + selected;
-    if (total == 0) return const SizedBox.shrink();
-    final parts = [
-      t.homeMyResponsesSummary(total),
-      if (pending > 0) t.homeMyResponsesPending(pending),
-      if (invited > 0) t.homeMyResponsesInvited(invited),
-      if (selected > 0) t.homeMyResponsesSelected(selected),
-    ];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.md, AppSpacing.screen, 0),
-      child: AppCard(
-        key: const Key('homeMyResponses'),
-        onTap: () => context.push('/driver/responses'),
-        child: Row(
-          children: [
-            Icon(LucideIcons.send, color: invited > 0 || selected > 0 ? AppColors.accentText : AppColors.primary),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(child: Text(parts.join(' · '), style: AppTextStyles.bodyStrong)),
-            const Icon(LucideIcons.chevronRight, size: 18),
-          ],
-        ),
-      ),
+    final locale = Localizations.localeOf(context).languageCode;
+    final deals = (ref.watch(dealsMineProvider).valueOrNull ?? const <Deal>[]).where(dealNeedsDriver).where((d) => d.cargo != null).toList();
+    final now = DateTime.now();
+    final invites = (ref.watch(myResponsesProvider).valueOrNull ?? const <MyResponseEntry>[])
+        .where((r) => r.status == ResponseStatus.invited && inviteHoursLeft(r.inviteExpiresAt, now) > 0)
+        .toList();
+    if (deals.isEmpty && invites.isEmpty) return const SizedBox.shrink();
+
+    Widget card({required Key key, required Color border, required String text, required String cta}) => Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.md, AppSpacing.screen, 0),
+          child: AppCard(
+            key: key,
+            borderColor: border,
+            onTap: () => context.go('/driver/trips'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(text, style: AppTextStyles.bodyStrong),
+                const SizedBox(height: AppSpacing.xs),
+                Text(cta, style: AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        );
+
+    return Column(
+      children: [
+        for (final d in deals)
+          card(
+            key: Key('homeActionSelected-${d.id}'),
+            border: AppColors.primary,
+            text: t.homeActionSelected(_route(locale, d.cargo!.pointId, d.cargo!.destinationCountryId, d.cargo!.destinationCityId), formatMoney(d.cargo!.price, d.cargo!.currency)),
+            cta: t.homeActionSelectedCta,
+          ),
+        for (final r in invites)
+          card(
+            key: Key('homeActionInvited-${r.id}'),
+            border: AppColors.accent,
+            text: t.homeActionInvited(_route(locale, r.pointId, r.destinationCountryId, r.destinationCityId), inviteHoursLeft(r.inviteExpiresAt, now)),
+            cta: t.homeActionInvitedCta,
+          ),
+      ],
     );
   }
 }

@@ -3697,4 +3697,103 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get navTrips => 'Мои рейсы';
+
+  @override
+  String get tripsTitle => 'Мои рейсы';
+
+  @override
+  String get tripsNeedAnswer => 'Нужно ответить';
+
+  @override
+  String get tripsWaiting => 'Жду ответа логиста';
+
+  @override
+  String get tripsInWork => 'В работе';
+
+  @override
+  String get tripsSelectedBadge => 'Вас выбрали — подтвердите';
+
+  @override
+  String get tripsConfirm => 'Подтвердить рейс';
+
+  @override
+  String tripsInvitedBadge(int hours) {
+    return 'Вас пригласили · осталось $hours ч';
+  }
+
+  @override
+  String get tripsAccept => 'Готов взять';
+
+  @override
+  String get tripsDecline => 'Отказаться';
+
+  @override
+  String get tripsWithdraw => 'Отозвать отклик';
+
+  @override
+  String get tripsEmpty => 'Откликайтесь на грузы в ленте';
+
+  @override
+  String get tripsGoFeed => 'В ленту';
+
+  @override
+  String get historyTitle => 'История рейсов';
+
+  @override
+  String get historyAll => 'Все';
+
+  @override
+  String get historyDelivered => 'Доставлено';
+
+  @override
+  String get historyFailed => 'Не сложилось';
+
+  @override
+  String get historyEmpty => 'Здесь появятся завершённые рейсы';
+
+  @override
+  String get closeReasonTakenByOther => 'Груз ушёл другому';
+
+  @override
+  String get closeReasonRejectedByLogist => 'Логист отказал';
+
+  @override
+  String get closeReasonWithdrawn => 'Вы отозвали';
+
+  @override
+  String get closeReasonInviteExpired => 'Приглашение истекло';
+
+  @override
+  String get closeReasonCargoClosed => 'Груз снят';
+
+  @override
+  String get closeReasonCargoArchived => 'Груз в архиве';
+
+  @override
+  String get closeReasonDealCancelled => 'Сделка отменена';
+
+  @override
+  String get closeReasonAccountDeleted => 'Аккаунт удалён';
+
+  @override
+  String homeActionSelected(String route, String price) {
+    return 'Вас выбрали на $route, $price';
+  }
+
+  @override
+  String get homeActionSelectedCta => 'Подтвердить в «Моих рейсах» →';
+
+  @override
+  String homeActionInvited(String route, int hours) {
+    return 'Вас пригласили на $route · осталось $hours ч';
+  }
+
+  @override
+  String get homeActionInvitedCta => 'Ответить →';
+
+  @override
+  String get profileTripHistory => 'История рейсов';
 }

@@ -6911,6 +6911,192 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'{count, plural, =1{1 новый} few{{count} новых} many{{count} новых} other{{count} новых}}'**
   String cargoResponsesNew(int count);
+
+  /// No description provided for @navTrips.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мои рейсы'**
+  String get navTrips;
+
+  /// No description provided for @tripsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мои рейсы'**
+  String get tripsTitle;
+
+  /// No description provided for @tripsNeedAnswer.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нужно ответить'**
+  String get tripsNeedAnswer;
+
+  /// No description provided for @tripsWaiting.
+  ///
+  /// In ru, this message translates to:
+  /// **'Жду ответа логиста'**
+  String get tripsWaiting;
+
+  /// No description provided for @tripsInWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'В работе'**
+  String get tripsInWork;
+
+  /// No description provided for @tripsSelectedBadge.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вас выбрали — подтвердите'**
+  String get tripsSelectedBadge;
+
+  /// No description provided for @tripsConfirm.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтвердить рейс'**
+  String get tripsConfirm;
+
+  /// No description provided for @tripsInvitedBadge.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вас пригласили · осталось {hours} ч'**
+  String tripsInvitedBadge(int hours);
+
+  /// No description provided for @tripsAccept.
+  ///
+  /// In ru, this message translates to:
+  /// **'Готов взять'**
+  String get tripsAccept;
+
+  /// No description provided for @tripsDecline.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отказаться'**
+  String get tripsDecline;
+
+  /// No description provided for @tripsWithdraw.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отозвать отклик'**
+  String get tripsWithdraw;
+
+  /// No description provided for @tripsEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откликайтесь на грузы в ленте'**
+  String get tripsEmpty;
+
+  /// No description provided for @tripsGoFeed.
+  ///
+  /// In ru, this message translates to:
+  /// **'В ленту'**
+  String get tripsGoFeed;
+
+  /// No description provided for @historyTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'История рейсов'**
+  String get historyTitle;
+
+  /// No description provided for @historyAll.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все'**
+  String get historyAll;
+
+  /// No description provided for @historyDelivered.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доставлено'**
+  String get historyDelivered;
+
+  /// No description provided for @historyFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не сложилось'**
+  String get historyFailed;
+
+  /// No description provided for @historyEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Здесь появятся завершённые рейсы'**
+  String get historyEmpty;
+
+  /// No description provided for @closeReasonTakenByOther.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз ушёл другому'**
+  String get closeReasonTakenByOther;
+
+  /// No description provided for @closeReasonRejectedByLogist.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логист отказал'**
+  String get closeReasonRejectedByLogist;
+
+  /// No description provided for @closeReasonWithdrawn.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы отозвали'**
+  String get closeReasonWithdrawn;
+
+  /// No description provided for @closeReasonInviteExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приглашение истекло'**
+  String get closeReasonInviteExpired;
+
+  /// No description provided for @closeReasonCargoClosed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз снят'**
+  String get closeReasonCargoClosed;
+
+  /// No description provided for @closeReasonCargoArchived.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз в архиве'**
+  String get closeReasonCargoArchived;
+
+  /// No description provided for @closeReasonDealCancelled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделка отменена'**
+  String get closeReasonDealCancelled;
+
+  /// No description provided for @closeReasonAccountDeleted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аккаунт удалён'**
+  String get closeReasonAccountDeleted;
+
+  /// No description provided for @homeActionSelected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вас выбрали на {route}, {price}'**
+  String homeActionSelected(String route, String price);
+
+  /// No description provided for @homeActionSelectedCta.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подтвердить в «Моих рейсах» →'**
+  String get homeActionSelectedCta;
+
+  /// No description provided for @homeActionInvited.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вас пригласили на {route} · осталось {hours} ч'**
+  String homeActionInvited(String route, int hours);
+
+  /// No description provided for @homeActionInvitedCta.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ответить →'**
+  String get homeActionInvitedCta;
+
+  /// No description provided for @profileTripHistory.
+  ///
+  /// In ru, this message translates to:
+  /// **'История рейсов'**
+  String get profileTripHistory;
 }
 
 class _LubaoLocalizationsDelegate
