@@ -134,7 +134,13 @@ void main() {
       // Карточка во время обновления показывает прежний город — ждём новый.
       await waitFor(tester, find.byWidgetPredicate((w) => w is Text && w.key == const Key('anonsCityName') && w.data == 'Астана'));
       await waitAndReveal(tester, find.byWidgetPredicate((w) => w.key is ValueKey && '${(w.key! as ValueKey).value}'.startsWith('feedCargoCard-')).first);
-      // Теперь первым — груз из Астаны, груз из Алматы ушёл вниз.
+      // Теперь первым — груз из Астаны, груз из Алматы ушёл вниз. Лента
+      // перезагружается после анонса — ждём новый порядок, а не первый кадр.
+      final reordered = DateTime.now().add(const Duration(seconds: 20));
+      while (firstFeedCargoId(tester) != e2eCargo7) {
+        if (DateTime.now().isAfter(reordered)) break;
+        await tester.pump(const Duration(milliseconds: 300));
+      }
       expect(firstFeedCargoId(tester), e2eCargo7);
       expectNoOverflow(tester);
     });
