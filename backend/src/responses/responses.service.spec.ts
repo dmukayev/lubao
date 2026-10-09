@@ -628,7 +628,7 @@ describe('ResponsesService.driverAgreed — «Договорились?» → «
 
     await service.driverAgreed('cargo1', 'd1');
 
-    expect(prisma.response.update).toHaveBeenCalledWith(expect.objectContaining({ data: { status: 'PENDING' } }));
+    expect(prisma.response.update).toHaveBeenCalledWith(expect.objectContaining({ data: { status: 'PENDING', closeReason: null } }));
     expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['logist-1'], companyId: 'c1' }, 'DRIVER_AGREED', { cargoId: 'cargo1', driverName: 'Ерлан' });
     expect(chat.post).toHaveBeenCalledWith(expect.objectContaining({ code: 'DRIVER_SAYS_AGREED', cargoId: 'cargo1' }));
   });

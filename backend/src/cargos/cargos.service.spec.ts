@@ -129,7 +129,8 @@ describe('CargosService.closeCargo — закрытие только с исхо
     expect(responses.createDealDirect).toHaveBeenCalledWith('cargo1', 'd1', 'c1');
     expect(prisma.cargo.update).toHaveBeenCalledWith({
       where: { id: 'cargo1' },
-      data: { status: 'CANCELLED', closeOutcome: 'FOUND_IN_APP', closedAt: expect.any(Date) },
+      // 057 п.16: груз с идущей сделкой остаётся «В работе» (IN_DEAL), статус не трогаем.
+      data: { closeOutcome: 'FOUND_IN_APP', closedAt: expect.any(Date) },
     });
   });
 

@@ -68,7 +68,8 @@ describe('DriverAvatarService (054)', () => {
   it('«Убрать» админом — файл удалён, ключ обнулён, в журнал с причиной', async () => {
     const { service, prisma, uploads } = makeService({ avatarFileKey: 'old.jpg' });
     await service.remove('d1', 'admin-1', 'ADMIN', 'Неподходящее фото');
-    expect(prisma.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { avatarFileKey: null, avatarUpdatedAt: expect.any(Date) } });
+    // 057 п.12: после «Убрать» предложение «поставить селфи» не всплывает снова.
+    expect(prisma.driver.update).toHaveBeenCalledWith({ where: { id: 'd1' }, data: { avatarFileKey: null, avatarUpdatedAt: expect.any(Date), avatarOfferDismissedAt: expect.any(Date) } });
     expect(prisma.auditLog.create).toHaveBeenCalledWith({ data: expect.objectContaining({ action: 'DRIVER_AVATAR_REMOVED_BY_ADMIN', metadata: { reason: 'Неподходящее фото' } }) });
     expect(uploads.removeDocument).toHaveBeenCalledWith('old.jpg');
   });

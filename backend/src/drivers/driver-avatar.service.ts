@@ -88,7 +88,8 @@ export class DriverAvatarService {
     const driver = await this.prisma.driver.findUnique({ where: { id: driverId }, select: { avatarFileKey: true } });
     if (!driver) throw new NotFoundException('Driver not found');
     if (!driver.avatarFileKey) return { avatarVersion: null };
-    await this.prisma.driver.update({ where: { id: driverId }, data: { avatarFileKey: null, avatarUpdatedAt: new Date() } });
+    // 057 п.12: убрал фото — предложение «поставить селфи» больше не всплывает.
+    await this.prisma.driver.update({ where: { id: driverId }, data: { avatarFileKey: null, avatarUpdatedAt: new Date(), avatarOfferDismissedAt: new Date() } });
     await this.prisma.auditLog.create({
       data: { actorUserId, action: by === 'ADMIN' ? 'DRIVER_AVATAR_REMOVED_BY_ADMIN' : 'DRIVER_AVATAR_REMOVED', entityType: 'Driver', entityId: driverId, metadata: reason ? { reason } : undefined },
     });

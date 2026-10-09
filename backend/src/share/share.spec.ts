@@ -77,9 +77,9 @@ describe('ShareService — права и вход по ссылке', () => {
       shareLink: {
         findUnique: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockImplementation(({ data }) => Promise.resolve({ id: 'l1', ...data })),
-        update: jest.fn(),
+        update: jest.fn().mockResolvedValue({}),
       },
-      user: { findUnique: jest.fn().mockResolvedValue({ referredByShareId: null }), update: jest.fn() },
+      user: { findUnique: jest.fn().mockResolvedValue({ createdAt: new Date() }), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
     };
     return { prisma, service: new ShareService(prisma) };
   }
@@ -96,15 +96,24 @@ describe('ShareService — права и вход по ссылке', () => {
     await expect(service.create(logist, 'COMPANY', 'other')).rejects.toThrow(ForbiddenException);
     await expect(service.create({ user: { id: 'u1' }, driver: { id: 'd1' }, companyMember: null } as any, 'DRIVER', 'd2')).rejects.toThrow(ForbiddenException);
   });
-  it('вход по ссылке засчитывается автору один раз; свои ссылки не считаются', async () => {
+  it('вход по ссылке засчитывается автору один раз (условный апдейт); свои ссылки не считаются', async () => {
     const { prisma, service } = make();
     prisma.shareLink.findUnique.mockResolvedValue({ id: 'l1', code: 'Abc2345', type: 'CARGO', targetId: 'cargo1', authorUserId: 'author' });
     await service.claim('newbie', 'Abc2345');
-    expect(prisma.user.update).toHaveBeenCalledWith({ where: { id: 'newbie' }, data: { referredByShareId: 'l1' } });
+    expect(prisma.user.updateMany).toHaveBeenCalledWith({ where: { id: 'newbie', referredByShareId: null }, data: { referredByShareId: 'l1' } });
     expect(prisma.shareLink.update).toHaveBeenCalledWith({ where: { id: 'l1' }, data: { logins: { increment: 1 } } });
-    prisma.user.update.mockClear();
+    prisma.user.updateMany.mockClear();
     await service.claim('author', 'Abc2345');
-    expect(prisma.user.update).not.toHaveBeenCalled();
+    expect(prisma.user.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('057 п.4: давно зарегистрированный — только «открытие», в «пришло по ссылкам» не идёт', async () => {
+    const { prisma, service } = make();
+    prisma.shareLink.findUnique.mockResolvedValue({ id: 'l1', code: 'Abc2345', type: 'CARGO', targetId: 'cargo1', authorUserId: 'author' });
+    prisma.user.findUnique.mockResolvedValue({ createdAt: new Date('2026-01-01T00:00:00Z') });
+    await service.claim('old', 'Abc2345', new Date('2026-10-09T12:00:00Z'));
+    expect(prisma.user.updateMany).not.toHaveBeenCalled();
+    expect(prisma.shareLink.update).toHaveBeenCalledWith({ where: { id: 'l1' }, data: { opens: { increment: 1 } } });
   });
 });
 
@@ -112,5 +121,14 @@ describe('SharePagesService — неизвестная ссылка', () => {
   it('нет ссылки — null (404)', async () => {
     const service = new SharePagesService({} as any, { findByCode: jest.fn().mockResolvedValue(null) } as any);
     expect(await service.render('nope123', 'ru')).toBeNull();
+  });
+});
+
+describe('publicName (057 п.11)', () => {
+  it('«Имя Ф.» вместо полного ФИО', () => {
+    const { publicName } = require('./share-pages.service');
+    expect(publicName('Ерлан Сейткали Нурланович')).toBe('Ерлан С.');
+    expect(publicName('Ерлан')).toBe('Ерлан');
+    expect(publicName('  ')).toBe('');
   });
 });

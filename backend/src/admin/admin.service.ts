@@ -842,8 +842,20 @@ export class AdminService {
   async unpublishCargo(id: string, adminUserId: string, reason: string) {
     const cargo = await this.prisma.cargo.findUnique({ where: { id } });
     if (!cargo) throw new NotFoundException('Cargo not found');
+    // 057 п.15: снять с витрины можно только опубликованный груз — груз со
+    // сделкой (IN_DEAL) так не трогаем, его закрывает отмена сделки.
+    if (cargo.status !== 'PUBLISHED') {
+      throw new BadRequestException({ code: 'CARGO_NOT_PUBLISHED', message: 'Only a published cargo can be unpublished' });
+    }
 
-    await this.prisma.cargo.update({ where: { id }, data: { status: 'ARCHIVED', archivedAt: new Date() } });
+    const updated = await this.prisma.cargo.updateMany({ where: { id, status: 'PUBLISHED' }, data: { status: 'ARCHIVED', archivedAt: new Date() } });
+    if (updated.count === 0) throw new BadRequestException({ code: 'CARGO_NOT_PUBLISHED', message: 'Only a published cargo can be unpublished' });
+    // Ждущие отклики не висят «Ожидает» — закрыты «груз снят», водителям push.
+    const waiting = await this.prisma.response.findMany({ where: { cargoId: id, status: { in: ['PENDING', 'INVITED'] } }, select: { id: true, driver: { select: { userId: true } } } });
+    if (waiting.length) {
+      await this.prisma.response.updateMany({ where: { id: { in: waiting.map((r) => r.id) } }, data: { status: 'CANCELLED', closeReason: 'CARGO_CLOSED' } });
+      await this.notifications?.notify({ userIds: waiting.map((r) => r.driver.userId) }, 'RESPONSE_CARGO_CLOSED', { cargoId: id }).catch(() => undefined);
+    }
     await this.logAudit(adminUserId, 'CARGO_UNPUBLISHED', 'Cargo', id, { reason });
     const contactUserId = await resolveCargoContactUserId(this.prisma, cargo);
     if (contactUserId) {

@@ -1260,16 +1260,23 @@ describe('AdminService.cargoDetail / updateCargo / unpublishCargo (задача 
 
   it('unpublishCargo sets ARCHIVED with archivedAt, logs one decision entry, and notifies the publisher (задача 029, п.7)', async () => {
     const prisma: any = {
-      cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo()), update: jest.fn() },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ ...baseCargo(), status: 'PUBLISHED' }), update: jest.fn(), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      response: {
+        findMany: jest.fn().mockResolvedValue([{ id: 'r1', driver: { userId: 'drv-1' } }]),
+        updateMany: jest.fn(),
+      },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ userId: 'owner-1' }) },
       auditLog: { create: jest.fn() },
     };
-    const notifications = { notify: jest.fn() };
+    const notifications = { notify: jest.fn().mockResolvedValue(undefined) };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any, undefined, notifications as any);
 
     await service.unpublishCargo('cargo1', 'admin-1', 'Груз больше не актуален');
 
-    expect(prisma.cargo.update).toHaveBeenCalledWith({ where: { id: 'cargo1' }, data: { status: 'ARCHIVED', archivedAt: expect.any(Date) } });
+    expect(prisma.cargo.updateMany).toHaveBeenCalledWith({ where: { id: 'cargo1', status: 'PUBLISHED' }, data: { status: 'ARCHIVED', archivedAt: expect.any(Date) } });
+    // 057 п.15: ждущие отклики закрыты «груз снят», водителю push.
+    expect(prisma.response.updateMany).toHaveBeenCalledWith({ where: { id: { in: ['r1'] } }, data: { status: 'CANCELLED', closeReason: 'CARGO_CLOSED' } });
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['drv-1'] }, 'RESPONSE_CARGO_CLOSED', { cargoId: 'cargo1' });
     expect(prisma.auditLog.create).toHaveBeenCalledTimes(1);
     expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['owner-1'] }, 'CARGO_UNPUBLISHED', { cargoId: 'cargo1', reason: 'Груз больше не актуален' });
   });
@@ -1278,6 +1285,13 @@ describe('AdminService.cargoDetail / updateCargo / unpublishCargo (задача 
     const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue(null) } };
     const service = new AdminService(prisma, {} as any, fakeUploads() as any);
     await expect(service.unpublishCargo('missing', 'admin-1', 'x')).rejects.toThrow(NotFoundException);
+  });
+
+  it('057 п.15: груз со сделкой (IN_DEAL) с публикации не снимается', async () => {
+    const prisma: any = { cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', status: 'IN_DEAL' }), updateMany: jest.fn() } };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+    await expect(service.unpublishCargo('cargo1', 'admin-1', 'x')).rejects.toMatchObject({ response: { code: 'CARGO_NOT_PUBLISHED' } });
+    expect(prisma.cargo.updateMany).not.toHaveBeenCalled();
   });
 });
 
@@ -2425,7 +2439,8 @@ describe('AdminService.resolveComplaint — 4 resolutions, required note (зад
   it('CARGO_UNPUBLISHED on a CARGO target unpublishes that cargo (reusing unpublishCargo)', async () => {
     const prisma: any = {
       complaint: { findUnique: jest.fn().mockResolvedValue(baseComplaint({ targetType: 'CARGO', targetId: 'cargo1' })), update: jest.fn().mockResolvedValue({ id: 'cp1', reporter: {} }) },
-      cargo: { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', id: 'cargo1' }), update: jest.fn() },
+      cargo: { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', id: 'cargo1', status: 'PUBLISHED' }), update: jest.fn(), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      response: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
       user: { findUnique: jest.fn().mockResolvedValue({ id: 'u1' }) },
       companyMember: { findFirst: jest.fn().mockResolvedValue({ userId: 'owner-1' }) },
       auditLog: { create: jest.fn() },
@@ -2434,7 +2449,7 @@ describe('AdminService.resolveComplaint — 4 resolutions, required note (зад
 
     await service.resolveComplaint('cp1', 'admin-1', { resolution: 'CARGO_UNPUBLISHED', resolutionNote: 'Груз снят' } as any);
 
-    expect(prisma.cargo.update).toHaveBeenCalledWith({ where: { id: 'cargo1' }, data: { status: 'ARCHIVED', archivedAt: expect.any(Date) } });
+    expect(prisma.cargo.updateMany).toHaveBeenCalledWith({ where: { id: 'cargo1', status: 'PUBLISHED' }, data: { status: 'ARCHIVED', archivedAt: expect.any(Date) } });
   });
 
   it('CARGO_UNPUBLISHED on a target with no cargo throws BadRequestException', async () => {

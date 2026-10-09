@@ -11,9 +11,16 @@ const cargoInclude = {
   destinationCountry: { select: { name: true } },
   category: { select: { name: true } },
   bodyType: { select: { name: true } },
-  company: { select: { name: true, ratingAvg: true, ratingCount: true } },
+  company: { select: { name: true, ratingAvg: true, ratingCount: true, isBlocked: true } },
 } as const;
 type CargoRow = Prisma.CargoGetPayload<{ include: typeof cargoInclude }>;
+
+/// «Ерлан Сейткали» → «Ерлан С.»; одно слово — как есть.
+export function publicName(full: string): string {
+  const parts = full.trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return parts[0] ?? '';
+  return `${parts[0]} ${parts[1].charAt(0).toUpperCase()}.`;
+}
 
 function toPageCargo(c: CargoRow): PageCargo {
   return {
@@ -68,10 +75,11 @@ export class SharePagesService {
     const cargoHref = (c: PageCargo) => `${app}/driver/cargo/${c.id}`;
     if (link.type === 'CARGO') {
       const cargo = await this.prisma.cargo.findUnique({ where: { id: link.targetId }, include: cargoInclude });
-      if (cargo && cargo.status === 'PUBLISHED') return renderCargoPage(locale, toPageCargo(cargo), [], links, cargoHref);
+      // 057 п.7: груз заблокированной компании — «Уже неактуально».
+      if (cargo && cargo.status === 'PUBLISHED' && !cargo.company?.isBlocked) return renderCargoPage(locale, toPageCargo(cargo), [], links, cargoHref);
       // «Уже неактуально» + 3–5 похожих: опубликованные туда же (страна назначения), ближайшие по дате.
       const similar = await this.prisma.cargo.findMany({
-        where: { status: 'PUBLISHED', id: { not: link.targetId }, ...(cargo ? { destinationCountryId: cargo.destinationCountryId } : {}) },
+        where: { status: 'PUBLISHED', company: { isBlocked: false }, id: { not: link.targetId }, ...(cargo ? { destinationCountryId: cargo.destinationCountryId } : {}) },
         include: cargoInclude,
         orderBy: { readyDate: 'asc' },
         take: 5,
@@ -79,8 +87,8 @@ export class SharePagesService {
       return renderCargoPage(locale, null, similar.map(toPageCargo), links, cargoHref);
     }
     if (link.type === 'COMPANY') {
-      const company = await this.prisma.company.findUnique({ where: { id: link.targetId }, select: { name: true } });
-      const cargos = await this.prisma.cargo.findMany({ where: { companyId: link.targetId, status: 'PUBLISHED' }, include: cargoInclude, orderBy: { readyDate: 'asc' }, take: 30 });
+      const company = await this.prisma.company.findUnique({ where: { id: link.targetId }, select: { name: true, isBlocked: true } });
+      const cargos = await this.prisma.cargo.findMany({ where: { companyId: link.targetId, status: 'PUBLISHED', company: { isBlocked: false } }, include: cargoInclude, orderBy: { readyDate: 'asc' }, take: 30 });
       return renderCompanyPage(locale, company?.name ?? '', cargos.map(toPageCargo), links, cargoHref);
     }
     return renderDriverPage(locale, await this.driver(link.targetId), links);
@@ -101,7 +109,8 @@ export class SharePagesService {
     const trips = driver ? await this.prisma.deal.count({ where: { driverId, status: 'DELIVERED' } }) : 0;
     const vehicle = arrival?.trailer ?? arrival?.tractor ?? null;
     return {
-      fullName: driver?.fullName ?? '',
+      // 057 п.11: на публичной странице — «Имя Ф.», не полное ФИО.
+      fullName: publicName(driver?.fullName ?? ''),
       isVerified: driver?.isVerified ?? false,
       ratingAvg: Number(driver?.ratingAvg ?? 0),
       ratingCount: driver?.ratingCount ?? 0,

@@ -16,6 +16,9 @@ export function newShareCode(length = SHARE_CODE_LENGTH): string {
   return code;
 }
 
+/// Новый пользователь для «пришло по ссылке» — аккаунт моложе 30 минут.
+export const NEW_USER_WINDOW_MS = 30 * 60 * 1000;
+
 export function shareBaseUrl(): string {
   return (process.env.SHARE_BASE_URL || process.env.APP_PUBLIC_URL || 'https://lubao.kz').replace(/\/+$/, '');
 }
@@ -88,13 +91,19 @@ export class ShareService {
 
   /// Вход по ссылке (сразу после установки — отложенная ссылка): засчитать
   /// автору один раз на пользователя, свои ссылки не считаются.
-  async claim(userId: string, code: string) {
+  /// 057 п.4: «пришло по ссылке» — только новые (первый вход/регистрация, аккаунт
+  /// моложе 30 минут); давно вошедшим открытие ссылки — просто «открытие».
+  async claim(userId: string, code: string, now = new Date()) {
     const link = await this.findByCode(code);
     if (!link) throw new NotFoundException('Link not found');
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { referredByShareId: true } });
-    if (!user?.referredByShareId && link.authorUserId !== userId) {
-      await this.prisma.user.update({ where: { id: userId }, data: { referredByShareId: link.id } });
-      await this.prisma.shareLink.update({ where: { id: link.id }, data: { logins: { increment: 1 } } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { createdAt: true } });
+    const isNew = !!user && now.getTime() - user.createdAt.getTime() <= NEW_USER_WINDOW_MS;
+    if (isNew && link.authorUserId !== userId) {
+      // Условный апдейт против гонки двух одновременных входов.
+      const res = await this.prisma.user.updateMany({ where: { id: userId, referredByShareId: null }, data: { referredByShareId: link.id } });
+      if (res.count > 0) await this.prisma.shareLink.update({ where: { id: link.id }, data: { logins: { increment: 1 } } });
+    } else {
+      await this.countOpen(link.id);
     }
     return { type: link.type, targetId: link.targetId };
   }

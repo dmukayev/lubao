@@ -582,7 +582,8 @@ export class CargosService {
   /// 052: «Все грузы компании» по ссылке /co — опубликованные грузы компании.
   async publishedByCompany(companyId: string) {
     const cargos = await this.prisma.cargo.findMany({
-      where: { companyId, status: 'PUBLISHED' },
+      // 057 п.7: грузы заблокированной компании по ссылке не показываем.
+      where: { companyId, status: 'PUBLISHED', company: { isBlocked: false } },
       include: this.includeForDto,
       orderBy: { readyDate: 'asc' },
       take: 50,
@@ -778,9 +779,11 @@ export class CargosService {
       }
     }
 
+    // 057 п.16: «Нашёл в Lubao» — у груза идущая сделка: он остаётся IN_DEAL («В
+    // работе»), в архив уйдёт сам при доставке. Остальные исходы — снят.
     await this.prisma.cargo.update({
       where: { id },
-      data: { status: 'CANCELLED', closeOutcome: dto.outcome, closedAt: new Date() },
+      data: dto.outcome === 'FOUND_IN_APP' ? { closeOutcome: dto.outcome, closedAt: new Date() } : { status: 'CANCELLED', closeOutcome: dto.outcome, closedAt: new Date() },
     });
     // 056 п.1: отклики, что ещё ждали, закрываются с причиной «груз снят».
     await this.responses.closeForCargo(id);

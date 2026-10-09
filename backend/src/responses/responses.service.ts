@@ -220,7 +220,7 @@ export class ResponsesService {
     const response = keep
       ? await this.prisma.response.findUniqueOrThrow({ where: { id: existing!.id }, include: { driver: true } })
       : existing
-        ? await this.prisma.response.update({ where: { id: existing.id }, data: { status: 'PENDING' }, include: { driver: true } })
+        ? await this.prisma.response.update({ where: { id: existing.id }, data: { status: 'PENDING', closeReason: null }, include: { driver: true } })
         : await this.prisma.response.create({ data: { cargoId, driverId, status: 'PENDING' }, include: { driver: true } });
 
     const contactUserId = await resolveCargoContactUserId(this.prisma, cargo);
