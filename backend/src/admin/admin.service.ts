@@ -1026,10 +1026,13 @@ export class AdminService {
     await this.prisma.deal.update({
       where: { id },
       // 046: этап — по статусу; вина админской отмены нейтральна и в рейтинг не идёт.
-      data: { status: 'CANCELLED', cancelReason: reason, cancelledByRole: 'ADMIN', cancelReasonCode: 'OTHER', cancelStage: stageForStatus(deal.status), faultSide: 'NEUTRAL' },
+      // 057 п.3: отменённая сделка отпускает отклик — водителя можно выбрать снова.
+      data: { status: 'CANCELLED', cancelReason: reason, cancelledByRole: 'ADMIN', cancelReasonCode: 'OTHER', cancelStage: stageForStatus(deal.status), faultSide: 'NEUTRAL', responseId: null },
     });
     // 056 п.1: отклик водителя не висит «Вас выбрали».
-    await this.prisma.response.updateMany({ where: { id: deal.responseId, status: 'SELECTED' }, data: { status: 'CANCELLED', closeReason: 'DEAL_CANCELLED' } });
+    if (deal.responseId) {
+      await this.prisma.response.updateMany({ where: { id: deal.responseId, status: 'SELECTED' }, data: { status: 'CANCELLED', closeReason: 'DEAL_CANCELLED' } });
+    }
     await this.prisma.cargo.updateMany({ where: { id: deal.cargoId, status: 'IN_DEAL' }, data: { status: 'PUBLISHED' } });
     await this.logAudit(adminUserId, 'DEAL_CANCELLED_BY_ADMIN', 'Deal', id, { reason });
     await this.notifyDealStatusChange(deal, 'CANCELLED');

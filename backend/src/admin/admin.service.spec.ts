@@ -1419,7 +1419,7 @@ describe('AdminService.dealDetail / dealChat / advanceDealStatusByAdmin / cancel
     expect(prisma.deal.update).toHaveBeenCalledWith({
       where: { id: 'deal1' },
       // 046: этап по статусу, вина админской отмены — нейтральная.
-      data: { status: 'CANCELLED', cancelReason: 'Груз утрачен', cancelledByRole: 'ADMIN', cancelReasonCode: 'OTHER', cancelStage: 'AFTER_LOAD', faultSide: 'NEUTRAL' },
+      data: { status: 'CANCELLED', cancelReason: 'Груз утрачен', cancelledByRole: 'ADMIN', cancelReasonCode: 'OTHER', cancelStage: 'AFTER_LOAD', faultSide: 'NEUTRAL', responseId: null },
     });
   });
 

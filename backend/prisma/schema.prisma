@@ -1027,8 +1027,9 @@ model Response {
 
 model Deal {
   id                      String            @id @default(uuid())
-  responseId              String            @unique
-  response                Response          @relation(fields: [responseId], references: [id])
+  /// 057 п.3: у отменённой сделки — null: отклик свободен, водителя можно выбрать снова.
+  responseId              String?           @unique
+  response                Response?         @relation(fields: [responseId], references: [id])
   cargoId                 String
   cargo                   Cargo             @relation(fields: [cargoId], references: [id])
   driverId                String

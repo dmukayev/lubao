@@ -478,11 +478,15 @@ export class DealsService {
           cancelledByRole: p.by,
           cancelStage: p.stage,
           faultSide: p.faultSide,
+          // 057 п.3: отменённая сделка отпускает отклик — водителя можно выбрать снова.
+          responseId: null,
         },
         include: this.include,
       });
       // 056 п.1: отклик не висит «Вас выбрали» — закрыт с причиной.
-      await tx.response.updateMany({ where: { id: updated.responseId, status: 'SELECTED' }, data: { status: 'CANCELLED', closeReason: 'DEAL_CANCELLED' } });
+      if (deal.responseId) {
+        await tx.response.updateMany({ where: { id: deal.responseId, status: 'SELECTED' }, data: { status: 'CANCELLED', closeReason: 'DEAL_CANCELLED' } });
+      }
       // Сделка отменена → груз снова в ленте, если он не был закрыт (041, п.2).
       await tx.cargo.updateMany({ where: { id: updated.cargoId, status: 'IN_DEAL' }, data: { status: 'PUBLISHED' } });
       await recomputeDriverRating(tx, updated.driverId);

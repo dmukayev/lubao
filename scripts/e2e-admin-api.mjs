@@ -404,6 +404,14 @@ assert(stats1?.cancelled === 1 && stats1?.afterLoad === 1, 'у логиста в
 const myResponse = async (tkn, cargoId) => (await api('GET', '/responses/mine', { token: tkn })).json.find((r) => r.cargoId === cargoId);
 const afterCancel = await myResponse(cancelDriver.token, d1.cargoId);
 assert(afterCancel?.status === 'CANCELLED' && afterCancel.closeReason === 'DEAL_CANCELLED', 'сделка отменена → отклик водителя закрыт «сделка отменена»', JSON.stringify(afterCancel));
+// 057 п.3: после отменённой сделки водителя можно выбрать снова — новая сделка, не 409.
+const again057 = await api('POST', `/cargos/${d1.cargoId}/responses`, { token: cancelDriver.token, body: {} });
+assert(again057.status < 300, 'после отмены водитель снова откликается', `status=${again057.status} ${again057.text.slice(0, 120)}`);
+const reselect = await api('PATCH', `/responses/${again057.json.id}`, { token: kzOwner048, body: { status: 'SELECTED' } });
+assert(reselect.status < 300, 'логист выбирает того же водителя снова', `status=${reselect.status} ${reselect.text.slice(0, 160)}`);
+const newDeal057 = (await api('GET', '/deals/mine', { token: cancelDriver.token })).json.find((d) => d.cargoId === d1.cargoId && d.status === 'SELECTED');
+assert(!!newDeal057 && newDeal057.id !== d1.dealId, 'создана новая сделка', JSON.stringify(newDeal057 ?? null).slice(0, 120));
+await api('PATCH', `/deals/${newDeal057.id}/cancel`, { token: cancelDriver.token, body: { reasonCode: 'TOOK_OTHER_CARGO' } });
 const closeMe = await api('POST', '/cargos', { token: kzOwner048, body: { pointId: almaty048.id, destinationCountryId: kz046, bodyTypeId: tentType.id, categoryId: otherCategoryId, price: 1056, currency: 'USD', readyDate: '2030-03-02' } });
 assert((await api('POST', `/cargos/${closeMe.json.id}/responses`, { token: tentDriver.token, body: {} })).status < 300, 'водитель откликнулся на груз, который снимут');
 assert((await myResponse(tentDriver.token, closeMe.json.id))?.status === 'PENDING', 'до снятия — «Ожидает»');

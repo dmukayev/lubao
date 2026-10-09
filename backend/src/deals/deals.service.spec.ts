@@ -150,12 +150,14 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
   });
 
   it('056 п.1: отмена сделки закрывает отклик водителя — не висит «Вас выбрали»', async () => {
-    prisma.deal.findUnique.mockResolvedValue(dealFixture());
-    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CANCELLED', responseId: 'r1' }));
+    prisma.deal.findUnique.mockResolvedValue(dealFixture({ responseId: 'r1' }));
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CANCELLED', responseId: null }));
 
     await service.cancel('deal1', { companyId: 'c1' }, 'Груз не готов');
 
     expect(prisma.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: 'SELECTED' }, data: { status: 'CANCELLED', closeReason: 'DEAL_CANCELLED' } });
+    // 057 п.3: отменённая сделка отпускает отклик — водителя можно выбрать снова.
+    expect(prisma.deal.update.mock.calls[0][0].data).toMatchObject({ status: 'CANCELLED', responseId: null });
   });
 });
 
