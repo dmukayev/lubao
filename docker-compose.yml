@@ -107,6 +107,10 @@ services:
       # Dev: без ключей WhatsApp/Telegram код пишется в лог — выбор канала виден на экране входа.
       LOGIN_CODE_CONSOLE_CHANNELS: ${LOGIN_CODE_CONSOLE_CHANNELS:-whatsapp,telegram}
       # Push (042 п.1): console — в лог; real — FCM. Ключ — файл в backend/secrets/ (в .gitignore).
+      # Перевод чата (029): noop — без перевода; deepseek — DeepSeek API, ключ в .env.
+      TRANSLATION_PROVIDER: ${TRANSLATION_PROVIDER:-noop}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-}
       PUSH_PROVIDER: ${PUSH_PROVIDER:-console}
       FCM_SERVICE_ACCOUNT: ${FCM_SERVICE_ACCOUNT:-}
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}

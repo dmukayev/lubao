@@ -7313,6 +7313,12 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Ссылка не найдена — откройте её ещё раз из сообщения'**
   String get shareLinkPromptNotFound;
+
+  /// No description provided for @commonPaste.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вставить'**
+  String get commonPaste;
 }
 
 class _LubaoLocalizationsDelegate

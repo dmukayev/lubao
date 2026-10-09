@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/api_providers.dart';
+import '../../providers/data_providers.dart';
 
 /// 056 п.5: числа «Грузов» и новые отклики этого сотрудника — цифра на вкладке.
 final companyCargoCountsProvider = FutureProvider.autoDispose<Map<String, int>>((ref) {
@@ -25,6 +28,28 @@ class _CompanyShellState extends ConsumerState<CompanyShell> {
   static const _tabs = ['/company/cargos', '/company/drivers', '/company/chats', '/company/profile'];
 
   String? _lastLocation;
+  final _subs = <StreamSubscription<Object?>>[];
+
+  /// Непрочитанные сообщения — цифрой на «Чатах», как у водителя (053 п.6):
+  /// обновляются по сокету и при переходе на вкладку.
+  @override
+  void initState() {
+    super.initState();
+    final realtime = ref.read(realtimeServiceProvider);
+    void chats(Object? _) => ref.invalidate(myChatsProvider);
+    _subs
+      ..add(realtime.onMessageNew.listen(chats))
+      ..add(realtime.onMessageRead.listen(chats))
+      ..add(realtime.onChatUpdated.listen(chats));
+  }
+
+  @override
+  void dispose() {
+    for (final s in _subs) {
+      s.cancel();
+    }
+    super.dispose();
+  }
 
   int _indexForLocation(String location) {
     final index = _tabs.indexWhere((tab) => location.startsWith(tab));
@@ -36,14 +61,18 @@ class _CompanyShellState extends ConsumerState<CompanyShell> {
     final t = context.l10n;
     final location = GoRouterState.of(context).matchedLocation;
     // Вернулись в «Грузы» (например, из откликов груза) — новые пересчитать.
-    if (_lastLocation != null && _lastLocation != location && location.startsWith('/company/cargos')) {
+    if (_lastLocation != null && _lastLocation != location) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) ref.invalidate(companyCargoCountsProvider);
+        if (!mounted) return;
+        // Вернулись из откликов / из чата — новые и непрочитанные пересчитать.
+        if (location.startsWith('/company/cargos')) ref.invalidate(companyCargoCountsProvider);
+        ref.invalidate(myChatsProvider);
       });
     }
     _lastLocation = location;
     final currentIndex = _indexForLocation(location);
     final newResponses = ref.watch(companyCargoCountsProvider).valueOrNull?['newResponses'] ?? 0;
+    final unread = (ref.watch(myChatsProvider).valueOrNull ?? const <MyChatEntry>[]).fold<int>(0, (sum, c) => sum + c.unreadCount);
 
     return Scaffold(
       body: widget.child,
@@ -51,6 +80,7 @@ class _CompanyShellState extends ConsumerState<CompanyShell> {
         selectedIndex: currentIndex,
         onDestinationSelected: (index) {
           if (index == 0) ref.invalidate(companyCargoCountsProvider);
+          if (index == 2) ref.invalidate(myChatsProvider);
           context.go(_tabs[index]);
         },
         destinations: [
@@ -65,7 +95,16 @@ class _CompanyShellState extends ConsumerState<CompanyShell> {
             label: t.navCargos,
           ),
           NavigationDestination(icon: const Icon(LucideIcons.users), label: t.navDrivers),
-          NavigationDestination(icon: const Icon(LucideIcons.messageCircle), label: t.navChats),
+          NavigationDestination(
+            icon: Badge.count(
+              key: const Key('navChatsBadge'),
+              count: unread,
+              isLabelVisible: unread > 0,
+              backgroundColor: AppColors.primary,
+              child: const Icon(LucideIcons.messageCircle),
+            ),
+            label: t.navChats,
+          ),
           NavigationDestination(icon: const Icon(LucideIcons.user), label: t.profileTitle),
         ],
       ),

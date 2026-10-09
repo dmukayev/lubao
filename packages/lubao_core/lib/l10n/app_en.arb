@@ -1468,5 +1468,6 @@
   "driverCardChat": "Message",
   "shareLinkPromptText": "Came here via a link?",
   "shareLinkPromptOpen": "Open the cargo",
-  "shareLinkPromptNotFound": "Link not found — open it again from the message"
+  "shareLinkPromptNotFound": "Link not found — open it again from the message",
+  "commonPaste": "Paste"
 }

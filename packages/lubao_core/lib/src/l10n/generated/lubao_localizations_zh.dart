@@ -3844,4 +3844,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get shareLinkPromptNotFound => '未找到链接 — 请从消息中再次打开';
+
+  @override
+  String get commonPaste => '粘贴';
 }

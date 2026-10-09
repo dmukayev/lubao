@@ -186,6 +186,8 @@ void main() {
     });
 
     await run.step(tester, 'логист-выбирает-согласившегося', () async {
+      // Водитель ответил в чате («Готов взять») — у логиста цифра непрочитанных на «Чатах».
+      await waitFor(tester, find.byWidgetPredicate((w) => w is Badge && w.key == const Key('navChatsBadge') && w.isLabelVisible));
       await goTab(tester, t.navChats);
       await waitFor(tester, find.textContaining('Борис'));
       await tester.tap(find.textContaining('Борис').first);

@@ -1343,5 +1343,6 @@
   "driverCardChat": "Жазу",
   "shareLinkPromptText": "Сілтеме арқылы келдіңіз бе?",
   "shareLinkPromptOpen": "Жүкті ашу",
-  "shareLinkPromptNotFound": "Сілтеме табылмады — хабарламадан қайта ашыңыз"
+  "shareLinkPromptNotFound": "Сілтеме табылмады — хабарламадан қайта ашыңыз",
+  "commonPaste": "Қою"
 }

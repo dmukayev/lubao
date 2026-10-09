@@ -254,18 +254,45 @@ Future<void> _showWeComDialog(BuildContext context, WidgetRef ref, String? curre
     builder: (dialogContext) => StatefulBuilder(
       builder: (dialogContext, setState) => AlertDialog(
         title: Text(t.companyWecomTitle),
-        content: Column(
+        // С клавиатурой на телефоне диалог низкий: содержимое прокручивается,
+        // поле в несколько строк (ссылка длинная) и своя кнопка «Вставить» —
+        // системное меню вставки в сжатом поле не появлялось.
+        content: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(t.companyWecomHint, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
             const SizedBox(height: AppSpacing.md),
-            AppTextField(label: t.companyWecomUrlLabel, controller: controller, errorText: error),
+            AppTextField(
+              key: const Key('wecomWebhookField'),
+              label: t.companyWecomUrlLabel,
+              controller: controller,
+              errorText: error,
+              keyboardType: TextInputType.url,
+              maxLines: 3,
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                key: const Key('wecomWebhookPaste'),
+                icon: const Icon(LucideIcons.clipboardPaste, size: 18),
+                label: Text(t.commonPaste),
+                onPressed: () async {
+                  final data = await Clipboard.getData(Clipboard.kTextPlain);
+                  final text = data?.text?.trim();
+                  if (text == null || text.isEmpty) return;
+                  controller.text = text;
+                  controller.selection = TextSelection.collapsed(offset: text.length);
+                },
+              ),
+            ),
             if (info != null) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(info!, style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
             ],
           ],
+        ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(t.commonCancel)),

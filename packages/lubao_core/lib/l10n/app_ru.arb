@@ -1529,5 +1529,6 @@
   "driverCardChat": "Написать",
   "shareLinkPromptText": "Пришли по ссылке?",
   "shareLinkPromptOpen": "Открыть груз",
-  "shareLinkPromptNotFound": "Ссылка не найдена — откройте её ещё раз из сообщения"
+  "shareLinkPromptNotFound": "Ссылка не найдена — откройте её ещё раз из сообщения",
+  "commonPaste": "Вставить"
 }

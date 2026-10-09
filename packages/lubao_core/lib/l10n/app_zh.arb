@@ -1343,5 +1343,6 @@
   "driverCardChat": "发消息",
   "shareLinkPromptText": "是通过链接来的吗？",
   "shareLinkPromptOpen": "打开货物",
-  "shareLinkPromptNotFound": "未找到链接 — 请从消息中再次打开"
+  "shareLinkPromptNotFound": "未找到链接 — 请从消息中再次打开",
+  "commonPaste": "粘贴"
 }

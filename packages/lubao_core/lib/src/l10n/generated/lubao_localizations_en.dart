@@ -3934,4 +3934,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   @override
   String get shareLinkPromptNotFound =>
       'Link not found — open it again from the message';
+
+  @override
+  String get commonPaste => 'Paste';
 }

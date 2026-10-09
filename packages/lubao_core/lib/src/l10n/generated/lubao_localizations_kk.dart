@@ -3931,4 +3931,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   @override
   String get shareLinkPromptNotFound =>
       'Сілтеме табылмады — хабарламадан қайта ашыңыз';
+
+  @override
+  String get commonPaste => 'Қою';
 }
