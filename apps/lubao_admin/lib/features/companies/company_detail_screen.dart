@@ -303,6 +303,12 @@ class _Header extends StatelessWidget {
           const SizedBox(height: 8),
           Text(company.countryName.forLanguageCode(Localizations.localeOf(context).languageCode)),
           if (company.taxId != null) Text('${t.adminCode}: ${company.taxId}'),
+          // 052 п.7: сколько людей привели ссылками «Поделиться» сотрудники компании.
+          Text(
+            t.adminShareStats(company.shareStats.links, company.shareStats.opens, company.shareStats.came),
+            key: const Key('adminCompanyShareStats'),
+            style: AppTextStyles.caption,
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,

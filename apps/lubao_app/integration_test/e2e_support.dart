@@ -553,6 +553,15 @@ Future<void> approvedSelfieViaApi(String phoneLocal) async {
   if (review.statusCode! >= 300) fail('Админ не принял селфи: ${review.statusCode} ${review.data}');
 }
 
+/// Дождаться условия вне дерева виджетов (например, вызова подменённого share).
+Future<void> waitForCondition(WidgetTester tester, bool Function() condition, {Duration timeout = const Duration(seconds: 20)}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (!condition()) {
+    if (DateTime.now().isAfter(deadline)) fail('Условие не выполнилось за $timeout');
+    await tester.pump(const Duration(milliseconds: 200));
+  }
+}
+
 /// Дождаться элемента ленивого списка и прокрутить к нему: на узком экране с
 /// крупным шрифтом (iPhone SE в e2e) он ниже края и ещё не построен — простой
 /// waitFor его не видит.

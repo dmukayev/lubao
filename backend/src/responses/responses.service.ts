@@ -12,6 +12,7 @@ import { cancelStatsFor } from '../deals/cancel-policy';
 import { avatarVersion } from '../drivers/avatar-version';
 import { INVITATION_TTL_HOURS } from './invitation-ttl';
 import { markResponsesSeen } from './new-responses';
+import { bumpShareReferral } from '../share/share.service';
 
 type ResponseWithDriver = CargoResponseEntity & { driver: Driver };
 
@@ -266,6 +267,8 @@ export class ResponsesService {
           data: { cargoId, driverId, message, status: 'PENDING' },
           include: { driver: true },
         });
+    // 052: пришёл по ссылке «Поделиться» — отклик засчитать её автору.
+    await bumpShareReferral(this.prisma, response.driver.userId, 'responses');
 
     const contactUserId = await resolveCargoContactUserId(this.prisma, cargo);
     await this.notifications.notify(
@@ -460,6 +463,7 @@ export class ResponsesService {
       return { selected, deal, takenFrom };
     }).catch((e) => this.rethrowUnique(e));
 
+    await bumpShareReferral(this.prisma, updated.selected.driver.userId, 'deals');
     await this.notifications.notify({ userIds: [updated.selected.driver.userId] }, 'DEAL_SELECTED', {
       ...(await loadCargoPushSummary(this.prisma, updated.selected.cargoId)),
       dealId: updated.deal.id,
@@ -641,6 +645,7 @@ export class ResponsesService {
     }).catch((e) => this.rethrowUnique(e));
     const taken = updated.takenFrom;
     const selectedResponse = updated.selected;
+    await bumpShareReferral(this.prisma, selectedResponse.driver.userId, 'deals');
 
     await this.notifications.notify({ userIds: [selectedResponse.driver.userId] }, 'CARGO_INVITE', {
       ...(await loadCargoPushSummary(this.prisma, cargoId)),

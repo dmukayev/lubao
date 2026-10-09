@@ -11,6 +11,7 @@ import '../haul_hint.dart';
 import 'cargo_close_dialog.dart';
 import '../../shared/driver_vehicle_photos.dart';
 import '../../shared/driver_avatar.dart';
+import '../../shared/share_action.dart';
 
 class CargoResponsesScreen extends ConsumerWidget {
   const CargoResponsesScreen({super.key, required this.cargoId});
@@ -63,6 +64,21 @@ class CargoResponsesScreen extends ConsumerWidget {
         actions: cargo == null
             ? null
             : [
+                // 052 п.4: поделиться своим грузом — со своего экрана груза.
+                IconButton(
+                  key: const Key('cargoShareDetail'),
+                  tooltip: t.shareButton,
+                  icon: const Icon(LucideIcons.share),
+                  onPressed: () {
+                    final rd = referenceData.valueOrNull;
+                    if (rd == null) return;
+                    shareContent(context, ref,
+                        kind: ShareKind.cargo,
+                        targetId: cargo.id,
+                        dialogTitle: t.shareDialogCargo,
+                        buildText: (url) => cargoShareText(t, rd, cargo, url, Localizations.localeOf(context).languageCode));
+                  },
+                ),
                 IconButton(
                   tooltip: t.cargoEdit,
                   icon: const Icon(LucideIcons.pencil),

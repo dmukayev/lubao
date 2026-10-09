@@ -28,6 +28,8 @@ final dealRepositoryProvider = Provider((ref) => DealRepository(ref.watch(apiCli
 final chatRepositoryProvider = Provider((ref) => ChatRepository(ref.watch(apiClientProvider)));
 final reviewRepositoryProvider = Provider((ref) => ReviewRepository(ref.watch(apiClientProvider)));
 final uploadsRepositoryProvider = Provider((ref) => UploadsRepository(ref.watch(apiClientProvider)));
+/// 052: короткие ссылки «Поделиться».
+final shareRepositoryProvider = Provider((ref) => ShareRepository(ref.watch(apiClientProvider)));
 final arrivalRepositoryProvider = Provider((ref) => ArrivalRepository(ref.watch(apiClientProvider)));
 final notificationsRepositoryProvider = Provider((ref) => NotificationsRepository(ref.watch(apiClientProvider)));
 

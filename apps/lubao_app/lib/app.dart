@@ -7,6 +7,7 @@ import 'router/app_router.dart';
 import 'services/location_reporter.dart';
 import 'services/realtime_connector.dart';
 import 'services/push_service.dart';
+import 'services/share_links.dart';
 
 class LubaoApp extends ConsumerWidget {
   const LubaoApp({super.key});
@@ -19,6 +20,8 @@ class LubaoApp extends ConsumerWidget {
     // активной сделке «Загружен»/«В пути» и уже выданном разрешении;
     // разрешение просят с объяснением по «📍» в чате.
     ref.watch(realtimeConnectorProvider);
+    // 052: ссылки «Поделиться» — после входа открыть нужный экран.
+    ref.watch(shareLinkHandlerProvider);
     ref.watch(locationReporterProvider);
     // Push (042 п.1) — только при сборке с PUSH_ENABLED, иначе ничего не делает.
     ref.watch(pushServiceProvider);

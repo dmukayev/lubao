@@ -3812,4 +3812,99 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get responsesNewDot => 'Жаңа жауап';
+
+  @override
+  String get shareButton => 'Бөлісу';
+
+  @override
+  String get shareAllButton => 'Барлығы';
+
+  @override
+  String get shareAllWeb => 'Барлығымен бөлісу';
+
+  @override
+  String get shareDialogCargo => 'Жүкпен бөлісу';
+
+  @override
+  String get shareDialogAll => 'Барлық жүктермен бөлісу';
+
+  @override
+  String get shareDialogDriver => 'Анонспен бөлісу';
+
+  @override
+  String get shareCopyText => 'Мәтінді көшіру';
+
+  @override
+  String get shareTextCopied => 'Мәтін көшірілді';
+
+  @override
+  String get shareLinkButton => 'Сілтеме';
+
+  @override
+  String get shareLinkCopied => 'Сілтеме көшірілді';
+
+  @override
+  String get shareWeChatQr => 'WeChat — QR';
+
+  @override
+  String get shareWeChatHint =>
+      'WeChat: телефонмен сканерлеңіз — мәтін көшірілді, чатқа қойыңыз';
+
+  @override
+  String get shareEditHint => 'Жіберер алдында мәтінді түзетуге болады';
+
+  @override
+  String shareCargoLoading(String date) {
+    return 'тиеу $date';
+  }
+
+  @override
+  String shareCargoRespond(String url) {
+    return 'Жауап беру: $url';
+  }
+
+  @override
+  String shareAllTitle(String company) {
+    return '$company — бүгінгі жүктер';
+  }
+
+  @override
+  String shareAllFooter(String url) {
+    return 'Барлық жүктер және жауап: $url';
+  }
+
+  @override
+  String get shareDriverTitle => 'Фура бос';
+
+  @override
+  String shareDriverFrom(String city, String date) {
+    return '$city, $date бастап';
+  }
+
+  @override
+  String get shareDriverAnyDirection => 'кез келген бағытқа';
+
+  @override
+  String shareDriverDirection(String countries) {
+    return 'бағыты: $countries';
+  }
+
+  @override
+  String shareDriverOffer(String url) {
+    return 'Жүк ұсыну: $url';
+  }
+
+  @override
+  String get shareVerified => 'Тексерілген';
+
+  @override
+  String get shareOpenFailed => 'Сілтеме ашылмады — ескірген болуы мүмкін';
+
+  @override
+  String get shareCompanyCargosTitle => 'Компания жүктері';
+
+  @override
+  String adminShareStats(int links, int opens, int came) {
+    return 'Бөлісті: $links · ашылды: $opens · сілтемемен келді: $came';
+  }
 }

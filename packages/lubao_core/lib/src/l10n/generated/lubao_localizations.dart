@@ -7115,6 +7115,162 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Новый отклик'**
   String get responsesNewDot;
+
+  /// No description provided for @shareButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поделиться'**
+  String get shareButton;
+
+  /// No description provided for @shareAllButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все'**
+  String get shareAllButton;
+
+  /// No description provided for @shareAllWeb.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поделиться всеми'**
+  String get shareAllWeb;
+
+  /// No description provided for @shareDialogCargo.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поделиться грузом'**
+  String get shareDialogCargo;
+
+  /// No description provided for @shareDialogAll.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поделиться всеми грузами'**
+  String get shareDialogAll;
+
+  /// No description provided for @shareDialogDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поделиться анонсом'**
+  String get shareDialogDriver;
+
+  /// No description provided for @shareCopyText.
+  ///
+  /// In ru, this message translates to:
+  /// **'Копировать текст'**
+  String get shareCopyText;
+
+  /// No description provided for @shareTextCopied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Текст скопирован'**
+  String get shareTextCopied;
+
+  /// No description provided for @shareLinkButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылка'**
+  String get shareLinkButton;
+
+  /// No description provided for @shareLinkCopied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылка скопирована'**
+  String get shareLinkCopied;
+
+  /// No description provided for @shareWeChatQr.
+  ///
+  /// In ru, this message translates to:
+  /// **'WeChat — QR'**
+  String get shareWeChatQr;
+
+  /// No description provided for @shareWeChatHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'WeChat: отсканируйте телефоном — текст уже скопирован, вставьте в чат'**
+  String get shareWeChatHint;
+
+  /// No description provided for @shareEditHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Текст можно поправить перед отправкой'**
+  String get shareEditHint;
+
+  /// No description provided for @shareCargoLoading.
+  ///
+  /// In ru, this message translates to:
+  /// **'погрузка {date}'**
+  String shareCargoLoading(String date);
+
+  /// No description provided for @shareCargoRespond.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откликнуться: {url}'**
+  String shareCargoRespond(String url);
+
+  /// No description provided for @shareAllTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'{company} — грузы на сегодня'**
+  String shareAllTitle(String company);
+
+  /// No description provided for @shareAllFooter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все грузы и отклик: {url}'**
+  String shareAllFooter(String url);
+
+  /// No description provided for @shareDriverTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Свободна фура'**
+  String get shareDriverTitle;
+
+  /// No description provided for @shareDriverFrom.
+  ///
+  /// In ru, this message translates to:
+  /// **'{city}, с {date}'**
+  String shareDriverFrom(String city, String date);
+
+  /// No description provided for @shareDriverAnyDirection.
+  ///
+  /// In ru, this message translates to:
+  /// **'в любую сторону'**
+  String get shareDriverAnyDirection;
+
+  /// No description provided for @shareDriverDirection.
+  ///
+  /// In ru, this message translates to:
+  /// **'направление: {countries}'**
+  String shareDriverDirection(String countries);
+
+  /// No description provided for @shareDriverOffer.
+  ///
+  /// In ru, this message translates to:
+  /// **'Предложить груз: {url}'**
+  String shareDriverOffer(String url);
+
+  /// No description provided for @shareVerified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверен'**
+  String get shareVerified;
+
+  /// No description provided for @shareOpenFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылка не открылась — возможно, она устарела'**
+  String get shareOpenFailed;
+
+  /// No description provided for @shareCompanyCargosTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грузы компании'**
+  String get shareCompanyCargosTitle;
+
+  /// No description provided for @adminShareStats.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поделились: {links} · открытий: {opens} · пришло по ссылкам: {came}'**
+  String adminShareStats(int links, int opens, int came);
 }
 
 class _LubaoLocalizationsDelegate

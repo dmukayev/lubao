@@ -64,6 +64,8 @@ export 'src/repositories/chat_repository.dart';
 export 'src/repositories/review_repository.dart';
 export 'src/repositories/admin_repository.dart';
 export 'src/repositories/uploads_repository.dart';
+export 'src/repositories/share_repository.dart';
+export 'src/utils/share_texts.dart';
 export 'src/repositories/arrival_repository.dart';
 export 'src/repositories/notifications_repository.dart';
 

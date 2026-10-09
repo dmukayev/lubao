@@ -501,4 +501,26 @@ assert(csv.status === 200 && csv.text.includes('median_kzt_per_km'), 'админ
   assert(JSON.stringify(audit).includes('DRIVER_AVATAR_SET') && JSON.stringify(audit).includes('DRIVER_AVATAR_REMOVED_BY_ADMIN'), 'согласие и снятие фото — в журнале', JSON.stringify(audit.map((a) => a.action)).slice(0, 200));
 }
 
+// 052: «Поделиться» — короткая ссылка автора, публичная страница без входа и
+// без телефона, неизвестная ссылка — 404, вход по ссылке засчитывается автору.
+{
+  const sh = await api('POST', '/share', { token: kzOwner, body: { type: 'CARGO', targetId: KZ_CARGO } });
+  assert(sh.status < 300 && /\/c\/[A-Za-z0-9]{7}$/.test(sh.json.url), 'ссылка на свой груз /c/<код>', `status=${sh.status} ${sh.text.slice(0, 120)}`);
+  const again = await api('POST', '/share', { token: kzOwner, body: { type: 'CARGO', targetId: KZ_CARGO } });
+  assert(again.json.code === sh.json.code, 'повторное «Поделиться» — та же ссылка');
+  const page = await fetch(`${BASE}/p/c/${sh.json.code}`, { headers: { 'Accept-Language': 'zh-CN' } });
+  const html = await page.text();
+  assert(page.status === 200 && html.includes('og:title') && html.includes('在应用中响应'), 'страница груза без входа, язык устройства (zh), OG-теги', `status=${page.status}`);
+  assert(!/\+7\d{6,}|tel:/.test(html), 'на странице нет телефона');
+  assert((await fetch(`${BASE}/p/c/zzzzzzz`)).status === 404, 'неизвестная ссылка — 404');
+  const foreignCo = await api('POST', '/share', { token: kzOwner, body: { type: 'COMPANY', targetId: '00000000-0000-4000-8000-000000000000' } });
+  assert(foreignCo.status === 403, 'чужой компанией не поделиться', `status=${foreignCo.status}`);
+  const newcomer = await newDriver('+77010000092', tentType.id, { capacityTons: 20 });
+  const claimed = await api('POST', `/share/${sh.json.code}/claim`, { token: newcomer.token });
+  assert(claimed.status < 300 && claimed.json.targetId === KZ_CARGO, 'вход по ссылке → груз', `status=${claimed.status}`);
+  const kzCompanyId = (await api('GET', `/cargos/${KZ_CARGO}`, { token: newcomer.token })).json.companyId;
+  const stats = (await get(`/admin/companies/${kzCompanyId}`)).json.shareStats;
+  assert(stats && stats.links >= 1 && stats.opens >= 1 && stats.came >= 1, 'в админке: поделились, открытий, пришло по ссылкам', JSON.stringify(stats));
+}
+
 console.log(`Готово: ${checks} проверок.`);

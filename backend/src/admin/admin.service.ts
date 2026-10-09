@@ -2172,6 +2172,17 @@ export class AdminService {
 
   // -- detail ------------------------------------------------------------
 
+  /// 052 п.7: «Поделились: N, открытий: N, пришло по ссылкам: N» — по ссылкам
+  /// этих пользователей (водитель — он сам, компания — её сотрудники).
+  async shareStats(authorUserIds: string[]) {
+    if (authorUserIds.length === 0) return { links: 0, opens: 0, came: 0 };
+    const [agg, came] = await Promise.all([
+      this.prisma.shareLink.aggregate({ where: { authorUserId: { in: authorUserIds } }, _count: { _all: true }, _sum: { opens: true } }),
+      this.prisma.user.count({ where: { referredByShare: { authorUserId: { in: authorUserIds } } } }),
+    ]);
+    return { links: agg._count._all, opens: agg._sum.opens ?? 0, came };
+  }
+
   async driverDetail(id: string) {
     const driver = await this.prisma.driver.findUnique({
       where: { id },
@@ -2236,6 +2247,7 @@ export class AdminService {
       ...cancels,
       // 049 п.9: штраф за отмены, накопленный до первого отзыва.
       pendingPenalty: Number(driver.pendingPenalty),
+      shareStats: await this.shareStats([driver.userId]),
       id: driver.id,
       // 054 п.5: фото профиля в карточке; «Убрать фото» — DELETE /admin/drivers/:id/avatar.
       avatarVersion: driver.avatarFileKey && driver.avatarUpdatedAt ? driver.avatarUpdatedAt.toISOString() : null,
@@ -2365,7 +2377,9 @@ export class AdminService {
     ]);
 
     const cancels = await this.cancellations('COMPANY', company.id);
+    const shareStats = await this.shareStats(members.map((m) => m.userId));
     return {
+      shareStats,
       ...cancels,
       pendingPenalty: Number(company.pendingPenalty),
       id: company.id,

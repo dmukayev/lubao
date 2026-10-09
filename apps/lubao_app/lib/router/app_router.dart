@@ -34,6 +34,8 @@ import '../features/shared/notification_settings_screen.dart';
 import '../features/shared/splash_screen.dart';
 import '../features/shared/about_screen.dart';
 import '../features/shared/update_required_screen.dart';
+import '../services/share_links.dart';
+import '../features/driver/feed/company_cargos_public_screen.dart';
 
 class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
@@ -57,6 +59,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         return loc == '/update' ? null : '/update';
       }
       if (loc == '/update') return '/splash';
+
+      // 052 п.3: ссылка «Поделиться» — код запоминаем; экран откроется после
+      // входа (или сразу, если сессия уже есть).
+      final shareMatch = shareLinkPath.firstMatch(loc);
+      if (shareMatch != null) {
+        final handler = ref.read(shareLinkHandlerProvider)..remember(shareMatch.group(2)!);
+        final s = ref.read(sessionProvider);
+        if (ref.read(sessionRestoringProvider)) return '/splash';
+        if (s == null) return '/role-select';
+        Future.microtask(handler.consume);
+        return s.user.role == UserRole.driver ? '/driver/feed' : '/company/cargos';
+      }
 
       // Пока идёт восстановление сессии из secure storage — остаёмся на
       // сплэше, чтобы не мигнуть экраном входа перед тем, как токен
@@ -161,6 +175,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/driver/responses', redirect: (context, state) => '/driver/trips'),
       GoRoute(path: '/driver/history', builder: (context, state) => const TripHistoryScreen()),
+      GoRoute(path: '/driver/company/:id', builder: (context, state) => CompanyCargosPublicScreen(companyId: state.pathParameters['id']!)),
       ShellRoute(
         builder: (context, state, child) => CompanyShell(child: child),
         routes: [

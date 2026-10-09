@@ -579,6 +579,17 @@ export class CargosService {
     return { count: fittingDrivers.size };
   }
 
+  /// 052: «Все грузы компании» по ссылке /co — опубликованные грузы компании.
+  async publishedByCompany(companyId: string) {
+    const cargos = await this.prisma.cargo.findMany({
+      where: { companyId, status: 'PUBLISHED' },
+      include: this.includeForDto,
+      orderBy: { readyDate: 'asc' },
+      take: 50,
+    });
+    return Promise.all(cargos.map((c) => this.toDto(c)));
+  }
+
   async byId(id: string) {
     const cargo = await this.prisma.cargo.findUnique({
       where: { id },
