@@ -14,6 +14,7 @@ import '../../shared/status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../services/push_service.dart';
 import '../trips/driver_trips_screen.dart';
+import '../../shared/share_action.dart';
 
 class CargoDetailScreen extends ConsumerStatefulWidget {
   const CargoDetailScreen({super.key, required this.cargoId});
@@ -174,7 +175,23 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
     final canContact = !contactLocked && (cargoAsync.valueOrNull?.hasContactPhone ?? false);
 
     return Scaffold(
-      appBar: AppBar(title: Text(t.cargoDetailTitle)),
+      appBar: AppBar(
+        title: Text(t.cargoDetailTitle),
+        actions: [
+          // 052 п.4: водитель делится любым грузом из ленты («брат, глянь»).
+          if (cargoAsync.valueOrNull != null && ref.watch(referenceDataProvider).valueOrNull != null)
+            IconButton(
+              key: const Key('cargoDetailShare'),
+              tooltip: t.shareButton,
+              icon: const Icon(LucideIcons.share),
+              onPressed: () => shareContent(context, ref,
+                  kind: ShareKind.cargo,
+                  targetId: cargoAsync.value!.id,
+                  dialogTitle: t.shareDialogCargo,
+                  buildText: (url) => cargoShareText(t, ref.read(referenceDataProvider).value!, cargoAsync.value!, url, Localizations.localeOf(context).languageCode)),
+            ),
+        ],
+      ),
       body: cargoAsync.when(
         loading: () => const LoadingView(),
         error: (e, st) {

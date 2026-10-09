@@ -3807,4 +3807,99 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get responsesNewDot => 'Новый отклик';
+
+  @override
+  String get shareButton => 'Поделиться';
+
+  @override
+  String get shareAllButton => 'Все';
+
+  @override
+  String get shareAllWeb => 'Поделиться всеми';
+
+  @override
+  String get shareDialogCargo => 'Поделиться грузом';
+
+  @override
+  String get shareDialogAll => 'Поделиться всеми грузами';
+
+  @override
+  String get shareDialogDriver => 'Поделиться анонсом';
+
+  @override
+  String get shareCopyText => 'Копировать текст';
+
+  @override
+  String get shareTextCopied => 'Текст скопирован';
+
+  @override
+  String get shareLinkButton => 'Ссылка';
+
+  @override
+  String get shareLinkCopied => 'Ссылка скопирована';
+
+  @override
+  String get shareWeChatQr => 'WeChat — QR';
+
+  @override
+  String get shareWeChatHint =>
+      'WeChat: отсканируйте телефоном — текст уже скопирован, вставьте в чат';
+
+  @override
+  String get shareEditHint => 'Текст можно поправить перед отправкой';
+
+  @override
+  String shareCargoLoading(String date) {
+    return 'погрузка $date';
+  }
+
+  @override
+  String shareCargoRespond(String url) {
+    return 'Откликнуться: $url';
+  }
+
+  @override
+  String shareAllTitle(String company) {
+    return '$company — грузы на сегодня';
+  }
+
+  @override
+  String shareAllFooter(String url) {
+    return 'Все грузы и отклик: $url';
+  }
+
+  @override
+  String get shareDriverTitle => 'Свободна фура';
+
+  @override
+  String shareDriverFrom(String city, String date) {
+    return '$city, с $date';
+  }
+
+  @override
+  String get shareDriverAnyDirection => 'в любую сторону';
+
+  @override
+  String shareDriverDirection(String countries) {
+    return 'направление: $countries';
+  }
+
+  @override
+  String shareDriverOffer(String url) {
+    return 'Предложить груз: $url';
+  }
+
+  @override
+  String get shareVerified => 'Проверен';
+
+  @override
+  String get shareOpenFailed => 'Ссылка не открылась — возможно, она устарела';
+
+  @override
+  String get shareCompanyCargosTitle => 'Грузы компании';
+
+  @override
+  String adminShareStats(int links, int opens, int came) {
+    return 'Поделились: $links · открытий: $opens · пришло по ссылкам: $came';
+  }
 }

@@ -5,7 +5,9 @@ import 'package:lubao_core/lubao_core.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
+import '../../../providers/auth_provider.dart';
 import '../../shared/city_picking.dart';
+import '../../shared/share_action.dart';
 import '../../shared/status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -51,12 +53,47 @@ class _CompanyCargosScreenState extends ConsumerState<CompanyCargosScreen> with 
     return n == null || n == 0 || tab == CompanyCargoTab.archive ? name : '$name $n';
   }
 
+  /// 052 п.4: «Все» — до 10 активных грузов одной строкой каждый + ссылка /co.
+  Future<void> _shareAll() async {
+    final t = context.l10n;
+    final company = ref.read(sessionProvider)?.company;
+    final refData = ref.read(referenceDataProvider).valueOrNull;
+    if (company == null || refData == null) return;
+    final lang = Localizations.localeOf(context).languageCode;
+    List<Cargo> active;
+    try {
+      active = (await ref.read(cargoRepositoryProvider).companyTab(CompanyCargoTab.active, limit: 10)).items;
+    } catch (_) {
+      active = const [];
+    }
+    if (!mounted) return;
+    await shareContent(
+      context,
+      ref,
+      kind: ShareKind.company,
+      targetId: company.id,
+      dialogTitle: t.shareDialogAll,
+      buildText: (url) => companyShareText(t, refData, company.name, active, url, lang),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
     return Scaffold(
       appBar: AppBar(
         title: Text(t.myCargosTitle),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            child: TextButton.icon(
+              key: const Key('shareAllCargos'),
+              onPressed: _shareAll,
+              icon: const Icon(LucideIcons.share, size: 18),
+              label: Text(kIsWebWide(context) ? t.shareAllWeb : t.shareAllButton),
+            ),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabs,
           isScrollable: true,
@@ -329,6 +366,24 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
                   )
                 else
                   const Spacer(),
+                if (showResponses)
+                  IconButton(
+                    key: Key('cargoShare-${cargo.id}'),
+                    tooltip: t.shareButton,
+                    icon: const Icon(LucideIcons.share, size: 20, color: AppColors.primary),
+                    onPressed: () {
+                      final rd = refData;
+                      if (rd == null) return;
+                      shareContent(
+                        context,
+                        ref,
+                        kind: ShareKind.cargo,
+                        targetId: cargo.id,
+                        dialogTitle: t.shareDialogCargo,
+                        buildText: (url) => cargoShareText(t, rd, cargo, url, locale),
+                      );
+                    },
+                  ),
                 if (canRepeat)
                   TextButton.icon(
                     key: Key('cargoRepeat-${cargo.id}'),
@@ -376,3 +431,7 @@ class _DealDriverRow extends StatelessWidget {
     );
   }
 }
+
+/// Веб на широком экране — подпись «Поделиться всеми», на телефоне — «Все».
+bool kIsWebWide(BuildContext context) => MediaQuery.sizeOf(context).width >= 700;
+

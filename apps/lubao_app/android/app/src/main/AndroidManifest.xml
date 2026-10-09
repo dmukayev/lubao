@@ -33,6 +33,9 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https" android:host="${appLinkHost}" android:pathPrefix="/invite"/>
+                <data android:scheme="https" android:host="${appLinkHost}" android:pathPrefix="/c/"/>
+                <data android:scheme="https" android:host="${appLinkHost}" android:pathPrefix="/co/"/>
+                <data android:scheme="https" android:host="${appLinkHost}" android:pathPrefix="/d/"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

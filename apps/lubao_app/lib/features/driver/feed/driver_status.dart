@@ -8,6 +8,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/city_picking.dart';
 import '../../shared/error_feedback.dart';
+import '../../shared/share_action.dart';
 import '../../shared/status_helpers.dart';
 import 'announce_arrival_sheet.dart';
 
@@ -54,8 +55,48 @@ class DriverStatusBar extends ConsumerWidget {
           Icon(icon, color: color),
           const SizedBox(width: AppSpacing.md),
           Expanded(child: Text(label, key: Key('driverStatus-${kind.name}'), style: AppTextStyles.bodyStrong.copyWith(color: color))),
+          // 052 п.4: свой анонс — «Свободна фура …» в группы.
+          if (current != null && (kind == DriverStatusKind.lookingHere || kind == DriverStatusKind.onTheWay))
+            IconButton(
+              key: const Key('shareMyArrival'),
+              tooltip: t.shareButton,
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(LucideIcons.share, size: 20, color: AppColors.primary),
+              onPressed: () => _shareArrival(context, ref, current, city, locale),
+            ),
           if (kind != DriverStatusKind.inTrip) const Icon(LucideIcons.chevronDown, size: 18),
         ],
+      ),
+    );
+  }
+
+  Future<void> _shareArrival(BuildContext context, WidgetRef ref, Arrival current, String city, String locale) async {
+    final t = context.l10n;
+    final driver = ref.read(sessionProvider)?.driver;
+    if (driver == null) return;
+    final garage = ref.read(garageVehiclesProvider).valueOrNull ?? const <GarageVehicle>[];
+    final vehicle = garage.where((v) => v.id == (current.trailerId ?? current.tractorId)).firstOrNull;
+    final bodyTypeId = vehicle?.bodyTypeId ?? driver.preferredBodyTypeId;
+    await shareContent(
+      context,
+      ref,
+      kind: ShareKind.driver,
+      targetId: driver.id,
+      dialogTitle: t.shareDialogDriver,
+      buildText: (url) => driverShareText(
+        t,
+        lang: locale,
+        url: url,
+        bodyTypeName: bodyTypeId == null ? null : refData.bodyTypeById(bodyTypeId).name.forLanguageCode(locale),
+        capacityTons: vehicle?.capacityTons ?? driver.preferredCapacityTons,
+        volumeM3: vehicle?.volumeM3,
+        cityName: city.isEmpty ? null : city,
+        fromDate: current.plannedDay,
+        countries: [for (final id in current.countryIds) refData.countryById(id).name.forLanguageCode(locale)],
+        anyCountry: current.anyCountry,
+        ratingAvg: driver.ratingAvg,
+        ratingCount: driver.ratingCount,
+        verified: driver.isVerified,
       ),
     );
   }

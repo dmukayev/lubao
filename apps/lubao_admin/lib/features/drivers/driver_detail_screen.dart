@@ -320,6 +320,12 @@ class _Header extends StatelessWidget {
                       spacing: 16,
                       runSpacing: 4,
                       children: [
+                        // 052 п.7: сколько людей привёл ссылками «Поделиться».
+                        Text(
+                          t.adminShareStats(driver.shareStats.links, driver.shareStats.opens, driver.shareStats.came),
+                          key: const Key('adminDriverShareStats'),
+                          style: AppTextStyles.caption,
+                        ),
                         if (driver.phone != null)
                           InkWell(
                             onTap: () => copyToClipboardWithToast(context, driver.phone!, t.adminCopied),

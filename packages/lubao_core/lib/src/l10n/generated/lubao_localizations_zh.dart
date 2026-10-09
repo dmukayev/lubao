@@ -3727,4 +3727,98 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get responsesNewDot => '新响应';
+
+  @override
+  String get shareButton => '分享';
+
+  @override
+  String get shareAllButton => '全部';
+
+  @override
+  String get shareAllWeb => '分享全部';
+
+  @override
+  String get shareDialogCargo => '分享货物';
+
+  @override
+  String get shareDialogAll => '分享全部货物';
+
+  @override
+  String get shareDialogDriver => '分享我的空车信息';
+
+  @override
+  String get shareCopyText => '复制文字';
+
+  @override
+  String get shareTextCopied => '文字已复制';
+
+  @override
+  String get shareLinkButton => '链接';
+
+  @override
+  String get shareLinkCopied => '链接已复制';
+
+  @override
+  String get shareWeChatQr => '微信 — 二维码';
+
+  @override
+  String get shareWeChatHint => '微信：用手机扫码 — 文字已复制，粘贴到聊天中';
+
+  @override
+  String get shareEditHint => '发送前可以修改文字';
+
+  @override
+  String shareCargoLoading(String date) {
+    return '装货 $date';
+  }
+
+  @override
+  String shareCargoRespond(String url) {
+    return '响应：$url';
+  }
+
+  @override
+  String shareAllTitle(String company) {
+    return '$company — 今日货物';
+  }
+
+  @override
+  String shareAllFooter(String url) {
+    return '全部货物及响应：$url';
+  }
+
+  @override
+  String get shareDriverTitle => '空车待货';
+
+  @override
+  String shareDriverFrom(String city, String date) {
+    return '$city，$date 起';
+  }
+
+  @override
+  String get shareDriverAnyDirection => '任意方向';
+
+  @override
+  String shareDriverDirection(String countries) {
+    return '方向：$countries';
+  }
+
+  @override
+  String shareDriverOffer(String url) {
+    return '推荐货物：$url';
+  }
+
+  @override
+  String get shareVerified => '已认证';
+
+  @override
+  String get shareOpenFailed => '链接无法打开 — 可能已失效';
+
+  @override
+  String get shareCompanyCargosTitle => '公司货物';
+
+  @override
+  String adminShareStats(int links, int opens, int came) {
+    return '分享：$links · 打开：$opens · 通过链接加入：$came';
+  }
 }

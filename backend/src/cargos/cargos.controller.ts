@@ -113,6 +113,11 @@ export class CargosController {
     });
   }
 
+  @Get('by-company/:companyId')
+  publishedByCompany(@Param('companyId') companyId: string) {
+    return this.cargos.publishedByCompany(companyId);
+  }
+
   @Get(':id')
   byId(@Param('id') id: string) {
     return this.cargos.byId(id);

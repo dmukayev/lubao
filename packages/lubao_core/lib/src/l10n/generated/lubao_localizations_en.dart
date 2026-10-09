@@ -3815,4 +3815,99 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get responsesNewDot => 'New response';
+
+  @override
+  String get shareButton => 'Share';
+
+  @override
+  String get shareAllButton => 'All';
+
+  @override
+  String get shareAllWeb => 'Share all';
+
+  @override
+  String get shareDialogCargo => 'Share cargo';
+
+  @override
+  String get shareDialogAll => 'Share all cargo';
+
+  @override
+  String get shareDialogDriver => 'Share my availability';
+
+  @override
+  String get shareCopyText => 'Copy text';
+
+  @override
+  String get shareTextCopied => 'Text copied';
+
+  @override
+  String get shareLinkButton => 'Link';
+
+  @override
+  String get shareLinkCopied => 'Link copied';
+
+  @override
+  String get shareWeChatQr => 'WeChat — QR';
+
+  @override
+  String get shareWeChatHint =>
+      'WeChat: scan with your phone — the text is copied, paste it into the chat';
+
+  @override
+  String get shareEditHint => 'You can edit the text before sending';
+
+  @override
+  String shareCargoLoading(String date) {
+    return 'loading $date';
+  }
+
+  @override
+  String shareCargoRespond(String url) {
+    return 'Respond: $url';
+  }
+
+  @override
+  String shareAllTitle(String company) {
+    return '$company — cargo for today';
+  }
+
+  @override
+  String shareAllFooter(String url) {
+    return 'All cargo and respond: $url';
+  }
+
+  @override
+  String get shareDriverTitle => 'Truck available';
+
+  @override
+  String shareDriverFrom(String city, String date) {
+    return '$city, from $date';
+  }
+
+  @override
+  String get shareDriverAnyDirection => 'any direction';
+
+  @override
+  String shareDriverDirection(String countries) {
+    return 'towards $countries';
+  }
+
+  @override
+  String shareDriverOffer(String url) {
+    return 'Offer cargo: $url';
+  }
+
+  @override
+  String get shareVerified => 'Verified';
+
+  @override
+  String get shareOpenFailed => 'The link did not open — it may be outdated';
+
+  @override
+  String get shareCompanyCargosTitle => 'Company cargo';
+
+  @override
+  String adminShareStats(int links, int opens, int came) {
+    return 'Shared: $links · opens: $opens · joined via links: $came';
+  }
 }

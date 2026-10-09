@@ -47,7 +47,9 @@ export class SharePagesService {
     const app = (process.env.APP_PUBLIC_URL || shareBaseUrl()).replace(/\/+$/, '');
     const path = `/${SHARE_PATH[link.type]}/${link.code}`;
     return {
-      appUrl: `${app}${path}`,
+      // С этой страницы — в веб-приложение (/open/…): сам /c/… отдаёт эту страницу.
+      // Установленное приложение перехватывает /c|co|d/… ещё до неё (App/Universal Links).
+      appUrl: `${app}/open${path}`,
       androidUrl: process.env.ANDROID_STORE_URL || `${app}/app`,
       iosUrl: process.env.IOS_STORE_URL || `${app}/app`,
       code: link.code,
@@ -62,7 +64,8 @@ export class SharePagesService {
     await this.shares.countOpen(link.id);
     const links = this.links(link);
     // Похожие и грузы компании открываются в приложении по id груза.
-    const cargoHref = (c: PageCargo) => `${links.appUrl.replace(/\/(c|co|d)\/[^/]+$/, '')}/driver/cargo/${c.id}`;
+    const app = (process.env.APP_PUBLIC_URL || shareBaseUrl()).replace(/\/+$/, '');
+    const cargoHref = (c: PageCargo) => `${app}/driver/cargo/${c.id}`;
     if (link.type === 'CARGO') {
       const cargo = await this.prisma.cargo.findUnique({ where: { id: link.targetId }, include: cargoInclude });
       if (cargo && cargo.status === 'PUBLISHED') return renderCargoPage(locale, toPageCargo(cargo), [], links, cargoHref);

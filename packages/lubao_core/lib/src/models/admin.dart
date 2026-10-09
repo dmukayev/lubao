@@ -722,11 +722,25 @@ class AdminDriverStats {
       );
 }
 
+/// 052 п.7: «Поделились: N, открытий: N, пришло по ссылкам: N».
+class AdminShareStats {
+  const AdminShareStats({this.links = 0, this.opens = 0, this.came = 0});
+  final int links;
+  final int opens;
+  final int came;
+
+  factory AdminShareStats.fromJson(dynamic json) {
+    final m = json is Map<String, dynamic> ? json : const <String, dynamic>{};
+    return AdminShareStats(links: m['links'] as int? ?? 0, opens: m['opens'] as int? ?? 0, came: m['came'] as int? ?? 0);
+  }
+}
+
 class AdminDriverDetail {
   const AdminDriverDetail({
     this.cancelStats,
     this.cancellations = const [],
     required this.id,
+    this.shareStats = const AdminShareStats(),
     required this.fullName,
     this.avatarVersion,
     required this.isVerified,
@@ -755,6 +769,7 @@ class AdminDriverDetail {
   });
 
   final String id;
+  final AdminShareStats shareStats;
   final String fullName;
   /// 054 п.5: фото профиля (null — нет).
   final String? avatarVersion;
@@ -794,6 +809,7 @@ class AdminDriverDetail {
       cancelStats: CancelStats.fromJson(json['cancelStats']),
       cancellations: AdminCancellation.listFromJson(json['cancellations']),
       id: json['id'] as String,
+      shareStats: AdminShareStats.fromJson(json['shareStats']),
       fullName: json['fullName'] as String,
       avatarVersion: json['avatarVersion'] as String?,
       isVerified: json['isVerified'] as bool,
@@ -978,6 +994,7 @@ class AdminCompanyDetail {
     this.cancelStats,
     this.cancellations = const [],
     required this.id,
+    this.shareStats = const AdminShareStats(),
     required this.name,
     this.nameRu,
     required this.countryId,
@@ -1002,6 +1019,7 @@ class AdminCompanyDetail {
   });
 
   final String id;
+  final AdminShareStats shareStats;
   final String name;
   final String? nameRu;
   final String countryId;
@@ -1032,6 +1050,7 @@ class AdminCompanyDetail {
         cancelStats: CancelStats.fromJson(json['cancelStats']),
         cancellations: AdminCancellation.listFromJson(json['cancellations']),
         id: json['id'] as String,
+      shareStats: AdminShareStats.fromJson(json['shareStats']),
         name: json['name'] as String,
         nameRu: json['nameRu'] as String?,
         countryId: json['countryId'] as String,

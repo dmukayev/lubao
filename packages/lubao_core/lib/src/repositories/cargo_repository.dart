@@ -55,6 +55,12 @@ class CargoRepository {
     return (res.data as Map<String, dynamic>).map((k, v) => MapEntry(k, (v as num).toInt()));
   }
 
+  /// 052: «Все грузы компании» по ссылке /co.
+  Future<List<Cargo>> byCompany(String companyId) async {
+    final res = await _client.dio.get('/cargos/by-company/$companyId');
+    return (res.data as List<dynamic>).map((e) => Cargo.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
   Future<Cargo> byId(String id) async {
     final res = await _client.dio.get('/cargos/$id');
     return Cargo.fromJson(res.data as Map<String, dynamic>);
