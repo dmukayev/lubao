@@ -88,7 +88,9 @@ export class AccountDeletionService {
       if (driver) {
         await tx.driver.update({
           where: { id: driver.id },
-          data: { fullName: DELETED_NAME, isVerified: false, currentLat: null, currentLng: null, locationUpdatedAt: null },
+          // 057 п.2: фото профиля — тоже персональные данные: ключ и версия обнуляются,
+          // файл удаляется после коммита.
+          data: { fullName: DELETED_NAME, isVerified: false, currentLat: null, currentLng: null, locationUpdatedAt: null, avatarFileKey: null, avatarUpdatedAt: null },
         });
         await tx.vehicle.updateMany({ where: { driverId: driver.id }, data: { plateNumber: null, vin: null, isActive: false, isVerified: false } });
         await tx.arrival.updateMany({ where: { driverId: driver.id, status: { in: ['PLANNED', 'ON_SITE'] } }, data: { status: 'CANCELLED' } });
@@ -99,10 +101,18 @@ export class AccountDeletionService {
       }
       if (isOwner) {
         await tx.company.update({ where: { id: member.companyId }, data: { wecomWebhookUrl: null } });
+        const published = await tx.cargo.findMany({ where: { companyId: member.companyId, status: 'PUBLISHED' }, select: { id: true } });
         await tx.cargo.updateMany({
           where: { companyId: member.companyId, status: 'PUBLISHED' },
           data: { status: 'CANCELLED', closeOutcome: 'CARGO_CANCELLED', closedAt: now },
         });
+        // 057 п.15: ждущие отклики на снятые грузы не висят «Ожидает».
+        if (published.length) {
+          await tx.response.updateMany({
+            where: { cargoId: { in: published.map((c) => c.id) }, status: { in: ['PENDING', 'INVITED'] } },
+            data: { status: 'CANCELLED', closeReason: 'CARGO_CLOSED' },
+          });
+        }
       }
       await tx.auditLog.create({
         data: { actorUserId: userId, action: 'ACCOUNT_DELETED', entityType: 'User', entityId: userId, metadata: { role: user.role, documents: documentIds.length } },
@@ -112,6 +122,13 @@ export class AccountDeletionService {
     // Файлы — после коммита: если транзакция упала, документы должны остаться
     // целыми. Не удалившийся файл — в лог (только число, без ключей).
     let failed = 0;
+    if (driver?.avatarFileKey) {
+      try {
+        await this.uploads.removeDocument(driver.avatarFileKey);
+      } catch {
+        failed += 1;
+      }
+    }
     for (const doc of documents) {
       try {
         await this.uploads.removeDocument(doc.fileUrl);

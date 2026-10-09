@@ -19,7 +19,7 @@ function setup(user: unknown, { otherMembers = 0, activeDeals = 0, documents = [
     arrival: { updateMany: m() },
     response: { updateMany: m() },
     company: { update: m() },
-    cargo: { updateMany: m() },
+    cargo: { updateMany: m(), findMany: jest.fn().mockResolvedValue([{ id: 'cargo1' }]) },
     auditLog: { create: m() },
   };
   prisma.$transaction = jest.fn((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
@@ -83,6 +83,19 @@ describe('AccountDeletionService', () => {
     expect(prisma.companyMember.update.mock.calls[0][0].data).toEqual({ fullName: null, contactPhone: null, wechatId: null });
     expect(prisma.company.update.mock.calls[0][0].data).toEqual({ wecomWebhookUrl: null });
     expect(prisma.cargo.updateMany.mock.calls[0][0]).toMatchObject({ where: { companyId: 'c1', status: 'PUBLISHED' }, data: { status: 'CANCELLED' } });
+    // 057 п.15: ждущие отклики на снятые грузы закрыты с причиной.
+    expect(prisma.response.updateMany).toHaveBeenCalledWith({
+      where: { cargoId: { in: ['cargo1'] }, status: { in: ['PENDING', 'INVITED'] } },
+      data: { status: 'CANCELLED', closeReason: 'CARGO_CLOSED' },
+    });
+  });
+
+  it('057 п.2: фото профиля водителя — ключ обнулён в транзакции, файл удалён после', async () => {
+    const withAvatar = { ...driverUser, driver: { ...driverUser.driver, avatarFileKey: 'avatar-key.jpg' } };
+    const { prisma, uploads, service } = setup(withAvatar);
+    await service.deleteAccount('u1');
+    expect(prisma.driver.update.mock.calls[0][0].data).toMatchObject({ avatarFileKey: null, avatarUpdatedAt: null });
+    expect(uploads.removeDocument).toHaveBeenCalledWith('avatar-key.jpg');
   });
 
   it('логист-сотрудник: компания и её грузы не трогаются', async () => {
