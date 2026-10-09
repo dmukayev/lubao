@@ -11,6 +11,10 @@ import 'package:lubao_app/providers/data_providers.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import 'company_register_test.dart' show e2eNewCompanyEmail;
+import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lubao_app/features/shared/share_action.dart';
+
 import 'e2e_support.dart';
 
 void main() {
@@ -137,6 +141,39 @@ void main() {
       expectNoOverflow(tester);
     });
 
+    // 052: логист делится грузом — системное меню получает текст по эталону 30
+    // (маршрут, вес, цена, ссылка /c/<код>, без телефона); «Все» — ссылка /co.
+    // Публичная страница по ссылке открывается без входа.
+    late String sharePath;
+    await run.step(tester, 'поделиться-грузом', () async {
+      final shared = <String>[];
+      debugShareOverride = (text) async => shared.add(text);
+      addTearDown(() => debugShareOverride = null);
+      final share = find.byKey(Key('cargoShare-$cargoId'));
+      await waitAndReveal(tester, share);
+      await tester.tap(share);
+      await tester.pumpAndSettle();
+      await waitForCondition(tester, () => shared.isNotEmpty);
+      final text = shared.single;
+      expect(text, contains('→ Алматы'));
+      expect(text, contains('18,5 ${t.unitTon}'));
+      expect(text, contains('₸'), reason: 'цена как в ленте');
+      expect(text, isNot(matches(RegExp(r'\+7\d'))), reason: 'телефона в тексте нет');
+      final url = RegExp(r'https?://\S+/c/([A-Za-z0-9]{4,12})').firstMatch(text);
+      expect(url, isNotNull, reason: 'ссылка /c/<код>: $text');
+      sharePath = '/c/${url!.group(1)}';
+      await tester.tap(find.byKey(const Key('shareAllCargos')));
+      await tester.pumpAndSettle();
+      await waitForCondition(tester, () => shared.length == 2);
+      expect(shared.last, contains('/co/'));
+      expect(shared.last.split('\n').first, contains('Urumqi Test Logistics'));
+      final page = await Dio(BaseOptions(baseUrl: e2eApiBase, validateStatus: (_) => true, headers: {'Accept-Language': 'ru-RU'})).get<String>('/p$sharePath');
+      expect(page.statusCode, 200);
+      expect(page.data, contains('→ Алматы'));
+      expect(page.data, contains('Откликнуться в приложении'));
+      expect(page.data, isNot(matches(RegExp(r'\+7\d|tel:'))));
+    });
+
     // 056 п.3: «Повторить» — форма заполнена по старому грузу (маршрут, кузов,
     // вес, цена), дата — сегодня; публикуется новый груз, старый не трогается.
     // 056 п.4: внизу у логиста нет вкладки «Сделки».
@@ -185,6 +222,19 @@ void main() {
       final card = find.byKey(Key('feedCargoCard-$cargoId'));
       await waitAndReveal(tester, card, timeout: const Duration(seconds: 30));
       expect(find.descendant(of: card, matching: find.textContaining('18,5 ${t.unitTon}')), findsOneWidget);
+      // 052: вход по ссылке → экран груза; водитель делится чужим грузом.
+      GoRouter.of(tester.element(find.byType(NavigationBar))).go(sharePath);
+      await waitFor(tester, find.byKey(const Key('cargoDetailShare')), timeout: const Duration(seconds: 30));
+      final shared = <String>[];
+      debugShareOverride = (text) async => shared.add(text);
+      await tester.tap(find.byKey(const Key('cargoDetailShare')));
+      await tester.pumpAndSettle();
+      await waitForCondition(tester, () => shared.isNotEmpty);
+      debugShareOverride = null;
+      expect(shared.single, contains('/c/'));
+      expect(shared.single, isNot(contains(sharePath)), reason: 'у водителя своя ссылка — отклики считаются за него');
+      GoRouter.of(tester.element(find.byType(Scaffold).first)).go('/driver/feed');
+      await waitFor(tester, find.byType(NavigationBar));
       // 056 п.6: снятый груз — в «Истории рейсов» с причиной.
       await goTab(tester, t.profileTitle);
       final history = find.byKey(const Key('profileTripHistory'));
