@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -156,9 +158,27 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
   // Поиск в архиве: город (погрузки или назначения) и период погрузки.
   LoadingPoint? _city;
   DateTimeRange? _period;
+  final _subs = <StreamSubscription<Object?>>[];
+  Timer? _refreshDebounce;
+  bool _refreshPending = false;
 
   @override
   bool get wantKeepAlive => true;
+
+  /// Водитель сменил статус сделки («Загружен», «В пути»…) — список и числа
+  /// вкладок заново без «потяните, чтобы обновить»; после обрыва сокета — тоже
+  /// (события за это время пропущены). Пачку событий сводим в одну загрузку.
+  void _refreshSoon(Object? _) {
+    _refreshDebounce?.cancel();
+    _refreshDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      if (_loading) {
+        _refreshPending = true;
+      } else {
+        _load(reset: true);
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -166,11 +186,19 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
     _scroll.addListener(() {
       if (_scroll.position.extentAfter < 400) _loadMore();
     });
+    final realtime = ref.read(realtimeServiceProvider);
+    _subs
+      ..add(realtime.onDealUpdated.listen(_refreshSoon))
+      ..add(realtime.onReconnected.listen(_refreshSoon));
     _load(reset: true);
   }
 
   @override
   void dispose() {
+    for (final s in _subs) {
+      s.cancel();
+    }
+    _refreshDebounce?.cancel();
     _scroll.dispose();
     super.dispose();
   }
@@ -203,6 +231,10 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
       if (mounted) setState(() => _error = e);
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+    if (_refreshPending && mounted) {
+      _refreshPending = false;
+      _load(reset: true);
     }
   }
 
