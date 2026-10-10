@@ -120,3 +120,16 @@ export class DealsController {
     return this.reviews.submit(id, ctx.user.id, authorRole, dto.rating, dto.comment);
   }
 }
+
+/// 058 п.5: «Согласен» на встречную цену — здесь, а не в ResponsesController:
+/// выбор и подтверждение сделки одним действием (DealsService).
+@Controller('responses')
+export class ResponseOffersController {
+  constructor(private readonly deals: DealsService) {}
+
+  @Post(':id/counter/accept')
+  accept(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.deals.acceptCounter(id, ctx.driver);
+  }
+}

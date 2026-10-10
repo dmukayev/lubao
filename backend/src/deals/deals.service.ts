@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { PricingService } from '../pricing/pricing.service';
 import { CancelStage, Company, Deal, DealStatus, Driver, FaultSide, Prisma, ReviewAuthorRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { ResponsesService } from '../responses/responses.service';
 import { completeArrivalForConfirmedDeal } from '../arrivals/arrival-lifecycle';
 import { evaluateVehicleLoad } from './vehicle-load';
 import { CargosService } from '../cargos/cargos.service';
@@ -47,6 +48,7 @@ export class DealsService {
     private readonly chatSystem: ChatSystemMessagesService,
     private readonly realtime: RealtimeGateway,
     @Optional() private readonly pricing?: PricingService,
+    @Optional() private readonly responses?: ResponsesService,
   ) {}
 
   /// Push обеим сторонам + WeCom компании при смене статуса сделки
@@ -82,6 +84,8 @@ export class DealsService {
       id: deal.id,
       responseId: deal.responseId,
       cargoId: deal.cargoId,
+      // 058 п.5: итоговая цена сделки (в валюте груза).
+      agreedPrice: deal.agreedPrice != null ? Number(deal.agreedPrice) : null,
       driverId: deal.driverId,
       driverName: deal.driver.fullName,
       driverAvatarVersion: avatarVersion(deal.driver),
@@ -212,6 +216,23 @@ export class DealsService {
     });
   }
 
+  /// 058 п.5: «Согласен» на встречную цену = выбор и подтверждение одним
+  /// действием: проверенный водитель — сразу «подтверждена»; иначе (или нет
+  /// тягача/прицепа) сделка остаётся «выбран» и ждёт.
+  async acceptCounter(responseId: string, driver: { id: string; isVerified: boolean }) {
+    if (!this.responses) throw new Error('ResponsesService is not available');
+    const { dealId } = await this.responses.acceptCounter(responseId, driver.id);
+    if (!dealId) throw new NotFoundException('Deal not found');
+    if (driver.isVerified) {
+      try {
+        return await this.advanceStatus(dealId, driver.id, 'CONFIRMED_BY_DRIVER');
+      } catch {
+        // Подтвердить нельзя (машина, проверка) — водитель увидит причину в сделке.
+      }
+    }
+    return this.byId(dealId, { driverId: driver.id });
+  }
+
   async advanceStatus(id: string, driverId: string, nextStatus: string) {
     const found = await this.findEntity(id);
     if (found.driverId !== driverId) throw new ForbiddenException('Not your deal');
@@ -305,7 +326,8 @@ export class DealsService {
           where: { id: updated.cargoId },
           include: { point: { select: { cityId: true } }, destinationCountry: { select: { code: true } } },
         });
-        if (cargo) await this.pricing.recordPoint('DEAL', cargo, { driverId: updated.driverId, dealId: updated.id });
+        // 058 п.5: статистика — по итоговой цене сделки.
+        if (cargo) await this.pricing.recordPoint('DEAL', { ...cargo, price: updated.agreedPrice ?? cargo.price }, { driverId: updated.driverId, dealId: updated.id });
       }
     }
     await this.notifyStatusChange(updated, nextStatus, 'DRIVER');

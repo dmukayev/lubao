@@ -100,7 +100,7 @@ describe('ResponsesService.createForCargo — NEW_RESPONSE notification (зад�
 
     expect(prisma.response.create).not.toHaveBeenCalled();
     expect(prisma.response.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'r1' }, data: { status: 'PENDING', closeReason: null, message: 'старое' } }),
+      expect.objectContaining({ where: { id: 'r1' }, data: expect.objectContaining({ status: 'PENDING', closeReason: null, message: 'старое', proposedPrice: null, counterPrice: null }) }),
     );
     expect(result.status).toBe('PENDING');
     // Логист снова получает уведомление — для него это новый отклик.
@@ -766,5 +766,76 @@ describe('058 п.2: груз на несколько машин — места',
 
   it('одна машина (как раньше): первая сделка набирает груз', async () => {
     expect(await setup(1, 0).claim()).toBe(true);
+  });
+});
+
+describe('058 п.5: своя цена водителя и один встречный ход логиста', () => {
+  const driver = { id: 'd1', userId: 'u1', fullName: 'Ерлан' };
+  function setup(response: Record<string, unknown>) {
+    const row = { id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', proposedPrice: null, proposedComment: null, counterPrice: null, counterStatus: null, driver, cargo: { companyId: 'c1', publishedByUserId: 'logist-1', currency: 'USD', price: 10300, company: { name: 'Acme' } }, ...response };
+    const prisma: any = {
+      response: {
+        findUnique: jest.fn().mockResolvedValue(row),
+        findUniqueOrThrow: jest.fn().mockResolvedValue(row),
+        update: jest.fn().mockImplementation(async ({ data }: any) => ({ ...row, ...data })),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+    };
+    const notifications = { notify: jest.fn() };
+    const realtime = { emitResponsesUpdated: jest.fn() };
+    return { prisma, notifications, service: new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any, undefined, realtime as any) };
+  }
+
+  it('встречная цена: один раз, push водителю «Логист предлагает»', async () => {
+    const { prisma, notifications, service } = setup({ proposedPrice: 9500 });
+    await service.counterOffer('r1', 'c1', 9900);
+    expect(prisma.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: 'PENDING', counterPrice: null }, data: { counterPrice: 9900, counterStatus: 'PENDING' } });
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u1'] }, 'COUNTER_OFFER', expect.objectContaining({ price: 9900, currency: 'USD' }));
+
+    prisma.response.updateMany.mockResolvedValue({ count: 0 });
+    await expect(service.counterOffer('r1', 'c1', 9800)).rejects.toMatchObject({ response: { code: 'COUNTER_ALREADY_SENT' } });
+  });
+
+  it('встречная без своей цены водителя — нельзя', async () => {
+    const { service } = setup({});
+    await expect(service.counterOffer('r1', 'c1', 9900)).rejects.toMatchObject({ response: { code: 'NO_DRIVER_PRICE' } });
+  });
+
+  it('«Нет» — отклик остаётся с ценой водителя', async () => {
+    const { prisma, service } = setup({ proposedPrice: 9500, counterPrice: 9900, counterStatus: 'PENDING' });
+    await service.declineCounter('r1', 'd1');
+    expect(prisma.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: 'PENDING', counterStatus: 'PENDING' }, data: { counterStatus: 'DECLINED' } });
+  });
+
+  it('изменить свою цену, пока ждёт встречная, — сначала ответить на неё', async () => {
+    const { service } = setup({ proposedPrice: 9500, counterPrice: 9900, counterStatus: 'PENDING' });
+    await expect(service.updateOffer('r1', 'd1', 9700)).rejects.toMatchObject({ response: { code: 'COUNTER_PENDING' } });
+  });
+
+  it('«Согласен» — выбор по встречной цене (agreedPrice = встречная)', async () => {
+    const { service } = setup({ proposedPrice: 9500, counterPrice: 9900, counterStatus: 'PENDING' });
+    const select = jest.spyOn(service, 'updateStatus').mockResolvedValue({} as any);
+    (service as any).prisma.deal = { findFirst: jest.fn().mockResolvedValue({ id: 'deal1' }) };
+    expect(await service.acceptCounter('r1', 'd1')).toEqual({ dealId: 'deal1' });
+    expect(select).toHaveBeenCalledWith('r1', 'c1', 'SELECTED', 'u1', { agreedPrice: 9900 });
+  });
+
+  it('отклик со своей ценой — логисту «Своя цена водителя»', async () => {
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', status: 'PUBLISHED', companyId: 'c1', publishedByUserId: 'logist-1', currency: 'USD' }) },
+      response: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', driver }) },
+      driverBlacklist: { findFirst: jest.fn().mockResolvedValue(null) },
+      driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1', isBlocked: false }) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+      user: { update: jest.fn() },
+      shareLink: { findFirst: jest.fn().mockResolvedValue(null) },
+    };
+    const notifications = { notify: jest.fn() };
+    const service = new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any);
+    jest.spyOn(service as any, 'assertNotBlacklisted').mockResolvedValue(undefined);
+    await service.createForCargo('cargo1', 'd1', undefined, { proposedPrice: 9500, proposedComment: 'дизель подорожал' });
+    expect(prisma.response.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ proposedPrice: 9500, proposedComment: 'дизель подорожал' }) }));
+    expect(notifications.notify).toHaveBeenCalledWith(expect.anything(), 'PRICE_PROPOSED', expect.objectContaining({ price: 9500 }));
   });
 });

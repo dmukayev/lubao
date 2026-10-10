@@ -177,7 +177,7 @@ export class CargosController {
     if (!ctx.driver) throw new ForbiddenException('Not a driver account');
     // Откликаться может любой водитель с профилем (041, п.1); гейт проверки —
     // только на «Подтверждаю перевозку» (deals.controller).
-    return this.responses.createForCargo(id, ctx.driver.id, dto.message);
+    return this.responses.createForCargo(id, ctx.driver.id, dto.message, { proposedPrice: dto.proposedPrice, proposedComment: dto.proposedComment });
   }
 
   /// «Позвонить»/WhatsApp (043 п.11): номер логиста — по нажатию, с лимитом.

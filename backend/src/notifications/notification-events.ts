@@ -91,6 +91,8 @@ export type NotificationEvent =
   | 'NEW_RESPONSE'
   | 'DRIVER_AGREED'
   | 'RESPONSE_REJECTED'
+  | 'COUNTER_OFFER'
+  | 'PRICE_PROPOSED'
   | 'RESPONSE_CARGO_CLOSED'
   | 'NEW_DRIVER_DIGEST'
   | 'DEAL_STATUS'
@@ -339,6 +341,20 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
     en: (p) => ({ title: 'New drivers at point', body: `${p.count} new drivers matching your filters` }),
   },
   /// Водителю — отклик не выбран (045 п.3): раньше это было видно только в чате.
+  /// 058 п.5: логист ответил встречной ценой — водителю.
+  COUNTER_OFFER: {
+    ru: (p) => ({ title: 'Встречная цена', body: `${p.companyName}: логист предлагает ${formatMoney(Number(p.price), p.currency, 'ru')}` }),
+    kk: (p) => ({ title: 'Қарсы баға', body: `${p.companyName}: логист ${formatMoney(Number(p.price), p.currency, 'kk')} ұсынады` }),
+    zh: (p) => ({ title: '还价', body: `${p.companyName}：物流方报价 ${formatMoney(Number(p.price), p.currency, 'zh')}` }),
+    en: (p) => ({ title: 'Counter-offer', body: `${p.companyName}: the logist offers ${formatMoney(Number(p.price), p.currency, 'en')}` }),
+  },
+  /// 058 п.5: водитель откликнулся со своей ценой / изменил её — логисту.
+  PRICE_PROPOSED: {
+    ru: (p) => ({ title: 'Своя цена водителя', body: `${p.driverName} предлагает ${formatMoney(Number(p.price), p.currency, 'ru')}` }),
+    kk: (p) => ({ title: 'Жүргізушінің бағасы', body: `${p.driverName} ${formatMoney(Number(p.price), p.currency, 'kk')} ұсынады` }),
+    zh: (p) => ({ title: '司机报价', body: `${p.driverName} 报价 ${formatMoney(Number(p.price), p.currency, 'zh')}` }),
+    en: (p) => ({ title: "Driver's price", body: `${p.driverName} offers ${formatMoney(Number(p.price), p.currency, 'en')}` }),
+  },
   RESPONSE_REJECTED: {
     ru: (p) => ({ title: 'Логист выбрал другого водителя', body: `${p.companyName}: груз ушёл другому. В ленте есть другие грузы.` }),
     kk: (p) => ({ title: 'Логист басқа жүргізушіні таңдады', body: `${p.companyName}: жүк басқаға кетті. Таспада басқа жүктер бар.` }),
@@ -447,6 +463,18 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
     eventGroup: 'NEW_RESPONSE',
     channels: ['PUSH', 'WECOM'],
     render: (locale, p) => T.DRIVER_AGREED[locale](p),
+    deepLink: (p) => `/company/cargos/${p.cargoId}/responses`,
+  },
+  COUNTER_OFFER: {
+    eventGroup: 'DEAL_STATUS',
+    channels: ['PUSH'],
+    render: (locale, p) => T.COUNTER_OFFER[locale](p),
+    deepLink: (p) => `/driver/cargo/${p.cargoId}`,
+  },
+  PRICE_PROPOSED: {
+    eventGroup: 'NEW_RESPONSE',
+    channels: ['PUSH', 'WECOM'],
+    render: (locale, p) => T.PRICE_PROPOSED[locale](p),
     deepLink: (p) => `/company/cargos/${p.cargoId}/responses`,
   },
   RESPONSE_REJECTED: {

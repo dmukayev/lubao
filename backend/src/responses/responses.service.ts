@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { Driver, Prisma, Response as CargoResponseEntity, ResponseCloseReason } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -17,6 +17,25 @@ import { bumpShareReferral } from '../share/share.service';
 import { currentVehicleCombo } from '../deals/vehicle-combo';
 
 type ResponseWithDriver = CargoResponseEntity & { driver: Driver };
+
+type OfferRow = { proposedPrice: Prisma.Decimal | null; proposedComment: string | null; counterPrice: Prisma.Decimal | null; counterStatus: string | null };
+
+/// 058 п.5: поля торга в ответах API.
+function offerFields(r: OfferRow) {
+  return {
+    proposedPrice: r.proposedPrice != null ? Number(r.proposedPrice) : null,
+    proposedComment: r.proposedComment ?? null,
+    counterPrice: r.counterPrice != null ? Number(r.counterPrice) : null,
+    counterStatus: r.counterStatus ?? null,
+  };
+}
+
+/// Цена — положительное число с копейками не точнее 0,01.
+function assertPrice(value: number, field: string) {
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new BadRequestException({ code: 'VALIDATION_FAILED', message: [`${field} must be positive`], fields: [{ field, rule: 'min', limit: 0 }] });
+  }
+}
 
 @Injectable()
 export class ResponsesService {
@@ -45,6 +64,8 @@ export class ResponsesService {
       status: response.status,
       // 056 п.1: почему закрыт (null у активных).
       closeReason: response.closeReason ?? null,
+      // 058 п.5: своя цена водителя и встречная логиста.
+      ...offerFields(response),
       createdAt: response.createdAt,
     };
   }
@@ -77,6 +98,7 @@ export class ResponsesService {
       inviteExpiresAt: r.status === 'INVITED' ? new Date(r.updatedAt.getTime() + INVITATION_TTL_HOURS * 3600 * 1000) : null,
       dealId: r.deal?.id ?? null,
       dealStatus: r.deal?.status ?? null,
+      ...offerFields(r),
       cargo: {
         id: r.cargo.id,
         status: r.cargo.status,
@@ -101,9 +123,9 @@ export class ResponsesService {
   async findMine(cargoId: string, driverId: string) {
     const response = await this.prisma.response.findUnique({
       where: { cargoId_driverId: { cargoId, driverId } },
-      select: { id: true, status: true },
+      select: { id: true, status: true, proposedPrice: true, proposedComment: true, counterPrice: true, counterStatus: true },
     });
-    return response ?? null;
+    return response ? { id: response.id, status: response.status, ...offerFields(response) } : null;
   }
 
   /// Список откликов для логиста (задача 038, п.8/9) — каждый отклик несёт
@@ -256,7 +278,8 @@ export class ResponsesService {
     return this.toDto(response);
   }
 
-  async createForCargo(cargoId: string, driverId: string, message?: string) {
+  async createForCargo(cargoId: string, driverId: string, message?: string, offer: { proposedPrice?: number | null; proposedComment?: string | null } = {}) {
+    if (offer.proposedPrice != null) assertPrice(offer.proposedPrice, 'proposedPrice');
     await this.assertNotBlacklisted(driverId);
     const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId } });
     if (!cargo) throw new NotFoundException('Cargo not found');
@@ -276,11 +299,12 @@ export class ResponsesService {
     const response = existing
       ? await this.prisma.response.update({
           where: { id: existing.id },
-          data: { status: 'PENDING', closeReason: null, message: message ?? existing.message },
+          // Переоткрытый отклик — торг с начала (058 п.5).
+          data: { status: 'PENDING', closeReason: null, message: message ?? existing.message, proposedPrice: offer.proposedPrice ?? null, proposedComment: offer.proposedComment ?? null, counterPrice: null, counterStatus: null },
           include: { driver: true },
         })
       : await this.prisma.response.create({
-          data: { cargoId, driverId, message, status: 'PENDING' },
+          data: { cargoId, driverId, message, status: 'PENDING', proposedPrice: offer.proposedPrice ?? null, proposedComment: offer.proposedComment ?? null },
           include: { driver: true },
         });
     // 052: пришёл по ссылке «Поделиться» — отклик засчитать её автору.
@@ -289,8 +313,8 @@ export class ResponsesService {
     const contactUserId = await resolveCargoContactUserId(this.prisma, cargo);
     await this.notifications.notify(
       { userIds: contactUserId ? [contactUserId] : [], companyId: cargo.companyId },
-      'NEW_RESPONSE',
-      { cargoId, driverName: response.driver.fullName },
+      offer.proposedPrice != null ? 'PRICE_PROPOSED' : 'NEW_RESPONSE',
+      { cargoId, driverName: response.driver.fullName, price: offer.proposedPrice ?? undefined, currency: cargo.currency },
     );
     this.touch([contactUserId, response.driver.userId], cargoId);
 
@@ -401,7 +425,7 @@ export class ResponsesService {
   }
 
 
-  async updateStatus(responseId: string, companyId: string, status: 'SELECTED' | 'REJECTED', actorUserId?: string) {
+  async updateStatus(responseId: string, companyId: string, status: 'SELECTED' | 'REJECTED', actorUserId?: string, opts: { agreedPrice?: Prisma.Decimal | number } = {}) {
     const response = await this.prisma.response.findUnique({
       where: { id: responseId },
       include: { driver: true, cargo: true },
@@ -456,6 +480,8 @@ export class ResponsesService {
           driverId: selected.driverId,
           companyId,
           status: 'SELECTED',
+          // 058 п.5: принятая встречная → она; иначе своя цена водителя → она; иначе цена груза.
+          agreedPrice: opts.agreedPrice ?? selected.proposedPrice ?? response.cargo.price,
           tractorId: combo.tractorId,
           trailerId: combo.trailerId,
         },
@@ -544,6 +570,89 @@ export class ResponsesService {
     } catch {
       // уведомление не критично
     }
+  }
+
+  /// 058 п.5: водитель меняет свою цену, пока отклик ждёт (и встречная не
+  /// висит без ответа); `null` — откликнуться по цене груза.
+  async updateOffer(responseId: string, driverId: string, proposedPrice: number | null, proposedComment?: string | null) {
+    if (proposedPrice != null) assertPrice(proposedPrice, 'proposedPrice');
+    const response = await this.prisma.response.findUnique({ where: { id: responseId }, include: { driver: true, cargo: true } });
+    if (!response) throw new NotFoundException('Response not found');
+    if (response.driverId !== driverId) throw new ForbiddenException('Not your response');
+    if (response.status !== 'PENDING') throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
+    if (response.counterStatus === 'PENDING') throw new ConflictException({ code: 'COUNTER_PENDING', message: 'Answer the counter-offer first' });
+    const updated = await this.prisma.response.update({
+      where: { id: responseId },
+      data: { proposedPrice, proposedComment: proposedComment ?? null },
+      include: { driver: true },
+    });
+    const contactUserId = await resolveCargoContactUserId(this.prisma, response.cargo);
+    if (proposedPrice != null) {
+      await this.notifications.notify({ userIds: contactUserId ? [contactUserId] : [], companyId: response.cargo.companyId }, 'PRICE_PROPOSED', {
+        cargoId: response.cargoId,
+        driverName: response.driver.fullName,
+        price: proposedPrice,
+        currency: response.cargo.currency,
+      });
+    }
+    this.touch([contactUserId, response.driver.userId], response.cargoId);
+    return this.toDto(updated);
+  }
+
+  /// 058 п.5: один встречный ход логиста на своя цену водителя.
+  async counterOffer(responseId: string, companyId: string, price: number) {
+    assertPrice(price, 'counterPrice');
+    const response = await this.prisma.response.findUnique({ where: { id: responseId }, include: { driver: true, cargo: { include: { company: true } } } });
+    if (!response) throw new NotFoundException('Response not found');
+    if (response.cargo.companyId !== companyId) throw new ForbiddenException('Not your cargo');
+    if (response.status !== 'PENDING') throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
+    if (response.proposedPrice == null) throw new ConflictException({ code: 'NO_DRIVER_PRICE', message: 'The driver did not propose a price' });
+    // Второй встречной нет — дальше договариваются в чате.
+    const claimed = await this.prisma.response.updateMany({
+      where: { id: responseId, status: 'PENDING', counterPrice: null },
+      data: { counterPrice: price, counterStatus: 'PENDING' },
+    });
+    if (claimed.count === 0) throw new ConflictException({ code: 'COUNTER_ALREADY_SENT', message: 'Counter-offer was already sent' });
+    await this.notifications.notify({ userIds: [response.driver.userId] }, 'COUNTER_OFFER', {
+      cargoId: response.cargoId,
+      companyName: response.cargo.company.name,
+      price,
+      currency: response.cargo.currency,
+    });
+    this.touch([response.driver.userId], response.cargoId);
+    return this.toDto(await this.prisma.response.findUniqueOrThrow({ where: { id: responseId }, include: { driver: true } }));
+  }
+
+  /// 058 п.5: «Нет» на встречную — отклик остаётся с ценой водителя.
+  async declineCounter(responseId: string, driverId: string) {
+    const response = await this.prisma.response.findUnique({ where: { id: responseId }, include: { cargo: true } });
+    if (!response) throw new NotFoundException('Response not found');
+    if (response.driverId !== driverId) throw new ForbiddenException('Not your response');
+    const claimed = await this.prisma.response.updateMany({ where: { id: responseId, status: 'PENDING', counterStatus: 'PENDING' }, data: { counterStatus: 'DECLINED' } });
+    if (claimed.count === 0) throw new ConflictException({ code: 'NO_PENDING_COUNTER', message: 'No counter-offer to answer' });
+    this.touch([await resolveCargoContactUserId(this.prisma, response.cargo)], response.cargoId);
+    return this.toDto(await this.prisma.response.findUniqueOrThrow({ where: { id: responseId }, include: { driver: true } }));
+  }
+
+  /// 058 п.5: «Согласен» на встречную — выбор по встречной цене (сделку
+  /// подтверждает DealsService, если водитель проверен).
+  async acceptCounter(responseId: string, driverId: string) {
+    const response = await this.prisma.response.findUnique({ where: { id: responseId }, include: { cargo: true, driver: true } });
+    if (!response) throw new NotFoundException('Response not found');
+    if (response.driverId !== driverId) throw new ForbiddenException('Not your response');
+    if (response.status !== 'PENDING' || response.counterStatus !== 'PENDING' || response.counterPrice == null) {
+      throw new ConflictException({ code: 'NO_PENDING_COUNTER', message: 'No counter-offer to answer' });
+    }
+    await this.prisma.response.update({ where: { id: responseId }, data: { counterStatus: 'ACCEPTED' } });
+    try {
+      await this.updateStatus(responseId, response.cargo.companyId, 'SELECTED', response.driver.userId, { agreedPrice: response.counterPrice });
+    } catch (e) {
+      // Мест нет / груз ушёл — встречная снова «ждёт ответа» не нужна: оставляем как была.
+      await this.prisma.response.updateMany({ where: { id: responseId, status: 'PENDING' }, data: { counterStatus: 'PENDING' } });
+      throw e;
+    }
+    const deal = await this.prisma.deal.findFirst({ where: { responseId }, select: { id: true } });
+    return { dealId: deal?.id ?? null };
   }
 
   /// Приглашение с согласием (041, п.3): логист зовёт водителя на груз —
@@ -641,6 +750,7 @@ export class ResponsesService {
           driverId: selected.driverId,
           companyId,
           status: 'SELECTED',
+          agreedPrice: cargo.price,
           tractorId: combo.tractorId,
           trailerId: combo.trailerId,
         },
