@@ -23,6 +23,8 @@ final authRepositoryProvider = Provider((ref) => AuthRepository(ref.watch(apiCli
 final referenceDataRepositoryProvider = Provider((ref) => ReferenceDataRepository(ref.watch(apiClientProvider)));
 final driverRepositoryProvider = Provider((ref) => DriverRepository(ref.watch(apiClientProvider)));
 final companyRepositoryProvider = Provider((ref) => CompanyRepository(ref.watch(apiClientProvider)));
+/// 058 п.6: «Мои водители» / «Компании, где я в списке».
+final companyDriversRepositoryProvider = Provider((ref) => CompanyDriversRepository(ref.watch(apiClientProvider)));
 final cargoRepositoryProvider = Provider((ref) => CargoRepository(ref.watch(apiClientProvider)));
 final dealRepositoryProvider = Provider((ref) => DealRepository(ref.watch(apiClientProvider)));
 final chatRepositoryProvider = Provider((ref) => ChatRepository(ref.watch(apiClientProvider)));

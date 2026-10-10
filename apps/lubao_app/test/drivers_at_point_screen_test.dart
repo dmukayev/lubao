@@ -212,8 +212,8 @@ void main() {
     expect(arrivals.lastBodyTypeId, 'bt1');
     await tester.tap(find.text('Тент'));
     await tester.pumpAndSettle();
-    expect(find.text('Все'), findsOneWidget);
-    await tester.tap(find.text('Все'));
+    expect(find.descendant(of: find.byType(BottomSheet), matching: find.text('Все')), findsOneWidget);
+    await tester.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text('Все')));
     await tester.pumpAndSettle();
     expect(arrivals.lastBodyTypeId, isNull);
 
@@ -230,7 +230,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('driversFilterCapacity')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Все'));
+    await tester.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text('Все')));
     await tester.pumpAndSettle();
     expect(arrivals.lastMinCapacity, isNull);
   });

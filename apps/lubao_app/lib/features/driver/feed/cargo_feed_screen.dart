@@ -8,6 +8,7 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import 'favorite_button.dart';
+import '../profile/driver_companies.dart';
 import '../../shared/status_helpers.dart';
 import 'announce_arrival_sheet.dart';
 import '../../shared/error_feedback.dart';
@@ -116,6 +117,8 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                     // пригласили / выбрали (045 п.3), затем анонс с вопросами
                     // «вы на месте?» и «ещё ищете?».
                     const ShareLinkPrompt(),
+                    // 058 п.6: «Компания X добавила вас в свои водители».
+                    const CompanyInviteCards(),
                     _ActionCards(refData: refData),
                     if (ref.watch(myArrivalsProvider).valueOrNull?.current != null) ...[
                       const SizedBox(height: AppSpacing.md),

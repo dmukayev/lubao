@@ -9,6 +9,7 @@ import '../../../providers/data_providers.dart';
 import '../../../providers/locale_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'add_vehicle_banner.dart';
+import 'driver_companies.dart';
 import 'profile_avatar.dart';
 
 class DriverProfileScreen extends ConsumerStatefulWidget {
@@ -125,6 +126,8 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
             const SizedBox(height: AppSpacing.lg),
             _CompletenessBanner(driver: driver),
           ],
+          // 058 п.6: «Компании, где я в списке» — выйти из любой.
+          const DriverCompaniesSection(),
           const Divider(height: 32),
           ListTile(
             leading: const Icon(LucideIcons.phone),

@@ -3589,6 +3589,86 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get postCargoTrucks => 'Қанша көлік керек';
 
   @override
+  String get driversTabAll => 'Барлығы';
+
+  @override
+  String get driversTabMine => 'Менің';
+
+  @override
+  String get myDriversEmpty =>
+      'Мұнда — мәміле болған, ☆ сақталған және өзіңіз қосқан жүргізушілер';
+
+  @override
+  String get myDriversCreate => 'Жүргізуші қосу';
+
+  @override
+  String get myDriversName => 'Аты';
+
+  @override
+  String get myDriversPhone => 'Телефон';
+
+  @override
+  String get myDriversPhoneHint => '+7, +998, +996, +86 …';
+
+  @override
+  String get myDriversPhoneError =>
+      'Ел коды бар нөмір, мысалы +7 701 123 45 67';
+
+  @override
+  String get myDriversWaiting => 'кіруін күтуде';
+
+  @override
+  String get myDriversSearching => 'Жүк іздеуде';
+
+  @override
+  String get myDriversOnSite => 'Орнында';
+
+  @override
+  String get myDriversInvite => 'Жүкке шақыру';
+
+  @override
+  String myDriversShareText(String company, String url) {
+    return '$company сізді Lubao-дағы өз жүргізушілеріне қосты. Осы нөмірге келген кодпен кіріп, шақыруды қабылдаңыз: $url';
+  }
+
+  @override
+  String get myDriversAlready => 'Бұл жүргізуші сізде бар';
+
+  @override
+  String get myDriversInvitedExisting =>
+      'Жүргізуші Lubao-да бар — шақыруды қосымшада көреді';
+
+  @override
+  String get driverSave => 'Менің жүргізушілеріме';
+
+  @override
+  String get driverUnsave => 'Менікінен алу';
+
+  @override
+  String get driverCompaniesTitle => 'Мен тізімде тұрған компаниялар';
+
+  @override
+  String get driverCompaniesLeave => 'Шығу';
+
+  @override
+  String driverCompanyInviteTitle(String company) {
+    return '$company сізді өз жүргізушілеріне қосты';
+  }
+
+  @override
+  String get driverCompanyInviteBody =>
+      'Компания сіздің жүк іздеп жүргеніңізді көріп, рейске шақыра алады';
+
+  @override
+  String get driverCompanyAccept => 'Қабылдау';
+
+  @override
+  String get driverCompanyDecline => 'Бас тарту';
+
+  @override
+  String get driverCompanyPending => 'жауап күтуде';
+
+  @override
   String get lastSeenOnline => 'желіде';
 
   @override

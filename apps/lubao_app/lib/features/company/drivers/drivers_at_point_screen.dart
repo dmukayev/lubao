@@ -17,6 +17,8 @@ import '../haul_hint.dart';
 import '../../shared/driver_vehicle_photos.dart';
 import '../../shared/driver_avatar.dart';
 import 'invite_cargo_picker.dart';
+import 'my_drivers_view.dart';
+import '../../shared/error_feedback.dart';
 
 class DriversAtPointScreen extends ConsumerStatefulWidget {
   const DriversAtPointScreen({super.key});
@@ -39,6 +41,8 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   String? _pointId;
   int? _minCapacityTons;
   bool _verifiedOnly = false;
+  // 058 п.6: «Все» / «Мои».
+  bool _mine = false;
   int _dayOffset = 0;
   Future<List<ArrivalListing>>? _future;
   Future<List<ArrivalSummaryDay>>? _summaryFuture;
@@ -160,6 +164,17 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     } finally {
       if (mounted) setState(() => _openingChatDriverId = null);
     }
+  }
+
+  /// 058 п.6: ☆ у водителя — в «Мои» / убрать.
+  Future<void> _toggleSave(ArrivalListing driver) async {
+    final saved = ref.read(myDriversProvider).valueOrNull?.any((d) => d.driverId == driver.driverId && d.saved) ?? false;
+    try {
+      await ref.read(companyDriversRepositoryProvider).setSaved(driver.driverId, !saved);
+    } catch (e) {
+      if (mounted) showApiError(context, e);
+    }
+    ref.invalidate(myDriversProvider);
   }
 
   Future<void> _invite(ArrivalListing driver) async {
@@ -289,6 +304,7 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     final companyCountryId = ref.watch(sessionProvider)?.company?.countryId;
     final isChinaCompany =
         referenceData.valueOrNull?.countries.where((c) => c.id == companyCountryId).firstOrNull?.code == 'CN';
+    final savedIds = {for (final d in ref.watch(myDriversProvider).valueOrNull ?? const <CompanyDriverEntry>[]) if (d.saved && d.driverId != null) d.driverId!};
 
     return Scaffold(
       // AppBar сам отступает от выреза/строки статуса (задача 036, п.9) —
@@ -296,14 +312,32 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
       appBar: AppBar(
         title: Text(t.driversAtPointTitleShort),
         actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.calendar),
-            tooltip: t.driversAtPointPickDate,
-            onPressed: () => _openCalendar(context),
-          ),
+          if (!_mine)
+            IconButton(
+              icon: const Icon(LucideIcons.calendar),
+              tooltip: t.driversAtPointPickDate,
+              onPressed: () => _openCalendar(context),
+            ),
         ],
+        // 058 п.6: переключатель «Все / Мои».
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(52),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.sm),
+            child: SegmentedButton<bool>(
+              key: const Key('driversMineToggle'),
+              showSelectedIcon: false,
+              segments: [
+                ButtonSegment(value: false, label: Text(t.driversTabAll, key: const Key('driversTabAll'))),
+                ButtonSegment(value: true, label: Text(t.driversTabMine, key: const Key('driversTabMine'))),
+              ],
+              selected: {_mine},
+              onSelectionChanged: (v) => setState(() => _mine = v.first),
+            ),
+          ),
+        ),
       ),
-      body: referenceData.when(
+      body: _mine ? const MyDriversView() : referenceData.when(
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('DriversAtPointScreen: $e');
@@ -512,6 +546,8 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                               onWhatsapp: _whatsapp,
                               onChat: _chat,
                               onInvite: _invite,
+                              saved: savedIds.contains(driver.driverId),
+                              onToggleSave: _toggleSave,
                             ),
                         ],
                       ),
@@ -692,8 +728,13 @@ class _DriverCard extends StatelessWidget {
     required this.onWhatsapp,
     required this.onChat,
     required this.onInvite,
+    this.saved = false,
+    this.onToggleSave,
   });
 
+  /// 058 п.6: ☆ — в «Мои водители».
+  final bool saved;
+  final ValueChanged<ArrivalListing>? onToggleSave;
   final ArrivalListing driver;
   final ReferenceData refData;
   final bool isChinaCompany;
@@ -863,6 +904,16 @@ class _DriverCard extends StatelessWidget {
                           driver.ratingCount > 0 ? driver.ratingAvg.toStringAsFixed(1) : '–',
                           style: AppTextStyles.caption,
                         ),
+                        if (onToggleSave != null) ...[
+                          const Spacer(),
+                          IconButton(
+                            key: Key('driverSave-${driver.driverId}'),
+                            tooltip: saved ? t.driverUnsave : t.driverSave,
+                            visualDensity: VisualDensity.compact,
+                            icon: Icon(saved ? Icons.star_rounded : LucideIcons.star, size: 22, color: saved ? AppColors.accent : AppColors.textSecondary),
+                            onPressed: () => onToggleSave!(driver),
+                          ),
+                        ],
                       ],
                     ),
                     // 058 п.7: «в сети» / «был сегодня в 20:15».

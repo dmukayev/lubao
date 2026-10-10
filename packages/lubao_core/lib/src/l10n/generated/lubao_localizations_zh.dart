@@ -3507,6 +3507,82 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoTrucks => '需要几辆车';
 
   @override
+  String get driversTabAll => '全部';
+
+  @override
+  String get driversTabMine => '我的';
+
+  @override
+  String get myDriversEmpty => '这里是有过交易、已收藏 ☆ 以及您添加的司机';
+
+  @override
+  String get myDriversCreate => '添加司机';
+
+  @override
+  String get myDriversName => '姓名';
+
+  @override
+  String get myDriversPhone => '电话';
+
+  @override
+  String get myDriversPhoneHint => '+7、+998、+996、+86 …';
+
+  @override
+  String get myDriversPhoneError => '请填写带国家代码的号码，例如 +7 701 123 45 67';
+
+  @override
+  String get myDriversWaiting => '等待登录';
+
+  @override
+  String get myDriversSearching => '正在找货';
+
+  @override
+  String get myDriversOnSite => '已到场';
+
+  @override
+  String get myDriversInvite => '邀请承运';
+
+  @override
+  String myDriversShareText(String company, String url) {
+    return '$company 已在 Lubao 中将您添加为其司机。请用此号码接收验证码登录并接受邀请：$url';
+  }
+
+  @override
+  String get myDriversAlready => '该司机已在您的列表中';
+
+  @override
+  String get myDriversInvitedExisting => '该司机已在 Lubao——会在应用中看到邀请';
+
+  @override
+  String get driverSave => '加入我的司机';
+
+  @override
+  String get driverUnsave => '从我的司机移除';
+
+  @override
+  String get driverCompaniesTitle => '将我列入名单的公司';
+
+  @override
+  String get driverCompaniesLeave => '退出';
+
+  @override
+  String driverCompanyInviteTitle(String company) {
+    return '$company 将您添加为其司机';
+  }
+
+  @override
+  String get driverCompanyInviteBody => '公司将能看到您正在找货，并邀请您承运';
+
+  @override
+  String get driverCompanyAccept => '接受';
+
+  @override
+  String get driverCompanyDecline => '拒绝';
+
+  @override
+  String get driverCompanyPending => '待回复';
+
+  @override
   String get lastSeenOnline => '在线';
 
   @override

@@ -101,3 +101,13 @@ final favoriteCargosProvider = FutureProvider.autoDispose<List<Cargo>>((ref) {
   return ref.watch(cargoRepositoryProvider).favorites();
 });
 
+/// 058 п.6: «Мои водители» компании.
+final myDriversProvider = FutureProvider.autoDispose<List<CompanyDriverEntry>>((ref) {
+  return ref.watch(companyDriversRepositoryProvider).mine();
+});
+
+/// 058 п.6: «Компании, где я в списке» и приглашения водителю.
+final driverCompaniesProvider = FutureProvider.autoDispose<List<DriverCompanyEntry>>((ref) {
+  return ref.watch(companyDriversRepositoryProvider).myCompanies();
+});
+

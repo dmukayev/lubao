@@ -6684,6 +6684,150 @@ abstract class LubaoLocalizations {
   /// **'Сколько машин нужно'**
   String get postCargoTrucks;
 
+  /// No description provided for @driversTabAll.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все'**
+  String get driversTabAll;
+
+  /// No description provided for @driversTabMine.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мои'**
+  String get driversTabMine;
+
+  /// No description provided for @myDriversEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Здесь — водители, с кем были сделки, сохранённые ☆ и заведённые вами'**
+  String get myDriversEmpty;
+
+  /// No description provided for @myDriversCreate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Создать водителя'**
+  String get myDriversCreate;
+
+  /// No description provided for @myDriversName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя'**
+  String get myDriversName;
+
+  /// No description provided for @myDriversPhone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Телефон'**
+  String get myDriversPhone;
+
+  /// No description provided for @myDriversPhoneHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'+7, +998, +996, +86 …'**
+  String get myDriversPhoneHint;
+
+  /// No description provided for @myDriversPhoneError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Номер с кодом страны, например +7 701 123 45 67'**
+  String get myDriversPhoneError;
+
+  /// No description provided for @myDriversWaiting.
+  ///
+  /// In ru, this message translates to:
+  /// **'ждёт входа'**
+  String get myDriversWaiting;
+
+  /// No description provided for @myDriversSearching.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ищет груз'**
+  String get myDriversSearching;
+
+  /// No description provided for @myDriversOnSite.
+  ///
+  /// In ru, this message translates to:
+  /// **'На месте'**
+  String get myDriversOnSite;
+
+  /// No description provided for @myDriversInvite.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пригласить на груз'**
+  String get myDriversInvite;
+
+  /// No description provided for @myDriversShareText.
+  ///
+  /// In ru, this message translates to:
+  /// **'{company} добавила вас в свои водители в Lubao. Войдите по коду на этот номер и примите приглашение: {url}'**
+  String myDriversShareText(String company, String url);
+
+  /// No description provided for @myDriversAlready.
+  ///
+  /// In ru, this message translates to:
+  /// **'Этот водитель уже в ваших'**
+  String get myDriversAlready;
+
+  /// No description provided for @myDriversInvitedExisting.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель уже в Lubao — приглашение он увидит в приложении'**
+  String get myDriversInvitedExisting;
+
+  /// No description provided for @driverSave.
+  ///
+  /// In ru, this message translates to:
+  /// **'В мои водители'**
+  String get driverSave;
+
+  /// No description provided for @driverUnsave.
+  ///
+  /// In ru, this message translates to:
+  /// **'Убрать из моих'**
+  String get driverUnsave;
+
+  /// No description provided for @driverCompaniesTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Компании, где я в списке'**
+  String get driverCompaniesTitle;
+
+  /// No description provided for @driverCompaniesLeave.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выйти'**
+  String get driverCompaniesLeave;
+
+  /// No description provided for @driverCompanyInviteTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'{company} добавила вас в свои водители'**
+  String driverCompanyInviteTitle(String company);
+
+  /// No description provided for @driverCompanyInviteBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Компания увидит, когда вы ищете груз, и сможет пригласить на рейс'**
+  String get driverCompanyInviteBody;
+
+  /// No description provided for @driverCompanyAccept.
+  ///
+  /// In ru, this message translates to:
+  /// **'Принять'**
+  String get driverCompanyAccept;
+
+  /// No description provided for @driverCompanyDecline.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отказаться'**
+  String get driverCompanyDecline;
+
+  /// No description provided for @driverCompanyPending.
+  ///
+  /// In ru, this message translates to:
+  /// **'ждёт ответа'**
+  String get driverCompanyPending;
+
   /// No description provided for @lastSeenOnline.
   ///
   /// In ru, this message translates to:

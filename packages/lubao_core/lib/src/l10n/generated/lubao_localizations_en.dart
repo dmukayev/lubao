@@ -3591,6 +3591,86 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get postCargoTrucks => 'Trucks needed';
 
   @override
+  String get driversTabAll => 'All';
+
+  @override
+  String get driversTabMine => 'Mine';
+
+  @override
+  String get myDriversEmpty =>
+      'Drivers you\'ve had deals with, saved ☆ or added yourself';
+
+  @override
+  String get myDriversCreate => 'Add a driver';
+
+  @override
+  String get myDriversName => 'Name';
+
+  @override
+  String get myDriversPhone => 'Phone';
+
+  @override
+  String get myDriversPhoneHint => '+7, +998, +996, +86 …';
+
+  @override
+  String get myDriversPhoneError =>
+      'Number with country code, e.g. +7 701 123 45 67';
+
+  @override
+  String get myDriversWaiting => 'waiting to sign in';
+
+  @override
+  String get myDriversSearching => 'Looking for cargo';
+
+  @override
+  String get myDriversOnSite => 'On site';
+
+  @override
+  String get myDriversInvite => 'Invite to a cargo';
+
+  @override
+  String myDriversShareText(String company, String url) {
+    return '$company added you to its drivers in Lubao. Sign in with a code sent to this number and accept: $url';
+  }
+
+  @override
+  String get myDriversAlready => 'This driver is already yours';
+
+  @override
+  String get myDriversInvitedExisting =>
+      'The driver is already in Lubao — they\'ll see the invitation in the app';
+
+  @override
+  String get driverSave => 'Save to my drivers';
+
+  @override
+  String get driverUnsave => 'Remove from my drivers';
+
+  @override
+  String get driverCompaniesTitle => 'Companies that list me';
+
+  @override
+  String get driverCompaniesLeave => 'Leave';
+
+  @override
+  String driverCompanyInviteTitle(String company) {
+    return '$company added you to its drivers';
+  }
+
+  @override
+  String get driverCompanyInviteBody =>
+      'The company will see when you\'re looking for cargo and can invite you to trips';
+
+  @override
+  String get driverCompanyAccept => 'Accept';
+
+  @override
+  String get driverCompanyDecline => 'Decline';
+
+  @override
+  String get driverCompanyPending => 'awaiting your answer';
+
+  @override
   String get lastSeenOnline => 'online';
 
   @override
