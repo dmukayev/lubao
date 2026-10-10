@@ -91,7 +91,7 @@ describe('JobsService.refreshExchangeRates', () => {
   it('при старте: курс на сегодня уже есть — сеть не трогаем; нет — берём сразу', async () => {
     const { service, prisma } = setup();
     service.fetchFn = jest.fn().mockResolvedValue({ ok: true, status: 200, text: async () => NBK_XML });
-    prisma.exchangeRate.count.mockResolvedValue(2);
+    prisma.exchangeRate.count.mockResolvedValue(4) // USD, CNY, RUB, UZS (058);
     expect(await service.ensureTodayRates(NOW)).toBe(false);
     expect(service.fetchFn).not.toHaveBeenCalled();
     prisma.exchangeRate.count.mockResolvedValue(0);

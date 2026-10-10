@@ -1,5 +1,6 @@
 import { Locale } from '@prisma/client';
-import { CURRENCY_SYMBOL, I18nName, formatCargoWeight, groupThousands, pickLocaleText } from '../notifications/notification-events';
+import { I18nName, formatCargoWeight, formatMoney, groupThousands, paymentLine, pickLocaleText } from '../notifications/notification-events';
+import { routeFlags } from '../common/flags';
 
 /// 052 п.2: публичные страницы «Поделиться» — без входа, без Google и внешних
 /// запросов (WeChat/Telegram открывают их во встроенном браузере). Телефона,
@@ -62,10 +63,9 @@ function shortDate(d: Date, l: PageLocale): string {
   if (l === 'en') return `${MONTHS.en[m]} ${day}`;
   return `${day} ${MONTHS[l][m]}`;
 }
-/// Цена — как в ленте: символ валюты впереди, разряды пробелом.
-export function money(amount: number, currency: string): string {
-  const sym = CURRENCY_SYMBOL[currency];
-  return sym ? `${sym}${groupThousands(amount)}` : `${groupThousands(amount)} ${currency}`;
+/// Цена — как в приложении (058 п.4: «1 250 000 ₽», «95 000 000 сум»).
+export function money(amount: number, currency: string, l: PageLocale = 'ru'): string {
+  return formatMoney(amount, currency, l);
 }
 
 export interface PageCargo {
@@ -75,6 +75,14 @@ export interface PageCargo {
   category: I18nName | null;
   bodyType: I18nName | null;
   weightKg: number | null;
+  /// 058 п.3: «21 т · 35 м³»; флаги стран маршрута (если страны разные).
+  volumeM3?: number | null;
+  originCountryCode?: string | null;
+  destinationCountryCode?: string | null;
+  /// 058 п.1: условия оплаты.
+  advanceAmount?: number | null;
+  paymentForm?: string | null;
+  paymentDelayDays?: number | null;
   distanceKm: number | null;
   price: number;
   pricePerKm: number | null;
@@ -111,14 +119,19 @@ export interface PageLinks {
 }
 
 const txt = (n: I18nName | null, l: PageLocale) => (n ? pickLocaleText(n, l as Locale) : '');
-const route = (c: PageCargo, l: PageLocale) => [txt(c.origin, l), txt(c.destination, l)].filter(Boolean).join(' → ');
+const route = (c: PageCargo, l: PageLocale) => {
+  const [fromFlag, toFlag] = routeFlags(c.originCountryCode, c.destinationCountryCode);
+  return [[fromFlag, txt(c.origin, l)].filter(Boolean).join(' '), [toFlag, txt(c.destination, l)].filter(Boolean).join(' ')].filter((p) => p.length > 0).join(' → ');
+};
+const terms = (c: PageCargo, l: PageLocale) => paymentLine(c, l);
 
 function cargoFacts(c: PageCargo, l: PageLocale): string {
-  return [txt(c.category, l), c.weightKg != null ? formatCargoWeight(c.weightKg, l) : '', txt(c.bodyType, l).toLocaleLowerCase(l)].filter(Boolean).join(' · ');
+  const size = [c.weightKg != null ? formatCargoWeight(c.weightKg, l) : '', c.volumeM3 ? `${groupThousands(c.volumeM3)} м³` : ''].filter(Boolean).join(' · ');
+  return [txt(c.category, l), size, txt(c.bodyType, l).toLocaleLowerCase(l)].filter(Boolean).join(' · ');
 }
 
 function cargoRow(c: PageCargo, l: PageLocale, href: string): string {
-  return `<a class="row" href="${escapeHtml(href)}"><div><b>${escapeHtml(route(c, l))}</b><div class="muted">${escapeHtml(cargoFacts(c, l))} · ${escapeHtml(shortDate(c.readyDate, l))}</div></div><div class="price">${escapeHtml(money(c.price, c.currency))}</div></a>`;
+  return `<a class="row" href="${escapeHtml(href)}"><div><b>${escapeHtml(route(c, l))}</b><div class="muted">${escapeHtml(cargoFacts(c, l))} · ${escapeHtml(shortDate(c.readyDate, l))}</div></div><div class="price">${escapeHtml(money(c.price, c.currency, l))}</div></a>`;
 }
 
 function actions(l: PageLocale, links: PageLinks, primary: string): string {
@@ -163,15 +176,15 @@ ${similar.length ? `<div class="card"><b>${escapeHtml(t.similar)}</b>${similar.m
     return layout(l, t.stale, t.staleCargo, body, links, false);
   }
   const r = route(cargo, l);
-  const perKm = cargo.pricePerKm != null ? ` (${money(cargo.pricePerKm, cargo.currency)}${t.perKm})` : '';
+  const perKm = cargo.pricePerKm != null ? ` (${money(cargo.pricePerKm, cargo.currency, l)}${t.perKm})` : '';
   const rating = cargo.companyRatingCount > 0 ? ` · ★ ${cargo.companyRatingAvg.toFixed(1)}` : '';
-  const body = `<div class="card hero" data-testid="share-cargo"><h1>${escapeHtml(r)}</h1><div class="big">${escapeHtml(money(cargo.price, cargo.currency))}</div><div class="muted">${escapeHtml(perKm.trim())}</div></div>
+  const body = `<div class="card hero" data-testid="share-cargo"><h1>${escapeHtml(r)}</h1><div class="big">${escapeHtml(money(cargo.price, cargo.currency, l))}</div><div class="muted">${escapeHtml(perKm.trim())}</div>${terms(cargo, l) ? `<div data-testid="share-terms">${escapeHtml(terms(cargo, l))}</div>` : ''}</div>
 <div class="card"><div>🚛 <b>${escapeHtml(r)}</b>${cargo.distanceKm ? ` · ${groupThousands(cargo.distanceKm)} ${escapeHtml(t.km)}` : ''}</div>
-<div>${escapeHtml(cargoFacts(cargo, l))}</div><div>💰 ${escapeHtml(money(cargo.price, cargo.currency) + perKm)}</div>
+<div>${escapeHtml(cargoFacts(cargo, l))}</div><div>💰 ${escapeHtml(money(cargo.price, cargo.currency, l) + perKm)}</div>
 <div>📅 ${escapeHtml(t.loading)} ${escapeHtml(shortDate(cargo.readyDate, l))}</div><div class="muted">${escapeHtml(cargo.companyName + rating)}</div></div>
 ${actions(l, links, t.respond)}`;
-  const description = [cargoFacts(cargo, l), money(cargo.price, cargo.currency), `${t.loading} ${shortDate(cargo.readyDate, l)}`].filter(Boolean).join(' · ');
-  return layout(l, `${r} · ${money(cargo.price, cargo.currency)}`, description, body, links, false);
+  const description = [cargoFacts(cargo, l), money(cargo.price, cargo.currency, l), terms(cargo, l), `${t.loading} ${shortDate(cargo.readyDate, l)}`].filter(Boolean).join(' · ');
+  return layout(l, `${r} · ${money(cargo.price, cargo.currency, l)}`, description, body, links, false);
 }
 
 export function renderCompanyPage(l: PageLocale, companyName: string, cargos: PageCargo[], links: PageLinks, cargoHref: (c: PageCargo) => string): string {

@@ -1,4 +1,5 @@
 import { ArrayMaxSize, IsArray, IsBoolean, IsISO8601, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
+import { CARGO_CURRENCIES, CargoCurrency, PAYMENT_FORMS, PaymentFormCode } from '../../common/currencies';
 
 export class CreateCargoDto {
   /// 047: категория груза из справочника — обязательна при публикации.
@@ -49,8 +50,24 @@ export class CreateCargoDto {
   @Min(0)
   price!: number;
 
-  @IsIn(['USD', 'CNY', 'KZT'])
-  currency!: 'USD' | 'CNY' | 'KZT';
+  @IsIn(CARGO_CURRENCIES)
+  currency!: CargoCurrency;
+
+  /// 058 п.1: аванс (в валюте груза, не больше цены), форма оплаты, отсрочка в днях.
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  advanceAmount?: number | null;
+
+  @IsOptional()
+  @IsIn(PAYMENT_FORMS)
+  paymentForm?: PaymentFormCode | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(365)
+  paymentDelayDays?: number | null;
 
   @IsISO8601()
   readyDate!: string;

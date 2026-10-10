@@ -37,6 +37,7 @@ export class CompaniesService {
       legalAddress: company.legalAddress,
       taxId: company.taxId,
       isVerified: company.isVerified,
+      kind: company.kind,
       wecomWebhookUrl: company.wecomWebhookUrl,
       ratingAvg: Number(company.ratingAvg),
       ratingCount: company.ratingCount,
@@ -80,7 +81,7 @@ export class CompaniesService {
     }
     const updated = await this.prisma.company.update({
       where: { id: companyId },
-      data: { city: dto.city, legalAddress: dto.legalAddress, taxId: dto.taxId },
+      data: { city: dto.city, legalAddress: dto.legalAddress, taxId: dto.taxId, kind: dto.kind },
     });
     return this.toCompanyDto(updated);
   }
@@ -143,6 +144,7 @@ export class CompaniesService {
             name: dto.companyName,
             nameRu: dto.companyNameRu ?? dto.companyName,
             countryId: dto.countryId,
+            ...(dto.kind ? { kind: dto.kind } : {}),
             ...(opts.offerVersion ? { offerAcceptedAt: new Date(), offerVersion: opts.offerVersion } : {}),
           },
         });

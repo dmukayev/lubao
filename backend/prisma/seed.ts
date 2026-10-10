@@ -470,9 +470,12 @@ async function main() {
   // Снимок курса НБ РК — обновляется отдельным фидом, здесь только базовое
   // значение, чтобы пересчёт цены в ₸ работал сразу после установки.
   const exchangeRateSnapshotDate = new Date('2026-09-01');
-  const exchangeRates: { currency: 'USD' | 'CNY'; rateToKzt: number }[] = [
+  const exchangeRates: { currency: 'USD' | 'CNY' | 'RUB' | 'UZS'; rateToKzt: number }[] = [
     { currency: 'USD', rateToKzt: 480 },
     { currency: 'CNY', rateToKzt: 67 },
+    // 058 п.4: рейсы в Россию и Узбекистан.
+    { currency: 'RUB', rateToKzt: 5.9 },
+    { currency: 'UZS', rateToKzt: 0.039 },
   ];
   for (const rate of exchangeRates) {
     await prisma.exchangeRate.upsert({

@@ -1,3 +1,4 @@
+import { RateCurrency } from '../common/currencies';
 import { notifyDealStatus } from '../deals/deal-status-notify';
 import { cancelStatsFor, isAtFault, stageForStatus } from '../deals/cancel-policy';
 import { CARGO_ARCHIVE_AFTER_MS } from '../cargos/cargo-lifecycle';
@@ -144,7 +145,7 @@ export class AdminService {
 
   /// Ручной курс на сегодня (задача 042, п.4): source='manual' — автоматика
   /// НБ РК такую строку не трогает; каждое изменение в audit_log.
-  async setExchangeRate(adminUserId: string, dto: { currency: 'USD' | 'CNY'; rateToKzt: number; reason: string }) {
+  async setExchangeRate(adminUserId: string, dto: { currency: RateCurrency; rateToKzt: number; reason: string }) {
     const effectiveDate = parseDateOnly(localDateOnly(new Date()));
     const where = { currency_effectiveDate: { currency: dto.currency, effectiveDate } };
     const existing = await this.prisma.exchangeRate.findUnique({ where });

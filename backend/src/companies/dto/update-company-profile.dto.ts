@@ -1,4 +1,4 @@
-import { IsOptional, IsString, Length } from 'class-validator';
+import { IsIn, IsOptional, IsString, Length } from 'class-validator';
 
 /// Поля компании, которые может менять сама компания (владелец) — не всё,
 /// что видит админ (задача 012: «Город — нет, по желанию в профиле»;
@@ -21,4 +21,9 @@ export class UpdateCompanyProfileDto {
   @IsString()
   @Length(1, 50)
   taxId?: string;
+
+  /// 058 п.8а: грузовладелец / экспедитор / перевозчик (по умолчанию экспедитор).
+  @IsOptional()
+  @IsIn(['SHIPPER', 'FORWARDER', 'CARRIER'])
+  kind?: 'SHIPPER' | 'FORWARDER' | 'CARRIER';
 }

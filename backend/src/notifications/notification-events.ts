@@ -127,6 +127,39 @@ function route(p: NotificationPayload, locale: Loc): string {
 /// 053 п.6а: «₸850 000 · 20 т · тентованный · погрузка 10 окт» — цена как в
 /// ленте (символ и разряды пробелом), город/кузов из справочника.
 export const CURRENCY_SYMBOL: Record<string, string> = { USD: '$', CNY: '¥', KZT: '₸' };
+const SUM: Record<Loc, string> = { ru: 'сум', kk: 'сум', zh: '苏姆', en: 'UZS' };
+/// Цена как в приложении: «$10 300», «¥7 000», «₸850 000», «1 250 000 ₽»,
+/// «95 000 000 сум» (058 п.4).
+export function formatMoney(amount: number, currency: string | null | undefined, locale: Loc = 'ru'): string {
+  const n = groupThousands(amount);
+  if (currency === 'RUB') return `${n} ₽`;
+  if (currency === 'UZS') return `${n} ${SUM[locale]}`;
+  const sym = currency ? CURRENCY_SYMBOL[currency] : undefined;
+  return sym ? `${sym}${n}` : `${n} ${currency ?? ''}`.trim();
+}
+const ADVANCE: Record<Loc, string> = { ru: 'аванс', kk: 'аванс', zh: '预付', en: 'advance' };
+const PAYMENT_FORM: Record<string, Record<Loc, string>> = {
+  CASH: { ru: 'нал.', kk: 'қолма-қол', zh: '现金', en: 'cash' },
+  CARD: { ru: 'на карту', kk: 'картаға', zh: '转卡', en: 'to card' },
+  CASHLESS: { ru: 'на счёт', kk: 'шотқа', zh: '对公转账', en: 'bank transfer' },
+};
+const DELAY: Record<Loc, (d: number) => string> = {
+  ru: (d) => `отсрочка ${d} дн.`,
+  kk: (d) => `кейінге қалдыру ${d} күн`,
+  zh: (d) => `账期 ${d} 天`,
+  en: (d) => `${d}-day deferral`,
+};
+/// 058 п.1: «аванс $5 300 · нал. · отсрочка 10 дн.» — пусто, если условий нет.
+export function paymentLine(
+  p: { advanceAmount?: number | null; paymentForm?: string | null; paymentDelayDays?: number | null; currency?: string | null },
+  locale: Loc = 'ru',
+): string {
+  return [
+    p.advanceAmount ? `${ADVANCE[locale]} ${formatMoney(Number(p.advanceAmount), p.currency, locale)}` : '',
+    p.paymentForm ? PAYMENT_FORM[p.paymentForm]?.[locale] ?? '' : '',
+    p.paymentDelayDays ? DELAY[locale](p.paymentDelayDays) : '',
+  ].filter(Boolean).join(' · ');
+}
 const MONTHS: Record<Loc, string[]> = {
   ru: ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'],
   kk: ['қаң', 'ақп', 'нау', 'сәу', 'мам', 'мау', 'шіл', 'там', 'қыр', 'қаз', 'қар', 'жел'],
@@ -160,7 +193,9 @@ function shortDate(iso: string, locale: Loc): string {
 export function cargoLine(p: NotificationPayload, locale: Loc): string {
   const body = p.bodyType ? pickLocaleText(p.bodyType, locale) : '';
   return [
-    `${CURRENCY_SYMBOL[p.currency] ?? ''}${groupThousands(Number(p.price))}${CURRENCY_SYMBOL[p.currency] ? '' : ` ${p.currency ?? ''}`}`.trim(),
+    formatMoney(Number(p.price), p.currency, locale),
+    // 058 п.1: условия оплаты сразу после цены — в push «Приглашение».
+    paymentLine(p, locale),
     p.weightKg != null ? formatCargoWeight(Number(p.weightKg), locale) : '',
     locale === 'zh' || !body ? body : body.toLocaleLowerCase(locale),
     p.readyDate ? LOADING[locale](shortDate(p.readyDate, locale)) : '',

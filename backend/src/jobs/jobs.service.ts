@@ -1,3 +1,4 @@
+import { RATE_CURRENCIES } from '../common/currencies';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
@@ -52,7 +53,7 @@ export class JobsService {
     }
     const rates = parseNbkRates(xml);
     if (rates.length === 0) {
-      this.logger.warn('Курс НБ РК: в ответе нет USD/CNY');
+      this.logger.warn('Курс НБ РК: в ответе нет нужных валют');
       return { updated: 0, skippedManual: 0, error: 'EMPTY_RESPONSE' };
     }
     let updated = 0;
@@ -78,8 +79,8 @@ export class JobsService {
   /// При старте: курса на сегодня ещё нет — берём сразу, не ждём 10:00.
   async ensureTodayRates(now = new Date()): Promise<boolean> {
     const day = parseDateOnly(localDateOnly(now));
-    const have = await this.prisma.exchangeRate.count({ where: { effectiveDate: day, currency: { in: ['USD', 'CNY'] } } });
-    if (have >= 2) return false;
+    const have = await this.prisma.exchangeRate.count({ where: { effectiveDate: day, currency: { in: [...RATE_CURRENCIES] } } });
+    if (have >= RATE_CURRENCIES.length) return false;
     await this.refreshExchangeRates(now);
     return true;
   }

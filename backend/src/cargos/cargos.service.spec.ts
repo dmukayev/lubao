@@ -878,3 +878,40 @@ describe('подсказка маршрута в форме: расстояни�
     }
   });
 });
+
+describe('058 п.1: условия оплаты груза', () => {
+  function setup() {
+    const prisma: any = {
+      point: { findUnique: jest.fn().mockResolvedValue({ id: 'p1', isActive: true }) },
+      cargo: { create: jest.fn().mockResolvedValue({ id: 'cargo1' }), findUnique: jest.fn().mockResolvedValue(baseCargo()) },
+      cargoCategory: { findUnique: jest.fn().mockResolvedValue({ isActive: true }) },
+      deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+      bodyType: { findUnique: jest.fn().mockResolvedValue({ fields: [] }), findMany: jest.fn().mockResolvedValue([]) },
+      appSetting: { findUnique: jest.fn().mockResolvedValue(null) },
+    };
+    return { prisma, service: new CargosService(prisma, {} as any, {} as any) };
+  }
+  const base = { pointId: 'p1', readyDate: '2026-01-01', destinationCountryId: 'kz', bodyTypeId: 'bt1', price: 10300, currency: 'RUB', categoryId: 'cat1' };
+
+  it('аванс, форма и отсрочка сохраняются; валюта RUB', async () => {
+    const { prisma, service } = setup();
+    await service.create('c1', 'u1', true, { ...base, advanceAmount: 5300, paymentForm: 'CASH', paymentDelayDays: 10 } as any);
+    expect(prisma.cargo.create.mock.calls[0][0].data).toEqual(expect.objectContaining({ currency: 'RUB', advanceAmount: 5300, paymentForm: 'CASH', paymentDelayDays: 10 }));
+  });
+
+  it('аванс больше цены — понятная ошибка поля, груз не создаётся', async () => {
+    const { prisma, service } = setup();
+    await expect(service.create('c1', 'u1', true, { ...base, advanceAmount: 20000 } as any)).rejects.toMatchObject({
+      response: { code: 'VALIDATION_FAILED', fields: [{ field: 'advanceAmount', rule: 'max', limit: 10300 }] },
+    });
+    expect(prisma.cargo.create).not.toHaveBeenCalled();
+  });
+
+  it('аванс 0 и отсрочка 0 — «без условий» (null)', async () => {
+    const { prisma, service } = setup();
+    await service.create('c1', 'u1', true, { ...base, advanceAmount: 0, paymentDelayDays: 0 } as any);
+    expect(prisma.cargo.create.mock.calls[0][0].data).toEqual(expect.objectContaining({ advanceAmount: null, paymentDelayDays: null }));
+  });
+});
+

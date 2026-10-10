@@ -76,6 +76,23 @@ enum Currency {
   USD
   CNY
   KZT
+  /// 058 п.4: рейсы в Россию и Узбекистан.
+  RUB
+  UZS
+}
+
+/// 058 п.1: форма оплаты груза — наличные / на карту / на счёт (без НДС, решение 2026-10-10).
+enum PaymentForm {
+  CASH
+  CARD
+  CASHLESS
+}
+
+/// 058 п.8а: метка типа компании (режим «перевозчик с парком» — после пилота).
+enum CompanyKind {
+  SHIPPER
+  FORWARDER
+  CARRIER
 }
 
 enum ResponseStatus {
@@ -609,6 +626,8 @@ model Company {
   /// адрес в профиле компании; «Проверить» шлёт туда тестовое сообщение.
   wecomWebhookUrl String?
   isVerified      Boolean   @default(false)
+  /// 058 п.8а: грузовладелец / экспедитор / перевозчик — метка в карточке.
+  kind            CompanyKind @default(FORWARDER)
   /// Оферта для компании (043 п.2) принята при регистрации — версия текста
   /// `/legal/offer`; у компаний до 043 — null.
   offerAcceptedAt DateTime?
@@ -907,6 +926,10 @@ model Cargo {
   pricePerKm           Decimal?           @db.Decimal(12, 2)
   price                Decimal            @db.Decimal(12, 2)
   currency             Currency
+  /// 058 п.1: условия оплаты — аванс (в валюте груза), форма, отсрочка в днях.
+  advanceAmount        Decimal?           @db.Decimal(12, 2)
+  paymentForm          PaymentForm?
+  paymentDelayDays     Int?
   readyDate            DateTime           @db.Date
   /// «Можно догрузом» (задача 040, п.6): груз не на всю машину, сборный.
   allowPartial         Boolean            @default(false)

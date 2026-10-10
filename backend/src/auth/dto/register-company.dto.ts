@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, Length } from 'class-validator';
+import { IsIn, IsEmail, IsOptional, IsString, Length } from 'class-validator';
 import { IsPersonName } from '../../common/validators/person-name.validator';
 
 /// Регистрация логиста в один экран — email, пароль, имя, компания, страна
@@ -27,6 +27,11 @@ export class RegisterCompanyAuthDto {
 
   @IsString()
   countryId!: string;
+
+  /// 058 п.8а: грузовладелец / экспедитор / перевозчик (по умолчанию экспедитор).
+  @IsOptional()
+  @IsIn(['SHIPPER', 'FORWARDER', 'CARRIER'])
+  kind?: 'SHIPPER' | 'FORWARDER' | 'CARRIER';
 
   /// Версия принятой оферты (043 п.2) — галочка на экране регистрации.
   @IsString()

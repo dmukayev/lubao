@@ -1,9 +1,10 @@
 /// Курсы Нацбанка РК (задача 042, п.4): RSS `get_rates.cfm?fdate=ДД.ММ.ГГГГ`.
-/// Берём только нужные валюты: USD и CNY — единственные валюты грузов, кроме ₸.
+/// Берём только валюты грузов, кроме ₸: USD, CNY и (058 п.4) RUB, UZS.
+import { RATE_CURRENCIES, RateCurrency } from '../common/currencies';
 
-export type NbkRate = { currency: 'USD' | 'CNY'; rateToKzt: number };
+export type NbkRate = { currency: RateCurrency; rateToKzt: number };
 
-const WANTED = new Set(['USD', 'CNY']);
+const WANTED = new Set<string>(RATE_CURRENCIES);
 
 export function nbkRatesUrl(date: Date, base = process.env.NBK_RATES_URL || 'https://nationalbank.kz/rss/get_rates.cfm'): string {
   const dd = String(date.getUTCDate()).padStart(2, '0');
@@ -26,7 +27,7 @@ export function parseNbkRates(xml: string): NbkRate[] {
     const value = Number((tag(block, 'description') ?? '').replace(',', '.'));
     const quant = Number(tag(block, 'quant') ?? '1') || 1;
     if (!Number.isFinite(value) || value <= 0) continue;
-    rates.push({ currency: code as 'USD' | 'CNY', rateToKzt: Math.round((value / quant) * 1e6) / 1e6 });
+    rates.push({ currency: code as RateCurrency, rateToKzt: Math.round((value / quant) * 1e6) / 1e6 });
   }
   return rates;
 }

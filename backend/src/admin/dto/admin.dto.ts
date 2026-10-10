@@ -1,3 +1,4 @@
+import { CARGO_CURRENCIES, CargoCurrency, RATE_CURRENCIES, RateCurrency } from '../../common/currencies';
 import { IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { BooleanQuery } from '../../common/boolean-query.decorator';
@@ -283,8 +284,8 @@ export class CreatePointDto {
 /// Ручная правка курса на сегодня (задача 042, п.4): автоматика НБ РК её не
 /// перезаписывает.
 export class SetExchangeRateDto {
-  @IsIn(['USD', 'CNY'])
-  currency!: 'USD' | 'CNY';
+  @IsIn(RATE_CURRENCIES)
+  currency!: RateCurrency;
 
   @IsNumber()
   @Min(0.0001)
@@ -446,8 +447,8 @@ export class AdminUpdateCargoDto {
   price?: number;
 
   @IsOptional()
-  @IsIn(['USD', 'CNY', 'KZT'])
-  currency?: 'USD' | 'CNY' | 'KZT';
+  @IsIn(CARGO_CURRENCIES)
+  currency?: CargoCurrency;
 
   @IsOptional()
   @IsISO8601()

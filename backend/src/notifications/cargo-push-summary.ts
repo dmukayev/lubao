@@ -12,6 +12,10 @@ export interface CargoPushSummary {
   destination: I18nName | null;
   price: number;
   currency: string;
+  /// 058 п.1: условия оплаты.
+  advanceAmount: number | null;
+  paymentForm: string | null;
+  paymentDelayDays: number | null;
   weightKg: number | null;
   bodyType: I18nName | null;
   /// YYYY-MM-DD — дата готовности (погрузки).
@@ -34,6 +38,9 @@ async function load(prisma: Pick<PrismaService, 'cargo'>, cargoId: string): Prom
     select: {
       price: true,
       currency: true,
+      advanceAmount: true,
+      paymentForm: true,
+      paymentDelayDays: true,
       weightKg: true,
       readyDate: true,
       company: { select: { name: true } },
@@ -52,6 +59,9 @@ async function load(prisma: Pick<PrismaService, 'cargo'>, cargoId: string): Prom
     destination: ((cargo.destinationCity?.name ?? cargo.destinationCountry?.name) as I18nName | undefined) ?? null,
     price: num(cargo.price) ?? 0,
     currency: cargo.currency,
+    advanceAmount: num(cargo.advanceAmount),
+    paymentForm: cargo.paymentForm ?? null,
+    paymentDelayDays: cargo.paymentDelayDays ?? null,
     weightKg: num(cargo.weightKg),
     bodyType: (cargo.bodyType?.name as I18nName | undefined) ?? null,
     readyDate: cargo.readyDate.toISOString().slice(0, 10),

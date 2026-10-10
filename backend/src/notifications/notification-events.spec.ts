@@ -1,4 +1,4 @@
-import { NOTIFICATION_EVENTS, formatCargoWeight } from './notification-events';
+import { NOTIFICATION_EVENTS, cargoLine, formatCargoWeight, formatMoney, paymentLine } from './notification-events';
 
 /// Задача 029, п.11 — раньше DEAL_STATUS всегда рендерился на русском
 /// (готовая строка статуса клалась в payload вызывающей стороной), а
@@ -141,5 +141,24 @@ describe('formatCargoWeight — вес в push как у водителя (055)'
     expect(formatCargoWeight(800, 'ru')).toBe('800 кг');
     expect(formatCargoWeight(18500, 'en')).toBe('18.5 t');
     expect(formatCargoWeight(18540, 'zh')).toBe('18.5 吨');
+  });
+});
+
+describe('058: цена в любой валюте и условия оплаты', () => {
+  it('RUB и UZS — знак после суммы', () => {
+    expect(formatMoney(1250000, 'RUB', 'ru')).toBe('1 250 000 ₽');
+    expect(formatMoney(95000000, 'UZS', 'ru')).toBe('95 000 000 сум');
+    expect(formatMoney(10300, 'USD', 'en')).toBe('$10 300');
+  });
+
+  it('«аванс $5 300 · нал. · отсрочка 10 дн.»; без условий — пусто', () => {
+    expect(paymentLine({ advanceAmount: 5300, paymentForm: 'CASH', paymentDelayDays: 10, currency: 'USD' }, 'ru')).toBe('аванс $5 300 · нал. · отсрочка 10 дн.');
+    expect(paymentLine({ paymentForm: 'CASHLESS' }, 'en')).toBe('bank transfer');
+    expect(paymentLine({}, 'ru')).toBe('');
+  });
+
+  it('push «Приглашение»: условия сразу после цены', () => {
+    const line = cargoLine({ price: 10300, currency: 'USD', advanceAmount: 5300, paymentForm: 'CASH', weightKg: 20000 } as never, 'ru');
+    expect(line).toBe('$10 300 · аванс $5 300 · нал. · 20 т');
   });
 });

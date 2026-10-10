@@ -6,9 +6,9 @@ import { PageCargo, PageDriver, PageLinks, PageLocale, renderCargoPage, renderCo
 import { SHARE_PATH, ShareService, shareBaseUrl } from './share.service';
 
 const cargoInclude = {
-  point: { select: { name: true } },
+  point: { select: { name: true, city: { select: { country: { select: { code: true } } } } } },
   destinationCity: { select: { name: true } },
-  destinationCountry: { select: { name: true } },
+  destinationCountry: { select: { name: true, code: true } },
   category: { select: { name: true } },
   bodyType: { select: { name: true } },
   company: { select: { name: true, ratingAvg: true, ratingCount: true, isBlocked: true } },
@@ -48,6 +48,12 @@ function toPageCargo(c: CargoRow): PageCargo {
     category: (c.category?.name as I18nName) ?? null,
     bodyType: (c.bodyType?.name as I18nName) ?? null,
     weightKg: c.weightKg != null ? Number(c.weightKg) : null,
+    volumeM3: c.volumeM3 != null ? Number(c.volumeM3) : null,
+    originCountryCode: c.point?.city?.country?.code ?? null,
+    destinationCountryCode: c.destinationCountry?.code ?? null,
+    advanceAmount: c.advanceAmount != null ? Number(c.advanceAmount) : null,
+    paymentForm: c.paymentForm ?? null,
+    paymentDelayDays: c.paymentDelayDays ?? null,
     distanceKm: c.distanceKm ?? null,
     price: Number(c.price),
     pricePerKm: c.pricePerKm != null ? Number(c.pricePerKm) : null,

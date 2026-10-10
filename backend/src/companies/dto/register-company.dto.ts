@@ -1,4 +1,4 @@
-import { IsOptional, IsString, Length } from 'class-validator';
+import { IsIn, IsOptional, IsString, Length } from 'class-validator';
 import { IsPersonName } from '../../common/validators/person-name.validator';
 
 export class RegisterCompanyDto {
@@ -19,4 +19,9 @@ export class RegisterCompanyDto {
 
   @IsString()
   countryId!: string;
+
+  /// 058 п.8а: грузовладелец / экспедитор / перевозчик (по умолчанию экспедитор).
+  @IsOptional()
+  @IsIn(['SHIPPER', 'FORWARDER', 'CARRIER'])
+  kind?: 'SHIPPER' | 'FORWARDER' | 'CARRIER';
 }

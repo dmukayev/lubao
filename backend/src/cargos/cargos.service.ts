@@ -2,7 +2,7 @@ import { PricingService } from '../pricing/pricing.service';
 import { cancelStatsFor } from '../deals/cancel-policy';
 import { BadRequestException, ConflictException, Optional, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
-import { BodyTypeProfile, Cargo, CargoStatus, Company, Prisma } from '@prisma/client';
+import { BodyTypeProfile, Cargo, CargoStatus, Company, PaymentForm, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ResponsesService } from '../responses/responses.service';
 import { CreateCargoDto } from './dto/create-cargo.dto';
@@ -45,6 +45,24 @@ interface CargoContact {
   name: string | null;
   phone: string | null;
   wechatId: string | null;
+}
+
+/// 058 п.1: условия оплаты из формы. `undefined` — поле не трогаем (правка),
+/// `null` — убрать. Аванс не больше цены груза (в той же валюте).
+function paymentTerms(
+  dto: { advanceAmount?: number | null; paymentForm?: PaymentForm | null; paymentDelayDays?: number | null },
+  price: number,
+  currentAdvance: number | null = null,
+) {
+  const advance = dto.advanceAmount === undefined ? currentAdvance : dto.advanceAmount;
+  if (advance != null && advance > price) {
+    throw new BadRequestException({ code: 'VALIDATION_FAILED', message: ['advanceAmount must not be greater than price'], fields: [{ field: 'advanceAmount', rule: 'max', limit: price }] });
+  }
+  return {
+    advanceAmount: dto.advanceAmount === undefined ? undefined : dto.advanceAmount && dto.advanceAmount > 0 ? dto.advanceAmount : null,
+    paymentForm: dto.paymentForm,
+    paymentDelayDays: dto.paymentDelayDays === undefined ? undefined : dto.paymentDelayDays || null,
+  };
 }
 
 @Injectable()
@@ -203,6 +221,11 @@ export class CargosService {
       photoUrls: cargo.photoUrls,
       price: Number(cargo.price),
       currency: cargo.currency,
+      // 058 п.1: условия оплаты; 8а — метка типа компании.
+      advanceAmount: cargo.advanceAmount != null ? Number(cargo.advanceAmount) : null,
+      paymentForm: cargo.paymentForm ?? null,
+      paymentDelayDays: cargo.paymentDelayDays ?? null,
+      companyKind: cargo.company.kind,
       readyDate: toDateOnly(cargo.readyDate),
       // 049 п.1: догруз выключен — бейджа нет, даже если груз помечен раньше.
       allowPartial: cargo.allowPartial && (await this.partialEnabled()),
@@ -702,6 +725,7 @@ export class CargosService {
         photoUrls: dto.photoUrls ?? [],
         price: dto.price,
         currency: dto.currency,
+        ...paymentTerms(dto, dto.price),
         readyDate,
         // 049 п.1: при выключенном догрузе пометка игнорируется.
         allowPartial: (dto.allowPartial ?? false) && (await this.partialEnabled()),
@@ -771,6 +795,7 @@ export class CargosService {
         photoUrls: dto.photoUrls,
         price: dto.price,
         currency: dto.currency,
+        ...paymentTerms(dto, dto.price ?? Number(existing.price), existing.advanceAmount != null ? Number(existing.advanceAmount) : null),
         readyDate,
         expiresAt,
         description: dto.description,
