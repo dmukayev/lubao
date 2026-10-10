@@ -1533,5 +1533,6 @@
   "commonPaste": "Вставить",
   "driversInvitePickHint": "Отметьте груз и нажмите «Пригласить»",
   "driversInviteTitle": "Пригласить {name}",
-  "@driversInviteTitle": {"placeholders": {"name": {"type": "String"}}}
+  "@driversInviteTitle": {"placeholders": {"name": {"type": "String"}}},
+  "dealVehicleRequired": "Для рейса нужны тягач и прицеп — добавьте недостающее в гараже"
 }

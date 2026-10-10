@@ -1471,5 +1471,6 @@
   "shareLinkPromptNotFound": "Link not found — open it again from the message",
   "commonPaste": "Paste",
   "driversInvitePickHint": "Pick a cargo and tap “Invite”",
-  "driversInviteTitle": "Invite {name}"
+  "driversInviteTitle": "Invite {name}",
+  "dealVehicleRequired": "The trip needs a tractor and a trailer — add the missing one in the garage"
 }

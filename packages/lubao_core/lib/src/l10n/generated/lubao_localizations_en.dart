@@ -3945,4 +3945,8 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String driversInviteTitle(String name) {
     return 'Invite $name';
   }
+
+  @override
+  String get dealVehicleRequired =>
+      'The trip needs a tractor and a trailer — add the missing one in the garage';
 }

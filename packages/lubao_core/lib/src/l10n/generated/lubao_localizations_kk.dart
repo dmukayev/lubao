@@ -3942,4 +3942,8 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String driversInviteTitle(String name) {
     return '$name шақыру';
   }
+
+  @override
+  String get dealVehicleRequired =>
+      'Рейс үшін тартқыш пен тіркеме керек — жетіспейтінін гаражға қосыңыз';
 }

@@ -7331,6 +7331,12 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Пригласить {name}'**
   String driversInviteTitle(String name);
+
+  /// No description provided for @dealVehicleRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Для рейса нужны тягач и прицеп — добавьте недостающее в гараже'**
+  String get dealVehicleRequired;
 }
 
 class _LubaoLocalizationsDelegate

@@ -134,6 +134,13 @@ bool isVehicleNotVerifiedError(Object error) {
   return data is Map && (data['message'] == 'VEHICLE_NOT_VERIFIED' || data['message'] == 'VEHICLE_REQUIRED');
 }
 
+/// Не «на проверке», а машины в связке нет (нет прицепа у тягача / нет тягача).
+bool isVehicleRequiredError(Object error) {
+  if (error is! DioException) return false;
+  final data = error.response?.data;
+  return data is Map && data['message'] == 'VEHICLE_REQUIRED';
+}
+
 /// Машина уже занята активными сделками (задача 037) — догруз не помещается
 /// или это вообще следующий рейс. `null`, если ошибка другая.
 VehicleFullError? asVehicleFullError(Object error) {

@@ -1346,5 +1346,6 @@
   "shareLinkPromptNotFound": "Сілтеме табылмады — хабарламадан қайта ашыңыз",
   "commonPaste": "Қою",
   "driversInvitePickHint": "Жүкті белгілеп, «Шақыру» басыңыз",
-  "driversInviteTitle": "{name} шақыру"
+  "driversInviteTitle": "{name} шақыру",
+  "dealVehicleRequired": "Рейс үшін тартқыш пен тіркеме керек — жетіспейтінін гаражға қосыңыз"
 }

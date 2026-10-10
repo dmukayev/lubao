@@ -3937,4 +3937,8 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String driversInviteTitle(String name) {
     return 'Пригласить $name';
   }
+
+  @override
+  String get dealVehicleRequired =>
+      'Для рейса нужны тягач и прицеп — добавьте недостающее в гараже';
 }

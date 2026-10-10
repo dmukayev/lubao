@@ -1346,5 +1346,6 @@
   "shareLinkPromptNotFound": "未找到链接 — 请从消息中再次打开",
   "commonPaste": "粘贴",
   "driversInvitePickHint": "选择货物后点击“邀请”",
-  "driversInviteTitle": "邀请 {name}"
+  "driversInviteTitle": "邀请 {name}",
+  "dealVehicleRequired": "此趟运输需要牵引车和挂车 — 请在车库中补充"
 }

@@ -91,7 +91,8 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
         if (mounted) {
           final t = context.l10n;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(t.dealVehicleNotVerified),
+            // Нет прицепа/тягача — так и говорим; «на проверке» — только когда машина не проверена.
+            content: Text(isVehicleRequiredError(e) ? t.dealVehicleRequired : t.dealVehicleNotVerified),
             action: SnackBarAction(label: t.garageGoToGarage, onPressed: () => context.push('/driver/garage')),
           ));
         }

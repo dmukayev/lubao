@@ -3855,4 +3855,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String driversInviteTitle(String name) {
     return '邀请 $name';
   }
+
+  @override
+  String get dealVehicleRequired => '此趟运输需要牵引车和挂车 — 请在车库中补充';
 }
