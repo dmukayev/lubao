@@ -59,6 +59,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   Timer? _marketDebounce;
   /// 048: параметры груза по профилю кузова и другие подходящие кузова.
   Map<String, dynamic> _specs = {};
+  bool _showSpecsRequired = false;
   final _extraBodyTypeIds = <String>{};
   Currency _currency = Currency.usd;
   DateTime _readyDate = DateTime.now();
@@ -204,7 +205,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
 
   Future<void> _refreshFitCount() async {
     final weightKg = _weightKg();
-    final volumeM3 = double.tryParse(_volumeController.text);
+    final volumeM3 = parseDecimal(_volumeController.text);
     final palletCount = int.tryParse(_palletController.text);
     if (volumeM3 == null && palletCount == null && _specs.isEmpty) {
       setState(() => _fitCount = null);
@@ -279,6 +280,12 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     }
   }
 
+  /// Пределы — как на сервере (объём кузова до 200 м³, до 60 европаллет).
+  String? _volumeError(LubaoLocalizations t) => numberFieldError(t, _volumeController.text, max: 200);
+  String? _palletError(LubaoLocalizations t) => int.tryParse(_palletController.text.trim()) == null && _palletController.text.trim().isNotEmpty
+      ? t.fieldNotNumber
+      : numberFieldError(t, _palletController.text, min: 1, max: 60);
+
   /// «≈ 1 115 км по дорогам · ваша цена ≈ 8 970 ₸/км» — цена в ₸ по курсу НБ РК.
   String? _distanceLabel(LubaoLocalizations t, ReferenceData refData) {
     if (_distanceKm == null || _distanceKm == 0) return _distanceLoading ? t.postCargoDistanceCounting : null;
@@ -314,7 +321,12 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       final kg = _weightKg();
       _weightError = weightText.isEmpty || (kg != null && kg > 0 && kg <= maxCargoTons * 1000) ? null : t.postCargoWeightError;
     });
-    if (_pointError != null || _destinationError != null || _bodyTypeError != null || _categoryError != null || _priceError != null || _weightError != null) return;
+    // Поля груза по кузову (литры, число машин…) — ошибки под полями.
+    final specsOk = _bodyTypeId == null || refData == null || specsValid(refData.bodyTypeById(_bodyTypeId!).cargoFields, _specs);
+    if (!specsOk) setState(() => _showSpecsRequired = true);
+    final sizesOk = _volumeError(t) == null && _palletError(t) == null;
+    if (!sizesOk) return;
+    if (_pointError != null || _destinationError != null || _bodyTypeError != null || _categoryError != null || _priceError != null || _weightError != null || !specsOk) return;
     setState(() => _saving = true);
     try {
       final input = CreateCargoInput(
@@ -325,7 +337,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         bodyTypeId: _bodyTypeId!,
         categoryId: _categoryId,
         weightKg: _weightKg(),
-        volumeM3: refData == null || _showVolume(refData) ? double.tryParse(_volumeController.text) : null,
+        volumeM3: refData == null || _showVolume(refData) ? parseDecimal(_volumeController.text) : null,
         palletCount: refData == null || _showPallets(refData) ? int.tryParse(_palletController.text) : null,
         photoUrls: _photoUrls,
         price: price!,
@@ -546,6 +558,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 const SizedBox(height: 8),
                 SpecsForm(
                   key: ValueKey('cargoSpecs-$_bodyTypeId'),
+                  showRequired: _showSpecsRequired,
                   fields: refData.bodyTypeById(_bodyTypeId!).cargoFields,
                   values: _specs,
                   onChanged: (v) {
@@ -584,8 +597,12 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                       key: const Key('postCargoVolume'),
                       label: t.postCargoVolume,
                       controller: _volumeController,
+                      errorText: _volumeError(t),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      onChanged: (_) => _refreshFitCount(),
+                      onChanged: (_) {
+                        setState(() {});
+                        _refreshFitCount();
+                      },
                     ),
                   ),
                 ],
@@ -597,8 +614,12 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 AppTextField(
                   label: t.postCargoPallets,
                   controller: _palletController,
+                  errorText: _palletError(t),
                   keyboardType: TextInputType.number,
-                  onChanged: (_) => _refreshFitCount(),
+                  onChanged: (_) {
+                    setState(() {});
+                    _refreshFitCount();
+                  },
                 ),
               ],
               if (_fitCount != null && !_fitCountLoading) ...[

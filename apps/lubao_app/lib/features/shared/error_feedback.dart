@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:lubao_core/lubao_core.dart';
 
-import 'number_field.dart';
 import 'status_helpers.dart';
 
 /// Единый обработчик ошибок API (задача 041, п.7): сеть/таймаут, сессия,
@@ -38,6 +37,8 @@ void showApiError(BuildContext context, Object error, {String? fallback, VoidCal
   debugPrint('API error: $error');
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
     content: Text(errorMessage(t, error, fallback: fallback)),
+    // С кнопкой Flutter не убирает SnackBar сам (persist) — висел до нажатия.
+    persist: false,
     action: onRetry == null ? null : SnackBarAction(label: t.commonRetry, onPressed: onRetry),
   ));
 }
@@ -62,16 +63,20 @@ String? _fieldLabel(LubaoLocalizations t, String field) => switch (field.split('
 /// Ответ сервера `VALIDATION_FAILED` (поле, правило, предел) → «Длина внутри,
 /// м — не больше 20». Поле без подписи — null (общий текст).
 String? validationErrorText(LubaoLocalizations t, Object? data) {
-  if (data is! Map || data['code'] != 'VALIDATION_FAILED' || data['fields'] is! List) return null;
+  if (data is! Map || (data['code'] != 'VALIDATION_FAILED' && data['code'] != 'INVALID_SPECS') || data['fields'] is! List) return null;
+  final lang = t.localeName.split('_').first;
   for (final raw in data['fields'] as List) {
     if (raw is! Map) continue;
-    final label = _fieldLabel(t, raw['field']?.toString() ?? '');
+    // Поле кузова (INVALID_SPECS) — подпись из справочника на языке пользователя.
+    final serverLabel = raw['label'] is Map ? I18nText.fromJson(Map<String, dynamic>.from(raw['label'] as Map)).forLanguageCode(lang) : null;
+    final label = (serverLabel != null && serverLabel.isNotEmpty ? serverLabel : null) ?? _fieldLabel(t, raw['field']?.toString() ?? '');
     if (label == null) continue;
     final limit = raw['limit'] is num ? formatLimit((raw['limit'] as num).toDouble()) : null;
     return switch (raw['rule']) {
       'max' when limit != null => t.errorFieldMax(label, limit),
       'min' when limit != null => t.errorFieldMin(label, limit),
       'maxLength' when limit != null => t.errorFieldMaxLength(label, limit),
+      'required' => t.errorFieldRequired(label),
       _ => t.errorFieldInvalid(label),
     };
   }

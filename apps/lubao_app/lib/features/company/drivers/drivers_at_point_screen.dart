@@ -151,6 +151,8 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(t.chatOpenFailed),
+            // С кнопкой Flutter не убирает SnackBar сам (persist) — висел до нажатия.
+            persist: false,
             action: SnackBarAction(label: t.commonRetry, onPressed: () => _chat(driver)),
           ),
         );

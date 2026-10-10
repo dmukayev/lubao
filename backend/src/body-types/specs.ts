@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import type { BodyField } from '../../prisma/body-type-profiles';
+import type { FieldViolation } from '../common/validation-errors';
 
 export type SpecsTarget = 'vehicle' | 'cargo' | 'preferred';
 export type Specs = Record<string, number | string | boolean | string[]>;
@@ -23,40 +24,48 @@ export function validateSpecs(fieldsJson: unknown, input: unknown, target: Specs
   const raw = input && typeof input === 'object' && !Array.isArray(input) ? (input as Record<string, unknown>) : {};
   const out: Specs = {};
   const errors: string[] = [];
+  // То же для приложения: поле с подписью из справочника (4 языка) и предел —
+  // «Объём кузова — не больше 200» для любого типа кузова, и добавленного в админке.
+  const violations: Array<FieldViolation & { label?: unknown }> = [];
+  const fail = (f: BodyField, text: string, rule: string, limit?: number) => {
+    errors.push(`${f.key}: ${text}`);
+    violations.push({ field: `specs.${f.key}`, rule, ...(limit != null ? { limit } : {}), label: f.label });
+  };
   for (const f of fields) {
     const value = raw[f.key];
     if (value === undefined || value === null || value === '') {
-      if (f.required && target !== 'preferred') errors.push(`${f.key}: required`);
+      if (f.required && target !== 'preferred') fail(f, 'required', 'required');
       continue;
     }
     switch (f.kind) {
       case 'number': {
         const n = typeof value === 'number' ? value : Number(value);
-        if (!Number.isFinite(n)) errors.push(`${f.key}: number expected`);
-        else if ((f.min != null && n < f.min) || (f.max != null && n > f.max)) errors.push(`${f.key}: out of range ${f.min ?? ''}..${f.max ?? ''}`);
+        if (!Number.isFinite(n)) fail(f, 'number expected', 'isNumber');
+        else if (f.min != null && n < f.min) fail(f, `out of range ${f.min ?? ''}..${f.max ?? ''}`, 'min', f.min);
+        else if (f.max != null && n > f.max) fail(f, `out of range ${f.min ?? ''}..${f.max ?? ''}`, 'max', f.max);
         else out[f.key] = n;
         break;
       }
       case 'bool':
-        if (typeof value !== 'boolean') errors.push(`${f.key}: boolean expected`);
+        if (typeof value !== 'boolean') fail(f, 'boolean expected', 'isBoolean');
         else out[f.key] = value;
         break;
       case 'enum': {
         const codes = (f.options ?? []).map((o) => o.code);
-        if (typeof value !== 'string' || !codes.includes(value)) errors.push(`${f.key}: one of ${codes.join(',')}`);
+        if (typeof value !== 'string' || !codes.includes(value)) fail(f, `one of ${codes.join(',')}`, 'isIn');
         else out[f.key] = value;
         break;
       }
       case 'multi': {
         const codes = (f.options ?? []).map((o) => o.code);
         const list = Array.isArray(value) ? value : [value];
-        if (list.length === 0 || !list.every((v) => typeof v === 'string' && codes.includes(v))) errors.push(`${f.key}: subset of ${codes.join(',')}`);
+        if (list.length === 0 || !list.every((v) => typeof v === 'string' && codes.includes(v))) fail(f, `subset of ${codes.join(',')}`, 'isIn');
         else out[f.key] = [...new Set(list as string[])];
         break;
       }
     }
   }
-  if (errors.length) throw new BadRequestException({ code: 'INVALID_SPECS', message: 'Invalid body specs', errors });
+  if (errors.length) throw new BadRequestException({ code: 'INVALID_SPECS', message: 'Invalid body specs', errors, fields: violations });
   return out;
 }
 

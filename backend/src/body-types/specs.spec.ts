@@ -40,3 +40,29 @@ describe('validateSpecs', () => {
     expect(() => validateSpecs(CARS, { carType: 'SUV' }, 'cargo')).toThrow();
   });
 });
+
+describe('ошибки полей кузова — с подписью из справочника и пределом', () => {
+  const fields = [
+    { key: 'volumeM3', kind: 'number', unit: 'm3', label: { ru: 'Объём кузова', kk: 'Шанақ көлемі', zh: '车厢容积', en: 'Body volume' }, forVehicle: true, forCargo: false, min: 1, max: 200 },
+    { key: 'liters', kind: 'number', label: { ru: 'Объём цистерны' }, forVehicle: true, forCargo: false, required: true },
+  ];
+  const fieldsOf = (input: unknown) => {
+    try {
+      validateSpecs(fields, input, 'vehicle');
+      return null;
+    } catch (e) {
+      return (e as { getResponse(): { fields: unknown[] } }).getResponse().fields;
+    }
+  };
+
+  it('500 м³ при пределе 200 → max 200 с подписью; пустое обязательное → required', () => {
+    expect(fieldsOf({ volumeM3: 500 })).toEqual([
+      { field: 'specs.volumeM3', rule: 'max', limit: 200, label: fields[0].label },
+      { field: 'specs.liters', rule: 'required', label: fields[1].label },
+    ]);
+  });
+
+  it('меньше минимума → min', () => {
+    expect(fieldsOf({ volumeM3: 0.5, liters: 1000 })).toEqual([{ field: 'specs.volumeM3', rule: 'min', limit: 1, label: fields[0].label }]);
+  });
+});

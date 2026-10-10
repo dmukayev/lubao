@@ -80,6 +80,19 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get fieldNotNumber => 'Введите число';
 
   @override
+  String fieldMin(String limit) {
+    return 'Не меньше $limit';
+  }
+
+  @override
+  String get fieldRequired => 'Обязательное поле';
+
+  @override
+  String errorFieldRequired(String field) {
+    return '$field — обязательно';
+  }
+
+  @override
   String get errorSessionExpired => 'Сессия истекла — войдите снова';
 
   @override

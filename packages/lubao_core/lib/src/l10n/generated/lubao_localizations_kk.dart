@@ -80,6 +80,19 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get fieldNotNumber => 'Сан енгізіңіз';
 
   @override
+  String fieldMin(String limit) {
+    return '$limit кем болмауы керек';
+  }
+
+  @override
+  String get fieldRequired => 'Міндетті өріс';
+
+  @override
+  String errorFieldRequired(String field) {
+    return '$field — міндетті';
+  }
+
+  @override
   String get errorSessionExpired => 'Сессия аяқталды — қайта кіріңіз';
 
   @override

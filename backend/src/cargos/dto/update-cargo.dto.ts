@@ -36,11 +36,13 @@ export class UpdateCargoDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(200) // как «Объём кузова» в профилях (до 200 м³)
   volumeM3?: number;
 
   @IsOptional()
   @IsInt()
   @Min(1)
+  @Max(60) // как «Европаллеты» в профилях
   palletCount?: number;
 
   @IsOptional()

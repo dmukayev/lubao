@@ -81,6 +81,19 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get fieldNotNumber => 'Enter a number';
 
   @override
+  String fieldMin(String limit) {
+    return 'At least $limit';
+  }
+
+  @override
+  String get fieldRequired => 'Required';
+
+  @override
+  String errorFieldRequired(String field) {
+    return '$field: required';
+  }
+
+  @override
   String get errorSessionExpired => 'Session expired — sign in again';
 
   @override

@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
+import '../../shared/error_feedback.dart';
 import '../../shared/number_field.dart';
 import '../../shared/photo_picker.dart';
 import 'add_vehicle_sheet.dart';
@@ -21,6 +22,7 @@ class GarageScreen extends ConsumerWidget {
   /// 048 п.3: параметры машины по профилю кузова (цистерна, автовоз…).
   Future<void> _editSpecs(BuildContext context, WidgetRef ref, GarageVehicle vehicle, BodyType bodyType) async {
     var values = <String, dynamic>{...?vehicle.specs};
+    var showRequired = false;
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -37,8 +39,13 @@ class GarageScreen extends ConsumerWidget {
               children: [
                 Text(sheetContext.l10n.bodySpecsTitle, style: AppTextStyles.headline),
                 const SizedBox(height: AppSpacing.md),
-                SpecsForm(fields: bodyType.vehicleFields, values: values, onChanged: (v) => setSheet(() => values = v)),
-                PrimaryButton(key: const Key('vehicleSpecsSave'), label: sheetContext.l10n.commonSave, onPressed: () => Navigator.pop(sheetContext, true)),
+                SpecsForm(fields: bodyType.vehicleFields, values: values, showRequired: showRequired, onChanged: (v) => setSheet(() => values = v)),
+                PrimaryButton(
+                  key: const Key('vehicleSpecsSave'),
+                  label: sheetContext.l10n.commonSave,
+                  // Ошибка — под полем, шторка не закрывается («Объём — не больше 200»).
+                  onPressed: () => specsValid(bodyType.vehicleFields, values) ? Navigator.pop(sheetContext, true) : setSheet(() => showRequired = true),
+                ),
               ],
             ),
           ),
@@ -51,7 +58,7 @@ class GarageScreen extends ConsumerWidget {
       ref.invalidate(garageVehiclesProvider);
     } catch (e) {
       debugPrint('GarageScreen: specs: $e');
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.garageAddFailed)));
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage(context.l10n, e, fallback: context.l10n.garageAddFailed))));
     }
   }
 

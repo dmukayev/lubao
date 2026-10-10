@@ -5,6 +5,7 @@ import '../l10n/generated/lubao_localizations.dart';
 import '../models/reference_data.dart';
 import '../theme/app_theme.dart';
 import 'app_text_field.dart';
+import 'number_input.dart';
 import 'selectable_tile.dart';
 
 /// Единица поля профиля кузова (048) — на языке интерфейса.
@@ -52,14 +53,33 @@ String specsSummary(LubaoLocalizations t, String locale, BodyType bodyType, Map<
   return parts.join(' · ');
 }
 
+/// Можно сохранять: обязательные заполнены, числа в пределах справочника.
+/// Число, которое не разобралось («abc»), в `values` не попадает — для
+/// обязательного поля это «не заполнено», под полем — «Введите число».
+bool specsValid(List<BodyField> fields, Map<String, dynamic> values) {
+  for (final f in fields) {
+    final v = values[f.key];
+    if (v == null || (v is List && v.isEmpty)) {
+      if (f.required) return false;
+      continue;
+    }
+    if (f.kind == 'number' && v is num && ((f.min != null && v < f.min!) || (f.max != null && v > f.max!))) return false;
+  }
+  return true;
+}
+
 /// Форма параметров по полям профиля кузова (048 п.3–4, 7): числа с единицами,
 /// выбор одного / нескольких вариантов, переключатель. Значения — как в `specs`.
+/// Ошибки — под полем сразу при вводе («Не больше 200», «Введите число») для
+/// любого типа кузова (пределы из справочника); [showRequired] — после
+/// попытки сохранить подсветить незаполненные обязательные.
 class SpecsForm extends StatefulWidget {
-  const SpecsForm({super.key, required this.fields, required this.values, required this.onChanged});
+  const SpecsForm({super.key, required this.fields, required this.values, required this.onChanged, this.showRequired = false});
 
   final List<BodyField> fields;
   final Map<String, dynamic> values;
   final ValueChanged<Map<String, dynamic>> onChanged;
+  final bool showRequired;
 
   @override
   State<SpecsForm> createState() => _SpecsFormState();
@@ -104,13 +124,15 @@ class _SpecsFormState extends State<SpecsForm> {
             key: Key('spec-${f.key}'),
             label: unit.isEmpty ? label : '$label, $unit',
             controller: controller,
+            errorText: numberFieldError(t, controller.text, min: f.min, max: f.max, required: widget.showRequired && f.required, positive: false),
             keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
             onChanged: (text) => _set(f.key, double.tryParse(text.replaceAll(',', '.').replaceAll(' ', ''))),
           ));
         case 'enum':
         case 'multi':
           final current = widget.values[f.key];
-          children.add(Text(label, style: AppTextStyles.bodyStrong));
+          final missing = widget.showRequired && f.required && (current == null || (current is List && current.isEmpty));
+          children.add(Text(label, style: AppTextStyles.bodyStrong.copyWith(color: missing ? AppColors.error : null)));
           children.add(const SizedBox(height: AppSpacing.xs));
           children.add(Wrap(
             spacing: AppSpacing.sm,
@@ -133,6 +155,10 @@ class _SpecsFormState extends State<SpecsForm> {
                 ),
             ],
           ));
+          if (missing) {
+            children.add(const SizedBox(height: AppSpacing.xs));
+            children.add(Text(t.fieldRequired, key: Key('spec-${f.key}-required'), style: AppTextStyles.caption.copyWith(color: AppColors.error)));
+          }
         case 'bool':
           children.add(SwitchListTile(
             key: Key('spec-${f.key}'),

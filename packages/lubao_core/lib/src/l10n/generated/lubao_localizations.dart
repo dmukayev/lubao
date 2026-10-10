@@ -222,6 +222,24 @@ abstract class LubaoLocalizations {
   /// **'Введите число'**
   String get fieldNotNumber;
 
+  /// No description provided for @fieldMin.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не меньше {limit}'**
+  String fieldMin(String limit);
+
+  /// No description provided for @fieldRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обязательное поле'**
+  String get fieldRequired;
+
+  /// No description provided for @errorFieldRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'{field} — обязательно'**
+  String errorFieldRequired(String field);
+
   /// No description provided for @errorSessionExpired.
   ///
   /// In ru, this message translates to:

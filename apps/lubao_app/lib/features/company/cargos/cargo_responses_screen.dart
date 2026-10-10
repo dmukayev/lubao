@@ -247,6 +247,8 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
         final t = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(t.chatOpenFailed),
+          // С кнопкой Flutter не убирает SnackBar сам (persist) — висел до нажатия.
+          persist: false,
           action: SnackBarAction(label: t.commonRetry, onPressed: _chat),
         ));
       }

@@ -36,7 +36,7 @@ export class CreateVehicleDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  @Max(60)
+  @Max(80) // как в профилях кузова (body-type-profiles: capacityTons до 80 т)
   capacityTons?: number;
 
   /// Длина машины/прицепа снаружи: автопоезд — до ~25 м.

@@ -48,6 +48,8 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
         final t = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(t.chatOpenFailed),
+          // С кнопкой Flutter не убирает SnackBar сам (persist) — висел до нажатия.
+          persist: false,
           action: SnackBarAction(label: t.commonRetry, onPressed: () => _openChat(deal)),
         ));
       }
@@ -93,6 +95,8 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             // Нет прицепа/тягача — так и говорим; «на проверке» — только когда машина не проверена.
             content: Text(isVehicleRequiredError(e) ? t.dealVehicleRequired : t.dealVehicleNotVerified),
+            // С кнопкой Flutter не убирает SnackBar сам (persist) — висел до нажатия.
+            persist: false,
             action: SnackBarAction(label: t.garageGoToGarage, onPressed: () => context.push('/driver/garage')),
           ));
         }

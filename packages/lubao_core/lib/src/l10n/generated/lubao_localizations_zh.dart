@@ -79,6 +79,19 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get fieldNotNumber => '请输入数字';
 
   @override
+  String fieldMin(String limit) {
+    return '不能小于 $limit';
+  }
+
+  @override
+  String get fieldRequired => '必填项';
+
+  @override
+  String errorFieldRequired(String field) {
+    return '$field：必填';
+  }
+
+  @override
   String get errorSessionExpired => '登录已过期，请重新登录';
 
   @override

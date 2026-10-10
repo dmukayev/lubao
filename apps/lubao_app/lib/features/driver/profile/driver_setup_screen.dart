@@ -166,6 +166,13 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
       _bodyTypeError = widget.isRegistration && _bodyTypeId == null ? t.driverSetupBodyTypeError : null;
     });
     if (_fullNameError != null || _homeCityError != null || _bodyTypeError != null) return;
+    // Параметры кузова здесь необязательны, но вне пределов справочника не
+    // отправляем — причина уже написана под полем.
+    final body = _bodyTypeId == null ? null : ref.read(referenceDataProvider).valueOrNull?.bodyTypeById(_bodyTypeId!);
+    if (widget.isRegistration && body != null) {
+      final optional = body.primaryFields.where((f) => f.key != 'capacityTons').map((f) => BodyField(key: f.key, kind: f.kind, label: f.label, min: f.min, max: f.max)).toList();
+      if (!specsValid(optional, _preferredSpecs)) return;
+    }
 
     setState(() => _saving = true);
     try {

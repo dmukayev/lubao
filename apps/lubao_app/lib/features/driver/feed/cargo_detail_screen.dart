@@ -115,6 +115,8 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(context.l10n.chatOpenFailed),
+            // С кнопкой Flutter не убирает SnackBar сам (persist) — висел до нажатия.
+            persist: false,
             action: SnackBarAction(label: context.l10n.commonRetry, onPressed: () => _chat(cargo)),
           ),
         );

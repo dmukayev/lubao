@@ -105,6 +105,8 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
         if (isEmailTakenError(e)) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(t.companyRegisterEmailTaken),
+            // С кнопкой Flutter не убирает SnackBar сам (persist) — висел до нажатия.
+            persist: false,
             action: SnackBarAction(
               label: t.companyLoginTitle,
               onPressed: () => context.push('/login/company', extra: email),

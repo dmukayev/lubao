@@ -131,6 +131,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   String? _innerLengthError;
   String? _innerWidthError;
   String? _innerHeightError;
+  bool _showSpecsRequired = false;
 
   /// Проверка чисел до отправки (пределы те же, что на сервере).
   bool _validateSizes() {
@@ -144,7 +145,11 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
       _innerWidthError = custom ? numberFieldError(t, _innerWidthController.text, max: VehicleLimits.innerWidthM, required: true) : null;
       _innerHeightError = custom ? numberFieldError(t, _innerHeightController.text, max: VehicleLimits.innerHeightM, required: true) : null;
     });
-    return [_capacityError, _lengthError, _innerLengthError, _innerWidthError, _innerHeightError].every((e) => e == null);
+    // Не объёмный кузов (цистерна, автовоз…) — поля по профилю из справочника.
+    final body = _selectedBodyType(ref.read(referenceDataProvider).valueOrNull);
+    final specsOk = _kind == VehicleKind.tractor || _isVolume || body == null || specsValid(body.vehicleFields, _specs);
+    if (!specsOk) setState(() => _showSpecsRequired = true);
+    return specsOk && [_capacityError, _lengthError, _innerLengthError, _innerWidthError, _innerHeightError].every((e) => e == null);
   }
 
   BodyType? _selectedBodyType(ReferenceData? refData) =>
@@ -308,6 +313,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                   Text(t.bodySpecsTitle, style: AppTextStyles.bodyStrong),
                   const SizedBox(height: AppSpacing.sm),
                   SpecsForm(
+                    showRequired: _showSpecsRequired,
                     key: ValueKey('specs-${_bodyTypeId}'),
                     fields: _selectedBodyType(refData)!.vehicleFields,
                     values: _specs,
