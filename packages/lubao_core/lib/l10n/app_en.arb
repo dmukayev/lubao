@@ -926,6 +926,7 @@
   "adminSettingCargoArchiveDays": "Cargo archive period without responses",
   "adminComplaintResolutionTitle": "Resolution",
   "adminComplaintResolutionNoteLabel": "Reply to the reporter",
+  "adminComplaintNoteRequired": "Write a reply to the reporter — they will see it",
   "adminComplaintSelectHint": "Select a complaint from the queue on the left",
   "adminComplaintTabNew": "New",
   "adminComplaintTabInReview": "In review",

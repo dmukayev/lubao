@@ -933,6 +933,7 @@
   "adminSettingCargoArchiveDays": "Срок архива груза без откликов",
   "adminComplaintResolutionTitle": "Решение",
   "adminComplaintResolutionNoteLabel": "Ответ автору жалобы",
+  "adminComplaintNoteRequired": "Напишите ответ автору — он его увидит",
   "adminComplaintSelectHint": "Выберите жалобу из очереди слева",
   "adminComplaintTabNew": "Новые",
   "adminComplaintTabInReview": "В работе",

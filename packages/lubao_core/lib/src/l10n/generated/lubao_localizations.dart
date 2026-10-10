@@ -4212,6 +4212,12 @@ abstract class LubaoLocalizations {
   /// **'Ответ автору жалобы'**
   String get adminComplaintResolutionNoteLabel;
 
+  /// No description provided for @adminComplaintNoteRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Напишите ответ автору — он его увидит'**
+  String get adminComplaintNoteRequired;
+
   /// No description provided for @adminComplaintSelectHint.
   ///
   /// In ru, this message translates to:

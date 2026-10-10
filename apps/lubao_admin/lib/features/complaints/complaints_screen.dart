@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -131,7 +132,19 @@ class _Detail extends ConsumerWidget {
   Future<void> _resolve(BuildContext context, WidgetRef ref, String targetType) async {
     final result = await showComplaintResolveDialog(context, targetType: targetType);
     if (result == null) return;
-    await ref.read(adminRepositoryProvider).resolveComplaint(id, resolution: result.resolution, resolutionNote: result.resolutionNote);
+    try {
+      await ref.read(adminRepositoryProvider).resolveComplaint(id, resolution: result.resolution, resolutionNote: result.resolutionNote);
+    } catch (e) {
+      // Сервер отказал (например, «нечего снимать / некого блокировать») —
+      // причина на экране, а не тишина.
+      debugPrint('ComplaintDetail: resolve failed: $e');
+      if (context.mounted) {
+        final data = e is DioException ? e.response?.data : null;
+        final reason = data is Map ? data['message']?.toString() : null;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text([context.l10n.commonError, ?reason].join(': '))));
+      }
+      return;
+    }
     await _reload(ref);
     ref.read(adminComplaintSelectedIdProvider.notifier).state = null;
   }

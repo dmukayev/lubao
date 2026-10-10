@@ -2180,6 +2180,9 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get adminComplaintResolutionNoteLabel => '回复投诉人';
 
   @override
+  String get adminComplaintNoteRequired => '请填写给投诉人的回复——对方会看到';
+
+  @override
   String get adminComplaintSelectHint => '请从左侧队列中选择一条投诉';
 
   @override

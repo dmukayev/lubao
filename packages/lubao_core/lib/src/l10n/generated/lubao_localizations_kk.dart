@@ -2217,6 +2217,10 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get adminComplaintResolutionNoteLabel => 'Шағым авторына жауап';
 
   @override
+  String get adminComplaintNoteRequired =>
+      'Авторға жауап жазыңыз — ол оны көреді';
+
+  @override
   String get adminComplaintSelectHint =>
       'Сол жақтағы кезектен шағымды таңдаңыз';
 

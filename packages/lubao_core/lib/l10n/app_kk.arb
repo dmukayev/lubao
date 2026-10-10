@@ -801,6 +801,7 @@
   "adminSettingCargoArchiveDays": "Жауапсыз жүк мұрағатталу мерзімі",
   "adminComplaintResolutionTitle": "Шешім",
   "adminComplaintResolutionNoteLabel": "Шағым авторына жауап",
+  "adminComplaintNoteRequired": "Авторға жауап жазыңыз — ол оны көреді",
   "adminComplaintSelectHint": "Сол жақтағы кезектен шағымды таңдаңыз",
   "adminComplaintTabNew": "Жаңа",
   "adminComplaintTabInReview": "Жұмыста",

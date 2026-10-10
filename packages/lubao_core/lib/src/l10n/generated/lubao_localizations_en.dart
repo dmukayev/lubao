@@ -2221,6 +2221,10 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get adminComplaintResolutionNoteLabel => 'Reply to the reporter';
 
   @override
+  String get adminComplaintNoteRequired =>
+      'Write a reply to the reporter — they will see it';
+
+  @override
   String get adminComplaintSelectHint =>
       'Select a complaint from the queue on the left';
 

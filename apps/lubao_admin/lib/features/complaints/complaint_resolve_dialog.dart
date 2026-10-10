@@ -18,13 +18,15 @@ Future<ComplaintResolveResult?> showComplaintResolveDialog(BuildContext context,
   final options = ['DISMISSED', 'WARNED', if (targetType == 'CARGO' || targetType == 'DEAL') 'CARGO_UNPUBLISHED', 'BLOCKED'];
   String resolution = options.first;
   final noteController = TextEditingController();
+  // «Сохранить» всегда нажимается: пустой ответ — причина под полем
+  // (раньше кнопка была серой без объяснения — «не нажимается»).
+  var noteMissing = false;
 
   return showDialog<ComplaintResolveResult>(
     context: context,
     builder: (dialogContext) => StatefulBuilder(
       builder: (dialogContext, setState) {
         final t = dialogContext.l10n;
-        final canConfirm = noteController.text.trim().isNotEmpty;
         return AlertDialog(
           title: Text(t.adminComplaintResolutionTitle),
           content: SizedBox(
@@ -46,7 +48,14 @@ Future<ComplaintResolveResult?> showComplaintResolveDialog(BuildContext context,
                       onChanged: (v) => setState(() => resolution = v!),
                     ),
                   const SizedBox(height: 8),
-                  AppTextField(label: t.adminComplaintResolutionNoteLabel, controller: noteController, maxLines: 3, onChanged: (_) => setState(() {})),
+                  AppTextField(
+                    key: const Key('complaintResolutionNote'),
+                    label: t.adminComplaintResolutionNoteLabel,
+                    controller: noteController,
+                    maxLines: 3,
+                    errorText: noteMissing ? t.adminComplaintNoteRequired : null,
+                    onChanged: (_) => setState(() => noteMissing = false),
+                  ),
                 ],
               ),
             ),
@@ -54,7 +63,12 @@ Future<ComplaintResolveResult?> showComplaintResolveDialog(BuildContext context,
           actions: [
             TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
             FilledButton(
-              onPressed: canConfirm ? () => Navigator.pop(dialogContext, ComplaintResolveResult(resolution: resolution, resolutionNote: noteController.text.trim())) : null,
+              key: const Key('complaintResolveSave'),
+              onPressed: () {
+                final note = noteController.text.trim();
+                if (note.isEmpty) return setState(() => noteMissing = true);
+                Navigator.pop(dialogContext, ComplaintResolveResult(resolution: resolution, resolutionNote: note));
+              },
               child: Text(t.commonSave),
             ),
           ],

@@ -2211,6 +2211,10 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get adminComplaintResolutionNoteLabel => 'Ответ автору жалобы';
 
   @override
+  String get adminComplaintNoteRequired =>
+      'Напишите ответ автору — он его увидит';
+
+  @override
   String get adminComplaintSelectHint => 'Выберите жалобу из очереди слева';
 
   @override

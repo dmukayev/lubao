@@ -801,6 +801,7 @@
   "adminSettingCargoArchiveDays": "无响应货物的归档期限",
   "adminComplaintResolutionTitle": "处理决定",
   "adminComplaintResolutionNoteLabel": "回复投诉人",
+  "adminComplaintNoteRequired": "请填写给投诉人的回复——对方会看到",
   "adminComplaintSelectHint": "请从左侧队列中选择一条投诉",
   "adminComplaintTabNew": "新投诉",
   "adminComplaintTabInReview": "处理中",
