@@ -68,6 +68,21 @@ void main() {
       await waitFor(tester, find.byKey(const Key('driverStatusBar')));
     });
 
+    // До торга: сделок с этой компанией ещё нет — номер в Lubao → приглашение.
+    await run.step(tester, 'компания-добавила-водителя-принять', () async {
+      final res = await logist.createDriver('Ержан', '+7 701 000 00 05');
+      expect(res['result'], 'INVITED_EXISTING');
+      // Список «компаний» водителя перечитывается при входе на экран.
+      await goTab(tester, t.profileTitle);
+      await goTab(tester, t.navFeed);
+      final accept = find.byKey(const Key('companyInviteAccept-33333333-3333-4333-8333-333333333002'));
+      await waitFor(tester, accept, timeout: const Duration(seconds: 20));
+      await tester.tap(accept);
+      await tester.pumpAndSettle();
+      final mine = await logist.myDrivers();
+      expect(mine.any((d) => d['driverId'] == 'dddddddd-dddd-4ddd-8ddd-ddddddddd005' && d['status'] == 'ACTIVE'), isTrue);
+    });
+
     final card = find.byKey(Key('feedCargoCard-$cargoId'));
     await run.step(tester, 'лента-аванс-нал-нужно-2-флаги', () async {
       await reveal(tester, card);
@@ -128,19 +143,6 @@ void main() {
       await tester.drag(find.byType(Scrollable).first, const Offset(0, 400));
       await tester.pumpAndSettle(const Duration(seconds: 2));
       expect(card, findsNothing);
-    });
-
-    await run.step(tester, 'компания-добавила-водителя-принять', () async {
-      final res = await logist.createDriver('Ержан', '+7 701 000 00 05');
-      expect(res['result'], 'INVITED_EXISTING');
-      await goTab(tester, t.profileTitle);
-      await goTab(tester, t.navFeed);
-      final accept = find.byKey(const Key('companyInviteAccept-33333333-3333-4333-8333-333333333002'));
-      await waitFor(tester, accept, timeout: const Duration(seconds: 20));
-      await tester.tap(accept);
-      await tester.pumpAndSettle();
-      final mine = await logist.myDrivers();
-      expect(mine.any((d) => d['driverId'] == 'dddddddd-dddd-4ddd-8ddd-ddddddddd005' && d['status'] == 'ACTIVE'), isTrue);
     });
 
     await run.step(tester, 'был-в-сети', () async {

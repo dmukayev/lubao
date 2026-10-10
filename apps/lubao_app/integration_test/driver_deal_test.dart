@@ -225,6 +225,10 @@ void main() {
     await run.step(tester, 'отмена-причина-из-списка', () async {
       await openDeal(deal3);
       await waitAndReveal(tester, find.byKey(const Key('dealCancelButton')));
+      // Страница сделки длиннее (058: маршрут и условия) — дождаться конца прокрутки.
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('dealCancelButton')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('dealCancelButton')));
       await waitFor(tester, find.byKey(const Key('cancelReason_VEHICLE_BREAKDOWN')));
       expect(find.byKey(const Key('cancelReason_TOOK_OTHER_CARGO')), findsOneWidget);
