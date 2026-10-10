@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
@@ -63,14 +62,6 @@ class _DriverShellState extends ConsumerState<DriverShell> {
     return index < 0 ? 0 : index;
   }
 
-  Widget _counted(IconData icon, int count, String key) => Badge.count(
-        key: Key(key),
-        count: count,
-        isLabelVisible: count > 0,
-        backgroundColor: AppColors.primary,
-        child: Icon(icon),
-      );
-
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
@@ -95,11 +86,12 @@ class _DriverShellState extends ConsumerState<DriverShell> {
           if (index == 2) ref.invalidate(myChatsProvider);
           context.go(_tabs[index]);
         },
+        // Эталон 33: свои цветные иконки (design/brand/nav).
         destinations: [
-          NavigationDestination(icon: const Icon(LucideIcons.truck), label: t.navFeed),
-          NavigationDestination(icon: _counted(tripsTabIcon, waiting, 'navTripsBadge'), label: t.navTrips),
-          NavigationDestination(icon: _counted(LucideIcons.messageCircle, unread, 'navChatsBadge'), label: t.navChats),
-          NavigationDestination(icon: const Icon(LucideIcons.user), label: t.profileTitle),
+          navDestination(NavIconAsset.cargo, t.navFeed),
+          navDestination(NavIconAsset.trips, t.navTrips, count: waiting, badgeKey: const Key('navTripsBadge')),
+          navDestination(NavIconAsset.chats, t.navChats, count: unread, badgeKey: const Key('navChatsBadge')),
+          navDestination(NavIconAsset.profile, t.profileTitle),
         ],
       ),
     );

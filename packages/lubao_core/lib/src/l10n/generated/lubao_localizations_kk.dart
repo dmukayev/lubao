@@ -3549,6 +3549,58 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   }
 
   @override
+  String cargoAdvance(String amount) {
+    return 'аванс $amount';
+  }
+
+  @override
+  String get paymentFormCashShort => 'қолма-қол';
+
+  @override
+  String get paymentFormCardShort => 'картаға';
+
+  @override
+  String get paymentFormCashlessShort => 'шотқа';
+
+  @override
+  String paymentDelayShort(String days) {
+    return 'кейінге қалдыру $days күн';
+  }
+
+  @override
+  String get paymentFormCash => 'Қолма-қол';
+
+  @override
+  String get paymentFormCard => 'Картаға';
+
+  @override
+  String get paymentFormCashless => 'Шотқа';
+
+  @override
+  String get postCargoPaymentTitle => 'Төлем';
+
+  @override
+  String get postCargoAdvance => 'Аванс';
+
+  @override
+  String get postCargoPaymentDelay => 'Кейінге қалдыру, күн';
+
+  @override
+  String get postCargoAdvanceTooBig => 'Аванс бағадан аспауы керек';
+
+  @override
+  String get companyKindTitle => 'Компания түрі';
+
+  @override
+  String get companyKindShipper => 'Жүк иесі';
+
+  @override
+  String get companyKindForwarder => 'Экспедитор';
+
+  @override
+  String get companyKindCarrier => 'Тасымалдаушы';
+
+  @override
   String postCargoDistanceHint(String km) {
     return 'Жолмен ≈ $km км';
   }

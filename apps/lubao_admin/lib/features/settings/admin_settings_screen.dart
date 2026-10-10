@@ -377,12 +377,13 @@ class _RatesCard extends ConsumerWidget {
           const SizedBox(height: 4),
           Text(t.adminRatesHint, style: AppTextStyles.caption),
           const SizedBox(height: 8),
-          for (final currency in const [Currency.usd, Currency.cny])
+          // 058 п.4: + RUB, UZS (курс сума — до 4 знаков: 1 сум ≈ 0,04 ₸).
+          for (final currency in const [Currency.usd, Currency.cny, Currency.rub, Currency.uzs])
             Builder(builder: (context) {
               final rate = rates.where((r) => r.currency == currency).firstOrNull?.rateToKzt;
               return Row(
                 children: [
-                  Expanded(child: Text('1 ${currency.name.toUpperCase()} = ${rate?.toStringAsFixed(2) ?? '—'} ₸')),
+                  Expanded(child: Text('1 ${currency.name.toUpperCase()} = ${rate?.toStringAsFixed(rate < 1 ? 4 : 2) ?? '—'} ₸')),
                   IconButton(
                     key: Key('adminRateEdit-${currency.name}'),
                     tooltip: t.adminRateEdit,

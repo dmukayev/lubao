@@ -46,7 +46,17 @@ class Cargo {
     this.distanceKm,
     this.pricePerKm,
     this.market,
+    this.advanceAmount,
+    this.paymentForm,
+    this.paymentDelayDays,
+    this.companyKind = CompanyKind.forwarder,
   });
+
+  /// 058 п.1: условия оплаты (аванс — в валюте груза); 8а — тип компании.
+  final double? advanceAmount;
+  final PaymentForm? paymentForm;
+  final int? paymentDelayDays;
+  final CompanyKind companyKind;
 
   /// 047: категория (справочник), км по дороге и цена за км в валюте груза;
   /// `market` — «рынок за месяц» по маршруту (только в карточке).
@@ -141,6 +151,10 @@ class Cargo {
         photoUrls: (json['photoUrls'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
         price: (json['price'] as num).toDouble(),
         currency: currencyFromJson(json['currency'] as String),
+        advanceAmount: (json['advanceAmount'] as num?)?.toDouble(),
+        paymentForm: paymentFormFromJson(json['paymentForm'] as String?),
+        paymentDelayDays: json['paymentDelayDays'] as int?,
+        companyKind: companyKindFromJson(json['companyKind'] as String?),
         readyDate: DateTime.parse(json['readyDate'] as String),
         description: json['description'] as String?,
         status: cargoStatusFromJson(json['status'] as String),
@@ -270,7 +284,15 @@ class CreateCargoInput {
     required this.currency,
     required this.readyDate,
     this.description,
+    this.advanceAmount,
+    this.paymentForm,
+    this.paymentDelayDays,
   });
+
+  /// 058 п.1: условия оплаты; null — «без условий» (при правке — убрать).
+  final double? advanceAmount;
+  final PaymentForm? paymentForm;
+  final int? paymentDelayDays;
 
   /// Город погрузки — обязателен (040, п.7).
   final String pointId;
@@ -309,6 +331,10 @@ class CreateCargoInput {
         if (photoUrls.isNotEmpty) 'photoUrls': photoUrls,
         'price': price,
         'currency': currencyToJson(currency),
+        // Всегда, в т.ч. null: при правке так убирают аванс/форму/отсрочку.
+        'advanceAmount': advanceAmount,
+        'paymentForm': paymentForm?.name.toUpperCase(),
+        'paymentDelayDays': paymentDelayDays,
         'readyDate': ymd(readyDate),
         if (description != null) 'description': description,
       };

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
@@ -306,6 +305,3 @@ class _TripCard extends StatelessWidget {
     );
   }
 }
-
-/// Иконка вкладки «Мои рейсы» (компас, как на эталоне).
-const tripsTabIcon = LucideIcons.compass;

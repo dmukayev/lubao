@@ -3536,6 +3536,58 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   }
 
   @override
+  String cargoAdvance(String amount) {
+    return 'аванс $amount';
+  }
+
+  @override
+  String get paymentFormCashShort => 'нал.';
+
+  @override
+  String get paymentFormCardShort => 'на карту';
+
+  @override
+  String get paymentFormCashlessShort => 'на счёт';
+
+  @override
+  String paymentDelayShort(String days) {
+    return 'отсрочка $days дн.';
+  }
+
+  @override
+  String get paymentFormCash => 'Наличные';
+
+  @override
+  String get paymentFormCard => 'На карту';
+
+  @override
+  String get paymentFormCashless => 'На счёт';
+
+  @override
+  String get postCargoPaymentTitle => 'Оплата';
+
+  @override
+  String get postCargoAdvance => 'Аванс';
+
+  @override
+  String get postCargoPaymentDelay => 'Отсрочка, дней';
+
+  @override
+  String get postCargoAdvanceTooBig => 'Аванс не больше цены';
+
+  @override
+  String get companyKindTitle => 'Тип компании';
+
+  @override
+  String get companyKindShipper => 'Грузовладелец';
+
+  @override
+  String get companyKindForwarder => 'Экспедитор';
+
+  @override
+  String get companyKindCarrier => 'Перевозчик';
+
+  @override
   String postCargoDistanceHint(String km) {
     return '≈ $km км по дорогам';
   }

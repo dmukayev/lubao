@@ -298,8 +298,11 @@ class Company {
     this.wecomWebhookUrl,
     required this.ratingAvg,
     required this.ratingCount,
+    this.kind = CompanyKind.forwarder,
   });
 
+  /// 058 п.8а: грузовладелец / экспедитор / перевозчик.
+  final CompanyKind kind;
   final String id;
   final String name;
   final String? nameRu;
@@ -327,6 +330,7 @@ class Company {
         wecomWebhookUrl: json['wecomWebhookUrl'] as String?,
         ratingAvg: (json['ratingAvg'] as num?)?.toDouble() ?? 0,
         ratingCount: json['ratingCount'] as int? ?? 0,
+        kind: companyKindFromJson(json['kind'] as String?),
       );
 }
 

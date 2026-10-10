@@ -41,6 +41,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   bool _fitCountLoading = false;
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
+  // 058 п.1: условия оплаты — аванс (в валюте груза), форма, отсрочка.
+  final _advanceController = TextEditingController();
+  final _delayController = TextEditingController();
+  PaymentForm? _paymentForm;
   String? _pointId;
   String? _pointError;
   bool _allowPartial = false;
@@ -104,6 +108,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       if (cargo.palletCount != null) _palletController.text = cargo.palletCount.toString();
       _priceController.text = _trimNum(cargo.price);
       _descriptionController.text = cargo.description ?? '';
+      // «Повторить» копирует и условия оплаты.
+      if (cargo.advanceAmount != null) _advanceController.text = _trimNum(cargo.advanceAmount!);
+      if (cargo.paymentDelayDays != null) _delayController.text = '${cargo.paymentDelayDays}';
+      _paymentForm = cargo.paymentForm;
     }
   }
 
@@ -172,6 +180,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     _palletController.dispose();
     _priceController.dispose();
     _descriptionController.dispose();
+    _advanceController.dispose();
+    _delayController.dispose();
     super.dispose();
   }
 
@@ -280,6 +290,23 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     }
   }
 
+  /// 058 п.1: аванс — число, не больше цены; отсрочка — целые дни до 365.
+  String? _advanceError(LubaoLocalizations t) {
+    if (_advanceController.text.trim().isEmpty) return null;
+    final advance = parseDecimal(_advanceController.text);
+    if (advance == null || advance < 0) return t.fieldNotNumber;
+    final price = parseDecimal(_priceController.text);
+    return price != null && advance > price ? t.postCargoAdvanceTooBig : null;
+  }
+
+  String? _delayError(LubaoLocalizations t) {
+    final text = _delayController.text.trim();
+    if (text.isEmpty) return null;
+    final days = int.tryParse(text);
+    if (days == null || days < 0) return t.fieldNotNumber;
+    return days > 365 ? t.fieldMax('365') : null;
+  }
+
   /// Пределы — как на сервере (объём кузова до 200 м³, до 60 европаллет).
   String? _volumeError(LubaoLocalizations t) => numberFieldError(t, _volumeController.text, max: 200);
   String? _palletError(LubaoLocalizations t) => int.tryParse(_palletController.text.trim()) == null && _palletController.text.trim().isNotEmpty
@@ -324,7 +351,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     // Поля груза по кузову (литры, число машин…) — ошибки под полями.
     final specsOk = _bodyTypeId == null || refData == null || specsValid(refData.bodyTypeById(_bodyTypeId!).cargoFields, _specs);
     if (!specsOk) setState(() => _showSpecsRequired = true);
-    final sizesOk = _volumeError(t) == null && _palletError(t) == null;
+    final sizesOk = _volumeError(t) == null && _palletError(t) == null && _advanceError(t) == null && _delayError(t) == null;
     if (!sizesOk) return;
     if (_pointError != null || _destinationError != null || _bodyTypeError != null || _categoryError != null || _priceError != null || _weightError != null || !specsOk) return;
     setState(() => _saving = true);
@@ -344,6 +371,9 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         currency: _currency,
         readyDate: _readyDate,
         description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
+        advanceAmount: parseDecimal(_advanceController.text),
+        paymentForm: _paymentForm,
+        paymentDelayDays: int.tryParse(_delayController.text.trim()),
         specs: _specs.isEmpty ? null : _specs,
         extraBodyTypeIds: _extraBodyTypeIds.where((id) => id != _bodyTypeId).toList(),
       );
@@ -674,6 +704,50 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                       onChanged: (value) => setState(() => _currency = value ?? _currency),
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // 058 п.1: «Оплата» — аванс, форма, отсрочка (всё необязательно).
+              Text(t.postCargoPaymentTitle, style: AppTextStyles.bodyStrong),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: AppTextField(
+                      key: const Key('postCargoAdvance'),
+                      label: '${t.postCargoAdvance}, ${currencySymbol(_currency)}',
+                      controller: _advanceController,
+                      errorText: _advanceError(t),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AppTextField(
+                      key: const Key('postCargoPaymentDelay'),
+                      label: t.postCargoPaymentDelay,
+                      controller: _delayController,
+                      errorText: _delayError(t),
+                      keyboardType: TextInputType.number,
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final form in PaymentForm.values)
+                    SelectableTile(
+                      key: Key('postCargoPaymentForm-${form.name}'),
+                      label: paymentFormLabel(t, form),
+                      selected: _paymentForm == form,
+                      onTap: () => setState(() => _paymentForm = _paymentForm == form ? null : form),
+                    ),
                 ],
               ),
               const SizedBox(height: 12),

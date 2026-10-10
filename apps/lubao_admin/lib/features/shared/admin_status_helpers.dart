@@ -297,19 +297,8 @@ String contactEventTypeLabel(LubaoLocalizations t, String type) {
   }
 }
 
-String _groupThousands(int value) {
-  final digits = value.abs().toString();
-  final buffer = StringBuffer();
-  for (var i = 0; i < digits.length; i++) {
-    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(' ');
-    buffer.write(digits[i]);
-  }
-  return value < 0 ? '-${buffer.toString()}' : buffer.toString();
-}
-
-String formatMoney(double price, Currency currency) {
-  return '${currencySymbol(currency)}${_groupThousands(price.round())}';
-}
+/// Как везде (058 п.4: «1 250 000 ₽», «95 000 000 сум»).
+String formatMoney(double price, Currency currency) => formatCurrencyAmount(price, currency);
 
 String formatAdminDate(DateTime date) {
   final local = date.toLocal();

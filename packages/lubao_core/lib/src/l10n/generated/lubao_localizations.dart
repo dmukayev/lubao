@@ -6612,6 +6612,102 @@ abstract class LubaoLocalizations {
   /// **'По этому маршруту за месяц: медиана {median} ₸/км, сделок {deals}'**
   String postCargoMarketHint(String median, int deals);
 
+  /// No description provided for @cargoAdvance.
+  ///
+  /// In ru, this message translates to:
+  /// **'аванс {amount}'**
+  String cargoAdvance(String amount);
+
+  /// No description provided for @paymentFormCashShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'нал.'**
+  String get paymentFormCashShort;
+
+  /// No description provided for @paymentFormCardShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'на карту'**
+  String get paymentFormCardShort;
+
+  /// No description provided for @paymentFormCashlessShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'на счёт'**
+  String get paymentFormCashlessShort;
+
+  /// No description provided for @paymentDelayShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'отсрочка {days} дн.'**
+  String paymentDelayShort(String days);
+
+  /// No description provided for @paymentFormCash.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наличные'**
+  String get paymentFormCash;
+
+  /// No description provided for @paymentFormCard.
+  ///
+  /// In ru, this message translates to:
+  /// **'На карту'**
+  String get paymentFormCard;
+
+  /// No description provided for @paymentFormCashless.
+  ///
+  /// In ru, this message translates to:
+  /// **'На счёт'**
+  String get paymentFormCashless;
+
+  /// No description provided for @postCargoPaymentTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Оплата'**
+  String get postCargoPaymentTitle;
+
+  /// No description provided for @postCargoAdvance.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аванс'**
+  String get postCargoAdvance;
+
+  /// No description provided for @postCargoPaymentDelay.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отсрочка, дней'**
+  String get postCargoPaymentDelay;
+
+  /// No description provided for @postCargoAdvanceTooBig.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аванс не больше цены'**
+  String get postCargoAdvanceTooBig;
+
+  /// No description provided for @companyKindTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Тип компании'**
+  String get companyKindTitle;
+
+  /// No description provided for @companyKindShipper.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грузовладелец'**
+  String get companyKindShipper;
+
+  /// No description provided for @companyKindForwarder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Экспедитор'**
+  String get companyKindForwarder;
+
+  /// No description provided for @companyKindCarrier.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перевозчик'**
+  String get companyKindCarrier;
+
   /// No description provided for @postCargoDistanceHint.
   ///
   /// In ru, this message translates to:

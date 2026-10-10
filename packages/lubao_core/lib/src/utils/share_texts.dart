@@ -2,6 +2,7 @@ import '../l10n/generated/lubao_localizations.dart';
 import '../models/cargo.dart';
 import '../models/common.dart';
 import '../models/reference_data.dart';
+import 'cargo_display.dart';
 import 'cargo_weight.dart';
 
 /// 052 п.6: тексты «Поделиться» — на языке интерфейса того, кто делится,
@@ -17,10 +18,8 @@ String _group(int value) {
   return value < 0 ? '-$buffer' : buffer.toString();
 }
 
-String _symbol(Currency c) => switch (c) { Currency.usd => r'$', Currency.cny => '¥', Currency.kzt => '₸' };
-
-/// «₸850 000» — как в ленте.
-String shareMoney(double amount, Currency currency) => '${_symbol(currency)}${_group(amount.round())}';
+/// «₸850 000», «1 250 000 ₽» — как в ленте.
+String shareMoney(double amount, Currency currency) => formatCurrencyAmount(amount, currency);
 
 const _monthsRu = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 const _monthsKk = ['қаң', 'ақп', 'нау', 'сәу', 'мам', 'мау', 'шіл', 'там', 'қыр', 'қаз', 'қар', 'жел'];
@@ -34,10 +33,10 @@ String shareDate(DateTime d, String languageCode) => switch (languageCode) {
       _ => '${d.day} ${_monthsRu[d.month - 1]}',
     };
 
+/// Маршрут с флагами стран (058 п.3) — как в ленте.
 String _route(ReferenceData refData, Cargo c, String lang) {
-  final origin = refData.pointOrNull(c.pointId)?.name.forLanguageCode(lang);
-  final destination = refData.cityById(c.destinationCityId)?.name.forLanguageCode(lang) ?? refData.countryById(c.destinationCountryId).name.forLanguageCode(lang);
-  return origin == null ? destination : '$origin → $destination';
+  final r = cargoRouteLabels(refData, pointId: c.pointId, destinationCountryId: c.destinationCountryId, destinationCityId: c.destinationCityId, languageCode: lang);
+  return r.origin == null ? r.destination : '${r.origin} → ${r.destination}';
 }
 
 String _weightBody(LubaoLocalizations t, ReferenceData refData, Cargo c, String lang) => [
@@ -54,16 +53,20 @@ String _weightBody(LubaoLocalizations t, ReferenceData refData, Cargo c, String 
 String cargoShareText(LubaoLocalizations t, ReferenceData refData, Cargo c, String url, String lang) {
   final km = c.distanceKm == null ? '' : ' · ${_group(c.distanceKm!.round())} ${t.unitKm}';
   final category = refData.categoryById(c.categoryId)?.name.forLanguageCode(lang);
+  final size = cargoSizeLabel(t, weightKg: c.weightKg, volumeM3: c.volumeM3, languageCode: lang);
   final facts = [
     if (category != null) category,
-    if (c.weightKg != null) formatCargoWeight(c.weightKg!, tonUnit: t.unitTon, kgUnit: t.unitKg, languageCode: lang),
+    if (size.isNotEmpty) size,
     refData.bodyTypeById(c.bodyTypeId).name.forLanguageCode(lang).toLowerCase(),
   ].join(' · ');
   final perKm = c.pricePerKm == null ? '' : ' (${shareMoney(c.pricePerKm!, c.currency)}/${t.unitKm})';
+  final terms = paymentTermsLine(t, advanceAmount: c.advanceAmount, paymentForm: c.paymentForm, paymentDelayDays: c.paymentDelayDays, currency: c.currency);
   return [
     '🚛 ${_route(refData, c, lang)}$km',
     facts,
     '💰 ${shareMoney(c.price, c.currency)}$perKm',
+    // 058 п.1: «аванс $5 300 · нал.»
+    if (terms.isNotEmpty) terms,
     '📅 ${t.shareCargoLoading(shareDate(c.readyDate, lang))}',
     t.shareCargoRespond(url),
   ].join('\n');

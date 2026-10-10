@@ -94,9 +94,8 @@ String loadingDayLabel(LubaoLocalizations t, DateTime readyDate, {DateTime? now}
   return t.feedLoadOn(formatDate(readyDate));
 }
 
-String formatMoney(double price, Currency currency) {
-  return '${currencySymbol(currency)}${_groupThousands(price.round())}';
-}
+/// Как везде (058 п.4: «1 250 000 ₽», «95 000 000 сум»).
+String formatMoney(double price, Currency currency) => formatCurrencyAmount(price, currency);
 
 /// Пересчёт в тенге мелким шрифтом под ценой груза. `null`, если курса нет.
 String? formatKztConversion(double? amountInKzt) {

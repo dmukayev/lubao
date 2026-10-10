@@ -23,6 +23,7 @@ export 'src/widgets/body_type_icon.dart';
 export 'src/widgets/vehicle_photo_hint.dart';
 export 'src/widgets/person_avatar.dart';
 export 'src/widgets/specs_form.dart';
+export 'src/widgets/nav_svg_icon.dart';
 export 'src/widgets/number_input.dart';
 export 'src/widgets/lubao_brand.dart';
 export 'src/widgets/whatsapp_icon.dart';
@@ -41,6 +42,7 @@ export 'src/widgets/language_picker_button.dart';
 export 'src/widgets/city_picker_sheet.dart';
 
 export 'src/utils/cargo_weight.dart';
+export 'src/utils/cargo_display.dart';
 export 'src/utils/city_search.dart';
 export 'src/utils/date_only.dart';
 export 'src/utils/geo.dart';

@@ -3551,6 +3551,58 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   }
 
   @override
+  String cargoAdvance(String amount) {
+    return 'advance $amount';
+  }
+
+  @override
+  String get paymentFormCashShort => 'cash';
+
+  @override
+  String get paymentFormCardShort => 'to card';
+
+  @override
+  String get paymentFormCashlessShort => 'bank transfer';
+
+  @override
+  String paymentDelayShort(String days) {
+    return '$days-day deferral';
+  }
+
+  @override
+  String get paymentFormCash => 'Cash';
+
+  @override
+  String get paymentFormCard => 'To card';
+
+  @override
+  String get paymentFormCashless => 'Bank transfer';
+
+  @override
+  String get postCargoPaymentTitle => 'Payment';
+
+  @override
+  String get postCargoAdvance => 'Advance';
+
+  @override
+  String get postCargoPaymentDelay => 'Deferral, days';
+
+  @override
+  String get postCargoAdvanceTooBig => 'Advance can\'t exceed the price';
+
+  @override
+  String get companyKindTitle => 'Company type';
+
+  @override
+  String get companyKindShipper => 'Shipper';
+
+  @override
+  String get companyKindForwarder => 'Forwarder';
+
+  @override
+  String get companyKindCarrier => 'Carrier';
+
+  @override
   String postCargoDistanceHint(String km) {
     return '≈ $km km by road';
   }

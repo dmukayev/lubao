@@ -3467,6 +3467,58 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   }
 
   @override
+  String cargoAdvance(String amount) {
+    return '预付 $amount';
+  }
+
+  @override
+  String get paymentFormCashShort => '现金';
+
+  @override
+  String get paymentFormCardShort => '转卡';
+
+  @override
+  String get paymentFormCashlessShort => '对公转账';
+
+  @override
+  String paymentDelayShort(String days) {
+    return '账期 $days 天';
+  }
+
+  @override
+  String get paymentFormCash => '现金';
+
+  @override
+  String get paymentFormCard => '转卡';
+
+  @override
+  String get paymentFormCashless => '对公转账';
+
+  @override
+  String get postCargoPaymentTitle => '付款';
+
+  @override
+  String get postCargoAdvance => '预付款';
+
+  @override
+  String get postCargoPaymentDelay => '账期（天）';
+
+  @override
+  String get postCargoAdvanceTooBig => '预付款不能超过运价';
+
+  @override
+  String get companyKindTitle => '公司类型';
+
+  @override
+  String get companyKindShipper => '货主';
+
+  @override
+  String get companyKindForwarder => '货代';
+
+  @override
+  String get companyKindCarrier => '承运商';
+
+  @override
   String postCargoDistanceHint(String km) {
     return '公路里程约 $km 公里';
   }

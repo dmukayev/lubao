@@ -278,8 +278,10 @@ class AppTheme {
         backgroundColor: AppColors.surface,
         indicatorColor: AppColors.primarySoft,
         labelTextStyle: WidgetStateProperty.resolveWith(
+          // Эталон 33: выбранная — синяя жирная подпись.
           (states) => AppTextStyles.small.copyWith(
             color: states.contains(WidgetState.selected) ? AppColors.primary : AppColors.textSecondary,
+            fontWeight: states.contains(WidgetState.selected) ? FontWeight.w700 : null,
           ),
         ),
         iconTheme: WidgetStateProperty.resolveWith(

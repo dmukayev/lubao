@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
@@ -89,29 +88,12 @@ class _CompanyShellState extends ConsumerState<CompanyShell> {
           if (index == 2) ref.invalidate(myChatsProvider);
           context.go(_tabs[index]);
         },
+        // Эталон 33: свои цветные иконки (design/brand/nav).
         destinations: [
-          NavigationDestination(
-            icon: Badge.count(
-              key: const Key('navCargosBadge'),
-              count: newResponses,
-              isLabelVisible: newResponses > 0,
-              backgroundColor: AppColors.error,
-              child: const Icon(LucideIcons.package),
-            ),
-            label: t.navCargos,
-          ),
-          NavigationDestination(icon: const Icon(LucideIcons.users), label: t.navDrivers),
-          NavigationDestination(
-            icon: Badge.count(
-              key: const Key('navChatsBadge'),
-              count: unread,
-              isLabelVisible: unread > 0,
-              backgroundColor: AppColors.primary,
-              child: const Icon(LucideIcons.messageCircle),
-            ),
-            label: t.navChats,
-          ),
-          NavigationDestination(icon: const Icon(LucideIcons.user), label: t.profileTitle),
+          navDestination(NavIconAsset.boxes, t.navCargos, count: newResponses, badgeKey: const Key('navCargosBadge')),
+          navDestination(NavIconAsset.drivers, t.navDrivers),
+          navDestination(NavIconAsset.chats, t.navChats, count: unread, badgeKey: const Key('navChatsBadge')),
+          navDestination(NavIconAsset.profile, t.profileTitle),
         ],
       ),
     );

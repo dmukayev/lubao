@@ -39,6 +39,8 @@ flutter:
     - assets/brand/
     # Миниатюры типов кузова (045 п.4, design/brand/vehicles, эталон 29).
     - assets/vehicles/
+    # Иконки нижнего меню (эталон 33, design/brand/nav).
+    - assets/nav/
 
   fonts:
     - family: Onest

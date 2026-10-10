@@ -66,7 +66,8 @@ CompanyMemberRole companyMemberRoleFromJson(String value) => CompanyMemberRole.v
       orElse: () => CompanyMemberRole.logist,
     );
 
-enum Currency { usd, cny, kzt }
+/// 058 п.4: + RUB, UZS (рейсы в Россию и Узбекистан).
+enum Currency { usd, cny, kzt, rub, uzs }
 
 Currency currencyFromJson(String value) => Currency.values.firstWhere(
       (e) => e.name.toUpperCase() == value.toUpperCase(),
@@ -83,7 +84,49 @@ String currencySymbol(Currency currency) {
       return '¥';
     case Currency.kzt:
       return '₸';
+    case Currency.rub:
+      return '₽';
+    case Currency.uzs:
+      return 'сум';
   }
+}
+
+String _groupDigits(int value) {
+  final digits = value.abs().toString();
+  final buffer = StringBuffer();
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(' ');
+    buffer.write(digits[i]);
+  }
+  return value < 0 ? '-$buffer' : buffer.toString();
+}
+
+/// Цена везде одинаково: «$10 300», «¥7 000», «₸850 000», «1 250 000 ₽»,
+/// «95 000 000 сум» (058 п.4: рубль и сум — знаком после суммы).
+String formatCurrencyAmount(double amount, Currency currency) {
+  final n = _groupDigits(amount.round());
+  return switch (currency) {
+    Currency.rub || Currency.uzs => '$n ${currencySymbol(currency)}',
+    _ => '${currencySymbol(currency)}$n',
+  };
+}
+
+/// 058 п.1: форма оплаты груза.
+enum PaymentForm { cash, card, cashless }
+
+PaymentForm? paymentFormFromJson(String? value) =>
+    value == null ? null : PaymentForm.values.where((e) => e.name.toUpperCase() == value.toUpperCase()).firstOrNull;
+
+/// 058 п.8а: тип компании — метка.
+enum CompanyKind { shipper, forwarder, carrier }
+
+CompanyKind companyKindFromJson(String? value) =>
+    CompanyKind.values.where((e) => e.name.toUpperCase() == value?.toUpperCase()).firstOrNull ?? CompanyKind.forwarder;
+
+/// Эмодзи-флаг по коду страны («KZ» → 🇰🇿); не код — пусто.
+String flagEmoji(String? code) {
+  if (code == null || !RegExp(r'^[A-Za-z]{2}$').hasMatch(code)) return '';
+  return String.fromCharCodes(code.toUpperCase().codeUnits.map((c) => 0x1F1E6 + c - 65));
 }
 
 enum CargoStatus { published, inDeal, archived, expired, cancelled }
