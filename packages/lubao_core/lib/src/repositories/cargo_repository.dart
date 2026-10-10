@@ -96,14 +96,16 @@ class CargoRepository {
   }
 
   /// 047 п.7: «По этому маршруту за месяц: медиана 690 ₸/км, 8 сделок».
-  Future<RouteMarket?> marketHint({required String pointId, required String destinationCountryId, String? destinationCityId, double? weightKg}) async {
+  /// Плюс расстояние по дорогам — считается, как только выбрана пара городов.
+  Future<RouteHint> marketHint({required String pointId, required String destinationCountryId, String? destinationCityId, double? weightKg}) async {
     final res = await _client.dio.get('/cargos/market-hint', queryParameters: {
       'pointId': pointId,
       'destinationCountryId': destinationCountryId,
       if (destinationCityId != null) 'destinationCityId': destinationCityId,
       if (weightKg != null) 'weightKg': weightKg,
     });
-    return RouteMarket.fromJson((res.data as Map<String, dynamic>)['market']);
+    final data = res.data as Map<String, dynamic>;
+    return RouteHint(market: RouteMarket.fromJson(data['market']), distanceKm: (data['distanceKm'] as num?)?.round());
   }
 
   /// «Подходит N водителям на точке» при публикации (задача 033, п.10).

@@ -3488,6 +3488,19 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   }
 
   @override
+  String postCargoDistanceHint(String km) {
+    return '≈ $km км по дорогам';
+  }
+
+  @override
+  String postCargoDistancePerKm(String km, String perKm) {
+    return '≈ $km км по дорогам · ваша цена ≈ $perKm ₸/км';
+  }
+
+  @override
+  String get postCargoDistanceCounting => 'Считаем расстояние…';
+
+  @override
   String get adminRoutePricesTitle => 'Цены по маршрутам';
 
   @override

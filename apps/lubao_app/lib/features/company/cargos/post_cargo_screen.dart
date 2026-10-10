@@ -51,6 +51,11 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   String? _categoryId;
   String? _categoryError;
   RouteMarket? _market;
+  // Расстояние по дорогам для выбранной пары городов; null и _distanceLoading —
+  // «Считаем расстояние…» (новая пара на сервере считается до ~30 с).
+  int? _distanceKm;
+  bool _distanceLoading = false;
+  Timer? _distanceRetry;
   Timer? _marketDebounce;
   /// 048: параметры груза по профилю кузова и другие подходящие кузова.
   Map<String, dynamic> _specs = {};
@@ -160,6 +165,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   @override
   void dispose() {
     _marketDebounce?.cancel();
+    _distanceRetry?.cancel();
     _volumeController.dispose();
     _weightController.dispose();
     _palletController.dispose();
@@ -237,22 +243,49 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   }
 
   /// 047 п.7: медиана ₸/км по маршруту — подсказка, при сбое просто не показываем.
-  Future<void> _loadMarket() async {
+  Future<void> _loadMarket({int attempt = 0}) async {
+    _distanceRetry?.cancel();
     if (_pointId == null || _countryId == null || _cityId == null) {
-      if (_market != null) setState(() => _market = null);
+      if (_market != null || _distanceKm != null || _distanceLoading) {
+        setState(() {
+          _market = null;
+          _distanceKm = null;
+          _distanceLoading = false;
+        });
+      }
       return;
     }
+    final route = (_pointId, _cityId);
+    if (attempt == 0) setState(() => _distanceLoading = true);
     try {
-      final market = await ref.read(cargoRepositoryProvider).marketHint(
+      final hint = await ref.read(cargoRepositoryProvider).marketHint(
             pointId: _pointId!,
             destinationCountryId: _countryId!,
             destinationCityId: _cityId,
             weightKg: _weightKg(),
           );
-      if (mounted) setState(() => _market = market);
+      if (!mounted || route != (_pointId, _cityId)) return;
+      // Сервер ещё считает — спросить ещё раз (к тому времени пара в кэше).
+      final retry = hint.distanceKm == null && attempt < 2;
+      setState(() {
+        _market = hint.market;
+        _distanceKm = hint.distanceKm;
+        _distanceLoading = retry;
+      });
+      if (retry) _distanceRetry = Timer(const Duration(seconds: 5), () => _loadMarket(attempt: attempt + 1));
     } catch (e) {
       debugPrint('PostCargoScreen: marketHint failed: $e');
+      if (mounted) setState(() => _distanceLoading = false);
     }
+  }
+
+  /// «≈ 1 115 км по дорогам · ваша цена ≈ 8 970 ₸/км» — цена в ₸ по курсу НБ РК.
+  String? _distanceLabel(LubaoLocalizations t, ReferenceData refData) {
+    if (_distanceKm == null || _distanceKm == 0) return _distanceLoading ? t.postCargoDistanceCounting : null;
+    final km = formatThousands(_distanceKm!);
+    final price = double.tryParse(_priceController.text.replaceAll(' ', '').replaceAll(',', '.'));
+    final kzt = price == null || price <= 0 ? null : refData.convertToKzt(price, _currency);
+    return kzt == null ? t.postCargoDistanceHint(km) : t.postCargoDistancePerKm(km, formatThousands((kzt / _distanceKm!).round()));
   }
 
   Future<void> _pickDate() async {
@@ -577,6 +610,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   onChanged: (value) => setState(() => _allowPartial = value),
                 ),
               const SizedBox(height: 12),
+              if (_distanceLabel(t, refData) case final distance?) ...[
+                Text(distance, key: const Key('postCargoDistanceHint'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                const SizedBox(height: 4),
+              ],
               if (_market != null) ...[
                 Text(
                   t.postCargoMarketHint(formatThousands(_market!.median.round()), _market!.dealPoints),
@@ -589,7 +626,15 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: AppTextField(key: const Key('postCargoPrice'), label: t.postCargoPrice, errorText: _priceError, controller: _priceController, keyboardType: TextInputType.number),
+                    child: AppTextField(
+                      key: const Key('postCargoPrice'),
+                      label: t.postCargoPrice,
+                      errorText: _priceError,
+                      controller: _priceController,
+                      keyboardType: TextInputType.number,
+                      // Цена за км под расстоянием пересчитывается на ходу.
+                      onChanged: (_) => setState(() {}),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

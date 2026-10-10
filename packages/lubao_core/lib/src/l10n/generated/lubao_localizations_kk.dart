@@ -3501,6 +3501,19 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   }
 
   @override
+  String postCargoDistanceHint(String km) {
+    return 'Жолмен ≈ $km км';
+  }
+
+  @override
+  String postCargoDistancePerKm(String km, String perKm) {
+    return 'Жолмен ≈ $km км · сіздің бағаңыз ≈ $perKm ₸/км';
+  }
+
+  @override
+  String get postCargoDistanceCounting => 'Қашықтық есептелуде…';
+
+  @override
   String get adminRoutePricesTitle => 'Бағыттар бойынша бағалар';
 
   @override

@@ -349,3 +349,11 @@ class RouteMarket {
     );
   }
 }
+
+/// Подсказка маршрута в форме груза: медиана ₸/км (может не быть) и
+/// расстояние по дорогам (null — OSRM ещё считает).
+class RouteHint {
+  const RouteHint({this.market, this.distanceKm});
+  final RouteMarket? market;
+  final int? distanceKm;
+}

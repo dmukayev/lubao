@@ -649,14 +649,23 @@ export class CargosService {
 
   /// 047 п.7: подсказка логисту при публикации — медиана по маршруту.
   async marketHint(pointId: string, destinationCityId: string | undefined, destinationCountryId: string, weightKg: number | undefined) {
-    if (!this.pricing || !destinationCityId) return { market: null };
+    if (!this.pricing || !destinationCityId) return { market: null, distanceKm: null };
     const [point, country] = await Promise.all([
       this.prisma.point.findUnique({ where: { id: pointId }, select: { cityId: true } }),
       this.prisma.country.findUnique({ where: { id: destinationCountryId }, select: { code: true } }),
     ]);
-    if (!point || !country) return { market: null };
-    return { market: await this.pricing.marketFor(point.cityId, destinationCityId, country.code, weightKg ?? null) };
+    if (!point || !country) return { market: null, distanceKm: null };
+    // Пара городов выбрана — расстояние считается сразу (к публикации оно уже
+    // в кэше). Новая пара на холодном OSRM — до ~30 с: ждём не дольше лимита,
+    // расчёт идёт дальше, форма спросит ещё раз.
+    const distance = this.pricing.distanceFor({ price: 0, destinationCityId, point }).then((d) => d.distanceKm).catch(() => null);
+    let timer: NodeJS.Timeout | undefined;
+    const distanceKm = await Promise.race([distance, new Promise<null>((resolve) => (timer = setTimeout(() => resolve(null), CargosService.HINT_DISTANCE_MS)))]);
+    clearTimeout(timer);
+    return { market: await this.pricing.marketFor(point.cityId, destinationCityId, country.code, weightKg ?? null), distanceKm };
   }
+
+  static HINT_DISTANCE_MS = 12000;
 
   private async findEntity(id: string) {
     const cargo = await this.prisma.cargo.findUnique({ where: { id }, include: this.includeForDto });

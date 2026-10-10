@@ -6546,6 +6546,24 @@ abstract class LubaoLocalizations {
   /// **'По этому маршруту за месяц: медиана {median} ₸/км, сделок {deals}'**
   String postCargoMarketHint(String median, int deals);
 
+  /// No description provided for @postCargoDistanceHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'≈ {km} км по дорогам'**
+  String postCargoDistanceHint(String km);
+
+  /// No description provided for @postCargoDistancePerKm.
+  ///
+  /// In ru, this message translates to:
+  /// **'≈ {km} км по дорогам · ваша цена ≈ {perKm} ₸/км'**
+  String postCargoDistancePerKm(String km, String perKm);
+
+  /// No description provided for @postCargoDistanceCounting.
+  ///
+  /// In ru, this message translates to:
+  /// **'Считаем расстояние…'**
+  String get postCargoDistanceCounting;
+
   /// No description provided for @adminRoutePricesTitle.
   ///
   /// In ru, this message translates to:

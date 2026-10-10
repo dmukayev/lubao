@@ -3420,6 +3420,19 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   }
 
   @override
+  String postCargoDistanceHint(String km) {
+    return '公路里程约 $km 公里';
+  }
+
+  @override
+  String postCargoDistancePerKm(String km, String perKm) {
+    return '公路里程约 $km 公里 · 您的报价约 $perKm ₸/公里';
+  }
+
+  @override
+  String get postCargoDistanceCounting => '正在计算里程…';
+
+  @override
   String get adminRoutePricesTitle => '线路价格';
 
   @override

@@ -80,7 +80,7 @@ export class CargosController {
     @Query('weightKg') weightKg?: string,
   ) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
-    if (!pointId || !destinationCountryId) return { market: null };
+    if (!pointId || !destinationCountryId) return { market: null, distanceKm: null };
     const w = weightKg != null && weightKg !== '' ? Number(weightKg) : undefined;
     return this.cargos.marketHint(pointId, destinationCityId || undefined, destinationCountryId, Number.isFinite(w) ? w : undefined);
   }

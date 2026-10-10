@@ -15,6 +15,11 @@ class _FakeCargoRepository extends CargoRepository {
   _FakeCargoRepository() : super(ApiClient(baseUrl: 'http://localhost'));
 
   CreateCargoInput? created;
+  int? distanceKm;
+
+  @override
+  Future<RouteHint> marketHint({required String pointId, required String destinationCountryId, String? destinationCityId, double? weightKg}) async =>
+      RouteHint(distanceKm: distanceKm);
 
   @override
   Future<Cargo> create(CreateCargoInput input, {String? idempotencyKey}) async {
@@ -71,11 +76,11 @@ Cargo _previous(String pointId) => Cargo(
       expiresAt: DateTime(2026, 10, 3),
     );
 
-Future<_FakeCargoRepository> _pump(WidgetTester tester, {List<Cargo> previous = const [], bool partialLoads = false}) async {
+Future<_FakeCargoRepository> _pump(WidgetTester tester, {List<Cargo> previous = const [], bool partialLoads = false, Cargo? editing, int? distanceKm}) async {
   tester.view.physicalSize = const Size(390, 2400) * 3;
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
-  final repo = _FakeCargoRepository();
+  final repo = _FakeCargoRepository()..distanceKm = distanceKm;
   await tester.pumpWidget(ProviderScope(
     overrides: [
       cargoRepositoryProvider.overrideWithValue(repo),
@@ -87,7 +92,7 @@ Future<_FakeCargoRepository> _pump(WidgetTester tester, {List<Cargo> previous = 
       locale: const Locale('ru'),
       supportedLocales: supportedLocales,
       localizationsDelegates: LubaoLocalizations.localizationsDelegates,
-      home: const PostCargoScreen(),
+      home: PostCargoScreen(cargo: editing),
     ),
   ));
   await tester.pumpAndSettle();
@@ -130,5 +135,28 @@ void main() {
     await tester.tap(find.byKey(const Key('postCargoAllowPartial')));
     await tester.pumpAndSettle();
     expect(tester.widget<SwitchListTile>(find.byKey(const Key('postCargoAllowPartial'))).value, isTrue);
+  });
+
+  testWidgets('пара городов выбрана — под ценой расстояние по дорогам', (tester) async {
+    final cargo = Cargo(
+      id: 'c1',
+      companyId: 'co',
+      companyName: 'Co',
+      pointId: _astana.id,
+      destinationCountryId: 'uz',
+      destinationCityId: 'c-tashkent',
+      bodyTypeId: 'bt1',
+      price: 1000,
+      currency: Currency.usd,
+      readyDate: DateTime(2026, 10, 1),
+      status: CargoStatus.published,
+      publishedAt: DateTime(2026, 10, 1),
+      expiresAt: DateTime(2026, 10, 3),
+    );
+    await _pump(tester, editing: cargo, distanceKm: 1115);
+
+    final hint = tester.widget<Text>(find.byKey(const Key('postCargoDistanceHint')));
+    expect(hint.data, contains('км по дорогам'));
+    expect(hint.data!.replaceAll(RegExp(r'\D'), ''), startsWith('1115'));
   });
 }

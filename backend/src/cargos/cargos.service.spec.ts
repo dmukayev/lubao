@@ -851,3 +851,30 @@ describe('публикация груза: повтор и долгий расч
     }
   });
 });
+
+describe('подсказка маршрута в форме: расстояние сразу после выбора пары городов', () => {
+  function setup(distanceFor: jest.Mock) {
+    const prisma: any = {
+      point: { findUnique: jest.fn().mockResolvedValue({ cityId: 'from' }) },
+      country: { findUnique: jest.fn().mockResolvedValue({ code: 'KZ' }) },
+    };
+    const pricing: any = { distanceFor, marketFor: jest.fn().mockResolvedValue(null) };
+    return new CargosService(prisma, {} as any, {} as any, pricing);
+  }
+
+  it('расстояние в кэше — приходит вместе с подсказкой', async () => {
+    const service = setup(jest.fn().mockResolvedValue({ distanceKm: 1115, pricePerKm: null }));
+    expect(await service.marketHint('p1', 'to', 'kz', undefined)).toEqual({ market: null, distanceKm: 1115 });
+  });
+
+  it('OSRM считает долго — ответ без расстояния, не дольше лимита', async () => {
+    const service = setup(jest.fn().mockReturnValue(new Promise(() => undefined)));
+    const saved = CargosService.HINT_DISTANCE_MS;
+    CargosService.HINT_DISTANCE_MS = 20;
+    try {
+      expect(await service.marketHint('p1', 'to', 'kz', undefined)).toEqual({ market: null, distanceKm: null });
+    } finally {
+      CargosService.HINT_DISTANCE_MS = saved;
+    }
+  });
+});
