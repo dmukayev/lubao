@@ -40,7 +40,13 @@ class _CompanyShellState extends ConsumerState<CompanyShell> {
     _subs
       ..add(realtime.onMessageNew.listen(chats))
       ..add(realtime.onMessageRead.listen(chats))
-      ..add(realtime.onChatUpdated.listen(chats));
+      ..add(realtime.onChatUpdated.listen(chats))
+      // Новый отклик / водитель отозвал — цифра на «Грузах».
+      ..add(realtime.onResponsesUpdated.listen((_) => ref.invalidate(companyCargoCountsProvider)))
+      ..add(realtime.onReconnected.listen((_) {
+        ref.invalidate(myChatsProvider);
+        ref.invalidate(companyCargoCountsProvider);
+      }));
   }
 
   @override

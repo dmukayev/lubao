@@ -46,6 +46,7 @@ class RealtimeService {
   final _reconnectedController = StreamController<void>.broadcast();
   final _messageTranslatedController = StreamController<Map<String, dynamic>>.broadcast();
   final _dealUpdatedController = StreamController<Map<String, dynamic>>.broadcast();
+  final _responsesUpdatedController = StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Map<String, dynamic>> get onMessageNew => _messageNewController.stream;
   Stream<Map<String, dynamic>> get onMessageRead => _messageReadController.stream;
@@ -61,6 +62,10 @@ class RealtimeService {
   /// Статус сделки сменился (задача 038, п.12) — шлётся в комнату чата
   /// сделки, собеседник обновляет карточку без перезахода.
   Stream<Map<String, dynamic>> get onDealUpdated => _dealUpdatedController.stream;
+
+  /// Отклики изменились (приглашение, выбор, отклонение, новый отклик) —
+  /// личная комната: цифры на вкладках и шапка приглашений без «обновить».
+  Stream<Map<String, dynamic>> get onResponsesUpdated => _responsesUpdatedController.stream;
   /// Сокет (пере)подключился — после первого раза это сигнал «могли
   /// пропустить сообщения, догоните рефетчем».
   Stream<void> get onReconnected => _reconnectedController.stream;
@@ -102,6 +107,7 @@ class RealtimeService {
     socket.on('chat:updated', (data) => _chatUpdatedController.add(Map<String, dynamic>.from(data as Map)));
     socket.on('message:translated', (data) => _messageTranslatedController.add(Map<String, dynamic>.from(data as Map)));
     socket.on('deal:updated', (data) => _dealUpdatedController.add(Map<String, dynamic>.from(data as Map)));
+    socket.on('responses:updated', (data) => _responsesUpdatedController.add(Map<String, dynamic>.from(data as Map)));
     _socket = socket;
   }
 

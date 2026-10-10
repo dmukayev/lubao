@@ -165,7 +165,7 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
   @override
   bool get wantKeepAlive => true;
 
-  /// Водитель сменил статус сделки («Загружен», «В пути»…) — список и числа
+  /// Водитель сменил статус сделки («Загружен», «В пути»…) или откликнулся — список и числа
   /// вкладок заново без «потяните, чтобы обновить»; после обрыва сокета — тоже
   /// (события за это время пропущены). Пачку событий сводим в одну загрузку.
   void _refreshSoon(Object? _) {
@@ -189,6 +189,7 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
     final realtime = ref.read(realtimeServiceProvider);
     _subs
       ..add(realtime.onDealUpdated.listen(_refreshSoon))
+      ..add(realtime.onResponsesUpdated.listen(_refreshSoon))
       ..add(realtime.onReconnected.listen(_refreshSoon));
     _load(reset: true);
   }

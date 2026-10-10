@@ -504,8 +504,25 @@ describe('ResponsesService — приглашение с согласием, г�
     };
     const notifications = { notify: jest.fn() };
     const chat = { post: jest.fn(), postToChat: jest.fn() };
-    return { service: new ResponsesService(prisma, notifications as any, chat as any), prisma, tx, notifications, chat };
+    const realtime = { emitResponsesUpdated: jest.fn() };
+    return { service: new ResponsesService(prisma, notifications as any, chat as any, undefined, realtime as any), prisma, tx, notifications, chat, realtime };
   }
+
+  it('приглашение — сокет-событие в личную комнату водителя: цифра «Мои рейсы» и шапка в ленте без «обновить»', async () => {
+    const { service, realtime } = inviteSetup();
+
+    await service.inviteDriver('cargo1', 'd1', 'c1', 'logist-1');
+
+    expect(realtime.emitResponsesUpdated).toHaveBeenCalledWith(['u1'], { cargoId: 'cargo1' });
+  });
+
+  it('повторное приглашение (уже INVITED) — без события', async () => {
+    const { service, realtime } = inviteSetup({ existing: { id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'INVITED', driver: { fullName: 'Ерлан', userId: 'u1' } } });
+
+    await service.inviteDriver('cargo1', 'd1', 'c1');
+
+    expect(realtime.emitResponsesUpdated).not.toHaveBeenCalled();
+  });
 
   it('inviteDriver: создаёт отклик INVITED, НЕ сделку и НЕ отклоняет чужие отклики', async () => {
     const { service, tx, notifications, chat } = inviteSetup();

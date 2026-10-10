@@ -32,13 +32,21 @@ class _DriverShellState extends ConsumerState<DriverShell> {
     super.initState();
     final realtime = ref.read(realtimeServiceProvider);
     void chats(Object? _) => ref.invalidate(myChatsProvider);
+    void trips(Object? _) {
+      ref.invalidate(dealsMineProvider);
+      ref.invalidate(myResponsesProvider);
+    }
     _subs
       ..add(realtime.onMessageNew.listen(chats))
       ..add(realtime.onMessageRead.listen(chats))
       ..add(realtime.onChatUpdated.listen(chats))
-      ..add(realtime.onDealUpdated.listen((_) {
-        ref.invalidate(dealsMineProvider);
-        ref.invalidate(myResponsesProvider);
+      ..add(realtime.onDealUpdated.listen(trips))
+      // Пригласили / выбрали / отклонили — цифра «Мои рейсы» и шапка в ленте.
+      ..add(realtime.onResponsesUpdated.listen(trips))
+      // Пока сокета не было, события пропущены — перечитать.
+      ..add(realtime.onReconnected.listen((_) {
+        chats(null);
+        trips(null);
       }));
   }
 

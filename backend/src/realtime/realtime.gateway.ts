@@ -162,4 +162,11 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   emitDealUpdatedToUser(userId: string, payload: { dealId: string; status: string }): void {
     this.server.to(userRoom(userId)).emit('deal:updated', payload);
   }
+
+  /// Отклики изменились (приглашение, выбор, отклонение, «груз ушёл», новый
+  /// отклик) — в личные комнаты: у водителя цифра «Мои рейсы» и шапка
+  /// приглашений в ленте, у логиста числа «Грузов» обновляются без «обновить».
+  emitResponsesUpdated(userIds: string[], payload: { cargoId: string }): void {
+    for (const userId of new Set(userIds)) this.server.to(userRoom(userId)).emit('responses:updated', payload);
+  }
 }

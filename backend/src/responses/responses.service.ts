@@ -1,6 +1,7 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { Driver, Prisma, Response as CargoResponseEntity, ResponseCloseReason } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { ChatSystemMessagesService } from '../chats/chat-system-messages.service';
 import { haulInfoByDriver } from '../deals/haul-summary';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
@@ -24,7 +25,14 @@ export class ResponsesService {
     private readonly notifications: NotificationsService,
     private readonly chatSystem: ChatSystemMessagesService,
     @Optional() private readonly identifiers?: IdentifiersService,
+    @Optional() private readonly realtime?: RealtimeGateway,
   ) {}
+
+  /// Сокет-событие участникам — best-effort, как и push.
+  private touch(userIds: Array<string | null | undefined>, cargoId: string) {
+    const ids = userIds.filter((id): id is string => !!id);
+    if (ids.length) this.realtime?.emitResponsesUpdated(ids, { cargoId });
+  }
 
   toDto(response: ResponseWithDriver) {
     return {
@@ -230,6 +238,7 @@ export class ResponsesService {
       'DRIVER_AGREED',
       { cargoId, driverName: response.driver.fullName },
     );
+    this.touch([contactUserId, response.driver.userId], cargoId);
     await this.chatSystem.post({
       driverId,
       companyId: cargo.companyId,
@@ -277,6 +286,7 @@ export class ResponsesService {
       'NEW_RESPONSE',
       { cargoId, driverName: response.driver.fullName },
     );
+    this.touch([contactUserId, response.driver.userId], cargoId);
 
     // Системная строка «готов взять» в чат пары (задача 038, п.11) —
     // сервером, не клиентом: раньше клиент слал обычное сообщение от
@@ -309,7 +319,7 @@ export class ResponsesService {
   /// `CANCELLED` — значение уже было в схеме (задача 017), просто не
   /// использовалось ни одним путём до этой задачи.
   async withdraw(responseId: string, driverId: string) {
-    const response = await this.prisma.response.findUnique({ where: { id: responseId }, include: { driver: true, cargo: { select: { companyId: true } } } });
+    const response = await this.prisma.response.findUnique({ where: { id: responseId }, include: { driver: true, cargo: { select: { companyId: true, publishedByUserId: true } } } });
     if (!response) throw new NotFoundException('Response not found');
     if (response.driverId !== driverId) throw new ForbiddenException('Not your response');
     if (response.status !== 'PENDING' && response.status !== 'INVITED') {
@@ -318,6 +328,7 @@ export class ResponsesService {
     const wasInvited = response.status === 'INVITED';
 
     const updated = await this.closePending(responseId, response.cargoId, 'CANCELLED', 'WITHDRAWN');
+    this.touch([await resolveCargoContactUserId(this.prisma, response.cargo).catch(() => null), updated.driver.userId], response.cargoId);
 
     // «Водитель отозвал отклик» / «отказался от приглашения» — системно в чат
     // (задача 038, п.11/12), логист с открытым чатом видит смену кнопок сразу.
@@ -449,6 +460,7 @@ export class ResponsesService {
       ...(await loadCargoPushSummary(this.prisma, updated.selected.cargoId)),
       dealId: updated.deal.id,
     });
+    this.touch([updated.selected.driver.userId], updated.selected.cargoId);
 
     // «Выбран водитель» — системно в чат пары (задача 038, п.11/12).
     await this.chatSystem.post({
@@ -502,6 +514,7 @@ export class ResponsesService {
       return open;
     });
     if (closed.length === 0) return 0;
+    this.touch(closed.map((r) => r.driver.userId), cargoId);
     try {
       const summary = await loadCargoPushSummary(this.prisma, cargoId);
       await this.notifications.notify({ userIds: closed.map((r) => r.driver.userId) }, 'RESPONSE_CARGO_CLOSED', { ...summary, cargoId });
@@ -515,6 +528,7 @@ export class ResponsesService {
   /// уведомлений не должен откатывать выбор водителя.
   private async notifyRejected(userIds: string[], companyId: string, cargoId: string) {
     if (!userIds.length) return;
+    this.touch(userIds, cargoId);
     try {
       const company = await this.prisma.company.findUnique({ where: { id: companyId }, select: { name: true } });
       await this.notifications.notify({ userIds }, 'RESPONSE_REJECTED', { cargoId, companyName: company?.name ?? '' });
@@ -557,6 +571,7 @@ export class ResponsesService {
       return { response: saved, created: true };
     });
     if (!created) return this.toDto(response);
+    this.touch([response.driver.userId], cargoId);
 
     await this.notifications.notify({ userIds: [response.driver.userId] }, 'CARGO_INVITE', {
       ...(await loadCargoPushSummary(this.prisma, cargoId)),
@@ -627,6 +642,7 @@ export class ResponsesService {
     const taken = updated.takenFrom;
     const selectedResponse = updated.selected;
     await bumpShareReferral(this.prisma, selectedResponse.driver.userId, 'deals');
+    this.touch([selectedResponse.driver.userId], cargoId);
 
     await this.notifications.notify({ userIds: [selectedResponse.driver.userId] }, 'CARGO_INVITE', {
       ...(await loadCargoPushSummary(this.prisma, cargoId)),
