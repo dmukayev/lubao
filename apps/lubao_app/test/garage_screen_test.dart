@@ -64,7 +64,7 @@ void main() {
 
     expect(find.byKey(const Key('garageEmptyCta')), findsOneWidget);
     expect(find.text('Добавьте машину'), findsOneWidget);
-    expect(find.text('Добавить машину'), findsOneWidget);
+    expect(find.text('Добавить машину или прицеп'), findsOneWidget);
     expect(find.text('Нет тягачей'), findsNothing);
   });
 
