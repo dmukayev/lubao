@@ -319,14 +319,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  // 058 п.7: собеседник «в сети» / «был сегодня в 20:15».
-                  if (formatLastSeen(t, thread?.lastSeenAt) case final seen?)
-                    Text(seen, key: const Key('chatLastSeen'), style: AppTextStyles.caption.copyWith(color: seen == t.lastSeenOnline ? AppColors.success : null)),
-                  if (_languageName(t, thread?.counterpartLocale) != null)
-                    Text(
-                      t.chatWritesIn(_languageName(t, thread!.counterpartLocale)!),
-                      style: AppTextStyles.caption,
-                    ),
+                  // 058 п.7: «в сети» и «пишет на …» — одной строкой: шапка не
+                  // выше AppBar (иначе заезжала под строку статуса на SE).
+                  if ([formatLastSeen(t, thread?.lastSeenAt), if (_languageName(t, thread?.counterpartLocale) case final lang?) t.chatWritesIn(lang)].whereType<String>().join(' · ')
+                      case final sub when sub.isNotEmpty)
+                    Text(sub, key: const Key('chatLastSeen'), style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
                   if (thread?.counterpartWechatId != null)
                     Text('WeChat: ${thread!.counterpartWechatId}', style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],

@@ -119,8 +119,11 @@ void main() {
       await (await DriverApi.login('+77010000004')).respond(cargoId);
       final second = (await logist.pendingResponses(cargoId)).first;
       await logist.select(second['id'] as String);
-      await tester.tap(find.byType(BackButton).first);
-      await tester.pumpAndSettle();
+      // Сделка открыта поверх карточки груза — назад до нижнего меню.
+      for (var i = 0; i < 3 && find.byType(NavigationBar).evaluate().isEmpty; i++) {
+        await tester.tap(find.byType(BackButton).first);
+        await tester.pumpAndSettle();
+      }
       await goTab(tester, t.navFeed);
       await tester.drag(find.byType(Scrollable).first, const Offset(0, 400));
       await tester.pumpAndSettle(const Duration(seconds: 2));
