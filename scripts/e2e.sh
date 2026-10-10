@@ -416,7 +416,7 @@ run_ios() {
   fi
 }
 
-PHASE1=(driver_flow_test driver_deal_test logist_drivers_test garage_vehicle_test company_register_test driver_register_iin_test telegram_login_test)
+PHASE1=(driver_flow_test driver_deal_test logist_drivers_test garage_vehicle_test company_register_test driver_register_iin_test telegram_login_test trade_offers_test)
 PHASE3=(logist_publish_test)
 PHASE4=(all_screens_test)
 if [[ -n "${E2E_ONLY:-}" ]]; then

@@ -178,10 +178,10 @@ class LogistApi {
   LogistApi._(this._dio);
   final Dio _dio;
 
-  static Future<LogistApi> login() async {
+  static Future<LogistApi> login({String email = e2eCompanyEmail}) async {
     final dio = Dio(BaseOptions(baseUrl: e2eApiBase, connectTimeout: e2eHttpTimeout, receiveTimeout: e2eHttpTimeout, validateStatus: (_) => true));
     final res = await dio.post('/auth/company/login', data: {
-      'email': e2eCompanyEmail,
+      'email': email,
       'password': e2ePassword,
       'deviceName': 'e2e',
       'platform': 'ios',
@@ -207,6 +207,32 @@ class LogistApi {
         .get<List<int>>('/deals/$dealId/driver-documents.pdf', queryParameters: {'token': token}, options: Options(responseType: ResponseType.bytes));
     return pdf.data ?? const [];
   }
+
+  Future<Map<String, dynamic>> _ok(Future<Response<dynamic>> call, String what) async {
+    final res = await call;
+    if (res.statusCode! >= 300) fail('$what не удалось: ${res.statusCode} ${res.data}');
+    return res.data is Map ? Map<String, dynamic>.from(res.data as Map) : <String, dynamic>{};
+  }
+
+  /// 058: опубликовать груз (поля — как в форме), вернуть id.
+  Future<String> publishCargo(Map<String, dynamic> body) async => (await _ok(_dio.post('/cargos', data: body), 'Публикация груза'))['id'] as String;
+
+  /// Отклики на груз (ждёт, пока появится [minCount] ждущих).
+  Future<List<Map>> pendingResponses(String cargoId, {int minCount = 1}) async {
+    final deadline = DateTime.now().add(const Duration(seconds: 20));
+    while (true) {
+      final list = ((await _dio.get('/cargos/$cargoId/responses')).data as List).cast<Map>().where((r) => r['status'] == 'PENDING').toList();
+      if (list.length >= minCount) return list;
+      if (DateTime.now().isAfter(deadline)) fail('Нет $minCount ждущих откликов на груз $cargoId');
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+  }
+
+  Future<void> counterOffer(String responseId, num price) => _ok(_dio.post('/responses/$responseId/counter', data: {'price': price}), 'Встречная цена');
+  Future<void> select(String responseId) => _ok(_dio.patch('/responses/$responseId', data: {'status': 'SELECTED'}), 'Выбор водителя');
+  Future<Map<String, dynamic>> createDriver(String name, String phone) => _ok(_dio.post('/company-drivers', data: {'name': name, 'phone': phone}), 'Создать водителя');
+  Future<List<Map>> myDrivers() async => ((await _dio.get('/company-drivers')).data as List).cast<Map>();
+  Future<List<Map>> responses(String cargoId) async => ((await _dio.get('/cargos/$cargoId/responses')).data as List).cast<Map>();
 
   /// Ждёт отклик на груз (запись на сервере появляется асинхронно) и
   /// выбирает этого водителя; возвращает id сделки.

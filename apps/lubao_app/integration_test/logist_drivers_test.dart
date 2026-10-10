@@ -118,6 +118,29 @@ void main() {
       expect(find.byKey(_d4Card), findsOneWidget);
     });
 
+    // 058 п.6: ☆ у водителя → «Мои»; «Создать водителя» (номер уже в Lubao —
+    // приглашение без дубля, системное меню «Поделиться» не открывается).
+    await run.step(tester, 'мои-водители-звезда-и-создать', () async {
+      final star = find.byKey(const Key('driverSave-dddddddd-dddd-4ddd-8ddd-ddddddddd003'));
+      await reveal(tester, star);
+      await tester.tap(star);
+      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.tap(find.byKey(const Key('driversTabMine')));
+      await waitFor(tester, find.byKey(const Key('myDriverCard-dddddddd-dddd-4ddd-8ddd-ddddddddd003')));
+      expectNoOverflow(tester);
+      await tester.tap(find.byKey(const Key('myDriversCreate')));
+      await waitFor(tester, find.byKey(const Key('myDriversCreateName')));
+      await tester.enterText(find.byKey(const Key('myDriversCreateName')), 'Нурлан');
+      await tester.enterText(find.byKey(const Key('myDriversCreatePhone')), '+7 701 000 00 04');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('myDriversCreateSubmit')));
+      await waitFor(tester, find.text(t.myDriversInvitedExisting));
+      await waitFor(tester, find.byKey(const Key('myDriverCard-dddddddd-dddd-4ddd-8ddd-ddddddddd004')));
+      expect(find.descendant(of: find.byKey(const Key('myDriverCard-dddddddd-dddd-4ddd-8ddd-ddddddddd004')), matching: find.textContaining(t.myDriversWaiting)), findsOneWidget);
+      await tester.tap(find.byKey(const Key('driversTabAll')));
+      await waitFor(tester, find.byKey(_d3Card));
+    });
+
     await run.step(tester, 'чат-с-водителем', () async {
       final card = find.byKey(_d3Card);
       final chatButton = find.descendant(
