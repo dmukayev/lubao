@@ -7,6 +7,8 @@ import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
+import '../../shared/error_feedback.dart';
+import '../../shared/number_field.dart';
 import '../../shared/photo_picker.dart';
 import '../../shared/pd_consent.dart';
 import '../../../providers/auth_provider.dart';
@@ -123,6 +125,27 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   Map<String, dynamic> _specs = {};
   bool _submitting = false;
   String? _photoError;
+  /// Ошибки размеров под полями — до отправки, с конкретной причиной.
+  String? _capacityError;
+  String? _lengthError;
+  String? _innerLengthError;
+  String? _innerWidthError;
+  String? _innerHeightError;
+
+  /// Проверка чисел до отправки (пределы те же, что на сервере).
+  bool _validateSizes() {
+    final t = context.l10n;
+    final checkVolume = _kind != VehicleKind.tractor && _isVolume;
+    final custom = checkVolume && _customSize;
+    setState(() {
+      _capacityError = checkVolume ? numberFieldError(t, _capacityController.text, max: VehicleLimits.capacityTons) : null;
+      _lengthError = checkVolume ? numberFieldError(t, _lengthController.text, max: VehicleLimits.lengthM) : null;
+      _innerLengthError = custom ? numberFieldError(t, _innerLengthController.text, max: VehicleLimits.innerLengthM, required: true) : null;
+      _innerWidthError = custom ? numberFieldError(t, _innerWidthController.text, max: VehicleLimits.innerWidthM, required: true) : null;
+      _innerHeightError = custom ? numberFieldError(t, _innerHeightController.text, max: VehicleLimits.innerHeightM, required: true) : null;
+    });
+    return [_capacityError, _lengthError, _innerLengthError, _innerWidthError, _innerHeightError].every((e) => e == null);
+  }
 
   BodyType? _selectedBodyType(ReferenceData? refData) =>
       _bodyTypeId == null ? null : refData?.bodyTypes.where((b) => b.id == _bodyTypeId).firstOrNull;
@@ -175,10 +198,12 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
 
   Future<void> _submit() async {
     final t = context.l10n;
+    final sizesOk = _validateSizes();
     if (_photo == null) {
       setState(() => _photoError = t.garagePhotoRequired);
       return;
     }
+    if (!sizesOk) return;
 
     setState(() {
       _submitting = true;
@@ -204,12 +229,12 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
             plateNumber: _plateController.text.trim().isEmpty ? null : _plateController.text.trim(),
             vin: _vinController.text.trim().isEmpty ? null : _vinController.text.trim(),
             brand: _brandController.text.trim().isEmpty ? null : _brandController.text.trim(),
-            capacityTons: isTractor || !_isVolume ? null : double.tryParse(_capacityController.text.trim()),
-            lengthM: isTractor || !_isVolume ? null : double.tryParse(_lengthController.text.trim()),
+            capacityTons: isTractor || !_isVolume ? null : parseDecimal(_capacityController.text),
+            lengthM: isTractor || !_isVolume ? null : parseDecimal(_lengthController.text),
             sizePresetId: isTractor || _customSize || !_isVolume ? null : _sizePresetId,
-            innerLengthM: isTractor || !_customSize || !_isVolume ? null : double.tryParse(_innerLengthController.text.trim()),
-            innerWidthM: isTractor || !_customSize || !_isVolume ? null : double.tryParse(_innerWidthController.text.trim()),
-            innerHeightM: isTractor || !_customSize || !_isVolume ? null : double.tryParse(_innerHeightController.text.trim()),
+            innerLengthM: isTractor || !_customSize || !_isVolume ? null : parseDecimal(_innerLengthController.text),
+            innerWidthM: isTractor || !_customSize || !_isVolume ? null : parseDecimal(_innerWidthController.text),
+            innerHeightM: isTractor || !_customSize || !_isVolume ? null : parseDecimal(_innerHeightController.text),
             specs: isTractor || _isVolume ? null : _specs,
           );
 
@@ -217,7 +242,8 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
     } catch (e) {
       debugPrint('AddVehicleSheet: failed to add vehicle: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.garageAddFailed)));
+        // Сервер отклонил поле — конкретная причина («Длина, м — не больше 25»).
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage(t, e, fallback: t.garageAddFailed))));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -288,9 +314,9 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                     onChanged: (v) => setState(() => _specs = v),
                   ),
                 ] else ...[
-                AppTextField(key: const Key('addVehicleCapacity'), label: t.driverSetupCapacity, controller: _capacityController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                AppTextField(key: const Key('addVehicleCapacity'), label: t.driverSetupCapacity, controller: _capacityController, errorText: _capacityError, onChanged: (_) => setState(() => _capacityError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                 const SizedBox(height: AppSpacing.md),
-                AppTextField(key: const Key('addVehicleLength'), label: t.garageLength, controller: _lengthController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                AppTextField(key: const Key('addVehicleLength'), label: t.garageLength, controller: _lengthController, errorText: _lengthError, onChanged: (_) => setState(() => _lengthError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                 const SizedBox(height: AppSpacing.md),
                 // 045 п.6: размер/шаблоны — только у объёмных кузовов.
                 if (isVolumeBodyType(_bodyTypeId == null ? null : refData.bodyTypeById(_bodyTypeId!).code)) ...[
@@ -321,11 +347,11 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                 ),
                 if (_customSize) ...[
                   const SizedBox(height: AppSpacing.md),
-                  AppTextField(label: t.garageSizeLength, controller: _innerLengthController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                  AppTextField(key: const Key('addVehicleInnerLength'), label: t.garageSizeLength, controller: _innerLengthController, errorText: _innerLengthError, onChanged: (_) => setState(() => _innerLengthError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                   const SizedBox(height: AppSpacing.md),
-                  AppTextField(label: t.garageSizeWidth, controller: _innerWidthController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                  AppTextField(key: const Key('addVehicleInnerWidth'), label: t.garageSizeWidth, controller: _innerWidthController, errorText: _innerWidthError, onChanged: (_) => setState(() => _innerWidthError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                   const SizedBox(height: AppSpacing.md),
-                  AppTextField(label: t.garageSizeHeight, controller: _innerHeightController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                  AppTextField(key: const Key('addVehicleInnerHeight'), label: t.garageSizeHeight, controller: _innerHeightController, errorText: _innerHeightError, onChanged: (_) => setState(() => _innerHeightError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                 ],
                 ],
                 ],

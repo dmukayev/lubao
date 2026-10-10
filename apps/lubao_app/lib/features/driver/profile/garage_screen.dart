@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
+import '../../shared/number_field.dart';
 import '../../shared/photo_picker.dart';
 import 'add_vehicle_sheet.dart';
 import 'add_vehicle_banner.dart';
@@ -79,26 +80,27 @@ class GarageScreen extends ConsumerWidget {
     final lengthController = TextEditingController();
     final widthController = TextEditingController();
     final heightController = TextEditingController();
-    double? parse(String raw) => double.tryParse(raw.trim().replaceAll(',', '.'));
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
-          final l = parse(lengthController.text);
-          final w = parse(widthController.text);
-          final h = parse(heightController.text);
-          final valid = l != null && l > 0 && l <= 20 && w != null && w > 0 && w <= 3 && h != null && h > 0 && h <= 4.5;
+          // Причина под полем сразу при вводе («Не больше 20»), пустое — без ошибки.
+          final lengthError = numberFieldError(t, lengthController.text, max: VehicleLimits.innerLengthM);
+          final widthError = numberFieldError(t, widthController.text, max: VehicleLimits.innerWidthM);
+          final heightError = numberFieldError(t, heightController.text, max: VehicleLimits.innerHeightM);
+          final filled = [lengthController, widthController, heightController].every((c) => c.text.trim().isNotEmpty);
+          final valid = filled && lengthError == null && widthError == null && heightError == null;
           return AlertDialog(
             title: Text(t.garageSizeCustom),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AppTextField(label: t.garageSizeLength, controller: lengthController, keyboardType: TextInputType.number, onChanged: (_) => setDialogState(() {})),
+                AppTextField(label: t.garageSizeLength, controller: lengthController, errorText: lengthError, keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => setDialogState(() {})),
                 const SizedBox(height: AppSpacing.sm),
-                AppTextField(label: t.garageSizeWidth, controller: widthController, keyboardType: TextInputType.number, onChanged: (_) => setDialogState(() {})),
+                AppTextField(label: t.garageSizeWidth, controller: widthController, errorText: widthError, keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => setDialogState(() {})),
                 const SizedBox(height: AppSpacing.sm),
-                AppTextField(label: t.garageSizeHeight, controller: heightController, keyboardType: TextInputType.number, onChanged: (_) => setDialogState(() {})),
+                AppTextField(label: t.garageSizeHeight, controller: heightController, errorText: heightError, keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (_) => setDialogState(() {})),
               ],
             ),
             actions: [
@@ -110,7 +112,7 @@ class GarageScreen extends ConsumerWidget {
       ),
     );
     if (ok != true) return null;
-    return (parse(lengthController.text)!, parse(widthController.text)!, parse(heightController.text)!);
+    return (parseDecimal(lengthController.text)!, parseDecimal(widthController.text)!, parseDecimal(heightController.text)!);
   }
 
   Future<void> _setSize(BuildContext context, WidgetRef ref, GarageVehicle vehicle) async {

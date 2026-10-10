@@ -49,6 +49,37 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get errorInvalidData => 'Проверьте введённые данные';
 
   @override
+  String errorFieldMax(String field, String limit) {
+    return '$field — не больше $limit';
+  }
+
+  @override
+  String errorFieldMin(String field, String limit) {
+    return '$field — не меньше $limit';
+  }
+
+  @override
+  String errorFieldMaxLength(String field, String limit) {
+    return '$field — не длиннее $limit символов';
+  }
+
+  @override
+  String errorFieldInvalid(String field) {
+    return '$field — проверьте значение';
+  }
+
+  @override
+  String fieldMax(String limit) {
+    return 'Не больше $limit';
+  }
+
+  @override
+  String get fieldPositive => 'Должно быть больше 0';
+
+  @override
+  String get fieldNotNumber => 'Введите число';
+
+  @override
   String get errorSessionExpired => 'Сессия истекла — войдите снова';
 
   @override

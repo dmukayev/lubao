@@ -50,6 +50,37 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get errorInvalidData => 'Check the data you entered';
 
   @override
+  String errorFieldMax(String field, String limit) {
+    return '$field: must be at most $limit';
+  }
+
+  @override
+  String errorFieldMin(String field, String limit) {
+    return '$field: must be at least $limit';
+  }
+
+  @override
+  String errorFieldMaxLength(String field, String limit) {
+    return '$field: at most $limit characters';
+  }
+
+  @override
+  String errorFieldInvalid(String field) {
+    return '$field: check the value';
+  }
+
+  @override
+  String fieldMax(String limit) {
+    return 'At most $limit';
+  }
+
+  @override
+  String get fieldPositive => 'Must be greater than 0';
+
+  @override
+  String get fieldNotNumber => 'Enter a number';
+
+  @override
   String get errorSessionExpired => 'Session expired — sign in again';
 
   @override

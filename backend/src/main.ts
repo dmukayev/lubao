@@ -4,6 +4,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { assertProductionConfig } from './config/production-guard';
+import { validationExceptionFactory } from './common/validation-errors';
 import { SentryExceptionFilter, initSentry } from './observability/sentry';
 
 async function bootstrap() {
@@ -26,7 +27,8 @@ async function bootstrap() {
   // этого). В production пустой список не пропустит предохранитель.
   const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean);
   app.enableCors(allowedOrigins?.length ? { origin: allowedOrigins } : {});
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  // Ошибки полей — с полем и пределом: приложение пишет конкретную причину.
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, exceptionFactory: validationExceptionFactory }));
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

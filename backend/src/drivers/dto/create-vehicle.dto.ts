@@ -36,11 +36,14 @@ export class CreateVehicleDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(60)
   capacityTons?: number;
 
+  /// Длина машины/прицепа снаружи: автопоезд — до ~25 м.
   @IsOptional()
   @IsNumber()
   @Min(0)
+  @Max(25)
   lengthM?: number;
 
   /// Размер кузова (задача 033) — шаблон ИЛИ свой размер (Д/Ш/В).

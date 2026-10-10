@@ -48,6 +48,37 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get errorInvalidData => '请检查填写的内容';
 
   @override
+  String errorFieldMax(String field, String limit) {
+    return '$field：不能超过 $limit';
+  }
+
+  @override
+  String errorFieldMin(String field, String limit) {
+    return '$field：不能小于 $limit';
+  }
+
+  @override
+  String errorFieldMaxLength(String field, String limit) {
+    return '$field：不能超过 $limit 个字符';
+  }
+
+  @override
+  String errorFieldInvalid(String field) {
+    return '$field：请检查填写内容';
+  }
+
+  @override
+  String fieldMax(String limit) {
+    return '不能超过 $limit';
+  }
+
+  @override
+  String get fieldPositive => '必须大于 0';
+
+  @override
+  String get fieldNotNumber => '请输入数字';
+
+  @override
   String get errorSessionExpired => '登录已过期，请重新登录';
 
   @override

@@ -49,6 +49,37 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get errorInvalidData => 'Енгізілген деректерді тексеріңіз';
 
   @override
+  String errorFieldMax(String field, String limit) {
+    return '$field — $limit аспауы керек';
+  }
+
+  @override
+  String errorFieldMin(String field, String limit) {
+    return '$field — $limit кем болмауы керек';
+  }
+
+  @override
+  String errorFieldMaxLength(String field, String limit) {
+    return '$field — $limit таңбадан аспауы керек';
+  }
+
+  @override
+  String errorFieldInvalid(String field) {
+    return '$field — мәнін тексеріңіз';
+  }
+
+  @override
+  String fieldMax(String limit) {
+    return '$limit аспауы керек';
+  }
+
+  @override
+  String get fieldPositive => '0-ден үлкен болуы керек';
+
+  @override
+  String get fieldNotNumber => 'Сан енгізіңіз';
+
+  @override
   String get errorSessionExpired => 'Сессия аяқталды — қайта кіріңіз';
 
   @override

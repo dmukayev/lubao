@@ -180,6 +180,48 @@ abstract class LubaoLocalizations {
   /// **'Проверьте введённые данные'**
   String get errorInvalidData;
 
+  /// No description provided for @errorFieldMax.
+  ///
+  /// In ru, this message translates to:
+  /// **'{field} — не больше {limit}'**
+  String errorFieldMax(String field, String limit);
+
+  /// No description provided for @errorFieldMin.
+  ///
+  /// In ru, this message translates to:
+  /// **'{field} — не меньше {limit}'**
+  String errorFieldMin(String field, String limit);
+
+  /// No description provided for @errorFieldMaxLength.
+  ///
+  /// In ru, this message translates to:
+  /// **'{field} — не длиннее {limit} символов'**
+  String errorFieldMaxLength(String field, String limit);
+
+  /// No description provided for @errorFieldInvalid.
+  ///
+  /// In ru, this message translates to:
+  /// **'{field} — проверьте значение'**
+  String errorFieldInvalid(String field);
+
+  /// No description provided for @fieldMax.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не больше {limit}'**
+  String fieldMax(String limit);
+
+  /// No description provided for @fieldPositive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Должно быть больше 0'**
+  String get fieldPositive;
+
+  /// No description provided for @fieldNotNumber.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите число'**
+  String get fieldNotNumber;
+
   /// No description provided for @errorSessionExpired.
   ///
   /// In ru, this message translates to:
