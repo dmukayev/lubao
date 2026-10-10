@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { ReferenceDataModule } from './reference-data/reference-data.module';
 import { DriversModule } from './drivers/drivers.module';
 import { ShareModule } from './share/share.module';
+import { CompanyDriversModule } from './company-drivers/company-drivers.module';
 import { ArrivalsModule } from './arrivals/arrivals.module';
 import { CompaniesModule } from './companies/companies.module';
 import { CargosModule } from './cargos/cargos.module';
@@ -50,6 +51,7 @@ import { IdentifiersModule } from './identifiers/identifiers.module';
     AuthModule,
     ReferenceDataModule,
     DriversModule,
+    CompanyDriversModule,
     ShareModule,
     ArrivalsModule,
     CompaniesModule,

@@ -498,6 +498,8 @@ model Driver {
   user                   User      @relation(fields: [userId], references: [id])
   /// 058 п.8: ☆ грузы водителя.
   favoriteCargos         CargoFavorite[]
+  /// 058 п.6: компании, где водитель в списке «Мои водители».
+  companyLists           CompanyDriver[]
   fullName               String
   homeCityId             String
   homeCity               City      @relation(fields: [homeCityId], references: [id])
@@ -657,6 +659,8 @@ model Company {
 
   members               CompanyMember[]
   cargos                Cargo[]
+  /// 058 п.6: «Мои водители» — сохранённые ☆ и заведённые компанией.
+  ownDrivers            CompanyDriver[]
   deals                 Deal[]
   chats                 Chat[]
   contactEvents         ContactEvent[]
@@ -1506,3 +1510,45 @@ model CargoFavorite {
   @@index([cargoId])
   @@map("cargo_favorites")
 }
+
+/// 058 п.6: откуда водитель в «Моих водителях» компании.
+enum CompanyDriverSource {
+  /// Логист сохранил ☆.
+  SAVED
+  /// Логист завёл по имени и телефону («Создать водителя»).
+  CREATED
+}
+
+/// 058 п.6: ACTIVE — в списке; PENDING — заведён компанией, ждёт входа и
+/// «Принять»; DECLINED / LEFT — водитель отказался или вышел (компания его
+/// в «Моих» больше не видит, даже если были сделки).
+enum CompanyDriverStatus {
+  ACTIVE
+  PENDING
+  DECLINED
+  LEFT
+}
+
+/// 058 п.6: строка «Моих водителей» компании. Заведённый компанией водитель
+/// до входа — только имя и телефон, указанные компанией (`driverId` пуст);
+/// при входе по коду на этот номер привязывается к водителю.
+model CompanyDriver {
+  id              String              @id @default(uuid())
+  companyId       String
+  company         Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  driverId        String?
+  driver          Driver?             @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  phone           String?
+  name            String?
+  source          CompanyDriverSource
+  status          CompanyDriverStatus
+  createdByUserId String?
+  createdAt       DateTime            @default(now())
+  respondedAt     DateTime?
+
+  @@unique([companyId, driverId])
+  @@unique([companyId, phone])
+  @@index([phone])
+  @@map("company_drivers")
+}
+
