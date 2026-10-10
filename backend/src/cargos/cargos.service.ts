@@ -1,6 +1,7 @@
 import { PricingService } from '../pricing/pricing.service';
 import { cancelStatsFor } from '../deals/cancel-policy';
-import { BadRequestException, Optional, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Optional, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { RedisService } from '../redis/redis.service';
 import { BodyTypeProfile, Cargo, CargoStatus, Company, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ResponsesService } from '../responses/responses.service';
@@ -53,7 +54,49 @@ export class CargosService {
     private readonly responses: ResponsesService,
     private readonly contactPolicy: ContactPolicyService,
     @Optional() private readonly pricing?: PricingService,
+    @Optional() private readonly redis?: RedisService,
   ) {}
+
+  private readonly logger = new Logger(CargosService.name);
+
+  /// Публикация не ждёт расстояние дольше этого: холодный OSRM на новую пару
+  /// городов отвечает до ~30 с, а приложение ждёт ответ 20 с — логист видел
+  /// ошибку, жал «Опубликовать» ещё раз, и появлялся второй такой же груз.
+  static PRICING_INLINE_MS = 3000;
+
+  private async applyPricingBounded(cargoId: string, listed: boolean) {
+    const work = this.applyPricing(cargoId, listed).catch((e) => this.logger.warn(`Расстояние для груза ${cargoId}: ${(e as Error).message}`));
+    let timer: NodeJS.Timeout | undefined;
+    await Promise.race([work, new Promise<void>((resolve) => (timer = setTimeout(resolve, CargosService.PRICING_INLINE_MS)))]);
+    clearTimeout(timer);
+  }
+
+  /// Повтор той же формы (ключ `Idempotency-Key`, 10 мин) — тот же груз, а не второй.
+  private static readonly IDEMPOTENCY_TTL_S = 600;
+
+  async createIdempotent(companyId: string, userId: string, companyIsVerified: boolean, dto: CreateCargoDto, key?: string) {
+    if (!key || !this.redis || !/^[A-Za-z0-9_-]{8,64}$/.test(key)) return this.create(companyId, userId, companyIsVerified, dto);
+    const redisKey = `cargo-create:${userId}:${key}`;
+    const claimed = await this.redis.client.set(redisKey, 'pending', 'EX', CargosService.IDEMPOTENCY_TTL_S, 'NX');
+    if (!claimed) {
+      // Первый запрос ещё идёт или уже создал груз — ждём его результат.
+      for (let i = 0; i < 50; i++) {
+        const value = await this.redis.client.get(redisKey);
+        if (value && value !== 'pending') return this.toDto(await this.findEntity(value));
+        if (!value) break;
+        await new Promise((r) => setTimeout(r, 300));
+      }
+      throw new ConflictException({ code: 'CARGO_CREATE_IN_PROGRESS', message: 'The same cargo is being published' });
+    }
+    try {
+      const cargo = await this.create(companyId, userId, companyIsVerified, dto);
+      await this.redis.client.set(redisKey, cargo.id, 'EX', CargosService.IDEMPOTENCY_TTL_S);
+      return cargo;
+    } catch (e) {
+      await this.redis.client.del(redisKey);
+      throw e;
+    }
+  }
 
   /// 049 п.1: флаг догруза — читается часто (каждая карточка), кэш на 5 с.
   private partialFlag: { value: boolean; at: number } | null = null;
@@ -662,7 +705,7 @@ export class CargosService {
       select: { id: true },
     });
     // Публикует только проверенная компания (проверено выше) — точка LISTED.
-    await this.applyPricing(created.id, true);
+    await this.applyPricingBounded(created.id, true);
     return this.toDto(await this.findEntity(created.id));
   }
 
@@ -726,7 +769,7 @@ export class CargosService {
       },
     });
     // Сменился маршрут или цена — заново км и ₸/км.
-    if (dto.pointId !== undefined || dto.destinationCityId !== undefined || dto.price !== undefined) await this.applyPricing(id, false);
+    if (dto.pointId !== undefined || dto.destinationCityId !== undefined || dto.price !== undefined) await this.applyPricingBounded(id, false);
     return this.toDto(await this.findEntity(id));
   }
 

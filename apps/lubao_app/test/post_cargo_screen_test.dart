@@ -17,7 +17,7 @@ class _FakeCargoRepository extends CargoRepository {
   CreateCargoInput? created;
 
   @override
-  Future<Cargo> create(CreateCargoInput input) async {
+  Future<Cargo> create(CreateCargoInput input, {String? idempotencyKey}) async {
     created = input;
     return Cargo(
       id: 'new',

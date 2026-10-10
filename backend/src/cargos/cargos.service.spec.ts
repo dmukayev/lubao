@@ -781,3 +781,73 @@ describe('CargosService.companyTab — новые отклики наверху 
     expect(r.counts.newResponses).toBe(1);
   });
 });
+
+describe('публикация груза: повтор и долгий расчёт расстояния', () => {
+  function fakeRedis() {
+    const store = new Map<string, string>();
+    return {
+      store,
+      client: {
+        set: jest.fn(async (k: string, v: string, _ex: string, _ttl: number, nx?: string) => {
+          if (nx === 'NX' && store.has(k)) return null;
+          store.set(k, v);
+          return 'OK';
+        }),
+        get: jest.fn(async (k: string) => store.get(k) ?? null),
+        del: jest.fn(async (k: string) => store.delete(k)),
+      },
+    };
+  }
+
+  it('тот же Idempotency-Key, пока первый запрос идёт, — один груз, второй ответ тот же', async () => {
+    const redis = fakeRedis();
+    const service = new CargosService({} as any, {} as any, {} as any, undefined, redis as any);
+    let finish!: () => void;
+    const create = jest.spyOn(service, 'create').mockImplementation(
+      () => new Promise((resolve) => (finish = () => resolve({ id: 'cargo-1' } as any))),
+    );
+    jest.spyOn(service as any, 'findEntity').mockResolvedValue({ id: 'cargo-1' });
+    jest.spyOn(service, 'toDto').mockImplementation(async (c: any) => ({ id: c.id }) as any);
+
+    const first = service.createIdempotent('c1', 'u1', true, {} as any, 'form-key-123');
+    const second = service.createIdempotent('c1', 'u1', true, {} as any, 'form-key-123');
+    await new Promise((r) => setTimeout(r, 10));
+    finish();
+
+    expect((await first).id).toBe('cargo-1');
+    expect((await second).id).toBe('cargo-1');
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  it('первая попытка упала — ключ освобождается, повтор публикует', async () => {
+    const redis = fakeRedis();
+    const service = new CargosService({} as any, {} as any, {} as any, undefined, redis as any);
+    const create = jest.spyOn(service, 'create').mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({ id: 'cargo-2' } as any);
+
+    await expect(service.createIdempotent('c1', 'u1', true, {} as any, 'form-key-456')).rejects.toThrow('boom');
+    expect((await service.createIdempotent('c1', 'u1', true, {} as any, 'form-key-456')).id).toBe('cargo-2');
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  it('без ключа — обычная публикация', async () => {
+    const service = new CargosService({} as any, {} as any, {} as any, undefined, fakeRedis() as any);
+    const create = jest.spyOn(service, 'create').mockResolvedValue({ id: 'cargo-3' } as any);
+    await service.createIdempotent('c1', 'u1', true, {} as any);
+    await service.createIdempotent('c1', 'u1', true, {} as any);
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  it('расстояние считается дольше лимита — публикация не ждёт его до конца', async () => {
+    const service = new CargosService({} as any, {} as any, {} as any);
+    jest.spyOn(service as any, 'applyPricing').mockReturnValue(new Promise(() => undefined));
+    const saved = (CargosService as any).PRICING_INLINE_MS;
+    (CargosService as any).PRICING_INLINE_MS = 20;
+    try {
+      const started = Date.now();
+      await (service as any).applyPricingBounded('cargo-1', true);
+      expect(Date.now() - started).toBeLessThan(1000);
+    } finally {
+      (CargosService as any).PRICING_INLINE_MS = saved;
+    }
+  });
+});

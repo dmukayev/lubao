@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -63,6 +64,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   /// 055: единица ввода веса (по умолчанию кг; выбор логиста — на устройстве).
   WeightUnit _weightUnit = WeightUnit.kg;
   bool _saving = false;
+
+  /// Ключ публикации этой формы: «Опубликовать» ещё раз после ошибки (сеть,
+  /// долгий ответ) не создаёт второй такой же груз.
+  final String _publishKey = List.generate(24, (_) => 'abcdefghijklmnopqrstuvwxyz0123456789'[Random.secure().nextInt(36)]).join();
   final List<String> _photoUrls = [];
   bool _uploadingPhoto = false;
 
@@ -301,7 +306,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         await ref.read(cargoRepositoryProvider).update(widget.cargo!.id, input);
         ref.invalidate(cargoByIdProvider(widget.cargo!.id));
       } else {
-        await ref.read(cargoRepositoryProvider).create(input);
+        await ref.read(cargoRepositoryProvider).create(input, idempotencyKey: _publishKey);
         unawaited(ref.read(pushServiceProvider).requestPermissionAndRegister());
       }
       ref.invalidate(myCargosProvider);

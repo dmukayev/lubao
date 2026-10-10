@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Headers, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import { IsString } from 'class-validator';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
@@ -124,9 +124,9 @@ export class CargosController {
   }
 
   @Post()
-  create(@CurrentUser() ctx: RequestContext, @Body() dto: CreateCargoDto) {
+  create(@CurrentUser() ctx: RequestContext, @Body() dto: CreateCargoDto, @Headers('idempotency-key') idempotencyKey?: string) {
     if (!ctx.companyMember) throw new ForbiddenException('Not a company account');
-    return this.cargos.create(ctx.companyMember.companyId, ctx.user.id, ctx.companyMember.company.isVerified, dto);
+    return this.cargos.createIdempotent(ctx.companyMember.companyId, ctx.user.id, ctx.companyMember.company.isVerified, dto, idempotencyKey);
   }
 
   @Patch(':id')

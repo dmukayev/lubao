@@ -66,8 +66,14 @@ class CargoRepository {
     return Cargo.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<Cargo> create(CreateCargoInput input) async {
-    final res = await _client.dio.post('/cargos', data: input.toJson());
+  /// [idempotencyKey] — один на форму: повтор после таймаута/ошибки сети
+  /// возвращает уже созданный груз, а не публикует второй.
+  Future<Cargo> create(CreateCargoInput input, {String? idempotencyKey}) async {
+    final res = await _client.dio.post(
+      '/cargos',
+      data: input.toJson(),
+      options: idempotencyKey == null ? null : Options(headers: {'Idempotency-Key': idempotencyKey}),
+    );
     return Cargo.fromJson(res.data as Map<String, dynamic>);
   }
 
