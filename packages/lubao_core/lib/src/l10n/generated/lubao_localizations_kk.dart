@@ -2584,7 +2584,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get companyNotVerifiedBannerText =>
-      'Компания тексерілмеген. Жүргізушілерді көруге және оларға жазуға болады, бірақ жүк жариялау мүмкін емес — төмендегі тіркеу туралы куәлікті жүктеңіз';
+      'Компания тексерілмеген — төмендегі тіркеу туралы куәлікті жүктеңіз';
 
   @override
   String get companyEditTitle => 'Компания деректері';
@@ -3587,6 +3587,29 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get postCargoTrucks => 'Қанша көлік керек';
+
+  @override
+  String get preVerifyTitle => 'Тексеру жүріп жатқанда';
+
+  @override
+  String get preVerifyDriverCan =>
+      'Болады: жүктерді көру, қоңырау шалу, жазу және өтінім беру';
+
+  @override
+  String get preVerifyDriverCannot => 'Болмайды: тасымалды растау';
+
+  @override
+  String get preVerifyDriverAfter => 'Құжаттар тексерілгеннен кейін ашылады';
+
+  @override
+  String get preVerifyCompanyCan =>
+      'Болады: жүргізушілерді көру, қоңырау шалу және жазу';
+
+  @override
+  String get preVerifyCompanyCannot => 'Болмайды: жүк жариялау';
+
+  @override
+  String get preVerifyCompanyAfter => 'Компания тексерілгеннен кейін ашылады';
 
   @override
   String get driversTabAll => 'Барлығы';

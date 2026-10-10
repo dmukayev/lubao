@@ -4905,7 +4905,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @companyNotVerifiedBannerText.
   ///
   /// In ru, this message translates to:
-  /// **'Компания не проверена. Можно смотреть водителей и писать им, но нельзя опубликовать груз — загрузите свидетельство о регистрации ниже'**
+  /// **'Компания не проверена — загрузите свидетельство о регистрации ниже'**
   String get companyNotVerifiedBannerText;
 
   /// No description provided for @companyEditTitle.
@@ -6683,6 +6683,48 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Сколько машин нужно'**
   String get postCargoTrucks;
+
+  /// No description provided for @preVerifyTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пока идёт проверка'**
+  String get preVerifyTitle;
+
+  /// No description provided for @preVerifyDriverCan.
+  ///
+  /// In ru, this message translates to:
+  /// **'Можно: смотреть грузы, звонить, писать и откликаться'**
+  String get preVerifyDriverCan;
+
+  /// No description provided for @preVerifyDriverCannot.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нельзя: подтвердить перевозку'**
+  String get preVerifyDriverCannot;
+
+  /// No description provided for @preVerifyDriverAfter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откроется после проверки документов'**
+  String get preVerifyDriverAfter;
+
+  /// No description provided for @preVerifyCompanyCan.
+  ///
+  /// In ru, this message translates to:
+  /// **'Можно: смотреть водителей, звонить и писать им'**
+  String get preVerifyCompanyCan;
+
+  /// No description provided for @preVerifyCompanyCannot.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нельзя: публиковать грузы'**
+  String get preVerifyCompanyCannot;
+
+  /// No description provided for @preVerifyCompanyAfter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откроется после проверки компании'**
+  String get preVerifyCompanyAfter;
 
   /// No description provided for @driversTabAll.
   ///

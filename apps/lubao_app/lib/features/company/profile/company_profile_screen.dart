@@ -10,6 +10,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../../providers/locale_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../shared/pre_verification_card.dart';
 import '../../shared/photo_picker.dart';
 import '../../shared/error_feedback.dart';
 import '../../shared/pd_consent.dart';
@@ -621,15 +622,11 @@ class CompanyProfileScreen extends ConsumerWidget {
           if (session != null && session.user.emailVerifiedAt == null) const _EmailVerifyBanner(),
           // Задача 012, п.4 — компания видит прямо в профиле, почему не
           // может опубликовать груз, а не только натыкается на 403.
+          // 058 п.9: одна карточка «можно / нельзя / откроется после проверки».
           if (company != null && !company.isVerified)
-            Card(
-              key: const Key('companyNotVerifiedBanner'),
-              color: AppColors.primarySoft,
-              margin: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: ListTile(
-                leading: const Icon(LucideIcons.shieldAlert),
-                title: Text(t.companyNotVerifiedBannerText),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: PreVerificationCard.company(t, key: const Key('companyNotVerifiedBanner'), title: t.companyNotVerifiedBannerText),
             ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,

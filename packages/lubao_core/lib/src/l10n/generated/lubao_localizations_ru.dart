@@ -2574,7 +2574,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get companyNotVerifiedBannerText =>
-      'Компания не проверена. Можно смотреть водителей и писать им, но нельзя опубликовать груз — загрузите свидетельство о регистрации ниже';
+      'Компания не проверена — загрузите свидетельство о регистрации ниже';
 
   @override
   String get companyEditTitle => 'Данные компании';
@@ -3574,6 +3574,29 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get postCargoTrucks => 'Сколько машин нужно';
+
+  @override
+  String get preVerifyTitle => 'Пока идёт проверка';
+
+  @override
+  String get preVerifyDriverCan =>
+      'Можно: смотреть грузы, звонить, писать и откликаться';
+
+  @override
+  String get preVerifyDriverCannot => 'Нельзя: подтвердить перевозку';
+
+  @override
+  String get preVerifyDriverAfter => 'Откроется после проверки документов';
+
+  @override
+  String get preVerifyCompanyCan =>
+      'Можно: смотреть водителей, звонить и писать им';
+
+  @override
+  String get preVerifyCompanyCannot => 'Нельзя: публиковать грузы';
+
+  @override
+  String get preVerifyCompanyAfter => 'Откроется после проверки компании';
 
   @override
   String get driversTabAll => 'Все';

@@ -2532,8 +2532,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
       '发布货物功能将在公司验证通过后开放——请在公司资料中上传注册证书';
 
   @override
-  String get companyNotVerifiedBannerText =>
-      '公司尚未通过验证。您可以查看司机并与其联系，但无法发布货物——请在下方上传注册证书';
+  String get companyNotVerifiedBannerText => '公司尚未通过验证——请在下方上传注册证书';
 
   @override
   String get companyEditTitle => '公司信息';
@@ -3505,6 +3504,27 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get postCargoTrucks => '需要几辆车';
+
+  @override
+  String get preVerifyTitle => '审核期间';
+
+  @override
+  String get preVerifyDriverCan => '可以：浏览货物、打电话、发消息和报名';
+
+  @override
+  String get preVerifyDriverCannot => '不可以：确认承运';
+
+  @override
+  String get preVerifyDriverAfter => '证件审核通过后开放';
+
+  @override
+  String get preVerifyCompanyCan => '可以：查看司机、打电话和发消息';
+
+  @override
+  String get preVerifyCompanyCannot => '不可以：发布货物';
+
+  @override
+  String get preVerifyCompanyAfter => '公司审核通过后开放';
 
   @override
   String get driversTabAll => '全部';

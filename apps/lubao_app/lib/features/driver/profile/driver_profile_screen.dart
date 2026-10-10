@@ -10,6 +10,7 @@ import '../../../providers/locale_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'add_vehicle_banner.dart';
 import 'driver_companies.dart';
+import '../../shared/pre_verification_card.dart';
 import 'profile_avatar.dart';
 
 class DriverProfileScreen extends ConsumerStatefulWidget {
@@ -124,6 +125,9 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
           ],
           if (!(driver?.isVerified ?? false)) ...[
             const SizedBox(height: AppSpacing.lg),
+            // 058 п.9: что можно до проверки, что нельзя и что откроется.
+            PreVerificationCard.driver(t, key: const Key('driverPreVerifyCard')),
+            const SizedBox(height: AppSpacing.sm),
             _CompletenessBanner(driver: driver),
           ],
           // 058 п.6: «Компании, где я в списке» — выйти из любой.

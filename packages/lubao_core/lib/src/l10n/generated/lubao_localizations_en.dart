@@ -2585,7 +2585,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get companyNotVerifiedBannerText =>
-      'The company is not verified. You can view drivers and message them, but you can\'t publish cargo — upload the registration certificate below';
+      'The company is not verified — upload the registration certificate below';
 
   @override
   String get companyEditTitle => 'Company details';
@@ -3589,6 +3589,30 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get postCargoTrucks => 'Trucks needed';
+
+  @override
+  String get preVerifyTitle => 'While we verify you';
+
+  @override
+  String get preVerifyDriverCan =>
+      'You can: browse cargo, call, chat and respond';
+
+  @override
+  String get preVerifyDriverCannot => 'You can\'t: confirm a trip';
+
+  @override
+  String get preVerifyDriverAfter =>
+      'Unlocks after your documents are verified';
+
+  @override
+  String get preVerifyCompanyCan =>
+      'You can: see drivers, call and message them';
+
+  @override
+  String get preVerifyCompanyCannot => 'You can\'t: publish cargo';
+
+  @override
+  String get preVerifyCompanyAfter => 'Unlocks after your company is verified';
 
   @override
   String get driversTabAll => 'All';
