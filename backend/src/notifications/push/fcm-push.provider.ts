@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { Injectable, Logger } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
-import { PushMessage, fcmMessage } from './push-provider';
+import { PushMessage, fcmMessage, PushTokenGoneError, isFcmTokenGone } from './push-provider';
 
 interface ServiceAccount {
   project_id: string;
@@ -96,7 +96,9 @@ export class FcmPushProvider {
       },
     );
     if (!res.ok) {
-      throw new Error(`FCM send failed: ${res.status} ${await res.text()}`);
+      const body = await res.text();
+      if (isFcmTokenGone(res.status, body)) throw new PushTokenGoneError(`FCM token gone: ${res.status}`);
+      throw new Error(`FCM send failed: ${res.status} ${body}`);
     }
   }
 }

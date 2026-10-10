@@ -37,6 +37,28 @@ export function fcmMessage(token: string, message: PushMessage): Record<string, 
   return { token, notification: { title: message.title, body: message.body }, data: message.data };
 }
 
+/// Токен устройства больше недействителен (приложение удалено/переустановлено,
+/// токен сменился): FCM 404 `UNREGISTERED` / 400 о токене, APNs 410 или
+/// `BadDeviceToken`. Повторять бессмысленно — токен удаляется.
+export class PushTokenGoneError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PushTokenGoneError';
+  }
+}
+
+/// FCM v1: по ответу — токен ли умер (а не сеть/квота/ключ).
+export function isFcmTokenGone(status: number, body: string): boolean {
+  if (status === 404) return true;
+  return status === 400 && /UNREGISTERED|registration[- ]token|not a valid FCM registration token/i.test(body);
+}
+
+/// APNs: 410 Unregistered или 400 BadDeviceToken / DeviceTokenNotForTopic.
+export function isApnsTokenGone(status: number, body: string): boolean {
+  if (status === 410) return true;
+  return status === 400 && /BadDeviceToken|DeviceTokenNotForTopic/.test(body);
+}
+
 /// Абстракция канала push. Выбор реализации — через .env (PUSH_PROVIDER),
 /// бизнес-логика (кому, через какой из трёх провайдеров, лимиты, очередь)
 /// — в NotificationsService, не здесь. По аналогии с SmsProvider/EmailProvider.
