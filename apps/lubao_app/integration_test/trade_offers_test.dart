@@ -72,10 +72,14 @@ void main() {
     await run.step(tester, 'компания-добавила-водителя-принять', () async {
       final res = await logist.createDriver('Ержан', '+7 701 000 00 05');
       expect(res['result'], 'INVITED_EXISTING');
-      // Список «компаний» водителя перечитывается при входе на экран.
-      await goTab(tester, t.profileTitle);
-      await goTab(tester, t.navFeed);
+      // Список «компаний» водителя перечитывается при входе на экран (до 3 попыток).
       final accept = find.byKey(const Key('companyInviteAccept-33333333-3333-4333-8333-333333333002'));
+      for (var i = 0; i < 3 && accept.evaluate().isEmpty; i++) {
+        await goTab(tester, t.profileTitle);
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+        await goTab(tester, t.navFeed);
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+      }
       await waitFor(tester, accept, timeout: const Duration(seconds: 20));
       await tester.tap(accept);
       await tester.pumpAndSettle();
