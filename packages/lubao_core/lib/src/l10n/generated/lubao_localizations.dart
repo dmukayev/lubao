@@ -6684,6 +6684,48 @@ abstract class LubaoLocalizations {
   /// **'Сколько машин нужно'**
   String get postCargoTrucks;
 
+  /// No description provided for @lastSeenOnline.
+  ///
+  /// In ru, this message translates to:
+  /// **'в сети'**
+  String get lastSeenOnline;
+
+  /// No description provided for @lastSeenToday.
+  ///
+  /// In ru, this message translates to:
+  /// **'был сегодня в {time}'**
+  String lastSeenToday(String time);
+
+  /// No description provided for @lastSeenYesterday.
+  ///
+  /// In ru, this message translates to:
+  /// **'был вчера'**
+  String get lastSeenYesterday;
+
+  /// No description provided for @lastSeenDate.
+  ///
+  /// In ru, this message translates to:
+  /// **'был {date}'**
+  String lastSeenDate(String date);
+
+  /// No description provided for @favoritesTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Избранное'**
+  String get favoritesTitle;
+
+  /// No description provided for @favoriteAdd.
+  ///
+  /// In ru, this message translates to:
+  /// **'В избранное'**
+  String get favoriteAdd;
+
+  /// No description provided for @favoriteRemove.
+  ///
+  /// In ru, this message translates to:
+  /// **'Убрать из избранного'**
+  String get favoriteRemove;
+
   /// No description provided for @offerPropose.
   ///
   /// In ru, this message translates to:

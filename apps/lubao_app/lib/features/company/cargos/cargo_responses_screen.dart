@@ -328,7 +328,17 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
                 ),
                 const SizedBox(width: AppSpacing.xs),
               ],
-              Expanded(child: Text(response.driverName, style: AppTextStyles.bodyStrong)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(response.driverName, style: AppTextStyles.bodyStrong),
+                    // 058 п.7: «в сети» / «был сегодня в 20:15».
+                    if (formatLastSeen(t, response.lastSeenAt) case final seen?)
+                      Text(seen, key: Key('responseLastSeen-${response.id}'), style: AppTextStyles.caption.copyWith(color: seen == t.lastSeenOnline ? AppColors.success : AppColors.textSecondary)),
+                  ],
+                ),
+              ),
               StatusBadge(label: statusLabel, color: statusColor),
               const SizedBox(width: AppSpacing.sm),
               IconSquareButton(icon: LucideIcons.messageSquare, loading: _openingChat, onPressed: _chat),

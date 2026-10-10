@@ -95,3 +95,9 @@ final garageVehiclesProvider = FutureProvider.autoDispose<List<GarageVehicle>>((
 final devicesProvider = FutureProvider.autoDispose<List<DeviceSession>>((ref) {
   return ref.watch(authRepositoryProvider).listSessions();
 });
+
+/// 058 п.8: избранные грузы водителя (☆ в ленте и карточке, раздел в «Моих рейсах»).
+final favoriteCargosProvider = FutureProvider.autoDispose<List<Cargo>>((ref) {
+  return ref.watch(cargoRepositoryProvider).favorites();
+});
+

@@ -3589,6 +3589,31 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get postCargoTrucks => 'Қанша көлік керек';
 
   @override
+  String get lastSeenOnline => 'желіде';
+
+  @override
+  String lastSeenToday(String time) {
+    return 'бүгін $time желіде болды';
+  }
+
+  @override
+  String get lastSeenYesterday => 'кеше желіде болды';
+
+  @override
+  String lastSeenDate(String date) {
+    return '$date желіде болды';
+  }
+
+  @override
+  String get favoritesTitle => 'Таңдаулылар';
+
+  @override
+  String get favoriteAdd => 'Таңдаулыларға';
+
+  @override
+  String get favoriteRemove => 'Таңдаулылардан алу';
+
+  @override
   String get offerPropose => 'Өз бағаңызды ұсыну';
 
   @override

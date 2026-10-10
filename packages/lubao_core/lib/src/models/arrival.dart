@@ -26,6 +26,7 @@ ArrivalStatus arrivalStatusFromJson(String value) {
 /// ON_SITE) анонсом, со стороны логиста.
 class ArrivalListing {
   const ArrivalListing({
+    this.lastSeenAt,
     required this.arrivalId,
     required this.driverId,
     required this.driverName,
@@ -105,12 +106,16 @@ class ArrivalListing {
   final bool anyCountry;
   final List<String> directionCountryIds;
 
+  /// 058 п.7: «в сети / был в сети».
+  final DateTime? lastSeenAt;
+
   factory ArrivalListing.fromJson(Map<String, dynamic> json) => ArrivalListing(
         arrivalId: json['arrivalId'] as String,
         driverId: json['driverId'] as String,
         driverName: json['driverName'] as String? ?? '',
         avatarVersion: json['avatarVersion'] as String?,
         hasPhone: json['hasPhone'] as bool? ?? false,
+        lastSeenAt: json['lastSeenAt'] == null ? null : DateTime.parse(json['lastSeenAt'] as String),
         specs: json['specs'] as Map<String, dynamic>?,
         isVerified: json['isVerified'] as bool? ?? false,
         ratingAvg: (json['ratingAvg'] as num?)?.toDouble() ?? 0,

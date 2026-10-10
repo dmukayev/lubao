@@ -7,6 +7,7 @@ import 'package:lubao_core/lubao_core.dart';
 import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
+import 'favorite_button.dart';
 import '../../shared/status_helpers.dart';
 import 'announce_arrival_sheet.dart';
 import '../../shared/error_feedback.dart';
@@ -200,7 +201,13 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(origin == null ? destination : '$origin → $destination', style: AppTextStyles.route, maxLines: 1, overflow: TextOverflow.ellipsis),
+          Row(
+            children: [
+              Expanded(child: Text(origin == null ? destination : '$origin → $destination', style: AppTextStyles.route, maxLines: 1, overflow: TextOverflow.ellipsis)),
+              // 058 п.8: ☆ прямо в ленте.
+              FavoriteCargoButton(cargoId: cargo.id, compact: true),
+            ],
+          ),
           const SizedBox(height: AppSpacing.xs),
           // 049 п.13: на узком экране с крупным шрифтом (360 dp × 1,3) колонка цены
           // сжимала атрибуты до разрыва слова («Стройматериал|ы») — тогда цена и

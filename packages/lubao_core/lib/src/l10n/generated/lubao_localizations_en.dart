@@ -3591,6 +3591,31 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get postCargoTrucks => 'Trucks needed';
 
   @override
+  String get lastSeenOnline => 'online';
+
+  @override
+  String lastSeenToday(String time) {
+    return 'last seen today at $time';
+  }
+
+  @override
+  String get lastSeenYesterday => 'last seen yesterday';
+
+  @override
+  String lastSeenDate(String date) {
+    return 'last seen $date';
+  }
+
+  @override
+  String get favoritesTitle => 'Favorites';
+
+  @override
+  String get favoriteAdd => 'Add to favorites';
+
+  @override
+  String get favoriteRemove => 'Remove from favorites';
+
+  @override
   String get offerPropose => 'Offer your price';
 
   @override

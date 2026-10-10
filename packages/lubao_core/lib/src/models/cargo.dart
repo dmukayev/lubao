@@ -3,6 +3,7 @@ import 'common.dart';
 
 class Cargo {
   const Cargo({
+    this.contactLastSeenAt,
     required this.id,
     required this.companyId,
     required this.companyName,
@@ -139,6 +140,9 @@ class Cargo {
   final Map<String, dynamic>? cargoSpecs;
   final List<String> extraBodyTypeIds;
 
+  /// 058 п.7: логист груза «в сети / был в сети».
+  final DateTime? contactLastSeenAt;
+
   factory Cargo.fromJson(Map<String, dynamic> json) => Cargo(
         id: json['id'] as String,
         companyId: json['companyId'] as String,
@@ -173,6 +177,7 @@ class Cargo {
         contactName: json['contactName'] as String?,
         hasContactPhone: json['hasContactPhone'] as bool? ?? false,
         contactWechatId: json['contactWechatId'] as String?,
+        contactLastSeenAt: json['contactLastSeenAt'] == null ? null : DateTime.parse(json['contactLastSeenAt'] as String),
         isWhatsappBlocked: json['isWhatsappBlocked'] as bool? ?? false,
         closeOutcome: json['closeOutcome'] as String?,
         closedAt: json['closedAt'] == null ? null : DateTime.parse(json['closedAt'] as String),

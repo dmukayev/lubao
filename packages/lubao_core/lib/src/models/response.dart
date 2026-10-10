@@ -34,6 +34,7 @@ class ResponseOffer {
 
 class CargoResponse {
   const CargoResponse({
+    this.lastSeenAt,
     required this.id,
     required this.cargoId,
     required this.driverId,
@@ -106,6 +107,9 @@ class CargoResponse {
   /// 046 п.3: отмены водителя в карточке отклика.
   final CancelStats? cancelStats;
 
+  /// 058 п.7: водитель «в сети / был в сети».
+  final DateTime? lastSeenAt;
+
   factory CargoResponse.fromJson(Map<String, dynamic> json) => CargoResponse(
         offer: ResponseOffer.fromJson(json),
         id: json['id'] as String,
@@ -132,6 +136,7 @@ class CargoResponse {
         dealId: json['dealId'] as String?,
         dealStatus: json['dealStatus'] == null ? null : dealStatusFromJson(json['dealStatus'] as String),
         cancelStats: CancelStats.fromJson(json['cancelStats']),
+        lastSeenAt: json['lastSeenAt'] == null ? null : DateTime.parse(json['lastSeenAt'] as String),
       );
 }
 

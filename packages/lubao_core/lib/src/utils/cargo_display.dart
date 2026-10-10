@@ -70,3 +70,18 @@ String cargoSizeLabel(LubaoLocalizations t, {double? weightKg, double? volumeM3,
 /// «нужно 3 · осталось 2» — только если машин больше одной (058 п.2).
 String? cargoTrucksLabel(LubaoLocalizations t, {required int needed, required int taken}) =>
     needed > 1 ? t.cargoTrucksLeft('$needed', '${(needed - taken).clamp(0, needed)}') : null;
+
+/// 058 п.7: «в сети» (≤ 5 мин), «был сегодня в 20:15», «был вчера», «был 08.10».
+/// null — неизвестно (не показываем).
+String? formatLastSeen(LubaoLocalizations t, DateTime? lastSeenAt, {DateTime? now}) {
+  if (lastSeenAt == null) return null;
+  final current = now ?? DateTime.now();
+  final seen = lastSeenAt.toLocal();
+  if (current.difference(seen).inMinutes <= 5) return t.lastSeenOnline;
+  String two(int n) => n.toString().padLeft(2, '0');
+  final today = DateTime(current.year, current.month, current.day);
+  final day = DateTime(seen.year, seen.month, seen.day);
+  if (day == today) return t.lastSeenToday('${two(seen.hour)}:${two(seen.minute)}');
+  if (day == today.subtract(const Duration(days: 1))) return t.lastSeenYesterday;
+  return t.lastSeenDate('${two(seen.day)}.${two(seen.month)}${seen.year == current.year ? '' : '.${seen.year}'}');
+}

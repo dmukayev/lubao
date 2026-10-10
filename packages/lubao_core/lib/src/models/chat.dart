@@ -2,6 +2,7 @@ import 'common.dart';
 
 class ChatThread {
   const ChatThread({
+    this.lastSeenAt,
     required this.id,
     this.cargoId,
     this.dealId,
@@ -38,6 +39,9 @@ class ChatThread {
   final String? cargoResponseId;
   final String? cargoResponseStatus;
 
+  /// 058 п.7: собеседник «в сети / был в сети».
+  final DateTime? lastSeenAt;
+
   factory ChatThread.fromJson(Map<String, dynamic> json) => ChatThread(
         id: json['id'] as String,
         cargoId: json['cargoId'] as String?,
@@ -47,6 +51,7 @@ class ChatThread {
         counterpartName: json['counterpartName'] as String? ?? '',
         counterpartAvatarVersion: json['counterpartAvatarVersion'] as String?,
         counterpartLocale: json['counterpartLocale'] as String?,
+        lastSeenAt: json['counterpartLastSeenAt'] == null ? null : DateTime.parse(json['counterpartLastSeenAt'] as String),
         counterpartHasPhone: json['counterpartHasPhone'] as bool? ?? false,
         counterpartWechatId: json['counterpartWechatId'] as String?,
         counterpartCountryCode: json['counterpartCountryCode'] as String?,

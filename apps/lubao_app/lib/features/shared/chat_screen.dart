@@ -319,6 +319,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  // 058 п.7: собеседник «в сети» / «был сегодня в 20:15».
+                  if (formatLastSeen(t, thread?.lastSeenAt) case final seen?)
+                    Text(seen, key: const Key('chatLastSeen'), style: AppTextStyles.caption.copyWith(color: seen == t.lastSeenOnline ? AppColors.success : null)),
                   if (_languageName(t, thread?.counterpartLocale) != null)
                     Text(
                       t.chatWritesIn(_languageName(t, thread!.counterpartLocale)!),

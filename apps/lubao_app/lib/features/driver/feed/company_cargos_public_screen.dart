@@ -33,13 +33,26 @@ class CompanyCargosPublicScreen extends ConsumerWidget {
             key: const Key('companyCargosPublicList'),
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             children: [
+              // 058 п.7/8а: тип компании и когда логист был в сети.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen, vertical: AppSpacing.xs),
+                child: Text(
+                  [
+                    companyKindLabel(t, list.first.companyKind),
+                    ?formatLastSeen(t, list.map((c) => c.contactLastSeenAt).whereType<DateTime>().fold<DateTime?>(null, (a, b) => a == null || b.isAfter(a) ? b : a)),
+                  ].join(' · '),
+                  key: const Key('companyPublicMeta'),
+                  style: AppTextStyles.caption,
+                ),
+              ),
               for (final c in list)
                 CargoCard(
                   key: Key('companyCargoPublic-${c.id}'),
-                  originLabel: refData?.pointOrNull(c.pointId)?.name.forLanguageCode(locale),
+                  originLabel: refData == null ? null : cargoRouteLabels(refData, pointId: c.pointId, destinationCountryId: c.destinationCountryId, destinationCityId: c.destinationCityId, languageCode: locale).origin,
                   destinationLabel: refData == null
                       ? ''
-                      : (refData.cityById(c.destinationCityId)?.name.forLanguageCode(locale) ?? refData.countryById(c.destinationCountryId).name.forLanguageCode(locale)),
+                      : cargoRouteLabels(refData, pointId: c.pointId, destinationCountryId: c.destinationCountryId, destinationCityId: c.destinationCityId, languageCode: locale).destination,
+                  termsLabel: paymentTermsLine(t, advanceAmount: c.advanceAmount, paymentForm: c.paymentForm, paymentDelayDays: c.paymentDelayDays, currency: c.currency),
                   bodyTypeLabel: refData?.bodyTypeById(c.bodyTypeId).name.forLanguageCode(locale) ?? '',
                   priceLabel: formatMoney(c.price, c.currency),
                   readyDateLabel: formatDate(c.readyDate),

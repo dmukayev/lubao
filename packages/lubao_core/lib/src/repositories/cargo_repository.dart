@@ -142,6 +142,20 @@ class CargoRepository {
     return CargoResponse.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// 058 п.8: «Избранное» водителя — опубликованные грузы со ☆.
+  Future<List<Cargo>> favorites() async {
+    final res = await _client.dio.get('/cargos/favorites');
+    return (res.data as List<dynamic>).map((e) => Cargo.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> setFavorite(String cargoId, bool on) async {
+    if (on) {
+      await _client.dio.post('/cargos/$cargoId/favorite');
+    } else {
+      await _client.dio.delete('/cargos/$cargoId/favorite');
+    }
+  }
+
   /// 058 п.5: изменить свою цену (null — по цене груза), пока отклик ждёт.
   Future<CargoResponse> updateOffer(String responseId, {double? proposedPrice, String? proposedComment}) async {
     final res = await _client.dio.patch('/responses/$responseId/offer', data: {'proposedPrice': proposedPrice, 'proposedComment': proposedComment});

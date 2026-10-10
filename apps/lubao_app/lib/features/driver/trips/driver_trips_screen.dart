@@ -41,6 +41,7 @@ class DriverTripsScreen extends ConsumerWidget {
     ref.invalidate(dealsMineProvider);
     ref.invalidate(myResponsesProvider);
     ref.invalidate(cargoFeedProvider);
+    ref.invalidate(favoriteCargosProvider);
   }
 
   Future<void> _act(BuildContext context, WidgetRef ref, Future<void> Function() action) async {
@@ -73,8 +74,11 @@ class DriverTripsScreen extends ConsumerWidget {
       final invited = responses.where((r) => r.status == ResponseStatus.invited && inviteHoursLeft(r.inviteExpiresAt, now) > 0).toList();
       final waiting = responses.where((r) => r.status == ResponseStatus.pending).toList()..sort((a, b) => a.readyDate.compareTo(b.readyDate));
       final inWork = deals.where(dealInWork).toList();
+      // 058 п.8: «Избранное» — опубликованные грузы со ☆, без тех, где уже есть отклик.
+      final involved = {...responses.map((r) => r.cargoId), ...deals.map((d) => d.cargoId)};
+      final favorites = (ref.watch(favoriteCargosProvider).valueOrNull ?? const <Cargo>[]).where((c) => !involved.contains(c.id)).toList();
 
-      if (selected.isEmpty && invited.isEmpty && waiting.isEmpty && inWork.isEmpty) {
+      if (selected.isEmpty && invited.isEmpty && waiting.isEmpty && inWork.isEmpty && favorites.isEmpty) {
         body = ListView(
           children: [
             const SizedBox(height: AppSpacing.xxl),
@@ -155,6 +159,16 @@ class DriverTripsScreen extends ConsumerWidget {
                     onTap: () => context.push('/deal/${d.id}'),
                   );
                 }),
+            ],
+            if (favorites.isNotEmpty) ...[
+              _SectionTitle(key: const Key('tripsSectionFavorites'), title: t.favoritesTitle, count: favorites.length),
+              for (final c in favorites)
+                _TripCard(
+                  key: Key('favoriteTripCard-${c.id}'),
+                  refData: refData,
+                  cargo: _TripCargo.fromCargo(c),
+                  onTap: () => context.push('/driver/cargo/${c.id}'),
+                ),
             ],
           ],
         );
@@ -263,6 +277,24 @@ class _TripCargo {
       paymentDelayDays: c.paymentDelayDays,
     );
   }
+
+  /// 058 п.8: груз из «Избранного».
+  factory _TripCargo.fromCargo(Cargo c) => _TripCargo(
+        pointId: c.pointId,
+        destinationCountryId: c.destinationCountryId,
+        destinationCityId: c.destinationCityId,
+        bodyTypeId: c.bodyTypeId,
+        categoryId: c.categoryId,
+        weightKg: c.weightKg,
+        volumeM3: c.volumeM3,
+        price: c.price,
+        currency: c.currency,
+        readyDate: c.readyDate,
+        companyName: c.companyName,
+        advanceAmount: c.advanceAmount,
+        paymentForm: c.paymentForm,
+        paymentDelayDays: c.paymentDelayDays,
+      );
 
   factory _TripCargo.fromDeal(Deal d) =>
       fromDealOrNull(d) ??

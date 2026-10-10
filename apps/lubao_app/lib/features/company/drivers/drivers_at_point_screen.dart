@@ -865,6 +865,9 @@ class _DriverCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    // 058 п.7: «в сети» / «был сегодня в 20:15».
+                    if (formatLastSeen(t, driver.lastSeenAt) case final seen?)
+                      Text(seen, key: Key('driverLastSeen-${driver.driverId}'), style: AppTextStyles.caption.copyWith(color: seen == t.lastSeenOnline ? AppColors.success : AppColors.textSecondary)),
                     if (spec.isNotEmpty)
                       // 045 п.4: миниатюра кузова (40 px) перед строкой машины.
                       // 044 п.7: тап по строке машины — её фото («Фото нет», если не добавлены).

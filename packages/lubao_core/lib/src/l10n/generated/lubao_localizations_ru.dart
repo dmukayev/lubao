@@ -3576,6 +3576,31 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get postCargoTrucks => 'Сколько машин нужно';
 
   @override
+  String get lastSeenOnline => 'в сети';
+
+  @override
+  String lastSeenToday(String time) {
+    return 'был сегодня в $time';
+  }
+
+  @override
+  String get lastSeenYesterday => 'был вчера';
+
+  @override
+  String lastSeenDate(String date) {
+    return 'был $date';
+  }
+
+  @override
+  String get favoritesTitle => 'Избранное';
+
+  @override
+  String get favoriteAdd => 'В избранное';
+
+  @override
+  String get favoriteRemove => 'Убрать из избранного';
+
+  @override
   String get offerPropose => 'Предложить свою цену';
 
   @override

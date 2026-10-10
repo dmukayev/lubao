@@ -17,6 +17,7 @@ import '../trips/driver_trips_screen.dart';
 import '../../shared/error_feedback.dart';
 import '../../shared/offer_sheet.dart';
 import '../../shared/share_action.dart';
+import 'favorite_button.dart';
 
 class CargoDetailScreen extends ConsumerStatefulWidget {
   const CargoDetailScreen({super.key, required this.cargoId});
@@ -290,6 +291,8 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
       appBar: AppBar(
         title: Text(t.cargoDetailTitle),
         actions: [
+          // 058 п.8: ☆ — в «Избранное».
+          FavoriteCargoButton(cargoId: widget.cargoId),
           // 052 п.4: водитель делится любым грузом из ленты («брат, глянь»).
           if (cargoAsync.valueOrNull != null && ref.watch(referenceDataProvider).valueOrNull != null)
             IconButton(
@@ -603,7 +606,11 @@ class _CargoDetailBody extends ConsumerWidget {
                             ],
                           ),
                           // 058 п.8а: грузовладелец / экспедитор / перевозчик.
-                          Text(companyKindLabel(t, cargo.companyKind), key: const Key('cargoDetailCompanyKind'), style: AppTextStyles.caption),
+                          Text(
+                            [companyKindLabel(t, cargo.companyKind), ?formatLastSeen(t, cargo.contactLastSeenAt)].join(' · '),
+                            key: const Key('cargoDetailCompanyKind'),
+                            style: AppTextStyles.caption,
+                          ),
                           const SizedBox(height: AppSpacing.xs),
                           // Один текст с переносом, а не ряд кусков: на узком
                           // экране с крупным шрифтом ряд вылезал вправо (iPhone SE

@@ -3507,6 +3507,31 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoTrucks => '需要几辆车';
 
   @override
+  String get lastSeenOnline => '在线';
+
+  @override
+  String lastSeenToday(String time) {
+    return '今天 $time 在线';
+  }
+
+  @override
+  String get lastSeenYesterday => '昨天在线';
+
+  @override
+  String lastSeenDate(String date) {
+    return '$date 在线';
+  }
+
+  @override
+  String get favoritesTitle => '收藏';
+
+  @override
+  String get favoriteAdd => '收藏';
+
+  @override
+  String get favoriteRemove => '取消收藏';
+
+  @override
   String get offerPropose => '提出我的报价';
 
   @override
