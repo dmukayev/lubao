@@ -207,7 +207,8 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
         children: [
           Row(
             children: [
-              Expanded(child: Text(origin == null ? destination : '$origin → $destination', style: AppTextStyles.route, maxLines: 1, overflow: TextOverflow.ellipsis)),
+              // Две строки: с флагами (058 п.3) город назначения не обрезается.
+              Expanded(child: Text(origin == null ? destination : '$origin → $destination', style: AppTextStyles.route, maxLines: 2, overflow: TextOverflow.ellipsis)),
               // 058 п.8: ☆ прямо в ленте.
               FavoriteCargoButton(cargoId: cargo.id, compact: true),
             ],
@@ -234,7 +235,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [price, ?perKm],
                     ),
-                    ?termsText,
+                    if (terms.isNotEmpty) Text(terms, key: Key('feedCargoTerms-${cargo.id}'), style: small),
                   ],
                 );
               }
