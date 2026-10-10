@@ -475,10 +475,16 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 displayStringForOption: (o) => o.label,
                 optionsBuilder: (value) {
                   if (value.text.isEmpty) return destinationOptions;
+                  // Только что выбранный город в поле — список не держим открытым
+                  // (на Android после выбора он оставался до второго нажатия).
+                  if (destinationOptions.any((o) => o.countryId == _countryId && o.cityId == _cityId && o.label == value.text)) {
+                    return const Iterable<CountryCityOption>.empty();
+                  }
                   final query = value.text.toLowerCase();
                   return destinationOptions.where((o) => o.label.toLowerCase().contains(query));
                 },
                 onSelected: (option) {
+                  FocusManager.instance.primaryFocus?.unfocus();
                   setState(() {
                     _countryId = option.countryId;
                     _cityId = option.cityId;

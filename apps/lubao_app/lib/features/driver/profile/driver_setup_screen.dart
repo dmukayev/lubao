@@ -246,6 +246,9 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
               optionsBuilder: (value) {
                 final addCityOption = CountryCityOption(label: t.cityNotListed, countryId: '', isAddCityAction: true);
                 if (value.text.trim().isEmpty) return [...homeCityOptions, addCityOption];
+                // Только что выбранный город в поле — список не держим открытым
+                // (на Android после выбора он оставался до второго нажатия).
+                if (homeCityOptions.any((o) => o.cityId == _homeCityId && o.label == value.text)) return const <CountryCityOption>[];
                 final matches = searchCities(refData.cities, refData.countries, value.text);
                 final matchedOptions = <CountryCityOption>[];
                 for (final city in matches) {
@@ -259,6 +262,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                 return [...matchedOptions, addCityOption];
               },
               onSelected: (option) async {
+                FocusManager.instance.primaryFocus?.unfocus();
                 if (option.isAddCityAction) {
                   final city = await showAddCitySheet(context, ref, refData);
                   if (city != null) {
