@@ -191,6 +191,9 @@ fi
 
 # Ключи идентификаторов нужны сиду (хеш номера в чёрном списке) и backend.
 set -a; source .env; set +a
+# Внешние каналы в e2e — заглушки, что бы ни стояло в .env для dev: иначе
+# сценарии слали бы настоящие push на тестовые токены и платно переводили чат.
+export PUSH_PROVIDER=console TRANSLATION_PROVIDER=noop SMS_PROVIDER=console
 
 echo "== сборка backend =="
 if ! RWT_DIR=backend run_with_timeout 300 "$RESULTS/build.log" npx nest build; then
