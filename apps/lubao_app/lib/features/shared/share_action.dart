@@ -43,7 +43,11 @@ Future<void> shareContent(
   // 057 п.10: браузер телефона без Web Share — сразу своё меню, не mailto:.
   if (!desktopWeb && browserCanShare()) {
     // 057 п.9: на iPad системное меню привязывается к кнопке.
-    final box = context.findRenderObject() as RenderBox?;
+    // Контекст может принадлежать списку (RenderSliverList, не RenderBox) —
+    // приведение `as RenderBox?` падало, и «Поделиться» в карточке груза
+    // ничего не делало. Нет прямоугольника — системное меню без привязки.
+    final renderObject = context.findRenderObject();
+    final box = renderObject is RenderBox ? renderObject : null;
     final origin = box != null && box.hasSize ? box.localToGlobal(Offset.zero) & box.size : null;
     try {
       final result = await SharePlus.instance.share(ShareParams(text: text, sharePositionOrigin: origin));
