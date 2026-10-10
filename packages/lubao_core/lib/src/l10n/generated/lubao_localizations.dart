@@ -5001,7 +5001,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @garageAddVehicle.
   ///
   /// In ru, this message translates to:
-  /// **'Добавить машину'**
+  /// **'Добавить машину или прицеп'**
   String get garageAddVehicle;
 
   /// No description provided for @garageEmptyTractors.

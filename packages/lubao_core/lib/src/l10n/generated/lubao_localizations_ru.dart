@@ -2609,7 +2609,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get garageAddedYesterday => 'добавлен вчера';
 
   @override
-  String get garageAddVehicle => 'Добавить машину';
+  String get garageAddVehicle => 'Добавить машину или прицеп';
 
   @override
   String get garageEmptyTractors => 'Нет тягачей';

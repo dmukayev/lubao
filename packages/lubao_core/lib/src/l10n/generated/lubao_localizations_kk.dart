@@ -2619,7 +2619,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get garageAddedYesterday => 'кеше қосылды';
 
   @override
-  String get garageAddVehicle => 'Машина қосу';
+  String get garageAddVehicle => 'Машина не тіркеме қосу';
 
   @override
   String get garageEmptyTractors => 'Тягач жоқ';

@@ -2568,7 +2568,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get garageAddedYesterday => '昨天添加';
 
   @override
-  String get garageAddVehicle => '添加车辆';
+  String get garageAddVehicle => '添加车辆或挂车';
 
   @override
   String get garageEmptyTractors => '暂无牵引车';

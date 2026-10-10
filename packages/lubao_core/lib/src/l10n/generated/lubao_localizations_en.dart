@@ -2620,7 +2620,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get garageAddedYesterday => 'added yesterday';
 
   @override
-  String get garageAddVehicle => 'Add a vehicle';
+  String get garageAddVehicle => 'Add a vehicle or trailer';
 
   @override
   String get garageEmptyTractors => 'No tractors yet';

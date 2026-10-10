@@ -1081,7 +1081,7 @@
   "garageVerified": "verified",
   "garagePending": "under review",
   "garageAddedYesterday": "added yesterday",
-  "garageAddVehicle": "Add a vehicle",
+  "garageAddVehicle": "Add a vehicle or trailer",
   "garageEmptyTractors": "No tractors yet",
   "garageEmptyTrailers": "No trailers yet",
   "garageOcrHint": "Photograph the registration certificate — the plate and VIN fill in automatically. Review and submit.",

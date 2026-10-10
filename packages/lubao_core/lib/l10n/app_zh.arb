@@ -956,7 +956,7 @@
   "garageVerified": "已核验",
   "garagePending": "审核中",
   "garageAddedYesterday": "昨天添加",
-  "garageAddVehicle": "添加车辆",
+  "garageAddVehicle": "添加车辆或挂车",
   "garageEmptyTractors": "暂无牵引车",
   "garageEmptyTrailers": "暂无挂车",
   "garageOcrHint": "拍摄车辆登记证——车牌号和车架号将自动填写。请检查后提交。",

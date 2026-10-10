@@ -956,7 +956,7 @@
   "garageVerified": "тексерілді",
   "garagePending": "тексеруде",
   "garageAddedYesterday": "кеше қосылды",
-  "garageAddVehicle": "Машина қосу",
+  "garageAddVehicle": "Машина не тіркеме қосу",
   "garageEmptyTractors": "Тягач жоқ",
   "garageEmptyTrailers": "Тіркеме жоқ",
   "garageOcrHint": "Техпаспортты суретке түсіріңіз — мемномер мен VIN өздігінен толады. Тексеріп, жіберіңіз.",

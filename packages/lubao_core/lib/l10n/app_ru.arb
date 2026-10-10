@@ -1081,7 +1081,7 @@
   "garageVerified": "проверена",
   "garagePending": "на проверке",
   "garageAddedYesterday": "добавлен вчера",
-  "garageAddVehicle": "Добавить машину",
+  "garageAddVehicle": "Добавить машину или прицеп",
   "garageEmptyTractors": "Нет тягачей",
   "garageEmptyTrailers": "Нет прицепов",
   "garageOcrHint": "Сфотографируйте техпаспорт — госномер и VIN заполнятся сами. Проверьте и отправьте.",
