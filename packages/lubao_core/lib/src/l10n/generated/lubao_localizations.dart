@@ -6684,6 +6684,120 @@ abstract class LubaoLocalizations {
   /// **'Сколько машин нужно'**
   String get postCargoTrucks;
 
+  /// No description provided for @offerPropose.
+  ///
+  /// In ru, this message translates to:
+  /// **'Предложить свою цену'**
+  String get offerPropose;
+
+  /// No description provided for @offerSheetTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Своя цена'**
+  String get offerSheetTitle;
+
+  /// No description provided for @offerPriceLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена, {currency}'**
+  String offerPriceLabel(String currency);
+
+  /// No description provided for @offerCommentLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Комментарий (необязательно)'**
+  String get offerCommentLabel;
+
+  /// No description provided for @offerSend.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отправить'**
+  String get offerSend;
+
+  /// No description provided for @offerSent.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ваша цена отправлена: {price}'**
+  String offerSent(String price);
+
+  /// No description provided for @offerChange.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменить цену'**
+  String get offerChange;
+
+  /// No description provided for @offerCounterFromLogist.
+  ///
+  /// In ru, this message translates to:
+  /// **'Встречная цена от логиста: {price}'**
+  String offerCounterFromLogist(String price);
+
+  /// No description provided for @offerAgree.
+  ///
+  /// In ru, this message translates to:
+  /// **'Согласен'**
+  String get offerAgree;
+
+  /// No description provided for @offerDecline.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет'**
+  String get offerDecline;
+
+  /// No description provided for @offerAgreed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена согласована: {price}'**
+  String offerAgreed(String price);
+
+  /// No description provided for @offerCounterDeclinedDriver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы отказались от встречной цены — логист видит вашу цену'**
+  String get offerCounterDeclinedDriver;
+
+  /// No description provided for @offerLogistProposes.
+  ///
+  /// In ru, this message translates to:
+  /// **'Предлагает {price} (вы просили {cargoPrice})'**
+  String offerLogistProposes(String price, String cargoPrice);
+
+  /// No description provided for @offerSelectFor.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выбрать за {price}'**
+  String offerSelectFor(String price);
+
+  /// No description provided for @offerCounterButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Встречная цена'**
+  String get offerCounterButton;
+
+  /// No description provided for @offerCounterHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Встречную цену можно отправить один раз — дальше договаривайтесь в чате'**
+  String get offerCounterHint;
+
+  /// No description provided for @offerCounterSent.
+  ///
+  /// In ru, this message translates to:
+  /// **'Встречная цена отправлена: {price} — ждём ответ'**
+  String offerCounterSent(String price);
+
+  /// No description provided for @offerCounterDeclined.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель не согласился на {price}'**
+  String offerCounterDeclined(String price);
+
+  /// No description provided for @dealAgreedPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Итоговая цена'**
+  String get dealAgreedPrice;
+
   /// No description provided for @cargoTrucksLeft.
   ///
   /// In ru, this message translates to:

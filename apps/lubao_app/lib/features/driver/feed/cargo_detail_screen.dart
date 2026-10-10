@@ -14,6 +14,8 @@ import '../../shared/status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../services/push_service.dart';
 import '../trips/driver_trips_screen.dart';
+import '../../shared/error_feedback.dart';
+import '../../shared/offer_sheet.dart';
 import '../../shared/share_action.dart';
 
 class CargoDetailScreen extends ConsumerStatefulWidget {
@@ -49,6 +51,114 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
     } finally {
       if (mounted) setState(() => _responding = false);
     }
+  }
+
+  void _refreshMine() {
+    ref.invalidate(myCargoResponseProvider(widget.cargoId));
+    ref.invalidate(cargoFeedProvider);
+    ref.invalidate(myResponsesProvider);
+  }
+
+  Future<void> _offerAction(Future<void> Function() action) async {
+    setState(() => _responding = true);
+    try {
+      await action();
+    } catch (e) {
+      if (mounted) showApiError(context, e);
+    } finally {
+      _refreshMine();
+      if (mounted) setState(() => _responding = false);
+    }
+  }
+
+  /// 058 п.5: «Предложить свою цену» (и в ответ на приглашение) / «Изменить цену».
+  Future<void> _proposePrice(Cargo cargo, MyCargoResponse? mine) async {
+    final t = context.l10n;
+    final offer = await showOfferSheet(context, currency: cargo.currency, title: t.offerSheetTitle, initialPrice: mine?.offer.proposedPrice ?? cargo.price, initialComment: mine?.offer.proposedComment);
+    if (offer == null || !mounted) return;
+    final repo = ref.read(cargoRepositoryProvider);
+    await _offerAction(() async {
+      if (mine != null && mine.status == ResponseStatus.pending) {
+        await repo.updateOffer(mine.id, proposedPrice: offer.price, proposedComment: offer.comment);
+      } else {
+        await repo.respond(widget.cargoId, proposedPrice: offer.price, proposedComment: offer.comment);
+        unawaited(ref.read(pushServiceProvider).requestPermissionAndRegister());
+      }
+    });
+  }
+
+  /// «Согласен» на встречную — сделка сразу (подтверждена, если проверен).
+  Future<void> _agreeCounter(String responseId) async {
+    String? dealId;
+    await _offerAction(() async => dealId = await ref.read(cargoRepositoryProvider).acceptCounter(responseId));
+    ref.invalidate(dealsMineProvider);
+    if (dealId != null && mounted) context.push('/deal/$dealId');
+  }
+
+  /// 058 п.5: состояние торга над кнопками.
+  Widget? _offerBlock(Cargo cargo, LubaoLocalizations t) {
+    final mine = ref.watch(myCargoResponseProvider(widget.cargoId)).valueOrNull;
+    final status = mine?.status;
+    final offer = mine?.offer ?? ResponseOffer.none;
+    final canPropose = cargo.status == CargoStatus.published && (status == null || status == ResponseStatus.invited || status == ResponseStatus.cancelled);
+    if (offer.counterPending && status == ResponseStatus.pending) {
+      return AppCard(
+        key: const Key('offerCounterCard'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(t.offerCounterFromLogist(formatMoney(offer.counterPrice!, cargo.currency)), style: AppTextStyles.bodyStrong),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    key: const Key('offerCounterDecline'),
+                    onPressed: _responding ? null : () => _offerAction(() => ref.read(cargoRepositoryProvider).declineCounter(mine!.id)),
+                    child: Text(t.offerDecline),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: FilledButton(
+                    key: const Key('offerCounterAgree'),
+                    onPressed: _responding ? null : () => _agreeCounter(mine!.id),
+                    child: Text(t.offerAgree),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+    if (status == ResponseStatus.pending && offer.hasDriverPrice) {
+      return Row(
+        children: [
+          Expanded(
+            child: Text(
+              offer.counterStatus == CounterStatus.declined ? t.offerCounterDeclinedDriver : t.offerSent(formatMoney(offer.proposedPrice!, cargo.currency)),
+              key: const Key('offerSentText'),
+              style: AppTextStyles.body,
+            ),
+          ),
+          if (offer.counterPrice == null)
+            TextButton(key: const Key('offerChange'), onPressed: _responding ? null : () => _proposePrice(cargo, mine), child: Text(t.offerChange)),
+        ],
+      );
+    }
+    if (canPropose) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          key: const Key('offerProposeButton'),
+          icon: const Icon(LucideIcons.badgeDollarSign, size: 18),
+          onPressed: _responding ? null : () => _proposePrice(cargo, mine),
+          label: Text(t.offerPropose),
+        ),
+      );
+    }
+    return null;
   }
 
   /// «Отказаться» от приглашения.
@@ -217,6 +327,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    ?_offerBlock(cargoAsync.value!, t),
                     // Новичок откликается и без проверки; подтвердить перевозку —
                     // только после неё (041, п.1) — мягкая подсказка, не запрет.
                     if (!(ref.watch(sessionProvider)?.driver?.isVerified ?? false))

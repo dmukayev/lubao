@@ -6,6 +6,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
+import '../../shared/error_feedback.dart';
+import '../../shared/offer_sheet.dart';
 import '../../shared/status_helpers.dart';
 import '../haul_hint.dart';
 import 'cargo_close_dialog.dart';
@@ -102,6 +104,7 @@ class CargoResponsesScreen extends ConsumerWidget {
           Widget card(CargoResponse response, {bool waitingDriver = false}) => _ResponseCard(
                 response: response,
                 cargoWeightKg: cargo?.weightKg,
+                cargo: cargo,
                 refData: referenceData.valueOrNull,
                 waitingDriver: waitingDriver,
                 onUpdateStatus: (status) => _updateStatus(context, ref, response.id, status),
@@ -198,9 +201,13 @@ class _ResponseCard extends ConsumerStatefulWidget {
     required this.refData,
     required this.onUpdateStatus,
     this.waitingDriver = false,
+    this.cargo,
   });
 
   final CargoResponse response;
+
+  /// 058 п.5: цена груза — «вы просили $10 300», валюта встречной цены.
+  final Cargo? cargo;
 
   /// Приглашён, ещё не ответил — пометка «ждём ответа водителя».
   final bool waitingDriver;
@@ -234,6 +241,22 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
     widget.onUpdateStatus('SELECTED');
   }
 
+  /// 058 п.5: встречная цена — один раз.
+  Future<void> _counter() async {
+    final t = context.l10n;
+    final cargo = widget.cargo;
+    if (cargo == null) return;
+    final offer = await showOfferSheet(context,
+        currency: cargo.currency, title: t.offerCounterButton, initialPrice: widget.response.offer.proposedPrice, withComment: false, hint: t.offerCounterHint);
+    if (offer == null || !mounted) return;
+    try {
+      await ref.read(cargoRepositoryProvider).counterOffer(widget.response.id, offer.price);
+    } catch (e) {
+      if (mounted) showApiError(context, e);
+    }
+    ref.invalidate(cargoResponsesProvider(widget.response.cargoId));
+  }
+
   Future<void> _chat() async {
     setState(() => _openingChat = true);
     try {
@@ -259,6 +282,7 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
 
   @override
   Widget build(BuildContext context) {
+    final offer = widget.response.offer;
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final response = widget.response;
@@ -362,11 +386,36 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
             const SizedBox(height: AppSpacing.xs),
             Text(response.message!, style: AppTextStyles.body),
           ],
+          // 058 п.5: торг — своя цена водителя и встречная логиста.
+          if (widget.cargo case final cargo? when offer.hasDriverPrice) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              t.offerLogistProposes(formatMoney(offer.proposedPrice!, cargo.currency), formatMoney(cargo.price, cargo.currency)),
+              key: Key('responseOffer-${response.id}'),
+              style: AppTextStyles.bodyStrong,
+            ),
+            if (offer.proposedComment != null) Text(offer.proposedComment!, style: AppTextStyles.body),
+            if (offer.counterPending)
+              Text(t.offerCounterSent(formatMoney(offer.counterPrice!, cargo.currency)), key: Key('responseCounterSent-${response.id}'), style: AppTextStyles.caption.copyWith(color: AppColors.accentText)),
+            if (offer.counterStatus == CounterStatus.declined)
+              Text(t.offerCounterDeclined(formatMoney(offer.counterPrice!, cargo.currency)), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+          ],
           if (response.status == ResponseStatus.pending) ...[
             const SizedBox(height: AppSpacing.md),
             // Друг под другом: «Выбрать водителя» в половине узкого экрана не
             // помещалось (переполнение, найдено сценарием 9 на iPhone 16e/17).
-            PrimaryButton(key: const Key('responseSelectButton'), label: t.responseSelect, onPressed: () => _select(haulHint)),
+            PrimaryButton(
+              key: const Key('responseSelectButton'),
+              label: offer.hasDriverPrice && widget.cargo != null ? t.offerSelectFor(formatMoney(offer.proposedPrice!, widget.cargo!.currency)) : t.responseSelect,
+              onPressed: () => _select(haulHint),
+            ),
+            if (offer.canCounter && widget.cargo != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(key: Key('responseCounterButton-${response.id}'), onPressed: _counter, child: Text(t.offerCounterButton)),
+              ),
+            ],
             const SizedBox(height: AppSpacing.sm),
             SizedBox(
               width: double.infinity,

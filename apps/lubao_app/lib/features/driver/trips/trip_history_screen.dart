@@ -77,7 +77,7 @@ class _TripHistoryScreenState extends ConsumerState<TripHistoryScreen> {
             key: 'historyDeal-${d.id}',
             at: d.deliveredAt ?? d.createdAt,
             route: d.cargo == null ? d.companyName : _route(rd, locale, d.cargo!.pointId, d.cargo!.destinationCountryId, d.cargo!.destinationCityId),
-            price: d.cargo == null ? '' : formatMoney(d.cargo!.price, d.cargo!.currency),
+            price: d.cargo == null ? '' : formatMoney(d.agreedPrice ?? d.cargo!.price, d.cargo!.currency),
             delivered: true,
             onTap: () => context.push('/deal/${d.id}'),
           ),

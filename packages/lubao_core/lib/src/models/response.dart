@@ -1,5 +1,37 @@
 import 'common.dart';
 
+/// 058 п.5: ответ водителя на встречную цену логиста.
+enum CounterStatus { pending, accepted, declined }
+
+/// 058 п.5: торг по отклику — своя цена водителя (в валюте груза) с
+/// комментарием и один встречный ход логиста.
+class ResponseOffer {
+  const ResponseOffer({this.proposedPrice, this.proposedComment, this.counterPrice, this.counterStatus});
+
+  final double? proposedPrice;
+  final String? proposedComment;
+  final double? counterPrice;
+  final CounterStatus? counterStatus;
+
+  static const none = ResponseOffer();
+
+  bool get hasDriverPrice => proposedPrice != null;
+  bool get counterPending => counterStatus == CounterStatus.pending && counterPrice != null;
+  bool get canCounter => proposedPrice != null && counterPrice == null;
+
+  factory ResponseOffer.fromJson(Map<String, dynamic> json) => ResponseOffer(
+        proposedPrice: (json['proposedPrice'] as num?)?.toDouble(),
+        proposedComment: json['proposedComment'] as String?,
+        counterPrice: (json['counterPrice'] as num?)?.toDouble(),
+        counterStatus: switch (json['counterStatus']) {
+          'PENDING' => CounterStatus.pending,
+          'ACCEPTED' => CounterStatus.accepted,
+          'DECLINED' => CounterStatus.declined,
+          _ => null,
+        },
+      );
+}
+
 class CargoResponse {
   const CargoResponse({
     required this.id,
@@ -26,8 +58,11 @@ class CargoResponse {
     this.dealId,
     this.dealStatus,
     this.cancelStats,
+    this.offer = ResponseOffer.none,
   });
 
+  /// 058 п.5: своя цена водителя / встречная логиста.
+  final ResponseOffer offer;
   final String id;
   final String cargoId;
   final String driverId;
@@ -72,6 +107,7 @@ class CargoResponse {
   final CancelStats? cancelStats;
 
   factory CargoResponse.fromJson(Map<String, dynamic> json) => CargoResponse(
+        offer: ResponseOffer.fromJson(json),
         id: json['id'] as String,
         cargoId: json['cargoId'] as String,
         driverId: json['driverId'] as String,
@@ -102,13 +138,14 @@ class CargoResponse {
 
 /// Мой отклик на груз (041) — для карточки водителя.
 class MyCargoResponse {
-  const MyCargoResponse({required this.id, required this.status});
+  const MyCargoResponse({required this.id, required this.status, this.offer = ResponseOffer.none});
 
   final String id;
   final ResponseStatus status;
+  final ResponseOffer offer;
 
   factory MyCargoResponse.fromJson(Map<String, dynamic> json) =>
-      MyCargoResponse(id: json['id'] as String, status: responseStatusFromJson(json['status'] as String));
+      MyCargoResponse(id: json['id'] as String, status: responseStatusFromJson(json['status'] as String), offer: ResponseOffer.fromJson(json));
 }
 
 
@@ -148,6 +185,7 @@ class MyResponseEntry {
     this.advanceAmount,
     this.paymentForm,
     this.paymentDelayDays,
+    this.offer = ResponseOffer.none,
     this.companyName = '',
     this.closeReason,
     this.inviteExpiresAt,
@@ -161,6 +199,7 @@ class MyResponseEntry {
   final double? advanceAmount;
   final PaymentForm? paymentForm;
   final int? paymentDelayDays;
+  final ResponseOffer offer;
   final String id;
   final String cargoId;
   final ResponseStatus status;
@@ -203,6 +242,7 @@ class MyResponseEntry {
       advanceAmount: (cargo['advanceAmount'] as num?)?.toDouble(),
       paymentForm: paymentFormFromJson(cargo['paymentForm'] as String?),
       paymentDelayDays: cargo['paymentDelayDays'] as int?,
+      offer: ResponseOffer.fromJson(json),
       companyName: cargo['companyName'] as String? ?? '',
       closeReason: responseCloseReasonFromJson(json['closeReason'] as String?),
       inviteExpiresAt: json['inviteExpiresAt'] == null ? null : DateTime.parse(json['inviteExpiresAt'] as String),

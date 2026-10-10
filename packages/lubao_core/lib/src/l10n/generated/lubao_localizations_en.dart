@@ -3591,6 +3591,81 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get postCargoTrucks => 'Trucks needed';
 
   @override
+  String get offerPropose => 'Offer your price';
+
+  @override
+  String get offerSheetTitle => 'Your price';
+
+  @override
+  String offerPriceLabel(String currency) {
+    return 'Price, $currency';
+  }
+
+  @override
+  String get offerCommentLabel => 'Comment (optional)';
+
+  @override
+  String get offerSend => 'Send';
+
+  @override
+  String offerSent(String price) {
+    return 'Your price sent: $price';
+  }
+
+  @override
+  String get offerChange => 'Change price';
+
+  @override
+  String offerCounterFromLogist(String price) {
+    return 'Logist\'s counter-offer: $price';
+  }
+
+  @override
+  String get offerAgree => 'Agree';
+
+  @override
+  String get offerDecline => 'No';
+
+  @override
+  String offerAgreed(String price) {
+    return 'Price agreed: $price';
+  }
+
+  @override
+  String get offerCounterDeclinedDriver =>
+      'You declined the counter-offer — the logist sees your price';
+
+  @override
+  String offerLogistProposes(String price, String cargoPrice) {
+    return 'Offers $price (you asked $cargoPrice)';
+  }
+
+  @override
+  String offerSelectFor(String price) {
+    return 'Choose for $price';
+  }
+
+  @override
+  String get offerCounterButton => 'Counter-offer';
+
+  @override
+  String get offerCounterHint =>
+      'You can send a counter-offer once — then agree in the chat';
+
+  @override
+  String offerCounterSent(String price) {
+    return 'Counter-offer sent: $price — waiting for an answer';
+  }
+
+  @override
+  String offerCounterDeclined(String price) {
+    return 'The driver declined $price';
+  }
+
+  @override
+  String get dealAgreedPrice => 'Agreed price';
+
+  @override
   String cargoTrucksLeft(String needed, String left) {
     return '$needed needed · $left left';
   }

@@ -3,6 +3,7 @@ import 'cargo.dart';
 
 class Deal {
   const Deal({
+    this.agreedPrice,
     required this.id,
     this.responseId,
     required this.cargoId,
@@ -80,7 +81,11 @@ class Deal {
   /// 044 п.4: когда логист последний раз открыл документы водителя.
   final DateTime? driverDocsOpenedAt;
 
+  /// 058 п.5: итоговая цена (в валюте груза); null — старые ответы API.
+  final double? agreedPrice;
+
   factory Deal.fromJson(Map<String, dynamic> json) => Deal(
+        agreedPrice: (json['agreedPrice'] as num?)?.toDouble(),
         id: json['id'] as String,
         responseId: json['responseId'] as String?,
         cargoId: json['cargoId'] as String,

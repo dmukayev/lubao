@@ -367,7 +367,10 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                       final route = cargoRouteLabels(rd, pointId: cargo.pointId, destinationCountryId: cargo.destinationCountryId, destinationCityId: cargo.destinationCityId, languageCode: Localizations.localeOf(context).languageCode);
                       return Text(route.origin == null ? route.destination : '${route.origin} → ${route.destination}', key: const Key('dealRoute'), style: AppTextStyles.route);
                     }),
-                  Text(formatMoney(cargo.price, cargo.currency), style: Theme.of(context).textTheme.headlineSmall),
+                  // 058 п.5: итоговая цена — та, о которой договорились.
+                  Text(formatMoney(deal.agreedPrice ?? cargo.price, cargo.currency), key: const Key('dealPrice'), style: Theme.of(context).textTheme.headlineSmall),
+                  if (deal.agreedPrice != null && deal.agreedPrice != cargo.price)
+                    Text(t.offerAgreed(formatMoney(deal.agreedPrice!, cargo.currency)), key: const Key('dealAgreedPrice'), style: AppTextStyles.caption),
                   if (paymentTermsLine(t, advanceAmount: cargo.advanceAmount, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays, currency: cargo.currency) case final terms when terms.isNotEmpty)
                     Text(terms, key: const Key('dealTerms'), style: AppTextStyles.body),
                 ],

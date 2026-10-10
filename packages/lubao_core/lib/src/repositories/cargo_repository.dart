@@ -132,9 +132,37 @@ class CargoRepository {
     await _client.dio.post('/cargos/$cargoId/agreed');
   }
 
-  Future<CargoResponse> respond(String cargoId, {String? message}) async {
-    final res = await _client.dio.post('/cargos/$cargoId/responses', data: {if (message != null) 'message': message});
+  /// «Готов взять»; 058 п.5 — со своей ценой ([proposedPrice] в валюте груза).
+  Future<CargoResponse> respond(String cargoId, {String? message, double? proposedPrice, String? proposedComment}) async {
+    final res = await _client.dio.post('/cargos/$cargoId/responses', data: {
+      if (message != null) 'message': message,
+      if (proposedPrice != null) 'proposedPrice': proposedPrice,
+      if (proposedComment != null && proposedComment.isNotEmpty) 'proposedComment': proposedComment,
+    });
     return CargoResponse.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// 058 п.5: изменить свою цену (null — по цене груза), пока отклик ждёт.
+  Future<CargoResponse> updateOffer(String responseId, {double? proposedPrice, String? proposedComment}) async {
+    final res = await _client.dio.patch('/responses/$responseId/offer', data: {'proposedPrice': proposedPrice, 'proposedComment': proposedComment});
+    return CargoResponse.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// 058 п.5: встречная цена логиста — один раз.
+  Future<CargoResponse> counterOffer(String responseId, double price) async {
+    final res = await _client.dio.post('/responses/$responseId/counter', data: {'price': price});
+    return CargoResponse.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// 058 п.5: «Нет» на встречную цену.
+  Future<void> declineCounter(String responseId) async {
+    await _client.dio.post('/responses/$responseId/counter/decline');
+  }
+
+  /// 058 п.5: «Согласен» — сделка по встречной цене (подтверждена, если водитель проверен).
+  Future<String> acceptCounter(String responseId) async {
+    final res = await _client.dio.post('/responses/$responseId/counter/accept');
+    return (res.data as Map<String, dynamic>)['id'] as String;
   }
 
   Future<CargoResponse> updateResponseStatus(String responseId, String status) async {

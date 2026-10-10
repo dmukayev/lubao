@@ -253,7 +253,8 @@ class _TripCargo {
       categoryId: c.categoryId,
       weightKg: c.weightKg,
       volumeM3: c.volumeM3,
-      price: c.price,
+      // 058 п.5: в рейсе — итоговая цена сделки.
+      price: d.agreedPrice ?? c.price,
       currency: c.currency,
       readyDate: c.readyDate,
       companyName: d.companyName,

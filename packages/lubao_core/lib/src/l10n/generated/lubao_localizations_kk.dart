@@ -3589,6 +3589,81 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get postCargoTrucks => 'Қанша көлік керек';
 
   @override
+  String get offerPropose => 'Өз бағаңызды ұсыну';
+
+  @override
+  String get offerSheetTitle => 'Өз бағаңыз';
+
+  @override
+  String offerPriceLabel(String currency) {
+    return 'Баға, $currency';
+  }
+
+  @override
+  String get offerCommentLabel => 'Пікір (міндетті емес)';
+
+  @override
+  String get offerSend => 'Жіберу';
+
+  @override
+  String offerSent(String price) {
+    return 'Бағаңыз жіберілді: $price';
+  }
+
+  @override
+  String get offerChange => 'Бағаны өзгерту';
+
+  @override
+  String offerCounterFromLogist(String price) {
+    return 'Логисттің қарсы бағасы: $price';
+  }
+
+  @override
+  String get offerAgree => 'Келісемін';
+
+  @override
+  String get offerDecline => 'Жоқ';
+
+  @override
+  String offerAgreed(String price) {
+    return 'Баға келісілді: $price';
+  }
+
+  @override
+  String get offerCounterDeclinedDriver =>
+      'Қарсы бағадан бас тарттыңыз — логист сіздің бағаңызды көреді';
+
+  @override
+  String offerLogistProposes(String price, String cargoPrice) {
+    return '$price ұсынады (сіз $cargoPrice сұрадыңыз)';
+  }
+
+  @override
+  String offerSelectFor(String price) {
+    return '$price бағасына таңдау';
+  }
+
+  @override
+  String get offerCounterButton => 'Қарсы баға';
+
+  @override
+  String get offerCounterHint =>
+      'Қарсы бағаны бір рет жіберуге болады — әрі қарай чатта келісіңіз';
+
+  @override
+  String offerCounterSent(String price) {
+    return 'Қарсы баға жіберілді: $price — жауап күтеміз';
+  }
+
+  @override
+  String offerCounterDeclined(String price) {
+    return 'Жүргізуші $price бағасына келіспеді';
+  }
+
+  @override
+  String get dealAgreedPrice => 'Қорытынды баға';
+
+  @override
   String cargoTrucksLeft(String needed, String left) {
     return 'керек $needed · қалды $left';
   }

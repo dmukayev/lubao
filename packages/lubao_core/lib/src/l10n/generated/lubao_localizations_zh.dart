@@ -3507,6 +3507,79 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoTrucks => '需要几辆车';
 
   @override
+  String get offerPropose => '提出我的报价';
+
+  @override
+  String get offerSheetTitle => '我的报价';
+
+  @override
+  String offerPriceLabel(String currency) {
+    return '价格，$currency';
+  }
+
+  @override
+  String get offerCommentLabel => '备注（可选）';
+
+  @override
+  String get offerSend => '发送';
+
+  @override
+  String offerSent(String price) {
+    return '您的报价已发送：$price';
+  }
+
+  @override
+  String get offerChange => '修改报价';
+
+  @override
+  String offerCounterFromLogist(String price) {
+    return '物流方还价：$price';
+  }
+
+  @override
+  String get offerAgree => '同意';
+
+  @override
+  String get offerDecline => '不同意';
+
+  @override
+  String offerAgreed(String price) {
+    return '已议定价格：$price';
+  }
+
+  @override
+  String get offerCounterDeclinedDriver => '您已拒绝还价——物流方看到的是您的报价';
+
+  @override
+  String offerLogistProposes(String price, String cargoPrice) {
+    return '报价 $price（您的价格 $cargoPrice）';
+  }
+
+  @override
+  String offerSelectFor(String price) {
+    return '以 $price 选择';
+  }
+
+  @override
+  String get offerCounterButton => '还价';
+
+  @override
+  String get offerCounterHint => '还价只能发送一次——之后请在聊天中商议';
+
+  @override
+  String offerCounterSent(String price) {
+    return '已发送还价：$price——等待回复';
+  }
+
+  @override
+  String offerCounterDeclined(String price) {
+    return '司机不同意 $price';
+  }
+
+  @override
+  String get dealAgreedPrice => '最终价格';
+
+  @override
   String cargoTrucksLeft(String needed, String left) {
     return '需要 $needed 辆 · 还剩 $left 辆';
   }
