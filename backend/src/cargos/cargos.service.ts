@@ -38,13 +38,14 @@ type GeoCity = { id: string; regionId: string | null; lat: unknown; lng: unknown
 type GeoPoint = { cityId: string; lat: unknown; lng: unknown; city: GeoCity };
 export type FeedOrigin = { cityId: string; regionId: string | null; lat: number | null; lng: number | null };
 
-type CargoWithCompany = Cargo & { company: Company & { country: { code: string } }; publishedBy?: { id: string; name: string | null; phone: string | null } | null };
+type CargoWithCompany = Cargo & { company: Company & { country: { code: string } }; publishedBy?: { id: string; name: string | null; phone: string | null; lastSeenAt?: Date | null } | null };
 
 interface CargoContact {
   id: string;
   name: string | null;
   phone: string | null;
   wechatId: string | null;
+  lastSeenAt?: Date | null;
 }
 
 /// 058 п.1: условия оплаты из формы. `undefined` — поле не трогаем (правка),
@@ -162,12 +163,13 @@ export class CargosService {
         name: member?.fullName ?? cargo.publishedBy.name,
         phone: member?.contactPhone ?? cargo.publishedBy.phone,
         wechatId: member?.wechatId ?? null,
+        lastSeenAt: cargo.publishedBy.lastSeenAt ?? null,
       };
     }
     const owner = await this.prisma.companyMember.findFirst({
       where: { companyId: cargo.companyId, role: 'OWNER' },
       orderBy: { createdAt: 'asc' },
-      include: { user: { select: { id: true, name: true, phone: true } } },
+      include: { user: { select: { id: true, name: true, phone: true, lastSeenAt: true } } },
     });
     if (!owner) return null;
     return {
@@ -175,6 +177,7 @@ export class CargosService {
       name: owner.fullName ?? owner.user.name,
       phone: owner.contactPhone ?? owner.user.phone,
       wechatId: owner.wechatId,
+      lastSeenAt: owner.user.lastSeenAt ?? null,
     };
   }
 
@@ -201,6 +204,8 @@ export class CargosService {
       // через POST /cargos/:id/contact; здесь — есть ли он вообще.
       hasContactPhone: !!contact?.phone,
       contactWechatId: contact?.wechatId ?? null,
+      // 058 п.7: логист «в сети / был в сети».
+      contactLastSeenAt: contact?.lastSeenAt ?? null,
       // WhatsApp заблокирован в Китае — водителю показываем чат Lubao
       // вместо кнопки, которая всё равно не дойдёт до логиста (decisions.md
       // «Звонки — обычные, через телефон», 2026-10-05).
@@ -256,7 +261,7 @@ export class CargosService {
   }
 
   private get includeForDto() {
-    return { company: { include: { country: { select: { code: true } } } }, publishedBy: { select: { id: true, name: true, phone: true } } } as const;
+    return { company: { include: { country: { select: { code: true } } } }, publishedBy: { select: { id: true, name: true, phone: true, lastSeenAt: true } } } as const;
   }
 
   /// Кузов связки водителя для отсева грузов (задача 033, п.8) — прицеп
@@ -674,6 +679,27 @@ export class CargosService {
   }
 
   /// 047 п.7: подсказка логисту при публикации — медиана по маршруту.
+  /// 058 п.8: ☆ груза водителем (повтор — без ошибки).
+  async setFavorite(driverId: string, cargoId: string, on: boolean) {
+    if (on) {
+      const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId }, select: { id: true } });
+      if (!cargo) throw new NotFoundException('Cargo not found');
+      await this.prisma.cargoFavorite.upsert({ where: { driverId_cargoId: { driverId, cargoId } }, create: { driverId, cargoId }, update: {} });
+    } else {
+      await this.prisma.cargoFavorite.deleteMany({ where: { driverId, cargoId } });
+    }
+  }
+
+  /// «Избранное» в «Моих рейсах» — пока груз опубликован; новые сверху.
+  async listFavorites(driverId: string) {
+    const rows = await this.prisma.cargoFavorite.findMany({
+      where: { driverId, cargo: { status: 'PUBLISHED', company: { isBlocked: false } } },
+      orderBy: { createdAt: 'desc' },
+      include: { cargo: { include: this.includeForDto } },
+    });
+    return Promise.all(rows.map((r) => this.toDto(r.cargo)));
+  }
+
   async marketHint(pointId: string, destinationCityId: string | undefined, destinationCountryId: string, weightKg: number | undefined) {
     if (!this.pricing || !destinationCityId) return { market: null, distanceKm: null };
     const [point, country] = await Promise.all([

@@ -182,6 +182,8 @@ export class ChatsService {
       // 054: логист видит фото водителя в чате; водителю фото логиста не показываем.
       counterpartAvatarVersion: ctx.driver ? null : avatarVersion(driver),
       counterpartLocale,
+      // 058 п.7: «в сети / был в сети» собеседника.
+      counterpartLastSeenAt: (ctx.driver ? companyMember?.user.lastSeenAt : driver.user.lastSeenAt) ?? null,
       // Номер собеседника — только по нажатию (POST /chats/:id/contact, 043 п.11).
       counterpartHasPhone: !!(ctx.driver ? companyMember?.contactPhone ?? companyMember?.user.phone : driver.user.phone),
       counterpartWechatId: ctx.driver ? companyMember?.wechatId ?? null : null,

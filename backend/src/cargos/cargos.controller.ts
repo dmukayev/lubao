@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, Headers, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, Headers, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import { IsString } from 'class-validator';
 import { CurrentUser } from '../common/current-user.decorator';
 import { RequestContext } from '../common/request-context';
@@ -28,6 +28,27 @@ export class CargosController {
       limit: limit ? Number(limit) : undefined,
       offset: offset ? Number(offset) : undefined,
     });
+  }
+
+  /// 058 п.8: «Избранное» водителя — опубликованные грузы со ☆ (до `:id`).
+  @Get('favorites')
+  favorites(@CurrentUser() ctx: RequestContext) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.cargos.listFavorites(ctx.driver.id);
+  }
+
+  @Post(':id/favorite')
+  @HttpCode(204)
+  async addFavorite(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    await this.cargos.setFavorite(ctx.driver.id, id, true);
+  }
+
+  @Delete(':id/favorite')
+  @HttpCode(204)
+  async removeFavorite(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    await this.cargos.setFavorite(ctx.driver.id, id, false);
   }
 
   @Get('mine')

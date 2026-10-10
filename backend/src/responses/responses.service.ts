@@ -140,7 +140,7 @@ export class ResponsesService {
     const [found, cargo, seen] = await Promise.all([
       this.prisma.response.findMany({
         where: { cargoId },
-        include: { driver: true },
+        include: { driver: { include: { user: { select: { lastSeenAt: true } } } } },
         orderBy: { createdAt: 'asc' },
       }),
       this.prisma.cargo.findUnique({ where: { id: cargoId }, select: { pointId: true } }),
@@ -205,6 +205,8 @@ export class ResponsesService {
       const info = haul.get(r.driverId);
       return {
         ...this.toDto(r),
+        // 058 п.7: «в сети / был в сети».
+        lastSeenAt: r.driver.user?.lastSeenAt ?? null,
         // 045 п.4–5: кузов для миниатюры; машины нет — кузов и тоннаж из регистрации.
         bodyTypeId: body?.bodyTypeId ?? r.driver.preferredBodyTypeId ?? null,
         specs: (body ? body.specs : r.driver.preferredSpecs) ?? null,

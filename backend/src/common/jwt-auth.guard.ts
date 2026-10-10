@@ -11,6 +11,13 @@ import { IS_PUBLIC_KEY } from './public.decorator';
 /// свежей записи БД (не слепо из токена), сессия должна быть живой —
 /// иначе разлогин «на всех остальных устройствах» подействовал бы только
 /// после истечения access-токена, а не «при следующем запросе».
+/// 058 п.7: «в сети / был в сети» — lastSeenAt не чаще раза в 5 минут.
+export const LAST_SEEN_WRITE_MS = 5 * 60 * 1000;
+
+export function lastSeenDue(lastSeenAt: Date | null | undefined, now = Date.now()): boolean {
+  return !lastSeenAt || now - lastSeenAt.getTime() >= LAST_SEEN_WRITE_MS;
+}
+
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
@@ -76,6 +83,10 @@ export class JwtAuthGuard implements CanActivate {
     ]);
 
     request.authContext = { user, driver, companyMember, sessionId: payload.sid };
+    // Отметка «был в сети» — не ждём и не роняем запрос из-за неё.
+    if (lastSeenDue(user.lastSeenAt)) {
+      void this.prisma.user.update({ where: { id: user.id }, data: { lastSeenAt: new Date() } }).catch(() => undefined);
+    }
     return true;
   }
 }

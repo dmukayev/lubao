@@ -418,6 +418,9 @@ model MessageTemplate {
 model User {
   id               String    @id @default(uuid())
   role             UserRole
+  /// 058 п.7: «в сети / был в сети» — пишется при запросах к API не чаще
+  /// раза в 5 минут.
+  lastSeenAt       DateTime?
   phone            String?   @unique
   email            String?   @unique
   /// 050: аккаунт Telegram, с которого водитель вошёл через бота, — повторный
@@ -493,6 +496,8 @@ model Driver {
   id                     String    @id @default(uuid())
   userId                 String    @unique
   user                   User      @relation(fields: [userId], references: [id])
+  /// 058 п.8: ☆ грузы водителя.
+  favoriteCargos         CargoFavorite[]
   fullName               String
   homeCityId             String
   homeCity               City      @relation(fields: [homeCityId], references: [id])
@@ -940,6 +945,7 @@ model Cargo {
   /// 058 п.2: сколько машин нужно (1–20). Груз в поиске, пока сделок (кроме
   /// отменённых) меньше этого числа; каждый выбор водителя — своя сделка.
   trucksNeeded         Int                @default(1)
+  favoritedBy          CargoFavorite[]
   readyDate            DateTime           @db.Date
   /// «Можно догрузом» (задача 040, п.6): груз не на всю машину, сборный.
   allowPartial         Boolean            @default(false)
@@ -1485,4 +1491,18 @@ model ShareLink {
   @@unique([authorUserId, type, targetId])
   @@index([type, targetId])
   @@map("share_links")
+}
+
+/// 058 п.8: «Избранное» водителя — ☆ на карточке груза и в ленте; в «Моих
+/// рейсах» раздел «Избранное», пока груз опубликован.
+model CargoFavorite {
+  driverId  String
+  driver    Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  cargoId   String
+  cargo     Cargo    @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([driverId, cargoId])
+  @@index([cargoId])
+  @@map("cargo_favorites")
 }

@@ -1,5 +1,5 @@
 import { cargoFitsBody, DriverBody } from '../body-types/profile-fit';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CargosService } from './cargos.service';
 
 function baseCargo(overrides: Partial<Record<string, unknown>> = {}) {
@@ -915,3 +915,26 @@ describe('058 п.1: условия оплаты груза', () => {
   });
 });
 
+
+describe('058 п.8: избранные грузы водителя', () => {
+  it('☆ — upsert (повтор без ошибки), снять — deleteMany; неизвестный груз — 404', async () => {
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1' }) },
+      cargoFavorite: { upsert: jest.fn(), deleteMany: jest.fn() },
+    };
+    const service = new CargosService(prisma, {} as any, {} as any);
+    await service.setFavorite('d1', 'cargo1', true);
+    expect(prisma.cargoFavorite.upsert).toHaveBeenCalledWith({ where: { driverId_cargoId: { driverId: 'd1', cargoId: 'cargo1' } }, create: { driverId: 'd1', cargoId: 'cargo1' }, update: {} });
+    await service.setFavorite('d1', 'cargo1', false);
+    expect(prisma.cargoFavorite.deleteMany).toHaveBeenCalledWith({ where: { driverId: 'd1', cargoId: 'cargo1' } });
+    prisma.cargo.findUnique.mockResolvedValue(null);
+    await expect(service.setFavorite('d1', 'nope', true)).rejects.toThrow(NotFoundException);
+  });
+
+  it('в списке — только опубликованные грузы', async () => {
+    const prisma: any = { cargoFavorite: { findMany: jest.fn().mockResolvedValue([]) } };
+    const service = new CargosService(prisma, {} as any, {} as any);
+    await service.listFavorites('d1');
+    expect(prisma.cargoFavorite.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { driverId: 'd1', cargo: { status: 'PUBLISHED', company: { isBlocked: false } } } }));
+  });
+});

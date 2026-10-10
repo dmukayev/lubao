@@ -1,6 +1,6 @@
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import { JwtAuthGuard, lastSeenDue } from './jwt-auth.guard';
 
 function makeContext(headers: Record<string, string | undefined>, isPublic = false) {
   const request: any = {
@@ -17,7 +17,7 @@ function makeContext(headers: Record<string, string | undefined>, isPublic = fal
 
 describe('JwtAuthGuard', () => {
   let reflector: { getAllAndOverride: jest.Mock };
-  let prisma: { user: { findUnique: jest.Mock }; driver: { findUnique: jest.Mock }; companyMember: { findUnique: jest.Mock } };
+  let prisma: { user: { findUnique: jest.Mock; update: jest.Mock }; driver: { findUnique: jest.Mock }; companyMember: { findUnique: jest.Mock } };
   let tokens: { verifyAccessToken: jest.Mock };
   let sessions: { isSessionActive: jest.Mock };
   let guard: JwtAuthGuard;
@@ -27,7 +27,7 @@ describe('JwtAuthGuard', () => {
   beforeEach(() => {
     reflector = { getAllAndOverride: jest.fn().mockReturnValue(false) };
     prisma = {
-      user: { findUnique: jest.fn().mockResolvedValue(activeUser) },
+      user: { findUnique: jest.fn().mockResolvedValue(activeUser), update: jest.fn().mockResolvedValue({}) },
       driver: { findUnique: jest.fn().mockResolvedValue(null) },
       companyMember: { findUnique: jest.fn().mockResolvedValue(null) },
     };
@@ -131,3 +131,13 @@ describe('JwtAuthGuard', () => {
     expect(request.authContext).toBeUndefined();
   });
 });
+
+describe('058 п.7: «был в сети» — lastSeenAt не чаще раза в 5 минут', () => {
+  const now = Date.parse('2026-10-10T20:15:00Z');
+  it('ещё не было или прошло 5 минут — писать; меньше — нет', () => {
+    expect(lastSeenDue(null, now)).toBe(true);
+    expect(lastSeenDue(new Date(now - 5 * 60 * 1000), now)).toBe(true);
+    expect(lastSeenDue(new Date(now - 4 * 60 * 1000), now)).toBe(false);
+  });
+});
+
