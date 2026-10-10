@@ -23,6 +23,7 @@ import { resolveCargoContactUserId } from '../cargos/resolve-contact';
 import { NotificationsService } from '../notifications/notifications.service';
 import { toDateOnly } from '../common/date-only';
 import { avatarVersion } from '../drivers/avatar-version';
+import { currentVehicleCombo } from './vehicle-combo';
 
 function rethrowStatusRace(e: unknown): never {
   if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') throw new ConflictException('DEAL_STATUS_CHANGED');
@@ -141,8 +142,26 @@ export class DealsService {
     return deal;
   }
 
+  /// Связка рейса фиксируется при подтверждении водителем. Пока сделка
+  /// «выбран», а связки нет или она неполная (водитель выбран раньше, чем
+  /// добавил машины), — подтягиваем текущую из анонса/гаража. Иначе сделка
+  /// навсегда «Машина ещё на проверке» и не подтверждается (VEHICLE_REQUIRED).
+  private async refreshSelectedCombo<T extends Deal>(deal: T): Promise<T> {
+    if (deal.status !== 'SELECTED') return deal;
+    let complete = !!deal.tractorId;
+    if (complete && !deal.trailerId) {
+      const tractor = await this.prisma.vehicle.findUnique({ where: { id: deal.tractorId! }, select: { kind: true, isArchived: true } });
+      complete = !!tractor && !tractor.isArchived && tractor.kind === 'RIGID';
+    }
+    if (complete) return deal;
+    const combo = await currentVehicleCombo(this.prisma, deal.driverId);
+    if (!combo.tractorId || (combo.tractorId === deal.tractorId && combo.trailerId === deal.trailerId)) return deal;
+    await this.prisma.deal.updateMany({ where: { id: deal.id, status: 'SELECTED' }, data: { tractorId: combo.tractorId, trailerId: combo.trailerId } });
+    return { ...deal, tractorId: combo.tractorId, trailerId: combo.trailerId };
+  }
+
   async byId(id: string, ctx: { driverId?: string; companyId?: string }) {
-    const deal = await this.findEntity(id);
+    const deal = await this.refreshSelectedCombo(await this.findEntity(id));
     this.assertParty(deal, ctx);
     // 044 п.2, 4–5: в карточке сделки — проверены ли машины рейса (плашка
     // «Машина ещё на проверке») и когда логист последний раз открыл документы.
@@ -194,8 +213,9 @@ export class DealsService {
   }
 
   async advanceStatus(id: string, driverId: string, nextStatus: string) {
-    const deal = await this.findEntity(id);
-    if (deal.driverId !== driverId) throw new ForbiddenException('Not your deal');
+    const found = await this.findEntity(id);
+    if (found.driverId !== driverId) throw new ForbiddenException('Not your deal');
+    const deal = await this.refreshSelectedCombo(found);
 
     const currentIndex = PROGRESSION.indexOf(deal.status as (typeof PROGRESSION)[number]);
     const nextIndex = PROGRESSION.indexOf(nextStatus as (typeof PROGRESSION)[number]);

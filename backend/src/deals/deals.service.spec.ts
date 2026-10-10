@@ -167,11 +167,11 @@ describe('DealsService.advanceStatus — проверка связки маши�
 
   beforeEach(() => {
     prisma = {
-      deal: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
-      arrival: { updateMany: jest.fn().mockResolvedValue({ count: 0 }), findFirst: jest.fn().mockResolvedValue(null), update: jest.fn() },
+      deal: { findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+      arrival: { updateMany: jest.fn().mockResolvedValue({ count: 0 }), findFirst: jest.fn().mockResolvedValue(null), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn() },
       chat: { findFirst: jest.fn().mockResolvedValue(null) },
-      vehicle: { findUnique: jest.fn(), findMany: jest.fn() },
+      vehicle: { findUnique: jest.fn(), findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
       $queryRaw: jest.fn().mockResolvedValue([]),
     };
     prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
@@ -238,6 +238,19 @@ describe('DealsService.advanceStatus — проверка связки маши�
 
     await expect(service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER')).rejects.toThrow('VEHICLE_REQUIRED');
     expect(prisma.deal.update).not.toHaveBeenCalled();
+  });
+  it('сделка выбрана раньше, чем водитель добавил машины: связка подтягивается из гаража, подтвердить можно', async () => {
+    const deal = dealFixture({ tractorId: null, trailerId: null });
+    prisma.deal.findUnique.mockResolvedValue(deal);
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
+    prisma.vehicle.findFirst.mockImplementation(({ where }: any) => Promise.resolve(where.kind === 'TRAILER' ? { id: 'trailer9' } : { id: 'tractor9' }));
+    prisma.vehicle.findUnique.mockResolvedValue({ isVerified: true, kind: 'TRACTOR' });
+    prisma.vehicle.findMany.mockResolvedValue([{ id: 'tractor9', isVerified: true }, { id: 'trailer9', isVerified: true }]);
+
+    await service.advanceStatus('deal1', 'd1', 'CONFIRMED_BY_DRIVER');
+
+    expect(prisma.deal.updateMany).toHaveBeenCalledWith({ where: { id: 'deal1', status: 'SELECTED' }, data: { tractorId: 'tractor9', trailerId: 'trailer9' } });
+    expect(prisma.deal.update).toHaveBeenCalled();
   });
 });
 

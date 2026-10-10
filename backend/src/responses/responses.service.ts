@@ -13,6 +13,7 @@ import { avatarVersion } from '../drivers/avatar-version';
 import { INVITATION_TTL_HOURS } from './invitation-ttl';
 import { markResponsesSeen } from './new-responses';
 import { bumpShareReferral } from '../share/share.service';
+import { currentVehicleCombo } from '../deals/vehicle-combo';
 
 type ResponseWithDriver = CargoResponseEntity & { driver: Driver };
 
@@ -299,28 +300,8 @@ export class ResponsesService {
   /// что он выбрал на эту поездку), а не из первых по дате машин гаража:
   /// иначе проверенный тягач A в гараже проходит проверку, хотя в анонсе
   /// выбран непроверенный B — логист видит B, сделка подтверждается по A.
-  private async currentVehicleCombo(
-    client: Prisma.TransactionClient | PrismaService,
-    driverId: string,
-  ): Promise<{ tractorId: string | null; trailerId: string | null }> {
-    // Анонсов может быть несколько (040): берём тот, где водитель на месте,
-    // иначе ближайший по дате приезда.
-    const arrivals = await client.arrival.findMany({
-      where: { driverId, status: { in: ['PLANNED', 'ON_SITE'] } },
-      orderBy: [{ plannedDay: 'asc' }, { createdAt: 'desc' }],
-      select: { status: true, tractorId: true, trailerId: true },
-    });
-    const arrival = arrivals.find((a) => a.status === 'ON_SITE') ?? arrivals[0];
-    if (arrival?.tractorId) return { tractorId: arrival.tractorId, trailerId: arrival.trailerId };
-
-    // Нет активного анонса (отклик без анонса — теоретически возможно,
-    // например логист пригласил напрямую водителя, который ещё не
-    // анонсировался) — фолбэк на гараж, как раньше.
-    const [tractor, trailer] = await Promise.all([
-      client.vehicle.findFirst({ where: { driverId, kind: { in: ['TRACTOR', 'RIGID'] }, isArchived: false }, orderBy: { createdAt: 'asc' } }),
-      client.vehicle.findFirst({ where: { driverId, kind: 'TRAILER', isArchived: false }, orderBy: { createdAt: 'asc' } }),
-    ]);
-    return { tractorId: tractor?.id ?? null, trailerId: trailer?.id ?? null };
+  private async currentVehicleCombo(client: Prisma.TransactionClient | PrismaService, driverId: string) {
+    return currentVehicleCombo(client, driverId);
   }
 
   /// «Отозвать» (задача 035) — только сам водитель, только пока отклик
