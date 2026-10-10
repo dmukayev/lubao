@@ -1,9 +1,10 @@
-import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestContext } from '../common/request-context';
 import { ShareService } from '../share/share.service';
 import { avatarVersion } from '../drivers/avatar-version';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 /// Лимит «Создать водителя» — на компанию в сутки (058 п.6).
 export const CREATE_DRIVER_DAILY_LIMIT = 50;
@@ -39,6 +40,7 @@ export class CompanyDriversService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly shares: ShareService,
+    @Optional() private readonly realtime?: RealtimeGateway,
   ) {}
 
   private audit(actorUserId: string | null, action: string, entityId: string, metadata?: Record<string, unknown>) {
@@ -156,6 +158,8 @@ export class CompanyDriversService {
           : await this.prisma.companyDriver.create({ data: { companyId, driverId, name: cleanName, source: 'CREATED', status: 'PENDING', createdByUserId: ctx.user.id } });
         result = 'INVITED_EXISTING';
         rowId = row.id;
+        // Водитель с открытым приложением сразу видит «Компания X добавила вас».
+        this.realtime?.emitResponsesUpdated([user.id], { cargoId: '' });
       }
     } else {
       const row = await this.prisma.companyDriver.upsert({

@@ -103,6 +103,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                   ref.invalidate(myArrivalsProvider);
                   ref.invalidate(myResponsesProvider);
                   ref.invalidate(dealsMineProvider);
+                  ref.invalidate(driverCompaniesProvider);
                 },
                 child: ListView(
                   padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.lg),

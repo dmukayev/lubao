@@ -36,6 +36,8 @@ class _DriverShellState extends ConsumerState<DriverShell> {
       ref.invalidate(myResponsesProvider);
       // 058 п.5: встречная цена — карточка груза обновится сама.
       ref.invalidate(myCargoResponseProvider);
+      // 058 п.6: «Компания X добавила вас» — без перезапуска.
+      ref.invalidate(driverCompaniesProvider);
     }
     _subs
       ..add(realtime.onMessageNew.listen(chats))
