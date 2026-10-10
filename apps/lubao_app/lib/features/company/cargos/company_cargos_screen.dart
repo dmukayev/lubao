@@ -370,7 +370,9 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
         ? ''
         : [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
     final bodyType = refData?.bodyTypeById(cargo.bodyTypeId);
-    final (statusLabel, statusColor) = cargoStatusPresentation(t, cargo.status);
+    // Груз в сделке — на плашке шаг сделки («Загружен», «В пути»…), а не общее «В сделке».
+    final deal = cargo.activeDeal;
+    final (statusLabel, statusColor) = deal != null ? dealStatusPresentation(t, deal.status) : cargoStatusPresentation(t, cargo.status);
     final canRepeat = widget.tab != CompanyCargoTab.work;
     final showResponses = widget.tab == CompanyCargoTab.active;
 
@@ -393,7 +395,7 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
       trailing: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (cargo.activeDeal != null) _DealDriverRow(deal: cargo.activeDeal!),
+          if (deal != null) _DealDriverRow(deal: deal),
           if (showResponses || canRepeat)
             Row(
               children: [
