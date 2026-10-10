@@ -163,10 +163,10 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
   Widget _feedCard(BuildContext context, ReferenceData refData, Cargo cargo) {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
-    final country = refData.countryById(cargo.destinationCountryId);
-    final city = refData.cityById(cargo.destinationCityId);
-    final origin = refData.pointOrNull(cargo.pointId)?.name.forLanguageCode(locale);
-    final destination = city?.name.forLanguageCode(locale) ?? country.name.forLanguageCode(locale);
+    // 058 п.3: флаги стран, если маршрут не внутри одной страны.
+    final route = cargoRouteLabels(refData, pointId: cargo.pointId, destinationCountryId: cargo.destinationCountryId, destinationCityId: cargo.destinationCityId, languageCode: locale);
+    final origin = route.origin;
+    final destination = route.destination;
     final bodyType = refData.bodyTypeById(cargo.bodyTypeId);
     final category = refData.categoryById(cargo.categoryId)?.name.forLanguageCode(locale);
     final isHomeSection = cargo.feedSection == CargoFeedSection.home;
@@ -179,7 +179,11 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
     };
     final perKmKzt = cargo.pricePerKm == null ? null : refData.convertToKzt(cargo.pricePerKm!, cargo.currency);
     // 055: водителю — тонны («18,5 т»), меньше тонны — кг.
-    final weight = cargo.weightKg == null ? null : formatCargoWeight(cargo.weightKg!, tonUnit: t.unitTon, kgUnit: t.unitKg, languageCode: locale);
+    // 058 п.3: «21 т · 35 м³», если объём указан.
+    final size = cargoSizeLabel(t, weightKg: cargo.weightKg, volumeM3: cargo.volumeM3, languageCode: locale);
+    final weight = size.isEmpty ? null : size;
+    // 058 п.1: «аванс $5 300 · нал.» под ценой.
+    final terms = paymentTermsLine(t, advanceAmount: cargo.advanceAmount, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays, currency: cargo.currency);
     final grey = AppTextStyles.body.copyWith(color: AppColors.textSecondary);
     final blue = AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600);
     final small = AppTextStyles.small.copyWith(color: AppColors.textSecondary);
@@ -206,6 +210,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
               final details = _feedDetails(category, weight, bodyType.name.forLanguageCode(locale), cargo, t, grey, blue, small, companyLine);
               final price = Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceCard);
               final perKm = perKmKzt == null ? null : Text(t.perKmKzt(formatThousands(perKmKzt.round())), key: Key('feedCargoPerKm-${cargo.id}'), style: blue);
+              final termsText = terms.isEmpty ? null : Text(terms, key: Key('feedCargoTerms-${cargo.id}'), style: small, textAlign: TextAlign.end);
               final narrow = constraints.maxWidth / MediaQuery.textScalerOf(context).scale(1) < 260;
               if (narrow) {
                 return Column(
@@ -218,6 +223,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [price, ?perKm],
                     ),
+                    ?termsText,
                   ],
                 );
               }
@@ -226,7 +232,11 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                 children: [
                   Expanded(child: details),
                   const SizedBox(width: AppSpacing.md),
-                  Column(crossAxisAlignment: CrossAxisAlignment.end, children: [price, ?perKm]),
+                  // Строка условий не шире 45% — атрибуты слева не сжимаются.
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.45),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [price, ?perKm, ?termsText]),
+                  ),
                 ],
               );
             },

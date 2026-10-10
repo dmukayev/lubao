@@ -28,6 +28,8 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
   final _companyNameController = TextEditingController();
   final _companyNameRuController = TextEditingController();
   String? _countryId;
+  // 058 п.8а: тип компании (по умолчанию экспедитор).
+  CompanyKind _kind = CompanyKind.forwarder;
   bool _showAllCountries = false;
   bool _companyNameRuTouched = false;
   bool _obscurePassword = true;
@@ -97,6 +99,7 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
             companyName: companyName,
             companyNameRu: _companyNameRuController.text.trim().isEmpty ? null : _companyNameRuController.text.trim(),
             countryId: _countryId!,
+            kind: _kind,
           );
       // Дальше решает редирект роутера — сессия с привязанной компанией
       // уводит прямо в кабинет (см. app_router.dart).
@@ -232,6 +235,22 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 Text(_countryError!, style: AppTextStyles.caption.copyWith(color: AppColors.error)),
               ],
+              const SizedBox(height: AppSpacing.lg),
+              Text(t.companyKindTitle, style: AppTextStyles.bodyStrong),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (final kind in CompanyKind.values)
+                    SelectableTile(
+                      key: Key('companyRegisterKind-${kind.name}'),
+                      label: companyKindLabel(t, kind),
+                      selected: _kind == kind,
+                      onTap: () => setState(() => _kind = kind),
+                    ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.xl),
               // 043 п.2: оферта для компании — без галочки зарегистрироваться нельзя.
               CheckboxListTile(

@@ -144,6 +144,10 @@ class MyResponseEntry {
     this.pointId,
     this.categoryId,
     this.weightKg,
+    this.volumeM3,
+    this.advanceAmount,
+    this.paymentForm,
+    this.paymentDelayDays,
     this.companyName = '',
     this.closeReason,
     this.inviteExpiresAt,
@@ -152,6 +156,11 @@ class MyResponseEntry {
     this.updatedAt,
   });
 
+  /// 058: объём и условия оплаты груза — в карточке рейса.
+  final double? volumeM3;
+  final double? advanceAmount;
+  final PaymentForm? paymentForm;
+  final int? paymentDelayDays;
   final String id;
   final String cargoId;
   final ResponseStatus status;
@@ -190,6 +199,10 @@ class MyResponseEntry {
       pointId: cargo['pointId'] as String?,
       categoryId: cargo['categoryId'] as String?,
       weightKg: (cargo['weightKg'] as num?)?.toDouble(),
+      volumeM3: (cargo['volumeM3'] as num?)?.toDouble(),
+      advanceAmount: (cargo['advanceAmount'] as num?)?.toDouble(),
+      paymentForm: paymentFormFromJson(cargo['paymentForm'] as String?),
+      paymentDelayDays: cargo['paymentDelayDays'] as int?,
       companyName: cargo['companyName'] as String? ?? '',
       closeReason: responseCloseReasonFromJson(json['closeReason'] as String?),
       inviteExpiresAt: json['inviteExpiresAt'] == null ? null : DateTime.parse(json['inviteExpiresAt'] as String),

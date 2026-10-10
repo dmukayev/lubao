@@ -19,6 +19,7 @@ class CargoCard extends StatelessWidget {
     this.secondaryPriceLabel,
     this.originLabel,
     this.partialLabel,
+    this.termsLabel,
   });
 
   /// Город погрузки (задача 040, п.7) — крупно, до маршрута: «Алматы → Ташкент».
@@ -26,6 +27,9 @@ class CargoCard extends StatelessWidget {
 
   /// Плашка «Догруз» (040, п.6), если груз можно брать догрузом.
   final String? partialLabel;
+
+  /// 058 п.1: «аванс $5 300 · нал.» — строкой под ценой.
+  final String? termsLabel;
 
   final String destinationLabel;
   final String bodyTypeLabel;
@@ -91,6 +95,8 @@ class CargoCard extends StatelessWidget {
               ),
             ],
           ),
+          if (termsLabel != null && termsLabel!.isNotEmpty)
+            Align(alignment: Alignment.centerRight, child: Text(termsLabel!, style: AppTextStyles.caption, textAlign: TextAlign.end)),
           if (partialLabel != null) ...[
             const SizedBox(height: AppSpacing.sm),
             Container(

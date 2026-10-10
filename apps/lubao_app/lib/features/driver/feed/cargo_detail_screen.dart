@@ -330,14 +330,12 @@ class _CargoDetailBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
-    final country = refData.countryById(cargo.destinationCountryId);
-    final city = refData.cityById(cargo.destinationCityId);
     final bodyType = refData.bodyTypeById(cargo.bodyTypeId);
-    final pointName = refData.pointOrNull(cargo.pointId)?.name.forLanguageCode(locale) ?? '';
-    final destinationLabel = [
-      city?.name.forLanguageCode(locale),
-      country.name.forLanguageCode(locale),
-    ].whereType<String>().join(', ');
+    // 058 п.3: флаги стран маршрута (если страны разные).
+    final route = cargoRouteLabels(refData, pointId: cargo.pointId, destinationCountryId: cargo.destinationCountryId, destinationCityId: cargo.destinationCityId, languageCode: locale, withCountry: true);
+    final pointName = route.origin ?? '';
+    final destinationLabel = route.destination;
+    final terms = paymentTermsLine(t, advanceAmount: cargo.advanceAmount, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays, currency: cargo.currency);
 
     final kzt = refData.convertToKzt(cargo.price, cargo.currency);
     final usd = refData.convertToUsd(cargo.price, cargo.currency);
@@ -377,6 +375,8 @@ class _CargoDetailBody extends ConsumerWidget {
                           Text(t.cargoDetailPriceLabel, style: AppTextStyles.caption),
                           const SizedBox(height: AppSpacing.xs),
                           Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceDetail),
+                          // 058 п.1: «аванс $5 300 · нал. · отсрочка 10 дн.»
+                          if (terms.isNotEmpty) Text(terms, key: const Key('cargoDetailTerms'), style: AppTextStyles.body),
                         ],
                       ),
                     ),
@@ -489,6 +489,8 @@ class _CargoDetailBody extends ConsumerWidget {
                               ],
                             ],
                           ),
+                          // 058 п.8а: грузовладелец / экспедитор / перевозчик.
+                          Text(companyKindLabel(t, cargo.companyKind), key: const Key('cargoDetailCompanyKind'), style: AppTextStyles.caption),
                           const SizedBox(height: AppSpacing.xs),
                           // Один текст с переносом, а не ряд кусков: на узком
                           // экране с крупным шрифтом ряд вылезал вправо (iPhone SE

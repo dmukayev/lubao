@@ -356,6 +356,7 @@ Future<void> _showCompanyEditDialog(BuildContext context, WidgetRef ref, Company
   final cityController = TextEditingController(text: company.city ?? '');
   final addressController = TextEditingController(text: company.legalAddress ?? '');
   final taxIdController = TextEditingController(text: company.taxId ?? '');
+  var kind = company.kind;
   String? error;
   bool saving = false;
 
@@ -364,7 +365,8 @@ Future<void> _showCompanyEditDialog(BuildContext context, WidgetRef ref, Company
     builder: (dialogContext) => StatefulBuilder(
       builder: (dialogContext, setState) => AlertDialog(
         title: Text(t.companyEditTitle),
-        content: Column(
+        content: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AppTextField(label: t.companyEditCityLabel, controller: cityController),
@@ -372,7 +374,20 @@ Future<void> _showCompanyEditDialog(BuildContext context, WidgetRef ref, Company
             AppTextField(label: t.companyEditLegalAddressLabel, controller: addressController),
             const SizedBox(height: AppSpacing.md),
             AppTextField(label: t.companyEditTaxIdLabel, controller: taxIdController, errorText: error),
+            const SizedBox(height: AppSpacing.md),
+            // 058 п.8а: тип компании — метка у грузов и в карточке.
+            Align(alignment: Alignment.centerLeft, child: Text(t.companyKindTitle, style: AppTextStyles.bodyStrong)),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final k in CompanyKind.values)
+                  SelectableTile(key: Key('companyEditKind-${k.name}'), label: companyKindLabel(t, k), selected: kind == k, onTap: () => setState(() => kind = k)),
+              ],
+            ),
           ],
+        ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(t.commonCancel)),
@@ -386,6 +401,7 @@ Future<void> _showCompanyEditDialog(BuildContext context, WidgetRef ref, Company
                             city: cityController.text.trim(),
                             legalAddress: addressController.text.trim(),
                             taxId: taxIdController.text.trim(),
+                            kind: kind,
                           );
                       final session = ref.read(sessionProvider);
                       if (session?.companyMember != null) {
@@ -625,6 +641,7 @@ class CompanyProfileScreen extends ConsumerWidget {
                     Text(company?.name ?? '', style: Theme.of(context).textTheme.headlineSmall),
                     if (company?.nameRu != null && company!.nameRu!.isNotEmpty && company.nameRu != company.name)
                       Text(company.nameRu!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
+                    if (company != null) Text(companyKindLabel(t, company.kind), key: const Key('companyProfileKind'), style: AppTextStyles.caption),
                   ],
                 ),
               ),

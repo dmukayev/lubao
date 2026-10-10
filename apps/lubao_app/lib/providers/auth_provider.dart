@@ -78,6 +78,7 @@ class SessionController extends StateNotifier<Session?> {
     required String companyName,
     String? companyNameRu,
     required String countryId,
+    CompanyKind? kind,
   }) async {
     final session = await _ref.read(authRepositoryProvider).registerCompany(
           email: email,
@@ -86,6 +87,7 @@ class SessionController extends StateNotifier<Session?> {
           companyName: companyName,
           companyNameRu: companyNameRu,
           countryId: countryId,
+          kind: kind,
         );
     state = session;
     _applyUserLocale(session.user.locale);

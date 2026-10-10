@@ -1,5 +1,6 @@
 import '../api/api_client.dart';
 import '../api/device_info.dart';
+import '../models/common.dart';
 import '../models/session_device.dart';
 import '../models/user.dart';
 
@@ -92,8 +93,11 @@ class AuthRepository {
     required String companyName,
     String? companyNameRu,
     required String countryId,
+    CompanyKind? kind,
   }) async {
     final res = await _client.dio.post('/auth/company/register', data: {
+      // 058 п.8а: грузовладелец / экспедитор / перевозчик.
+      if (kind != null) 'kind': kind.name.toUpperCase(),
       'email': email,
       'password': password,
       'ownerName': ownerName,

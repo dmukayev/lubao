@@ -199,11 +199,20 @@ class _TripCargo {
     required this.bodyTypeId,
     this.categoryId,
     this.weightKg,
+    this.volumeM3,
     required this.price,
     required this.currency,
     required this.readyDate,
     required this.companyName,
+    this.advanceAmount,
+    this.paymentForm,
+    this.paymentDelayDays,
   });
+
+  final double? volumeM3;
+  final double? advanceAmount;
+  final PaymentForm? paymentForm;
+  final int? paymentDelayDays;
 
   final String? pointId;
   final String destinationCountryId;
@@ -223,10 +232,14 @@ class _TripCargo {
         bodyTypeId: r.bodyTypeId,
         categoryId: r.categoryId,
         weightKg: r.weightKg,
+        volumeM3: r.volumeM3,
         price: r.price,
         currency: r.currency,
         readyDate: r.readyDate,
         companyName: r.companyName,
+        advanceAmount: r.advanceAmount,
+        paymentForm: r.paymentForm,
+        paymentDelayDays: r.paymentDelayDays,
       );
 
   static _TripCargo? fromDealOrNull(Deal d) {
@@ -239,10 +252,14 @@ class _TripCargo {
       bodyTypeId: c.bodyTypeId,
       categoryId: c.categoryId,
       weightKg: c.weightKg,
+      volumeM3: c.volumeM3,
       price: c.price,
       currency: c.currency,
       readyDate: c.readyDate,
       companyName: d.companyName,
+      advanceAmount: c.advanceAmount,
+      paymentForm: c.paymentForm,
+      paymentDelayDays: c.paymentDelayDays,
     );
   }
 
@@ -268,13 +285,17 @@ class _TripCard extends StatelessWidget {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final rd = refData;
-    final origin = cargo.pointId == null ? null : rd?.pointOrNull(cargo.pointId!)?.name.forLanguageCode(locale);
-    final destination = rd == null || cargo.destinationCountryId.isEmpty
-        ? ''
-        : (rd.cityById(cargo.destinationCityId)?.name.forLanguageCode(locale) ?? rd.countryById(cargo.destinationCountryId).name.forLanguageCode(locale));
+    // 058 п.3: флаги стран, «21 т · 35 м³»; п.1 — условия оплаты.
+    final route = rd == null || cargo.destinationCountryId.isEmpty
+        ? null
+        : cargoRouteLabels(rd, pointId: cargo.pointId, destinationCountryId: cargo.destinationCountryId, destinationCityId: cargo.destinationCityId, languageCode: locale);
+    final origin = route?.origin;
+    final destination = route?.destination ?? '';
+    final size = cargoSizeLabel(t, weightKg: cargo.weightKg, volumeM3: cargo.volumeM3, languageCode: locale);
+    final terms = paymentTermsLine(t, advanceAmount: cargo.advanceAmount, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays, currency: cargo.currency);
     final details = [
       if (cargo.categoryId != null) rd?.categoryById(cargo.categoryId)?.name.forLanguageCode(locale),
-      if (cargo.weightKg != null) formatCargoWeight(cargo.weightKg!, tonUnit: t.unitTon, kgUnit: t.unitKg, languageCode: locale),
+      if (size.isNotEmpty) size,
       if (rd != null && cargo.bodyTypeId.isNotEmpty) rd.bodyTypeById(cargo.bodyTypeId).name.forLanguageCode(locale),
       formatDate(cargo.readyDate),
     ].whereType<String>().join(' · ');
@@ -297,6 +318,7 @@ class _TripCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(details, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+          if (terms.isNotEmpty) Text(terms, style: AppTextStyles.body),
           if (cargo.companyName.isNotEmpty) Text(cargo.companyName, style: AppTextStyles.small.copyWith(color: AppColors.textSecondary)),
           if (badge != null) ...[const SizedBox(height: AppSpacing.sm), badge!],
           if (actions.isNotEmpty) ...[const SizedBox(height: AppSpacing.sm), Row(children: actions)],

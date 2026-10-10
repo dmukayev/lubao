@@ -59,7 +59,9 @@ export class ResponsesService {
         cargo: {
           select: {
             id: true, status: true, pointId: true, destinationCountryId: true, destinationCityId: true, bodyTypeId: true, categoryId: true,
-            weightKg: true, price: true, currency: true, readyDate: true, company: { select: { name: true } },
+            weightKg: true, volumeM3: true, price: true, currency: true, readyDate: true, company: { select: { name: true } },
+            // 058 п.1: условия оплаты — в «Моих рейсах».
+            advanceAmount: true, paymentForm: true, paymentDelayDays: true,
           },
         },
         deal: { select: { id: true, status: true } },
@@ -84,6 +86,10 @@ export class ResponsesService {
         bodyTypeId: r.cargo.bodyTypeId,
         categoryId: r.cargo.categoryId,
         weightKg: r.cargo.weightKg != null ? Number(r.cargo.weightKg) : null,
+        volumeM3: r.cargo.volumeM3 != null ? Number(r.cargo.volumeM3) : null,
+        advanceAmount: r.cargo.advanceAmount != null ? Number(r.cargo.advanceAmount) : null,
+        paymentForm: r.cargo.paymentForm ?? null,
+        paymentDelayDays: r.cargo.paymentDelayDays ?? null,
         companyName: r.cargo.company.name,
         price: Number(r.cargo.price),
         currency: r.cargo.currency,

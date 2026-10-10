@@ -46,8 +46,9 @@ class CompanyRepository {
 
   /// Данные компании, которые правит владелец (задача 012) — город,
   /// юр. адрес, рег. номер (формат проверяется на бэкенде по стране).
-  Future<Company> updateProfile({String? city, String? legalAddress, String? taxId}) async {
+  Future<Company> updateProfile({String? city, String? legalAddress, String? taxId, CompanyKind? kind}) async {
     final res = await _client.dio.patch('/companies/me', data: {
+      if (kind != null) 'kind': kind.name.toUpperCase(),
       if (city != null) 'city': city,
       if (legalAddress != null) 'legalAddress': legalAddress,
       if (taxId != null) 'taxId': taxId,

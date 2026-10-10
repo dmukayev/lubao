@@ -377,14 +377,20 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
     final canRepeat = widget.tab != CompanyCargoTab.work;
     final showResponses = widget.tab == CompanyCargoTab.active;
 
+    // 058 п.3: флаги стран маршрута; п.1 — условия оплаты под ценой.
+    final route = refData == null
+        ? null
+        : cargoRouteLabels(refData, pointId: cargo.pointId, destinationCountryId: cargo.destinationCountryId, destinationCityId: cargo.destinationCityId, languageCode: locale, withCountry: true);
     return CargoCard(
       key: Key('companyCargoCard-${cargo.id}'),
-      originLabel: refData?.pointOrNull(cargo.pointId)?.name.forLanguageCode(locale),
+      originLabel: route?.origin,
       partialLabel: cargo.allowPartial ? t.feedBadgePartial : null,
-      destinationLabel: destinationLabel,
-      // Как у водителя в ленте: кузов и расстояние по дорогам («тент · 1 230 км»).
+      destinationLabel: route?.destination ?? destinationLabel,
+      termsLabel: paymentTermsLine(t, advanceAmount: cargo.advanceAmount, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays, currency: cargo.currency),
+      // Как у водителя в ленте: кузов, «21 т · 35 м³» и расстояние по дорогам.
       bodyTypeLabel: [
         bodyType?.name.forLanguageCode(locale) ?? '',
+        cargoSizeLabel(t, weightKg: cargo.weightKg, volumeM3: cargo.volumeM3, languageCode: locale),
         if (cargo.distanceKm != null) '${formatThousands(cargo.distanceKm!)} ${t.unitKm}',
       ].where((s) => s.isNotEmpty).join(' · '),
       priceLabel: formatMoney(cargo.price, cargo.currency),

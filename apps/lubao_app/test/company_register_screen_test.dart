@@ -26,6 +26,7 @@ class _FakeAuthRepository extends AuthRepository {
   String? lastOwnerName;
   String? lastCompanyName;
   String? lastCountryId;
+  CompanyKind? lastKind;
 
   @override
   Future<Session?> restore() async => null;
@@ -38,7 +39,9 @@ class _FakeAuthRepository extends AuthRepository {
     required String companyName,
     String? companyNameRu,
     required String countryId,
+    CompanyKind? kind,
   }) async {
+    lastKind = kind;
     lastEmail = email;
     lastOwnerName = ownerName;
     lastCompanyName = companyName;
@@ -85,9 +88,14 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, 'Название компании'), '新疆测试物流');
     await tester.tap(find.text('Китай'));
     await tester.pumpAndSettle();
+    // 058 п.8а: тип компании — перевозчик.
+    await tester.scrollUntilVisible(find.byKey(const Key('companyRegisterKind-carrier')), 200, scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('companyRegisterKind-carrier')));
+    await tester.pumpAndSettle();
 
     // 043 п.2: без принятой оферты кнопка неактивна.
-    await tester.ensureVisible(find.byKey(const Key('companyRegisterOfferCheckbox')));
+    await tester.scrollUntilVisible(find.byKey(const Key('companyRegisterOfferCheckbox')), 200, scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('companyRegisterOfferCheckbox')));
     await tester.pumpAndSettle();
@@ -100,6 +108,7 @@ void main() {
     expect(authRepo.lastOwnerName, 'Ли Вэй');
     expect(authRepo.lastCompanyName, '新疆测试物流');
     expect(authRepo.lastCountryId, 'cn-1');
+    expect(authRepo.lastKind, CompanyKind.carrier);
   });
 
   testWidgets('submitting without picking a country shows the inline error', (tester) async {
@@ -122,7 +131,7 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, 'Ваше имя'), 'Ли Вэй');
     await tester.enterText(find.widgetWithText(TextField, 'Название компании'), '新疆测试物流');
     // 043 п.2: без принятой оферты кнопка неактивна.
-    await tester.ensureVisible(find.byKey(const Key('companyRegisterOfferCheckbox')));
+    await tester.scrollUntilVisible(find.byKey(const Key('companyRegisterOfferCheckbox')), 200, scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('companyRegisterOfferCheckbox')));
     await tester.pumpAndSettle();

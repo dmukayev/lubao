@@ -359,9 +359,17 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                   const SizedBox(height: 12),
                   _cancelRequestBanner(context, deal, isDriver: isDriver),
                 ],
-                if (deal.cargo != null) ...[
+                if (deal.cargo case final cargo?) ...[
                   const SizedBox(height: 8),
-                  Text(formatMoney(deal.cargo!.price, deal.cargo!.currency), style: Theme.of(context).textTheme.headlineSmall),
+                  // 058 п.3: маршрут с флагами стран; п.1 — условия оплаты под ценой.
+                  if (ref.watch(referenceDataProvider).valueOrNull case final rd?)
+                    Builder(builder: (context) {
+                      final route = cargoRouteLabels(rd, pointId: cargo.pointId, destinationCountryId: cargo.destinationCountryId, destinationCityId: cargo.destinationCityId, languageCode: Localizations.localeOf(context).languageCode);
+                      return Text(route.origin == null ? route.destination : '${route.origin} → ${route.destination}', key: const Key('dealRoute'), style: AppTextStyles.route);
+                    }),
+                  Text(formatMoney(cargo.price, cargo.currency), style: Theme.of(context).textTheme.headlineSmall),
+                  if (paymentTermsLine(t, advanceAmount: cargo.advanceAmount, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays, currency: cargo.currency) case final terms when terms.isNotEmpty)
+                    Text(terms, key: const Key('dealTerms'), style: AppTextStyles.body),
                 ],
                 const Divider(height: 32),
                 Text(t.dealTimelineTitle, style: Theme.of(context).textTheme.titleSmall),
