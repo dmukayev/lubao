@@ -241,6 +241,12 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
               );
             },
           ),
+          // 058 п.2: «нужно 3 · осталось 2».
+          if (cargoTrucksLabel(t, needed: cargo.trucksNeeded, taken: cargo.trucksTaken) case final trucks?)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: Text(trucks, key: Key('feedCargoTrucks-${cargo.id}'), style: blue),
+            ),
           if (isHomeSection || cargo.allowPartial || stateLabel != null) ...[
             const SizedBox(height: AppSpacing.sm),
             Wrap(

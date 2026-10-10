@@ -3586,6 +3586,14 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get postCargoPaymentDelay => 'Кейінге қалдыру, күн';
 
   @override
+  String get postCargoTrucks => 'Қанша көлік керек';
+
+  @override
+  String cargoTrucksLeft(String needed, String left) {
+    return 'керек $needed · қалды $left';
+  }
+
+  @override
   String get postCargoAdvanceTooBig => 'Аванс бағадан аспауы керек';
 
   @override

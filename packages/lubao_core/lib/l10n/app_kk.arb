@@ -1238,6 +1238,8 @@
   "postCargoPaymentTitle": "Төлем",
   "postCargoAdvance": "Аванс",
   "postCargoPaymentDelay": "Кейінге қалдыру, күн",
+  "postCargoTrucks": "Қанша көлік керек",
+  "cargoTrucksLeft": "керек {needed} · қалды {left}",
   "postCargoAdvanceTooBig": "Аванс бағадан аспауы керек",
   "companyKindTitle": "Компания түрі",
   "companyKindShipper": "Жүк иесі",

@@ -66,3 +66,7 @@ String cargoSizeLabel(LubaoLocalizations t, {double? weightKg, double? volumeM3,
     if (volumeM3 != null && volumeM3 > 0) '${volumeM3 == volumeM3.roundToDouble() ? volumeM3.round() : volumeM3} ${t.unitM3}',
   ].join(' · ');
 }
+
+/// «нужно 3 · осталось 2» — только если машин больше одной (058 п.2).
+String? cargoTrucksLabel(LubaoLocalizations t, {required int needed, required int taken}) =>
+    needed > 1 ? t.cargoTrucksLeft('$needed', '${(needed - taken).clamp(0, needed)}') : null;

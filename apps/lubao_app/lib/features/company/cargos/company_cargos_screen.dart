@@ -391,6 +391,7 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
       bodyTypeLabel: [
         bodyType?.name.forLanguageCode(locale) ?? '',
         cargoSizeLabel(t, weightKg: cargo.weightKg, volumeM3: cargo.volumeM3, languageCode: locale),
+        cargoTrucksLabel(t, needed: cargo.trucksNeeded, taken: cargo.trucksTaken) ?? '',
         if (cargo.distanceKm != null) '${formatThousands(cargo.distanceKm!)} ${t.unitKm}',
       ].where((s) => s.isNotEmpty).join(' · '),
       priceLabel: formatMoney(cargo.price, cargo.currency),

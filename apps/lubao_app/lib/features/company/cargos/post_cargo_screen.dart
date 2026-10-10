@@ -44,6 +44,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   // 058 п.1: условия оплаты — аванс (в валюте груза), форма, отсрочка.
   final _advanceController = TextEditingController();
   final _delayController = TextEditingController();
+  // 058 п.2: сколько машин нужно (1–20).
+  final _trucksController = TextEditingController(text: '1');
   PaymentForm? _paymentForm;
   String? _pointId;
   String? _pointError;
@@ -112,6 +114,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       if (cargo.advanceAmount != null) _advanceController.text = _trimNum(cargo.advanceAmount!);
       if (cargo.paymentDelayDays != null) _delayController.text = '${cargo.paymentDelayDays}';
       _paymentForm = cargo.paymentForm;
+      _trucksController.text = '${cargo.trucksNeeded}';
     }
   }
 
@@ -182,6 +185,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     _descriptionController.dispose();
     _advanceController.dispose();
     _delayController.dispose();
+    _trucksController.dispose();
     super.dispose();
   }
 
@@ -299,6 +303,13 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     return price != null && advance > price ? t.postCargoAdvanceTooBig : null;
   }
 
+  /// 058 п.2: целое 1–20.
+  String? _trucksError(LubaoLocalizations t) {
+    final text = _trucksController.text.trim();
+    if (text.isEmpty) return t.fieldRequired;
+    return int.tryParse(text) == null ? t.fieldNotNumber : numberFieldError(t, text, min: 1, max: 20);
+  }
+
   String? _delayError(LubaoLocalizations t) {
     final text = _delayController.text.trim();
     if (text.isEmpty) return null;
@@ -351,7 +362,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     // Поля груза по кузову (литры, число машин…) — ошибки под полями.
     final specsOk = _bodyTypeId == null || refData == null || specsValid(refData.bodyTypeById(_bodyTypeId!).cargoFields, _specs);
     if (!specsOk) setState(() => _showSpecsRequired = true);
-    final sizesOk = _volumeError(t) == null && _palletError(t) == null && _advanceError(t) == null && _delayError(t) == null;
+    final sizesOk = _volumeError(t) == null && _palletError(t) == null && _advanceError(t) == null && _delayError(t) == null && _trucksError(t) == null;
     if (!sizesOk) return;
     if (_pointError != null || _destinationError != null || _bodyTypeError != null || _categoryError != null || _priceError != null || _weightError != null || !specsOk) return;
     setState(() => _saving = true);
@@ -374,6 +385,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         advanceAmount: parseDecimal(_advanceController.text),
         paymentForm: _paymentForm,
         paymentDelayDays: int.tryParse(_delayController.text.trim()),
+        trucksNeeded: int.tryParse(_trucksController.text.trim()) ?? 1,
         specs: _specs.isEmpty ? null : _specs,
         extraBodyTypeIds: _extraBodyTypeIds.where((id) => id != _bodyTypeId).toList(),
       );
@@ -705,6 +717,15 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              AppTextField(
+                key: const Key('postCargoTrucks'),
+                label: t.postCargoTrucks,
+                controller: _trucksController,
+                errorText: _trucksError(t),
+                keyboardType: TextInputType.number,
+                onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 12),
               // 058 п.1: «Оплата» — аванс, форма, отсрочка (всё необязательно).

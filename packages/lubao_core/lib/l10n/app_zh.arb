@@ -1238,6 +1238,8 @@
   "postCargoPaymentTitle": "付款",
   "postCargoAdvance": "预付款",
   "postCargoPaymentDelay": "账期（天）",
+  "postCargoTrucks": "需要几辆车",
+  "cargoTrucksLeft": "需要 {needed} 辆 · 还剩 {left} 辆",
   "postCargoAdvanceTooBig": "预付款不能超过运价",
   "companyKindTitle": "公司类型",
   "companyKindShipper": "货主",

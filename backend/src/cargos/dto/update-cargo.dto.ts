@@ -76,6 +76,13 @@ export class UpdateCargoDto {
   @Max(365)
   paymentDelayDays?: number | null;
 
+  /// 058 п.2: сколько машин нужно — 1–20.
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  trucksNeeded?: number;
+
   @IsOptional()
   @IsISO8601()
   readyDate?: string;

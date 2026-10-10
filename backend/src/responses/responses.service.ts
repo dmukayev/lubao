@@ -386,19 +386,20 @@ export class ResponsesService {
     throw e;
   }
 
-  private async assertNoActiveDeal(tx: Prisma.TransactionClient, cargoId: string) {
-    // Задача 038, п.22 — проверка «нет активной сделки» без блокировки
-    // гонялась: два логиста одновременно видели «свободно» и создавали две
-    // сделки. Замок по грузу до проверки сериализует выбор.
+  /// Место под сделку (058 п.2): груз на `trucksNeeded` машин, сделок (кроме
+  /// отменённых) должно быть меньше. Замок по грузу (038 п.22) — два логиста
+  /// одновременно не займут последнее место. `true` — этой сделкой груз набран.
+  private async claimPlace(tx: Prisma.TransactionClient, cargoId: string): Promise<boolean> {
     await this.lockCargo(tx, cargoId);
-    const activeDeal = await tx.deal.findFirst({
-      where: { cargoId, status: { not: 'CANCELLED' } },
-      select: { id: true },
-    });
-    if (activeDeal) {
-      throw new ConflictException({ code: 'CARGO_ALREADY_HAS_DEAL', message: 'Cargo already has an active deal' });
+    const cargo = await tx.cargo.findUnique({ where: { id: cargoId }, select: { trucksNeeded: true } });
+    const needed = Math.max(1, cargo?.trucksNeeded ?? 1);
+    const taken = await tx.deal.count({ where: { cargoId, status: { not: 'CANCELLED' } } });
+    if (taken >= needed) {
+      throw new ConflictException({ code: 'CARGO_ALREADY_HAS_DEAL', message: 'Cargo already has all the deals it needs' });
     }
+    return taken + 1 >= needed;
   }
+
 
   async updateStatus(responseId: string, companyId: string, status: 'SELECTED' | 'REJECTED', actorUserId?: string) {
     const response = await this.prisma.response.findUnique({
@@ -436,8 +437,10 @@ export class ResponsesService {
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      await this.assertNoActiveDeal(tx, response.cargoId);
-      const takenFrom = await this.markCargoTaken(tx, response.cargoId, responseId);
+      // 058 п.2: груз уходит из ленты и ждущие отклики закрываются, только
+      // когда набрано нужное число машин.
+      const filled = await this.claimPlace(tx, response.cargoId);
+      const takenFrom = filled ? await this.markCargoTaken(tx, response.cargoId, responseId) : [];
       // Условный апдейт (п.22): статус мог уйти из PENDING между чтением
       // снаружи транзакции и замком — 0 затронутых = отклик уже решён.
       const claimed = await tx.response.updateMany({ where: { id: responseId, status: 'PENDING' }, data: { status: 'SELECTED' } });
@@ -507,7 +510,7 @@ export class ResponsesService {
 
   /// 056 п.1: логист снял груз — ждущие отклики (PENDING/INVITED) не висят
   /// «Ожидает»: CANCELLED с причиной «груз снят», водителям — push.
-  async closeForCargo(cargoId: string) {
+  async closeForCargo(cargoId: string, reason: 'CARGO_CLOSED' | 'TAKEN_BY_OTHER' = 'CARGO_CLOSED') {
     const closed = await this.prisma.$transaction(async (tx) => {
       await this.lockCargo(tx, cargoId);
       const open = await tx.response.findMany({
@@ -515,7 +518,7 @@ export class ResponsesService {
         select: { id: true, driver: { select: { userId: true } } },
       });
       if (open.length > 0) {
-        await tx.response.updateMany({ where: { id: { in: open.map((r) => r.id) } }, data: { status: 'CANCELLED', closeReason: 'CARGO_CLOSED' } });
+        await tx.response.updateMany({ where: { id: { in: open.map((r) => r.id) } }, data: reason === 'TAKEN_BY_OTHER' ? { status: 'REJECTED', closeReason: 'TAKEN_BY_OTHER' } : { status: 'CANCELLED', closeReason: 'CARGO_CLOSED' } });
       }
       return open;
     });
@@ -610,8 +613,8 @@ export class ResponsesService {
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      await this.assertNoActiveDeal(tx, cargoId);
-      const takenFrom = await this.markCargoTaken(tx, cargoId, existing?.id ?? null);
+      const filled = await this.claimPlace(tx, cargoId);
+      const takenFrom = filled ? await this.markCargoTaken(tx, cargoId, existing?.id ?? null) : [];
       let selected;
       if (existing) {
         // Условный апдейт (п.22): решённый между проверкой и замком отклик

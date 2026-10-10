@@ -226,6 +226,9 @@ export class CargosService {
       paymentForm: cargo.paymentForm ?? null,
       paymentDelayDays: cargo.paymentDelayDays ?? null,
       companyKind: cargo.company.kind,
+      // 058 п.2: «нужно 3 · осталось 2».
+      trucksNeeded: cargo.trucksNeeded,
+      trucksTaken: cargo.trucksNeeded > 1 ? await this.prisma.deal.count({ where: { cargoId: cargo.id, status: { not: 'CANCELLED' } } }) : undefined,
       readyDate: toDateOnly(cargo.readyDate),
       // 049 п.1: догруз выключен — бейджа нет, даже если груз помечен раньше.
       allowPartial: cargo.allowPartial && (await this.partialEnabled()),
@@ -726,6 +729,7 @@ export class CargosService {
         price: dto.price,
         currency: dto.currency,
         ...paymentTerms(dto, dto.price),
+        trucksNeeded: dto.trucksNeeded ?? 1,
         readyDate,
         // 049 п.1: при выключенном догрузе пометка игнорируется.
         allowPartial: (dto.allowPartial ?? false) && (await this.partialEnabled()),
@@ -779,6 +783,11 @@ export class CargosService {
         : {};
 
     if (dto.categoryId !== undefined) await this.assertCategory(dto.categoryId);
+    // 058 п.2: машин не меньше, чем уже взято сделок.
+    const taken = dto.trucksNeeded !== undefined ? await this.prisma.deal.count({ where: { cargoId: id, status: { not: 'CANCELLED' } } }) : 0;
+    if (dto.trucksNeeded !== undefined && dto.trucksNeeded < taken) {
+      throw new BadRequestException({ code: 'VALIDATION_FAILED', message: ['trucksNeeded must not be less than taken deals'], fields: [{ field: 'trucksNeeded', rule: 'min', limit: taken }] });
+    }
 
     await this.prisma.cargo.update({
       where: { id },
@@ -796,12 +805,23 @@ export class CargosService {
         price: dto.price,
         currency: dto.currency,
         ...paymentTerms(dto, dto.price ?? Number(existing.price), existing.advanceAmount != null ? Number(existing.advanceAmount) : null),
+        trucksNeeded: dto.trucksNeeded,
         readyDate,
         expiresAt,
         description: dto.description,
         ...bodyData,
       },
     });
+    // 058 п.2: набрали все места — «В работе» (ждущие отклики закрываются),
+    // добавили машин — снова в поиске.
+    if (dto.trucksNeeded !== undefined) {
+      if (taken >= dto.trucksNeeded && existing.status === 'PUBLISHED') {
+        await this.prisma.cargo.updateMany({ where: { id, status: 'PUBLISHED' }, data: { status: 'IN_DEAL' } });
+        await this.responses.closeForCargo(id, 'TAKEN_BY_OTHER');
+      } else if (taken < dto.trucksNeeded && existing.status === 'IN_DEAL') {
+        await this.prisma.cargo.updateMany({ where: { id, status: 'IN_DEAL' }, data: { status: 'PUBLISHED' } });
+      }
+    }
     // Сменился маршрут или цена — заново км и ₸/км.
     if (dto.pointId !== undefined || dto.destinationCityId !== undefined || dto.price !== undefined) await this.applyPricingBounded(id, false);
     return this.toDto(await this.findEntity(id));

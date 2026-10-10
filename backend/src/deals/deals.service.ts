@@ -290,10 +290,15 @@ export class DealsService {
     }
     // Доставлено → груз закрыт («нашёл в Lubao»), 041.
     if (nextStatus === 'DELIVERED') {
-      await this.prisma.cargo.updateMany({
-        where: { id: updated.cargoId, status: 'IN_DEAL' },
-        data: { status: 'ARCHIVED', closeOutcome: 'FOUND_IN_APP', closedAt: new Date() },
-      });
+      // 058 п.2: груз на несколько машин — в архив, когда набран (IN_DEAL) и
+      // все его неотменённые сделки доставлены.
+      const unfinished = await this.prisma.deal.count({ where: { cargoId: updated.cargoId, status: { notIn: ['CANCELLED', 'DELIVERED'] } } });
+      if (unfinished === 0) {
+        await this.prisma.cargo.updateMany({
+          where: { id: updated.cargoId, status: 'IN_DEAL' },
+          data: { status: 'ARCHIVED', closeOutcome: 'FOUND_IN_APP', closedAt: new Date() },
+        });
+      }
       // 047 п.4: сделка — точка статистики цен по маршруту.
       if (this.pricing) {
         const cargo = await this.prisma.cargo.findUnique({
@@ -507,7 +512,8 @@ export class DealsService {
       if (deal.responseId) {
         await tx.response.updateMany({ where: { id: deal.responseId, status: 'SELECTED' }, data: { status: 'CANCELLED', closeReason: 'DEAL_CANCELLED' } });
       }
-      // Сделка отменена → груз снова в ленте, если он не был закрыт (041, п.2).
+      // Сделка отменена → место свободно: груз снова в ленте, если он не был
+      // закрыт (041 п.2, 058 п.2 — на любое число машин).
       await tx.cargo.updateMany({ where: { id: updated.cargoId, status: 'IN_DEAL' }, data: { status: 'PUBLISHED' } });
       await recomputeDriverRating(tx, updated.driverId);
       await recomputeCompanyRating(tx, updated.companyId);

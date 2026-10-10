@@ -377,6 +377,8 @@ class _CargoDetailBody extends ConsumerWidget {
                           Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceDetail),
                           // 058 п.1: «аванс $5 300 · нал. · отсрочка 10 дн.»
                           if (terms.isNotEmpty) Text(terms, key: const Key('cargoDetailTerms'), style: AppTextStyles.body),
+                          if (cargoTrucksLabel(t, needed: cargo.trucksNeeded, taken: cargo.trucksTaken) case final trucks?)
+                            Text(trucks, key: const Key('cargoDetailTrucks'), style: AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),

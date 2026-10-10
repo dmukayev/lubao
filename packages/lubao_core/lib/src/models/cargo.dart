@@ -50,7 +50,14 @@ class Cargo {
     this.paymentForm,
     this.paymentDelayDays,
     this.companyKind = CompanyKind.forwarder,
+    this.trucksNeeded = 1,
+    this.trucksTaken = 0,
   });
+
+  /// 058 п.2: сколько машин нужно и сколько уже взято сделками.
+  final int trucksNeeded;
+  final int trucksTaken;
+  int get trucksLeft => (trucksNeeded - trucksTaken).clamp(0, trucksNeeded);
 
   /// 058 п.1: условия оплаты (аванс — в валюте груза); 8а — тип компании.
   final double? advanceAmount;
@@ -155,6 +162,8 @@ class Cargo {
         paymentForm: paymentFormFromJson(json['paymentForm'] as String?),
         paymentDelayDays: json['paymentDelayDays'] as int?,
         companyKind: companyKindFromJson(json['companyKind'] as String?),
+        trucksNeeded: json['trucksNeeded'] as int? ?? 1,
+        trucksTaken: json['trucksTaken'] as int? ?? 0,
         readyDate: DateTime.parse(json['readyDate'] as String),
         description: json['description'] as String?,
         status: cargoStatusFromJson(json['status'] as String),
@@ -287,7 +296,11 @@ class CreateCargoInput {
     this.advanceAmount,
     this.paymentForm,
     this.paymentDelayDays,
+    this.trucksNeeded = 1,
   });
+
+  /// 058 п.2: сколько машин нужно (1–20).
+  final int trucksNeeded;
 
   /// 058 п.1: условия оплаты; null — «без условий» (при правке — убрать).
   final double? advanceAmount;
@@ -335,6 +348,7 @@ class CreateCargoInput {
         'advanceAmount': advanceAmount,
         'paymentForm': paymentForm?.name.toUpperCase(),
         'paymentDelayDays': paymentDelayDays,
+        'trucksNeeded': trucksNeeded,
         'readyDate': ymd(readyDate),
         if (description != null) 'description': description,
       };

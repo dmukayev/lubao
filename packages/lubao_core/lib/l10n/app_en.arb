@@ -1363,6 +1363,8 @@
   "postCargoPaymentTitle": "Payment",
   "postCargoAdvance": "Advance",
   "postCargoPaymentDelay": "Deferral, days",
+  "postCargoTrucks": "Trucks needed",
+  "cargoTrucksLeft": "{needed} needed · {left} left",
   "postCargoAdvanceTooBig": "Advance can't exceed the price",
   "companyKindTitle": "Company type",
   "companyKindShipper": "Shipper",

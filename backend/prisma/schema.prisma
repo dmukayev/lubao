@@ -930,6 +930,9 @@ model Cargo {
   advanceAmount        Decimal?           @db.Decimal(12, 2)
   paymentForm          PaymentForm?
   paymentDelayDays     Int?
+  /// 058 п.2: сколько машин нужно (1–20). Груз в поиске, пока сделок (кроме
+  /// отменённых) меньше этого числа; каждый выбор водителя — своя сделка.
+  trucksNeeded         Int                @default(1)
   readyDate            DateTime           @db.Date
   /// «Можно догрузом» (задача 040, п.6): груз не на всю машину, сборный.
   allowPartial         Boolean            @default(false)

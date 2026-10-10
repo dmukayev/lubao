@@ -3588,6 +3588,14 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get postCargoPaymentDelay => 'Deferral, days';
 
   @override
+  String get postCargoTrucks => 'Trucks needed';
+
+  @override
+  String cargoTrucksLeft(String needed, String left) {
+    return '$needed needed · $left left';
+  }
+
+  @override
   String get postCargoAdvanceTooBig => 'Advance can\'t exceed the price';
 
   @override

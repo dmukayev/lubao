@@ -3573,6 +3573,14 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get postCargoPaymentDelay => 'Отсрочка, дней';
 
   @override
+  String get postCargoTrucks => 'Сколько машин нужно';
+
+  @override
+  String cargoTrucksLeft(String needed, String left) {
+    return 'нужно $needed · осталось $left';
+  }
+
+  @override
   String get postCargoAdvanceTooBig => 'Аванс не больше цены';
 
   @override

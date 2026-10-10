@@ -6678,6 +6678,18 @@ abstract class LubaoLocalizations {
   /// **'Отсрочка, дней'**
   String get postCargoPaymentDelay;
 
+  /// No description provided for @postCargoTrucks.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сколько машин нужно'**
+  String get postCargoTrucks;
+
+  /// No description provided for @cargoTrucksLeft.
+  ///
+  /// In ru, this message translates to:
+  /// **'нужно {needed} · осталось {left}'**
+  String cargoTrucksLeft(String needed, String left);
+
   /// No description provided for @postCargoAdvanceTooBig.
   ///
   /// In ru, this message translates to:

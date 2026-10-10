@@ -7,9 +7,10 @@ const FAKE_CHAT_SYSTEM = { post: jest.fn(), postToChat: jest.fn() };
 function txMock() {
   return {
     response: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), update: jest.fn(), create: jest.fn(), findUniqueOrThrow: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
-    cargo: { updateMany: jest.fn() },
-    // findFirst — проверка «на груз нет активной сделки» (задача 038, п.1).
-    deal: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
+    // 058 п.2: сколько машин нужно (по умолчанию одна).
+    cargo: { updateMany: jest.fn(), findUnique: jest.fn().mockResolvedValue({ trucksNeeded: 1 }) },
+    // count — сколько мест уже занято сделками (038 п.1, 058 п.2).
+    deal: { create: jest.fn(), count: jest.fn().mockResolvedValue(0) },
     chat: { updateMany: jest.fn() },
     $queryRaw: jest.fn().mockResolvedValue([]),
     // Задача 031 — снимок связки тягач/прицеп при создании сделки; задача
@@ -175,7 +176,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
 
   it('задача 038, п.1 — 409 CARGO_ALREADY_HAS_DEAL when the cargo already has an active deal', async () => {
     const tx = txMock();
-    tx.deal.findFirst.mockResolvedValue({ id: 'existing-deal' });
+    tx.deal.count.mockResolvedValue(1);
     const prisma: any = {
       response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1' } }) },
       $transaction: jest.fn(async (cb: any) => cb(tx)),
@@ -183,10 +184,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
     const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
 
     await expect(service.updateStatus('r1', 'c1', 'SELECTED')).rejects.toThrow(ConflictException);
-    expect(tx.deal.findFirst).toHaveBeenCalledWith({
-      where: { cargoId: 'cargo1', status: { not: 'CANCELLED' } },
-      select: { id: true },
-    });
+    expect(tx.deal.count).toHaveBeenCalledWith({ where: { cargoId: 'cargo1', status: { not: 'CANCELLED' } } });
     expect(tx.deal.create).not.toHaveBeenCalled();
   });
 
@@ -349,7 +347,7 @@ describe('ResponsesService.createDealDirect — attaches the pre-deal chat too (
 
   it('задача 038, п.1 — invite refuses when the cargo already has an active deal', async () => {
     const tx = txMock();
-    tx.deal.findFirst.mockResolvedValue({ id: 'existing-deal' });
+    tx.deal.count.mockResolvedValue(1);
     const prisma: any = {
       cargo: { findUnique: jest.fn().mockResolvedValue({ id: 'cargo1', companyId: 'c1', company: { name: 'Acme' } }) },
       response: { findUnique: jest.fn().mockResolvedValue(null) },
@@ -375,7 +373,7 @@ describe('ResponsesService — гонка двух сделок на груз (�
 
     await service.updateStatus('r1', 'c1', 'SELECTED');
 
-    expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(tx.deal.findFirst.mock.invocationCallOrder[0]);
+    expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(tx.deal.count.mock.invocationCallOrder[0]);
   });
 
   it('отклик, ушедший из PENDING между чтением и замком, → 409 и сделка не создаётся', async () => {
@@ -738,5 +736,35 @@ describe('ResponsesService.listForCargo — порядок и «новые» (05
     expect(list.find((x: any) => x.id === 'rOnSite')).toMatchObject({ isNew: true, onSiteAtPoint: true });
     expect(list.find((x: any) => x.id === 'rEarly')).toMatchObject({ isNew: false });
     expect(prisma.cargoResponsesSeen.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { userId_cargoId: { userId: 'logist-1', cargoId: 'c1' } } }));
+  });
+});
+
+describe('058 п.2: груз на несколько машин — места', () => {
+  function setup(trucksNeeded: number, taken: number) {
+    const tx: any = {
+      $queryRaw: jest.fn().mockResolvedValue([]),
+      cargo: { findUnique: jest.fn().mockResolvedValue({ trucksNeeded }) },
+      deal: { count: jest.fn().mockResolvedValue(taken) },
+    };
+    const service = new ResponsesService({} as any, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
+    return { tx, claim: () => (service as any).claimPlace(tx, 'cargo1') as Promise<boolean> };
+  }
+
+  it('нужно 2, взято 0 — сделка создаётся, груз остаётся в поиске', async () => {
+    const { tx, claim } = setup(2, 0);
+    expect(await claim()).toBe(false);
+    expect(tx.$queryRaw).toHaveBeenCalled(); // замок по грузу
+  });
+
+  it('нужно 2, взято 1 — эта сделка последняя: груз набран', async () => {
+    expect(await setup(2, 1).claim()).toBe(true);
+  });
+
+  it('нужно 2, взято 2 — мест нет, 409', async () => {
+    await expect(setup(2, 2).claim()).rejects.toMatchObject({ response: { code: 'CARGO_ALREADY_HAS_DEAL' } });
+  });
+
+  it('одна машина (как раньше): первая сделка набирает груз', async () => {
+    expect(await setup(1, 0).claim()).toBe(true);
   });
 });

@@ -3504,6 +3504,14 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoPaymentDelay => '账期（天）';
 
   @override
+  String get postCargoTrucks => '需要几辆车';
+
+  @override
+  String cargoTrucksLeft(String needed, String left) {
+    return '需要 $needed 辆 · 还剩 $left 辆';
+  }
+
+  @override
   String get postCargoAdvanceTooBig => '预付款不能超过运价';
 
   @override

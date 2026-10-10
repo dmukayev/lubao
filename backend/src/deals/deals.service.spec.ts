@@ -69,6 +69,20 @@ describe('DealsService — DEAL_STATUS notification (задача 011)', () => {
     service = new DealsService(prisma, cargos, notifications, FAKE_CHAT_SYSTEM as any, FAKE_REALTIME as any);
   });
 
+  it('058 п.2: доставлена одна из двух машин — груз в архив не уходит; доставлена последняя — уходит', async () => {
+    prisma.deal.count = jest.fn().mockResolvedValue(1);
+    prisma.cargo.updateMany = jest.fn().mockResolvedValue({ count: 1 });
+    prisma.deal.findUnique.mockResolvedValue(dealFixture({ status: 'IN_TRANSIT' }));
+    prisma.deal.update.mockResolvedValue(dealFixture({ status: 'DELIVERED' }));
+
+    await service.advanceStatus('deal1', 'd1', 'DELIVERED');
+    expect(prisma.cargo.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: 'ARCHIVED' }) }));
+
+    prisma.deal.count.mockResolvedValue(0);
+    await service.advanceStatus('deal1', 'd1', 'DELIVERED');
+    expect(prisma.cargo.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ status: 'IN_DEAL' }), data: expect.objectContaining({ status: 'ARCHIVED' }) }));
+  });
+
   it('041, п.13: смена статуса сделки уходит в личные комнаты водителя и логиста (трекинг рейса без опроса)', async () => {
     FAKE_REALTIME.emitDealUpdatedToUser.mockClear();
     prisma.deal.findUnique.mockResolvedValue(dealFixture({ status: 'CONFIRMED_BY_DRIVER' }));
