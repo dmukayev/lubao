@@ -3467,7 +3467,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String cargoAdvance(String amount) {
-    return '预付 $amount';
+    return '装货时预付 $amount';
   }
 
   @override
@@ -3481,8 +3481,22 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String paymentDelayShort(String days) {
-    return '账期 $days 天';
+    return '余款 $days 天后';
   }
+
+  @override
+  String paymentDelayNoAdvance(String days) {
+    return '卸货后 $days 天付款';
+  }
+
+  @override
+  String get paymentRestNow => '立即';
+
+  @override
+  String get paymentRestLater => 'N 天后';
+
+  @override
+  String get postCargoDelayDays => '几天后';
 
   @override
   String get paymentFormCash => '现金';
@@ -3497,10 +3511,10 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoPaymentTitle => '付款';
 
   @override
-  String get postCargoAdvance => '预付款';
+  String get postCargoAdvance => '装货时预付';
 
   @override
-  String get postCargoPaymentDelay => '账期（天）';
+  String get postCargoPaymentDelay => '卸货后余款';
 
   @override
   String get postCargoTrucks => '需要几辆车';

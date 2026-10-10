@@ -19,7 +19,8 @@ void main() {
   test('058 п.1/4: цена и условия оплаты', () {
     expect(formatCurrencyAmount(1250000, Currency.rub), '1 250 000 ₽');
     expect(formatCurrencyAmount(95000000, Currency.uzs), '95 000 000 сум');
-    expect(paymentTermsLine(t, advanceAmount: 5300, paymentForm: PaymentForm.cash, currency: Currency.usd), r'аванс $5 300 · нал.');
+    expect(paymentTermsLine(t, advanceAmount: 5300, paymentForm: PaymentForm.cash, paymentDelayDays: 5, currency: Currency.usd), r'аванс $5 300 при погрузке · остаток через 5 дн. · нал.');
+    expect(paymentTermsLine(t, paymentForm: PaymentForm.cashless, paymentDelayDays: 5, currency: Currency.usd), 'оплата через 5 дн. после выгрузки · на счёт');
     expect(paymentTermsLine(t, currency: Currency.usd), '');
     expect(cargoTrucksLabel(t, needed: 3, taken: 1), 'нужно 3 · осталось 2');
     expect(cargoTrucksLabel(t, needed: 1, taken: 0), isNull);

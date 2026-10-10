@@ -44,9 +44,9 @@ test('обход экранов админки: ни одного белого �
         expect(await page.getByRole('button', { name: 'Ниже' }).count()).toBe(4);
         expect(await page.getByRole('button', { name: 'Выше' }).count()).toBe(4);
         expect(await page.getByRole('switch').count()).toBeGreaterThanOrEqual(3);
-        // 042 п.4: курсы НБ РК — правка USD и CNY (на 1280 карточка в кадре).
+        // 042 п.4 / 058 п.4: курсы НБ РК — правка USD, CNY, RUB, UZS (на 1280 карточка в кадре).
         if ((page.viewportSize()?.width ?? 0) >= 800) {
-          expect(await page.getByRole('button', { name: 'Изменить курс' }).count()).toBe(2);
+          expect(await page.getByRole('button', { name: 'Изменить курс' }).count()).toBe(4);
         }
       }
     });

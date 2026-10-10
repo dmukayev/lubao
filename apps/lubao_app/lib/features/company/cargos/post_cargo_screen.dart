@@ -47,6 +47,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   // 058 п.2: сколько машин нужно (1–20).
   final _trucksController = TextEditingController(text: '1');
   PaymentForm? _paymentForm;
+  // Остаток после выгрузки: «Сразу» или «Через N дней» (058 п.1, уточнение).
+  bool _restLater = false;
   String? _pointId;
   String? _pointError;
   bool _allowPartial = false;
@@ -112,7 +114,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       _descriptionController.text = cargo.description ?? '';
       // «Повторить» копирует и условия оплаты.
       if (cargo.advanceAmount != null) _advanceController.text = _trimNum(cargo.advanceAmount!);
-      if (cargo.paymentDelayDays != null) _delayController.text = '${cargo.paymentDelayDays}';
+      if (cargo.paymentDelayDays != null && cargo.paymentDelayDays! > 0) {
+        _delayController.text = '${cargo.paymentDelayDays}';
+        _restLater = true;
+      }
       _paymentForm = cargo.paymentForm;
       _trucksController.text = '${cargo.trucksNeeded}';
     }
@@ -311,8 +316,9 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   }
 
   String? _delayError(LubaoLocalizations t) {
+    if (!_restLater) return null;
     final text = _delayController.text.trim();
-    if (text.isEmpty) return null;
+    if (text.isEmpty) return t.fieldRequired;
     final days = int.tryParse(text);
     if (days == null || days < 0) return t.fieldNotNumber;
     return days > 365 ? t.fieldMax('365') : null;
@@ -384,7 +390,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
         advanceAmount: parseDecimal(_advanceController.text),
         paymentForm: _paymentForm,
-        paymentDelayDays: int.tryParse(_delayController.text.trim()),
+        paymentDelayDays: _restLater ? int.tryParse(_delayController.text.trim()) : null,
         trucksNeeded: int.tryParse(_trucksController.text.trim()) ?? 1,
         specs: _specs.isEmpty ? null : _specs,
         extraBodyTypeIds: _extraBodyTypeIds.where((id) => id != _bodyTypeId).toList(),
@@ -728,35 +734,39 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 12),
-              // 058 п.1: «Оплата» — аванс, форма, отсрочка (всё необязательно).
+              // 058 п.1: «Оплата» — аванс при погрузке, остаток после выгрузки, форма (всё необязательно).
               Text(t.postCargoPaymentTitle, style: AppTextStyles.bodyStrong),
               const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              AppTextField(
+                key: const Key('postCargoAdvance'),
+                label: '${t.postCargoAdvance}, ${currencySymbol(_currency)}',
+                controller: _advanceController,
+                errorText: _advanceError(t),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 8),
+              Text(t.postCargoPaymentDelay, style: AppTextStyles.caption),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Expanded(
-                    child: AppTextField(
-                      key: const Key('postCargoAdvance'),
-                      label: '${t.postCargoAdvance}, ${currencySymbol(_currency)}',
-                      controller: _advanceController,
-                      errorText: _advanceError(t),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: AppTextField(
-                      key: const Key('postCargoPaymentDelay'),
-                      label: t.postCargoPaymentDelay,
-                      controller: _delayController,
-                      errorText: _delayError(t),
-                      keyboardType: TextInputType.number,
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
+                  SelectableTile(key: const Key('postCargoRestNow'), label: t.paymentRestNow, selected: !_restLater, onTap: () => setState(() => _restLater = false)),
+                  SelectableTile(key: const Key('postCargoRestLater'), label: t.paymentRestLater, selected: _restLater, onTap: () => setState(() => _restLater = true)),
                 ],
               ),
+              if (_restLater) ...[
+                const SizedBox(height: 8),
+                AppTextField(
+                  key: const Key('postCargoPaymentDelay'),
+                  label: t.postCargoDelayDays,
+                  controller: _delayController,
+                  errorText: _delayError(t),
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,

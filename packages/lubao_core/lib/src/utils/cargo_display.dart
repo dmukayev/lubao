@@ -6,12 +6,16 @@ import 'cargo_weight.dart';
 /// 058: как показывать груз одинаково в ленте, карточке, «Моих рейсах»,
 /// сделке, у логиста и в «Поделиться».
 
-/// «аванс $5 300 · нал. · отсрочка 10 дн.» — пусто, если условий нет (058 п.1).
+/// 058 п.1 (уточнение 2026-10-10): аванс — при погрузке, отсрочка — остаток
+/// после выгрузки. «аванс $5 300 при погрузке · остаток через 5 дн. · нал.»;
+/// без аванса — «оплата через 5 дн. после выгрузки · на счёт»; «сразу» не пишем.
 String paymentTermsLine(LubaoLocalizations t, {double? advanceAmount, PaymentForm? paymentForm, int? paymentDelayDays, required Currency currency}) {
+  final hasAdvance = advanceAmount != null && advanceAmount > 0;
+  final delay = paymentDelayDays != null && paymentDelayDays > 0 ? '$paymentDelayDays' : null;
   return [
-    if (advanceAmount != null && advanceAmount > 0) t.cargoAdvance(formatCurrencyAmount(advanceAmount, currency)),
+    if (hasAdvance) t.cargoAdvance(formatCurrencyAmount(advanceAmount, currency)),
+    if (delay != null) hasAdvance ? t.paymentDelayShort(delay) : t.paymentDelayNoAdvance(delay),
     if (paymentForm != null) paymentFormShort(t, paymentForm),
-    if (paymentDelayDays != null && paymentDelayDays > 0) t.paymentDelayShort('$paymentDelayDays'),
   ].join(' · ');
 }
 

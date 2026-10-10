@@ -39,11 +39,14 @@ test('жалоба: Новые → В работе → решение → Зак
     await expect(page.getByRole('button', { name: /E2E: синтетическая жалоба/ })).toBeVisible();
   });
 
-  await steps.step('решение-без-ответа-недоступно', async () => {
+  // «Сохранить» нажимается всегда; без ответа автору — причина под полем, окно не закрывается.
+  await steps.step('решение-без-ответа-подсказка', async () => {
     await page.getByRole('button', { name: /E2E: синтетическая жалоба/ }).click();
     await page.getByRole('button', { name: 'Принять решение' }).click();
     const dialog = page.getByRole('alertdialog');
-    await expect(dialog.getByRole('button', { name: 'Сохранить' })).toBeDisabled();
+    await dialog.getByRole('button', { name: 'Сохранить' }).click();
+    await expect(dialog.getByText('Напишите ответ автору — он его увидит')).toBeVisible();
+    await expect(dialog).toBeVisible();
   });
 
   await steps.step('решение-с-ответом', async () => {

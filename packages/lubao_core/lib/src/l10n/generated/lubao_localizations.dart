@@ -6615,7 +6615,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @cargoAdvance.
   ///
   /// In ru, this message translates to:
-  /// **'аванс {amount}'**
+  /// **'аванс {amount} при погрузке'**
   String cargoAdvance(String amount);
 
   /// No description provided for @paymentFormCashShort.
@@ -6639,8 +6639,32 @@ abstract class LubaoLocalizations {
   /// No description provided for @paymentDelayShort.
   ///
   /// In ru, this message translates to:
-  /// **'отсрочка {days} дн.'**
+  /// **'остаток через {days} дн.'**
   String paymentDelayShort(String days);
+
+  /// No description provided for @paymentDelayNoAdvance.
+  ///
+  /// In ru, this message translates to:
+  /// **'оплата через {days} дн. после выгрузки'**
+  String paymentDelayNoAdvance(String days);
+
+  /// No description provided for @paymentRestNow.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сразу'**
+  String get paymentRestNow;
+
+  /// No description provided for @paymentRestLater.
+  ///
+  /// In ru, this message translates to:
+  /// **'Через N дней'**
+  String get paymentRestLater;
+
+  /// No description provided for @postCargoDelayDays.
+  ///
+  /// In ru, this message translates to:
+  /// **'Через сколько дней'**
+  String get postCargoDelayDays;
 
   /// No description provided for @paymentFormCash.
   ///
@@ -6669,13 +6693,13 @@ abstract class LubaoLocalizations {
   /// No description provided for @postCargoAdvance.
   ///
   /// In ru, this message translates to:
-  /// **'Аванс'**
+  /// **'Аванс при погрузке'**
   String get postCargoAdvance;
 
   /// No description provided for @postCargoPaymentDelay.
   ///
   /// In ru, this message translates to:
-  /// **'Отсрочка, дней'**
+  /// **'Остаток после выгрузки'**
   String get postCargoPaymentDelay;
 
   /// No description provided for @postCargoTrucks.

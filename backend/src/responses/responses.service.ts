@@ -403,8 +403,9 @@ export class ResponsesService {
     });
   }
 
-  /// Уникальный индекс «одна активная сделка на груз» / responseId @unique
-  /// (039, п.3): гонка, дошедшая до БД, — это 409, а не 500.
+  /// Уникальный индекс «одна активная сделка на груз + водителя» (058 п.2;
+  /// раньше — на груз, 039 п.3) / responseId @unique: гонка, дошедшая до БД, —
+  /// это 409, а не 500.
   private rethrowUnique(e: unknown): never {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
       throw new ConflictException({ code: 'CARGO_ALREADY_HAS_DEAL', message: 'Cargo already has an active deal' });

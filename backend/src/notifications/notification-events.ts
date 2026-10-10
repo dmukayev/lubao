@@ -139,27 +139,41 @@ export function formatMoney(amount: number, currency: string | null | undefined,
   const sym = currency ? CURRENCY_SYMBOL[currency] : undefined;
   return sym ? `${sym}${n}` : `${n} ${currency ?? ''}`.trim();
 }
-const ADVANCE: Record<Loc, string> = { ru: 'аванс', kk: 'аванс', zh: '预付', en: 'advance' };
+const ADVANCE: Record<Loc, (amount: string) => string> = {
+  ru: (a) => `аванс ${a} при погрузке`,
+  kk: (a) => `тиеу кезінде аванс ${a}`,
+  zh: (a) => `装货时预付 ${a}`,
+  en: (a) => `${a} advance on loading`,
+};
 const PAYMENT_FORM: Record<string, Record<Loc, string>> = {
   CASH: { ru: 'нал.', kk: 'қолма-қол', zh: '现金', en: 'cash' },
   CARD: { ru: 'на карту', kk: 'картаға', zh: '转卡', en: 'to card' },
   CASHLESS: { ru: 'на счёт', kk: 'шотқа', zh: '对公转账', en: 'bank transfer' },
 };
-const DELAY: Record<Loc, (d: number) => string> = {
-  ru: (d) => `отсрочка ${d} дн.`,
-  kk: (d) => `кейінге қалдыру ${d} күн`,
-  zh: (d) => `账期 ${d} 天`,
-  en: (d) => `${d}-day deferral`,
+/// Отсрочка — остаток после выгрузки (058 п.1, уточнение 2026-10-10).
+const REST: Record<Loc, (d: number) => string> = {
+  ru: (d) => `остаток через ${d} дн.`,
+  kk: (d) => `қалғаны ${d} күннен кейін`,
+  zh: (d) => `余款 ${d} 天后`,
+  en: (d) => `balance in ${d} days`,
 };
-/// 058 п.1: «аванс $5 300 · нал. · отсрочка 10 дн.» — пусто, если условий нет.
+const PAY_AFTER: Record<Loc, (d: number) => string> = {
+  ru: (d) => `оплата через ${d} дн. после выгрузки`,
+  kk: (d) => `түсіргеннен кейін ${d} күнде төлем`,
+  zh: (d) => `卸货后 ${d} 天付款`,
+  en: (d) => `payment ${d} days after unloading`,
+};
+/// 058 п.1: «аванс $5 300 при погрузке · остаток через 5 дн. · нал.»; без
+/// аванса — «оплата через 5 дн. после выгрузки · на счёт»; «сразу» не пишем.
 export function paymentLine(
   p: { advanceAmount?: number | null; paymentForm?: string | null; paymentDelayDays?: number | null; currency?: string | null },
   locale: Loc = 'ru',
 ): string {
+  const advance = p.advanceAmount ? Number(p.advanceAmount) : 0;
   return [
-    p.advanceAmount ? `${ADVANCE[locale]} ${formatMoney(Number(p.advanceAmount), p.currency, locale)}` : '',
+    advance > 0 ? ADVANCE[locale](formatMoney(advance, p.currency, locale)) : '',
+    p.paymentDelayDays ? (advance > 0 ? REST : PAY_AFTER)[locale](p.paymentDelayDays) : '',
     p.paymentForm ? PAYMENT_FORM[p.paymentForm]?.[locale] ?? '' : '',
-    p.paymentDelayDays ? DELAY[locale](p.paymentDelayDays) : '',
   ].filter(Boolean).join(' · ');
 }
 const MONTHS: Record<Loc, string[]> = {

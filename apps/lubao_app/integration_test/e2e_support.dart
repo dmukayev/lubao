@@ -280,7 +280,8 @@ void expectInsideSafeZone(WidgetTester tester) {
   }
   final nav = find.byType(NavigationBar);
   if (nav.evaluate().isNotEmpty) {
-    final icon = find.descendant(of: nav, matching: find.byType(Icon)).first;
+    // Эталон 33: в меню свои SVG-иконки (NavSvgIcon), не Icon.
+    final icon = find.descendant(of: nav, matching: find.byType(NavSvgIcon)).first;
     expect(tester.getBottomLeft(icon).dy, lessThanOrEqualTo(bottomLimit), reason: 'иконки навигации заезжают под «домой»');
   }
   final send = find.byKey(const Key('chatSendButton'));

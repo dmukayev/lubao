@@ -151,14 +151,15 @@ describe('058: цена в любой валюте и условия оплат�
     expect(formatMoney(10300, 'USD', 'en')).toBe('$10 300');
   });
 
-  it('«аванс $5 300 · нал. · отсрочка 10 дн.»; без условий — пусто', () => {
-    expect(paymentLine({ advanceAmount: 5300, paymentForm: 'CASH', paymentDelayDays: 10, currency: 'USD' }, 'ru')).toBe('аванс $5 300 · нал. · отсрочка 10 дн.');
+  it('«аванс $5 300 при погрузке · остаток через 5 дн. · нал.»; без аванса — «оплата через … после выгрузки»; без условий — пусто', () => {
+    expect(paymentLine({ advanceAmount: 5300, paymentForm: 'CASH', paymentDelayDays: 5, currency: 'USD' }, 'ru')).toBe('аванс $5 300 при погрузке · остаток через 5 дн. · нал.');
+    expect(paymentLine({ paymentForm: 'CASHLESS', paymentDelayDays: 5, currency: 'USD' }, 'ru')).toBe('оплата через 5 дн. после выгрузки · на счёт');
     expect(paymentLine({ paymentForm: 'CASHLESS' }, 'en')).toBe('bank transfer');
     expect(paymentLine({}, 'ru')).toBe('');
   });
 
   it('push «Приглашение»: условия сразу после цены', () => {
     const line = cargoLine({ price: 10300, currency: 'USD', advanceAmount: 5300, paymentForm: 'CASH', weightKg: 20000 } as never, 'ru');
-    expect(line).toBe('$10 300 · аванс $5 300 · нал. · 20 т');
+    expect(line).toBe('$10 300 · аванс $5 300 при погрузке · нал. · 20 т');
   });
 });

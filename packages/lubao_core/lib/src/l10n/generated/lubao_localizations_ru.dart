@@ -3537,7 +3537,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String cargoAdvance(String amount) {
-    return 'аванс $amount';
+    return 'аванс $amount при погрузке';
   }
 
   @override
@@ -3551,8 +3551,22 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String paymentDelayShort(String days) {
-    return 'отсрочка $days дн.';
+    return 'остаток через $days дн.';
   }
+
+  @override
+  String paymentDelayNoAdvance(String days) {
+    return 'оплата через $days дн. после выгрузки';
+  }
+
+  @override
+  String get paymentRestNow => 'Сразу';
+
+  @override
+  String get paymentRestLater => 'Через N дней';
+
+  @override
+  String get postCargoDelayDays => 'Через сколько дней';
 
   @override
   String get paymentFormCash => 'Наличные';
@@ -3567,10 +3581,10 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get postCargoPaymentTitle => 'Оплата';
 
   @override
-  String get postCargoAdvance => 'Аванс';
+  String get postCargoAdvance => 'Аванс при погрузке';
 
   @override
-  String get postCargoPaymentDelay => 'Отсрочка, дней';
+  String get postCargoPaymentDelay => 'Остаток после выгрузки';
 
   @override
   String get postCargoTrucks => 'Сколько машин нужно';
