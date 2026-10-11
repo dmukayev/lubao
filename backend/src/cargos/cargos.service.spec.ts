@@ -1044,3 +1044,15 @@ describe('059: лента — фильтры, чипы «куда», сорти�
     );
   });
 });
+
+describe('057 п.18: limit/offset — только целые', () => {
+  it('дробные и мусор — не число (раньше 500), целые — как есть', async () => {
+    const { toInt } = await import('./cargos.controller');
+    const { parseFeedQuery } = await import('./feed-query');
+    expect(toInt('2.5')).toBeUndefined();
+    expect(toInt('abc')).toBeUndefined();
+    expect(toInt('-1')).toBeUndefined();
+    expect(toInt('20')).toBe(20);
+    expect(parseFeedQuery({ limit: '2.5', offset: '3' })).toMatchObject({ limit: undefined, offset: 3 });
+  });
+});

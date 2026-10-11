@@ -16,6 +16,12 @@ class InviteDriverDto {
   driverId!: string;
 }
 
+/// 057 п.18: «2.5», «abc», «-1» → undefined; целое неотрицательное — как есть.
+export function toInt(v?: string): number | undefined {
+  if (v == null || !/^\d+$/.test(v.trim())) return undefined;
+  return Number(v);
+}
+
 @Controller('cargos')
 export class CargosController {
   constructor(
@@ -73,8 +79,9 @@ export class CargosController {
     const isDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
     return this.cargos.companyTab(ctx.companyMember.companyId, {
       tab: safeTab,
-      limit: limit ? Number(limit) || undefined : undefined,
-      offset: offset ? Number(offset) || undefined : undefined,
+      // 057 п.18: только целые (дробные раньше давали 500).
+      limit: toInt(limit),
+      offset: toInt(offset),
       cityId: cityId || undefined,
       from: isDate(from),
       to: isDate(to),

@@ -36,6 +36,8 @@ const num = (v: unknown): number | undefined => {
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
 };
+/// 057 п.18: limit/offset — только целые неотрицательные.
+const int = (v: unknown): number | undefined => (typeof v === 'string' && /^\d+$/.test(v.trim()) ? Number(v) : typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : undefined);
 const bool = (v: unknown): boolean | undefined => (v === undefined || v === '' ? undefined : v === true || v === 'true' || v === '1');
 const str = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
 
@@ -45,8 +47,8 @@ export function parseFeedQuery(q: Record<string, unknown>): FeedQuery {
   const ready = str(q.ready);
   const bodies = str(q.bodyTypeIds);
   return {
-    limit: num(q.limit),
-    offset: num(q.offset),
+    limit: int(q.limit),
+    offset: int(q.offset),
     fromCountryId: str(q.fromCountryId),
     fromCityId: str(q.fromCityId),
     toCountryId: str(q.toCountryId),

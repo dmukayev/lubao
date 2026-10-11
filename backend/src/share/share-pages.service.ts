@@ -33,6 +33,11 @@ export function androidIntentUrl(httpsUrl: string): string {
   return `intent://${u.host}${u.pathname}#Intent;scheme=https;package=${pkg};S.browser_fallback_url=${encodeURIComponent(httpsUrl)};end`;
 }
 
+/// Роботы превью ссылок: WhatsApp, Telegram, Facebook/Instagram, Slack, Twitter…
+export function isPreviewBot(ua: string): boolean {
+  return /WhatsApp|TelegramBot|facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|Discordbot|vkShare|SkypeUriPreview|Viber|bot\b|crawler|spider/i.test(ua);
+}
+
 /// «Ерлан Сейткали» → «Ерлан С.»; одно слово — как есть.
 export function publicName(full: string): string {
   const parts = full.trim().split(/\s+/).filter(Boolean);
@@ -96,7 +101,8 @@ export class SharePagesService {
   async render(code: string, locale: PageLocale, userAgent = ''): Promise<string | null> {
     const link = await this.shares.findByCode(code);
     if (!link) return null;
-    await this.shares.countOpen(link.id);
+    // 057 п.23: превью в мессенджерах (роботы) — не «открытие» человеком.
+    if (!isPreviewBot(userAgent)) await this.shares.countOpen(link.id);
     const links = this.links(link, userAgent);
     // Похожие и грузы компании открываются в приложении по id груза.
     const app = (process.env.APP_PUBLIC_URL || shareBaseUrl()).replace(/\/+$/, '');
