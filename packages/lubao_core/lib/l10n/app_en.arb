@@ -1424,8 +1424,6 @@
   "myDriversOnSite": "On site",
   "myDriversInvite": "Invite to a cargo",
   "myDriversShareText": "{company} added you to its drivers in Lubao. Sign in with a code sent to this number and accept: {url}",
-  "myDriversAlready": "This driver is already yours",
-  "myDriversInvitedExisting": "The driver is already in Lubao — they'll see the invitation in the app",
   "driverSave": "Save to my drivers",
   "driverUnsave": "Remove from my drivers",
   "driverCompaniesTitle": "Companies that list me",

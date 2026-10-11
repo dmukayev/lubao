@@ -67,12 +67,3 @@ class DriverCompanyEntry {
         pending: json['status'] == 'PENDING',
       );
 }
-
-/// Результат «Создать водителя».
-enum CreateDriverResult { created, invitedExisting, alreadyInList }
-
-CreateDriverResult createDriverResultFromJson(String? value) => switch (value) {
-      'INVITED_EXISTING' => CreateDriverResult.invitedExisting,
-      'ALREADY_IN_LIST' => CreateDriverResult.alreadyInList,
-      _ => CreateDriverResult.created,
-    };

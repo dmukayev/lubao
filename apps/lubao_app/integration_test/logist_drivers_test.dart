@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lubao_app/app.dart';
+import 'package:lubao_app/features/shared/share_action.dart';
 import 'package:lubao_app/providers/tracking_provider.dart';
 import 'package:lubao_core/lubao_core.dart';
 
@@ -118,8 +119,9 @@ void main() {
       expect(find.byKey(_d4Card), findsOneWidget);
     });
 
-    // 058 п.6: ☆ у водителя → «Мои»; «Создать водителя» (номер уже в Lubao —
-    // приглашение без дубля, системное меню «Поделиться» не открывается).
+    // 058 п.6: ☆ у водителя → «Мои»; «Создать водителя». 061 п.1: номер уже в
+    // Lubao, но ответ — как на любой номер: ссылка для отправки, в списке —
+    // имя от компании и «ждёт входа», без карточки водителя.
     await run.step(tester, 'мои-водители-звезда-и-создать', () async {
       final star = find.byKey(const Key('driverSave-dddddddd-dddd-4ddd-8ddd-ddddddddd003'));
       await reveal(tester, star);
@@ -133,10 +135,21 @@ void main() {
       await tester.enterText(find.byKey(const Key('myDriversCreateName')), 'Нурлан');
       await tester.enterText(find.byKey(const Key('myDriversCreatePhone')), '+7 701 000 00 04');
       await tester.pumpAndSettle();
+      final shared = <String>[];
+      debugShareOverride = (text) async => shared.add(text);
+      addTearDown(() => debugShareOverride = null);
       await tester.tap(find.byKey(const Key('myDriversCreateSubmit')));
-      await waitFor(tester, find.text(t.myDriversInvitedExisting));
-      await waitFor(tester, find.byKey(const Key('myDriverCard-dddddddd-dddd-4ddd-8ddd-ddddddddd004')));
-      expect(find.descendant(of: find.byKey(const Key('myDriverCard-dddddddd-dddd-4ddd-8ddd-ddddddddd004')), matching: find.textContaining(t.myDriversWaiting)), findsOneWidget);
+      await tester.pumpAndSettle(const Duration(seconds: 1));
+      for (var i = 0; i < 20 && shared.isEmpty; i++) {
+        await tester.pump(const Duration(milliseconds: 250));
+      }
+      debugShareOverride = null;
+      expect(shared, hasLength(1));
+      expect(shared.single, contains('/co/'), reason: 'приглашение — ссылка компании');
+      expect(find.byKey(const Key('myDriverCard-dddddddd-dddd-4ddd-8ddd-ddddddddd004')), findsNothing, reason: 'до «Принять» driverId не отдаётся');
+      final pending = find.ancestor(of: find.text('Нурлан'), matching: find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('myDriverCard-')));
+      await waitFor(tester, pending.first);
+      expect(find.descendant(of: pending.first, matching: find.textContaining(t.myDriversWaiting)), findsOneWidget);
       await tester.tap(find.byKey(const Key('driversTabAll')));
       await waitFor(tester, find.byKey(_d3Card));
     });

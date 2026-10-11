@@ -3792,13 +3792,6 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   }
 
   @override
-  String get myDriversAlready => 'This driver is already yours';
-
-  @override
-  String get myDriversInvitedExisting =>
-      'The driver is already in Lubao — they\'ll see the invitation in the app';
-
-  @override
   String get driverSave => 'Save to my drivers';
 
   @override

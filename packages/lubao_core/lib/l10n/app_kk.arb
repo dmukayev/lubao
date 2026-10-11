@@ -1299,8 +1299,6 @@
   "myDriversOnSite": "Орнында",
   "myDriversInvite": "Жүкке шақыру",
   "myDriversShareText": "{company} сізді Lubao-дағы өз жүргізушілеріне қосты. Осы нөмірге келген кодпен кіріп, шақыруды қабылдаңыз: {url}",
-  "myDriversAlready": "Бұл жүргізуші сізде бар",
-  "myDriversInvitedExisting": "Жүргізуші Lubao-да бар — шақыруды қосымшада көреді",
   "driverSave": "Менің жүргізушілеріме",
   "driverUnsave": "Менікінен алу",
   "driverCompaniesTitle": "Мен тізімде тұрған компаниялар",

@@ -17,6 +17,13 @@ import 'web_share_support_stub.dart' if (dart.library.js_interop) 'web_share_sup
 @visibleForTesting
 Future<void> Function(String text)? debugShareOverride;
 
+/// Готовый текст — в системное меню (в сквозных сценариях — в [debugShareOverride]).
+Future<void> sharePlainText(String text) async {
+  final override = debugShareOverride;
+  if (override != null) return override(text);
+  await SharePlus.instance.share(ShareParams(text: text));
+}
+
 /// 052 п.4–5: «Поделиться». Телефон (и браузер телефона) — сразу системное
 /// меню (`share_plus`): своих кнопок мессенджеров нет. Браузер ПК — своё меню:
 /// текст правится, «Копировать текст», WhatsApp, Telegram, WeChat (QR), «Ссылка».

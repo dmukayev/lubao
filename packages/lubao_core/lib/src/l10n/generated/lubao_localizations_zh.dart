@@ -3702,12 +3702,6 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   }
 
   @override
-  String get myDriversAlready => '该司机已在您的列表中';
-
-  @override
-  String get myDriversInvitedExisting => '该司机已在 Lubao——会在应用中看到邀请';
-
-  @override
   String get driverSave => '加入我的司机';
 
   @override

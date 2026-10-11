@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/driver_avatar.dart';
 import '../../shared/error_feedback.dart';
+import '../../shared/share_action.dart';
 import '../../shared/status_helpers.dart';
 import 'invite_cargo_picker.dart';
 
@@ -47,19 +47,13 @@ class MyDriversView extends ConsumerWidget {
     );
     if (input == null || !context.mounted) return;
     try {
-      final res = await ref.read(companyDriversRepositoryProvider).create(name: input.name, phone: input.phone);
+      final url = await ref.read(companyDriversRepositoryProvider).create(name: input.name, phone: input.phone);
       ref.invalidate(myDriversProvider);
       if (!context.mounted) return;
-      switch (res.result) {
-        case CreateDriverResult.alreadyInList:
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.myDriversAlready)));
-        case CreateDriverResult.invitedExisting:
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.myDriversInvitedExisting)));
-        case CreateDriverResult.created:
-          // Ссылку логист отправляет сам — системное меню (WhatsApp и т. п.).
-          final company = ref.read(sessionProvider)?.company?.name ?? '';
-          await SharePlus.instance.share(ShareParams(text: t.myDriversShareText(company, res.url)));
-      }
+      // 061 п.1: на любой номер — одно и то же: ссылку логист отправляет сам
+      // (системное меню — WhatsApp и т. п.). Есть ли водитель в Lubao, не видно.
+      final company = ref.read(sessionProvider)?.company?.name ?? '';
+      await sharePlainText(t.myDriversShareText(company, url));
     } catch (e) {
       if (context.mounted) showApiError(context, e);
     }

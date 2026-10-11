@@ -71,7 +71,9 @@ void main() {
     // До торга: сделок с этой компанией ещё нет — номер в Lubao → приглашение.
     await run.step(tester, 'компания-добавила-водителя-принять', () async {
       final res = await logist.createDriver('Ержан', '+7 701 000 00 05');
-      expect(res['result'], 'INVITED_EXISTING');
+      // 061 п.1: ответ одинаковый на любой номер.
+      expect(res['status'], 'INVITED');
+      expect(res.containsKey('result'), isFalse);
       // Список «компаний» водителя перечитывается при входе на экран (до 3 попыток).
       final accept = find.byKey(const Key('companyInviteAccept-33333333-3333-4333-8333-333333333002'));
       for (var i = 0; i < 3 && accept.evaluate().isEmpty; i++) {

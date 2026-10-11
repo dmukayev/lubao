@@ -12,11 +12,11 @@ class CompanyDriversRepository {
     return (res.data as List<dynamic>).map((e) => CompanyDriverEntry.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  /// «Создать водителя» → исход и ссылка компании для отправки водителю.
-  Future<({CreateDriverResult result, String url})> create({required String name, required String phone}) async {
+  /// «Создать водителя» → ссылка компании для отправки водителю. 061 п.1: ответ
+  /// одинаковый на любой номер — есть ли человек в Lubao, не узнать.
+  Future<String> create({required String name, required String phone}) async {
     final res = await _client.dio.post('/company-drivers', data: {'name': name, 'phone': phone});
-    final data = res.data as Map<String, dynamic>;
-    return (result: createDriverResultFromJson(data['result'] as String?), url: data['url'] as String? ?? '');
+    return (res.data as Map<String, dynamic>)['url'] as String? ?? '';
   }
 
   Future<void> setSaved(String driverId, bool saved) async {

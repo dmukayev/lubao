@@ -7044,18 +7044,6 @@ abstract class LubaoLocalizations {
   /// **'{company} добавила вас в свои водители в Lubao. Войдите по коду на этот номер и примите приглашение: {url}'**
   String myDriversShareText(String company, String url);
 
-  /// No description provided for @myDriversAlready.
-  ///
-  /// In ru, this message translates to:
-  /// **'Этот водитель уже в ваших'**
-  String get myDriversAlready;
-
-  /// No description provided for @myDriversInvitedExisting.
-  ///
-  /// In ru, this message translates to:
-  /// **'Водитель уже в Lubao — приглашение он увидит в приложении'**
-  String get myDriversInvitedExisting;
-
   /// No description provided for @driverSave.
   ///
   /// In ru, this message translates to:

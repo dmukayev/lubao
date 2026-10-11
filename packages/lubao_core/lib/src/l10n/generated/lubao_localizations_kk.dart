@@ -3789,13 +3789,6 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   }
 
   @override
-  String get myDriversAlready => 'Бұл жүргізуші сізде бар';
-
-  @override
-  String get myDriversInvitedExisting =>
-      'Жүргізуші Lubao-да бар — шақыруды қосымшада көреді';
-
-  @override
   String get driverSave => 'Менің жүргізушілеріме';
 
   @override

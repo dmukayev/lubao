@@ -3776,13 +3776,6 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   }
 
   @override
-  String get myDriversAlready => 'Этот водитель уже в ваших';
-
-  @override
-  String get myDriversInvitedExisting =>
-      'Водитель уже в Lubao — приглашение он увидит в приложении';
-
-  @override
   String get driverSave => 'В мои водители';
 
   @override
