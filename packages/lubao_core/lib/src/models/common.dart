@@ -106,7 +106,8 @@ String _groupDigits(int value) {
 String formatCurrencyAmount(double amount, Currency currency) {
   final n = _groupDigits(amount.round());
   return switch (currency) {
-    Currency.rub || Currency.uzs => '$n ${currencySymbol(currency)}',
+    // 065 (эталоны 34–35): тенге — как рубль и сум, символ после числа: «850 000 ₸».
+    Currency.kzt || Currency.rub || Currency.uzs => '$n ${currencySymbol(currency)}',
     _ => '${currencySymbol(currency)}$n',
   };
 }

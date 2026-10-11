@@ -130,11 +130,13 @@ function route(p: NotificationPayload, locale: Loc): string {
 /// ленте (символ и разряды пробелом), город/кузов из справочника.
 export const CURRENCY_SYMBOL: Record<string, string> = { USD: '$', CNY: '¥', KZT: '₸' };
 const SUM: Record<Loc, string> = { ru: 'сум', kk: 'сум', zh: '苏姆', en: 'UZS' };
-/// Цена как в приложении: «$10 300», «¥7 000», «₸850 000», «1 250 000 ₽»,
+/// Цена как в приложении: «$10 300», «¥7 000», «850 000 ₸», «1 250 000 ₽»,
 /// «95 000 000 сум» (058 п.4).
 export function formatMoney(amount: number, currency: string | null | undefined, locale: Loc = 'ru'): string {
   const n = groupThousands(amount);
   if (currency === 'RUB') return `${n} ₽`;
+  // 065 (эталоны 34–35): тенге — символ после числа: «850 000 ₸».
+  if (currency === 'KZT') return `${n} ₸`;
   if (currency === 'UZS') return `${n} ${SUM[locale]}`;
   const sym = currency ? CURRENCY_SYMBOL[currency] : undefined;
   return sym ? `${sym}${n}` : `${n} ${currency ?? ''}`.trim();

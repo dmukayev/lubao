@@ -33,11 +33,11 @@ describe('страница груза', () => {
     expect(html).toContain('Алматы → Астана');
     expect(html).toContain('1 230 км');
     expect(html).toContain('20 т');
-    expect(html).toContain('₸850 000');
-    expect(html).toContain('₸691/км');
+    expect(html).toContain('850 000 ₸');
+    expect(html).toContain('691 ₸/км');
     expect(html).toContain('погрузка 9 окт');
     expect(html).toContain('ТОО &lt;Транс&gt; · ★ 4.8');
-    expect(html).toContain('<meta property="og:title" content="Алматы → Астана · ₸850 000">');
+    expect(html).toContain('<meta property="og:title" content="Алматы → Астана · 850 000 ₸">');
     expect(html).not.toMatch(/\+7\d|tel:|contactPhone/i);
     expect(html).not.toContain('noindex');
   });

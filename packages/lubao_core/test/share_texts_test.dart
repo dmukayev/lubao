@@ -38,7 +38,7 @@ Future<LubaoLocalizations> _t(String lang) => LubaoLocalizations.delegate.load(L
 void main() {
   test('груз по-русски — как на эталоне 30', () async {
     final text = cargoShareText(await _t('ru'), _ref, _cargo, 'https://lubao.kz/c/7Kx2abc', 'ru');
-    expect(text, '🚛 Алматы → Астана · 1 230 км\nСтройматериалы · 20 т · тент\n💰 ₸850 000 (₸691/км)\n📅 погрузка 9 окт\nОткликнуться: https://lubao.kz/c/7Kx2abc');
+    expect(text, '🚛 Алматы → Астана · 1 230 км\nСтройматериалы · 20 т · тент\n💰 850 000 ₸ (691 ₸/км)\n📅 погрузка 9 окт\nОткликнуться: https://lubao.kz/c/7Kx2abc');
   });
 
   test('4 языка: города и кузов из справочника, ссылка на месте, телефона нет', () async {
@@ -57,7 +57,7 @@ void main() {
     final t = await _t('ru');
     final text = companyShareText(t, _ref, 'ТОО «Транс-Азия»', List.filled(12, _cargo), 'https://lubao.kz/co/abcdefg', 'ru');
     expect(text.split('\n').first, '📦 ТОО «Транс-Азия» — грузы на сегодня');
-    expect(text, contains('1. Алматы → Астана · 20 т тент · ₸850 000'));
+    expect(text, contains('1. Алматы → Астана · 20 т тент · 850 000 ₸'));
     expect(text, contains('10. '));
     expect(text, isNot(contains('11. ')));
     expect(text.split('\n').last, 'Все грузы и отклик: https://lubao.kz/co/abcdefg');
