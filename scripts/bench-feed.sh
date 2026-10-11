@@ -16,17 +16,17 @@ docker exec lubao-postgres-1 psql -U lubao -d lubao_e2e -c "
   SELECT gen_random_uuid()::text, split_part(m.cu, '|', 1), split_part(m.cu, '|', 2), p.id, split_part(d.cc, '|', 2), split_part(d.cc, '|', 1), b.id,
          w.kg, CASE WHEN b.profile = 'VOLUME' THEN round((w.kg / 250.0)::numeric, 1) END, CASE WHEN b.profile = 'VOLUME' AND g % 3 = 0 THEN 10 + g % 23 END,
          CASE b.profile WHEN 'TANK' THEN jsonb_build_object('cargoLiters', 10000 + (g % 20) * 1000, 'cargoProduct', 'FOOD') WHEN 'CAR_CARRIER' THEN jsonb_build_object('carCount', 1 + g % 8) WHEN 'CONTAINER' THEN jsonb_build_object('containerType', CASE WHEN g % 2 = 0 THEN 'C40' ELSE 'C20' END) END,
-         cat.id, pr.amount, pr.cur, CASE WHEN g % 4 = 0 THEN round(pr.amount * 0.3) END, (ARRAY['CASH','CARD','CASHLESS'])[1 + g % 3]::\"PaymentForm\", CASE WHEN g % 2 = 0 THEN 1 + g % 10 END,
+         cat.id, pr.amount, pr.cur::\"Currency\", CASE WHEN g % 4 = 0 THEN round(pr.amount * 0.3) END, (ARRAY['CASH','CARD','CASHLESS'])[1 + g % 3]::\"PaymentForm\", CASE WHEN g % 2 = 0 THEN 1 + g % 10 END,
          current_date + (g % 8), 'PUBLISHED', now() - (g || ' minutes')::interval, current_date + (g % 8) + 3, now(), now(), km.v, round(pr.amount / km.v, 2)
   FROM generate_series(1, $N) g
-  CROSS JOIN LATERAL (SELECT cm.\"companyId\" || '|' || cm.\"userId\" AS cu FROM company_members cm JOIN companies co ON co.id = cm.\"companyId\" WHERE co.\"isVerified\" ORDER BY random() + g * 0 LIMIT 1) m
+  CROSS JOIN LATERAL (SELECT cm.\"companyId\" || '|' || cm.\"userId\" AS cu FROM company_members cm ORDER BY random() + g * 0 LIMIT 1) m
   CROSS JOIN LATERAL (SELECT id FROM points WHERE \"isActive\" ORDER BY random() + g * 0 LIMIT 1) p
   CROSS JOIN LATERAL (SELECT id || '|' || \"countryId\" AS cc FROM cities ORDER BY random() + g * 0 LIMIT 1) d
   CROSS JOIN LATERAL (SELECT id, profile FROM body_types ORDER BY random() + g * 0 LIMIT 1) b
   CROSS JOIN LATERAL (SELECT id FROM cargo_categories ORDER BY random() + g * 0 LIMIT 1) cat
   CROSS JOIN LATERAL (SELECT (500 + (g * 37) % 24500)::numeric AS kg) w
   CROSS JOIN LATERAL (SELECT 200 + (g * 53) % 4800 AS v) km
-  CROSS JOIN LATERAL (SELECT (ARRAY['USD','KZT','CNY','RUB','UZS'])[1 + g % 5] AS cur, (ARRAY[1500, 750000, 10000, 120000, 18000000])[1 + g % 5] * (1 + (g % 7) / 10.0) AS amount) pr;" >/dev/null
+  CROSS JOIN LATERAL (SELECT (ARRAY['USD','KZT','CNY','RUB','UZS'])[1 + g % 5] AS cur, (ARRAY[1500, 750000, 10000, 120000, 18000000])[1 + g % 5] * (1 + (g % 7) / 10.0) AS amount) pr;" 2>&1 | grep -E "ERROR|HINT|LINE" || true
 echo "компаний: $(docker exec lubao-postgres-1 psql -U lubao -d lubao_e2e -tAc "select count(distinct \"companyId\") from cargos where status='PUBLISHED'"), городов погрузки: $(docker exec lubao-postgres-1 psql -U lubao -d lubao_e2e -tAc "select count(distinct \"pointId\") from cargos where status='PUBLISHED'"), кузовов: $(docker exec lubao-postgres-1 psql -U lubao -d lubao_e2e -tAc "select count(distinct \"bodyTypeId\") from cargos where status='PUBLISHED'")"
 docker exec lubao-redis-1 redis-cli -n 1 flushdb >/dev/null
 rm -rf backend/dist-bench && cp -R backend/dist backend/dist-bench
