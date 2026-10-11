@@ -363,7 +363,7 @@ const noLiters = await api('POST', '/cargos', { token: kzOwner048, body: { ...ta
 assert(noLiters.status === 400 && noLiters.json.code === 'INVALID_SPECS', 'груз для цистерны без литров не публикуется', `status=${noLiters.status}`);
 const tankCargo = await api('POST', '/cargos', { token: kzOwner048, body: { ...tankCargoBody, specs: { cargoProduct: 'FOOD', cargoLiters: 20000 } } });
 assert(tankCargo.status < 300 && tankCargo.json.specs?.cargoLiters === 20000, 'груз «цистерна, 20 000 л, пищевое» опубликован', `status=${tankCargo.status}`);
-const feedIds = async (token) => (await api('GET', '/cargos?limit=50', { token })).json.items.map((c) => c.id);
+const feedIds = async (token) => (await api('GET', '/cargos?limit=50&showOtherCities=true', { token })).json.items.map((c) => c.id);
 assert((await feedIds(tankDriver.token)).includes(tankCargo.json.id), 'груз виден водителю цистерны');
 assert(!(await feedIds(tentDriver.token)).includes(tankCargo.json.id), 'груз не виден водителю тента');
 const fit = (await api('GET', `/cargos/fit-count?bodyTypeIds=${tankType.id}&specs=${encodeURIComponent(JSON.stringify({ cargoProduct: 'FOOD', cargoLiters: 20000 }))}`, { token: kzOwner048 })).json;
@@ -459,7 +459,7 @@ assert(noCategory.status === 400 && /CATEGORY_REQUIRED|categoryId/.test(noCatego
 const constructionId = ref047.cargoCategories.find((c) => c.code === 'CONSTRUCTION').id;
 const routed = await api('POST', '/cargos', { token: kzOwner048, body: { ...routeBody, categoryId: constructionId } });
 assert(routed.status < 300 && routed.json.categoryId === constructionId && routed.json.distanceKm === 1230 && routed.json.pricePerKm === 1000, 'Астана → Алматы: 1 230 км, 1 000 ₸/км', JSON.stringify({ s: routed.status, km: routed.json?.distanceKm, perKm: routed.json?.pricePerKm }));
-const feedRow = (await api('GET', '/cargos?limit=100', { token: tentDriver.token })).json.items.find((c) => c.id === routed.json.id);
+const feedRow = (await api('GET', '/cargos?limit=50&showOtherCities=true', { token: tentDriver.token })).json.items.find((c) => c.id === routed.json.id);
 assert(feedRow && feedRow.distanceKm === 1230 && feedRow.pricePerKm === 1000, 'в ленте у груза км и ₸/км', JSON.stringify(feedRow ?? {}).slice(0, 120));
 const hint047 = await api('GET', `/cargos/market-hint?pointId=${astana047.id}&destinationCountryId=${kz046}&destinationCityId=${almatyCity047.id}&weightKg=20000`, { token: kzOwner048 });
 assert(hint047.status === 200 && hint047.json.market === null, 'мало точек по маршруту — подсказки «рынок» нет', JSON.stringify(hint047.json));

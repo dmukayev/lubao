@@ -85,7 +85,9 @@ void main() {
       for (final id in expected) {
         await reveal(tester, find.byKey(Key('feedCargoCard-$id')));
       }
-      expect(visibleCardIds().difference(expected), isEmpty, reason: 'в ленте только грузы в Россию');
+      // Все грузы в Россию (и из других городов — если строку раскрыли).
+      final allRu = ((await api.feed({'toCountryId': ruId, 'showOtherCities': 'true'}))['items'] as List).cast<Map>().map((c) => c['id'] as String).toSet();
+      expect(visibleCardIds().difference(allRu), isEmpty, reason: 'в ленте только грузы в Россию');
       expectNoOverflow(tester);
       // Снова «Все».
       await tester.tap(find.byKey(const Key('feedChipAll')));
