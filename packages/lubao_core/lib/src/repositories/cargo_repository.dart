@@ -187,8 +187,10 @@ class CargoRepository {
     return (res.data as Map<String, dynamic>)['id'] as String;
   }
 
-  Future<CargoResponse> updateResponseStatus(String responseId, String status) async {
-    final res = await _client.dio.patch('/responses/$responseId', data: {'status': status});
+  /// 061 п.3: `expectedPrice` — цена, которую видел логист при «Выбрать»;
+  /// водитель успел сменить — 409 `PRICE_CHANGED`.
+  Future<CargoResponse> updateResponseStatus(String responseId, String status, {double? expectedPrice}) async {
+    final res = await _client.dio.patch('/responses/$responseId', data: {'status': status, if (expectedPrice != null) 'expectedPrice': expectedPrice});
     return CargoResponse.fromJson(res.data as Map<String, dynamic>);
   }
 

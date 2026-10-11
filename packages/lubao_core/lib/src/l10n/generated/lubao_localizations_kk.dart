@@ -3899,6 +3899,10 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   }
 
   @override
+  String get offerPriceChanged =>
+      'Жүргізуші бағаны жаңа ғана өзгертті — жаңасын қарап, қайта таңдаңыз';
+
+  @override
   String get offerCounterButton => 'Қарсы баға';
 
   @override

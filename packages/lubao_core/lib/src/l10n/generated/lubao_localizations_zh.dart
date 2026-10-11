@@ -3810,6 +3810,9 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   }
 
   @override
+  String get offerPriceChanged => '司机刚刚修改了价格——请查看新价格后重新选择';
+
+  @override
   String get offerCounterButton => '还价';
 
   @override

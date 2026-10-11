@@ -1329,6 +1329,7 @@
   "offerCounterDeclinedDriver": "您已拒绝还价——物流方看到的是您的报价",
   "offerLogistProposes": "报价 {price}（您的价格 {cargoPrice}）",
   "offerSelectFor": "以 {price} 选择",
+  "offerPriceChanged": "司机刚刚修改了价格——请查看新价格后重新选择",
   "offerCounterButton": "还价",
   "offerCounterHint": "还价只能发送一次——之后请在聊天中商议",
   "offerCounterSent": "已发送还价：{price}——等待回复",

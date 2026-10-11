@@ -1454,6 +1454,7 @@
   "offerCounterDeclinedDriver": "You declined the counter-offer — the logist sees your price",
   "offerLogistProposes": "Offers {price} (you asked {cargoPrice})",
   "offerSelectFor": "Choose for {price}",
+  "offerPriceChanged": "The driver has just changed the price — check the new one and select again",
   "offerCounterButton": "Counter-offer",
   "offerCounterHint": "You can send a counter-offer once — then agree in the chat",
   "offerCounterSent": "Counter-offer sent: {price} — waiting for an answer",

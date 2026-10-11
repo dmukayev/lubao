@@ -20,9 +20,9 @@ class CargoResponsesScreen extends ConsumerWidget {
 
   final String cargoId;
 
-  Future<void> _updateStatus(BuildContext context, WidgetRef ref, String responseId, String status) async {
+  Future<void> _updateStatus(BuildContext context, WidgetRef ref, String responseId, String status, {double? expectedPrice}) async {
     try {
-      await ref.read(cargoRepositoryProvider).updateResponseStatus(responseId, status);
+      await ref.read(cargoRepositoryProvider).updateResponseStatus(responseId, status, expectedPrice: expectedPrice);
     } catch (e) {
       if (context.mounted) {
         final t = context.l10n;
@@ -107,7 +107,7 @@ class CargoResponsesScreen extends ConsumerWidget {
                 cargo: cargo,
                 refData: referenceData.valueOrNull,
                 waitingDriver: waitingDriver,
-                onUpdateStatus: (status) => _updateStatus(context, ref, response.id, status),
+                onUpdateStatus: (status, {expectedPrice}) => _updateStatus(context, ref, response.id, status, expectedPrice: expectedPrice),
               );
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(cargoResponsesProvider(cargoId)),
@@ -213,7 +213,7 @@ class _ResponseCard extends ConsumerStatefulWidget {
   final bool waitingDriver;
   final double? cargoWeightKg;
   final ReferenceData? refData;
-  final ValueChanged<String> onUpdateStatus;
+  final void Function(String status, {double? expectedPrice}) onUpdateStatus;
 
   @override
   ConsumerState<_ResponseCard> createState() => _ResponseCardState();
@@ -238,7 +238,8 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
       final proceed = await confirmSelectBusyDriver(context, haulHint);
       if (!proceed || !mounted) return;
     }
-    widget.onUpdateStatus('SELECTED');
+    // 061 п.3: цена на кнопке — она же уходит на сверку.
+    widget.onUpdateStatus('SELECTED', expectedPrice: response.offer.proposedPrice ?? widget.cargo?.price);
   }
 
   /// 058 п.5: встречная цена — один раз.

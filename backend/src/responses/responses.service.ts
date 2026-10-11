@@ -433,7 +433,7 @@ export class ResponsesService {
   }
 
 
-  async updateStatus(responseId: string, companyId: string, status: 'SELECTED' | 'REJECTED', actorUserId?: string, opts: { agreedPrice?: Prisma.Decimal | number } = {}) {
+  async updateStatus(responseId: string, companyId: string, status: 'SELECTED' | 'REJECTED', actorUserId?: string, opts: { agreedPrice?: Prisma.Decimal | number | null; expectedPrice?: number } = {}) {
     const response = await this.prisma.response.findUnique({
       where: { id: responseId },
       include: { driver: true, cargo: true },
@@ -472,6 +472,15 @@ export class ResponsesService {
       // 058 п.2: груз уходит из ленты и ждущие отклики закрываются, только
       // когда набрано нужное число машин.
       const filled = await this.claimPlace(tx, response.cargoId);
+      // 061 п.3: цена в сделке — та, что видел логист. Водитель мог сменить
+      // свою цену в эту секунду — сверяем под тем же замком груза.
+      if (opts.expectedPrice !== undefined) {
+        const fresh = await tx.response.findUniqueOrThrow({ where: { id: responseId }, select: { proposedPrice: true } });
+        const price = opts.agreedPrice ?? fresh.proposedPrice ?? response.cargo.price;
+        if (Math.abs(Number(price) - opts.expectedPrice) > 0.005) {
+          throw new ConflictException({ code: 'PRICE_CHANGED', message: 'The driver changed the price', price: Number(price) });
+        }
+      }
       const takenFrom = filled ? await this.markCargoTaken(tx, response.cargoId, responseId) : [];
       // Условный апдейт (п.22): статус мог уйти из PENDING между чтением
       // снаружи транзакции и замком — 0 затронутых = отклик уже решён.
@@ -589,10 +598,16 @@ export class ResponsesService {
     if (response.driverId !== driverId) throw new ForbiddenException('Not your response');
     if (response.status !== 'PENDING') throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
     if (response.counterStatus === 'PENDING') throw new ConflictException({ code: 'COUNTER_PENDING', message: 'Answer the counter-offer first' });
-    const updated = await this.prisma.response.update({
-      where: { id: responseId },
-      data: { proposedPrice, proposedComment: proposedComment ?? null },
-      include: { driver: true },
+    // 061 п.3: под замком груза и только из PENDING — цена не меняется
+    // между сверкой и созданием сделки при «Выбрать».
+    const updated = await this.prisma.$transaction(async (tx) => {
+      await this.lockCargo(tx, response.cargoId);
+      const res = await tx.response.updateMany({
+        where: { id: responseId, status: 'PENDING', OR: [{ counterStatus: null }, { counterStatus: { not: 'PENDING' } }] },
+        data: { proposedPrice, proposedComment: proposedComment ?? null },
+      });
+      if (res.count === 0) throw new ConflictException({ code: 'RESPONSE_NOT_PENDING', message: 'Response is no longer pending' });
+      return tx.response.findUniqueOrThrow({ where: { id: responseId }, include: { driver: true } });
     });
     const contactUserId = await resolveCargoContactUserId(this.prisma, response.cargo);
     if (proposedPrice != null) {

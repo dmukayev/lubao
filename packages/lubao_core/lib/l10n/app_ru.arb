@@ -1521,6 +1521,7 @@
   "@offerLogistProposes": { "placeholders": {"price": {"type": "String"}, "cargoPrice": {"type": "String"}} },
   "offerSelectFor": "Выбрать за {price}",
   "@offerSelectFor": { "placeholders": {"price": {"type": "String"}} },
+  "offerPriceChanged": "Водитель только что изменил цену — посмотрите новую и выберите снова",
   "offerCounterButton": "Встречная цена",
   "offerCounterHint": "Встречную цену можно отправить один раз — дальше договаривайтесь в чате",
   "offerCounterSent": "Встречная цена отправлена: {price} — ждём ответ",

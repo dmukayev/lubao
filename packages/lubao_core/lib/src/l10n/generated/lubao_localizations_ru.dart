@@ -3886,6 +3886,10 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   }
 
   @override
+  String get offerPriceChanged =>
+      'Водитель только что изменил цену — посмотрите новую и выберите снова';
+
+  @override
   String get offerCounterButton => 'Встречная цена';
 
   @override

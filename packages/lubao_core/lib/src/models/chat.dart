@@ -16,6 +16,7 @@ class ChatThread {
     this.counterpartCountryCode,
     this.cargoResponseId,
     this.cargoResponseStatus,
+    this.cargoResponseProposedPrice,
   });
 
   final String id;
@@ -38,6 +39,8 @@ class ChatThread {
   /// «Готов взять», `PENDING` — «Отклик отправлен»+«Отозвать».
   final String? cargoResponseId;
   final String? cargoResponseStatus;
+  /// 061 п.3: своя цена водителя в отклике (в валюте груза), `null` — по цене груза.
+  final double? cargoResponseProposedPrice;
 
   /// 058 п.7: собеседник «в сети / был в сети».
   final DateTime? lastSeenAt;
@@ -57,6 +60,7 @@ class ChatThread {
         counterpartCountryCode: json['counterpartCountryCode'] as String?,
         cargoResponseId: json['cargoResponseId'] as String?,
         cargoResponseStatus: json['cargoResponseStatus'] as String?,
+        cargoResponseProposedPrice: (json['cargoResponseProposedPrice'] as num?)?.toDouble(),
       );
 }
 

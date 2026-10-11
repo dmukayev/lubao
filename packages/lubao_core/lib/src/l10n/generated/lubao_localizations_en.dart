@@ -3902,6 +3902,10 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   }
 
   @override
+  String get offerPriceChanged =>
+      'The driver has just changed the price — check the new one and select again';
+
+  @override
   String get offerCounterButton => 'Counter-offer';
 
   @override

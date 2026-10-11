@@ -250,7 +250,8 @@ void main() {
       await waitFor(tester, find.textContaining('Борис'));
       await tester.tap(find.textContaining('Борис').first);
       await waitFor(tester, find.byKey(const Key('chatCardActionButton')));
-      expect(find.descendant(of: find.byKey(const Key('chatCardActionButton')), matching: find.text(t.responseSelect)), findsOneWidget);
+      // 061 п.3: «Выбрать за …» — с ценой, которая уйдёт на сверку.
+      expect(find.descendant(of: find.byKey(const Key('chatCardActionButton')), matching: find.textContaining(t.offerSelectFor('').trim())), findsOneWidget);
       await tester.tap(find.byKey(const Key('chatCardActionButton')));
       final deadline = DateTime.now().add(const Duration(seconds: 20));
       while (find.byKey(const Key('chatCardActionButton')).evaluate().isNotEmpty) {

@@ -192,6 +192,8 @@ export class ChatsService {
       counterpartCountryCode: ctx.driver ? companyMember?.company.country?.code ?? null : null,
       cargoResponseId: cargoResponse?.id ?? null,
       cargoResponseStatus: cargoResponse?.status ?? null,
+      // 061 п.3: «Выбрать за …» в чате — по цене водителя (нет своей — цена груза).
+      cargoResponseProposedPrice: cargoResponse?.proposedPrice != null ? Number(cargoResponse.proposedPrice) : null,
     };
   }
 

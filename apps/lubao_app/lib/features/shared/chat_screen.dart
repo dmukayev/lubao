@@ -646,11 +646,12 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
     }
   }
 
-  Future<void> _selectDriver(String cargoId, String driverId, String? responseId) async {
+  Future<void> _selectDriver(String cargoId, String driverId, String? responseId, {double? expectedPrice}) async {
     setState(() => _busy = true);
     try {
       if (responseId != null) {
-        await ref.read(cargoRepositoryProvider).updateResponseStatus(responseId, 'SELECTED');
+        // 061 п.3: цена с кнопки «Выбрать за …» — на сверку под замком груза.
+        await ref.read(cargoRepositoryProvider).updateResponseStatus(responseId, 'SELECTED', expectedPrice: expectedPrice);
       } else {
         await ref.read(cargoRepositoryProvider).inviteDriver(cargoId, driverId);
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.driversAtPointInviteSent)));
@@ -824,11 +825,13 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
         if (responseStatus == null || responseStatus == 'PENDING') {
           // Нет отклика — это приглашение («Пригласить к грузу»), есть —
           // выбор из откликов (038, п.27).
+          // 061 п.3: «Выбрать за …» — цена водителя (нет своей — цена груза).
+          final selectPrice = thread.cargoResponseProposedPrice ?? cargo.price;
           actionRow = PrimaryButton(
             key: const Key('chatCardActionButton'),
-            label: responseStatus == null ? t.driversAtPointInvite : t.responseSelect,
+            label: responseStatus == null ? t.driversAtPointInvite : t.offerSelectFor(formatMoney(selectPrice, cargo.currency)),
             loading: _busy,
-            onPressed: () => _selectDriver(thread.cargoId!, thread.driverId, thread.cargoResponseId),
+            onPressed: () => _selectDriver(thread.cargoId!, thread.driverId, thread.cargoResponseId, expectedPrice: responseStatus == null ? null : selectPrice),
           );
         } else if (responseStatus == 'INVITED') {
           // Ждём согласия водителя (041, п.3): «Выбрать» из INVITED нельзя.

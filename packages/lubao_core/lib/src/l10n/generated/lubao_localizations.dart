@@ -7224,6 +7224,12 @@ abstract class LubaoLocalizations {
   /// **'Выбрать за {price}'**
   String offerSelectFor(String price);
 
+  /// No description provided for @offerPriceChanged.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель только что изменил цену — посмотрите новую и выберите снова'**
+  String get offerPriceChanged;
+
   /// No description provided for @offerCounterButton.
   ///
   /// In ru, this message translates to:

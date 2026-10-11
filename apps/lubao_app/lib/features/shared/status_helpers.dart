@@ -230,6 +230,8 @@ String? responseConflictText(LubaoLocalizations t, Object error) {
       return t.cargoAlreadyResponded;
     case 'CARGO_NOT_AVAILABLE':
       return t.cargoNotAvailable;
+    case 'PRICE_CHANGED':
+      return t.offerPriceChanged;
     default:
       return null;
   }

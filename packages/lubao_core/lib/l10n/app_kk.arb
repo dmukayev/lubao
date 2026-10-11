@@ -1329,6 +1329,7 @@
   "offerCounterDeclinedDriver": "Қарсы бағадан бас тарттыңыз — логист сіздің бағаңызды көреді",
   "offerLogistProposes": "{price} ұсынады (сіз {cargoPrice} сұрадыңыз)",
   "offerSelectFor": "{price} бағасына таңдау",
+  "offerPriceChanged": "Жүргізуші бағаны жаңа ғана өзгертті — жаңасын қарап, қайта таңдаңыз",
   "offerCounterButton": "Қарсы баға",
   "offerCounterHint": "Қарсы бағаны бір рет жіберуге болады — әрі қарай чатта келісіңіз",
   "offerCounterSent": "Қарсы баға жіберілді: {price} — жауап күтеміз",

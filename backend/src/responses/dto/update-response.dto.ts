@@ -3,6 +3,14 @@ import { IsIn, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class
 export class UpdateResponseDto {
   @IsIn(['SELECTED', 'REJECTED'])
   status!: 'SELECTED' | 'REJECTED';
+
+  /// 061 п.3: цена, которую видел логист при «Выбрать»; разошлась с ценой
+  /// водителя под замком груза — 409 PRICE_CHANGED.
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1_000_000_000)
+  expectedPrice?: number;
 }
 
 export class CreateResponseDto {

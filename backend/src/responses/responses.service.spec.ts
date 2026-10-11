@@ -8,7 +8,7 @@ function txMock() {
   return {
     response: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), update: jest.fn(), create: jest.fn(), findUniqueOrThrow: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     // 058 п.2: сколько машин нужно (по умолчанию одна).
-    cargo: { updateMany: jest.fn(), findUnique: jest.fn().mockResolvedValue({ trucksNeeded: 1 }) },
+    cargo: { updateMany: jest.fn(), findUnique: jest.fn().mockResolvedValue({ trucksNeeded: 1, status: 'PUBLISHED' }) },
     // count — сколько мест уже занято сделками (038 п.1, 058 п.2).
     deal: { create: jest.fn(), count: jest.fn().mockResolvedValue(0) },
     chat: { updateMany: jest.fn() },
@@ -783,7 +783,9 @@ describe('058 п.5: своя цена водителя и один встреч�
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+      $queryRaw: jest.fn().mockResolvedValue([]),
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const notifications = { notify: jest.fn() };
     const realtime = { emitResponsesUpdated: jest.fn() };
     return { prisma, notifications, service: new ResponsesService(prisma, notifications as any, FAKE_CHAT_SYSTEM as any, undefined, realtime as any) };
@@ -839,5 +841,55 @@ describe('058 п.5: своя цена водителя и один встреч�
     await service.createForCargo('cargo1', 'd1', undefined, { proposedPrice: 9500, proposedComment: 'дизель подорожал' });
     expect(prisma.response.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ proposedPrice: 9500, proposedComment: 'дизель подорожал' }) }));
     expect(notifications.notify).toHaveBeenCalledWith(expect.anything(), 'PRICE_PROPOSED', expect.objectContaining({ price: 9500 }));
+  });
+});
+
+describe('061 п.3/п.4б: цена при выборе, правка цены под замком, груз не в поиске', () => {
+  function selectSetup(proposedPrice: number | null, cargoStatus = 'PUBLISHED') {
+    const tx = txMock();
+    tx.cargo.findUnique.mockResolvedValue({ trucksNeeded: 1, status: cargoStatus });
+    tx.response.findUniqueOrThrow.mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', proposedPrice, driver: { userId: 'user-d1' } });
+    tx.deal.create.mockResolvedValue({ id: 'deal1', cargoId: 'cargo1', driverId: 'd1', companyId: 'c1' });
+    const prisma: any = {
+      response: { findUnique: jest.fn().mockResolvedValue({ cargoId: 'cargo1', status: 'PENDING', cargo: { companyId: 'c1', price: 10300 } }) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+    };
+    return { tx, service: new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any) };
+  }
+
+  it('водитель сменил цену в момент выбора — 409 PRICE_CHANGED, сделки нет', async () => {
+    const { tx, service } = selectSetup(9700);
+    await expect(service.updateStatus('r1', 'c1', 'SELECTED', 'logist-1', { expectedPrice: 9500 })).rejects.toMatchObject({ response: { code: 'PRICE_CHANGED', price: 9700 } });
+    expect(tx.deal.create).not.toHaveBeenCalled();
+  });
+
+  it('цена та, что видел логист, — сделка по ней; без своей цены — цена груза', async () => {
+    const a = selectSetup(9500);
+    await a.service.updateStatus('r1', 'c1', 'SELECTED', 'logist-1', { expectedPrice: 9500 });
+    expect(a.tx.deal.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ agreedPrice: 9500 }) }));
+    const b = selectSetup(null);
+    await b.service.updateStatus('r1', 'c1', 'SELECTED', 'logist-1', { expectedPrice: 10300 });
+    expect(b.tx.deal.create).toHaveBeenCalled();
+  });
+
+  it('груз уже не в поиске (снят / в работе) — место не занимается', async () => {
+    const { tx, service } = selectSetup(null, 'IN_DEAL');
+    await expect(service.updateStatus('r1', 'c1', 'SELECTED')).rejects.toMatchObject({ response: { code: 'CARGO_NOT_AVAILABLE' } });
+    expect(tx.deal.create).not.toHaveBeenCalled();
+  });
+
+  it('правка своей цены — под замком груза и только из PENDING', async () => {
+    const tx: any = {
+      $queryRaw: jest.fn().mockResolvedValue([]),
+      response: { updateMany: jest.fn().mockResolvedValue({ count: 0 }), findUniqueOrThrow: jest.fn() },
+    };
+    const prisma: any = {
+      response: { findUnique: jest.fn().mockResolvedValue({ id: 'r1', cargoId: 'cargo1', driverId: 'd1', status: 'PENDING', counterStatus: null, driver: { userId: 'u1' }, cargo: { companyId: 'c1' } }) },
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+    };
+    const service = new ResponsesService(prisma, { notify: jest.fn() } as any, FAKE_CHAT_SYSTEM as any);
+    await expect(service.updateOffer('r1', 'd1', 9700)).rejects.toMatchObject({ response: { code: 'RESPONSE_NOT_PENDING' } });
+    expect(tx.$queryRaw).toHaveBeenCalled();
+    expect(tx.response.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ id: 'r1', status: 'PENDING' }) }));
   });
 });
