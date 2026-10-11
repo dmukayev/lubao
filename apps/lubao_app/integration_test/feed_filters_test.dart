@@ -194,7 +194,8 @@ void main() {
       await reveal(tester, find.byKey(const Key('feedOtherCitiesCollapse')));
       await tester.tap(find.byKey(const Key('feedOtherCitiesCollapse')));
       await tester.pumpAndSettle(const Duration(seconds: 1));
-      expect(find.byKey(const Key('feedOtherCitiesExpand')), findsOneWidget);
+      // Снова свёрнуты — строка «Грузы из других городов» внизу ленты.
+      await reveal(tester, find.byKey(const Key('feedOtherCitiesExpand')));
     });
   });
 }
