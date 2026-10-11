@@ -353,7 +353,7 @@ void main() {
       final selected = find.byWidgetPredicate((w) => w.key is ValueKey && w.key.toString().contains('responseCard-'));
       await waitFor(tester, selected);
       await tester.tap(selected.first);
-      await waitFor(tester, find.text(t.dealDetailTitle));
+      await waitFor(tester, find.byKey(const Key('dealTitle')));
       expectInsideSafeZone(tester);
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
@@ -370,7 +370,7 @@ void main() {
       await waitAndReveal(tester, card);
       expect(find.byKey(Key('cargoRepeat-$cargoId')), findsNothing, reason: 'в работе «Повторить» нет');
       await tester.tap(card);
-      await waitFor(tester, find.text(t.dealDetailTitle));
+      await waitFor(tester, find.byKey(const Key('dealTitle')));
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
       expectInsideSafeZone(tester);
