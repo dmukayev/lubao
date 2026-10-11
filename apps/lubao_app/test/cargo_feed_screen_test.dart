@@ -51,10 +51,13 @@ class _FakeCargoRepository extends CargoRepository {
   final requestedOffsets = <int>[];
 
   @override
-  Future<CargoFeedPage> feed({int limit = 30, int offset = 0}) async {
+  Future<CargoFeedPage> feed({int limit = 30, int offset = 0, FeedFilter filter = FeedFilter.empty}) async {
     requestedOffsets.add(offset);
     return pages[offset]!;
   }
+
+  @override
+  Future<int> feedCount(FeedFilter filter) async => pages[0]?.total ?? 0;
 }
 
 class _FakeArrivalRepository extends ArrivalRepository {
@@ -137,24 +140,19 @@ void main() {
     final first = tester.getTopLeft(find.byKey(const Key('feedCargoCard-here'))).dy;
     final second = tester.getTopLeft(find.byKey(const Key('feedCargoCard-far'))).dy;
     expect(first, lessThan(second));
-    expect(find.byKey(const Key('feedLoadMoreButton')), findsNothing);
   });
 
-  testWidgets('лента страницами: «Показать ещё» дозагружает следующую страницу и прячется, когда всё показано', (tester) async {
+  testWidgets('059 п.6: бесконечная прокрутка — следующая страница грузится сама, без «Ещё»', (tester) async {
     final cargos = _FakeCargoRepository({
       0: CargoFeedPage(items: [_cargo('c1', pointId: 'p-almaty', rank: 0), _cargo('c2', pointId: 'p-almaty', rank: 0)], total: 3, offset: 0),
       2: CargoFeedPage(items: [_cargo('c3', pointId: 'p-astana', rank: 2)], total: 3, offset: 2),
     });
     await _pump(tester, cargos: cargos, arrivals: _FakeArrivalRepository(const MyArrivals(current: null, all: [])));
 
-    expect(find.byKey(const Key('feedCargoCard-c3')), findsNothing);
-    await tester.ensureVisible(find.byKey(const Key('feedLoadMoreButton')));
-    await tester.tap(find.byKey(const Key('feedLoadMoreButton')));
     await tester.pumpAndSettle();
-
     expect(cargos.requestedOffsets, [0, 2]);
+    await tester.scrollUntilVisible(find.byKey(const Key('feedCargoCard-c3')), 300, scrollable: find.byType(Scrollable).first);
     expect(find.byKey(const Key('feedCargoCard-c3')), findsOneWidget);
-    expect(find.byKey(const Key('feedLoadMoreButton')), findsNothing);
   });
 
   testWidgets('несколько анонсов: текущий — крупно, остальные — строками с «Отменить»', (tester) async {

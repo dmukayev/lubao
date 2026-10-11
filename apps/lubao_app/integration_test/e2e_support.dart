@@ -131,6 +131,8 @@ Future<void> clearPersistedSession() async {
   // Согласия на геопозицию тоже в Keychain и переживают `uninstall` (041, п.11):
   // без чистки согласие прошлого сценария скрыло бы шторку в следующем.
   await TrackingConsentStore().clear().timeout(e2eHttpTimeout, onTimeout: () => debugPrint('E2E: TrackingConsentStore.clear — таймаут'));
+  // 059: фильтр ленты тоже в Keychain — сценарий начинает с чистой ленты.
+  await FeedFilterStore().clear().timeout(e2eHttpTimeout, onTimeout: () => debugPrint('E2E: FeedFilterStore.clear — таймаут'));
 }
 
 /// Роль «водитель» → телефон → код 1111 → ждём главного экрана (кнопка
@@ -462,6 +464,13 @@ class DriverApi {
     return DriverApi._(dio);
   }
 
+  /// 059: лента так, как её видит водитель (те же параметры, что у приложения).
+  Future<Map<String, dynamic>> feed(Map<String, dynamic> query) async {
+    final res = await _dio.get('/cargos', queryParameters: {'limit': 50, ...query});
+    if (res.statusCode! >= 300) fail('Лента через API не загрузилась: ${res.statusCode} ${res.data}');
+    return Map<String, dynamic>.from(res.data as Map);
+  }
+
   Future<void> respond(String cargoId) async {
     final res = await _dio.post('/cargos/$cargoId/responses', data: {});
     if (res.statusCode! >= 300) fail('Отклик водителя через API не удался: ${res.statusCode} ${res.data}');
@@ -502,7 +511,23 @@ Future<void> reveal(WidgetTester tester, Finder finder) async {
     try {
       await tester.scrollUntilVisible(finder, 200, scrollable: best, maxScrolls: 30);
     } catch (_) {
-      await tester.scrollUntilVisible(finder, -200, scrollable: best, maxScrolls: 60);
+      try {
+        await tester.scrollUntilVisible(finder, -200, scrollable: best, maxScrolls: 60);
+      } catch (e) {
+        // 059 п.5: груз из другого города — в ленте свёрнут строкой «Грузы из
+        // других городов»; раскрываем её и ищем снова.
+        final expand = find.byKey(const Key('feedOtherCitiesExpand'));
+        if (!finder.toString().contains('feedCargoCard-')) rethrow;
+        await tester.scrollUntilVisible(expand, 300, scrollable: best, maxScrolls: 80);
+        await tester.tap(expand);
+        await tester.pumpAndSettle(const Duration(milliseconds: 100), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 5)).catchError((_) => 0);
+        await waitForCondition(tester, () => find.byKey(const Key('feedOtherCitiesCollapse')).evaluate().isNotEmpty || finder.evaluate().isNotEmpty, timeout: const Duration(seconds: 10)).catchError((_) {});
+        try {
+          await tester.scrollUntilVisible(finder, 200, scrollable: best, maxScrolls: 60);
+        } catch (_) {
+          await tester.scrollUntilVisible(finder, -200, scrollable: best, maxScrolls: 80);
+        }
+      }
     }
   }
   await tester.ensureVisible(finder);

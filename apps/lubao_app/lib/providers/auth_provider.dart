@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 import 'api_providers.dart';
 import 'locale_provider.dart';
+import 'data_providers.dart';
 import 'tracking_provider.dart';
 
 /// true, пока идёт попытка восстановить сессию из secure storage при
@@ -178,6 +179,9 @@ class SessionController extends StateNotifier<Session?> {
     state = null;
     // Согласия на геопозицию относятся к человеку, а не к устройству (041, п.11).
     await _ref.read(trackingConsentProvider.notifier).reset();
+    // 059: фильтр ленты — тоже его, не следующего на этом телефоне.
+    await _ref.read(feedFilterStoreProvider).clear();
+    _ref.invalidate(feedFilterProvider);
   }
 
   /// 043 п.2: согласие на обработку ПДн дано — экран больше не показываем.

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lubao_app/features/shared/error_feedback.dart';
-import 'package:lubao_app/features/shared/number_field.dart';
 import 'package:lubao_app/providers/locale_provider.dart';
 import 'package:lubao_core/lubao_core.dart';
 

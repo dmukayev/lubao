@@ -8,6 +8,7 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import 'favorite_button.dart';
+import 'feed_filters.dart';
 import '../profile/driver_companies.dart';
 import '../../shared/status_helpers.dart';
 import 'announce_arrival_sheet.dart';
@@ -51,7 +52,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
   Future<void> _loadMore(CargoFeedPage first) async {
     setState(() => _loadingMore = true);
     try {
-      final page = await ref.read(cargoRepositoryProvider).feed(offset: first.items.length + _more.length);
+      final page = await ref.read(cargoRepositoryProvider).feed(offset: first.items.length + _more.length, filter: ref.read(feedFilterProvider));
       if (!mounted) return;
       setState(() {
         _more.addAll(page.items);
@@ -107,7 +108,19 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                   ref.invalidate(dealsMineProvider);
                   ref.invalidate(driverCompaniesProvider);
                 },
-                child: ListView(
+                // 059 п.6: бесконечная прокрутка вместо «Ещё».
+                // ScrollMetricsNotification — и когда страница короче экрана (прокрутки нет).
+                child: NotificationListener<Notification>(
+                  onNotification: (n) {
+                    final metrics = n is ScrollNotification ? n.metrics : n is ScrollMetricsNotification ? n.metrics : null;
+                    if (metrics != null && metrics.axis == Axis.vertical && metrics.extentAfter < 800 && hasMore && !_loadingMore) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted && !_loadingMore) _loadMore(first);
+                      });
+                    }
+                    return false;
+                  },
+                  child: ListView(
                   padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.lg),
                   children: [
                     // 053 п.6: наверху — строка статуса (045 п.11, главный вход),
@@ -136,6 +149,10 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                       child: Text(t.driverHomeFeedCount(_total), style: AppTextStyles.title),
                     ),
                     const SizedBox(height: AppSpacing.sm),
+                    // 059: чипы «куда», фильтры, сортировка; активные фильтры с ✕.
+                    FeedChipsBar(chips: first.chips, refData: refData),
+                    ActiveFeedFilters(refData: refData),
+                    const SizedBox(height: AppSpacing.xs),
                     if (items.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
@@ -143,18 +160,37 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                       )
                     else
                       for (final cargo in items) _feedCard(context, refData, cargo),
-                    if (hasMore)
+                    if (_loadingMore)
+                      const Padding(
+                        padding: EdgeInsets.all(AppSpacing.md),
+                        child: Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))),
+                      ),
+                    // 059 п.5: грузы из других городов — свёрнуты строкой.
+                    if (!hasMore && first.otherCitiesCount > 0 && !ref.watch(feedFilterProvider).showOtherCities)
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen, vertical: AppSpacing.md),
-                        child: OutlinedButton(
-                          key: const Key('feedLoadMoreButton'),
-                          onPressed: _loadingMore ? null : () => _loadMore(first),
-                          child: _loadingMore
-                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                              : Text(t.feedLoadMore),
+                        padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 0),
+                        child: AppCard(
+                          key: const Key('feedOtherCitiesExpand'),
+                          onTap: () => ref.read(feedFilterProvider.notifier).set(ref.read(feedFilterProvider).copyWith(showOtherCities: true)),
+                          child: Row(
+                            children: [
+                              Expanded(child: Text(t.feedOtherCities('${first.otherCitiesCount}'), style: AppTextStyles.bodyStrong)),
+                              Text(t.feedOtherCitiesShow, style: AppTextStyles.body.copyWith(color: AppColors.primary)),
+                              const Icon(LucideIcons.chevronRight, color: AppColors.primary),
+                            ],
+                          ),
+                        ),
+                      ),
+                    if (!hasMore && ref.watch(feedFilterProvider).showOtherCities)
+                      Center(
+                        child: TextButton(
+                          key: const Key('feedOtherCitiesCollapse'),
+                          onPressed: () => ref.read(feedFilterProvider.notifier).set(ref.read(feedFilterProvider).copyWith(showOtherCities: false)),
+                          child: Text(t.feedOtherCitiesHide),
                         ),
                       ),
                   ],
+                ),
                 ),
               );
             },

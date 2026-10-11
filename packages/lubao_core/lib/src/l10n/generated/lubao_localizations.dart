@@ -6708,6 +6708,222 @@ abstract class LubaoLocalizations {
   /// **'Сколько машин нужно'**
   String get postCargoTrucks;
 
+  /// No description provided for @feedChipAll.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все {count}'**
+  String feedChipAll(String count);
+
+  /// No description provided for @feedChipHome.
+  ///
+  /// In ru, this message translates to:
+  /// **'Домой {count}'**
+  String feedChipHome(String count);
+
+  /// No description provided for @feedFilters.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фильтры'**
+  String get feedFilters;
+
+  /// No description provided for @feedSort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сортировка'**
+  String get feedSort;
+
+  /// No description provided for @feedSortStandard.
+  ///
+  /// In ru, this message translates to:
+  /// **'Как обычно'**
+  String get feedSortStandard;
+
+  /// No description provided for @feedSortPriceAsc.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дешевле'**
+  String get feedSortPriceAsc;
+
+  /// No description provided for @feedSortPriceDesc.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дороже'**
+  String get feedSortPriceDesc;
+
+  /// No description provided for @feedSortPerKm.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выгоднее ₸/км'**
+  String get feedSortPerKm;
+
+  /// No description provided for @feedSortReady.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ближе погрузка'**
+  String get feedSortReady;
+
+  /// No description provided for @feedSortDistanceAsc.
+  ///
+  /// In ru, this message translates to:
+  /// **'Короче маршрут'**
+  String get feedSortDistanceAsc;
+
+  /// No description provided for @feedSortDistanceDesc.
+  ///
+  /// In ru, this message translates to:
+  /// **'Длиннее маршрут'**
+  String get feedSortDistanceDesc;
+
+  /// No description provided for @feedSortNewest.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новые'**
+  String get feedSortNewest;
+
+  /// No description provided for @feedFilterFrom.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откуда'**
+  String get feedFilterFrom;
+
+  /// No description provided for @feedFilterTo.
+  ///
+  /// In ru, this message translates to:
+  /// **'Куда'**
+  String get feedFilterTo;
+
+  /// No description provided for @feedFilterAnyCity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Любой город'**
+  String get feedFilterAnyCity;
+
+  /// No description provided for @feedFilterBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Кузов'**
+  String get feedFilterBody;
+
+  /// No description provided for @feedFilterBodyMine.
+  ///
+  /// In ru, this message translates to:
+  /// **'Моя машина'**
+  String get feedFilterBodyMine;
+
+  /// No description provided for @feedFilterWeight.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вес, т'**
+  String get feedFilterWeight;
+
+  /// No description provided for @feedFilterMin.
+  ///
+  /// In ru, this message translates to:
+  /// **'от'**
+  String get feedFilterMin;
+
+  /// No description provided for @feedFilterMax.
+  ///
+  /// In ru, this message translates to:
+  /// **'до'**
+  String get feedFilterMax;
+
+  /// No description provided for @feedFilterPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цена'**
+  String get feedFilterPrice;
+
+  /// No description provided for @feedFilterPerKm.
+  ///
+  /// In ru, this message translates to:
+  /// **'₸/км от'**
+  String get feedFilterPerKm;
+
+  /// No description provided for @feedFilterReady.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дата погрузки'**
+  String get feedFilterReady;
+
+  /// No description provided for @feedReadyAny.
+  ///
+  /// In ru, this message translates to:
+  /// **'Любая'**
+  String get feedReadyAny;
+
+  /// No description provided for @feedReadyToday.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сегодня'**
+  String get feedReadyToday;
+
+  /// No description provided for @feedReady3d.
+  ///
+  /// In ru, this message translates to:
+  /// **'3 дня'**
+  String get feedReady3d;
+
+  /// No description provided for @feedReadyWeek.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неделя'**
+  String get feedReadyWeek;
+
+  /// No description provided for @feedFilterAdvance.
+  ///
+  /// In ru, this message translates to:
+  /// **'Только с авансом'**
+  String get feedFilterAdvance;
+
+  /// No description provided for @feedFilterReset.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сбросить'**
+  String get feedFilterReset;
+
+  /// No description provided for @feedFilterShow.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показать: {count}'**
+  String feedFilterShow(String count);
+
+  /// No description provided for @feedOtherCities.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грузы из других городов · {count}'**
+  String feedOtherCities(String count);
+
+  /// No description provided for @feedOtherCitiesShow.
+  ///
+  /// In ru, this message translates to:
+  /// **'показать'**
+  String get feedOtherCitiesShow;
+
+  /// No description provided for @feedOtherCitiesHide.
+  ///
+  /// In ru, this message translates to:
+  /// **'Свернуть грузы из других городов'**
+  String get feedOtherCitiesHide;
+
+  /// No description provided for @feedActiveWeight.
+  ///
+  /// In ru, this message translates to:
+  /// **'вес {range} т'**
+  String feedActiveWeight(String range);
+
+  /// No description provided for @feedActivePerKm.
+  ///
+  /// In ru, this message translates to:
+  /// **'от {value} ₸/км'**
+  String feedActivePerKm(String value);
+
+  /// No description provided for @feedActiveAdvance.
+  ///
+  /// In ru, this message translates to:
+  /// **'с авансом'**
+  String get feedActiveAdvance;
+
   /// No description provided for @preVerifyTitle.
   ///
   /// In ru, this message translates to:

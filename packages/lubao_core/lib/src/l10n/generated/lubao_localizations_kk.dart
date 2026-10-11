@@ -3603,6 +3603,126 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get postCargoTrucks => 'Қанша көлік керек';
 
   @override
+  String feedChipAll(String count) {
+    return 'Барлығы $count';
+  }
+
+  @override
+  String feedChipHome(String count) {
+    return 'Үйге $count';
+  }
+
+  @override
+  String get feedFilters => 'Сүзгілер';
+
+  @override
+  String get feedSort => 'Сұрыптау';
+
+  @override
+  String get feedSortStandard => 'Әдеттегідей';
+
+  @override
+  String get feedSortPriceAsc => 'Арзанырақ';
+
+  @override
+  String get feedSortPriceDesc => 'Қымбатырақ';
+
+  @override
+  String get feedSortPerKm => 'Тиімдірек ₸/км';
+
+  @override
+  String get feedSortReady => 'Тиеу жақынырақ';
+
+  @override
+  String get feedSortDistanceAsc => 'Қысқа маршрут';
+
+  @override
+  String get feedSortDistanceDesc => 'Ұзын маршрут';
+
+  @override
+  String get feedSortNewest => 'Жаңалары';
+
+  @override
+  String get feedFilterFrom => 'Қайдан';
+
+  @override
+  String get feedFilterTo => 'Қайда';
+
+  @override
+  String get feedFilterAnyCity => 'Кез келген қала';
+
+  @override
+  String get feedFilterBody => 'Шанақ';
+
+  @override
+  String get feedFilterBodyMine => 'Менің көлігім';
+
+  @override
+  String get feedFilterWeight => 'Салмағы, т';
+
+  @override
+  String get feedFilterMin => 'бастап';
+
+  @override
+  String get feedFilterMax => 'дейін';
+
+  @override
+  String get feedFilterPrice => 'Баға';
+
+  @override
+  String get feedFilterPerKm => '₸/км бастап';
+
+  @override
+  String get feedFilterReady => 'Тиеу күні';
+
+  @override
+  String get feedReadyAny => 'Кез келген';
+
+  @override
+  String get feedReadyToday => 'Бүгін';
+
+  @override
+  String get feedReady3d => '3 күн';
+
+  @override
+  String get feedReadyWeek => 'Апта';
+
+  @override
+  String get feedFilterAdvance => 'Тек авансымен';
+
+  @override
+  String get feedFilterReset => 'Тазалау';
+
+  @override
+  String feedFilterShow(String count) {
+    return 'Көрсету: $count';
+  }
+
+  @override
+  String feedOtherCities(String count) {
+    return 'Басқа қалалардан жүктер · $count';
+  }
+
+  @override
+  String get feedOtherCitiesShow => 'көрсету';
+
+  @override
+  String get feedOtherCitiesHide => 'Басқа қалалардың жүктерін жасыру';
+
+  @override
+  String feedActiveWeight(String range) {
+    return 'салмағы $range т';
+  }
+
+  @override
+  String feedActivePerKm(String value) {
+    return '$value ₸/км бастап';
+  }
+
+  @override
+  String get feedActiveAdvance => 'авансымен';
+
+  @override
   String get preVerifyTitle => 'Тексеру жүріп жатқанда';
 
   @override

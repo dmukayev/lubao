@@ -3520,6 +3520,126 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoTrucks => '需要几辆车';
 
   @override
+  String feedChipAll(String count) {
+    return '全部 $count';
+  }
+
+  @override
+  String feedChipHome(String count) {
+    return '回家 $count';
+  }
+
+  @override
+  String get feedFilters => '筛选';
+
+  @override
+  String get feedSort => '排序';
+
+  @override
+  String get feedSortStandard => '默认';
+
+  @override
+  String get feedSortPriceAsc => '价格从低到高';
+
+  @override
+  String get feedSortPriceDesc => '价格从高到低';
+
+  @override
+  String get feedSortPerKm => '每公里更划算';
+
+  @override
+  String get feedSortReady => '装货日期最近';
+
+  @override
+  String get feedSortDistanceAsc => '路线最短';
+
+  @override
+  String get feedSortDistanceDesc => '路线最长';
+
+  @override
+  String get feedSortNewest => '最新';
+
+  @override
+  String get feedFilterFrom => '出发地';
+
+  @override
+  String get feedFilterTo => '目的地';
+
+  @override
+  String get feedFilterAnyCity => '任意城市';
+
+  @override
+  String get feedFilterBody => '车厢类型';
+
+  @override
+  String get feedFilterBodyMine => '我的车';
+
+  @override
+  String get feedFilterWeight => '重量（吨）';
+
+  @override
+  String get feedFilterMin => '从';
+
+  @override
+  String get feedFilterMax => '至';
+
+  @override
+  String get feedFilterPrice => '价格';
+
+  @override
+  String get feedFilterPerKm => '每公里 ₸ 起';
+
+  @override
+  String get feedFilterReady => '装货日期';
+
+  @override
+  String get feedReadyAny => '任意';
+
+  @override
+  String get feedReadyToday => '今天';
+
+  @override
+  String get feedReady3d => '3 天内';
+
+  @override
+  String get feedReadyWeek => '一周内';
+
+  @override
+  String get feedFilterAdvance => '仅限有预付';
+
+  @override
+  String get feedFilterReset => '重置';
+
+  @override
+  String feedFilterShow(String count) {
+    return '显示 $count 条';
+  }
+
+  @override
+  String feedOtherCities(String count) {
+    return '其他城市的货物 · $count';
+  }
+
+  @override
+  String get feedOtherCitiesShow => '显示';
+
+  @override
+  String get feedOtherCitiesHide => '收起其他城市的货物';
+
+  @override
+  String feedActiveWeight(String range) {
+    return '重量 $range 吨';
+  }
+
+  @override
+  String feedActivePerKm(String value) {
+    return '每公里 $value ₸ 起';
+  }
+
+  @override
+  String get feedActiveAdvance => '有预付';
+
+  @override
   String get preVerifyTitle => '审核期间';
 
   @override

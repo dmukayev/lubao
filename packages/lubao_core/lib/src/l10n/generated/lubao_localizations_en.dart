@@ -3605,6 +3605,126 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get postCargoTrucks => 'Trucks needed';
 
   @override
+  String feedChipAll(String count) {
+    return 'All $count';
+  }
+
+  @override
+  String feedChipHome(String count) {
+    return 'Home $count';
+  }
+
+  @override
+  String get feedFilters => 'Filters';
+
+  @override
+  String get feedSort => 'Sort';
+
+  @override
+  String get feedSortStandard => 'Default';
+
+  @override
+  String get feedSortPriceAsc => 'Cheaper first';
+
+  @override
+  String get feedSortPriceDesc => 'Pricier first';
+
+  @override
+  String get feedSortPerKm => 'Best ₸/km';
+
+  @override
+  String get feedSortReady => 'Loading soonest';
+
+  @override
+  String get feedSortDistanceAsc => 'Shortest route';
+
+  @override
+  String get feedSortDistanceDesc => 'Longest route';
+
+  @override
+  String get feedSortNewest => 'Newest';
+
+  @override
+  String get feedFilterFrom => 'From';
+
+  @override
+  String get feedFilterTo => 'To';
+
+  @override
+  String get feedFilterAnyCity => 'Any city';
+
+  @override
+  String get feedFilterBody => 'Body type';
+
+  @override
+  String get feedFilterBodyMine => 'My vehicle';
+
+  @override
+  String get feedFilterWeight => 'Weight, t';
+
+  @override
+  String get feedFilterMin => 'from';
+
+  @override
+  String get feedFilterMax => 'to';
+
+  @override
+  String get feedFilterPrice => 'Price';
+
+  @override
+  String get feedFilterPerKm => '₸/km from';
+
+  @override
+  String get feedFilterReady => 'Loading date';
+
+  @override
+  String get feedReadyAny => 'Any';
+
+  @override
+  String get feedReadyToday => 'Today';
+
+  @override
+  String get feedReady3d => '3 days';
+
+  @override
+  String get feedReadyWeek => 'A week';
+
+  @override
+  String get feedFilterAdvance => 'Only with advance';
+
+  @override
+  String get feedFilterReset => 'Reset';
+
+  @override
+  String feedFilterShow(String count) {
+    return 'Show $count';
+  }
+
+  @override
+  String feedOtherCities(String count) {
+    return 'Cargo from other cities · $count';
+  }
+
+  @override
+  String get feedOtherCitiesShow => 'show';
+
+  @override
+  String get feedOtherCitiesHide => 'Hide cargo from other cities';
+
+  @override
+  String feedActiveWeight(String range) {
+    return 'weight $range t';
+  }
+
+  @override
+  String feedActivePerKm(String value) {
+    return 'from $value ₸/km';
+  }
+
+  @override
+  String get feedActiveAdvance => 'with advance';
+
+  @override
   String get preVerifyTitle => 'While we verify you';
 
   @override

@@ -204,14 +204,20 @@ class Cargo {
 
 /// Страница ленты водителя (040): порядок и отсев — на сервере.
 class CargoFeedPage {
-  const CargoFeedPage({required this.items, required this.total, required this.offset, this.originCityId});
+  const CargoFeedPage({required this.items, required this.total, required this.offset, this.originCityId, this.chips = FeedChips.empty, this.otherCitiesCount = 0});
 
   final List<Cargo> items;
   final int total;
   final int offset;
 
-  /// Город, от которого сервер считал «рядом» (город анонса или домашний).
+  /// Город, от которого сервер считал «рядом» (город анонса, домашний или из фильтра).
   final String? originCityId;
+
+  /// 059 п.1: чипы «куда» из грузов выборки.
+  final FeedChips chips;
+
+  /// 059 п.5: «Грузы из других городов · N» (свёрнуты).
+  final int otherCitiesCount;
 
   bool get hasMore => offset + items.length < total;
 
@@ -220,6 +226,30 @@ class CargoFeedPage {
         total: json['total'] as int? ?? 0,
         offset: json['offset'] as int? ?? 0,
         originCityId: json['originCityId'] as String?,
+        chips: json['chips'] is Map ? FeedChips.fromJson(Map<String, dynamic>.from(json['chips'] as Map)) : FeedChips.empty,
+        otherCitiesCount: json['otherCitiesCount'] as int? ?? 0,
+      );
+}
+
+/// 059 п.1: «Все 42 · Домой 8 · Россия 15 · Узбекистан 6 · Алматы 9».
+class FeedChips {
+  const FeedChips({this.all = 0, this.home = 0, this.countries = const [], this.cities = const []});
+
+  static const empty = FeedChips();
+
+  final int all;
+  final int home;
+  final List<({String id, int count})> countries;
+  final List<({String id, int count})> cities;
+
+  static List<({String id, int count})> _list(Object? raw) =>
+      (raw as List<dynamic>? ?? const []).cast<Map>().map((e) => (id: e['id'] as String, count: e['count'] as int? ?? 0)).toList();
+
+  factory FeedChips.fromJson(Map<String, dynamic> json) => FeedChips(
+        all: json['all'] as int? ?? 0,
+        home: json['home'] as int? ?? 0,
+        countries: _list(json['countries']),
+        cities: _list(json['cities']),
       );
 }
 

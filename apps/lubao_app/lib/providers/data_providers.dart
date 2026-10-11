@@ -4,8 +4,29 @@ import 'package:lubao_core/lubao_core.dart';
 import 'api_providers.dart';
 
 /// Первая страница ленты водителя; порядок и отсев — на сервере (040, п.5).
+/// 059: фильтр и сортировка ленты — запоминается на устройстве.
+class FeedFilterNotifier extends StateNotifier<FeedFilter> {
+  FeedFilterNotifier(this._store) : super(FeedFilter.empty) {
+    _store.load().then((saved) {
+      if (mounted && state == FeedFilter.empty) state = saved;
+    });
+  }
+
+  final FeedFilterStore _store;
+
+  void set(FeedFilter value) {
+    state = value;
+    _store.save(value);
+  }
+}
+
+/// Хранилище фильтра (подменяется в тестах).
+final feedFilterStoreProvider = Provider<FeedFilterStore>((ref) => FeedFilterStore());
+
+final feedFilterProvider = StateNotifierProvider<FeedFilterNotifier, FeedFilter>((ref) => FeedFilterNotifier(ref.watch(feedFilterStoreProvider)));
+
 final cargoFeedProvider = FutureProvider.autoDispose<CargoFeedPage>((ref) {
-  return ref.watch(cargoRepositoryProvider).feed();
+  return ref.watch(cargoRepositoryProvider).feed(filter: ref.watch(feedFilterProvider));
 });
 
 /// «Помещается к текущему» (040, п.6): есть только у водителя с активной сделкой.

@@ -45,6 +45,8 @@ export 'src/widgets/city_picker_sheet.dart';
 export 'src/utils/cargo_weight.dart';
 export 'src/utils/cargo_display.dart';
 export 'src/models/company_driver.dart';
+export 'src/models/feed_filter.dart';
+export 'src/offline/feed_filter_store.dart';
 export 'src/repositories/company_drivers_repository.dart';
 export 'src/utils/city_search.dart';
 export 'src/utils/date_only.dart';

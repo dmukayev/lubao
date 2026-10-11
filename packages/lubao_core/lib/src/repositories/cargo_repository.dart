@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
 import '../models/cargo.dart';
+import '../models/feed_filter.dart';
 import '../models/response.dart';
 import '../offline/contact_event_queue.dart';
 import '../offline/pending_contact_event.dart';
@@ -16,9 +17,16 @@ class CargoRepository {
   final ContactEventQueue _contactEventQueue;
 
   /// Лента водителя: порядок и отсев на сервере, страницами (040, п.5).
-  Future<CargoFeedPage> feed({int limit = 30, int offset = 0}) async {
-    final res = await _client.dio.get('/cargos', queryParameters: {'limit': limit, 'offset': offset});
+  /// 059: лента с фильтром и сортировкой.
+  Future<CargoFeedPage> feed({int limit = 30, int offset = 0, FeedFilter filter = FeedFilter.empty}) async {
+    final res = await _client.dio.get('/cargos', queryParameters: {'limit': limit, 'offset': offset, ...filter.toQuery()});
     return CargoFeedPage.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// 059 п.2: «Показать N грузов» в шторке — тот же запрос, только счётчик.
+  Future<int> feedCount(FeedFilter filter) async {
+    final res = await _client.dio.get('/cargos', queryParameters: {'limit': 0, ...filter.toQuery()});
+    return (res.data as Map<String, dynamic>)['total'] as int? ?? 0;
   }
 
   /// «Помещается к текущему: 8 т + 10 т из 20 т» — только для водителя с
