@@ -230,6 +230,11 @@ class LogistApi {
     }
   }
 
+  /// Снять груз (сценарий убирает за собой; ошибка — не падение: груз мог уйти).
+  Future<void> closeCargo(String cargoId) async {
+    await _dio.post('/cargos/$cargoId/close', data: {'outcome': 'CARGO_CANCELLED'});
+  }
+
   Future<void> counterOffer(String responseId, num price) => _ok(_dio.post('/responses/$responseId/counter', data: {'price': price}), 'Встречная цена');
   Future<void> select(String responseId) => _ok(_dio.patch('/responses/$responseId', data: {'status': 'SELECTED'}), 'Выбор водителя');
   Future<Map<String, dynamic>> createDriver(String name, String phone) => _ok(_dio.post('/company-drivers', data: {'name': name, 'phone': phone}), 'Создать водителя');
@@ -486,6 +491,22 @@ class DriverApi {
 }
 
 
+Finder? _largestVerticalScrollable(WidgetTester tester) {
+  Finder? best;
+  var bestArea = 0.0;
+  final all = find.byType(Scrollable);
+  for (var i = 0; i < all.evaluate().length; i++) {
+    final candidate = all.at(i);
+    if (tester.widget<Scrollable>(candidate).axis != Axis.vertical) continue;
+    final size = tester.getSize(candidate);
+    if (size.width * size.height > bestArea) {
+      bestArea = size.width * size.height;
+      best = candidate;
+    }
+  }
+  return best;
+}
+
 /// Показывает виджет: если он ещё не построен (ленивый список) — прокручивает
 /// самую большую вертикальную прокрутку экрана, затем `ensureVisible`.
 Future<void> reveal(WidgetTester tester, Finder finder) async {
@@ -519,13 +540,20 @@ Future<void> reveal(WidgetTester tester, Finder finder) async {
         final expand = find.byKey(const Key('feedOtherCitiesExpand'));
         if (!finder.toString().contains('feedCargoCard-')) rethrow;
         await tester.scrollUntilVisible(expand, 300, scrollable: best, maxScrolls: 80);
-        await tester.tap(expand);
+        // Строка могла остаться под нижним меню — на экран, потом нажатие.
+        await tester.ensureVisible(expand);
+        await tester.pumpAndSettle(const Duration(milliseconds: 100), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 3)).catchError((_) => 0);
+        await tester.tap(expand, warnIfMissed: false);
         await tester.pumpAndSettle(const Duration(milliseconds: 100), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 5)).catchError((_) => 0);
         await waitForCondition(tester, () => find.byKey(const Key('feedOtherCitiesCollapse')).evaluate().isNotEmpty || finder.evaluate().isNotEmpty, timeout: const Duration(seconds: 10)).catchError((_) {});
-        try {
-          await tester.scrollUntilVisible(finder, 200, scrollable: best, maxScrolls: 60);
-        } catch (_) {
-          await tester.scrollUntilVisible(finder, -200, scrollable: best, maxScrolls: 80);
+        // Лента перестроилась — заново самая большая вертикальная прокрутка.
+        final list = _largestVerticalScrollable(tester);
+        if (finder.evaluate().isEmpty && list != null) {
+          try {
+            await tester.scrollUntilVisible(finder, 200, scrollable: list, maxScrolls: 60);
+          } catch (_) {
+            await tester.scrollUntilVisible(finder, -200, scrollable: list, maxScrolls: 80);
+          }
         }
       }
     }

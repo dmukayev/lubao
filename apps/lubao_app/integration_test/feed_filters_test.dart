@@ -39,9 +39,18 @@ void main() {
             'pointId': almaty, 'destinationCountryId': country, if (city != null) 'destinationCityId': city, 'bodyTypeId': tentId,
             'categoryId': category, 'weightKg': weightKg, 'price': price, 'currency': 'USD', 'readyDate': tomorrow,
           };
-      await logist.publishCargo(body(ruId, moscow, 18000, 3000));
-      await logist.publishCargo(body(ruId, moscow, 8000, 1500));
-      await logist.publishCargo(body(uzId, null, 12000, 1200));
+      final ids = [
+        await logist.publishCargo(body(ruId, moscow, 18000, 3000)),
+        await logist.publishCargo(body(ruId, moscow, 8000, 1500)),
+        await logist.publishCargo(body(uzId, null, 12000, 1200)),
+      ];
+      // Грузы сценария снимаются в конце (и при падении): счётчики админки и
+      // следующих сценариев — как без него.
+      addTearDown(() async {
+        for (final id in ids) {
+          await logist.closeCargo(id);
+        }
+      });
     });
 
     await tester.pumpWidget(ProviderScope(
@@ -66,7 +75,8 @@ void main() {
 
     await run.step(tester, 'чип-россия-только-грузы-в-россию', () async {
       final chip = find.byKey(Key('feedChipCountry-$ruId'));
-      await waitFor(tester, chip);
+      // Полоса чипов горизонтальная — прокручиваем её до «России».
+      await tester.scrollUntilVisible(chip, 120, scrollable: find.descendant(of: find.byKey(const Key('feedChipsBar')), matching: find.byType(Scrollable)).first, maxScrolls: 30);
       await tester.ensureVisible(chip);
       await tester.tap(chip);
       await tester.pumpAndSettle(const Duration(seconds: 1));

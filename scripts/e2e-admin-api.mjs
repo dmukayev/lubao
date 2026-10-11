@@ -199,12 +199,13 @@ const badPoint = await api('POST', '/cargos', { token: ownerToken, body: { ...ca
 assert(badPoint.status === 400, 'груз с выключенным городом отклоняется (400)', `status=${badPoint.status}`);
 
 // Лента водителя на сервере и несколько анонсов (D6 — «свободен в Алматы», код 1111).
+// 059 п.5: грузы других городов по умолчанию свёрнуты — здесь вся выборка.
 const D6 = '+77010000008';
 await api('POST', '/auth/phone/request-code', { body: { phone: D6 } });
 const d6Login = await api('POST', '/auth/phone/verify', { body: { phone: D6, code: '1111', deviceName: 'e2e', platform: 'ios' } });
 assert(d6Login.status < 300, 'вход водителя D6 по SMS-коду', `status=${d6Login.status}`);
 const d6 = d6Login.json.accessToken;
-const feed = await api('GET', '/cargos?limit=2&offset=0', { token: d6 });
+const feed = await api('GET', '/cargos?limit=2&offset=0&showOtherCities=true', { token: d6 });
 assert(Array.isArray(feed.json.items) && feed.json.items.length === 2 && feed.json.total >= 7 && feed.json.limit === 2, 'лента: страница {items,total,limit} вместо голого массива', JSON.stringify(Object.keys(feed.json)));
 assert(feed.json.originCityId === almatyPoint.cityId && feed.json.originSource === 'arrival', 'лента считается от города анонса (Алматы)', `${feed.json.originCityId} ${feed.json.originSource}`);
 assert(feed.json.items[0].id === '11111111-1111-4111-8111-111111111006' && feed.json.items[0].pickupRank === 0, 'первым — груз из Алматы (город анонса = город погрузки)', feed.json.items[0].id);
@@ -212,10 +213,10 @@ assert(feed.json.items[0].id === '11111111-1111-4111-8111-111111111006' && feed.
 assert(feed.json.items[0].allowPartial === false && (await api('GET', '/reference-data')).json.partialLoadsEnabled === false, 'догруз выключен по умолчанию: бейджа нет');
 assert((await api('PATCH', '/admin/settings/partialLoadsEnabled', { token, body: { value: 'true', reason: 'E2E 049' } })).status < 300, 'админ включает догруз');
 await new Promise((r) => setTimeout(r, 5200)); // кэш флага в ленте — 5 с
-assert((await api('GET', '/cargos?limit=2&offset=0', { token: d6 })).json.items[0].allowPartial === true, 'догруз включён — груз 6 «можно догрузом»');
+assert((await api('GET', '/cargos?limit=2&offset=0&showOtherCities=true', { token: d6 })).json.items[0].allowPartial === true, 'догруз включён — груз 6 «можно догрузом»');
 assert((await api('PATCH', '/admin/settings/partialLoadsEnabled', { token, body: { value: 'false', reason: 'E2E 049' } })).status < 300, 'админ выключает догруз обратно');
 await new Promise((r) => setTimeout(r, 5200));
-const page2 = await api('GET', '/cargos?limit=2&offset=2', { token: d6 });
+const page2 = await api('GET', '/cargos?limit=2&offset=2&showOtherCities=true', { token: d6 });
 assert(page2.json.items.length === 2 && !page2.json.items.some((c) => feed.json.items.map((x) => x.id).includes(c.id)), 'вторая страница ленты без повторов');
 assert(page2.json.items.every((c) => c.pickupRank >= 0), 'каждая карточка ленты несёт ранг города');
 const hint = await api('GET', '/cargos/11111111-1111-4111-8111-111111111006/partial-hint', { token: d6 });
