@@ -140,11 +140,6 @@ for (const [label, list, card] of [
   assert(byNumber.length === 1 && byNumber[0].id === cargo.id, 'поиск грузов по номеру «482 915»');
   const plain = (await get(`/admin/search?q=${cargo.number.replace(' ', '')}`)).json;
   assert(plain.cargos.length === 1 && plain.cargos[0].id === cargo.id && plain.cargos[0].number === cargo.number, 'общий поиск по номеру без пробела');
-  const deal = (await get('/admin/deals')).json.items[0];
-  assert(/^\d{3} \d{3}-\d+$/.test(deal.number ?? ''), 'у сделки номер «482 915-1»', String(deal.number));
-  const dealHits = (await get(`/admin/deals?q=${encodeURIComponent(deal.number)}`)).json.items;
-  assert(dealHits.length === 1 && dealHits[0].id === deal.id, 'поиск сделки по номеру с машиной');
-  assert((await get(`/admin/deals/${deal.id}`)).json.number === deal.number, 'номер в карточке сделки');
 }
 
 const e2eDriver = drivers.items.find((d) => d.phone === '+77010000001');
@@ -555,6 +550,15 @@ assert(csv.status === 200 && csv.text.includes('median_kzt_per_km'), 'админ
   const kzCompanyId = (await api('GET', `/cargos/${KZ_CARGO}`, { token: newcomer.token })).json.companyId;
   const stats = (await get(`/admin/companies/${kzCompanyId}`)).json.shareStats;
   assert(stats && stats.links >= 1 && stats.opens >= 1 && stats.came >= 1, 'в админке: поделились, открытий, пришло по ссылкам', JSON.stringify(stats));
+}
+
+// ---- 062. Номер сделки (сделки к этому моменту созданы сценариями выше) ------
+{
+  const deal = (await get('/admin/deals')).json.items[0];
+  assert(/^\d{3} \d{3}-\d+$/.test(deal.number ?? ''), 'у сделки номер «482 915-1»', String(deal.number));
+  const dealHits = (await get(`/admin/deals?q=${encodeURIComponent(deal.number)}`)).json.items;
+  assert(dealHits.length === 1 && dealHits[0].id === deal.id, 'поиск сделки по номеру с машиной');
+  assert((await get(`/admin/deals/${deal.id}`)).json.number === deal.number, 'номер в карточке сделки');
 }
 
 console.log(`Готово: ${checks} проверок.`);
