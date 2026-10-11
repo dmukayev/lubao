@@ -7,5 +7,7 @@ class DiskBytesCache {
 
   Future<Uint8List?> read(String key) async => null;
   Future<void> write(String key, Uint8List bytes) async {}
+  Future<void> clear() async {}
+  Future<int> debugFileCount() async => 0;
   Future<Uint8List> getOrFetch(String key, Future<Uint8List> Function() fetch) => fetch();
 }

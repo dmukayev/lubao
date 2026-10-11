@@ -2,6 +2,7 @@
 // список → чат с водителем → «Предложить груз» → «Пригласить» → сделка (035);
 // затем тот же водитель входит, подтверждает перевозку и двигает «Загружен»
 // прямо в карточке чата, не выходя из переписки.
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +10,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:lubao_app/app.dart';
 import 'package:lubao_app/features/shared/share_action.dart';
 import 'package:lubao_app/providers/tracking_provider.dart';
+import 'package:lubao_app/services/disk_bytes_cache.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import 'e2e_support.dart';
@@ -261,15 +263,20 @@ void main() {
       expectNoOverflow(tester);
     });
 
+    // 061 п.9: фото, что видел логист, после выхода на телефоне не остаются;
+    // следующий вошедший — со своими вкладками.
     await run.step(tester, 'выход-логиста-2', () async {
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
+      if (!kIsWeb) expect(await DiskBytesCache.instance.debugFileCount(), greaterThan(0), reason: 'фото водителя были в кэше');
       await logoutViaProfile(tester, driver: false);
+      expect(await DiskBytesCache.instance.debugFileCount(), 0, reason: 'кэш картинок очищен при выходе');
     });
 
     await run.step(tester, 'вход-водителя-D3-снова', () async {
       await loginDriver(tester, '7010000003');
       await waitFor(tester, find.byType(NavigationBar));
+      expect(find.descendant(of: find.byType(NavigationBar), matching: find.text(t.navDrivers)), findsNothing, reason: 'вкладки логиста не остались');
     });
 
     await run.step(tester, 'чат-водителя-подтверждение', () async {

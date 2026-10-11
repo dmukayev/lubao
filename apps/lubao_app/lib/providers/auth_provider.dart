@@ -7,6 +7,9 @@ import 'api_providers.dart';
 import 'locale_provider.dart';
 import 'data_providers.dart';
 import 'tracking_provider.dart';
+import '../features/shared/cached_photo.dart';
+import '../features/shared/driver_avatar.dart';
+import '../services/disk_bytes_cache.dart';
 
 /// true, пока идёт попытка восстановить сессию из secure storage при
 /// старте приложения (см. SessionController._restore) — роутер показывает
@@ -182,6 +185,14 @@ class SessionController extends StateNotifier<Session?> {
     // 059: фильтр ленты — тоже его, не следующего на этом телефоне.
     await _ref.read(feedFilterStoreProvider).clear();
     _ref.invalidate(feedFilterProvider);
+    await _clearImages();
+  }
+
+  /// 061 п.9: фото, увиденные этим человеком, — не следующему на телефоне.
+  Future<void> _clearImages() async {
+    await DiskBytesCache.instance.clear();
+    _ref.invalidate(driverAvatarProvider);
+    _ref.invalidate(cachedPhotoProvider);
   }
 
   /// 043 п.2: согласие на обработку ПДн дано — экран больше не показываем.
@@ -205,6 +216,9 @@ class SessionController extends StateNotifier<Session?> {
     }
     state = null;
     await _ref.read(trackingConsentProvider.notifier).reset();
+    await _ref.read(feedFilterStoreProvider).clear();
+    _ref.invalidate(feedFilterProvider);
+    await _clearImages();
   }
 
   @override

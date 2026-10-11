@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -11,7 +12,7 @@ class DiskBytesCache {
   DiskBytesCache._();
   static final instance = DiskBytesCache._();
 
-  /// Не больше этого — самые старые файлы удаляются при записи.
+  /// Не больше этого — самые старые файлы удаляются уборкой (раз в несколько записей).
   static const maxFiles = 400;
 
   Directory? _dir;
@@ -49,21 +50,71 @@ class DiskBytesCache {
     }
   }
 
+  /// Записей с последней уборки — убираем не на каждую запись (061 п.12).
+  int _writesSinceTrim = 0;
+  static const _trimEvery = 40;
+  bool _trimming = false;
+
   Future<void> write(String key, Uint8List bytes) async {
     final dir = await _directory();
     if (dir == null) return;
     try {
-      await File('${dir.path}/${fileName(key)}').writeAsBytes(bytes, flush: false);
-      final files = dir.listSync().whereType<File>().toList();
-      if (files.length > maxFiles) {
-        files.sort((a, b) => a.statSync().modified.compareTo(b.statSync().modified));
-        for (final old in files.take(files.length - maxFiles)) {
-          old.deleteSync();
-        }
-      }
+      // 061 п.12: сначала во временный файл, потом переименование — оборванная
+      // запись не оставит битую картинку под настоящим именем.
+      final name = fileName(key);
+      final tmp = File('${dir.path}/$name.tmp');
+      await tmp.writeAsBytes(bytes, flush: false);
+      await tmp.rename('${dir.path}/$name');
     } catch (_) {
       // Кэш — не критично.
     }
+    if (++_writesSinceTrim >= _trimEvery) {
+      _writesSinceTrim = 0;
+      unawaited(_trim(dir));
+    }
+  }
+
+  /// Самые старые файлы сверх [maxFiles] — удалить; асинхронно, без
+  /// синхронных обращений к диску в кадре.
+  Future<void> _trim(Directory dir) async {
+    if (_trimming) return;
+    _trimming = true;
+    try {
+      final entries = <(File, DateTime)>[];
+      await for (final e in dir.list()) {
+        if (e is File) entries.add((e, (await e.stat()).modified));
+      }
+      if (entries.length <= maxFiles) return;
+      entries.sort((a, b) => a.$2.compareTo(b.$2));
+      for (final old in entries.take(entries.length - maxFiles)) {
+        await old.$1.delete().catchError((_) => old.$1);
+      }
+    } catch (_) {
+      // Кэш — не критично.
+    } finally {
+      _trimming = false;
+    }
+  }
+
+  /// Сколько картинок на диске — для сквозных сценариев (061 п.9).
+  @visibleForTesting
+  Future<int> debugFileCount() async {
+    final dir = await _directory();
+    if (dir == null) return 0;
+    return dir.list().where((e) => e is File).length;
+  }
+
+  /// 061 п.9: выход и удаление аккаунта — чужие фото на телефоне не остаются.
+  Future<void> clear() async {
+    final dir = await _directory();
+    if (dir == null) return;
+    try {
+      await dir.delete(recursive: true);
+    } catch (_) {
+      // Нет папки — уже чисто.
+    }
+    _dir = null;
+    _writesSinceTrim = 0;
   }
 
   /// Сначала диск, потом сеть; удачный ответ сети — на диск.

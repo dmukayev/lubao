@@ -10,7 +10,8 @@ import '../../services/disk_bytes_cache.dart';
 final _dio = Dio(BaseOptions(responseType: ResponseType.bytes, connectTimeout: const Duration(seconds: 10), receiveTimeout: const Duration(seconds: 30)));
 
 /// Публичное фото (груз) — с диска, иначе из сети и на диск (060 п.4).
-final cachedPhotoProvider = FutureProvider.family<Uint8List, String>((ref, url) {
+/// 061 п.12: autoDispose — байты не копятся в памяти за всю прокрутку.
+final cachedPhotoProvider = FutureProvider.autoDispose.family<Uint8List, String>((ref, url) {
   return DiskBytesCache.instance.getOrFetch('photo:$url', () async {
     final res = await _dio.get<List<int>>(url);
     return Uint8List.fromList(res.data ?? const []);
