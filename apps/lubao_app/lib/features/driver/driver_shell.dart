@@ -8,6 +8,7 @@ import 'package:lubao_core/lubao_core.dart';
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
 import '../../router/tab_scroll.dart';
+import '../../services/stale_refresh.dart';
 import 'trips/driver_trips_screen.dart';
 
 /// 053 п.6: отдельного списка уведомлений нет — непрочитанные сообщения и
@@ -66,6 +67,12 @@ class _DriverShellState extends ConsumerState<DriverShell> {
 
   @override
   Widget build(BuildContext context) {
+    // 061 п.10: после фона (> 3 мин) и переподключения сокета — лента и
+    // анонс тихо перечитываются (прошлые карточки остаются на экране).
+    ref.listen<int>(staleRefreshProvider, (_, _) {
+      ref.invalidate(cargoFeedProvider);
+      ref.invalidate(myArrivalsProvider);
+    });
     final t = context.l10n;
     final currentIndex = widget.navigationShell.currentIndex;
     final unread = (ref.watch(myChatsProvider).valueOrNull ?? const <MyChatEntry>[]).fold<int>(0, (sum, c) => sum + c.unreadCount);

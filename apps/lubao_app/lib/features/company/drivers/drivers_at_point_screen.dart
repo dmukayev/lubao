@@ -19,6 +19,7 @@ import '../../shared/driver_avatar.dart';
 import 'invite_cargo_picker.dart';
 import 'my_drivers_view.dart';
 import '../../shared/error_feedback.dart';
+import '../../../services/stale_refresh.dart';
 
 class DriversAtPointScreen extends ConsumerStatefulWidget {
   const DriversAtPointScreen({super.key});
@@ -45,6 +46,8 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   bool _mine = false;
   int _dayOffset = 0;
   Future<List<ArrivalListing>>? _future;
+  // 061 п.10: тихое обновление — прошлый список остаётся, пока грузится новый.
+  bool _silentReload = false;
   Future<List<ArrivalSummaryDay>>? _summaryFuture;
   String? _openingChatDriverId;
 
@@ -74,8 +77,9 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
 
   DateTime get _selectedDate => DateTime.now().add(Duration(days: _dayOffset));
 
-  void _reload() {
+  void _reload({bool silent = false}) {
     setState(() {
+      _silentReload = silent;
       _future = ref
           .read(arrivalRepositoryProvider)
           .listForCompany(
@@ -289,6 +293,12 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 061 п.10: после фона (> 3 мин) и переподключения сокета — тихо.
+    ref.listen<int>(staleRefreshProvider, (_, _) {
+      if (_future == null) return;
+      _loadSummary();
+      _reload(silent: true);
+    });
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final referenceData = ref.watch(referenceDataProvider);
@@ -488,7 +498,8 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                 child: FutureBuilder<List<ArrivalListing>>(
                   future: _future,
                   builder: (context, snapshot) {
-                    if (_future == null || snapshot.connectionState == ConnectionState.waiting) return const LoadingView();
+                    final keepShown = _silentReload && snapshot.hasData;
+                    if (_future == null || (snapshot.connectionState == ConnectionState.waiting && !keepShown)) return const LoadingView();
                     if (snapshot.hasError) return ErrorView(message: t.commonError, onRetry: _reload);
                     final list = snapshot.data ?? [];
                     if (list.isEmpty) return EmptyState(message: t.driversAtPointEmpty, icon: LucideIcons.users);

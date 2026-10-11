@@ -8,6 +8,7 @@ import 'services/location_reporter.dart';
 import 'services/realtime_connector.dart';
 import 'services/push_service.dart';
 import 'services/share_links.dart';
+import 'services/stale_refresh.dart';
 
 class LubaoApp extends ConsumerWidget {
   const LubaoApp({super.key});
@@ -20,6 +21,8 @@ class LubaoApp extends ConsumerWidget {
     // активной сделке «Загружен»/«В пути» и уже выданном разрешении;
     // разрешение просят с объяснением по «📍» в чате.
     ref.watch(realtimeConnectorProvider);
+    // 061 п.10: после фона и переподключения — тихое обновление списков.
+    ref.watch(staleRefreshWatcherProvider);
     // 052: ссылки «Поделиться» — после входа открыть нужный экран.
     ref.watch(shareLinkHandlerProvider);
     ref.watch(locationReporterProvider);
