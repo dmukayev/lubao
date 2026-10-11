@@ -244,6 +244,21 @@ void main() {
       expectNoOverflow(tester);
     });
 
+    // 061 п.11: повторное нажатие на «Грузы» у логиста — список наверх.
+    await run.step(tester, 'грузы-логиста-повторное-нажатие-наверх', () async {
+      await goTab(tester, t.navCargos);
+      final list = find.byKey(const Key('companyCargosList-active'));
+      await waitFor(tester, list);
+      final position = tester.state<ScrollableState>(find.descendant(of: list, matching: find.byType(Scrollable)).first).position;
+      await tester.drag(list, const Offset(0, -600));
+      await tester.pumpAndSettle();
+      if (position.maxScrollExtent > 100) expect(position.pixels, greaterThan(100), reason: 'список прокрутился');
+      await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text(t.navCargos)));
+      await tester.pumpAndSettle();
+      expect(position.pixels, lessThan(1));
+      expectNoOverflow(tester);
+    });
+
     await run.step(tester, 'логист-выбирает-согласившегося', () async {
       // Водитель написал в чат — у логиста цифра непрочитанных на «Чатах».
       await (await DriverApi.login('+77010000003')).sendToCompanyChat('E2E Test Logistics', 'Готов, жду');

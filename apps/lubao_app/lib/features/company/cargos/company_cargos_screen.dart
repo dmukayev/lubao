@@ -14,6 +14,7 @@ import '../../shared/status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../shared/share_link_prompt.dart';
 import '../company_shell.dart';
+import '../../../router/tab_scroll.dart';
 
 /// 056 п.2: «Грузы» логиста — Активные (по умолчанию) / В работе / Архив, с
 /// числами на вкладках. Нажатие: в «Активных» — отклики груза; в «В работе» и
@@ -186,6 +187,8 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
     _scroll.addListener(() {
       if (_scroll.position.extentAfter < 400) _loadMore();
     });
+    // 061 п.11: повторное нажатие на «Грузы» — этот список наверх.
+    attachTabScroll('company.cargos', _scroll);
     final realtime = ref.read(realtimeServiceProvider);
     _subs
       ..add(realtime.onDealUpdated.listen(_refreshSoon))
@@ -200,6 +203,7 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
       s.cancel();
     }
     _refreshDebounce?.cancel();
+    detachTabScroll('company.cargos', _scroll);
     _scroll.dispose();
     super.dispose();
   }
