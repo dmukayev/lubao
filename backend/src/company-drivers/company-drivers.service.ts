@@ -164,7 +164,7 @@ export class CompanyDriversService {
           rowId = existing?.id ?? driverId;
         } else {
           const row = existing
-            ? await tx.companyDriver.update({ where: { id: existing.id }, data: { source: 'CREATED', status: 'PENDING', name: cleanName, respondedAt: null } })
+            ? await tx.companyDriver.update({ where: { id: existing.id }, data: { source: 'CREATED', status: 'PENDING', name: cleanName, respondedAt: null, createdAt: new Date() } })
             : await tx.companyDriver.create({ data: { companyId, driverId, name: cleanName, source: 'CREATED', status: 'PENDING', createdByUserId: ctx.user.id } });
           result = 'INVITED_EXISTING';
           rowId = row.id;
@@ -174,7 +174,8 @@ export class CompanyDriversService {
         const row = await tx.companyDriver.upsert({
           where: { companyId_phone: { companyId, phone } },
           create: { companyId, phone, name: cleanName, source: 'CREATED', status: 'PENDING', createdByUserId: ctx.user.id },
-          update: { name: cleanName, status: 'PENDING' },
+          // 30 дней хранения (061 п.7) — от последнего приглашения.
+          update: { name: cleanName, status: 'PENDING', createdAt: new Date() },
         });
         result = 'CREATED';
         rowId = row.id;

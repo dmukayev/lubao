@@ -252,9 +252,12 @@ export class JobsService {
 
   /// 061 п.7: приглашение «Создать водителя» без ответа 30 дней — номер и имя,
   /// указанные компанией, не храним (decisions.md «Создать водителя»).
+  /// 064 п.12: удаляются все неотвеченные строки «Создать водителя» — и с
+  /// номером, и уже привязанные к водителю: иначе по исчезновению строки видно,
+  /// есть ли человек в Lubao.
   async cleanupInvitePhones(now = new Date()): Promise<{ deleted: number }> {
     const res = await this.prisma.companyDriver.deleteMany({
-      where: { status: 'PENDING', phone: { not: null }, driverId: null, createdAt: { lt: new Date(now.getTime() - INVITE_PHONE_RETENTION_DAYS * DAY_MS) } },
+      where: { status: 'PENDING', source: 'CREATED', createdAt: { lt: new Date(now.getTime() - INVITE_PHONE_RETENTION_DAYS * DAY_MS) } },
     });
     return { deleted: res.count };
   }

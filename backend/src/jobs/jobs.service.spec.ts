@@ -215,12 +215,14 @@ describe('061: архив по сроку и хранение номеров и�
     expect(prisma.cargo.updateMany).toHaveBeenCalledWith({ where: { id: { in: ['free'] }, status: 'PUBLISHED' }, data: { status: 'ARCHIVED', archivedAt: NOW } });
   });
 
-  it('п.7: неотвеченные приглашения с номером старше 30 дней удаляются', async () => {
+  it('п.7 / 064 п.12: все неотвеченные «Создать водителя» старше 30 дней удаляются — и с номером, и привязанные к водителю', async () => {
     const { service, prisma } = setup();
     await service.cleanupInvitePhones(NOW);
-    expect(prisma.companyDriver.deleteMany).toHaveBeenCalledWith({
-      where: { status: 'PENDING', phone: { not: null }, driverId: null, createdAt: { lt: new Date(NOW.getTime() - 30 * 86_400_000) } },
-    });
+    const where = prisma.companyDriver.deleteMany.mock.calls[0][0].where;
+    expect(where).toEqual({ status: 'PENDING', source: 'CREATED', createdAt: { lt: new Date(NOW.getTime() - 30 * 86_400_000) } });
+    // Нет условий, по которым строку с водителем и строку с номером можно различить.
+    expect(where).not.toHaveProperty('driverId');
+    expect(where).not.toHaveProperty('phone');
   });
 });
 

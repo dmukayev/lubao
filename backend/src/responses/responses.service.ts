@@ -562,7 +562,7 @@ export class ResponsesService {
       await this.lockCargo(tx, cargoId);
       const open = await tx.response.findMany({
         where: { cargoId, status: { in: ['PENDING', 'INVITED'] } },
-        select: { id: true, driver: { select: { userId: true } } },
+        select: { id: true, driverId: true, driver: { select: { userId: true } } },
       });
       if (open.length > 0) {
         await tx.response.updateMany({ where: { id: { in: open.map((r) => r.id) } }, data: reason === 'TAKEN_BY_OTHER' ? { status: 'REJECTED', closeReason: 'TAKEN_BY_OTHER' } : { status: 'CANCELLED', closeReason: 'CARGO_CLOSED' } });
@@ -570,6 +570,13 @@ export class ResponsesService {
       return open;
     });
     if (closed.length === 0) return 0;
+    if (reason === 'TAKEN_BY_OTHER') {
+      // 064 п.13: «ушёл другому» — как при обычном выборе: строка в чате
+      // «Груз ушёл другому» и push «Логист выбрал другого водителя».
+      const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId }, select: { companyId: true, publishedByUserId: true } });
+      if (cargo) await this.postCargoTaken(closed, cargo.companyId, cargoId, cargo.publishedByUserId ?? closed[0].driver.userId);
+      return closed.length;
+    }
     this.touch(closed.map((r) => r.driver.userId), cargoId);
     try {
       const summary = await loadCargoPushSummary(this.prisma, cargoId);

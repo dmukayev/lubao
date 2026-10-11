@@ -1033,19 +1033,68 @@ describe('059: лента — фильтры, чипы «куда», сорти�
     expect(prisma.cargo.findMany).toHaveBeenCalledTimes(1);
   });
 
-  it('в базу уходят: кузова, вес, «с авансом», дата погрузки', async () => {
+  it('в базу уходят: вес, «с авансом», дата погрузки; порядок — дата, затем id', async () => {
     const { prisma, service } = setup([]);
     await service.feed('d1', { bodyTypeIds: ['tent'], weightMinT: 10, weightMaxT: 20, withAdvance: true, ready: '3d' });
-    const where = prisma.cargo.findMany.mock.calls[0][0].where;
-    expect(where.AND).toEqual(
-      expect.arrayContaining([
-        { weightKg: { gte: 10000 } },
-        { weightKg: { lte: 20000 } },
-        { advanceAmount: { gt: 0 } },
-        { OR: [{ bodyTypeId: { in: ['tent'] } }, { extraBodyTypeIds: { hasSome: ['tent'] } }] },
-        { readyDate: { lte: expect.any(Date) } },
-      ]),
+    const call = prisma.cargo.findMany.mock.calls[0][0];
+    expect(call.where.AND).toEqual(
+      expect.arrayContaining([{ weightKg: { gte: 10000 } }, { weightKg: { lte: 20000 } }, { advanceAmount: { gt: 0 } }, { readyDate: { lte: expect.any(Date) } }]),
     );
+    expect(call.orderBy).toEqual([{ readyDate: 'asc' }, { id: 'asc' }]);
+  });
+
+  it('064 п.1: при одинаковых датах страницы не пересекаются (последний ключ — id)', async () => {
+    const same = new Date('2026-10-12');
+    const ids = ['c5', 'c1', 'c4', 'c2', 'c3', 'c6'];
+    for (const sort of ['default', 'ready', 'price_asc', 'per_km', 'new'] as const) {
+      const { service } = setup(ids.map((id) => at(id, almaty, { readyDate: same, publishedAt: same, price: 100, currency: 'KZT' })), { rates: [{ currency: 'KZT', rateToKzt: 1 }] });
+      const p1 = (await service.feed('d1', { sort, limit: 3, offset: 0 })).items.map((i: any) => i.id);
+      const p2 = (await service.feed('d1', { sort, limit: 3, offset: 3 })).items.map((i: any) => i.id);
+      expect(new Set([...p1, ...p2]).size).toBe(6);
+      expect([...p1, ...p2]).toEqual([...ids].sort());
+    }
+  });
+
+  it('064 п.8: кузов в шторке — по профилю 048 (тент → и фура того же профиля), не по точному id', async () => {
+    const { prisma, service } = setup([at('tent', almaty, { bodyTypeId: 'tent' }), at('van', almaty, { bodyTypeId: 'van' }), at('tank', almaty, { bodyTypeId: 'tank' })]);
+    prisma.bodyType.findMany.mockResolvedValue([{ id: 'tent', profile: 'VOLUME' }, { id: 'van', profile: 'VOLUME' }, { id: 'tank', profile: 'TANK' }]);
+    expect((await service.feed('d1', { bodyTypeIds: ['tent'] })).items.map((i: any) => i.id).sort()).toEqual(['tent', 'van']);
+    expect((await service.feed('d1', { bodyTypeIds: ['tank'] })).items.map((i: any) => i.id)).toEqual(['tank']);
+  });
+
+  it('064 п.9: «Ближе погрузка» — по расстоянию от города водителя, не по дате', async () => {
+    const shymkent = city('shymkent', null, 42.3417, 69.5901);
+    const { service } = setup([
+      at('far-early', astana, { readyDate: new Date('2026-10-10') }),
+      at('here-late', almaty, { readyDate: new Date('2026-10-20') }),
+      at('mid', shymkent, { readyDate: new Date('2026-10-12') }),
+    ]);
+    expect((await service.feed('d1', { sort: 'ready', showOtherCities: true })).items.map((i: any) => i.id)).toEqual(['here-late', 'mid', 'far-early']);
+  });
+
+  it('064 п.10: дороже, длиннее, UZS через ₸; нет курса валюты фильтра — пометка в ответе', async () => {
+    const rates = [{ currency: 'USD', rateToKzt: 500 }, { currency: 'UZS', rateToKzt: 0.04 }];
+    const { service } = setup(
+      [
+        at('usd', almaty, { price: 1000, currency: 'USD', distanceKm: 300 }), // 500 000 ₸
+        at('uzs', almaty, { price: 20000000, currency: 'UZS', distanceKm: 900 }), // 800 000 ₸
+        at('kzt', almaty, { price: 100000, currency: 'KZT', distanceKm: 600 }), // 100 000 ₸
+      ],
+      { rates },
+    );
+    expect((await service.feed('d1', { sort: 'price_desc' })).items.map((i: any) => i.id)).toEqual(['uzs', 'usd', 'kzt']);
+    expect((await service.feed('d1', { sort: 'distance_desc' })).items.map((i: any) => i.id)).toEqual(['uzs', 'kzt', 'usd']);
+    expect((await service.feed('d1', { sort: 'distance_asc' })).items.map((i: any) => i.id)).toEqual(['usd', 'kzt', 'uzs']);
+    expect((await service.feed('d1', { priceMin: 30000000, priceCurrency: 'UZS' })).items.map((i: any) => i.id)).toEqual([]);
+    expect((await service.feed('d1', { priceMin: 10000000, priceCurrency: 'UZS' })).items.map((i: any) => i.id).sort()).toEqual(['usd', 'uzs']); // от 400 000 ₸
+    const noRate = await service.feed('d1', { priceMin: 100, priceCurrency: 'CNY' });
+    expect(noRate.priceRateMissing).toBe(true);
+  });
+
+  it('064 п.10: неизвестная валюта цены — 400', async () => {
+    const { parseFeedQuery } = await import('./feed-query');
+    expect(() => parseFeedQuery({ priceCurrency: 'EUR' })).toThrow(BadRequestException);
+    expect(parseFeedQuery({ priceCurrency: 'uzs' }).priceCurrency).toBe('UZS');
   });
 });
 
@@ -1093,9 +1142,17 @@ describe('061 п.4б/п.5: число машин под замком, валют
       cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ currency: 'USD', companyId: 'c1', createdById: 'u1' })) },
       response: { count: jest.fn().mockResolvedValue(1) },
       deal: { count: jest.fn().mockResolvedValue(0) },
+      $queryRaw: jest.fn().mockResolvedValue([]),
     };
+    prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
     const service = new CargosService(prisma, {} as any, {} as any);
     jest.spyOn(service as any, 'assertCanEdit').mockResolvedValue(baseCargo({ currency: 'USD', companyId: 'c1', createdById: 'u1' }));
     await expect(service.update('c1', 'u1', 'OWNER', 'cargo1', { currency: 'KZT' } as any)).rejects.toMatchObject({ response: { code: 'CURRENCY_LOCKED' } });
+    // 064 п.14: под замком; запирает любая неотменённая сделка, в том числе доставленная.
+    expect(prisma.$queryRaw).toHaveBeenCalled();
+    prisma.response.count.mockResolvedValue(0);
+    prisma.deal.count.mockResolvedValue(1);
+    await expect(service.update('c1', 'u1', 'OWNER', 'cargo1', { currency: 'KZT' } as any)).rejects.toMatchObject({ response: { code: 'CURRENCY_LOCKED' } });
+    expect(prisma.deal.count).toHaveBeenLastCalledWith({ where: { cargoId: 'cargo1', status: { not: 'CANCELLED' } } });
   });
 });

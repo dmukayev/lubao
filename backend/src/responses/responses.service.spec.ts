@@ -893,3 +893,32 @@ describe('061 п.3/п.4б: цена при выборе, правка цены �
     expect(tx.response.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ id: 'r1', status: 'PENDING' }) }));
   });
 });
+
+describe('064 п.13: «ушёл другому» — как при обычном выборе', () => {
+  function setup() {
+    const tx: any = {
+      $queryRaw: jest.fn().mockResolvedValue([]),
+      response: {
+        findMany: jest.fn().mockResolvedValue([{ id: 'r2', driverId: 'd2', driver: { userId: 'u2' } }]),
+        updateMany: jest.fn(),
+      },
+    };
+    const prisma: any = {
+      $transaction: jest.fn(async (cb: any) => cb(tx)),
+      cargo: { findUnique: jest.fn().mockResolvedValue({ companyId: 'c1', publishedByUserId: 'logist-1' }) },
+      company: { findUnique: jest.fn().mockResolvedValue({ name: 'Acme' }) },
+    };
+    const notifications = { notify: jest.fn() };
+    const chat = { post: jest.fn(), postToChat: jest.fn() };
+    return { tx, notifications, chat, service: new ResponsesService(prisma, notifications as any, chat as any) };
+  }
+
+  it('push «Логист выбрал другого водителя» и строка в чате «Груз ушёл другому», а не «груз снят»', async () => {
+    const { tx, notifications, chat, service } = setup();
+    expect(await service.closeForCargo('cargo1', 'TAKEN_BY_OTHER')).toBe(1);
+    expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: { in: ['r2'] } }, data: { status: 'REJECTED', closeReason: 'TAKEN_BY_OTHER' } });
+    expect(chat.post).toHaveBeenCalledWith(expect.objectContaining({ driverId: 'd2', companyId: 'c1', cargoId: 'cargo1', code: 'CARGO_TAKEN' }));
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u2'] }, 'RESPONSE_REJECTED', expect.objectContaining({ cargoId: 'cargo1', companyName: 'Acme' }));
+    expect(notifications.notify).not.toHaveBeenCalledWith(expect.anything(), 'RESPONSE_CARGO_CLOSED', expect.anything());
+  });
+});

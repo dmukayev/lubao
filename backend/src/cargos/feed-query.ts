@@ -1,3 +1,6 @@
+import { BadRequestException } from '@nestjs/common';
+import { CARGO_CURRENCIES } from '../common/currencies';
+
 /// 059: фильтры и сортировка ленты водителя (GET /cargos).
 export const FEED_SORTS = ['default', 'price_asc', 'price_desc', 'per_km', 'ready', 'distance_asc', 'distance_desc', 'new'] as const;
 export type FeedSort = (typeof FEED_SORTS)[number];
@@ -46,6 +49,11 @@ export function parseFeedQuery(q: Record<string, unknown>): FeedQuery {
   const sort = str(q.sort);
   const ready = str(q.ready);
   const bodies = str(q.bodyTypeIds);
+  // 064 п.10: валюта цены — только из списка (иначе фильтр молча не работал).
+  const priceCurrency = str(q.priceCurrency)?.toUpperCase();
+  if (priceCurrency && !(CARGO_CURRENCIES as readonly string[]).includes(priceCurrency)) {
+    throw new BadRequestException({ code: 'VALIDATION_FAILED', message: ['priceCurrency is not supported'], fields: [{ field: 'priceCurrency', rule: 'isIn' }] });
+  }
   return {
     limit: int(q.limit),
     offset: int(q.offset),
@@ -59,7 +67,7 @@ export function parseFeedQuery(q: Record<string, unknown>): FeedQuery {
     weightMaxT: num(q.weightMaxT),
     priceMin: num(q.priceMin),
     priceMax: num(q.priceMax),
-    priceCurrency: str(q.priceCurrency),
+    priceCurrency,
     perKmMin: num(q.perKmMin),
     ready: ready && (FEED_READY as readonly string[]).includes(ready) ? (ready as FeedReady) : undefined,
     withAdvance: bool(q.withAdvance),

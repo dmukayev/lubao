@@ -335,6 +335,15 @@ export class CargosService {
     return 2;
   }
 
+  /// 064 п.9: км по прямой от города водителя до места погрузки; нет координат — null.
+  static pickupKm(point: GeoPoint, origin: FeedOrigin): number | null {
+    if (point.cityId === origin.cityId) return 0;
+    const lat = CargosService.num(point.lat) ?? CargosService.num(point.city.lat);
+    const lng = CargosService.num(point.lng) ?? CargosService.num(point.city.lng);
+    if (origin.lat == null || origin.lng == null || lat == null || lng == null) return null;
+    return haversineKm({ lat: origin.lat, lng: origin.lng }, { lat, lng });
+  }
+
   /// Откуда водитель смотрит на ленту: город его анонса (на месте, иначе
   /// ближайший запланированный), фолбэк — домашний город (040, п.5).
   private async feedOrigin(driverId: string) {
@@ -388,7 +397,7 @@ export class CargosService {
       const limitDay = parseDateOnly(localDateOnly(new Date(Date.now() + days * 86_400_000)));
       and.push({ readyDate: { lte: limitDay } });
     }
-    if (query.bodyTypeIds?.length) and.push({ OR: [{ bodyTypeId: { in: query.bodyTypeIds } }, { extraBodyTypeIds: { hasSome: query.bodyTypeIds } }] });
+    // 064 п.8: выбранные кузова — по профилям 048 (не по точному id), в памяти ниже.
     if (and.length) where.AND = and;
 
     const rows = await this.prisma.cargo.findMany({
@@ -400,7 +409,7 @@ export class CargosService {
         point: { select: { cityId: true, lat: true, lng: true, city: { select: { id: true, regionId: true, lat: true, lng: true } } } },
         destinationCity: { select: { regionId: true } },
       },
-      orderBy: { readyDate: 'asc' },
+      orderBy: [{ readyDate: 'asc' }, { id: 'asc' }],
     });
 
     // Цена и ₸/км — в тенге по курсу НБ РК (058 п.4: и RUB, UZS).
@@ -408,9 +417,14 @@ export class CargosService {
     const kzt = (amount: number | null, currency: string) => (amount == null || rate[currency] == null ? null : amount * rate[currency]!);
     const priceFloor = query.priceMin != null ? kzt(query.priceMin, query.priceCurrency ?? 'KZT') : null;
     const priceCeil = query.priceMax != null ? kzt(query.priceMax, query.priceCurrency ?? 'KZT') : null;
+    // 064 п.10: нет курса валюты фильтра — пометка в ответе, а не молчаливый пропуск.
+    const priceRateMissing = (query.priceMin != null || query.priceMax != null) && rate[query.priceCurrency ?? 'KZT'] == null;
 
-    const body = driverId && !query.bodyTypeIds?.length ? await this.driverCargoBody(driverId) : null;
-    const profileOf = body ? await this.bodyProfiles() : new Map<string, BodyTypeProfile>();
+    const body = driverId ? await this.driverCargoBody(driverId) : null;
+    const chosen = query.bodyTypeIds?.length ? query.bodyTypeIds : null;
+    const profileOf = body || chosen ? await this.bodyProfiles() : new Map<string, BodyTypeProfile>();
+    // 064 п.8: выбранные в шторке кузова — их профили (тент и фура — один профиль).
+    const chosenProfiles = chosen ? new Set(chosen.map((id) => profileOf.get(id)).filter((p): p is BodyTypeProfile => !!p)) : null;
 
     const enriched = rows
       .map((c) => {
@@ -422,8 +436,23 @@ export class CargosService {
         if (priceFloor != null && (priceKzt == null || priceKzt < priceFloor)) return false;
         if (priceCeil != null && (priceKzt == null || priceKzt > priceCeil)) return false;
         if (query.perKmMin != null && (perKmKzt == null || perKmKzt < query.perKmMin)) return false;
+        const profiles = CargosService.cargoProfiles(c, profileOf);
+        const cargoBody = { profiles, weightKg: c.weightKg, volumeM3: c.volumeM3, palletCount: c.palletCount, specs: c.specs as Record<string, unknown> | null };
+        if (chosen) {
+          // 064 п.8: кузов выбран в шторке — груз под один из выбранных профилей
+          // (груз без профиля — по точному id); «влезает в мою машину» — тоже.
+          const matches = profiles.length ? profiles.some((p) => chosenProfiles!.has(p)) : [c.bodyTypeId, ...(c.extraBodyTypeIds ?? [])].some((id) => chosen.includes(id));
+          if (!matches) return false;
+          if (body) {
+            const sameProfile = !body.profile || !profiles.length || profiles.includes(body.profile);
+            // Другой профиль, чем у моей машины, — проверяем только тоннаж.
+            const fitBody = sameProfile ? body : { ...body, profile: null, specs: null, volumeM3: null, palletsEuro: null };
+            if (!cargoFitsBody(cargoBody, fitBody as typeof body)) return false;
+          }
+          return true;
+        }
         // 048 п.5: отсев по профилю кузова моей машины (если кузова не выбраны в фильтре).
-        if (body && !cargoFitsBody({ profiles: CargosService.cargoProfiles(c, profileOf), weightKg: c.weightKg, volumeM3: c.volumeM3, palletCount: c.palletCount, specs: c.specs as Record<string, unknown> | null }, body)) return false;
+        if (body && !cargoFitsBody(cargoBody, body)) return false;
         return true;
       });
 
@@ -461,9 +490,11 @@ export class CargosService {
 
     const ranked = enriched.map((e) => {
       const pickupRank = origin ? CargosService.pickupRank(e.c.point, origin) : 2;
+      // 064 п.9: «Ближе погрузка» — км от города водителя до места погрузки.
+      const pickupKm = origin ? CargosService.pickupKm(e.c.point, origin) : null;
       const home = isHome(e.c);
       const section: 'home' | 'selected' | 'other' = home ? 'home' : (driver?.anyCountry ?? true) || inSelected(e.c) ? 'selected' : 'other';
-      return { ...e, pickupRank, section, home };
+      return { ...e, pickupRank, pickupKm, section, home };
     });
 
     // 059 п.5: «Грузы из других городов» — свёрнуты, если город погрузки известен.
@@ -504,14 +535,16 @@ export class CargosService {
       price_asc: (a, b) => nullsLast(a.priceKzt, b.priceKzt, 1) || byDate(a, b),
       price_desc: (a, b) => nullsLast(a.priceKzt, b.priceKzt, -1) || byDate(a, b),
       per_km: (a, b) => nullsLast(a.perKmKzt, b.perKmKzt, -1) || byDate(a, b),
-      ready: (a, b) => byDate(a, b) || a.pickupRank - b.pickupRank,
+      ready: (a, b) => nullsLast(a.pickupKm, b.pickupKm, 1) || a.pickupRank - b.pickupRank || byDate(a, b),
       distance_asc: (a, b) => nullsLast(a.c.distanceKm, b.c.distanceKm, 1) || byDate(a, b),
       distance_desc: (a, b) => nullsLast(a.c.distanceKm, b.c.distanceKm, -1) || byDate(a, b),
       new: (a, b) => b.c.publishedAt.getTime() - a.c.publishedAt.getTime(),
     };
-    matched.sort(sorters[query.sort ?? 'default']);
+    // 064 п.1: последний ключ — id: при равных датах страницы не пересекаются.
+    const sorter = sorters[query.sort ?? 'default'];
+    matched.sort((a, b) => sorter(a, b) || (a.c.id < b.c.id ? -1 : a.c.id > b.c.id ? 1 : 0));
 
-    const meta = { total: matched.length, offset, limit, originCityId: origin?.cityId ?? null, originSource: query.fromCityId ? ('filter' as const) : source, chips, otherCitiesCount };
+    const meta = { total: matched.length, offset, limit, originCityId: origin?.cityId ?? null, originSource: query.fromCityId ? ('filter' as const) : source, chips, otherCitiesCount, priceRateMissing };
     const pageRanked = limit === 0 ? [] : matched.slice(offset, offset + limit);
     if (pageRanked.length === 0) return { items: [], ...meta };
 
@@ -908,11 +941,18 @@ export class CargosService {
     // 061 п.5: валюта при откликах со своей ценой или живых сделках не меняется —
     // иначе $9 500 стал бы ₸9 500.
     if (dto.currency !== undefined && dto.currency !== existing.currency) {
-      const [offers, liveDeals] = await Promise.all([
-        this.prisma.response.count({ where: { cargoId: id, status: { in: ['PENDING', 'INVITED'] }, OR: [{ proposedPrice: { not: null } }, { counterPrice: { not: null } }] } }),
-        this.prisma.deal.count({ where: { cargoId: id, status: { notIn: ['CANCELLED', 'DELIVERED'] } } }),
-      ]);
-      if (offers > 0 || liveDeals > 0) throw new ConflictException({ code: 'CURRENCY_LOCKED', message: 'Currency cannot change while there are offers or deals' });
+      // 064 п.14: под замком груза (тот же, что у выбора водителя) — сделка не
+      // появится между проверкой и сменой; любая неотменённая сделка (и
+      // доставленная) валюту запирает.
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))::text`;
+        const [offers, deals] = await Promise.all([
+          tx.response.count({ where: { cargoId: id, status: { in: ['PENDING', 'INVITED'] }, OR: [{ proposedPrice: { not: null } }, { counterPrice: { not: null } }] } }),
+          tx.deal.count({ where: { cargoId: id, status: { not: 'CANCELLED' } } }),
+        ]);
+        if (offers > 0 || deals > 0) throw new ConflictException({ code: 'CURRENCY_LOCKED', message: 'Currency cannot change while there are offers or deals' });
+        await tx.cargo.update({ where: { id }, data: { currency: dto.currency } });
+      });
     }
     // 061 п.4б: число машин — в одной транзакции под замком груза, со статусом.
     let filledByEdit = false;
