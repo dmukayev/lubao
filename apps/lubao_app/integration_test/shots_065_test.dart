@@ -27,7 +27,7 @@ void main() {
     String body(String code) => (ref['bodyTypes'] as List).cast<Map>().firstWhere((b) => b['code'] == code)['id'] as String;
     final category = (ref['cargoCategories'] as List).cast<Map>().firstWhere((c) => c['isActive'] != false)['id'];
     String day(int d) => ymd(DateTime.now().add(Duration(days: d)));
-    Map<String, dynamic> cargo(String from, String to, String bodyCode, int kg, num price, String currency, {int? delay, String? form, num? advance, int trucks = 1, num? volume}) => {
+    Map<String, dynamic> cargo(String from, String to, String bodyCode, int kg, num price, String currency, {int? delay, String? form, num? advance, int trucks = 1, num? volume, Map<String, dynamic>? specs}) => {
           'pointId': pointIn(from),
           'destinationCountryId': city(to)['countryId'],
           'destinationCityId': city(to)['id'],
@@ -35,6 +35,7 @@ void main() {
           'categoryId': category,
           'weightKg': kg,
           if (volume != null) 'volumeM3': volume,
+          if (specs != null) 'specs': specs,
           'price': price,
           'currency': currency,
           if (delay != null) 'paymentDelayDays': delay,
@@ -55,7 +56,7 @@ void main() {
       await logist.pendingResponses(minsk); // логист открыл отклики — первый уже не «новый»
       await (await DriverApi.login('+77010000005')).respond(minsk);
       await (await DriverApi.login('+77010000001')).respond(minsk);
-      await logist.publishCargo(cargo('KZ-ASTANA', 'KG-OSH', 'CONTAINER', 20000, 100000, 'USD', delay: 5, form: 'CASH', advance: 1000, trucks: 5));
+      await logist.publishCargo(cargo('KZ-ASTANA', 'KG-OSH', 'CONTAINER', 20000, 100000, 'USD', delay: 5, form: 'CASH', advance: 1000, trucks: 5, specs: {'containerType': '40', 'containerCount': 1}));
       // Лента водителя — груз в рублях с километрами.
       final kz = await LogistApi.login(email: _kzLogist);
       await kz.publishCargo(cargo('KZ-ALMATY', 'RU-MOSCOW', 'TENT', 20000, 1250000, 'RUB', delay: 5, form: 'CASH', advance: 300000, volume: 82));
