@@ -150,7 +150,7 @@ void main() {
       expect(shared.single, contains('/co/'), reason: 'приглашение — ссылка компании');
       expect(find.byKey(const Key('myDriverCard-dddddddd-dddd-4ddd-8ddd-ddddddddd004')), findsNothing, reason: 'до «Принять» driverId не отдаётся');
       final pending = find.ancestor(of: find.text('Нурлан'), matching: find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('myDriverCard-')));
-      await waitFor(tester, pending.first);
+      await waitFor(tester, pending);
       expect(find.descendant(of: pending.first, matching: find.textContaining(t.myDriversWaiting)), findsOneWidget);
       await tester.tap(find.byKey(const Key('driversTabAll')));
       await waitFor(tester, find.byKey(_d3Card));

@@ -140,7 +140,7 @@ void main() {
       await waitAndReveal(tester, find.byKey(const Key('anonsCityName')));
       // Карточка во время обновления показывает прежний город — ждём новый.
       await waitFor(tester, find.byWidgetPredicate((w) => w is Text && w.key == const Key('anonsCityName') && w.data == 'Астана'));
-      await waitAndReveal(tester, find.byWidgetPredicate((w) => w.key is ValueKey && '${(w.key! as ValueKey).value}'.startsWith('feedCargoCard-')).first);
+      await waitAndReveal(tester, find.byWidgetPredicate((w) => w.key is ValueKey && '${(w.key! as ValueKey).value}'.startsWith('feedCargoCard-')));
       // Теперь первым — груз из Астаны, груз из Алматы ушёл вниз. Лента
       // перезагружается после анонса — ждём новый порядок, а не первый кадр.
       final reordered = DateTime.now().add(const Duration(seconds: 20));
