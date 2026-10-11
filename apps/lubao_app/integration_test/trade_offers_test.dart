@@ -133,6 +133,8 @@ void main() {
       await tester.tap(find.byKey(const Key('offerCounterAgree')));
       await waitFor(tester, find.byKey(const Key('dealPrice')));
       expect(tester.widget<Text>(find.byKey(const Key('dealPrice'))).data, '1 200 000 ₽');
+      // 062: «Сделка № 482 915-1» — первая машина груза.
+      expect(tester.widget<Text>(find.byKey(const Key('dealTitle'))).data, matches(RegExp(r'\d{3} \d{3}-1$')));
       expect(find.byKey(const Key('dealTerms')), findsOneWidget);
     });
 

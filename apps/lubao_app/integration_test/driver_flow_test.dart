@@ -206,6 +206,16 @@ void main() {
       await tester.tap(cargoCard);
       await waitFor(tester, find.byKey(const Key('cargoDetailChatButton')));
       expectInsideSafeZone(tester);
+      // 062: номер груза «№ 482 915»; нажатие — копирует номер.
+      final numberWidget = find.byType(CargoNumberText);
+      await waitFor(tester, numberWidget);
+      final number = tester.widget<CargoNumberText>(numberWidget).number;
+      expect(number, inInclusiveRange(100000, 999999));
+      expect(find.text(t.cargoNumberLabel(formatCargoNumber(number))), findsOneWidget);
+      await tester.tap(numberWidget);
+      await waitFor(tester, find.text(t.cargoNumberCopied('$number')));
+      ScaffoldMessenger.of(tester.element(numberWidget)).clearSnackBars();
+      await tester.pumpAndSettle();
     });
 
     // Кнопка WhatsApp — свой значок (не облачко чата), ведёт в wa.me и

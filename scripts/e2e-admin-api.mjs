@@ -132,6 +132,21 @@ for (const [label, list, card] of [
   assert(res.status === 200 && res.json && typeof res.json === 'object', `карточка ${label} открывается (200, JSON)`, `status=${res.status}`);
 }
 
+// ---- 062. Номер груза и сделки: в списках, поиск по номеру -------------------
+{
+  const cargo = (await get('/admin/cargos')).json.items[0];
+  assert(/^\d{3} \d{3}$/.test(cargo.number ?? ''), 'у груза номер из 6 цифр группами по 3', String(cargo.number));
+  const byNumber = (await get(`/admin/cargos?q=${encodeURIComponent(cargo.number)}`)).json.items;
+  assert(byNumber.length === 1 && byNumber[0].id === cargo.id, 'поиск грузов по номеру «482 915»');
+  const plain = (await get(`/admin/search?q=${cargo.number.replace(' ', '')}`)).json;
+  assert(plain.cargos.length === 1 && plain.cargos[0].id === cargo.id && plain.cargos[0].number === cargo.number, 'общий поиск по номеру без пробела');
+  const deal = (await get('/admin/deals')).json.items[0];
+  assert(/^\d{3} \d{3}-\d+$/.test(deal.number ?? ''), 'у сделки номер «482 915-1»', String(deal.number));
+  const dealHits = (await get(`/admin/deals?q=${encodeURIComponent(deal.number)}`)).json.items;
+  assert(dealHits.length === 1 && dealHits[0].id === deal.id, 'поиск сделки по номеру с машиной');
+  assert((await get(`/admin/deals/${deal.id}`)).json.number === deal.number, 'номер в карточке сделки');
+}
+
 const e2eDriver = drivers.items.find((d) => d.phone === '+77010000001');
 assert(!!e2eDriver, 'сидовый водитель найден');
 const before = (await get(`/admin/drivers/${e2eDriver.id}`)).json;
@@ -530,6 +545,7 @@ assert(csv.status === 200 && csv.text.includes('median_kzt_per_km'), 'админ
   const html = await page.text();
   assert(page.status === 200 && html.includes('og:title') && html.includes('在应用中响应'), 'страница груза без входа, язык устройства (zh), OG-теги', `status=${page.status}`);
   assert(!/\+7\d{6,}|tel:/.test(html), 'на странице нет телефона');
+  assert(/编号 \d{3} \d{3}/.test(html), 'на странице груза — номер груза (062)');
   assert((await fetch(`${BASE}/p/c/zzzzzzz`)).status === 404, 'неизвестная ссылка — 404');
   const foreignCo = await api('POST', '/share', { token: kzOwner, body: { type: 'COMPANY', targetId: '00000000-0000-4000-8000-000000000000' } });
   assert(foreignCo.status === 403, 'чужой компанией не поделиться', `status=${foreignCo.status}`);
