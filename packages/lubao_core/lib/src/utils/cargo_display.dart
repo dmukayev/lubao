@@ -9,15 +9,21 @@ import 'cargo_weight.dart';
 /// 058 п.1 (уточнение 2026-10-10): аванс — при погрузке, отсрочка — остаток
 /// после выгрузки. «аванс $5 300 при погрузке · остаток через 5 дн. · нал.»;
 /// без аванса — «оплата через 5 дн. после выгрузки · на счёт»; «сразу» не пишем.
-String paymentTermsLine(LubaoLocalizations t, {double? advanceAmount, PaymentForm? paymentForm, int? paymentDelayDays, required Currency currency}) {
-  final hasAdvance = advanceAmount != null && advanceAmount > 0;
-  final delay = paymentDelayDays != null && paymentDelayDays > 0 ? '$paymentDelayDays' : null;
+/// 063: под ценой — когда и как платят **всю** сумму: «через 5 дн. · нал.»,
+/// «сразу · на карту». Ничего не указано — пусто. Аванс — отдельно
+/// ([advancePillText]), не в этой строке.
+String paymentWhenHowLine(LubaoLocalizations t, {PaymentForm? paymentForm, int? paymentDelayDays}) {
+  final later = paymentDelayDays != null && paymentDelayDays > 0;
+  if (!later && paymentForm == null) return '';
   return [
-    if (hasAdvance) t.cargoAdvance(formatCurrencyAmount(advanceAmount, currency)),
-    if (delay != null) hasAdvance ? t.paymentDelayShort(delay) : t.paymentDelayNoAdvance(delay),
+    later ? t.paymentWhenDays('$paymentDelayDays') : t.paymentWhenNow,
     if (paymentForm != null) paymentFormShort(t, paymentForm),
   ].join(' · ');
 }
+
+/// 063: «Аванс $5 300 при погрузке» — отдельной плашкой; нет аванса — null.
+String? advancePillText(LubaoLocalizations t, {double? advanceAmount, required Currency currency}) =>
+    advanceAmount != null && advanceAmount > 0 ? t.advancePill(formatCurrencyAmount(advanceAmount, currency)) : null;
 
 String paymentFormShort(LubaoLocalizations t, PaymentForm form) => switch (form) {
       PaymentForm.cash => t.paymentFormCashShort,

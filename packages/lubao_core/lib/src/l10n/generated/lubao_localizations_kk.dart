@@ -3549,11 +3549,6 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   }
 
   @override
-  String cargoAdvance(String amount) {
-    return 'тиеу кезінде аванс $amount';
-  }
-
-  @override
   String get paymentFormCashShort => 'қолма-қол';
 
   @override
@@ -3561,25 +3556,6 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get paymentFormCashlessShort => 'шотқа';
-
-  @override
-  String paymentDelayShort(String days) {
-    return 'қалғаны $days күннен кейін';
-  }
-
-  @override
-  String paymentDelayNoAdvance(String days) {
-    return 'түсіргеннен кейін $days күнде төлем';
-  }
-
-  @override
-  String get paymentRestNow => 'Бірден';
-
-  @override
-  String get paymentRestLater => 'N күннен кейін';
-
-  @override
-  String get postCargoDelayDays => 'Неше күннен кейін';
 
   @override
   String get paymentFormCash => 'Қолма-қол';
@@ -3594,13 +3570,59 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get postCargoPaymentTitle => 'Төлем';
 
   @override
-  String get postCargoAdvance => 'Тиеу кезіндегі аванс';
-
-  @override
-  String get postCargoPaymentDelay => 'Түсіргеннен кейінгі қалдық';
-
-  @override
   String get postCargoTrucks => 'Қанша көлік керек';
+
+  @override
+  String get paymentWhenNow => 'бірден';
+
+  @override
+  String paymentWhenDays(Object days) {
+    return '$days күннен кейін';
+  }
+
+  @override
+  String advancePill(Object amount) {
+    return 'Тиеу кезінде $amount аванс';
+  }
+
+  @override
+  String advanceLine(Object amount) {
+    return 'тиеу кезінде $amount аванс';
+  }
+
+  @override
+  String get postCargoPriceTotal => 'Рейс құны — толық сома';
+
+  @override
+  String get postCargoWhenPay => 'Қашан төлейсіз';
+
+  @override
+  String get paymentWhenAfterUnload => 'Түсіргеннен кейін бірден';
+
+  @override
+  String get paymentWhenLater => '… күннен кейін';
+
+  @override
+  String get postCargoDaysAfterUnload => 'түсіргеннен кейінгі күн';
+
+  @override
+  String get postCargoHowPay => 'Қалай төлейсіз';
+
+  @override
+  String get postCargoAdvanceTitle => 'Тиеу кезіндегі аванс';
+
+  @override
+  String get postCargoOptional => 'міндетті емес';
+
+  @override
+  String postCargoAdvanceHintNow(Object rest, Object total) {
+    return 'Жүргізуші тиеу кезінде алатын құн бөлігі. $total ішіне кіреді, қалғаны — $rest түсіргеннен кейін бірден.';
+  }
+
+  @override
+  String postCargoAdvanceHintDays(Object days, Object rest, Object total) {
+    return 'Жүргізуші тиеу кезінде алатын құн бөлігі. $total ішіне кіреді, қалғаны — $rest түсіргеннен кейін $days күннен соң.';
+  }
 
   @override
   String feedChipAll(String count) {

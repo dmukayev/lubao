@@ -143,38 +143,39 @@ const ADVANCE: Record<Loc, (amount: string) => string> = {
   ru: (a) => `аванс ${a} при погрузке`,
   kk: (a) => `тиеу кезінде аванс ${a}`,
   zh: (a) => `装货时预付 ${a}`,
-  en: (a) => `${a} advance on loading`,
+  en: (a) => `advance ${a} at loading`,
 };
 const PAYMENT_FORM: Record<string, Record<Loc, string>> = {
   CASH: { ru: 'нал.', kk: 'қолма-қол', zh: '现金', en: 'cash' },
   CARD: { ru: 'на карту', kk: 'картаға', zh: '转卡', en: 'to card' },
   CASHLESS: { ru: 'на счёт', kk: 'шотқа', zh: '对公转账', en: 'bank transfer' },
 };
-/// Отсрочка — остаток после выгрузки (058 п.1, уточнение 2026-10-10).
-const REST: Record<Loc, (d: number) => string> = {
-  ru: (d) => `остаток через ${d} дн.`,
-  kk: (d) => `қалғаны ${d} күннен кейін`,
-  zh: (d) => `余款 ${d} 天后`,
-  en: (d) => `balance in ${d} days`,
+/// 063: когда платят всю сумму — «сразу» / «через 5 дн.».
+const WHEN_NOW: Record<Loc, string> = { ru: 'сразу', kk: 'бірден', zh: '立即', en: 'right away' };
+const WHEN_DAYS: Record<Loc, (d: number) => string> = {
+  ru: (d) => `через ${d} дн.`,
+  kk: (d) => `${d} күннен кейін`,
+  zh: (d) => `${d}天后`,
+  en: (d) => `in ${d} d.`,
 };
-const PAY_AFTER: Record<Loc, (d: number) => string> = {
-  ru: (d) => `оплата через ${d} дн. после выгрузки`,
-  kk: (d) => `түсіргеннен кейін ${d} күнде төлем`,
-  zh: (d) => `卸货后 ${d} 天付款`,
-  en: (d) => `payment ${d} days after unloading`,
-};
-/// 058 п.1: «аванс $5 300 при погрузке · остаток через 5 дн. · нал.»; без
-/// аванса — «оплата через 5 дн. после выгрузки · на счёт»; «сразу» не пишем.
-export function paymentLine(
-  p: { advanceAmount?: number | null; paymentForm?: string | null; paymentDelayDays?: number | null; currency?: string | null },
-  locale: Loc = 'ru',
-): string {
+/// 063 (эталон 34): когда и как платят **всю** сумму — «через 5 дн. · нал.»,
+/// «сразу · на карту»; ничего не указано — пусто. Аванс — отдельно ([advanceLine]).
+export function paymentWhenHow(p: { paymentForm?: string | null; paymentDelayDays?: number | null }, locale: Loc = 'ru'): string {
+  const later = !!p.paymentDelayDays && p.paymentDelayDays > 0;
+  if (!later && !p.paymentForm) return '';
+  return [later ? WHEN_DAYS[locale](p.paymentDelayDays!) : WHEN_NOW[locale], p.paymentForm ? PAYMENT_FORM[p.paymentForm]?.[locale] ?? '' : '']
+    .filter(Boolean)
+    .join(' · ');
+}
+/// 063: «аванс $5 300 при погрузке» — отдельной строкой; нет аванса — пусто.
+export function advanceLine(p: { advanceAmount?: number | null; currency?: string | null }, locale: Loc = 'ru'): string {
   const advance = p.advanceAmount ? Number(p.advanceAmount) : 0;
-  return [
-    advance > 0 ? ADVANCE[locale](formatMoney(advance, p.currency, locale)) : '',
-    p.paymentDelayDays ? (advance > 0 ? REST : PAY_AFTER)[locale](p.paymentDelayDays) : '',
-    p.paymentForm ? PAYMENT_FORM[p.paymentForm]?.[locale] ?? '' : '',
-  ].filter(Boolean).join(' · ');
+  return advance > 0 ? ADVANCE[locale](formatMoney(advance, p.currency, locale)) : '';
+}
+/// Тело push с авансом отдельной строкой ниже.
+function withAdvance(body: string, p: NotificationPayload, locale: Loc): string {
+  const advance = advanceLine(p, locale);
+  return advance ? `${body}\n${advance}` : body;
 }
 const MONTHS: Record<Loc, string[]> = {
   ru: ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'],
@@ -210,8 +211,8 @@ export function cargoLine(p: NotificationPayload, locale: Loc): string {
   const body = p.bodyType ? pickLocaleText(p.bodyType, locale) : '';
   return [
     formatMoney(Number(p.price), p.currency, locale),
-    // 058 п.1: условия оплаты сразу после цены — в push «Приглашение».
-    paymentLine(p, locale),
+    // 063: сразу после цены — когда и как платят всю сумму; аванс — строкой ниже.
+    paymentWhenHow(p, locale),
     p.weightKg != null ? formatCargoWeight(Number(p.weightKg), locale) : '',
     locale === 'zh' || !body ? body : body.toLocaleLowerCase(locale),
     p.readyDate ? LOADING[locale](shortDate(p.readyDate, locale)) : '',
@@ -323,10 +324,10 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
   /// заголовке, цена/вес/кузов/погрузка и компания в тексте. Без сводки
   /// (старый payload) — прежний общий текст.
   CARGO_INVITE: {
-    ru: (p) => (p.price != null ? { title: `Приглашение: ${route(p, 'ru')}`, body: `${cargoLine(p, 'ru')} — ${p.companyName}` } : { title: 'Приглашение на груз', body: `${p.companyName} приглашает вас на груз` }),
-    kk: (p) => (p.price != null ? { title: `Шақыру: ${route(p, 'kk')}`, body: `${cargoLine(p, 'kk')} — ${p.companyName}` } : { title: 'Жүкке шақыру', body: `${p.companyName} сізді жүкке шақырады` }),
-    zh: (p) => (p.price != null ? { title: `邀请：${route(p, 'zh')}`, body: `${cargoLine(p, 'zh')} — ${p.companyName}` } : { title: '货物邀请', body: `${p.companyName} 邀请您承运货物` }),
-    en: (p) => (p.price != null ? { title: `Invitation: ${route(p, 'en')}`, body: `${cargoLine(p, 'en')} — ${p.companyName}` } : { title: 'Cargo invitation', body: `${p.companyName} invited you to a cargo` }),
+    ru: (p) => (p.price != null ? { title: `Приглашение: ${route(p, 'ru')}`, body: withAdvance(`${cargoLine(p, 'ru')} — ${p.companyName}`, p, 'ru') } : { title: 'Приглашение на груз', body: `${p.companyName} приглашает вас на груз` }),
+    kk: (p) => (p.price != null ? { title: `Шақыру: ${route(p, 'kk')}`, body: withAdvance(`${cargoLine(p, 'kk')} — ${p.companyName}`, p, 'kk') } : { title: 'Жүкке шақыру', body: `${p.companyName} сізді жүкке шақырады` }),
+    zh: (p) => (p.price != null ? { title: `邀请：${route(p, 'zh')}`, body: withAdvance(`${cargoLine(p, 'zh')} — ${p.companyName}`, p, 'zh') } : { title: '货物邀请', body: `${p.companyName} 邀请您承运货物` }),
+    en: (p) => (p.price != null ? { title: `Invitation: ${route(p, 'en')}`, body: withAdvance(`${cargoLine(p, 'en')} — ${p.companyName}`, p, 'en') } : { title: 'Cargo invitation', body: `${p.companyName} invited you to a cargo` }),
   },
   /// Задача 029, п.11 — если отправитель и получатель на разных языках,
   /// перевод в момент отправки ещё не готов (п.6: он всегда асинхронный),
@@ -392,10 +393,10 @@ const T: Record<NotificationEvent, Record<Locale, (p: NotificationPayload) => Re
   DEAL_FOR_LOGIST: LOGIST_STATUS,
   DEAL_FOR_DRIVER: DRIVER_STATUS,
   DEAL_SELECTED: {
-    ru: (p) => (p.price != null ? { title: `Вас выбрали: ${route(p, 'ru')}`, body: `${cargoLine(p, 'ru')} — ${p.companyName}. Подтвердите перевозку` } : { title: 'Вас выбрали', body: 'Логист выбрал вас на груз. Подтвердите перевозку в приложении.' }),
-    kk: (p) => (p.price != null ? { title: `Сізді таңдады: ${route(p, 'kk')}`, body: `${cargoLine(p, 'kk')} — ${p.companyName}. Тасымалды растаңыз` } : { title: 'Сізді таңдады', body: 'Логист сізді жүкке таңдады. Тасымалды қолданбада растаңыз.' }),
-    zh: (p) => (p.price != null ? { title: `您已被选中：${route(p, 'zh')}`, body: `${cargoLine(p, 'zh')} — ${p.companyName}。请确认运输` } : { title: '您已被选中', body: '物流方已为该货物选择了您。请在应用中确认运输。' }),
-    en: (p) => (p.price != null ? { title: `You were selected: ${route(p, 'en')}`, body: `${cargoLine(p, 'en')} — ${p.companyName}. Confirm the haul` } : { title: 'You were selected', body: 'A logistician selected you for the cargo. Confirm the haul in the app.' }),
+    ru: (p) => (p.price != null ? { title: `Вас выбрали: ${route(p, 'ru')}`, body: withAdvance(`${cargoLine(p, 'ru')} — ${p.companyName}. Подтвердите перевозку`, p, 'ru') } : { title: 'Вас выбрали', body: 'Логист выбрал вас на груз. Подтвердите перевозку в приложении.' }),
+    kk: (p) => (p.price != null ? { title: `Сізді таңдады: ${route(p, 'kk')}`, body: withAdvance(`${cargoLine(p, 'kk')} — ${p.companyName}. Тасымалды растаңыз`, p, 'kk') } : { title: 'Сізді таңдады', body: 'Логист сізді жүкке таңдады. Тасымалды қолданбада растаңыз.' }),
+    zh: (p) => (p.price != null ? { title: `您已被选中：${route(p, 'zh')}`, body: withAdvance(`${cargoLine(p, 'zh')} — ${p.companyName}。请确认运输`, p, 'zh') } : { title: '您已被选中', body: '物流方已为该货物选择了您。请在应用中确认运输。' }),
+    en: (p) => (p.price != null ? { title: `You were selected: ${route(p, 'en')}`, body: withAdvance(`${cargoLine(p, 'en')} — ${p.companyName}. Confirm the haul`, p, 'en') } : { title: 'You were selected', body: 'A logistician selected you for the cargo. Confirm the haul in the app.' }),
   },
   DEAL_STATUS: {
     ru: (p) => ({ title: 'Статус сделки изменился', body: DEAL_STATUS_LABEL[p.status]?.ru ?? p.status }),

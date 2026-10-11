@@ -3536,11 +3536,6 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   }
 
   @override
-  String cargoAdvance(String amount) {
-    return 'аванс $amount при погрузке';
-  }
-
-  @override
   String get paymentFormCashShort => 'нал.';
 
   @override
@@ -3548,25 +3543,6 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get paymentFormCashlessShort => 'на счёт';
-
-  @override
-  String paymentDelayShort(String days) {
-    return 'остаток через $days дн.';
-  }
-
-  @override
-  String paymentDelayNoAdvance(String days) {
-    return 'оплата через $days дн. после выгрузки';
-  }
-
-  @override
-  String get paymentRestNow => 'Сразу';
-
-  @override
-  String get paymentRestLater => 'Через N дней';
-
-  @override
-  String get postCargoDelayDays => 'Через сколько дней';
 
   @override
   String get paymentFormCash => 'Наличные';
@@ -3581,13 +3557,59 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get postCargoPaymentTitle => 'Оплата';
 
   @override
-  String get postCargoAdvance => 'Аванс при погрузке';
-
-  @override
-  String get postCargoPaymentDelay => 'Остаток после выгрузки';
-
-  @override
   String get postCargoTrucks => 'Сколько машин нужно';
+
+  @override
+  String get paymentWhenNow => 'сразу';
+
+  @override
+  String paymentWhenDays(Object days) {
+    return 'через $days дн.';
+  }
+
+  @override
+  String advancePill(Object amount) {
+    return 'Аванс $amount при погрузке';
+  }
+
+  @override
+  String advanceLine(Object amount) {
+    return 'аванс $amount при погрузке';
+  }
+
+  @override
+  String get postCargoPriceTotal => 'Стоимость рейса — вся сумма';
+
+  @override
+  String get postCargoWhenPay => 'Когда платите';
+
+  @override
+  String get paymentWhenAfterUnload => 'Сразу после выгрузки';
+
+  @override
+  String get paymentWhenLater => 'Через … дней';
+
+  @override
+  String get postCargoDaysAfterUnload => 'дней после выгрузки';
+
+  @override
+  String get postCargoHowPay => 'Как платите';
+
+  @override
+  String get postCargoAdvanceTitle => 'Аванс при погрузке';
+
+  @override
+  String get postCargoOptional => 'необязательно';
+
+  @override
+  String postCargoAdvanceHintNow(Object rest, Object total) {
+    return 'Часть стоимости, которую водитель получит при погрузке. Входит в $total, остаток — $rest сразу после выгрузки.';
+  }
+
+  @override
+  String postCargoAdvanceHintDays(Object days, Object rest, Object total) {
+    return 'Часть стоимости, которую водитель получит при погрузке. Входит в $total, остаток — $rest через $days дн. после выгрузки.';
+  }
 
   @override
   String feedChipAll(String count) {

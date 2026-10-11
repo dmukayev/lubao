@@ -328,7 +328,9 @@ class _TripCard extends StatelessWidget {
     final origin = route?.origin;
     final destination = route?.destination ?? '';
     final size = cargoSizeLabel(t, weightKg: cargo.weightKg, volumeM3: cargo.volumeM3, languageCode: locale);
-    final terms = paymentTermsLine(t, advanceAmount: cargo.advanceAmount, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays, currency: cargo.currency);
+    // 063: под ценой — когда и как; аванс — плашкой внизу.
+    final terms = paymentWhenHowLine(t, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays);
+    final advance = advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency);
     final details = [
       if (cargo.categoryId != null) rd?.categoryById(cargo.categoryId)?.name.forLanguageCode(locale),
       if (size.isNotEmpty) size,
@@ -349,13 +351,19 @@ class _TripCard extends StatelessWidget {
                 child: Text(origin == null ? destination : '$origin → $destination', style: AppTextStyles.route, maxLines: 2, overflow: TextOverflow.ellipsis),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceCard),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceCard),
+                  if (terms.isNotEmpty) Text(terms, style: AppTextStyles.caption, textAlign: TextAlign.end),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(details, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
-          if (terms.isNotEmpty) Text(terms, style: AppTextStyles.body),
           if (cargo.companyName.isNotEmpty) Text(cargo.companyName, style: AppTextStyles.small.copyWith(color: AppColors.textSecondary)),
+          if (advance != null) ...[const SizedBox(height: AppSpacing.sm), AdvancePill(advance)],
           if (badge != null) ...[const SizedBox(height: AppSpacing.sm), badge!],
           if (actions.isNotEmpty) ...[const SizedBox(height: AppSpacing.sm), Row(children: actions)],
         ],

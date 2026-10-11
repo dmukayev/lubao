@@ -6612,12 +6612,6 @@ abstract class LubaoLocalizations {
   /// **'По этому маршруту за месяц: медиана {median} ₸/км, сделок {deals}'**
   String postCargoMarketHint(String median, int deals);
 
-  /// No description provided for @cargoAdvance.
-  ///
-  /// In ru, this message translates to:
-  /// **'аванс {amount} при погрузке'**
-  String cargoAdvance(String amount);
-
   /// No description provided for @paymentFormCashShort.
   ///
   /// In ru, this message translates to:
@@ -6635,36 +6629,6 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'на счёт'**
   String get paymentFormCashlessShort;
-
-  /// No description provided for @paymentDelayShort.
-  ///
-  /// In ru, this message translates to:
-  /// **'остаток через {days} дн.'**
-  String paymentDelayShort(String days);
-
-  /// No description provided for @paymentDelayNoAdvance.
-  ///
-  /// In ru, this message translates to:
-  /// **'оплата через {days} дн. после выгрузки'**
-  String paymentDelayNoAdvance(String days);
-
-  /// No description provided for @paymentRestNow.
-  ///
-  /// In ru, this message translates to:
-  /// **'Сразу'**
-  String get paymentRestNow;
-
-  /// No description provided for @paymentRestLater.
-  ///
-  /// In ru, this message translates to:
-  /// **'Через N дней'**
-  String get paymentRestLater;
-
-  /// No description provided for @postCargoDelayDays.
-  ///
-  /// In ru, this message translates to:
-  /// **'Через сколько дней'**
-  String get postCargoDelayDays;
 
   /// No description provided for @paymentFormCash.
   ///
@@ -6690,23 +6654,95 @@ abstract class LubaoLocalizations {
   /// **'Оплата'**
   String get postCargoPaymentTitle;
 
-  /// No description provided for @postCargoAdvance.
-  ///
-  /// In ru, this message translates to:
-  /// **'Аванс при погрузке'**
-  String get postCargoAdvance;
-
-  /// No description provided for @postCargoPaymentDelay.
-  ///
-  /// In ru, this message translates to:
-  /// **'Остаток после выгрузки'**
-  String get postCargoPaymentDelay;
-
   /// No description provided for @postCargoTrucks.
   ///
   /// In ru, this message translates to:
   /// **'Сколько машин нужно'**
   String get postCargoTrucks;
+
+  /// No description provided for @paymentWhenNow.
+  ///
+  /// In ru, this message translates to:
+  /// **'сразу'**
+  String get paymentWhenNow;
+
+  /// No description provided for @paymentWhenDays.
+  ///
+  /// In ru, this message translates to:
+  /// **'через {days} дн.'**
+  String paymentWhenDays(Object days);
+
+  /// No description provided for @advancePill.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аванс {amount} при погрузке'**
+  String advancePill(Object amount);
+
+  /// No description provided for @advanceLine.
+  ///
+  /// In ru, this message translates to:
+  /// **'аванс {amount} при погрузке'**
+  String advanceLine(Object amount);
+
+  /// No description provided for @postCargoPriceTotal.
+  ///
+  /// In ru, this message translates to:
+  /// **'Стоимость рейса — вся сумма'**
+  String get postCargoPriceTotal;
+
+  /// No description provided for @postCargoWhenPay.
+  ///
+  /// In ru, this message translates to:
+  /// **'Когда платите'**
+  String get postCargoWhenPay;
+
+  /// No description provided for @paymentWhenAfterUnload.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сразу после выгрузки'**
+  String get paymentWhenAfterUnload;
+
+  /// No description provided for @paymentWhenLater.
+  ///
+  /// In ru, this message translates to:
+  /// **'Через … дней'**
+  String get paymentWhenLater;
+
+  /// No description provided for @postCargoDaysAfterUnload.
+  ///
+  /// In ru, this message translates to:
+  /// **'дней после выгрузки'**
+  String get postCargoDaysAfterUnload;
+
+  /// No description provided for @postCargoHowPay.
+  ///
+  /// In ru, this message translates to:
+  /// **'Как платите'**
+  String get postCargoHowPay;
+
+  /// No description provided for @postCargoAdvanceTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аванс при погрузке'**
+  String get postCargoAdvanceTitle;
+
+  /// No description provided for @postCargoOptional.
+  ///
+  /// In ru, this message translates to:
+  /// **'необязательно'**
+  String get postCargoOptional;
+
+  /// No description provided for @postCargoAdvanceHintNow.
+  ///
+  /// In ru, this message translates to:
+  /// **'Часть стоимости, которую водитель получит при погрузке. Входит в {total}, остаток — {rest} сразу после выгрузки.'**
+  String postCargoAdvanceHintNow(Object rest, Object total);
+
+  /// No description provided for @postCargoAdvanceHintDays.
+  ///
+  /// In ru, this message translates to:
+  /// **'Часть стоимости, которую водитель получит при погрузке. Входит в {total}, остаток — {rest} через {days} дн. после выгрузки.'**
+  String postCargoAdvanceHintDays(Object days, Object rest, Object total);
 
   /// No description provided for @feedChipAll.
   ///

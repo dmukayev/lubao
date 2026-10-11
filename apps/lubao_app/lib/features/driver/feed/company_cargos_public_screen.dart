@@ -52,7 +52,9 @@ class CompanyCargosPublicScreen extends ConsumerWidget {
                   destinationLabel: refData == null
                       ? ''
                       : cargoRouteLabels(refData, pointId: c.pointId, destinationCountryId: c.destinationCountryId, destinationCityId: c.destinationCityId, languageCode: locale).destination,
-                  termsLabel: paymentTermsLine(t, advanceAmount: c.advanceAmount, paymentForm: c.paymentForm, paymentDelayDays: c.paymentDelayDays, currency: c.currency),
+                  // 063: под ценой — когда и как; аванс — плашкой внизу.
+      termsLabel: paymentWhenHowLine(t, paymentForm: c.paymentForm, paymentDelayDays: c.paymentDelayDays),
+      advanceLabel: advancePillText(t, advanceAmount: c.advanceAmount, currency: c.currency),
                   bodyTypeLabel: refData?.bodyTypeById(c.bodyTypeId).name.forLanguageCode(locale) ?? '',
                   priceLabel: formatMoney(c.price, c.currency),
                   readyDateLabel: formatDate(c.readyDate),

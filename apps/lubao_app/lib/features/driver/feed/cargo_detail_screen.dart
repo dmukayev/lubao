@@ -450,7 +450,9 @@ class _CargoDetailBody extends ConsumerWidget {
     final route = cargoRouteLabels(refData, pointId: cargo.pointId, destinationCountryId: cargo.destinationCountryId, destinationCityId: cargo.destinationCityId, languageCode: locale, withCountry: true);
     final pointName = route.origin ?? '';
     final destinationLabel = route.destination;
-    final terms = paymentTermsLine(t, advanceAmount: cargo.advanceAmount, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays, currency: cargo.currency);
+    // 063: под ценой — когда и как платят всю сумму; аванс — отдельной плашкой.
+    final terms = paymentWhenHowLine(t, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays);
+    final advance = advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency);
 
     final kzt = refData.convertToKzt(cargo.price, cargo.currency);
     final usd = refData.convertToUsd(cargo.price, cargo.currency);
@@ -492,8 +494,8 @@ class _CargoDetailBody extends ConsumerWidget {
                           Text(t.cargoDetailPriceLabel, style: AppTextStyles.caption),
                           const SizedBox(height: AppSpacing.xs),
                           Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceDetail),
-                          // 058 п.1: «аванс $5 300 · нал. · отсрочка 10 дн.»
                           if (terms.isNotEmpty) Text(terms, key: const Key('cargoDetailTerms'), style: AppTextStyles.body),
+                          if (advance != null) ...[const SizedBox(height: AppSpacing.xs), AdvancePill(advance, key: const Key('cargoDetailAdvance'))],
                           if (cargoTrucksLabel(t, needed: cargo.trucksNeeded, taken: cargo.trucksTaken) case final trucks?)
                             Text(trucks, key: const Key('cargoDetailTrucks'), style: AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
                         ],

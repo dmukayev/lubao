@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'advance_pill.dart';
 import 'app_card.dart';
 import 'status_badge.dart';
 
@@ -20,6 +21,7 @@ class CargoCard extends StatelessWidget {
     this.originLabel,
     this.partialLabel,
     this.termsLabel,
+    this.advanceLabel,
   });
 
   /// Город погрузки (задача 040, п.7) — крупно, до маршрута: «Алматы → Ташкент».
@@ -28,8 +30,11 @@ class CargoCard extends StatelessWidget {
   /// Плашка «Догруз» (040, п.6), если груз можно брать догрузом.
   final String? partialLabel;
 
-  /// 058 п.1: «аванс $5 300 · нал.» — строкой под ценой.
+  /// 063: «через 5 дн. · нал.» — когда и как платят всю сумму, под ценой.
   final String? termsLabel;
+
+  /// 063: «Аванс $5 300 при погрузке» — отдельной плашкой внизу; null — нет аванса.
+  final String? advanceLabel;
 
   final String destinationLabel;
   final String bodyTypeLabel;
@@ -89,14 +94,15 @@ class CargoCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(priceLabel, style: AppTextStyles.priceCard),
+                  if (termsLabel != null && termsLabel!.isNotEmpty)
+                    Text(termsLabel!, style: AppTextStyles.caption, textAlign: TextAlign.end),
                   if (secondaryPriceLabel != null)
                     Text(secondaryPriceLabel!, style: AppTextStyles.caption),
                 ],
               ),
             ],
           ),
-          if (termsLabel != null && termsLabel!.isNotEmpty)
-            Align(alignment: Alignment.centerRight, child: Text(termsLabel!, style: AppTextStyles.caption, textAlign: TextAlign.end)),
+          if (advanceLabel != null) ...[const SizedBox(height: AppSpacing.sm), AdvancePill(advanceLabel!)],
           if (partialLabel != null) ...[
             const SizedBox(height: AppSpacing.sm),
             Container(

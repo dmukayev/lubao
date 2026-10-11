@@ -3466,11 +3466,6 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   }
 
   @override
-  String cargoAdvance(String amount) {
-    return '装货时预付 $amount';
-  }
-
-  @override
   String get paymentFormCashShort => '现金';
 
   @override
@@ -3478,25 +3473,6 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get paymentFormCashlessShort => '对公转账';
-
-  @override
-  String paymentDelayShort(String days) {
-    return '余款 $days 天后';
-  }
-
-  @override
-  String paymentDelayNoAdvance(String days) {
-    return '卸货后 $days 天付款';
-  }
-
-  @override
-  String get paymentRestNow => '立即';
-
-  @override
-  String get paymentRestLater => 'N 天后';
-
-  @override
-  String get postCargoDelayDays => '几天后';
 
   @override
   String get paymentFormCash => '现金';
@@ -3511,13 +3487,59 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoPaymentTitle => '付款';
 
   @override
-  String get postCargoAdvance => '装货时预付';
-
-  @override
-  String get postCargoPaymentDelay => '卸货后余款';
-
-  @override
   String get postCargoTrucks => '需要几辆车';
+
+  @override
+  String get paymentWhenNow => '立即';
+
+  @override
+  String paymentWhenDays(Object days) {
+    return '$days天后';
+  }
+
+  @override
+  String advancePill(Object amount) {
+    return '装货时预付 $amount';
+  }
+
+  @override
+  String advanceLine(Object amount) {
+    return '装货时预付 $amount';
+  }
+
+  @override
+  String get postCargoPriceTotal => '运费——全部金额';
+
+  @override
+  String get postCargoWhenPay => '何时付款';
+
+  @override
+  String get paymentWhenAfterUnload => '卸货后立即';
+
+  @override
+  String get paymentWhenLater => '… 天后';
+
+  @override
+  String get postCargoDaysAfterUnload => '卸货后天数';
+
+  @override
+  String get postCargoHowPay => '付款方式';
+
+  @override
+  String get postCargoAdvanceTitle => '装货时预付';
+
+  @override
+  String get postCargoOptional => '可选';
+
+  @override
+  String postCargoAdvanceHintNow(Object rest, Object total) {
+    return '司机在装货时收到的部分运费。包含在 $total 内，余款 $rest 卸货后立即支付。';
+  }
+
+  @override
+  String postCargoAdvanceHintDays(Object days, Object rest, Object total) {
+    return '司机在装货时收到的部分运费。包含在 $total 内，余款 $rest 卸货后 $days 天支付。';
+  }
 
   @override
   String feedChipAll(String count) {

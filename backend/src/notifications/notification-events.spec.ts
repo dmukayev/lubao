@@ -1,4 +1,4 @@
-import { NOTIFICATION_EVENTS, cargoLine, formatCargoWeight, formatMoney, paymentLine } from './notification-events';
+import { NOTIFICATION_EVENTS, cargoLine, formatCargoWeight, formatMoney, paymentWhenHow, advanceLine } from './notification-events';
 
 /// Задача 029, п.11 — раньше DEAL_STATUS всегда рендерился на русском
 /// (готовая строка статуса клалась в payload вызывающей стороной), а
@@ -151,15 +151,19 @@ describe('058: цена в любой валюте и условия оплат�
     expect(formatMoney(10300, 'USD', 'en')).toBe('$10 300');
   });
 
-  it('«аванс $5 300 при погрузке · остаток через 5 дн. · нал.»; без аванса — «оплата через … после выгрузки»; без условий — пусто', () => {
-    expect(paymentLine({ advanceAmount: 5300, paymentForm: 'CASH', paymentDelayDays: 5, currency: 'USD' }, 'ru')).toBe('аванс $5 300 при погрузке · остаток через 5 дн. · нал.');
-    expect(paymentLine({ paymentForm: 'CASHLESS', paymentDelayDays: 5, currency: 'USD' }, 'ru')).toBe('оплата через 5 дн. после выгрузки · на счёт');
-    expect(paymentLine({ paymentForm: 'CASHLESS' }, 'en')).toBe('bank transfer');
-    expect(paymentLine({}, 'ru')).toBe('');
+  it('063: когда и как платят всю сумму — «через 5 дн. · нал.», «сразу · на карту»; аванс — отдельно', () => {
+    expect(paymentWhenHow({ paymentForm: 'CASH', paymentDelayDays: 5 }, 'ru')).toBe('через 5 дн. · нал.');
+    expect(paymentWhenHow({ paymentForm: 'CARD' }, 'ru')).toBe('сразу · на карту');
+    expect(paymentWhenHow({ paymentForm: 'CASHLESS' }, 'en')).toBe('right away · bank transfer');
+    expect(paymentWhenHow({}, 'ru')).toBe('');
+    expect(advanceLine({ advanceAmount: 5300, currency: 'USD' }, 'ru')).toBe('аванс $5 300 при погрузке');
+    expect(advanceLine({ advanceAmount: 0, currency: 'USD' }, 'ru')).toBe('');
   });
 
-  it('push «Приглашение»: условия сразу после цены', () => {
-    const line = cargoLine({ price: 10300, currency: 'USD', advanceAmount: 5300, paymentForm: 'CASH', weightKg: 20000 } as never, 'ru');
-    expect(line).toBe('$10 300 · аванс $5 300 при погрузке · нал. · 20 т');
+  it('063: push «Приглашение» — «$10 300 · через 5 дн. · нал.», ниже — «аванс … при погрузке»', () => {
+    const p = { price: 10300, currency: 'USD', advanceAmount: 5300, paymentForm: 'CASH', paymentDelayDays: 5, weightKg: 20000, companyName: 'Acme' } as never;
+    expect(cargoLine(p, 'ru')).toBe('$10 300 · через 5 дн. · нал. · 20 т');
+    const body = NOTIFICATION_EVENTS.CARGO_INVITE.render('ru', p).body;
+    expect(body.split('\n')).toEqual(['$10 300 · через 5 дн. · нал. · 20 т — Acme', 'аванс $5 300 при погрузке']);
   });
 });

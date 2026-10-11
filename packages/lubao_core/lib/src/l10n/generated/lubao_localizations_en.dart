@@ -3551,11 +3551,6 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   }
 
   @override
-  String cargoAdvance(String amount) {
-    return '$amount advance on loading';
-  }
-
-  @override
   String get paymentFormCashShort => 'cash';
 
   @override
@@ -3563,25 +3558,6 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get paymentFormCashlessShort => 'bank transfer';
-
-  @override
-  String paymentDelayShort(String days) {
-    return 'balance in $days days';
-  }
-
-  @override
-  String paymentDelayNoAdvance(String days) {
-    return 'payment $days days after unloading';
-  }
-
-  @override
-  String get paymentRestNow => 'Right away';
-
-  @override
-  String get paymentRestLater => 'In N days';
-
-  @override
-  String get postCargoDelayDays => 'In how many days';
 
   @override
   String get paymentFormCash => 'Cash';
@@ -3596,13 +3572,59 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get postCargoPaymentTitle => 'Payment';
 
   @override
-  String get postCargoAdvance => 'Advance on loading';
-
-  @override
-  String get postCargoPaymentDelay => 'Balance after unloading';
-
-  @override
   String get postCargoTrucks => 'Trucks needed';
+
+  @override
+  String get paymentWhenNow => 'right away';
+
+  @override
+  String paymentWhenDays(Object days) {
+    return 'in $days d.';
+  }
+
+  @override
+  String advancePill(Object amount) {
+    return 'Advance $amount at loading';
+  }
+
+  @override
+  String advanceLine(Object amount) {
+    return 'advance $amount at loading';
+  }
+
+  @override
+  String get postCargoPriceTotal => 'Trip price — full amount';
+
+  @override
+  String get postCargoWhenPay => 'When you pay';
+
+  @override
+  String get paymentWhenAfterUnload => 'Right after unloading';
+
+  @override
+  String get paymentWhenLater => 'In … days';
+
+  @override
+  String get postCargoDaysAfterUnload => 'days after unloading';
+
+  @override
+  String get postCargoHowPay => 'How you pay';
+
+  @override
+  String get postCargoAdvanceTitle => 'Advance at loading';
+
+  @override
+  String get postCargoOptional => 'optional';
+
+  @override
+  String postCargoAdvanceHintNow(Object rest, Object total) {
+    return 'Part of the price the driver gets at loading. Included in $total; the remaining $rest right after unloading.';
+  }
+
+  @override
+  String postCargoAdvanceHintDays(Object days, Object rest, Object total) {
+    return 'Part of the price the driver gets at loading. Included in $total; the remaining $rest $days days after unloading.';
+  }
 
   @override
   String feedChipAll(String count) {

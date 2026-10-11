@@ -316,6 +316,17 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     return int.tryParse(text) == null ? t.fieldNotNumber : numberFieldError(t, text, min: 1, max: 20);
   }
 
+  /// 063: «Входит в 850 000 ₸, остаток — 550 000 ₸ через 5 дн. после выгрузки» — на лету.
+  String? _advanceHint(LubaoLocalizations t) {
+    final price = parseDecimal(_priceController.text);
+    final advance = parseDecimal(_advanceController.text);
+    if (price == null || advance == null || advance <= 0 || advance >= price) return null;
+    final total = formatCurrencyAmount(price, _currency);
+    final rest = formatCurrencyAmount(price - advance, _currency);
+    final days = int.tryParse(_delayController.text.trim());
+    return _restLater && days != null && days > 0 ? t.postCargoAdvanceHintDays(total, rest, '$days') : t.postCargoAdvanceHintNow(total, rest);
+  }
+
   String? _delayError(LubaoLocalizations t) {
     if (!_restLater) return null;
     final text = _delayController.text.trim();
@@ -686,6 +697,15 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   onChanged: (value) => setState(() => _allowPartial = value),
                 ),
               const SizedBox(height: 12),
+              AppTextField(
+                key: const Key('postCargoTrucks'),
+                label: t.postCargoTrucks,
+                controller: _trucksController,
+                errorText: _trucksError(t),
+                keyboardType: TextInputType.number,
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 12),
               if (_distanceLabel(t, refData) case final distance?) ...[
                 Text(distance, key: const Key('postCargoDistanceHint'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
                 const SizedBox(height: 4),
@@ -698,13 +718,17 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 ),
                 const SizedBox(height: 8),
               ],
+              // 063, эталон 34: «Оплата» — стоимость всей суммой, когда и как платите,
+              // ниже отдельно — аванс при погрузке (необязательно).
+              Text(t.postCargoPaymentTitle, style: AppTextStyles.bodyStrong),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
                     flex: 2,
                     child: AppTextField(
                       key: const Key('postCargoPrice'),
-                      label: t.postCargoPrice,
+                      label: t.postCargoPriceTotal,
                       errorText: _priceError,
                       controller: _priceController,
                       keyboardType: TextInputType.number,
@@ -726,62 +750,63 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              AppTextField(
-                key: const Key('postCargoTrucks'),
-                label: t.postCargoTrucks,
-                controller: _trucksController,
-                errorText: _trucksError(t),
-                keyboardType: TextInputType.number,
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 12),
-              // 058 п.1: «Оплата» — аванс при погрузке, остаток после выгрузки, форма (всё необязательно).
-              Text(t.postCargoPaymentTitle, style: AppTextStyles.bodyStrong),
-              const SizedBox(height: 8),
-              AppTextField(
-                key: const Key('postCargoAdvance'),
-                label: '${t.postCargoAdvance}, ${currencySymbol(_currency)}',
-                controller: _advanceController,
-                errorText: _advanceError(t),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 8),
-              Text(t.postCargoPaymentDelay, style: AppTextStyles.caption),
+              Text(t.postCargoWhenPay, style: AppTextStyles.caption),
               const SizedBox(height: 4),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  SelectableTile(key: const Key('postCargoRestNow'), label: t.paymentRestNow, selected: !_restLater, onTap: () => setState(() => _restLater = false)),
-                  SelectableTile(key: const Key('postCargoRestLater'), label: t.paymentRestLater, selected: _restLater, onTap: () => setState(() => _restLater = true)),
+              _PaySegments(
+                options: [
+                  (const Key('postCargoRestNow'), t.paymentWhenAfterUnload, !_restLater, () => setState(() => _restLater = false)),
+                  (const Key('postCargoRestLater'), t.paymentWhenLater, _restLater, () => setState(() => _restLater = true)),
                 ],
               ),
               if (_restLater) ...[
                 const SizedBox(height: 8),
                 AppTextField(
                   key: const Key('postCargoPaymentDelay'),
-                  label: t.postCargoDelayDays,
+                  label: t.postCargoWhenPay,
+                  suffixText: t.postCargoDaysAfterUnload,
                   controller: _delayController,
                   errorText: _delayError(t),
                   keyboardType: TextInputType.number,
                   onChanged: (_) => setState(() {}),
                 ),
               ],
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
+              const SizedBox(height: 12),
+              Text(t.postCargoHowPay, style: AppTextStyles.caption),
+              const SizedBox(height: 4),
+              _PaySegments(
+                options: [
                   for (final form in PaymentForm.values)
-                    SelectableTile(
-                      key: Key('postCargoPaymentForm-${form.name}'),
-                      label: paymentFormLabel(t, form),
-                      selected: _paymentForm == form,
-                      onTap: () => setState(() => _paymentForm = _paymentForm == form ? null : form),
-                    ),
+                    (Key('postCargoPaymentForm-${form.name}'), paymentFormLabel(t, form), _paymentForm == form, () => setState(() => _paymentForm = _paymentForm == form ? null : form)),
                 ],
               ),
+              const Divider(height: 32),
+              Text.rich(
+                TextSpan(children: [
+                  TextSpan(text: t.postCargoAdvanceTitle),
+                  TextSpan(text: ' ${t.postCargoOptional}', style: AppTextStyles.small.copyWith(color: AppColors.textSecondary)),
+                ]),
+                style: AppTextStyles.caption,
+              ),
+              const SizedBox(height: 4),
+              AppTextField(
+                key: const Key('postCargoAdvance'),
+                label: t.postCargoAdvanceTitle,
+                suffixText: currencySymbol(_currency),
+                controller: _advanceController,
+                errorText: _advanceError(t),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => setState(() {}),
+              ),
+              if (_advanceHint(t) case final hint?) ...[
+                const SizedBox(height: 8),
+                Container(
+                  key: const Key('postCargoAdvanceHint'),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(12)),
+                  child: Text(hint, style: AppTextStyles.caption.copyWith(color: AppColors.text)),
+                ),
+              ],
               const SizedBox(height: 12),
               ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -867,4 +892,51 @@ final weightUnitStoreProvider = Provider((ref) => WeightUnitStore());
 DateTime repeatReadyDate(DateTime now) {
   final today = DateTime(now.year, now.month, now.day);
   return now.hour >= 18 ? today.add(const Duration(days: 1)) : today;
+}
+
+
+/// 063, эталон 34: переключатель на сером фоне, выбранный — белой плашкой.
+class _PaySegments extends StatelessWidget {
+  const _PaySegments({required this.options});
+
+  final List<(Key, String, bool, VoidCallback)> options;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(color: AppColors.divider.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        children: [
+          for (final (key, label, selected, onTap) in options)
+            Expanded(
+              child: Semantics(
+                selected: selected,
+                button: true,
+                child: InkWell(
+                  key: key,
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: onTap,
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 44),
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: selected ? AppColors.surface : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: selected ? const [BoxShadow(color: Color(0x14000000), blurRadius: 4, offset: Offset(0, 1))] : null,
+                    ),
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: selected ? AppTextStyles.bodyStrong : AppTextStyles.body.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }

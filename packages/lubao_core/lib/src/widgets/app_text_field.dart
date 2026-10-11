@@ -14,6 +14,7 @@ class AppTextField extends StatelessWidget {
     this.onChanged,
     this.errorText,
     this.enabled = true,
+    this.suffixText,
   });
 
   final String label;
@@ -26,6 +27,9 @@ class AppTextField extends StatelessWidget {
   final ValueChanged<String>? onSubmitted;
   final ValueChanged<String>? onChanged;
   final bool enabled;
+
+  /// Подпись справа в поле («дней после выгрузки», «₸»).
+  final String? suffixText;
 
   /// Текст ошибки под полем (красным) — для required-полей, которые не
   /// заполнены при сабмите (задача 021: не молчать, а показать причину).
@@ -46,6 +50,7 @@ class AppTextField extends StatelessWidget {
         labelText: label,
         hintText: hintText,
         errorText: errorText,
+        suffixText: suffixText,
         border: const OutlineInputBorder(),
       ),
     );

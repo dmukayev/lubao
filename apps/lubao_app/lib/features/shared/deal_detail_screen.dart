@@ -375,8 +375,13 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                   Text(formatMoney(deal.agreedPrice ?? cargo.price, cargo.currency), key: const Key('dealPrice'), style: Theme.of(context).textTheme.headlineSmall),
                   if (deal.agreedPrice != null && deal.agreedPrice != cargo.price)
                     Text(t.offerAgreed(formatMoney(deal.agreedPrice!, cargo.currency)), key: const Key('dealAgreedPrice'), style: AppTextStyles.caption),
-                  if (paymentTermsLine(t, advanceAmount: cargo.advanceAmount, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays, currency: cargo.currency) case final terms when terms.isNotEmpty)
+                  // 063: когда и как платят всю сумму; аванс — отдельной плашкой.
+                  if (paymentWhenHowLine(t, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays) case final terms when terms.isNotEmpty)
                     Text(terms, key: const Key('dealTerms'), style: AppTextStyles.body),
+                  if (advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency) case final advance?) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    AdvancePill(advance, key: const Key('dealAdvance')),
+                  ],
                 ],
                 const Divider(height: 32),
                 Text(t.dealTimelineTitle, style: Theme.of(context).textTheme.titleSmall),

@@ -69,13 +69,14 @@ String cargoShareText(LubaoLocalizations t, ReferenceData refData, Cargo c, Stri
     refData.bodyTypeById(c.bodyTypeId).name.forLanguageCode(lang).toLowerCase(),
   ].join(' · ');
   final perKm = c.pricePerKm == null ? '' : ' (${shareMoney(c.pricePerKm!, c.currency)}/${t.unitKm})';
-  final terms = paymentTermsLine(t, advanceAmount: c.advanceAmount, paymentForm: c.paymentForm, paymentDelayDays: c.paymentDelayDays, currency: c.currency);
+  // 063: «$10 300 · через 5 дн. · нал.», ниже — «аванс $5 300 при погрузке».
+  final whenHow = paymentWhenHowLine(t, paymentForm: c.paymentForm, paymentDelayDays: c.paymentDelayDays);
+  final hasAdvance = c.advanceAmount != null && c.advanceAmount! > 0;
   return [
     '🚛 ${_route(refData, c, lang)}$km',
     facts,
-    '💰 ${shareMoney(c.price, c.currency)}$perKm',
-    // 058 п.1: «аванс $5 300 · нал.»
-    if (terms.isNotEmpty) terms,
+    '💰 ${shareMoney(c.price, c.currency)}$perKm${whenHow.isEmpty ? '' : ' · $whenHow'}',
+    if (hasAdvance) t.advanceLine(shareMoney(c.advanceAmount!, c.currency)),
     '📅 ${t.shareCargoLoading(shareDate(c.readyDate, lang))}',
     t.shareCargoRespond(url),
   ].join('\n');

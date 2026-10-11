@@ -394,7 +394,9 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
       originLabel: route?.origin,
       partialLabel: cargo.allowPartial ? t.feedBadgePartial : null,
       destinationLabel: route?.destination ?? destinationLabel,
-      termsLabel: paymentTermsLine(t, advanceAmount: cargo.advanceAmount, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays, currency: cargo.currency),
+      // 063: под ценой — когда и как; аванс — плашкой внизу.
+      termsLabel: paymentWhenHowLine(t, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays),
+      advanceLabel: advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency),
       // Как у водителя в ленте: кузов, «21 т · 35 м³» и расстояние по дорогам.
       bodyTypeLabel: [
         bodyType?.name.forLanguageCode(locale) ?? '',

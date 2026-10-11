@@ -200,7 +200,8 @@ void main() {
       // 047, эталон 28: в строке — категория, км по дороге и ₸/км, без «Опубликован».
       final km = tester.widget<Text>(find.byKey(const Key('feedCargoKm-$e2eCargo1')));
       expect(km.textSpan!.toPlainText(), contains('340 ${t.unitKm}'));
-      expect(find.byKey(const Key('feedCargoPerKm-$e2eCargo1')), findsOneWidget);
+      // 063: ₸/км — в строке километров («340 км · 1 411 ₸/км»).
+      expect(km.textSpan!.toPlainText(), contains(t.perKmKzt('').trim()));
       expect(find.descendant(of: cargoCard, matching: find.textContaining('Стройматериалы', findRichText: true)), findsOneWidget);
       expect(find.descendant(of: cargoCard, matching: find.text(t.cargoStatusPublished)), findsNothing);
       await tester.tap(cargoCard);

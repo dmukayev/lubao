@@ -225,8 +225,9 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
     // 058 п.3: «21 т · 35 м³», если объём указан.
     final size = cargoSizeLabel(t, weightKg: cargo.weightKg, volumeM3: cargo.volumeM3, languageCode: locale);
     final weight = size.isEmpty ? null : size;
-    // 058 п.1: «аванс $5 300 · нал.» под ценой.
-    final terms = paymentTermsLine(t, advanceAmount: cargo.advanceAmount, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays, currency: cargo.currency);
+    // 063 (эталон 34): под ценой — когда и как платят всю сумму; аванс — плашкой внизу.
+    final terms = paymentWhenHowLine(t, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays);
+    final advance = advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency);
     final grey = AppTextStyles.body.copyWith(color: AppColors.textSecondary);
     final blue = AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600);
     final small = AppTextStyles.small.copyWith(color: AppColors.textSecondary);
@@ -257,9 +258,10 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
           // ₸/км уходят отдельной строкой под атрибуты.
           LayoutBuilder(
             builder: (context, constraints) {
-              final details = _feedDetails(category, weight, bodyType.name.forLanguageCode(locale), cargo, t, grey, blue, small, companyLine);
+              // 063: ₸/км — слева, к километрам.
+              final perKm = perKmKzt == null ? null : t.perKmKzt(formatThousands(perKmKzt.round()));
+              final details = _feedDetails(category, weight, bodyType.name.forLanguageCode(locale), cargo, t, grey, blue, small, companyLine, perKm);
               final price = Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceCard);
-              final perKm = perKmKzt == null ? null : Text(t.perKmKzt(formatThousands(perKmKzt.round())), key: Key('feedCargoPerKm-${cargo.id}'), style: blue);
               final termsText = terms.isEmpty ? null : Text(terms, key: Key('feedCargoTerms-${cargo.id}'), style: small, textAlign: TextAlign.end);
               final narrow = constraints.maxWidth / MediaQuery.textScalerOf(context).scale(1) < 260;
               if (narrow) {
@@ -268,11 +270,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                   children: [
                     details,
                     const SizedBox(height: AppSpacing.xs),
-                    Wrap(
-                      spacing: AppSpacing.md,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [price, ?perKm],
-                    ),
+                    price,
                     if (terms.isNotEmpty) Text(terms, key: Key('feedCargoTerms-${cargo.id}'), style: small),
                   ],
                 );
@@ -285,7 +283,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                   // Строка условий не шире 45% — атрибуты слева не сжимаются.
                   ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.45),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [price, ?perKm, ?termsText]),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [price, ?termsText]),
                   ),
                 ],
               );
@@ -297,6 +295,8 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
               padding: const EdgeInsets.only(top: AppSpacing.xs),
               child: Text(trucks, key: Key('feedCargoTrucks-${cargo.id}'), style: blue),
             ),
+          // 063: аванс — отдельной строкой внизу карточки; нет аванса — строки нет.
+          if (advance != null) ...[const SizedBox(height: AppSpacing.sm), AdvancePill(advance, key: Key('feedCargoAdvance-${cargo.id}'))],
           if (isHomeSection || cargo.allowPartial || stateLabel != null) ...[
             const SizedBox(height: AppSpacing.sm),
             Wrap(
@@ -314,7 +314,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
     );
   }
 
-  Widget _feedDetails(String? category, String? weight, String bodyName, Cargo cargo, LubaoLocalizations t, TextStyle grey, TextStyle blue, TextStyle small, String companyLine) {
+  Widget _feedDetails(String? category, String? weight, String bodyName, Cargo cargo, LubaoLocalizations t, TextStyle grey, TextStyle blue, TextStyle small, String companyLine, String? perKm) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -332,6 +332,10 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
             children: [
               if (cargo.distanceKm != null && cargo.distanceKm! > 0) ...[
                 TextSpan(text: '${formatThousands(cargo.distanceKm!)} ${t.unitKm}', style: blue),
+                TextSpan(text: ' · ', style: grey),
+              ],
+              if (perKm != null) ...[
+                TextSpan(text: perKm, style: blue),
                 TextSpan(text: ' · ', style: grey),
               ],
               TextSpan(text: loadingDayLabel(t, cargo.readyDate), style: grey),

@@ -1,5 +1,5 @@
-// Задача 058: груз на 2 машины с авансом в рублях — водитель видит «аванс ·
-// нал.», «нужно 2», флаги; ☆ → «Избранное»; своя цена → встречная логиста →
+// Задача 058: груз на 2 машины с авансом в рублях — водитель видит под ценой
+// «через 5 дн. · нал.», аванс — отдельной плашкой (063), «нужно 2», флаги; ☆ → «Избранное»; своя цена → встречная логиста →
 // «Согласен» → сделка с итоговой ценой; второй водитель → груз ушёл из ленты;
 // компания добавила водителя → «Принять» → он в «Моих»; «был в сети».
 // Логист — через API (вторая e2e-компания, чтобы не трогать счётчики первой).
@@ -38,6 +38,7 @@ Future<Map<String, dynamic>> _cargoBody() async {
     'currency': 'RUB',
     'advanceAmount': 300000,
     'paymentForm': 'CASH',
+    'paymentDelayDays': 5,
     'trucksNeeded': 2,
     'readyDate': ymd(DateTime.now().add(const Duration(days: 1))),
   };
@@ -93,9 +94,13 @@ void main() {
     await run.step(tester, 'лента-аванс-нал-нужно-2-флаги', () async {
       await reveal(tester, card);
       await tester.pumpAndSettle();
+      // 063 (эталон 34): под ценой — когда и как платят всю сумму, аванс —
+      // отдельной плашкой внизу карточки.
       final terms = tester.widget<Text>(find.byKey(Key('feedCargoTerms-$cargoId')));
-      expect(terms.data, contains('300 000 ₽'));
-      expect(terms.data, contains(t.paymentFormCashShort));
+      expect(terms.data, '${t.paymentWhenDays('5')} · ${t.paymentFormCashShort}');
+      expect(terms.data, isNot(contains('300 000')));
+      final advance = find.byKey(Key('feedCargoAdvance-$cargoId'));
+      expect(find.descendant(of: advance, matching: find.text(t.advancePill('300 000 ₽'))), findsOneWidget);
       expect(find.descendant(of: card, matching: find.text(t.cargoTrucksLeft('2', '2'))), findsOneWidget);
       expect(find.descendant(of: card, matching: find.textContaining('🇷🇺')), findsOneWidget);
       expect(find.descendant(of: card, matching: find.textContaining('1 250 000 ₽')), findsWidgets);
@@ -135,7 +140,8 @@ void main() {
       expect(tester.widget<Text>(find.byKey(const Key('dealPrice'))).data, '1 200 000 ₽');
       // 062: «Сделка № 482 915-1» — первая машина груза.
       expect(tester.widget<Text>(find.byKey(const Key('dealTitle'))).data, matches(RegExp(r'\d{3} \d{3}-1$')));
-      expect(find.byKey(const Key('dealTerms')), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(const Key('dealTerms'))).data, '${t.paymentWhenDays('5')} · ${t.paymentFormCashShort}');
+      expect(find.descendant(of: find.byKey(const Key('dealAdvance')), matching: find.text(t.advancePill('300 000 ₽'))), findsOneWidget);
     });
 
     await run.step(tester, 'второй-водитель-груз-ушёл-из-ленты', () async {

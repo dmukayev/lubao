@@ -1,5 +1,5 @@
 import { Locale } from '@prisma/client';
-import { I18nName, formatCargoWeight, formatMoney, groupThousands, paymentLine, pickLocaleText } from '../notifications/notification-events';
+import { I18nName, formatCargoWeight, formatMoney, groupThousands, paymentWhenHow, advanceLine, pickLocaleText } from '../notifications/notification-events';
 import { routeFlags } from '../common/flags';
 import { formatCargoNumber } from '../common/cargo-number';
 
@@ -131,7 +131,9 @@ const route = (c: PageCargo, l: PageLocale) => {
   const [fromFlag, toFlag] = routeFlags(c.originCountryCode, c.destinationCountryCode);
   return [[fromFlag, txt(c.origin, l)].filter(Boolean).join(' '), [toFlag, txt(c.destination, l)].filter(Boolean).join(' ')].filter((p) => p.length > 0).join(' → ');
 };
-const terms = (c: PageCargo, l: PageLocale) => paymentLine(c, l);
+/// 063: под ценой — когда и как платят всю сумму; аванс — отдельной плашкой.
+const terms = (c: PageCargo, l: PageLocale) => paymentWhenHow(c, l);
+const advance = (c: PageCargo, l: PageLocale) => advanceLine(c, l);
 
 function cargoFacts(c: PageCargo, l: PageLocale): string {
   const size = [c.weightKg != null ? formatCargoWeight(c.weightKg, l) : '', c.volumeM3 ? `${groupThousands(c.volumeM3)} ${m3(l)}` : ''].filter(Boolean).join(' · ');
@@ -168,7 +170,7 @@ ${noindex ? '<meta name="robots" content="noindex,nofollow">' : ''}
 main{max-width:560px;margin:0 auto;padding:16px}.brand{color:#E86B1E;font-weight:800;font-size:20px;margin:8px 0 16px}
 .card{background:var(--card);border-radius:20px;padding:20px;margin-bottom:12px}.hero{background:var(--primary);color:#fff}
 .hero .muted{color:rgba(255,255,255,.8)}h1{font-size:22px;margin:0 0 4px}.big{font-size:28px;font-weight:800;margin:8px 0 0}
-.muted{color:var(--muted)}.small{font-size:13px}.row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid #E5E7EB;color:inherit;text-decoration:none}
+.muted{color:var(--muted)}.small{font-size:13px}.advance{display:inline-block;margin-top:10px;padding:4px 12px;border-radius:10px;background:#E3F5E8;color:#11652E;font-weight:700;font-size:14px}.row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid #E5E7EB;color:inherit;text-decoration:none}
 .row:first-child{border-top:0}.price{font-weight:700;white-space:nowrap}.actions{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .btn{display:block;text-align:center;padding:14px;border-radius:14px;border:1px solid #D7DCE5;background:#fff;color:var(--text);font-weight:700;text-decoration:none}
 .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}.pill{display:inline-block;padding:2px 10px;border-radius:999px;background:#E7F7EE;color:#137A43;font-size:13px;font-weight:700}
@@ -187,12 +189,12 @@ ${similar.length ? `<div class="card"><b>${escapeHtml(t.similar)}</b>${similar.m
   const perKm = cargo.pricePerKm != null ? ` (${money(cargo.pricePerKm, cargo.currency, l)}${t.perKm})` : '';
   const rating = cargo.companyRatingCount > 0 ? ` · ★ ${cargo.companyRatingAvg.toFixed(1)}` : '';
   const numberLine = cargo.number ? `<div class="muted" data-testid="share-number">${escapeHtml(`${NUMBER_PREFIX[l]} ${formatCargoNumber(cargo.number)}`)}</div>` : '';
-  const body = `<div class="card hero" data-testid="share-cargo">${numberLine}<h1>${escapeHtml(r)}</h1><div class="big">${escapeHtml(money(cargo.price, cargo.currency, l))}</div><div class="muted">${escapeHtml(perKm.trim())}</div>${terms(cargo, l) ? `<div data-testid="share-terms">${escapeHtml(terms(cargo, l))}</div>` : ''}</div>
+  const body = `<div class="card hero" data-testid="share-cargo">${numberLine}<h1>${escapeHtml(r)}</h1><div class="big">${escapeHtml(money(cargo.price, cargo.currency, l))}</div><div class="muted">${escapeHtml(perKm.trim())}</div>${terms(cargo, l) ? `<div data-testid="share-terms">${escapeHtml(terms(cargo, l))}</div>` : ''}${advance(cargo, l) ? `<div class="advance" data-testid="share-advance">${escapeHtml(advance(cargo, l).replace(/^./, (c) => c.toLocaleUpperCase(l)))}</div>` : ''}</div>
 <div class="card"><div>🚛 <b>${escapeHtml(r)}</b>${cargo.distanceKm ? ` · ${groupThousands(cargo.distanceKm)} ${escapeHtml(t.km)}` : ''}</div>
 <div>${escapeHtml(cargoFacts(cargo, l))}</div><div>💰 ${escapeHtml(money(cargo.price, cargo.currency, l) + perKm)}</div>
 <div>📅 ${escapeHtml(t.loading)} ${escapeHtml(shortDate(cargo.readyDate, l))}</div><div class="muted">${escapeHtml(cargo.companyName + rating)}</div></div>
 ${actions(l, links, t.respond)}`;
-  const description = [cargoFacts(cargo, l), money(cargo.price, cargo.currency, l), terms(cargo, l), `${t.loading} ${shortDate(cargo.readyDate, l)}`].filter(Boolean).join(' · ');
+  const description = [cargoFacts(cargo, l), money(cargo.price, cargo.currency, l), terms(cargo, l), advance(cargo, l), `${t.loading} ${shortDate(cargo.readyDate, l)}`].filter(Boolean).join(' · ');
   return layout(l, `${r} · ${money(cargo.price, cargo.currency, l)}`, description, body, links, false);
 }
 
