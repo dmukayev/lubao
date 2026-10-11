@@ -107,7 +107,8 @@ class _AdminSearchBarState extends ConsumerState<AdminSearchBar> {
             dense: true,
             contentPadding: EdgeInsets.zero,
             leading: const Icon(LucideIcons.arrowRight, size: 16),
-            title: Text(hit.title),
+            // 062: номер груза/сделки перед названием.
+            title: Text(hit.number == null ? hit.title : '${context.l10n.cargoNumberLabel(hit.number!)} · ${hit.title}'),
             onTap: () => onTap(hit.id),
           ),
       ],

@@ -7,6 +7,8 @@ import { I18nName } from './notification-events';
 /// Тексты на языке получателя собирает шаблон (`cargoLine` в notification-events).
 export interface CargoPushSummary {
   cargoId: string;
+  /// 062: короткий номер груза.
+  cargoNumber: number;
   companyName: string;
   origin: I18nName | null;
   destination: I18nName | null;
@@ -36,6 +38,7 @@ async function load(prisma: Pick<PrismaService, 'cargo'>, cargoId: string): Prom
   const cargo = await prisma.cargo.findUnique({
     where: { id: cargoId },
     select: {
+      number: true,
       price: true,
       currency: true,
       advanceAmount: true,
@@ -54,6 +57,7 @@ async function load(prisma: Pick<PrismaService, 'cargo'>, cargoId: string): Prom
   const num = (d: Prisma.Decimal | number | null | undefined) => (d == null ? null : Number(d));
   return {
     cargoId,
+    cargoNumber: cargo.number,
     companyName: cargo.company?.name ?? '',
     origin: (cargo.point?.name as I18nName | undefined) ?? null,
     destination: ((cargo.destinationCity?.name ?? cargo.destinationCountry?.name) as I18nName | undefined) ?? null,

@@ -179,7 +179,7 @@ class _AdminCargosScreenState extends ConsumerState<AdminCargosScreen> {
                                   return Card(
                                     child: ListTile(
                                       onTap: () => context.push('/cargos/${c.id}'),
-                                      title: Text('${c.pointName.forLanguageCode(locale)} → ${c.destinationCityName?.forLanguageCode(locale) ?? c.destinationCountryName.forLanguageCode(locale)}'),
+                                      title: Text('${c.number != null ? '${t.cargoNumberLabel(c.number!)} · ' : ''}${c.pointName.forLanguageCode(locale)} → ${c.destinationCityName?.forLanguageCode(locale) ?? c.destinationCountryName.forLanguageCode(locale)}'),
                                       subtitle: Text('${c.companyName} · ${formatMoney(c.price, currencyFromJson(c.currency))}'),
                                       trailing: Text(cargoStatusLabel(t, c.status), style: Theme.of(context).textTheme.bodySmall),
                                     ),
@@ -204,7 +204,7 @@ class _AdminCargosScreenState extends ConsumerState<AdminCargosScreen> {
                                           (c) => DataRow(
                                             onSelectChanged: (_) => context.push('/cargos/${c.id}'),
                                             cells: [
-                                              DataCell(Text('${c.pointName.forLanguageCode(locale)} → ${c.destinationCityName?.forLanguageCode(locale) ?? c.destinationCountryName.forLanguageCode(locale)}')),
+                                              DataCell(Text('${c.number != null ? '${t.cargoNumberLabel(c.number!)} · ' : ''}${c.pointName.forLanguageCode(locale)} → ${c.destinationCityName?.forLanguageCode(locale) ?? c.destinationCountryName.forLanguageCode(locale)}')),
                                               DataCell(Text(c.bodyTypeName.forLanguageCode(locale))),
                                               DataCell(Text(formatMoney(c.price, currencyFromJson(c.currency)))),
                                               DataCell(InkWell(onTap: () => context.push('/companies/${c.companyId}'), child: Text(c.companyName, style: const TextStyle(decoration: TextDecoration.underline)))),

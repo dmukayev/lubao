@@ -54,7 +54,11 @@ class CargoDetailScreen extends ConsumerWidget {
     final cargoAsync = ref.watch(adminCargoDetailProvider(id));
 
     return Scaffold(
-      appBar: AppBar(leading: BackButton(onPressed: () => context.go('/cargos'))),
+      appBar: AppBar(
+        leading: BackButton(onPressed: () => context.go('/cargos')),
+        // 062: «№ 482 915».
+        title: cargoAsync.valueOrNull?.number == null ? null : Text(context.l10n.cargoNumberLabel(cargoAsync.valueOrNull!.number!), key: const Key('adminCargoNumber')),
+      ),
       body: cargoAsync.when(
         loading: () => const LoadingView(),
         error: (e, st) {

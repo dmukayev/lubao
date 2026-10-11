@@ -1,6 +1,7 @@
 import { Locale } from '@prisma/client';
 import { I18nName, formatCargoWeight, formatMoney, groupThousands, paymentLine, pickLocaleText } from '../notifications/notification-events';
 import { routeFlags } from '../common/flags';
+import { formatCargoNumber } from '../common/cargo-number';
 
 /// 052 п.2: публичные страницы «Поделиться» — без входа, без Google и внешних
 /// запросов (WeChat/Telegram открывают их во встроенном браузере). Телефона,
@@ -50,6 +51,9 @@ export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 }
 
+/// 062: «№ 482 915».
+const NUMBER_PREFIX: Record<PageLocale, string> = { ru: '№', kk: '№', zh: '编号', en: 'No.' };
+
 const MONTHS: Record<PageLocale, string[]> = {
   ru: ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'],
   kk: ['қаң', 'ақп', 'нау', 'сәу', 'мам', 'мау', 'шіл', 'там', 'қыр', 'қаз', 'қар', 'жел'],
@@ -75,6 +79,8 @@ export interface PageCargo {
   category: I18nName | null;
   bodyType: I18nName | null;
   weightKg: number | null;
+  /// 062: короткий номер груза — назвать по телефону.
+  number?: number | null;
   /// 058 п.3: «21 т · 35 м³»; флаги стран маршрута (если страны разные).
   volumeM3?: number | null;
   originCountryCode?: string | null;
@@ -180,7 +186,8 @@ ${similar.length ? `<div class="card"><b>${escapeHtml(t.similar)}</b>${similar.m
   const r = route(cargo, l);
   const perKm = cargo.pricePerKm != null ? ` (${money(cargo.pricePerKm, cargo.currency, l)}${t.perKm})` : '';
   const rating = cargo.companyRatingCount > 0 ? ` · ★ ${cargo.companyRatingAvg.toFixed(1)}` : '';
-  const body = `<div class="card hero" data-testid="share-cargo"><h1>${escapeHtml(r)}</h1><div class="big">${escapeHtml(money(cargo.price, cargo.currency, l))}</div><div class="muted">${escapeHtml(perKm.trim())}</div>${terms(cargo, l) ? `<div data-testid="share-terms">${escapeHtml(terms(cargo, l))}</div>` : ''}</div>
+  const numberLine = cargo.number ? `<div class="muted" data-testid="share-number">${escapeHtml(`${NUMBER_PREFIX[l]} ${formatCargoNumber(cargo.number)}`)}</div>` : '';
+  const body = `<div class="card hero" data-testid="share-cargo">${numberLine}<h1>${escapeHtml(r)}</h1><div class="big">${escapeHtml(money(cargo.price, cargo.currency, l))}</div><div class="muted">${escapeHtml(perKm.trim())}</div>${terms(cargo, l) ? `<div data-testid="share-terms">${escapeHtml(terms(cargo, l))}</div>` : ''}</div>
 <div class="card"><div>🚛 <b>${escapeHtml(r)}</b>${cargo.distanceKm ? ` · ${groupThousands(cargo.distanceKm)} ${escapeHtml(t.km)}` : ''}</div>
 <div>${escapeHtml(cargoFacts(cargo, l))}</div><div>💰 ${escapeHtml(money(cargo.price, cargo.currency, l) + perKm)}</div>
 <div>📅 ${escapeHtml(t.loading)} ${escapeHtml(shortDate(cargo.readyDate, l))}</div><div class="muted">${escapeHtml(cargo.companyName + rating)}</div></div>

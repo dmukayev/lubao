@@ -48,6 +48,7 @@ export function publicName(full: string): string {
 function toPageCargo(c: CargoRow): PageCargo {
   return {
     id: c.id,
+    number: c.number,
     origin: (c.point?.name as I18nName) ?? null,
     destination: ((c.destinationCity?.name ?? c.destinationCountry?.name) as I18nName) ?? null,
     category: (c.category?.name as I18nName) ?? null,

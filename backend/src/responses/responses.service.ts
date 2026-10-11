@@ -1,3 +1,4 @@
+import { formatDealNumber } from '../common/cargo-number';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { Driver, Prisma, Response as CargoResponseEntity, ResponseCloseReason } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -508,9 +509,12 @@ export class ResponsesService {
     }).catch((e) => this.rethrowUnique(e));
 
     await bumpShareReferral(this.prisma, updated.selected.driver.userId, 'deals');
+    const summary = await loadCargoPushSummary(this.prisma, updated.selected.cargoId);
     await this.notifications.notify({ userIds: [updated.selected.driver.userId] }, 'DEAL_SELECTED', {
-      ...(await loadCargoPushSummary(this.prisma, updated.selected.cargoId)),
+      ...summary,
       dealId: updated.deal.id,
+      // 062: «№ 482 915-1» в заголовке push.
+      dealNumber: summary && updated.deal.seq ? formatDealNumber(summary.cargoNumber, updated.deal.seq) : null,
     });
     this.touch([updated.selected.driver.userId], updated.selected.cargoId);
 

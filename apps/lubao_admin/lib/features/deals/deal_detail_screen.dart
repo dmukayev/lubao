@@ -51,7 +51,11 @@ class DealDetailScreen extends ConsumerWidget {
     final dealAsync = ref.watch(adminDealDetailProvider(id));
 
     return Scaffold(
-      appBar: AppBar(leading: BackButton(onPressed: () => context.go('/deals'))),
+      appBar: AppBar(
+        leading: BackButton(onPressed: () => context.go('/deals')),
+        // 062: «Сделка № 482 915-1».
+        title: dealAsync.valueOrNull?.number == null ? null : Text(context.l10n.dealNumberTitle(dealAsync.valueOrNull!.number!), key: const Key('adminDealNumber')),
+      ),
       body: dealAsync.when(
         loading: () => const LoadingView(),
         error: (e, st) {

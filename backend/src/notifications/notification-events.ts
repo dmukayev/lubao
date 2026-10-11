@@ -217,6 +217,11 @@ export function cargoLine(p: NotificationPayload, locale: Loc): string {
     p.readyDate ? LOADING[locale](shortDate(p.readyDate, locale)) : '',
   ].filter((part) => !!part).join(' · ');
 }
+/// 062: номер сделки в заголовке push — «Загрузился · № 482 915-1».
+const NUMBER_PREFIX: Record<Loc, string> = { ru: '№', kk: '№', zh: '编号', en: 'No.' };
+export function withDealNumber(r: { title: string; body: string }, p: NotificationPayload, locale: Loc): { title: string; body: string } {
+  return p.dealNumber ? { ...r, title: `${r.title} · ${NUMBER_PREFIX[locale]} ${p.dealNumber}` } : r;
+}
 const LOGIST_STATUS: Record<Loc, (p: NotificationPayload) => { title: string; body: string }> = {
   ru: (p) => {
     const flow = CANCEL_FLOW.ru(p, p.driverName);
@@ -518,19 +523,19 @@ export const NOTIFICATION_EVENTS: Record<NotificationEvent, NotificationEventDef
   DEAL_FOR_LOGIST: {
     eventGroup: 'DEAL_STATUS',
     channels: ['PUSH', 'WECOM'],
-    render: (locale, p) => LOGIST_STATUS[locale as Loc](p),
+    render: (locale, p) => withDealNumber(LOGIST_STATUS[locale as Loc](p), p, locale as Loc),
     deepLink: (p) => `/deal/${p.dealId}`,
   },
   DEAL_FOR_DRIVER: {
     eventGroup: 'DEAL_STATUS',
     channels: ['PUSH'],
-    render: (locale, p) => DRIVER_STATUS[locale as Loc](p),
+    render: (locale, p) => withDealNumber(DRIVER_STATUS[locale as Loc](p), p, locale as Loc),
     deepLink: (p) => `/deal/${p.dealId}`,
   },
   DEAL_SELECTED: {
     eventGroup: 'DEAL_STATUS',
     channels: ['PUSH'],
-    render: (locale, p) => T.DEAL_SELECTED[locale](p),
+    render: (locale, p) => withDealNumber(T.DEAL_SELECTED[locale](p), p, locale as Loc),
     deepLink: (p) => `/deal/${p.dealId}`,
   },
   DEAL_STATUS: {

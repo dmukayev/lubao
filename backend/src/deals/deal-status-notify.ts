@@ -1,3 +1,4 @@
+import { formatDealNumber } from '../common/cargo-number';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -7,6 +8,8 @@ export type DealActor = 'DRIVER' | 'COMPANY' | 'ADMIN';
 
 type DealForNotify = {
   id: string;
+  /// 062: номер машины по грузу — номер сделки в push.
+  seq?: number;
   cargoId: string;
   companyId: string;
   driverId: string;
@@ -48,6 +51,7 @@ async function send(
     prisma.cargo.findUnique({
       where: { id: deal.cargoId },
       select: {
+        number: true,
         companyId: true,
         publishedByUserId: true,
         point: { select: { name: true } },
@@ -61,6 +65,8 @@ async function send(
 
   const payload = {
     dealId: deal.id,
+    // 062: «№ 482 915-1» в заголовке push.
+    dealNumber: deal.seq ? formatDealNumber(cargo.number, deal.seq) : null,
     status,
     driverName: driver.fullName,
     companyName: company?.name ?? '',

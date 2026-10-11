@@ -1,3 +1,4 @@
+import { formatCargoNumber, formatDealNumber, parseCargoNumberQuery } from '../common/cargo-number';
 import { RateCurrency } from '../common/currencies';
 import { notifyDealStatus } from '../deals/deal-status-notify';
 import { cancelStatsFor, isAtFault, stageForStatus } from '../deals/cancel-policy';
@@ -594,22 +595,23 @@ export class AdminService {
         select: { id: true, name: true },
       }),
       this.prisma.cargo.findMany({
-        where: { id: { contains: query, mode: 'insensitive' } },
+        where: cargoQueryWhere(query) as never,
         take: 5,
-        select: { id: true, point: { select: { name: true } } },
+        select: { id: true, number: true, point: { select: { name: true } } },
       }),
       this.prisma.deal.findMany({
-        where: { id: { contains: query, mode: 'insensitive' } },
+        where: dealQueryWhere(query) as never,
         take: 5,
-        select: { id: true, driver: { select: { fullName: true } } },
+        select: { id: true, seq: true, cargo: { select: { number: true } }, driver: { select: { fullName: true } } },
       }),
     ]);
 
     return {
       drivers: drivers.map((d) => ({ id: d.id, title: d.fullName })),
       companies: companies.map((c) => ({ id: c.id, title: c.name })),
-      cargos: cargos.map((c) => ({ id: c.id, title: c.point.name })),
-      deals: deals.map((d) => ({ id: d.id, title: d.driver.fullName })),
+      // 062: номер — рядом с названием в подсказках поиска.
+      cargos: cargos.map((c) => ({ id: c.id, title: c.point.name, number: formatCargoNumber(c.number) })),
+      deals: deals.map((d) => ({ id: d.id, title: d.driver.fullName, number: formatDealNumber(d.cargo.number, d.seq) })),
     };
   }
 
@@ -624,7 +626,7 @@ export class AdminService {
       ...(query.status ? { status: query.status } : {}),
       ...(query.companyId ? { companyId: query.companyId } : {}),
       ...(query.destinationCountryId ? { destinationCountryId: query.destinationCountryId } : {}),
-      ...(q ? { id: { contains: q, mode: 'insensitive' } } : {}),
+      ...(q ? cargoQueryWhere(q) : {}),
     };
 
     const [total, cargos] = await Promise.all([
@@ -647,6 +649,7 @@ export class AdminService {
 
     const items = cargos.map((c) => ({
       id: c.id,
+      number: formatCargoNumber(c.number),
       pointName: c.point.name,
       destinationCountryName: c.destinationCountry.name,
       destinationCityName: c.destinationCity?.name ?? null,
@@ -678,7 +681,7 @@ export class AdminService {
       ...(query.stale ? { status: statusFilter ?? { notIn: ['DELIVERED', 'CANCELLED'] }, updatedAt: { lt: staleBefore } } : {}),
       ...(query.driverId ? { driverId: query.driverId } : {}),
       ...(query.companyId ? { companyId: query.companyId } : {}),
-      ...(q ? { id: { contains: q, mode: 'insensitive' } } : {}),
+      ...(q ? dealQueryWhere(q) : {}),
     };
 
     const [total, deals] = await Promise.all([
@@ -686,7 +689,7 @@ export class AdminService {
       this.prisma.deal.findMany({
         where: where as never,
         include: {
-          cargo: { select: { point: { select: { name: true } }, destinationCountry: { select: { name: true } }, price: true, currency: true } },
+          cargo: { select: { number: true, point: { select: { name: true } }, destinationCountry: { select: { name: true } }, price: true, currency: true } },
           driver: { select: { id: true, fullName: true } },
           company: { select: { id: true, name: true } },
         },
@@ -699,6 +702,7 @@ export class AdminService {
     const now = Date.now();
     const items = deals.map((d) => ({
       id: d.id,
+      number: formatDealNumber(d.cargo.number, d.seq),
       pointName: d.cargo.point.name,
       destinationCountryName: d.cargo.destinationCountry.name,
       driverId: d.driver.id,
@@ -749,6 +753,7 @@ export class AdminService {
 
     return {
       id: cargo.id,
+      number: formatCargoNumber(cargo.number),
       companyId: cargo.company.id,
       companyName: cargo.company.name,
       pointName: cargo.point.name,
@@ -906,6 +911,7 @@ export class AdminService {
 
     return {
       id: deal.id,
+      number: formatDealNumber(deal.cargo.number, deal.seq),
       cargoId: deal.cargoId,
       pointName: deal.cargo.point.name,
       destinationCountryName: deal.cargo.destinationCountry.name,
@@ -3234,4 +3240,17 @@ export class AdminService {
       },
     });
   }
+}
+
+/// 062: поиск груза — по короткому номеру («482 915», «482915»), иначе по куску id.
+function cargoQueryWhere(q: string): Record<string, unknown> {
+  const parsed = parseCargoNumberQuery(q);
+  return parsed ? { number: parsed.number } : { id: { contains: q, mode: 'insensitive' } };
+}
+
+/// 062: поиск сделки — «482 915-1» (сделка машины), «482 915» (все сделки груза), иначе по куску id.
+function dealQueryWhere(q: string): Record<string, unknown> {
+  const parsed = parseCargoNumberQuery(q);
+  if (!parsed) return { id: { contains: q, mode: 'insensitive' } };
+  return { cargo: { number: parsed.number }, ...(parsed.seq != null ? { seq: parsed.seq } : {}) };
 }

@@ -173,7 +173,7 @@ class _AdminDealsScreenState extends ConsumerState<AdminDealsScreen> {
                                   return Card(
                                     child: ListTile(
                                       onTap: () => context.push('/deals/${d.id}'),
-                                      title: Text('${d.driverName} · ${d.companyName}'),
+                                      title: Text('${d.number != null ? '${t.cargoNumberLabel(d.number!)} · ' : ''}${d.driverName} · ${d.companyName}'),
                                       subtitle: Text('${d.pointName.forLanguageCode(locale)} → ${d.destinationCountryName.forLanguageCode(locale)} · ${formatMoney(d.price, currencyFromJson(d.currency))}'),
                                       trailing: Text(dealStatusLabel(t, d.status), style: Theme.of(context).textTheme.bodySmall),
                                     ),
@@ -198,7 +198,7 @@ class _AdminDealsScreenState extends ConsumerState<AdminDealsScreen> {
                                           (d) => DataRow(
                                             onSelectChanged: (_) => context.push('/deals/${d.id}'),
                                             cells: [
-                                              DataCell(Text('${d.pointName.forLanguageCode(locale)} → ${d.destinationCountryName.forLanguageCode(locale)}')),
+                                              DataCell(Text('${d.number != null ? '${t.cargoNumberLabel(d.number!)} · ' : ''}${d.pointName.forLanguageCode(locale)} → ${d.destinationCountryName.forLanguageCode(locale)}')),
                                               DataCell(InkWell(onTap: () => context.push('/drivers/${d.driverId}'), child: Text(d.driverName, style: const TextStyle(decoration: TextDecoration.underline)))),
                                               DataCell(InkWell(onTap: () => context.push('/companies/${d.companyId}'), child: Text(d.companyName, style: const TextStyle(decoration: TextDecoration.underline)))),
                                               DataCell(Text(formatMoney(d.price, currencyFromJson(d.currency)))),

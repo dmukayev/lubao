@@ -1265,13 +1265,16 @@ class AdminEvent {
 }
 
 class AdminSearchHit {
-  const AdminSearchHit({required this.id, required this.title});
+  const AdminSearchHit({required this.id, required this.title, this.number});
 
   final String id;
+  /// 062: короткий номер груза («482 915») или сделки («482 915-1»).
+  final String? number;
   final String title;
 
   factory AdminSearchHit.fromJson(Map<String, dynamic> json) => AdminSearchHit(
         id: json['id'] as String,
+        number: json['number'] as String?,
         title: json['title'] is String ? json['title'] as String : (json['title'] as Map<String, dynamic>).values.whereType<String>().firstWhere((s) => s.isNotEmpty, orElse: () => ''),
       );
 }
@@ -1299,6 +1302,7 @@ class AdminSearchResults {
 class AdminCargoRow {
   const AdminCargoRow({
     required this.id,
+    this.number,
     required this.pointName,
     required this.destinationCountryName,
     this.destinationCityName,
@@ -1314,6 +1318,8 @@ class AdminCargoRow {
   });
 
   final String id;
+  /// 062: короткий номер груза («482 915») или сделки («482 915-1»).
+  final String? number;
   final I18nText pointName;
   final I18nText destinationCountryName;
   final I18nText? destinationCityName;
@@ -1329,6 +1335,7 @@ class AdminCargoRow {
 
   factory AdminCargoRow.fromJson(Map<String, dynamic> json) => AdminCargoRow(
         id: json['id'] as String,
+        number: json['number'] as String?,
         pointName: I18nText.fromJson(json['pointName'] as Map<String, dynamic>),
         destinationCountryName: I18nText.fromJson(json['destinationCountryName'] as Map<String, dynamic>),
         destinationCityName: json['destinationCityName'] == null ? null : I18nText.fromJson(json['destinationCityName'] as Map<String, dynamic>),
@@ -1348,6 +1355,7 @@ class AdminCargoRow {
 class AdminDealRow {
   const AdminDealRow({
     required this.id,
+    this.number,
     required this.pointName,
     required this.destinationCountryName,
     required this.driverId,
@@ -1362,6 +1370,8 @@ class AdminDealRow {
   });
 
   final String id;
+  /// 062: короткий номер груза («482 915») или сделки («482 915-1»).
+  final String? number;
   final I18nText pointName;
   final I18nText destinationCountryName;
   final String driverId;
@@ -1376,6 +1386,7 @@ class AdminDealRow {
 
   factory AdminDealRow.fromJson(Map<String, dynamic> json) => AdminDealRow(
         id: json['id'] as String,
+        number: json['number'] as String?,
         pointName: I18nText.fromJson(json['pointName'] as Map<String, dynamic>),
         destinationCountryName: I18nText.fromJson(json['destinationCountryName'] as Map<String, dynamic>),
         driverId: json['driverId'] as String,
@@ -1543,6 +1554,7 @@ class AdminCargoDealRef {
 class AdminCargoDetail {
   const AdminCargoDetail({
     required this.id,
+    this.number,
     required this.companyId,
     required this.companyName,
     required this.pointName,
@@ -1571,6 +1583,8 @@ class AdminCargoDetail {
   });
 
   final String id;
+  /// 062: короткий номер груза («482 915») или сделки («482 915-1»).
+  final String? number;
   final String companyId;
   final String companyName;
   final I18nText pointName;
@@ -1599,6 +1613,7 @@ class AdminCargoDetail {
 
   factory AdminCargoDetail.fromJson(Map<String, dynamic> json) => AdminCargoDetail(
         id: json['id'] as String,
+        number: json['number'] as String?,
         companyId: json['companyId'] as String,
         companyName: json['companyName'] as String,
         pointName: I18nText.fromJson(json['pointName'] as Map<String, dynamic>),
@@ -1653,6 +1668,7 @@ class AdminDealCallEntry {
 class AdminDealDetail {
   const AdminDealDetail({
     required this.id,
+    this.number,
     required this.cargoId,
     required this.pointName,
     required this.destinationCountryName,
@@ -1678,6 +1694,8 @@ class AdminDealDetail {
   });
 
   final String id;
+  /// 062: короткий номер груза («482 915») или сделки («482 915-1»).
+  final String? number;
   final String cargoId;
   final I18nText pointName;
   final I18nText destinationCountryName;
@@ -1705,6 +1723,7 @@ class AdminDealDetail {
 
   factory AdminDealDetail.fromJson(Map<String, dynamic> json) => AdminDealDetail(
         id: json['id'] as String,
+        number: json['number'] as String?,
         cargoId: json['cargoId'] as String,
         pointName: I18nText.fromJson(json['pointName'] as Map<String, dynamic>),
         destinationCountryName: I18nText.fromJson(json['destinationCountryName'] as Map<String, dynamic>),

@@ -2616,3 +2616,24 @@ describe('AdminService.createCargoCategory (049 п.11)', () => {
     expect(prisma.auditLog.create.mock.calls[0][0].data).toMatchObject({ action: 'CARGO_CATEGORY_CREATED', entityId: 'cat9' });
   });
 });
+
+describe('062: поиск по номеру груза и сделки', () => {
+  it('«482 915-1» ищет сделку по номеру груза и машине, «482 915» — груз по номеру; кусок id — как раньше', async () => {
+    const prisma: any = {
+      driver: { findMany: jest.fn().mockResolvedValue([]) },
+      company: { findMany: jest.fn().mockResolvedValue([]) },
+      cargo: { findMany: jest.fn().mockResolvedValue([{ id: 'c1', number: 482915, point: { name: { ru: 'Хоргос' } } }]) },
+      deal: { findMany: jest.fn().mockResolvedValue([{ id: 'd1', seq: 1, cargo: { number: 482915 }, driver: { fullName: 'Ерлан' } }]) },
+    };
+    const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+
+    const res = await service.search('482 915-1');
+    expect(prisma.cargo.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { number: 482915 } }));
+    expect(prisma.deal.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { cargo: { number: 482915 }, seq: 1 } }));
+    expect(res.cargos[0]).toMatchObject({ id: 'c1', number: '482 915' });
+    expect(res.deals[0]).toMatchObject({ id: 'd1', number: '482 915-1' });
+
+    await service.search('3f2a9c');
+    expect(prisma.cargo.findMany).toHaveBeenLastCalledWith(expect.objectContaining({ where: { id: { contains: '3f2a9c', mode: 'insensitive' } } }));
+  });
+});
