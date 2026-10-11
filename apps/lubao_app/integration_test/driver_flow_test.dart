@@ -266,7 +266,7 @@ void main() {
       expect(find.byKey(const Key('chatMessageInput')), findsNothing);
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(router.routerDelegate.currentConfiguration.uri.path, '/driver/feed');
-      await waitFor(tester, find.byKey(const Key('driverStatusBar')));
+      await waitFor(tester, find.byKey(const Key('feedChipsBar')));
     });
 
     await run.step(tester, 'список-чатов', () async {

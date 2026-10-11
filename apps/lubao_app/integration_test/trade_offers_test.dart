@@ -187,10 +187,19 @@ void main() {
         }
         await tester.pump(const Duration(seconds: 1));
       }
-      await reveal(tester, accept);
+      // Карточка наверху ленты — ленту наверх, дождаться конца прокрутки.
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, 600));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(accept);
+      await tester.pumpAndSettle();
       await tester.tap(accept);
       await tester.pumpAndSettle();
-      final after = (await logist.myDrivers()).firstWhere((d) => d['name'] == name);
+      Map<dynamic, dynamic> after = {};
+      for (var i = 0; i < 20; i++) {
+        after = (await logist.myDrivers()).firstWhere((d) => d['name'] == name);
+        if (after['status'] == 'ACTIVE') break;
+        await tester.pump(const Duration(milliseconds: 500));
+      }
       expect(after['status'], 'ACTIVE');
       expect(after['driverId'], isNotNull);
       expectNoOverflow(tester);

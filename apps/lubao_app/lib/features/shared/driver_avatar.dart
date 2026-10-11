@@ -9,10 +9,15 @@ import '../../services/disk_bytes_cache.dart';
 
 /// 054: миниатюра фото профиля водителя по версии (`?v` меняется при смене —
 /// кэш не показывает старое). Нет фото / сбой — null, у вызывающего буквы.
-final driverAvatarProvider = FutureProvider.family<Uint8List?, ({String driverId, String version})>((ref, key) async {
+/// 061 п.9: удачное фото держится в памяти (до выхода — там invalidate), сбой —
+/// нет: иначе пустой ответ, полученный в момент выхода, оставался бы
+/// у следующего вошедшего.
+final driverAvatarProvider = FutureProvider.autoDispose.family<Uint8List?, ({String driverId, String version})>((ref, key) async {
   try {
     // 060 п.4: кэш на диске по версии фото (новое фото — новая версия).
-    return await DiskBytesCache.instance.getOrFetch('avatar:${key.driverId}:${key.version}', () => ref.read(driverRepositoryProvider).driverAvatar(key.driverId));
+    final bytes = await DiskBytesCache.instance.getOrFetch('avatar:${key.driverId}:${key.version}', () => ref.read(driverRepositoryProvider).driverAvatar(key.driverId));
+    ref.keepAlive();
+    return bytes;
   } catch (_) {
     return null;
   }
