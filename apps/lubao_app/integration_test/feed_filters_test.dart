@@ -111,11 +111,11 @@ void main() {
       // Все грузы в Россию (и из других городов — если строку раскрыли).
       final allRu = ((await api.feed({'toCountryId': ruId, 'showOtherCities': 'true'}))['items'] as List).cast<Map>().map((c) => c['id'] as String).toSet();
       expect(visibleCardIds().difference(allRu), isEmpty, reason: 'в ленте только грузы в Россию');
-      // 064 п.6: «куда» — в строке активных фильтров с ✕.
-      expect(find.byKey(const Key('feedActive-to')), findsOneWidget);
       expectNoOverflow(tester);
       // Снимок шага — с выбранным чипом и строкой «Куда: Россия» наверху ленты.
       await tapChip(find.byKey(Key('feedChipCountry-$ruId')), tapIt: false);
+      // 064 п.6: «куда» — в строке активных фильтров с ✕.
+      expect(find.byKey(const Key('feedActive-to')), findsOneWidget);
     });
 
     await run.step(tester, 'фильтр-кузов-и-вес-счётчик-как-список', () async {

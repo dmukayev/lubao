@@ -141,21 +141,30 @@ Future<void> loginDriver(WidgetTester tester, String phoneLocal) async {
   await waitFor(tester, find.byKey(const Key('roleSelectDriverButton')));
   await tester.tap(find.byKey(const Key('roleSelectDriverButton')));
   await tester.pumpAndSettle();
-  // Над номером может стоять кнопка входа через бота (050) — на узком экране
-  // с крупным шрифтом поле ниже края: на экран, фокус, потом ввод.
-  final phone = find.byKey(const Key('driverLoginPhoneField'));
-  await waitAndReveal(tester, phone);
-  await tester.tap(phone);
-  await tester.pumpAndSettle();
-  await tester.enterText(phone, phoneLocal);
-  await tester.pumpAndSettle();
-  expect(find.text(phoneLocal), findsWidgets, reason: 'номер введён в поле');
-  // Узкий экран + крупный шрифт (iPhone SE в e2e): кнопка и ячейки кода
-  // могут быть ниже края — сначала на экран, потом нажатие/ввод.
-  final send = find.byKey(const Key('driverLoginSendCodeButton'));
-  await reveal(tester, send);
-  await tester.tap(send);
-  await waitFor(tester, find.byKey(const Key('driverLoginCodeDigit0')));
+  // Свежий эмулятор: экран входа иногда перестраивается сразу после ввода
+  // (поле снова пустое, запрос кода не уходит) — тогда ввод и отправка ещё раз.
+  final code = find.byKey(const Key('driverLoginCodeDigit0'));
+  for (var attempt = 1; attempt <= 3 && code.evaluate().isEmpty; attempt++) {
+    // Над номером может стоять кнопка входа через бота (050) — на узком экране
+    // с крупным шрифтом поле ниже края: на экран, фокус, потом ввод.
+    final phone = find.byKey(const Key('driverLoginPhoneField'));
+    await waitAndReveal(tester, phone);
+    await tester.tap(phone);
+    await tester.pumpAndSettle();
+    await tester.enterText(phone, phoneLocal);
+    await tester.pumpAndSettle();
+    expect(find.text(phoneLocal), findsWidgets, reason: 'номер введён в поле');
+    // Узкий экран + крупный шрифт (iPhone SE в e2e): кнопка и ячейки кода
+    // могут быть ниже края — сначала на экран, потом нажатие/ввод.
+    final send = find.byKey(const Key('driverLoginSendCodeButton'));
+    await reveal(tester, send);
+    await tester.tap(send);
+    final deadline = DateTime.now().add(Duration(seconds: attempt < 3 ? 8 : 20));
+    while (code.evaluate().isEmpty && DateTime.now().isBefore(deadline)) {
+      await tester.pump(const Duration(milliseconds: 250));
+    }
+  }
+  await waitFor(tester, code);
   for (var i = 0; i < 4; i++) {
     await reveal(tester, find.byKey(Key('driverLoginCodeDigit$i')));
     await tester.enterText(find.byKey(Key('driverLoginCodeDigit$i')), e2eDevCode[i]);
