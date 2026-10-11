@@ -419,7 +419,11 @@ export class ResponsesService {
   /// одновременно не займут последнее место. `true` — этой сделкой груз набран.
   private async claimPlace(tx: Prisma.TransactionClient, cargoId: string): Promise<boolean> {
     await this.lockCargo(tx, cargoId);
-    const cargo = await tx.cargo.findUnique({ where: { id: cargoId }, select: { trucksNeeded: true } });
+    const cargo = await tx.cargo.findUnique({ where: { id: cargoId }, select: { trucksNeeded: true, status: true } });
+    // 061 п.4б: место занимается, только пока груз в поиске.
+    if (cargo && cargo.status && cargo.status !== 'PUBLISHED') {
+      throw new ConflictException({ code: 'CARGO_NOT_AVAILABLE', message: 'Cargo is no longer available' });
+    }
     const needed = Math.max(1, cargo?.trucksNeeded ?? 1);
     const taken = await tx.deal.count({ where: { cargoId, status: { not: 'CANCELLED' } } });
     if (taken >= needed) {

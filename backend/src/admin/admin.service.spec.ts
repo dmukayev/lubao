@@ -1392,6 +1392,20 @@ describe('AdminService.dealDetail / dealChat / advanceDealStatusByAdmin / cancel
     expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['logist-1'], companyId: 'c1' }, 'DEAL_FOR_LOGIST', expect.objectContaining({ dealId: 'deal1', status: 'LOADED' }));
   });
 
+  it('061 п.4в: «доставлено» админом — груз в архив, только когда другие сделки по грузу завершены', async () => {
+    for (const [unfinished, archived] of [[1, false], [0, true]] as const) {
+      const prisma: any = {
+        deal: { findUnique: jest.fn().mockResolvedValue(baseDeal({ status: 'IN_TRANSIT' })), update: jest.fn(), count: jest.fn().mockResolvedValue(unfinished) },
+        auditLog: { create: jest.fn() },
+        ...dealNotificationMocks(),
+      };
+      prisma.cargo.updateMany = jest.fn();
+      const service = new AdminService(prisma, {} as any, fakeUploads() as any);
+      await service.advanceDealStatusByAdmin('deal1', 'admin-1', { status: 'DELIVERED', reason: 'x' } as any);
+      expect(prisma.cargo.updateMany).toHaveBeenCalledTimes(archived ? 1 : 0);
+    }
+  });
+
   it('advanceDealStatusByAdmin allows moving one step backward and clears the timestamp being undone', async () => {
     const prisma: any = {
       deal: { findUnique: jest.fn().mockResolvedValue(baseDeal({ status: 'LOADED' })), update: jest.fn() },

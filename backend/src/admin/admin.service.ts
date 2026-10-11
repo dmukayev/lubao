@@ -1000,7 +1000,9 @@ export class AdminService {
     await this.prisma.deal.update({ where: { id }, data });
     // Статус груза следует за сделкой (041): доставлено → груз закрыт, назад — снова в сделке.
     if (dto.status === 'DELIVERED') {
-      await this.prisma.cargo.updateMany({
+      // 061 п.4в: груз на несколько машин — в архив, только когда доставлены все.
+      const unfinished = await this.prisma.deal.count({ where: { cargoId: deal.cargoId, id: { not: id }, status: { notIn: ['DELIVERED', 'CANCELLED'] } } });
+      if (unfinished === 0) await this.prisma.cargo.updateMany({
         where: { id: deal.cargoId, status: 'IN_DEAL' },
         data: { status: 'ARCHIVED', closeOutcome: 'FOUND_IN_APP', closedAt: new Date() },
       });

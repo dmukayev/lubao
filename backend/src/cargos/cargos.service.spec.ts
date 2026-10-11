@@ -116,10 +116,11 @@ describe('CargosService.closeCargo — закрытие только с исхо
     await expect(service.closeCargo('c1', 'u1', 'OWNER', 'cargo1', { outcome: 'FOUND_IN_APP' } as any)).rejects.toThrow(BadRequestException);
   });
 
-  it('FOUND_IN_APP invites the driver (creating the deal) and marks the cargo CANCELLED with the outcome', async () => {
+  it('FOUND_IN_APP invites the driver (creating the deal), keeps the cargo IN_DEAL with places = taken', async () => {
     const prisma: any = {
       cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo()), update: jest.fn() },
       response: { findUnique: jest.fn().mockResolvedValue(null) },
+      deal: { count: jest.fn().mockResolvedValue(2) },
     };
     const responses = { createDealDirect: jest.fn(), closeForCargo: jest.fn() };
     const service = new CargosService(prisma, responses as any, {} as any);
@@ -129,15 +130,18 @@ describe('CargosService.closeCargo — закрытие только с исхо
     expect(responses.createDealDirect).toHaveBeenCalledWith('cargo1', 'd1', 'c1');
     expect(prisma.cargo.update).toHaveBeenCalledWith({
       where: { id: 'cargo1' },
-      // 057 п.16: груз с идущей сделкой остаётся «В работе» (IN_DEAL), статус не трогаем.
-      data: { closeOutcome: 'FOUND_IN_APP', closedAt: expect.any(Date) },
+      // 057 п.16: груз с идущей сделкой остаётся «В работе»; 061 п.4а: мест — сколько взято.
+      data: { closeOutcome: 'FOUND_IN_APP', closedAt: expect.any(Date), status: 'IN_DEAL', trucksNeeded: 2 },
     });
+    // 061 п.4г: ждущим — «ушёл другому», не «груз снят».
+    expect(responses.closeForCargo).toHaveBeenCalledWith('cargo1', 'TAKEN_BY_OTHER');
   });
 
   it('FOUND_IN_APP does not re-invite a driver whose response is already SELECTED (deal already exists)', async () => {
     const prisma: any = {
       cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo()), update: jest.fn() },
       response: { findUnique: jest.fn().mockResolvedValue({ status: 'SELECTED' }) },
+      deal: { count: jest.fn().mockResolvedValue(1) },
     };
     const responses = { createDealDirect: jest.fn(), closeForCargo: jest.fn() };
     const service = new CargosService(prisma, responses as any, {} as any);
@@ -1054,5 +1058,44 @@ describe('057 п.18: limit/offset — только целые', () => {
     expect(toInt('-1')).toBeUndefined();
     expect(toInt('20')).toBe(20);
     expect(parseFeedQuery({ limit: '2.5', offset: '3' })).toMatchObject({ limit: undefined, offset: 3 });
+  });
+});
+
+describe('061 п.4б/п.5: число машин под замком, валюта при откликах', () => {
+  const txWith = (taken: number, status: string) => {
+    const tx: any = {
+      $queryRaw: jest.fn().mockResolvedValue([]),
+      deal: { count: jest.fn().mockResolvedValue(taken) },
+      cargo: { findUniqueOrThrow: jest.fn().mockResolvedValue({ status }), update: jest.fn() },
+    };
+    return tx;
+  };
+
+  it('набрано правкой — IN_DEAL и true; меньше взятых — ошибка поля', async () => {
+    const tx = txWith(2, 'PUBLISHED');
+    const prisma: any = { $transaction: (fn: any) => fn(tx) };
+    const service = new CargosService(prisma, {} as any, {} as any);
+    await expect((service as any).applyTrucksNeeded('cargo1', 2)).resolves.toBe(true);
+    expect(tx.$queryRaw).toHaveBeenCalled();
+    expect(tx.cargo.update).toHaveBeenCalledWith({ where: { id: 'cargo1' }, data: { trucksNeeded: 2, status: 'IN_DEAL' } });
+    await expect((service as any).applyTrucksNeeded('cargo1', 1)).rejects.toThrow(BadRequestException);
+  });
+
+  it('добавили машин к «В работе» — снова в поиске', async () => {
+    const tx = txWith(1, 'IN_DEAL');
+    const service = new CargosService({ $transaction: (fn: any) => fn(tx) } as any, {} as any, {} as any);
+    await expect((service as any).applyTrucksNeeded('cargo1', 3)).resolves.toBe(false);
+    expect(tx.cargo.update).toHaveBeenCalledWith({ where: { id: 'cargo1' }, data: { trucksNeeded: 3, status: 'PUBLISHED' } });
+  });
+
+  it('смена валюты при отклике со своей ценой — 409 CURRENCY_LOCKED', async () => {
+    const prisma: any = {
+      cargo: { findUnique: jest.fn().mockResolvedValue(baseCargo({ currency: 'USD', companyId: 'c1', createdById: 'u1' })) },
+      response: { count: jest.fn().mockResolvedValue(1) },
+      deal: { count: jest.fn().mockResolvedValue(0) },
+    };
+    const service = new CargosService(prisma, {} as any, {} as any);
+    jest.spyOn(service as any, 'assertCanEdit').mockResolvedValue(baseCargo({ currency: 'USD', companyId: 'c1', createdById: 'u1' }));
+    await expect(service.update('c1', 'u1', 'OWNER', 'cargo1', { currency: 'KZT' } as any)).rejects.toMatchObject({ response: { code: 'CURRENCY_LOCKED' } });
   });
 });

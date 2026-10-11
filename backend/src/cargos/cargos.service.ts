@@ -903,11 +903,18 @@ export class CargosService {
         : {};
 
     if (dto.categoryId !== undefined) await this.assertCategory(dto.categoryId);
-    // 058 п.2: машин не меньше, чем уже взято сделок.
-    const taken = dto.trucksNeeded !== undefined ? await this.prisma.deal.count({ where: { cargoId: id, status: { not: 'CANCELLED' } } }) : 0;
-    if (dto.trucksNeeded !== undefined && dto.trucksNeeded < taken) {
-      throw new BadRequestException({ code: 'VALIDATION_FAILED', message: ['trucksNeeded must not be less than taken deals'], fields: [{ field: 'trucksNeeded', rule: 'min', limit: taken }] });
+    // 061 п.5: валюта при откликах со своей ценой или живых сделках не меняется —
+    // иначе $9 500 стал бы ₸9 500.
+    if (dto.currency !== undefined && dto.currency !== existing.currency) {
+      const [offers, liveDeals] = await Promise.all([
+        this.prisma.response.count({ where: { cargoId: id, status: { in: ['PENDING', 'INVITED'] }, OR: [{ proposedPrice: { not: null } }, { counterPrice: { not: null } }] } }),
+        this.prisma.deal.count({ where: { cargoId: id, status: { notIn: ['CANCELLED', 'DELIVERED'] } } }),
+      ]);
+      if (offers > 0 || liveDeals > 0) throw new ConflictException({ code: 'CURRENCY_LOCKED', message: 'Currency cannot change while there are offers or deals' });
     }
+    // 061 п.4б: число машин — в одной транзакции под замком груза, со статусом.
+    let filledByEdit = false;
+    if (dto.trucksNeeded !== undefined) filledByEdit = await this.applyTrucksNeeded(id, dto.trucksNeeded);
 
     await this.prisma.cargo.update({
       where: { id },
@@ -925,23 +932,14 @@ export class CargosService {
         price: dto.price,
         currency: dto.currency,
         ...paymentTerms(dto, dto.price ?? Number(existing.price), existing.advanceAmount != null ? Number(existing.advanceAmount) : null),
-        trucksNeeded: dto.trucksNeeded,
         readyDate,
         expiresAt,
         description: dto.description,
         ...bodyData,
       },
     });
-    // 058 п.2: набрали все места — «В работе» (ждущие отклики закрываются),
-    // добавили машин — снова в поиске.
-    if (dto.trucksNeeded !== undefined) {
-      if (taken >= dto.trucksNeeded && existing.status === 'PUBLISHED') {
-        await this.prisma.cargo.updateMany({ where: { id, status: 'PUBLISHED' }, data: { status: 'IN_DEAL' } });
-        await this.responses.closeForCargo(id, 'TAKEN_BY_OTHER');
-      } else if (taken < dto.trucksNeeded && existing.status === 'IN_DEAL') {
-        await this.prisma.cargo.updateMany({ where: { id, status: 'IN_DEAL' }, data: { status: 'PUBLISHED' } });
-      }
-    }
+    // 061 п.4г: места набраны правкой — ждущим «ушёл другому», не «груз снят».
+    if (filledByEdit) await this.responses.closeForCargo(id, 'TAKEN_BY_OTHER');
     // Сменился маршрут или цена — заново км и ₸/км.
     if (dto.pointId !== undefined || dto.destinationCityId !== undefined || dto.price !== undefined) await this.applyPricingBounded(id, false);
     return this.toDto(await this.findEntity(id));
@@ -977,6 +975,25 @@ export class CargosService {
     return [...byDriver.values()];
   }
 
+  /// 061 п.4б: `trucksNeeded` под замком груза (тот же, что у выбора водителя):
+  /// не меньше взятых мест; набрано — «В работе», добавили машин — снова в поиске.
+  /// `true` — этой правкой груз набран (ждущим отклики «ушёл другому»).
+  private async applyTrucksNeeded(cargoId: string, needed: number): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${cargoId}))::text`;
+      const taken = await tx.deal.count({ where: { cargoId, status: { not: 'CANCELLED' } } });
+      if (needed < taken) {
+        throw new BadRequestException({ code: 'VALIDATION_FAILED', message: ['trucksNeeded must not be less than taken deals'], fields: [{ field: 'trucksNeeded', rule: 'min', limit: taken }] });
+      }
+      const cargo = await tx.cargo.findUniqueOrThrow({ where: { id: cargoId }, select: { status: true } });
+      let status = cargo.status;
+      if (taken >= needed && cargo.status === 'PUBLISHED') status = 'IN_DEAL';
+      else if (taken < needed && cargo.status === 'IN_DEAL') status = 'PUBLISHED';
+      await tx.cargo.update({ where: { id: cargoId }, data: { trucksNeeded: needed, status } });
+      return cargo.status === 'PUBLISHED' && status === 'IN_DEAL';
+    });
+  }
+
   /// Закрыть груз только через выбор исхода (задача 017, п.6) — заменяет
   /// старое «удаление» без причины. «Нашёл в Lubao» выбирает водителя и
   /// создаёт сделку тем же путём, что и приглашение/выбор отклика
@@ -998,10 +1015,15 @@ export class CargosService {
 
     // 057 п.16: «Нашёл в Lubao» — у груза идущая сделка: он остаётся IN_DEAL («В
     // работе»), в архив уйдёт сам при доставке. Остальные исходы — снят.
-    await this.prisma.cargo.update({
-      where: { id },
-      data: dto.outcome === 'FOUND_IN_APP' ? { closeOutcome: dto.outcome, closedAt: new Date() } : { status: 'CANCELLED', closeOutcome: dto.outcome, closedAt: new Date() },
-    });
+    if (dto.outcome === 'FOUND_IN_APP') {
+      // 061 п.4а: груз на несколько машин — мест ровно столько, сколько взято;
+      // с поиска снимается, ждущим — «ушёл другому».
+      const taken = await this.prisma.deal.count({ where: { cargoId: id, status: { not: 'CANCELLED' } } });
+      await this.prisma.cargo.update({ where: { id }, data: { closeOutcome: dto.outcome, closedAt: new Date(), status: 'IN_DEAL', trucksNeeded: Math.max(1, taken) } });
+      await this.responses.closeForCargo(id, 'TAKEN_BY_OTHER');
+      return;
+    }
+    await this.prisma.cargo.update({ where: { id }, data: { status: 'CANCELLED', closeOutcome: dto.outcome, closedAt: new Date() } });
     // 056 п.1: отклики, что ещё ждали, закрываются с причиной «груз снят».
     await this.responses.closeForCargo(id);
   }
