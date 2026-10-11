@@ -266,7 +266,8 @@ void main() {
       expect(find.byKey(const Key('chatMessageInput')), findsNothing);
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(router.routerDelegate.currentConfiguration.uri.path, '/driver/feed');
-      await waitFor(tester, find.byKey(const Key('feedChipsBar')));
+      // Лента — в своей вкладке (прокрутка сохранена, полосы чипов может не быть видно).
+      await waitFor(tester, find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('feedCargoCard-')).first);
     });
 
     await run.step(tester, 'список-чатов', () async {
