@@ -3727,7 +3727,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get preVerifyDriverCan =>
-      'Болады: жүктерді көру, қоңырау шалу, жазу және өтінім беру';
+      'Болады: жүктерді көру, жазу және өтінім беру; логистің нөмірі өтінімнен кейін көрінеді';
 
   @override
   String get preVerifyDriverCannot => 'Болмайды: тасымалды растау';
@@ -3737,13 +3737,15 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get preVerifyCompanyCan =>
-      'Болады: жүргізушілерді көру, қоңырау шалу және жазу';
+      'Болады: жүргізушілерді көру және оларға жазу';
 
   @override
-  String get preVerifyCompanyCannot => 'Болмайды: жүк жариялау';
+  String get preVerifyCompanyCannot =>
+      'Болмайды: жүк жариялау және жүргізушілерге қоңырау шалу';
 
   @override
-  String get preVerifyCompanyAfter => 'Компания тексерілгеннен кейін ашылады';
+  String get preVerifyCompanyAfter =>
+      'Жүктер мен қоңыраулар — компания тексерілгеннен кейін';
 
   @override
   String get driversTabAll => 'Барлығы';

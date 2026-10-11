@@ -3643,7 +3643,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get preVerifyTitle => '审核期间';
 
   @override
-  String get preVerifyDriverCan => '可以：浏览货物、打电话、发消息和报名';
+  String get preVerifyDriverCan => '可以：浏览货物、发消息和报名；报名后可见物流人员电话';
 
   @override
   String get preVerifyDriverCannot => '不可以：确认承运';
@@ -3652,13 +3652,13 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get preVerifyDriverAfter => '证件审核通过后开放';
 
   @override
-  String get preVerifyCompanyCan => '可以：查看司机、打电话和发消息';
+  String get preVerifyCompanyCan => '可以：查看司机并给他们发消息';
 
   @override
-  String get preVerifyCompanyCannot => '不可以：发布货物';
+  String get preVerifyCompanyCannot => '不可以：发布货物、给司机打电话';
 
   @override
-  String get preVerifyCompanyAfter => '公司审核通过后开放';
+  String get preVerifyCompanyAfter => '公司审核通过后可发布货物和打电话';
 
   @override
   String get driversTabAll => '全部';

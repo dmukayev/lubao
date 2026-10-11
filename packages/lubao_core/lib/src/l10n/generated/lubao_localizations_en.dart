@@ -3729,7 +3729,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get preVerifyDriverCan =>
-      'You can: browse cargo, call, chat and respond';
+      'You can: browse cargo, chat and respond; the logistician\'s number is shown after you respond';
 
   @override
   String get preVerifyDriverCannot => 'You can\'t: confirm a trip';
@@ -3739,14 +3739,15 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
       'Unlocks after your documents are verified';
 
   @override
-  String get preVerifyCompanyCan =>
-      'You can: see drivers, call and message them';
+  String get preVerifyCompanyCan => 'You can: see drivers and message them';
 
   @override
-  String get preVerifyCompanyCannot => 'You can\'t: publish cargo';
+  String get preVerifyCompanyCannot =>
+      'You can\'t: publish cargo or call drivers';
 
   @override
-  String get preVerifyCompanyAfter => 'Unlocks after your company is verified';
+  String get preVerifyCompanyAfter =>
+      'Cargo and calls unlock after your company is verified';
 
   @override
   String get driversTabAll => 'All';

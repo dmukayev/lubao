@@ -6933,7 +6933,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @preVerifyDriverCan.
   ///
   /// In ru, this message translates to:
-  /// **'Можно: смотреть грузы, звонить, писать и откликаться'**
+  /// **'Можно: смотреть грузы, писать и откликаться; номер логиста виден после отклика'**
   String get preVerifyDriverCan;
 
   /// No description provided for @preVerifyDriverCannot.
@@ -6951,19 +6951,19 @@ abstract class LubaoLocalizations {
   /// No description provided for @preVerifyCompanyCan.
   ///
   /// In ru, this message translates to:
-  /// **'Можно: смотреть водителей, звонить и писать им'**
+  /// **'Можно: смотреть водителей и писать им'**
   String get preVerifyCompanyCan;
 
   /// No description provided for @preVerifyCompanyCannot.
   ///
   /// In ru, this message translates to:
-  /// **'Нельзя: публиковать грузы'**
+  /// **'Нельзя: публиковать грузы и звонить водителям'**
   String get preVerifyCompanyCannot;
 
   /// No description provided for @preVerifyCompanyAfter.
   ///
   /// In ru, this message translates to:
-  /// **'Откроется после проверки компании'**
+  /// **'Грузы и звонки — после проверки компании'**
   String get preVerifyCompanyAfter;
 
   /// No description provided for @driversTabAll.

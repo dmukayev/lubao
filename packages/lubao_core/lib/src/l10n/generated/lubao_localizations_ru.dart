@@ -3714,7 +3714,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get preVerifyDriverCan =>
-      'Можно: смотреть грузы, звонить, писать и откликаться';
+      'Можно: смотреть грузы, писать и откликаться; номер логиста виден после отклика';
 
   @override
   String get preVerifyDriverCannot => 'Нельзя: подтвердить перевозку';
@@ -3723,14 +3723,15 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get preVerifyDriverAfter => 'Откроется после проверки документов';
 
   @override
-  String get preVerifyCompanyCan =>
-      'Можно: смотреть водителей, звонить и писать им';
+  String get preVerifyCompanyCan => 'Можно: смотреть водителей и писать им';
 
   @override
-  String get preVerifyCompanyCannot => 'Нельзя: публиковать грузы';
+  String get preVerifyCompanyCannot =>
+      'Нельзя: публиковать грузы и звонить водителям';
 
   @override
-  String get preVerifyCompanyAfter => 'Откроется после проверки компании';
+  String get preVerifyCompanyAfter =>
+      'Грузы и звонки — после проверки компании';
 
   @override
   String get driversTabAll => 'Все';
