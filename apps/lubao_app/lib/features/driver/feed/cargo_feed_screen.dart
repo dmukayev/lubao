@@ -8,6 +8,7 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import 'favorite_button.dart';
+import '../../shared/cargo_price_column.dart';
 import 'feed_filters.dart';
 import '../profile/driver_companies.dart';
 import '../../shared/status_helpers.dart';
@@ -251,13 +252,11 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
       ResponseStatus.pending => (t.feedStateResponded, StatusBadge.success),
       _ => (null, StatusBadge.neutral),
     };
-    final perKmKzt = cargo.pricePerKm == null ? null : refData.convertToKzt(cargo.pricePerKm!, cargo.currency);
     // 055: водителю — тонны («18,5 т»), меньше тонны — кг.
     // 058 п.3: «21 т · 35 м³», если объём указан.
     final size = cargoSizeLabel(t, weightKg: cargo.weightKg, volumeM3: cargo.volumeM3, languageCode: locale);
     final weight = size.isEmpty ? null : size;
-    // 063 (эталон 34): под ценой — когда и как платят всю сумму; аванс — плашкой внизу.
-    final terms = paymentWhenHowLine(t, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays);
+    // 063 (эталон 34): аванс — плашкой внизу; цена, ≈ ₸, ₸/км и когда/как — столбцом (065).
     final advance = advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency);
     final grey = AppTextStyles.body.copyWith(color: AppColors.textSecondary);
     final blue = AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600);
@@ -289,20 +288,17 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
           // ₸/км уходят отдельной строкой под атрибуты.
           LayoutBuilder(
             builder: (context, constraints) {
-              // 063: ₸/км — слева, к километрам.
-              final perKm = perKmKzt == null ? null : t.perKmKzt(formatThousands(perKmKzt.round()));
-              final details = _feedDetails(category, weight, bodyType.name.forLanguageCode(locale), cargo, t, grey, blue, small, companyLine, perKm);
-              final price = Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceCard);
-              final termsText = terms.isEmpty ? null : Text(terms, key: Key('feedCargoTerms-${cargo.id}'), style: small, textAlign: TextAlign.end);
+              // 065 (эталон 35): правый столбец — цена, ≈ ₸, ₸/км, когда и как.
+              final details = _feedDetails(category, weight, bodyType.name.forLanguageCode(locale), cargo, t, grey, blue, small, companyLine);
               final narrow = constraints.maxWidth / MediaQuery.textScalerOf(context).scale(1) < 260;
               if (narrow) {
+                // Узкий экран: тот же столбец блоком под описанием.
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     details,
                     const SizedBox(height: AppSpacing.xs),
-                    price,
-                    if (terms.isNotEmpty) Text(terms, key: Key('feedCargoTerms-${cargo.id}'), style: small),
+                    CargoPriceColumn(cargo: cargo, refData: refData, keyPrefix: 'feedCargo', inline: true),
                   ],
                 );
               }
@@ -311,10 +307,10 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                 children: [
                   Expanded(child: details),
                   const SizedBox(width: AppSpacing.md),
-                  // Строка условий не шире 45% — атрибуты слева не сжимаются.
+                  // Столбец цены не шире 45% — атрибуты слева не сжимаются.
                   ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.45),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [price, ?termsText]),
+                    child: CargoPriceColumn(cargo: cargo, refData: refData, keyPrefix: 'feedCargo'),
                   ),
                 ],
               );
@@ -345,7 +341,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
     );
   }
 
-  Widget _feedDetails(String? category, String? weight, String bodyName, Cargo cargo, LubaoLocalizations t, TextStyle grey, TextStyle blue, TextStyle small, String companyLine, String? perKm) {
+  Widget _feedDetails(String? category, String? weight, String bodyName, Cargo cargo, LubaoLocalizations t, TextStyle grey, TextStyle blue, TextStyle small, String companyLine) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -363,10 +359,6 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
             children: [
               if (cargo.distanceKm != null && cargo.distanceKm! > 0) ...[
                 TextSpan(text: '${formatThousands(cargo.distanceKm!)} ${t.unitKm}', style: blue),
-                TextSpan(text: ' · ', style: grey),
-              ],
-              if (perKm != null) ...[
-                TextSpan(text: perKm, style: blue),
                 TextSpan(text: ' · ', style: grey),
               ],
               TextSpan(text: loadingDayLabel(t, cargo.readyDate), style: grey),

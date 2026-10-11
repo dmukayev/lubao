@@ -10,6 +10,7 @@ import '../../../providers/data_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../shared/city_picking.dart';
 import '../../shared/share_action.dart';
+import '../../shared/cargo_price_column.dart';
 import '../../shared/status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../shared/share_link_prompt.dart';
@@ -412,9 +413,6 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
       badgeLabel = statusLabel;
     }
     final grey = AppTextStyles.caption;
-    final perKmKzt = cargo.pricePerKm == null ? null : refData?.convertToKzt(cargo.pricePerKm!, cargo.currency);
-    final secondPrice = perKmKzt == null ? null : t.perKmKzt(formatThousands(perKmKzt.round()));
-    final whenHow = paymentWhenHowLine(t, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays);
     final advance = advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency);
     final size = cargoSizeLabel(t, weightKg: cargo.weightKg, volumeM3: cargo.volumeM3, languageCode: locale);
     final left = [
@@ -469,14 +467,8 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceCard),
-                  if (secondPrice != null) Text(secondPrice, style: AppTextStyles.small.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700)),
-                  if (whenHow.isNotEmpty) Text(whenHow, key: Key('companyCargoTerms-${cargo.id}'), style: AppTextStyles.small.copyWith(color: AppColors.textSecondary)),
-                ],
-              ),
+              // 065 (эталон 35): цена, ≈ ₸, ₸/км, когда и как — общий столбец.
+              Flexible(child: CargoPriceColumn(cargo: cargo, refData: refData, keyPrefix: 'companyCargo')),
             ],
           ),
           if (advance != null) ...[const SizedBox(height: AppSpacing.sm), AdvancePill(advance, key: Key('companyCargoAdvance-${cargo.id}'))],
