@@ -70,7 +70,14 @@ void main() {
 
     // Чип в горизонтальной полосе над лентой: лента — наверх (повторное нажатие
     // «Грузы»), полоса — до чипа, дождаться конца прокрутки, нажать.
-    Future<void> tapChip(Finder chip) async {
+    // Лента — наверх (повторное нажатие «Грузы»), чтобы на снимке были полоса чипов и фильтры.
+    Future<void> scrollFeedTop() async {
+      await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text(t.navFeed)));
+      await tester.pumpAndSettle();
+      await waitFor(tester, find.byKey(const Key('feedChipsBar')));
+    }
+
+    Future<void> tapChip(Finder chip, {bool tapIt = true}) async {
       await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text(t.navFeed)));
       await tester.pumpAndSettle();
       await waitFor(tester, find.byKey(const Key('feedChipsBar')));
@@ -84,7 +91,7 @@ void main() {
       }
       await tester.ensureVisible(chip);
       await tester.pumpAndSettle();
-      await tester.tap(chip);
+      if (tapIt) await tester.tap(chip);
     }
 
     await run.step(tester, 'вход-водителя', () async {
@@ -104,13 +111,18 @@ void main() {
       // Все грузы в Россию (и из других городов — если строку раскрыли).
       final allRu = ((await api.feed({'toCountryId': ruId, 'showOtherCities': 'true'}))['items'] as List).cast<Map>().map((c) => c['id'] as String).toSet();
       expect(visibleCardIds().difference(allRu), isEmpty, reason: 'в ленте только грузы в Россию');
+      // 064 п.6: «куда» — в строке активных фильтров с ✕.
+      expect(find.byKey(const Key('feedActive-to')), findsOneWidget);
       expectNoOverflow(tester);
-      // Снова «Все».
-      await tapChip(find.byKey(const Key('feedChipAll')));
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      // Снимок шага — с выбранным чипом и строкой «Куда: Россия» наверху ленты.
+      await tapChip(find.byKey(Key('feedChipCountry-$ruId')), tapIt: false);
     });
 
     await run.step(tester, 'фильтр-кузов-и-вес-счётчик-как-список', () async {
+      // Снова «Все».
+      await tapChip(find.byKey(const Key('feedChipAll')));
+      await tester.pumpAndSettle(const Duration(seconds: 1));
+      expect(find.byKey(const Key('feedActive-to')), findsNothing);
       await tester.tap(find.byKey(const Key('feedFiltersButton')));
       await waitFor(tester, find.byKey(const Key('feedFilterSheet')));
       final tent = find.byKey(Key('feedFilterBody-$tentId'));
@@ -127,6 +139,11 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 1));
       await waitFor(tester, find.text(t.driverHomeFeedCount(expected)));
       expect(find.byKey(const Key('feedActive-weight')), findsOneWidget);
+      // Снимок шага — лента с применёнными фильтрами (строка «кузов · вес» с ✕).
+      await scrollFeedTop();
+    });
+
+    await run.step(tester, 'снять-фильтры-крестиком', () async {
       // Снять фильтры ✕.
       Future<void> removeActive(Key key) async {
         // После снятия одного фильтра лента перезапрашивается — ждём крестик следующего.
@@ -148,6 +165,11 @@ void main() {
       final first = ((await api.feed({'sort': 'per_km'}))['items'] as List).cast<Map>().first['id'] as String;
       await waitFor(tester, find.byKey(Key('feedCargoCard-$first')));
       expect(firstFeedCargoId(tester), first);
+      // Снимок шага — лента «выгоднее ₸/км», точка на кнопке сортировки.
+      await scrollFeedTop();
+    });
+
+    await run.step(tester, 'сортировка-как-обычно', () async {
       await tester.tap(find.byKey(const Key('feedSortButton')));
       await waitFor(tester, find.byKey(const Key('feedSort-standard')));
       await tester.tap(find.byKey(const Key('feedSort-standard')));
@@ -165,9 +187,14 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 1));
       final all = ((await api.feed({'showOtherCities': 'true'}))['total'] as int);
       await reveal(tester, find.text(t.driverHomeFeedCount(all)));
+      // Снимок шага — раскрытые «другие города»: счётчик ленты вырос.
+    });
+
+    await run.step(tester, 'другие-города-свернуть', () async {
       await reveal(tester, find.byKey(const Key('feedOtherCitiesCollapse')));
       await tester.tap(find.byKey(const Key('feedOtherCitiesCollapse')));
       await tester.pumpAndSettle(const Duration(seconds: 1));
+      expect(find.byKey(const Key('feedOtherCitiesExpand')), findsOneWidget);
     });
   });
 }
