@@ -10,6 +10,9 @@ import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lubao_app/app.dart';
 import 'package:lubao_app/providers/auth_provider.dart';
+import 'package:lubao_app/providers/api_providers.dart';
+import 'package:lubao_app/router/tab_scroll.dart';
+import 'package:dio/dio.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import 'e2e_support.dart';
@@ -145,6 +148,40 @@ void main() {
       }
       expect(firstFeedCargoId(tester), e2eCargo7);
       expectNoOverflow(tester);
+    });
+
+    // 060 п.6: вкладки туда-обратно — прокрутка ленты на месте, ничего не
+    // грузится заново (нет запросов списков за 2 с); повторное нажатие — наверх.
+    await run.step(tester, 'вкладки-туда-обратно-без-перезагрузки', () async {
+      final container = ProviderScope.containerOf(tester.element(find.byType(NavigationBar)));
+      final listPaths = {'/cargos', '/deals/mine', '/responses/mine', '/chats', '/drivers/me'};
+      var listRequests = 0;
+      final counter = InterceptorsWrapper(onRequest: (options, handler) {
+        if (options.method == 'GET' && listPaths.contains(options.path)) listRequests++;
+        handler.next(options);
+      });
+      container.read(apiClientProvider).dio.interceptors.add(counter);
+      try {
+        final feed = tabScrollController('driver.feed');
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
+        await tester.pumpAndSettle();
+        final offset = feed.offset;
+        expect(offset, greaterThan(100), reason: 'лента прокрутилась');
+        for (final tab in [t.navTrips, t.navChats, t.profileTitle, t.navFeed]) {
+          await goTab(tester, tab);
+          expect(find.byKey(const Key('skeletonList')), findsNothing, reason: 'вкладка «$tab» не грузится заново');
+        }
+        await tester.pump(const Duration(seconds: 2));
+        expect(listRequests, 0, reason: 'переключение вкладок не перечитывает списки');
+        expect((feed.offset - offset).abs(), lessThan(1), reason: 'прокрутка ленты сохранилась');
+        // Повторное нажатие на «Грузы» — наверх.
+        await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text(t.navFeed)));
+        await tester.pumpAndSettle();
+        expect(feed.offset, lessThan(1));
+        expectNoOverflow(tester);
+      } finally {
+        container.read(apiClientProvider).dio.interceptors.remove(counter);
+      }
     });
 
     await run.step(tester, 'лента-карточка-груза', () async {

@@ -16,6 +16,7 @@ import '../../shared/tracking_consent_sheet.dart';
 import '../trips/driver_trips_screen.dart';
 import 'driver_status.dart';
 import '../../shared/share_link_prompt.dart';
+import '../../../services/perf_log.dart';
 
 class CargoFeedScreen extends ConsumerStatefulWidget {
   const CargoFeedScreen({super.key});
@@ -94,6 +95,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                 _more.clear();
                 _total = first.total;
               }
+              PerfLog.feedShown();
               final items = [...first.items, ..._more];
               final hasMore = items.length < _total;
 
