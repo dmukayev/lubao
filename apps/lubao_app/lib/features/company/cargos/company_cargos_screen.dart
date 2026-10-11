@@ -426,7 +426,7 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
       foregroundColor: AppColors.textSecondary,
       side: const BorderSide(color: AppColors.divider),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      minimumSize: const Size(44, 40),
+      minimumSize: const Size(44, 36),
       visualDensity: VisualDensity.compact,
       textStyle: AppTextStyles.small.copyWith(fontWeight: FontWeight.w600),
     );
@@ -434,14 +434,22 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
     return AppCard(
       key: Key('companyCargoCard-${cargo.id}'),
       onTap: () => _open(cargo),
+      // Эталон 35: на Android 360 с крупным шрифтом — около трёх карточек.
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(child: Text(routeText, key: Key('companyCargoRoute-${cargo.id}'), style: AppTextStyles.route, maxLines: 1, overflow: TextOverflow.ellipsis)),
+              Expanded(child: Text(routeText, key: Key('companyCargoRoute-${cargo.id}'), style: AppTextStyles.route.copyWith(fontSize: 18), maxLines: 1, overflow: TextOverflow.ellipsis)),
               const SizedBox(width: AppSpacing.sm),
-              Text(formatPublishedAt(t, cargo.publishedAt, languageCode: locale), key: Key('companyCargoPublished-${cargo.id}'), style: AppTextStyles.small.copyWith(color: AppColors.textSecondary)),
+              // Мелко (11–12 sp) и не растёт с крупным шрифтом — маршрут важнее.
+              Text(
+                formatPublishedAt(t, cargo.publishedAt, languageCode: locale),
+                key: Key('companyCargoPublished-${cargo.id}'),
+                style: AppTextStyles.small.copyWith(color: AppColors.textSecondary, fontSize: 12),
+                textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.1),
+              ),
             ],
           ),
           if (badgeLabel != null) ...[const SizedBox(height: AppSpacing.xs), StatusBadge(label: badgeLabel, color: badgeColor)],
@@ -474,7 +482,7 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
           if (advance != null) ...[const SizedBox(height: AppSpacing.sm), AdvancePill(advance, key: Key('companyCargoAdvance-${cargo.id}'))],
           if (deal != null) ...[const SizedBox(height: AppSpacing.sm), _DealDriverRow(deal: deal)],
           if (showResponses || canRepeat) ...[
-            const Divider(height: AppSpacing.lg),
+            const Divider(height: AppSpacing.md),
             Row(
               children: [
                 Expanded(
@@ -482,15 +490,15 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
                       ? Text.rich(
                           key: Key('cargoResponsesLine-${cargo.id}'),
                           cargo.responsesCount == 0
-                              ? TextSpan(text: t.cargoNoResponses, style: grey)
+                              ? TextSpan(text: t.cargoNoResponses, style: AppTextStyles.small.copyWith(color: AppColors.textSecondary))
                               : TextSpan(
                                   text: t.cargoResponsesCount(cargo.responsesCount),
-                                  style: AppTextStyles.caption.copyWith(color: AppColors.text),
+                                  style: AppTextStyles.small.copyWith(color: AppColors.text),
                                   children: [
                                     if (cargo.newResponsesCount > 0)
                                       TextSpan(
                                         text: ' · ${t.cargoResponsesNew(cargo.newResponsesCount)}',
-                                        style: AppTextStyles.caption.copyWith(color: AppColors.error, fontWeight: FontWeight.w700),
+                                        style: AppTextStyles.small.copyWith(color: AppColors.error, fontWeight: FontWeight.w700),
                                       ),
                                   ],
                                 ),

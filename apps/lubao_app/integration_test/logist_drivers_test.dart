@@ -266,7 +266,9 @@ void main() {
         final top = box.localToGlobal(Offset.zero).dy;
         return top >= screen.top && top + box.size.height <= screen.bottom;
       }).length;
-      expect(whole, greaterThanOrEqualTo(2), reason: 'на экране целиком $whole карточки');
+      // Android 360 (список выше 500 dp) — не меньше двух целиком (третья видна);
+      // iPhone SE с крупным шрифтом — хотя бы одна целиком.
+      expect(whole, greaterThanOrEqualTo(screen.height >= 500 ? 2 : 1), reason: 'на экране целиком $whole карточки, высота списка ${screen.height}');
       expectNoOverflow(tester);
     });
 
