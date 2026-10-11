@@ -19,9 +19,11 @@ function setup(over: Record<string, any> = {}) {
     driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1' }), findMany: jest.fn().mockResolvedValue([]) },
     arrival: { findMany: jest.fn().mockResolvedValue([]) },
     company: { findUnique: jest.fn().mockResolvedValue({ id: 'c1' }) },
-    auditLog: { create: jest.fn() },
+    auditLog: { create: jest.fn(), count: jest.fn().mockResolvedValue(0) },
+    $queryRaw: jest.fn().mockResolvedValue([]),
     ...over,
   };
+  prisma.$transaction = jest.fn(async (cb: any) => cb(prisma));
   const shares: any = { create: jest.fn().mockResolvedValue({ url: 'https://lubao.kz/co/abc' }) };
   return { prisma, shares, service: new CompanyDriversService(prisma, shares) };
 }
@@ -36,7 +38,7 @@ describe('058 п.6: «Создать водителя»', () => {
   it('новый номер — только имя и телефон до входа, ссылка — компании, в журнал без телефона', async () => {
     const { prisma, service } = setup();
     const res = await service.create(ctx, 'Ерлан', '+7 701 123 45 67');
-    expect(res).toEqual({ result: 'CREATED', url: 'https://lubao.kz/co/abc' });
+    expect(res).toEqual({ status: 'INVITED', url: 'https://lubao.kz/co/abc' });
     expect(prisma.companyDriver.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: expect.objectContaining({ companyId: 'c1', phone: '+77011234567', name: 'Ерлан', source: 'CREATED', status: 'PENDING' }) }));
     expect(JSON.stringify(prisma.auditLog.create.mock.calls)).not.toContain('+7701');
   });
@@ -45,15 +47,32 @@ describe('058 п.6: «Создать водителя»', () => {
     const { prisma, service } = setup();
     prisma.user.findUnique.mockResolvedValue({ id: 'u2', driver: { id: 'd2' } });
     const res = await service.create(ctx, 'Ерлан', '+77011234567');
-    expect(res.result).toBe('INVITED_EXISTING');
+    // 061 п.1: ответ тот же, что для нового номера — владельца номера не раскрываем.
+    expect(res).toEqual({ status: 'INVITED', url: 'https://lubao.kz/co/abc' });
     expect(prisma.companyDriver.create).toHaveBeenCalledWith({ data: expect.objectContaining({ driverId: 'd2', status: 'PENDING', source: 'CREATED' }) });
     expect(prisma.companyDriver.upsert).not.toHaveBeenCalled();
   });
 
   it(`лимит ${CREATE_DRIVER_DAILY_LIMIT} в сутки на компанию`, async () => {
     const { prisma, service } = setup();
-    prisma.companyDriver.count.mockResolvedValue(CREATE_DRIVER_DAILY_LIMIT);
+    prisma.auditLog.count.mockResolvedValue(CREATE_DRIVER_DAILY_LIMIT); // попытки по журналу
     await expect(service.create(ctx, 'Ерлан', '+77011234567')).rejects.toMatchObject({ response: { code: 'CREATE_DRIVER_LIMIT' } });
+  });
+});
+
+describe('061 п.6: повторное приглашение после отказа', () => {
+  it('отказался или вышел — 409, как ☆', async () => {
+    const { prisma, service } = setup();
+    prisma.user.findUnique.mockResolvedValue({ id: 'u2', driver: { id: 'd2' } });
+    prisma.companyDriver.findUnique.mockResolvedValue({ id: 'row1', status: 'DECLINED' });
+    await expect(service.create(ctx, 'Ерлан', '+77011234567')).rejects.toMatchObject({ response: { code: 'DRIVER_LEFT_LIST' } });
+  });
+
+  it('в журнал — компания (для лимита по попыткам), без телефона', async () => {
+    const { prisma, service } = setup();
+    await service.create(ctx, 'Ерлан', '+77011234567');
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({ data: expect.objectContaining({ action: 'COMPANY_DRIVER_CREATED', metadata: { result: 'CREATED', companyId: 'c1' } }) });
+    expect(prisma.$queryRaw).toHaveBeenCalled(); // замок компании
   });
 });
 
@@ -77,7 +96,7 @@ describe('058 п.6: согласие водителя и выход из спи�
     prisma.companyDriver.findMany.mockResolvedValue([{ id: 'row1', driverId: 'd1', name: 'Ерлан', status: 'PENDING', source: 'CREATED' }]);
     prisma.driver.findMany.mockResolvedValue([{ id: 'd1', fullName: 'Ерлан Сейткали', isVerified: true, ratingAvg: 4.9, ratingCount: 10, user: { lastSeenAt: new Date() } }]);
     const [entry] = await service.list('c1');
-    expect(entry).toMatchObject({ driverId: 'd1', name: 'Ерлан', status: 'PENDING', isVerified: false, lastSeenAt: null, ratingCount: 0 });
+    expect(entry).toMatchObject({ driverId: null, rowId: 'row1', name: 'Ерлан', status: 'PENDING', isVerified: false, lastSeenAt: null, ratingCount: 0 });
   });
 
   it('вышел из списка — компания его не видит, даже если были сделки; ☆ заново нельзя', async () => {

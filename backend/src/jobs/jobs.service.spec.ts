@@ -24,6 +24,9 @@ function setup() {
     response: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
     chat: { findFirst: jest.fn().mockResolvedValue({ id: 'chat-1' }) },
     cargo: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
+    // 061 п.4в: незавершённые сделки груза; п.7: приглашения «Создать водителя».
+    deal: { findMany: jest.fn().mockResolvedValue([]) },
+    companyDriver: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
     driver: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
     session: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
     companyMember: { findMany: jest.fn().mockResolvedValue([]) },
@@ -198,6 +201,26 @@ describe('JobsService.sendAgreedDigests — «Договорились?» лог
     prisma.companyMember.findMany.mockResolvedValue([{ user: { email: 'a@example.com', locale: 'ru' } }, { user: { email: 'b@example.com', locale: 'ru' } }]);
     email.sendTemplate.mockRejectedValueOnce(new Error('smtp down'));
     expect(await service.sendAgreedDigests(NOW)).toEqual({ companies: 1, emails: 1 });
+  });
+});
+
+describe('061: архив по сроку и хранение номеров из приглашений', () => {
+  it('п.4в: груз с незавершённой сделкой — не в архив, а «В работу»', async () => {
+    const { service, prisma } = setup();
+    prisma.cargo.findMany.mockResolvedValue([{ id: 'busy' }, { id: 'free' }]);
+    prisma.deal.findMany.mockResolvedValue([{ cargoId: 'busy' }]);
+    prisma.cargo.updateMany.mockResolvedValue({ count: 1 });
+    await service.archiveCargos(NOW);
+    expect(prisma.cargo.updateMany).toHaveBeenCalledWith({ where: { id: { in: ['busy'] }, status: 'PUBLISHED' }, data: { status: 'IN_DEAL' } });
+    expect(prisma.cargo.updateMany).toHaveBeenCalledWith({ where: { id: { in: ['free'] }, status: 'PUBLISHED' }, data: { status: 'ARCHIVED', archivedAt: NOW } });
+  });
+
+  it('п.7: неотвеченные приглашения с номером старше 30 дней удаляются', async () => {
+    const { service, prisma } = setup();
+    await service.cleanupInvitePhones(NOW);
+    expect(prisma.companyDriver.deleteMany).toHaveBeenCalledWith({
+      where: { status: 'PENDING', phone: { not: null }, driverId: null, createdAt: { lt: new Date(NOW.getTime() - 30 * 86_400_000) } },
+    });
   });
 });
 

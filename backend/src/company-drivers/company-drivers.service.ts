@@ -70,7 +70,8 @@ export class CompanyDriversService {
       const arrival = arrivals.filter((a) => a.driverId === d.id);
       entries.push({
         rowId: own[0]?.id ?? null,
-        driverId: d.id,
+        // 061 п.1: до «Принять» — без driverId (иначе по нему открывается карточка с ФИО и фото).
+        driverId: pending ? null : d.id,
         // До «Принять» — только имя, которое указала компания.
         name: pending ? own[0].name ?? d.fullName : d.fullName,
         status: pending ? 'PENDING' : 'ACTIVE',
@@ -136,44 +137,58 @@ export class CompanyDriversService {
     const cleanName = name.trim();
     if (cleanName.length < 2) throw new BadRequestException({ code: 'VALIDATION_FAILED', message: ['name is too short'], fields: [{ field: 'name', rule: 'minLength', limit: 2 }] });
 
-    const since = new Date(Date.now() - 24 * 3600 * 1000);
-    const today = await this.prisma.companyDriver.count({ where: { companyId, source: 'CREATED', createdAt: { gte: since } } });
-    if (today >= CREATE_DRIVER_DAILY_LIMIT) {
-      throw new HttpException({ code: 'CREATE_DRIVER_LIMIT', message: 'Daily limit reached', limit: CREATE_DRIVER_DAILY_LIMIT }, HttpStatus.TOO_MANY_REQUESTS);
-    }
-
-    const user = await this.prisma.user.findUnique({ where: { phone }, include: { driver: { select: { id: true } } } });
-    let result: 'CREATED' | 'INVITED_EXISTING' | 'ALREADY_IN_LIST';
-    let rowId: string;
-    if (user?.driver) {
-      const driverId = user.driver.id;
-      const existing = await this.prisma.companyDriver.findUnique({ where: { companyId_driverId: { companyId, driverId } } });
-      const hasDeals = (await this.prisma.deal.count({ where: { companyId, driverId } })) > 0;
-      if (existing?.status === 'ACTIVE' || existing?.status === 'PENDING' || (!existing && hasDeals)) {
-        result = 'ALREADY_IN_LIST';
-        rowId = existing?.id ?? driverId;
-      } else {
-        const row = existing
-          ? await this.prisma.companyDriver.update({ where: { id: existing.id }, data: { source: 'CREATED', status: 'PENDING', name: cleanName, respondedAt: null } })
-          : await this.prisma.companyDriver.create({ data: { companyId, driverId, name: cleanName, source: 'CREATED', status: 'PENDING', createdByUserId: ctx.user.id } });
-        result = 'INVITED_EXISTING';
-        rowId = row.id;
-        // Водитель с открытым приложением сразу видит «Компания X добавила вас».
-        this.realtime?.emitResponsesUpdated([user.id], { cargoId: '' });
+    // 061 п.6: лимит — по каждой попытке (журнал), подсчёт и запись — в одной
+    // транзакции под замком компании (параллельные запросы не обходят лимит).
+    const notifyUserId = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${'company-drivers:' + companyId}))::text`;
+      const since = new Date(Date.now() - 24 * 3600 * 1000);
+      const attempts = await tx.auditLog.count({ where: { action: 'COMPANY_DRIVER_CREATED', createdAt: { gte: since }, metadata: { path: ['companyId'], equals: companyId } } });
+      if (attempts >= CREATE_DRIVER_DAILY_LIMIT) {
+        throw new HttpException({ code: 'CREATE_DRIVER_LIMIT', message: 'Daily limit reached', limit: CREATE_DRIVER_DAILY_LIMIT }, HttpStatus.TOO_MANY_REQUESTS);
       }
-    } else {
-      const row = await this.prisma.companyDriver.upsert({
-        where: { companyId_phone: { companyId, phone } },
-        create: { companyId, phone, name: cleanName, source: 'CREATED', status: 'PENDING', createdByUserId: ctx.user.id },
-        update: { name: cleanName, status: 'PENDING' },
-      });
-      result = 'CREATED';
-      rowId = row.id;
-    }
-    // В журнал — без телефона (ПДн): строка списка и исход.
-    await this.audit(ctx.user.id, 'COMPANY_DRIVER_CREATED', rowId, { result });
+
+      const user = await tx.user.findUnique({ where: { phone }, include: { driver: { select: { id: true } } } });
+      let result: 'CREATED' | 'INVITED_EXISTING' | 'ALREADY_IN_LIST';
+      let rowId: string;
+      let notify: string | null = null;
+      if (user?.driver) {
+        const driverId = user.driver.id;
+        const existing = await tx.companyDriver.findUnique({ where: { companyId_driverId: { companyId, driverId } } });
+        // Отказался или вышел — без его согласия снова не приглашаем (как ☆).
+        if (existing?.status === 'DECLINED' || existing?.status === 'LEFT') {
+          throw new ConflictException({ code: 'DRIVER_LEFT_LIST', message: 'The driver left your list' });
+        }
+        const hasDeals = (await tx.deal.count({ where: { companyId, driverId } })) > 0;
+        if (existing?.status === 'ACTIVE' || existing?.status === 'PENDING' || (!existing && hasDeals)) {
+          result = 'ALREADY_IN_LIST';
+          rowId = existing?.id ?? driverId;
+        } else {
+          const row = existing
+            ? await tx.companyDriver.update({ where: { id: existing.id }, data: { source: 'CREATED', status: 'PENDING', name: cleanName, respondedAt: null } })
+            : await tx.companyDriver.create({ data: { companyId, driverId, name: cleanName, source: 'CREATED', status: 'PENDING', createdByUserId: ctx.user.id } });
+          result = 'INVITED_EXISTING';
+          rowId = row.id;
+          notify = user.id;
+        }
+      } else {
+        const row = await tx.companyDriver.upsert({
+          where: { companyId_phone: { companyId, phone } },
+          create: { companyId, phone, name: cleanName, source: 'CREATED', status: 'PENDING', createdByUserId: ctx.user.id },
+          update: { name: cleanName, status: 'PENDING' },
+        });
+        result = 'CREATED';
+        rowId = row.id;
+      }
+      // В журнал — без телефона (ПДн): строка списка, компания и исход (только для нас).
+      await tx.auditLog.create({ data: { actorUserId: ctx.user.id, action: 'COMPANY_DRIVER_CREATED', entityType: 'CompanyDriver', entityId: rowId, metadata: { result, companyId } } });
+      return notify;
+    });
+    // Водитель с открытым приложением сразу видит «Компания X добавила вас».
+    if (notifyUserId) this.realtime?.emitResponsesUpdated([notifyUserId], { cargoId: '' });
     const link = await this.shares.create(ctx, 'COMPANY', companyId);
-    return { result, url: link.url };
+    // 061 п.1: ответ одинаковый на любой номер — по нему нельзя узнать, есть ли
+    // человек в Lubao.
+    return { status: 'INVITED' as const, url: link.url };
   }
 
   /// Вход водителя: приглашения на его номер привязываются к нему.

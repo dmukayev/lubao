@@ -89,6 +89,12 @@ export class JobsScheduler implements OnApplicationBootstrap {
     return this.guarded('cleanup-sessions', 600, () => this.jobs.cleanupSessions());
   }
 
+  /// 061 п.7: номера из неотвеченных приглашений «Создать водителя» — 30 дней.
+  @Cron('40 3 * * *', { timeZone: TIME_ZONE })
+  invitePhones() {
+    return this.guarded('cleanup-invite-phones', 600, () => this.jobs.cleanupInvitePhones());
+  }
+
   private guarded(name: string, ttlSeconds: number, task: () => Promise<unknown>) {
     if (process.env.JOBS_DISABLED === 'true') return;
     return this.run(name, ttlSeconds, task);

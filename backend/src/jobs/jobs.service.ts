@@ -15,6 +15,8 @@ const AGREED_CHECK_WINDOW_HOURS = 26;
 export { INVITATION_TTL_HOURS } from '../responses/invitation-ttl';
 import { INVITATION_TTL_HOURS } from '../responses/invitation-ttl';
 export const LOCATION_RETENTION_DAYS = 30;
+/// 061 п.7: срок хранения номера из неотвеченного приглашения.
+export const INVITE_PHONE_RETENTION_DAYS = 30;
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
@@ -182,7 +184,17 @@ export class JobsService {
       select: { id: true },
     });
     if (stale.length === 0) return { archived: 0 };
-    const ids = stale.map((c) => c.id);
+    // 061 п.4в: груз на несколько машин с незавершёнными сделками — не в
+    // архив, а «В работу» (ждущие отклики закрываются как «ушёл другому»).
+    const busy = new Set(
+      (await this.prisma.deal.findMany({ where: { cargoId: { in: stale.map((c) => c.id) }, status: { notIn: ['CANCELLED', 'DELIVERED'] } }, select: { cargoId: true } })).map((d) => d.cargoId),
+    );
+    if (busy.size) {
+      await this.prisma.cargo.updateMany({ where: { id: { in: [...busy] }, status: 'PUBLISHED' }, data: { status: 'IN_DEAL' } });
+      await this.prisma.response.updateMany({ where: { cargoId: { in: [...busy] }, status: { in: ['PENDING', 'INVITED'] } }, data: { status: 'REJECTED', closeReason: 'TAKEN_BY_OTHER' } });
+    }
+    const ids = stale.map((c) => c.id).filter((id) => !busy.has(id));
+    if (ids.length === 0) return { archived: 0 };
     const res = await this.prisma.cargo.updateMany({
       where: { id: { in: ids }, status: 'PUBLISHED' },
       data: { status: 'ARCHIVED', archivedAt: now },
@@ -234,6 +246,15 @@ export class JobsService {
       where: {
         OR: [{ expiresAt: { lt: new Date(now.getTime() - 7 * DAY_MS) } }, { revokedAt: { lt: new Date(now.getTime() - 30 * DAY_MS) } }],
       },
+    });
+    return { deleted: res.count };
+  }
+
+  /// 061 п.7: приглашение «Создать водителя» без ответа 30 дней — номер и имя,
+  /// указанные компанией, не храним (decisions.md «Создать водителя»).
+  async cleanupInvitePhones(now = new Date()): Promise<{ deleted: number }> {
+    const res = await this.prisma.companyDriver.deleteMany({
+      where: { status: 'PENDING', phone: { not: null }, driverId: null, createdAt: { lt: new Date(now.getTime() - INVITE_PHONE_RETENTION_DAYS * DAY_MS) } },
     });
     return { deleted: res.count };
   }
