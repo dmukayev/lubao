@@ -739,6 +739,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<Currency>(
+                      // 360 dp и крупный шрифт: код валюты не вылезает за поле.
+                      isExpanded: true,
                       initialValue: _currency,
                       decoration: InputDecoration(labelText: t.postCargoCurrency, border: const OutlineInputBorder()),
                       items: Currency.values

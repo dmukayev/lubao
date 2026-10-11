@@ -3615,12 +3615,12 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get postCargoOptional => 'міндетті емес';
 
   @override
-  String postCargoAdvanceHintNow(Object rest, Object total) {
+  String postCargoAdvanceHintNow(String total, String rest) {
     return 'Жүргізуші тиеу кезінде алатын құн бөлігі. $total ішіне кіреді, қалғаны — $rest түсіргеннен кейін бірден.';
   }
 
   @override
-  String postCargoAdvanceHintDays(Object days, Object rest, Object total) {
+  String postCargoAdvanceHintDays(String total, String rest, String days) {
     return 'Жүргізуші тиеу кезінде алатын құн бөлігі. $total ішіне кіреді, қалғаны — $rest түсіргеннен кейін $days күннен соң.';
   }
 

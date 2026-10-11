@@ -3532,12 +3532,12 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoOptional => '可选';
 
   @override
-  String postCargoAdvanceHintNow(Object rest, Object total) {
+  String postCargoAdvanceHintNow(String total, String rest) {
     return '司机在装货时收到的部分运费。包含在 $total 内，余款 $rest 卸货后立即支付。';
   }
 
   @override
-  String postCargoAdvanceHintDays(Object days, Object rest, Object total) {
+  String postCargoAdvanceHintDays(String total, String rest, String days) {
     return '司机在装货时收到的部分运费。包含在 $total 内，余款 $rest 卸货后 $days 天支付。';
   }
 

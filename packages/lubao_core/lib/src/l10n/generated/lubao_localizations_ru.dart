@@ -3602,12 +3602,12 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get postCargoOptional => 'необязательно';
 
   @override
-  String postCargoAdvanceHintNow(Object rest, Object total) {
+  String postCargoAdvanceHintNow(String total, String rest) {
     return 'Часть стоимости, которую водитель получит при погрузке. Входит в $total, остаток — $rest сразу после выгрузки.';
   }
 
   @override
-  String postCargoAdvanceHintDays(Object days, Object rest, Object total) {
+  String postCargoAdvanceHintDays(String total, String rest, String days) {
     return 'Часть стоимости, которую водитель получит при погрузке. Входит в $total, остаток — $rest через $days дн. после выгрузки.';
   }
 

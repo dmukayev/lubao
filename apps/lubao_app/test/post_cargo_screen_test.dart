@@ -76,8 +76,8 @@ Cargo _previous(String pointId) => Cargo(
       expiresAt: DateTime(2026, 10, 3),
     );
 
-Future<_FakeCargoRepository> _pump(WidgetTester tester, {List<Cargo> previous = const [], bool partialLoads = false, Cargo? editing, int? distanceKm}) async {
-  tester.view.physicalSize = const Size(390, 2400) * 3;
+Future<_FakeCargoRepository> _pump(WidgetTester tester, {List<Cargo> previous = const [], bool partialLoads = false, Cargo? editing, int? distanceKm, double width = 390, double textScale = 1}) async {
+  tester.view.physicalSize = Size(width, 2400) * 3;
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
   final repo = _FakeCargoRepository()..distanceKm = distanceKm;
@@ -92,6 +92,7 @@ Future<_FakeCargoRepository> _pump(WidgetTester tester, {List<Cargo> previous = 
       locale: const Locale('ru'),
       supportedLocales: supportedLocales,
       localizationsDelegates: LubaoLocalizations.localizationsDelegates,
+      builder: (context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)), child: child!),
       home: PostCargoScreen(cargo: editing),
     ),
   ));
@@ -158,5 +159,27 @@ void main() {
     final hint = tester.widget<Text>(find.byKey(const Key('postCargoDistanceHint')));
     expect(hint.data, contains('км по дорогам'));
     expect(hint.data!.replaceAll(RegExp(r'\D'), ''), startsWith('1115'));
+  });
+
+  testWidgets('063 (эталон 34): «Оплата» — стоимость, когда, как, аванс с подсказкой «входит в …, остаток — …»; 360 dp, крупный шрифт — без переполнений', (tester) async {
+    await _pump(tester, previous: [_previous('p-almaty')], width: 360, textScale: 1.3);
+    final t = tester.element(find.byType(PostCargoScreen)).l10n;
+    expect(find.text(t.postCargoPriceTotal), findsWidgets);
+    expect(find.text(t.postCargoWhenPay), findsWidgets);
+    expect(find.text(t.postCargoHowPay), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('postCargoPrice')), '850000');
+    await tester.enterText(find.byKey(const Key('postCargoAdvance')), '300000');
+    await tester.pumpAndSettle();
+    final hint = find.byKey(const Key('postCargoAdvanceHint'));
+    expect(find.descendant(of: hint, matching: find.textContaining('550 000')), findsOneWidget);
+    expect(find.descendant(of: hint, matching: find.textContaining(t.paymentWhenAfterUnload.toLowerCase())), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('postCargoRestLater')));
+    await tester.tap(find.byKey(const Key('postCargoRestLater')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('postCargoPaymentDelay')), '5');
+    await tester.pumpAndSettle();
+    final hintText = tester.widget<Text>(find.descendant(of: hint, matching: find.byType(Text))).data;
+    expect(hintText, contains('через 5 дн.'), reason: '$hintText');
+    expect(tester.takeException(), isNull);
   });
 }

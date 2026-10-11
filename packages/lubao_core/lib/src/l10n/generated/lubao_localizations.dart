@@ -6736,13 +6736,13 @@ abstract class LubaoLocalizations {
   ///
   /// In ru, this message translates to:
   /// **'Часть стоимости, которую водитель получит при погрузке. Входит в {total}, остаток — {rest} сразу после выгрузки.'**
-  String postCargoAdvanceHintNow(Object rest, Object total);
+  String postCargoAdvanceHintNow(String total, String rest);
 
   /// No description provided for @postCargoAdvanceHintDays.
   ///
   /// In ru, this message translates to:
   /// **'Часть стоимости, которую водитель получит при погрузке. Входит в {total}, остаток — {rest} через {days} дн. после выгрузки.'**
-  String postCargoAdvanceHintDays(Object days, Object rest, Object total);
+  String postCargoAdvanceHintDays(String total, String rest, String days);
 
   /// No description provided for @feedChipAll.
   ///
