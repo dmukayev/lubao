@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 059: время ответа ленты при N грузах (по умолчанию 1200) — свой сервер на
+# 059 / 064 п.11: время ответа ленты при N грузах (по умолчанию 1200, разные города, кузова, компании) — свой сервер на
 # e2e-базе (dev не трогается). Печатает медиану и худшее из 10 запросов.
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -9,10 +9,25 @@ OUT=test-results/bench; mkdir -p "$OUT"
 docker exec lubao-postgres-1 psql -U lubao -d lubao -c "DROP DATABASE IF EXISTS lubao_e2e WITH (FORCE)" >/dev/null
 docker exec lubao-postgres-1 createdb -U lubao lubao_e2e
 (cd backend && DATABASE_URL="$DB_URL" bash -c 'npx prisma migrate deploy && npx ts-node prisma/seed.ts && npx ts-node prisma/seed-e2e.ts') >"$OUT/db.log" 2>&1 || { echo "сид не удался"; exit 1; }
+# 064 п.11: реалистичные данные — разные города погрузки и выгрузки, кузова
+# (и specs по профилю), компании, валюты, вес/объём/паллеты, даты, аванс.
 docker exec lubao-postgres-1 psql -U lubao -d lubao_e2e -c "
-  INSERT INTO cargos (id, \"companyId\", \"publishedByUserId\", \"pointId\", \"destinationCountryId\", \"destinationCityId\", \"bodyTypeId\", \"weightKg\", \"categoryId\", price, currency, \"readyDate\", status, \"publishedAt\", \"expiresAt\", \"createdAt\", \"updatedAt\", \"distanceKm\", \"pricePerKm\")
-  SELECT gen_random_uuid()::text, c.\"companyId\", c.\"publishedByUserId\", c.\"pointId\", c.\"destinationCountryId\", c.\"destinationCityId\", c.\"bodyTypeId\", c.\"weightKg\", c.\"categoryId\", c.price + g, c.currency, c.\"readyDate\", 'PUBLISHED', now() - (g || ' minutes')::interval, now() + interval '3 days', now(), now(), c.\"distanceKm\" + g % 500, c.\"pricePerKm\"
-  FROM cargos c, generate_series(1, $N) g WHERE c.id = '11111111-1111-4111-8111-111111111001';" >/dev/null
+  INSERT INTO cargos (id, \"companyId\", \"publishedByUserId\", \"pointId\", \"destinationCountryId\", \"destinationCityId\", \"bodyTypeId\", \"weightKg\", \"volumeM3\", \"palletCount\", specs, \"categoryId\", price, currency, \"advanceAmount\", \"paymentForm\", \"paymentDelayDays\", \"readyDate\", status, \"publishedAt\", \"expiresAt\", \"createdAt\", \"updatedAt\", \"distanceKm\", \"pricePerKm\")
+  SELECT gen_random_uuid()::text, split_part(m.cu, '|', 1), split_part(m.cu, '|', 2), p.id, split_part(d.cc, '|', 2), split_part(d.cc, '|', 1), b.id,
+         w.kg, CASE WHEN b.profile = 'VOLUME' THEN round((w.kg / 250.0)::numeric, 1) END, CASE WHEN b.profile = 'VOLUME' AND g % 3 = 0 THEN 10 + g % 23 END,
+         CASE b.profile WHEN 'TANK' THEN jsonb_build_object('cargoLiters', 10000 + (g % 20) * 1000, 'cargoProduct', 'FOOD') WHEN 'CAR_CARRIER' THEN jsonb_build_object('carCount', 1 + g % 8) WHEN 'CONTAINER' THEN jsonb_build_object('containerType', CASE WHEN g % 2 = 0 THEN 'C40' ELSE 'C20' END) END,
+         cat.id, pr.amount, pr.cur, CASE WHEN g % 4 = 0 THEN round(pr.amount * 0.3) END, (ARRAY['CASH','CARD','CASHLESS'])[1 + g % 3]::\"PaymentForm\", CASE WHEN g % 2 = 0 THEN 1 + g % 10 END,
+         current_date + (g % 8), 'PUBLISHED', now() - (g || ' minutes')::interval, current_date + (g % 8) + 3, now(), now(), km.v, round(pr.amount / km.v, 2)
+  FROM generate_series(1, $N) g
+  CROSS JOIN LATERAL (SELECT cm.\"companyId\" || '|' || cm.\"userId\" AS cu FROM company_members cm JOIN companies co ON co.id = cm.\"companyId\" WHERE co.\"isVerified\" ORDER BY random() + g * 0 LIMIT 1) m
+  CROSS JOIN LATERAL (SELECT id FROM points WHERE \"isActive\" ORDER BY random() + g * 0 LIMIT 1) p
+  CROSS JOIN LATERAL (SELECT id || '|' || \"countryId\" AS cc FROM cities ORDER BY random() + g * 0 LIMIT 1) d
+  CROSS JOIN LATERAL (SELECT id, profile FROM body_types ORDER BY random() + g * 0 LIMIT 1) b
+  CROSS JOIN LATERAL (SELECT id FROM cargo_categories ORDER BY random() + g * 0 LIMIT 1) cat
+  CROSS JOIN LATERAL (SELECT (500 + (g * 37) % 24500)::numeric AS kg) w
+  CROSS JOIN LATERAL (SELECT 200 + (g * 53) % 4800 AS v) km
+  CROSS JOIN LATERAL (SELECT (ARRAY['USD','KZT','CNY','RUB','UZS'])[1 + g % 5] AS cur, (ARRAY[1500, 750000, 10000, 120000, 18000000])[1 + g % 5] * (1 + (g % 7) / 10.0) AS amount) pr;" >/dev/null
+echo "компаний: $(docker exec lubao-postgres-1 psql -U lubao -d lubao_e2e -tAc "select count(distinct \"companyId\") from cargos where status='PUBLISHED'"), городов погрузки: $(docker exec lubao-postgres-1 psql -U lubao -d lubao_e2e -tAc "select count(distinct \"pointId\") from cargos where status='PUBLISHED'"), кузовов: $(docker exec lubao-postgres-1 psql -U lubao -d lubao_e2e -tAc "select count(distinct \"bodyTypeId\") from cargos where status='PUBLISHED'")"
 docker exec lubao-redis-1 redis-cli -n 1 flushdb >/dev/null
 rm -rf backend/dist-bench && cp -R backend/dist backend/dist-bench
 (cd backend && DATABASE_URL="$DB_URL" REDIS_URL="redis://localhost:${REDIS_PORT:-6379}/1" PORT="$PORT" SMS_PROVIDER=console EMAIL_PROVIDER=console \
@@ -33,3 +48,5 @@ bench "все города, сортировка ₸/км" "limit=30&showOtherCi
 bench "фильтр вес 10–20 т + новые" "limit=30&weightMinT=10&weightMaxT=20&sort=new&showOtherCities=true"
 bench "счётчик шторки (limit=0)" "limit=0&showOtherCities=true"
 bench "третья страница" "limit=30&offset=60&showOtherCities=true"
+bench "кузов (профиль) + цена в USD от 1000" "limit=30&showOtherCities=true&bodyTypeIds=$(docker exec lubao-postgres-1 psql -U lubao -d lubao_e2e -tAc "select id from body_types where code='TENT'")&priceMin=1000&priceCurrency=USD"
+bench "ближе погрузка" "limit=30&showOtherCities=true&sort=ready"
