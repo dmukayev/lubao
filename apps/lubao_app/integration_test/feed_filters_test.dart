@@ -9,6 +9,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:lubao_app/app.dart';
 import 'package:lubao_app/providers/tracking_provider.dart';
 import 'package:lubao_core/lubao_core.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import 'e2e_support.dart';
 
@@ -127,10 +128,15 @@ void main() {
       await waitFor(tester, find.text(t.driverHomeFeedCount(expected)));
       expect(find.byKey(const Key('feedActive-weight')), findsOneWidget);
       // Снять фильтры ✕.
-      await tester.tap(find.descendant(of: find.byKey(const Key('feedActive-weight')), matching: find.byType(Icon)).last);
-      await tester.pumpAndSettle();
-      await tester.tap(find.descendant(of: find.byKey(Key('feedActive-body-$tentId')), matching: find.byType(Icon)).last);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      Future<void> removeActive(Key key) async {
+        // После снятия одного фильтра лента перезапрашивается — ждём крестик следующего.
+        final x = find.descendant(of: find.byKey(key), matching: find.byIcon(LucideIcons.x));
+        await waitFor(tester, x);
+        await tester.tap(x);
+        await tester.pumpAndSettle(const Duration(seconds: 1));
+      }
+      await removeActive(const Key('feedActive-weight'));
+      await removeActive(Key('feedActive-body-$tentId'));
       expect(find.byKey(const Key('feedActiveFilters')), findsNothing);
     });
 
