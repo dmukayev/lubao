@@ -59,7 +59,7 @@ void main() {
       await logist.publishCargo(cargo('KZ-ASTANA', 'KG-OSH', 'CONTAINER', 20000, 100000, 'USD', delay: 5, form: 'CASH', advance: 1000, trucks: 5, specs: {'containerType': '40', 'containerCount': 1}));
       // Лента водителя — груз в рублях с километрами.
       final kz = await LogistApi.login(email: _kzLogist);
-      await kz.publishCargo(cargo('KZ-ALMATY', 'RU-MOSCOW', 'TENT', 20000, 1250000, 'RUB', delay: 5, form: 'CASH', advance: 300000, volume: 82));
+      await kz.publishCargo(cargo('KZ-ASTANA', 'RU-MOSCOW', 'TENT', 20000, 1250000, 'RUB', delay: 5, form: 'CASH', advance: 300000, volume: 82));
     });
 
     await tester.pumpWidget(ProviderScope(
@@ -86,8 +86,7 @@ void main() {
       await logoutViaProfile(tester, driver: false);
       await loginDriver(tester, '7010000005');
       await waitFor(tester, find.byKey(const Key('feedChipsBar')));
-      final rub = find.byWidgetPredicate((w) => w is Text && (w.data ?? '').contains('1 250 000 ₽'));
-      await reveal(tester, rub.first);
+      await reveal(tester, find.text('1 250 000 ₽'));
       await tester.pumpAndSettle();
     });
   });

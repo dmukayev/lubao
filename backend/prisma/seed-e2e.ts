@@ -284,6 +284,13 @@ async function main() {
     const [fromCityId, toCityId] = cityId < almaty.id ? [cityId, almaty.id] : [almaty.id, cityId];
     await prisma.cityDistance.upsert({ where: { fromCityId_toCityId: { fromCityId, toCityId } }, update: { km }, create: { fromCityId, toCityId, km, source: 'e2e' } });
   }
+  // 065: пары городов для снимков по эталону 35 (shots_065) — синтетика.
+  for (const [a, b, km] of [['KZ-ASTANA', 'KG-OSH', 1673], ['KZ-ASTANA', 'BY-MINSK', 3505], ['KZ-ALMATY', 'KZ-SHYMKENT', 690], ['KZ-ASTANA', 'RU-MOSCOW', 2700]] as const) {
+    const [x, y] = await Promise.all([prisma.city.findUnique({ where: { code: a } }), prisma.city.findUnique({ where: { code: b } })]);
+    if (!x || !y) continue;
+    const [fromCityId, toCityId] = x.id < y.id ? [x.id, y.id] : [y.id, x.id];
+    await prisma.cityDistance.upsert({ where: { fromCityId_toCityId: { fromCityId, toCityId } }, update: { km }, create: { fromCityId, toCityId, km, source: 'e2e' } });
+  }
   const cargoIds = cargoDefs.map((c) => c.id);
   await prisma.deal.deleteMany({ where: { cargoId: { in: cargoIds } } });
   await prisma.message.deleteMany({ where: { chat: { cargoId: { in: cargoIds } } } });

@@ -439,7 +439,14 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
         children: [
           Row(
             children: [
-              Expanded(child: Text(routeText, key: Key('companyCargoRoute-${cargo.id}'), style: AppTextStyles.route.copyWith(fontSize: 18), maxLines: 1, overflow: TextOverflow.ellipsis)),
+              // Маршрут — одной строкой: не помещается — уменьшается, город назначения не теряется.
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(routeText, key: Key('companyCargoRoute-${cargo.id}'), style: AppTextStyles.route.copyWith(fontSize: 18), maxLines: 1, softWrap: false),
+                ),
+              ),
               const SizedBox(width: AppSpacing.sm),
               // Мелко (11–12 sp) и не растёт с крупным шрифтом — маршрут важнее.
               Text(
@@ -452,25 +459,37 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
           ),
           if (badgeLabel != null) ...[const SizedBox(height: AppSpacing.xs), StatusBadge(label: badgeLabel, color: badgeColor)],
           const SizedBox(height: AppSpacing.xs),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(left[0], style: AppTextStyles.bodyStrong),
-                    Text(left[1], style: grey),
-                    Text(left[2], key: Key('companyCargoTrucks-${cargo.id}'), style: grey),
-                    if (cargo.allowPartial) Text(t.feedBadgePartial, style: AppTextStyles.small.copyWith(color: AppColors.primary)),
-                  ],
+          LayoutBuilder(builder: (context, constraints) {
+            final details = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(left[0], style: AppTextStyles.bodyStrong),
+                Text(left[1], style: grey),
+                Text(left[2], key: Key('companyCargoTrucks-${cargo.id}'), style: grey),
+                if (cargo.allowPartial) Text(t.feedBadgePartial, style: AppTextStyles.small.copyWith(color: AppColors.primary)),
+              ],
+            );
+            // 065 (эталон 35): цена, ≈ ₸, ₸/км, когда и как — общий столбец справа;
+            // на узком экране с крупным шрифтом — блоком под описанием, как в ленте
+            // водителя (иначе название кузова рвётся посреди слова).
+            if (constraints.maxWidth / MediaQuery.textScalerOf(context).scale(1) < 260) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [details, const SizedBox(height: AppSpacing.xs), CargoPriceColumn(cargo: cargo, refData: refData, keyPrefix: 'companyCargo', inline: true)],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: details),
+                const SizedBox(width: AppSpacing.sm),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.5),
+                  child: CargoPriceColumn(cargo: cargo, refData: refData, keyPrefix: 'companyCargo'),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              // 065 (эталон 35): цена, ≈ ₸, ₸/км, когда и как — общий столбец.
-              Flexible(child: CargoPriceColumn(cargo: cargo, refData: refData, keyPrefix: 'companyCargo')),
-            ],
-          ),
+              ],
+            );
+          }),
           if (advance != null) ...[const SizedBox(height: AppSpacing.sm), AdvancePill(advance, key: Key('companyCargoAdvance-${cargo.id}'))],
           if (deal != null) ...[const SizedBox(height: AppSpacing.sm), _DealDriverRow(deal: deal)],
           if (showResponses || canRepeat) ...[
