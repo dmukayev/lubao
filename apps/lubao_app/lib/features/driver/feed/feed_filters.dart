@@ -102,12 +102,16 @@ class FeedChipsBar extends ConsumerWidget {
   Future<void> _pickSort(BuildContext context, WidgetRef ref) async {
     final t = context.l10n;
     final current = ref.read(feedFilterProvider);
+    // Прокручиваемая: на узком экране с крупным шрифтом 8 пунктов не помещались.
     final picked = await showModalBottomSheet<FeedSort>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
+      useSafeArea: true,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
+          key: const Key('feedSortSheet'),
+          shrinkWrap: true,
           children: [
             for (final s in FeedSort.values)
               ListTile(
