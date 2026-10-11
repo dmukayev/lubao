@@ -86,7 +86,13 @@ void main() {
       await logoutViaProfile(tester, driver: false);
       await loginDriver(tester, '7010000005');
       await waitFor(tester, find.byKey(const Key('feedChipsBar')));
+      // Груз из Астаны — среди свёрнутых «Грузов из других городов»: раскрыть.
+      final expand = find.byKey(const Key('feedOtherCitiesExpand'));
+      await reveal(tester, expand);
+      await tester.tap(expand);
+      await tester.pumpAndSettle(const Duration(seconds: 1));
       await reveal(tester, find.text('1 250 000 ₽'));
+      await tester.pumpAndSettle();
       await tester.pumpAndSettle();
     });
   });
