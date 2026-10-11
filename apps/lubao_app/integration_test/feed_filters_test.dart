@@ -78,6 +78,8 @@ void main() {
       // Полоса чипов горизонтальная — прокручиваем её до «России».
       await tester.scrollUntilVisible(chip, 120, scrollable: find.descendant(of: find.byKey(const Key('feedChipsBar')), matching: find.byType(Scrollable)).first, maxScrolls: 30);
       await tester.ensureVisible(chip);
+      // Дождаться конца прокрутки полосы — иначе нажатие уходит мимо чипа.
+      await tester.pumpAndSettle();
       await tester.tap(chip);
       await tester.pumpAndSettle(const Duration(seconds: 1));
       final expected = ((await api.feed({'toCountryId': ruId}))['items'] as List).cast<Map>().map((c) => c['id'] as String).toSet();

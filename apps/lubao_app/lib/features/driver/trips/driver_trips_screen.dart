@@ -28,8 +28,11 @@ bool dealNeedsDriver(Deal d) => d.status == DealStatus.selected;
 bool dealInWork(Deal d) => const {DealStatus.confirmedByDriver, DealStatus.loaded, DealStatus.inTransit, DealStatus.cancelRequested, DealStatus.disputed}.contains(d.status);
 
 /// Цифра на вкладке «Мои рейсы» — раздел «Нужно ответить».
-int tripsNeedAnswerCount(List<Deal> deals, List<MyResponseEntry> responses) =>
-    deals.where(dealNeedsDriver).length + responses.where((r) => r.status == ResponseStatus.invited).length;
+/// 057 п.20: истёкшие приглашения не считаем — как в разделе на экране.
+int tripsNeedAnswerCount(List<Deal> deals, List<MyResponseEntry> responses, {DateTime? now}) {
+  final at = now ?? DateTime.now();
+  return deals.where(dealNeedsDriver).length + responses.where((r) => r.status == ResponseStatus.invited && inviteHoursLeft(r.inviteExpiresAt, at) > 0).length;
+}
 
 /// 056 п.6: «Мои рейсы» — отклики и сделки в одном месте. Разделы сверху вниз
 /// (пустой не показываем): «Нужно ответить» (выбран / приглашён с таймером) →

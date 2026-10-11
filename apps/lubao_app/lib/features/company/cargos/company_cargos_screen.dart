@@ -207,7 +207,11 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
   String _date(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   Future<void> _load({bool reset = false}) async {
-    if (_loading) return;
+    // 057 п.19: идёт загрузка, а фильтр архива сменили — перезагрузить после неё.
+    if (_loading) {
+      if (reset) _refreshPending = true;
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;

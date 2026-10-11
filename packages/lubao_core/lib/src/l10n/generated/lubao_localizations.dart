@@ -7683,7 +7683,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @cargoResponsesNew.
   ///
   /// In ru, this message translates to:
-  /// **'{count, plural, =1{1 новый} few{{count} новых} many{{count} новых} other{{count} новых}}'**
+  /// **'{count, plural, one{{count} новый} few{{count} новых} many{{count} новых} other{{count} новых}}'**
   String cargoResponsesNew(int count);
 
   /// No description provided for @navTrips.
@@ -7811,6 +7811,12 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Вы отозвали'**
   String get closeReasonWithdrawn;
+
+  /// No description provided for @closeReasonInviteDeclined.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы отказались'**
+  String get closeReasonInviteDeclined;
 
   /// No description provided for @closeReasonInviteExpired.
   ///

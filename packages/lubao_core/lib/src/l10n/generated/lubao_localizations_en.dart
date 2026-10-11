@@ -4231,6 +4231,9 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get closeReasonWithdrawn => 'You withdrew';
 
   @override
+  String get closeReasonInviteDeclined => 'You declined';
+
+  @override
   String get closeReasonInviteExpired => 'Invitation expired';
 
   @override

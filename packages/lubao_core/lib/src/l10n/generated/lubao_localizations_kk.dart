@@ -4227,6 +4227,9 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get closeReasonWithdrawn => 'Сіз қайтарып алдыңыз';
 
   @override
+  String get closeReasonInviteDeclined => 'Сіз бас тарттыңыз';
+
+  @override
   String get closeReasonInviteExpired => 'Шақыру мерзімі өтті';
 
   @override

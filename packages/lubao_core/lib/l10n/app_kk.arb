@@ -1427,6 +1427,7 @@
   "closeReasonTakenByOther": "Жүк басқаға кетті",
   "closeReasonRejectedByLogist": "Логист бас тартты",
   "closeReasonWithdrawn": "Сіз қайтарып алдыңыз",
+  "closeReasonInviteDeclined": "Сіз бас тарттыңыз",
   "closeReasonInviteExpired": "Шақыру мерзімі өтті",
   "closeReasonCargoClosed": "Жүк алынып тасталды",
   "closeReasonCargoArchived": "Жүк мұрағатта",

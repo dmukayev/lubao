@@ -49,10 +49,12 @@ class _FakeCargoRepository extends CargoRepository {
   /// offset → страница.
   final Map<int, CargoFeedPage> pages;
   final requestedOffsets = <int>[];
+  final requestedFilters = <FeedFilter>[];
 
   @override
   Future<CargoFeedPage> feed({int limit = 30, int offset = 0, FeedFilter filter = FeedFilter.empty}) async {
     requestedOffsets.add(offset);
+    requestedFilters.add(filter);
     return pages[offset]!;
   }
 
@@ -201,5 +203,24 @@ void main() {
     await tester.tap(find.byKey(const Key('driverCheckInButton')));
     await tester.pumpAndSettle();
     expect(arrivals.calls, ['checkin:a-today']);
+  });
+
+  testWidgets('059: чип «куда» — лента перезапрашивается с этой страной', (tester) async {
+    final cargos = _FakeCargoRepository({
+      0: CargoFeedPage(
+        items: [_cargo('c1', pointId: 'p-almaty', rank: 0)],
+        total: 1,
+        offset: 0,
+        chips: const FeedChips(all: 1, countries: [(id: 'uz', count: 1)]),
+      ),
+    });
+    await _pump(tester, cargos: cargos, arrivals: _FakeArrivalRepository(const MyArrivals(current: null, all: [])));
+    final chip = find.byKey(const Key('feedChipCountry-uz'));
+    await tester.scrollUntilVisible(chip, 100, scrollable: find.descendant(of: find.byKey(const Key('feedChipsBar')), matching: find.byType(Scrollable)).first);
+    await tester.ensureVisible(chip);
+    await tester.pumpAndSettle();
+    await tester.tap(chip);
+    await tester.pumpAndSettle();
+    expect(cargos.requestedFilters.last.toCountryId, 'uz');
   });
 }

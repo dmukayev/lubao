@@ -1552,6 +1552,7 @@
   "closeReasonTakenByOther": "Went to another driver",
   "closeReasonRejectedByLogist": "The logist declined",
   "closeReasonWithdrawn": "You withdrew",
+  "closeReasonInviteDeclined": "You declined",
   "closeReasonInviteExpired": "Invitation expired",
   "closeReasonCargoClosed": "Cargo withdrawn",
   "closeReasonCargoArchived": "Cargo archived",

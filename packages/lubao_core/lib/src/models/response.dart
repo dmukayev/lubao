@@ -155,10 +155,11 @@ class MyCargoResponse {
 
 
 /// 056 п.1: почему отклик закрыт — для «Истории рейсов».
-enum ResponseCloseReason { withdrawn, inviteExpired, cargoArchived, cargoClosed, takenByOther, rejectedByLogist, dealCancelled, accountDeleted }
+enum ResponseCloseReason { withdrawn, inviteDeclined, inviteExpired, cargoArchived, cargoClosed, takenByOther, rejectedByLogist, dealCancelled, accountDeleted }
 
 ResponseCloseReason? responseCloseReasonFromJson(String? value) => switch (value) {
       'WITHDRAWN' => ResponseCloseReason.withdrawn,
+      'INVITE_DECLINED' => ResponseCloseReason.inviteDeclined,
       'INVITE_EXPIRED' => ResponseCloseReason.inviteExpired,
       'CARGO_ARCHIVED' => ResponseCloseReason.cargoArchived,
       'CARGO_CLOSED' => ResponseCloseReason.cargoClosed,

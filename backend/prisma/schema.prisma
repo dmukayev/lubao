@@ -115,6 +115,8 @@ enum ResponseStatus {
 /// водителя. У активных откликов — null.
 enum ResponseCloseReason {
   WITHDRAWN
+  /// 057 п.22: водитель отказался от приглашения («Вы отказались»).
+  INVITE_DECLINED
   INVITE_EXPIRED
   CARGO_ARCHIVED
   CARGO_CLOSED

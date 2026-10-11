@@ -359,7 +359,8 @@ export class ResponsesService {
     }
     const wasInvited = response.status === 'INVITED';
 
-    const updated = await this.closePending(responseId, response.cargoId, 'CANCELLED', 'WITHDRAWN');
+    // 057 п.22: отказ от приглашения — своя причина («Вы отказались»).
+    const updated = await this.closePending(responseId, response.cargoId, 'CANCELLED', wasInvited ? 'INVITE_DECLINED' : 'WITHDRAWN');
     this.touch([await resolveCargoContactUserId(this.prisma, response.cargo).catch(() => null), updated.driver.userId], response.cargoId);
 
     // «Водитель отозвал отклик» / «отказался от приглашения» — системно в чат

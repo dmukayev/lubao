@@ -4132,6 +4132,9 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get closeReasonWithdrawn => '您已撤回';
 
   @override
+  String get closeReasonInviteDeclined => '您已拒绝';
+
+  @override
   String get closeReasonInviteExpired => '邀请已过期';
 
   @override

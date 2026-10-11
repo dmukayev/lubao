@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 import '../l10n/generated/lubao_localizations.dart';
 import '../models/cargo.dart';
 import '../models/common.dart';
@@ -25,13 +27,20 @@ const _monthsRu = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', '
 const _monthsKk = ['қаң', 'ақп', 'нау', 'сәу', 'мам', 'мау', 'шіл', 'там', 'қыр', 'қаз', 'қар', 'жел'];
 const _monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/// «9 окт» / «10月9日» / «Oct 9».
-String shareDate(DateTime d, String languageCode) => switch (languageCode) {
+/// «9 окт.» / «10月9日» / «Oct 9» — 057 п.23: месяцы из DateFormat (intl);
+/// данных локали нет (тесты без инициализации) — короткие названия из списков.
+String shareDate(DateTime d, String languageCode) {
+  try {
+    return DateFormat.MMMd(languageCode).format(d);
+  } catch (_) {
+    return switch (languageCode) {
       'zh' => '${d.month}月${d.day}日',
       'en' => '${_monthsEn[d.month - 1]} ${d.day}',
       'kk' => '${d.day} ${_monthsKk[d.month - 1]}',
       _ => '${d.day} ${_monthsRu[d.month - 1]}',
     };
+  }
+}
 
 /// Маршрут с флагами стран (058 п.3) — как в ленте.
 String _route(ReferenceData refData, Cargo c, String lang) {

@@ -1427,6 +1427,7 @@
   "closeReasonTakenByOther": "货物已由他人承运",
   "closeReasonRejectedByLogist": "物流方已拒绝",
   "closeReasonWithdrawn": "您已撤回",
+  "closeReasonInviteDeclined": "您已拒绝",
   "closeReasonInviteExpired": "邀请已过期",
   "closeReasonCargoClosed": "货物已下架",
   "closeReasonCargoArchived": "货物已归档",

@@ -4151,7 +4151,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
       other: '$count новых',
       many: '$count новых',
       few: '$count новых',
-      one: '1 новый',
+      one: '$count новый',
     );
     return '$_temp0';
   }
@@ -4220,6 +4220,9 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get closeReasonWithdrawn => 'Вы отозвали';
+
+  @override
+  String get closeReasonInviteDeclined => 'Вы отказались';
 
   @override
   String get closeReasonInviteExpired => 'Приглашение истекло';

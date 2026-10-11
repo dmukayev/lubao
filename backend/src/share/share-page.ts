@@ -118,6 +118,8 @@ export interface PageLinks {
   canonicalUrl: string;
 }
 
+/// 057 п.23: «м³» — только ru/kk; en/zh — «m³».
+const m3 = (l: PageLocale) => (l === 'ru' || l === 'kk' ? 'м³' : 'm³');
 const txt = (n: I18nName | null, l: PageLocale) => (n ? pickLocaleText(n, l as Locale) : '');
 const route = (c: PageCargo, l: PageLocale) => {
   const [fromFlag, toFlag] = routeFlags(c.originCountryCode, c.destinationCountryCode);
@@ -126,7 +128,7 @@ const route = (c: PageCargo, l: PageLocale) => {
 const terms = (c: PageCargo, l: PageLocale) => paymentLine(c, l);
 
 function cargoFacts(c: PageCargo, l: PageLocale): string {
-  const size = [c.weightKg != null ? formatCargoWeight(c.weightKg, l) : '', c.volumeM3 ? `${groupThousands(c.volumeM3)} м³` : ''].filter(Boolean).join(' · ');
+  const size = [c.weightKg != null ? formatCargoWeight(c.weightKg, l) : '', c.volumeM3 ? `${groupThousands(c.volumeM3)} ${m3(l)}` : ''].filter(Boolean).join(' · ');
   return [txt(c.category, l), size, txt(c.bodyType, l).toLocaleLowerCase(l)].filter(Boolean).join(' · ');
 }
 
@@ -200,7 +202,7 @@ export function renderDriverPage(l: PageLocale, d: PageDriver, links: PageLinks)
     const body = `<div class="card stale" data-testid="share-stale"><h1>${escapeHtml(t.stale)}</h1><p class="muted">${escapeHtml(t.staleDriver)}</p></div>${actions(l, links, t.open)}`;
     return layout(l, t.stale, t.staleDriver, body, links, true);
   }
-  const vehicle = [txt(d.bodyType, l), d.capacityTons != null ? `${d.capacityTons} ${l === 'zh' ? '吨' : l === 'en' ? 't' : 'т'}` : '', d.volumeM3 != null ? `${d.volumeM3} м³` : ''].filter(Boolean).join(', ');
+  const vehicle = [txt(d.bodyType, l), d.capacityTons != null ? `${d.capacityTons} ${l === 'zh' ? '吨' : l === 'en' ? 't' : 'т'}` : '', d.volumeM3 != null ? `${d.volumeM3} ${m3(l)}` : ''].filter(Boolean).join(', ');
   const countries = d.anyCountry ? t.anyCountry : d.countries.map((c) => txt(c, l)).join(', ');
   const rating = d.ratingCount > 0 ? `★ ${d.ratingAvg.toFixed(1)} · ` : '';
   const body = `<div class="card" data-testid="share-driver"><h1>🚚 ${escapeHtml(d.fullName)}</h1>${d.isVerified ? `<span class="pill">${escapeHtml(t.verified)}</span>` : ''}

@@ -608,6 +608,8 @@ describe('ResponsesService — приглашение с согласием, г�
     const service = new ResponsesService(prisma, { notify: jest.fn() } as any, chat as any);
     await service.withdraw('r1', 'd1');
     expect(chat.post).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVITATION_DECLINED' }));
+    // 057 п.22: в истории — «Вы отказались», не «Вы отозвали».
+    expect(tx.response.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { status: 'CANCELLED', closeReason: 'INVITE_DECLINED' } }));
   });
 });
 

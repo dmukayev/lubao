@@ -27,6 +27,7 @@ String closeReasonLabel(LubaoLocalizations t, ResponseCloseReason? reason) => sw
       ResponseCloseReason.takenByOther => t.closeReasonTakenByOther,
       ResponseCloseReason.rejectedByLogist => t.closeReasonRejectedByLogist,
       ResponseCloseReason.withdrawn => t.closeReasonWithdrawn,
+      ResponseCloseReason.inviteDeclined => t.closeReasonInviteDeclined,
       ResponseCloseReason.inviteExpired => t.closeReasonInviteExpired,
       ResponseCloseReason.cargoClosed => t.closeReasonCargoClosed,
       ResponseCloseReason.cargoArchived => t.closeReasonCargoArchived,
