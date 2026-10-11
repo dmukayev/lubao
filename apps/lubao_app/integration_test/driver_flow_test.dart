@@ -160,6 +160,13 @@ void main() {
         if (options.method == 'GET' && listPaths.contains(options.path)) listRequests++;
         handler.next(options);
       });
+      // Первое открытие вкладки грузит её данные — это нормально; сначала
+      // открываем все один раз, потом считаем запросы при переключениях.
+      for (final tab in [t.navTrips, t.navChats, t.profileTitle, t.navFeed]) {
+        await goTab(tester, tab);
+        await tester.pump(const Duration(seconds: 1));
+      }
+      await tester.pumpAndSettle();
       container.read(apiClientProvider).dio.interceptors.add(counter);
       try {
         final feed = tabScrollController('driver.feed');

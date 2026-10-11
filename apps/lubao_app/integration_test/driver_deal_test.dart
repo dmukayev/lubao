@@ -197,7 +197,10 @@ void main() {
       await tester.pumpAndSettle();
       // Второй рейс «загружен» — статус «В рейсе»; анонс «Ищу груз из Алматы»
       // погас сам при подтверждении (040 п.4).
+      // 060: лента помнит прокрутку — повторное нажатие на «Грузы» — наверх, к статусу.
       await goTab(tester, t.navFeed);
+      await goTab(tester, t.navFeed);
+      await tester.pumpAndSettle();
       await waitFor(tester, find.byKey(const Key('driverStatus-inTrip')));
       await goTab(tester, t.navTrips);
     });
