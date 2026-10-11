@@ -15,6 +15,11 @@
 | Firebase-проект + APNs-ключ | push (042); без них приложение работает, push нет |
 | (необязательно) Sentry DSN | отчёты об ошибках без персональных данных |
 
+## 0а. Скорость — только в release (060)
+- Скорость приложения (вкладки, лента, переходы) смотреть **только** в сборке `--release` (или `--profile`): `flutter run` в debug в разы медленнее и показывает рывки, которых в настоящей сборке нет.
+- Телефон: `flutter build apk --release` / `flutter build ios --release` (или `flutter run --release`).
+- Замер: `scripts/perf.sh` — эмулятор 360 dp, `--profile`, лента из 200 грузов; сводка — `apps/lubao_app/build/perf/perf_summary.json`. Release-сборка с `--dart-define=PERF_LOG=true` пишет в журнал устройства строки `LUBAO_PERF` (время до первой ленты, кадры > 16 мс).
+
 ## 1. Секреты и окружение
 
 Создайте на сервере `.env.prod` рядом с `docker-compose.prod.yml` (файл в `.gitignore`, не коммитить):
