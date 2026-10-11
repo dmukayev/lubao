@@ -158,5 +158,42 @@ void main() {
       await goTab(tester, t.profileTitle);
       await waitFor(tester, find.byKey(const Key('driverCompaniesSection')));
     });
+
+    // 061 п.13: «Создать водителя» с номером, которого нет в Lubao → человек
+    // входит по коду → «Компания добавила вас» → «Принять» → он в «Моих».
+    await run.step(tester, 'создать-водителя-новый-номер-вход-принять', () async {
+      const name = 'Новый Приглашённый';
+      final res = await logist.createDriver(name, '+7 701 000 00 78');
+      expect(res['status'], 'INVITED');
+      final before = (await logist.myDrivers()).firstWhere((d) => d['name'] == name);
+      expect(before['driverId'], isNull, reason: 'до входа и «Принять» — без карточки водителя');
+      await logoutViaProfile(tester, driver: true);
+      await loginDriver(tester, '7010000078');
+      await completeDriverWizard(tester, name);
+      final accept = find.byKey(const Key('companyInviteAccept-33333333-3333-4333-8333-333333333002'));
+      final deadline = DateTime.now().add(const Duration(seconds: 40));
+      while (accept.evaluate().isEmpty) {
+        if (DateTime.now().isAfter(deadline)) fail('Приглашение компании не показано новому водителю');
+        final notLooking = find.byKey(const Key('whereNowNotLooking'));
+        if (notLooking.evaluate().isNotEmpty) {
+          await tester.tap(notLooking);
+          await tester.pumpAndSettle();
+        } else if (find.byType(NavigationBar).evaluate().isNotEmpty) {
+          // Карточка приглашения — и наверху ленты, и в «Профиле».
+          await goTab(tester, t.profileTitle);
+          await tester.pump(const Duration(seconds: 1));
+          if (accept.evaluate().isNotEmpty) break;
+          await goTab(tester, t.navFeed);
+        }
+        await tester.pump(const Duration(seconds: 1));
+      }
+      await reveal(tester, accept);
+      await tester.tap(accept);
+      await tester.pumpAndSettle();
+      final after = (await logist.myDrivers()).firstWhere((d) => d['name'] == name);
+      expect(after['status'], 'ACTIVE');
+      expect(after['driverId'], isNotNull);
+      expectNoOverflow(tester);
+    });
   });
 }
