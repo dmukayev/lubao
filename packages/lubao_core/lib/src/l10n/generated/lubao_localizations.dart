@@ -7704,11 +7704,17 @@ abstract class LubaoLocalizations {
   /// **'Повторить'**
   String get cargoRepeat;
 
-  /// No description provided for @kztMillionsApprox.
+  /// No description provided for @publishedToday.
   ///
   /// In ru, this message translates to:
-  /// **'≈ {value} млн ₸'**
-  String kztMillionsApprox(String value);
+  /// **'сегодня {time}'**
+  String publishedToday(String time);
+
+  /// No description provided for @publishedYesterday.
+  ///
+  /// In ru, this message translates to:
+  /// **'вчера {time}'**
+  String publishedYesterday(String time);
 
   /// No description provided for @logistOneTruck.
   ///

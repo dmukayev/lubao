@@ -4165,8 +4165,13 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get cargoRepeat => 'Повторить';
 
   @override
-  String kztMillionsApprox(String value) {
-    return '≈ $value млн ₸';
+  String publishedToday(String time) {
+    return 'сегодня $time';
+  }
+
+  @override
+  String publishedYesterday(String time) {
+    return 'вчера $time';
   }
 
   @override

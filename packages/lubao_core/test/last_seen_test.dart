@@ -29,4 +29,15 @@ void main() {
     expect(cargoTrucksLabel(t, needed: 3, taken: 1), 'нужно 3 · осталось 2');
     expect(cargoTrucksLabel(t, needed: 1, taken: 0), isNull);
   });
+
+  test('063 (эталон 35): дата публикации с временем; машины у логиста', () {
+    final now = DateTime(2026, 10, 11, 20, 0);
+    expect(formatPublishedAt(t, DateTime(2026, 10, 11, 14, 20), languageCode: 'ru', now: now), 'сегодня 14:20');
+    expect(formatPublishedAt(t, DateTime(2026, 10, 10, 18, 5), languageCode: 'ru', now: now), 'вчера 18:05');
+    expect(formatPublishedAt(t, DateTime(2026, 10, 9, 11, 40), languageCode: 'ru', now: now), endsWith(' 11:40'));
+    expect(logistTrucksLabel(t, needed: 1, taken: 0), '1 машина');
+    expect(logistTrucksLabel(t, needed: 5, taken: 0), 'нужно 5 машин');
+    expect(logistTrucksLabel(t, needed: 3, taken: 0), 'нужно 3 машины');
+    expect(logistTrucksLabel(t, needed: 2, taken: 1), 'нужно 2 · осталось 1');
+  });
 }

@@ -1,3 +1,4 @@
+import 'share_texts.dart';
 import '../l10n/generated/lubao_localizations.dart';
 import '../models/common.dart';
 import '../models/reference_data.dart';
@@ -32,15 +33,16 @@ String logistTrucksLabel(LubaoLocalizations t, {required int needed, required in
   return t.logistTrucksNeeded(needed);
 }
 
-/// 063 (эталон 35): пересчёт в ₸ коротко — «≈ 45,4 млн ₸» от миллиона, иначе «≈ 450 000 ₸».
-String kztApproxShort(LubaoLocalizations t, double kzt, {required String languageCode}) {
-  if (kzt >= 1000000) {
-    final millions = (kzt / 1000000 * 10).round() / 10;
-    var text = millions == millions.roundToDouble() ? millions.toStringAsFixed(0) : millions.toStringAsFixed(1);
-    if (languageCode == 'ru' || languageCode == 'kk') text = text.replaceAll('.', ',');
-    return t.kztMillionsApprox(text);
-  }
-  return '≈ ${kzt.round().toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ' ')} ₸';
+/// 063 (эталон 35): когда опубликован — всегда с временем: «сегодня 14:20»,
+/// «вчера 18:05», «9 окт 11:40».
+String formatPublishedAt(LubaoLocalizations t, DateTime at, {required String languageCode, DateTime? now}) {
+  final local = at.toLocal();
+  final time = '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+  final today = now ?? DateTime.now();
+  final days = DateTime(today.year, today.month, today.day).difference(DateTime(local.year, local.month, local.day)).inDays;
+  if (days <= 0) return t.publishedToday(time);
+  if (days == 1) return t.publishedYesterday(time);
+  return '${shareDate(local, languageCode)} $time';
 }
 
 String paymentFormShort(LubaoLocalizations t, PaymentForm form) => switch (form) {

@@ -387,9 +387,10 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
     final canRepeat = widget.tab != CompanyCargoTab.work;
     final showResponses = widget.tab == CompanyCargoTab.active;
 
-    // 063 (эталон 35): маршрут одной строкой с флагами, номер справа; слева —
-    // кузов·вес, км·погрузка, машины; справа — цена, ≈ ₸ (или ₸/км для тенге),
-    // когда и как платят; аванс — плашкой; внизу — отклики и маленькие кнопки.
+    // 063 (эталон 35): маршрут одной строкой с флагами, справа — когда
+    // опубликован (номера в списке нет); слева — кузов·вес, км·погрузка, машины;
+    // справа — цена, ₸/км (в любой валюте), когда и как платят; аванс — плашкой;
+    // внизу — отклики и маленькие кнопки.
     final route = refData == null
         ? null
         : cargoRouteLabels(refData, pointId: cargo.pointId, destinationCountryId: cargo.destinationCountryId, destinationCityId: cargo.destinationCityId, languageCode: locale);
@@ -411,11 +412,8 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
       badgeLabel = statusLabel;
     }
     final grey = AppTextStyles.caption;
-    final kzt = refData?.convertToKzt(cargo.price, cargo.currency);
     final perKmKzt = cargo.pricePerKm == null ? null : refData?.convertToKzt(cargo.pricePerKm!, cargo.currency);
-    final secondPrice = cargo.currency == Currency.kzt
-        ? (perKmKzt == null ? null : t.perKmKzt(formatThousands(perKmKzt.round())))
-        : (kzt == null ? null : kztApproxShort(t, kzt, languageCode: locale));
+    final secondPrice = perKmKzt == null ? null : t.perKmKzt(formatThousands(perKmKzt.round()));
     final whenHow = paymentWhenHowLine(t, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays);
     final advance = advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency);
     final size = cargoSizeLabel(t, weightKg: cargo.weightKg, volumeM3: cargo.volumeM3, languageCode: locale);
@@ -443,8 +441,7 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
             children: [
               Expanded(child: Text(routeText, key: Key('companyCargoRoute-${cargo.id}'), style: AppTextStyles.route, maxLines: 1, overflow: TextOverflow.ellipsis)),
               const SizedBox(width: AppSpacing.sm),
-              // 062: номер груза (в работе — номер сделки «482 915-1»).
-              if (cargo.number != null) CargoNumberText(number: cargo.number!, seq: deal?.seq),
+              Text(formatPublishedAt(t, cargo.publishedAt, languageCode: locale), key: Key('companyCargoPublished-${cargo.id}'), style: AppTextStyles.small.copyWith(color: AppColors.textSecondary)),
             ],
           ),
           if (badgeLabel != null) ...[const SizedBox(height: AppSpacing.xs), StatusBadge(label: badgeLabel, color: badgeColor)],
