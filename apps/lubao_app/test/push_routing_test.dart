@@ -24,6 +24,16 @@ void main() {
     });
   });
 
+  test('061 п.2: вкладки — go, вложенные экраны — push', () {
+    for (final r in ['/driver/feed', '/driver/profile', '/company/drivers', '/company/profile', '/company/cargos?tab=work']) {
+      expect(isTabRoute(r), isTrue, reason: r);
+    }
+    for (final r in ['/chat/c1', '/deal/d1', '/driver/cargo/x', '/company/cargos/x/responses', '/driver/history', '/driver/verification']) {
+      expect(isTabRoute(r), isFalse, reason: r);
+    }
+    expect(isTabRoute(resolvePushRoute('/arrival', UserRole.driver)), isTrue);
+  });
+
   group('кнопки push', () {
     final t = lookupLubaoLocalizations(const Locale('ru'));
 

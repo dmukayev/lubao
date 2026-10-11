@@ -198,7 +198,7 @@ class PushService {
   void _open(String? deepLink) {
     if (deepLink == null || deepLink.isEmpty) return;
     final role = _ref.read(sessionProvider)?.user.role;
-    _ref.read(routerProvider).push(resolvePushRoute(deepLink, role));
+    openPushLink(_ref.read(routerProvider), deepLink, role);
   }
 
   Future<void> _askAgreed(String cargoId, String? title, String? body) async {

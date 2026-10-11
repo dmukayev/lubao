@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 /// Чистые правила push (042 п.1) — без Firebase, покрыты тестами.
@@ -18,6 +19,27 @@ String resolvePushRoute(String link, UserRole? role) {
   // Ссылки из старых сборок сервера (lubao://chat/…) — тот же путь.
   if (link.startsWith('lubao://')) return '/${link.substring('lubao://'.length)}';
   return link.startsWith('/') ? link : '/$link';
+}
+
+/// Корни вкладок (и их псевдонимы-редиректы) водителя и логиста.
+const _tabRoutes = {
+  '/driver/feed', '/driver/trips', '/driver/deals', '/driver/responses', '/driver/chats', '/driver/profile',
+  '/company/cargos', '/company/deals', '/company/drivers', '/company/chats', '/company/profile',
+};
+
+/// 061 п.2: адрес вкладки — сам корень оболочки; `push` поверх чата или сделки
+/// дал бы вторую копию оболочки («Duplicate GlobalKey») или ленту в чужой вкладке.
+bool isTabRoute(String route) => _tabRoutes.contains(Uri.parse(route).path);
+
+/// Открыть ссылку из push: вкладка — `go` (вложенные экраны закрываются),
+/// вложенный экран (чат, сделка, груз, отклики, история) — `push` поверх.
+void openPushLink(GoRouter router, String link, UserRole? role) {
+  final route = resolvePushRoute(link, role);
+  if (isTabRoute(route)) {
+    router.go(route);
+  } else {
+    router.push(route);
+  }
 }
 
 /// Кнопки в push: «Ещё ищете груз?» — Да / Уехал, «Договорились?» — Да / Нет.

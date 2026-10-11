@@ -11,7 +11,9 @@ import 'package:integration_test/integration_test.dart';
 import 'package:lubao_app/app.dart';
 import 'package:lubao_app/providers/auth_provider.dart';
 import 'package:lubao_app/providers/api_providers.dart';
+import 'package:lubao_app/router/app_router.dart';
 import 'package:lubao_app/router/tab_scroll.dart';
+import 'package:lubao_app/services/push_routing.dart';
 import 'package:dio/dio.dart';
 import 'package:lubao_core/lubao_core.dart';
 
@@ -254,11 +256,20 @@ void main() {
       await waitFor(tester, find.text(messageText));
     });
 
+    // 061 п.2: push с адресом вкладки поверх открытого чата — лента в своей
+    // вкладке, одна оболочка, без «Duplicate GlobalKey».
+    await run.step(tester, 'push-arrival-поверх-чата', () async {
+      final router = ProviderScope.containerOf(tester.element(find.byType(LubaoApp))).read(routerProvider);
+      openPushLink(router, '/arrival', UserRole.driver);
+      await tester.pumpAndSettle(const Duration(seconds: 1));
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const Key('chatMessageInput')), findsNothing);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(router.routerDelegate.currentConfiguration.uri.path, '/driver/feed');
+      await waitFor(tester, find.byKey(const Key('driverStatusBar')));
+    });
+
     await run.step(tester, 'список-чатов', () async {
-      await tester.tap(find.byType(BackButton).first);
-      await tester.pumpAndSettle();
-      await tester.tap(find.byType(BackButton).first);
-      await tester.pumpAndSettle();
       await tester.tap(find.text(t.navChats));
       await waitFor(tester, find.textContaining(messageText));
       expectInsideSafeZone(tester);
