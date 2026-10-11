@@ -182,6 +182,7 @@ describe('CargosService.feed — hides blocked companies\' cargo (задача 0
   it('filters by company.isBlocked: false, without touching cargo status', async () => {
     const prisma: any = {
       cargo: { findMany: jest.fn().mockResolvedValue([]) },
+      exchangeRate: { findMany: jest.fn().mockResolvedValue([]) },
       deal: { count: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     };
     const service = new CargosService(prisma, {} as any, {} as any);
@@ -229,6 +230,7 @@ describe('CargosService — отсев грузов по размеру маши
   it('feed() без driverId (аноним/не водитель) не фильтрует вовсе', async () => {
     const prisma: any = {
       cargo: { findMany: jest.fn().mockResolvedValue([]) },
+      exchangeRate: { findMany: jest.fn().mockResolvedValue([]) },
       deal: { count: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     };
     const service = new CargosService(prisma, {} as any, {} as any);
@@ -243,6 +245,7 @@ describe('CargosService — отсев грузов по размеру маши
     const smallCargo = baseCargo({ id: 'small', volumeM3: 80 });
     const prisma: any = {
       cargo: { findMany: jest.fn().mockResolvedValue([bigCargo, smallCargo]) },
+      exchangeRate: { findMany: jest.fn().mockResolvedValue([]) },
       deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       driver: { findUnique: jest.fn().mockResolvedValue(null) },
@@ -258,7 +261,7 @@ describe('CargosService — отсев грузов по размеру маши
     };
     const service = new CargosService(prisma, {} as any, {} as any);
 
-    const result = await service.feed('d1');
+    const result = await service.feed('d1', { showOtherCities: true });
 
     expect(result.items.map((c: any) => c.id)).toEqual(['small']);
   });
@@ -394,6 +397,7 @@ describe('CargosService — лента на сервере: город → об�
     const prisma: any = {
       appSetting: { findUnique: jest.fn().mockResolvedValue(opts.partialLoads === false ? null : { value: 'true' }) },
       cargo: { findMany: jest.fn().mockResolvedValue(opts.cargos) },
+      exchangeRate: { findMany: jest.fn().mockResolvedValue([]) },
       deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       arrival: { findMany: jest.fn().mockResolvedValue(opts.arrivals ?? []), findFirst: jest.fn().mockResolvedValue(null) },
@@ -415,7 +419,7 @@ describe('CargosService — лента на сервере: город → об�
       cargos: [cargoAt('from-astana', astana), cargoAt('from-konaev', konaev), cargoAt('from-almaty', almaty), cargoAt('from-taraz', taraz)],
     });
 
-    const { items, originCityId, originSource } = await service.feed('d1');
+    const { items, originCityId, originSource } = await service.feed('d1', { showOtherCities: true });
 
     expect(items.map((i: any) => i.id)).toEqual(['from-almaty', 'from-konaev', 'from-astana', 'from-taraz']);
     expect(items.map((i: any) => i.pickupRank)).toEqual([0, 1, 2, 2]);
@@ -432,7 +436,7 @@ describe('CargosService — лента на сервере: город → об�
       cargos: [cargoAt('astana-cargo', astana), cargoAt('almaty-cargo', almaty)],
     });
 
-    const { items, originCityId } = await service.feed('d1');
+    const { items, originCityId } = await service.feed('d1', { showOtherCities: true });
 
     expect(originCityId).toBe('almaty');
     expect(items[0].id).toBe('almaty-cargo');
@@ -444,7 +448,7 @@ describe('CargosService — лента на сервере: город → об�
       cargos: [cargoAt('far', astana), cargoAt('near', konaev), cargoAt('here', talgar)],
     });
 
-    const { items, originSource } = await service.feed('d1');
+    const { items, originSource } = await service.feed('d1', { showOtherCities: true });
 
     expect(originSource).toBe('home');
     expect(items.map((i: any) => i.id)).toEqual(['here', 'near', 'far']);
@@ -459,7 +463,7 @@ describe('CargosService — лента на сервере: город → об�
         cargoAt('to-konaev', almaty, { destinationCountryId: 'kz', destinationCity: { regionId: 'almaty-region' } }),
       ],
     });
-    const { items } = await service.feed('d1');
+    const { items } = await service.feed('d1', { showOtherCities: true });
     expect(items.map((i: any) => [i.id, i.feedSection])).toEqual([['to-konaev', 'home'], ['to-taraz', 'other']]);
   });
 
@@ -475,7 +479,7 @@ describe('CargosService — лента на сервере: город → об�
       ],
     });
 
-    const { items } = await service.feed('d1');
+    const { items } = await service.feed('d1', { showOtherCities: true });
 
     expect(items.map((i: any) => i.id)).toEqual(['home-country', 'selected-early', 'selected-late', 'other-country']);
     expect(items.map((i: any) => i.feedSection)).toEqual(['home', 'selected', 'selected', 'other']);
@@ -487,8 +491,8 @@ describe('CargosService — лента на сервере: город → об�
       cargos: [cargoAt('c-astana', astana), cargoAt('c-almaty-1', almaty), cargoAt('c-konaev', konaev), cargoAt('c-almaty-2', almaty)],
     });
 
-    const first = await service.feed('d1', { limit: 3, offset: 0 });
-    const second = await service.feed('d1', { limit: 3, offset: 3 });
+    const first = await service.feed('d1', { showOtherCities: true, limit: 3, offset: 0 });
+    const second = await service.feed('d1', { showOtherCities: true, limit: 3, offset: 3 });
 
     expect(first.total).toBe(4);
     expect(first.items).toHaveLength(3);
@@ -498,20 +502,20 @@ describe('CargosService — лента на сервере: город → об�
 
   it('лимит ограничен сверху (50 — 043 п.11), отрицательный offset — 0', async () => {
     const service = setupFeed({ cargos: [] });
-    const page = await service.feed('d1', { limit: 5000, offset: -5 });
+    const page = await service.feed('d1', { showOtherCities: true, limit: 5000, offset: -5 });
     expect(page.limit).toBe(50);
     expect(page.offset).toBe(0);
   });
 
   it('отдаёт признак догруза allowPartial', async () => {
     const service = setupFeed({ cargos: [cargoAt('partial', almaty, { allowPartial: true })] });
-    const { items } = await service.feed('d1');
+    const { items } = await service.feed('d1', { showOtherCities: true });
     expect(items[0].allowPartial).toBe(true);
   });
 
   it('049 п.1: догруз выключен — бейджа нет, даже у груза с пометкой', async () => {
     const service = setupFeed({ cargos: [cargoAt('partial', almaty, { allowPartial: true })], partialLoads: false });
-    const { items } = await service.feed('d1');
+    const { items } = await service.feed('d1', { showOtherCities: true });
     expect(items[0].allowPartial).toBe(false);
   });
 });
@@ -607,6 +611,7 @@ describe('CargosService.feed — моё состояние и конкурент
   it('мой отклик и сколько других откликнулись — по грузам страницы', async () => {
     const prisma: any = {
       cargo: { findMany: jest.fn().mockResolvedValue([baseCargo({ id: 'c1' }), baseCargo({ id: 'c2' })]) },
+      exchangeRate: { findMany: jest.fn().mockResolvedValue([]) },
       deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       driver: { findUnique: jest.fn().mockResolvedValue(null) },
@@ -618,7 +623,7 @@ describe('CargosService.feed — моё состояние и конкурент
       },
     };
     const service = new CargosService(prisma, {} as any, {} as any);
-    const { items } = await service.feed('d1');
+    const { items } = await service.feed('d1', { showOtherCities: true });
     const byId = Object.fromEntries(items.map((i: any) => [i.id, i]));
     expect(byId.c1).toMatchObject({ myResponseStatus: 'INVITED', responsesCount: 0 });
     expect(byId.c2).toMatchObject({ myResponseStatus: null, responsesCount: 3 });
@@ -633,6 +638,7 @@ describe('CargosService.feed — области направлений', () => {
       baseCargo({ id, destinationCountryId: 'kz', destinationCity: { regionId }, readyDate: new Date(day), point: { cityId: 'p', lat: null, lng: null, city: { id: 'p', regionId: 'x', lat: null, lng: null } } });
     const prisma: any = {
       cargo: { findMany: jest.fn().mockResolvedValue([mk('other-region', 'r-astana', '2030-01-01'), mk('my-region', 'r-almaty', '2030-01-05')]) },
+      exchangeRate: { findMany: jest.fn().mockResolvedValue([]) },
       deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
       arrival: { findFirst: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
@@ -649,7 +655,7 @@ describe('CargosService.feed — области направлений', () => {
       bodyType: { findMany: jest.fn().mockResolvedValue([]) },
     };
     const service = new CargosService(prisma, {} as any, {} as any);
-    const { items } = await service.feed('d1');
+    const { items } = await service.feed('d1', { showOtherCities: true });
     expect(items.map((i: any) => [i.id, i.feedSection])).toEqual([
       ['my-region', 'selected'],
       ['other-region', 'other'],
@@ -662,6 +668,7 @@ describe('CargosService.mine — сделка по грузу', () => {
   it('у груза со сделкой — водитель и статус, отменённые сделки не считаются', async () => {
     const prisma: any = {
       cargo: { findMany: jest.fn().mockResolvedValue([baseCargo({ id: 'c1' }), baseCargo({ id: 'c2' })]) },
+      exchangeRate: { findMany: jest.fn().mockResolvedValue([]) },
       deal: {
         count: jest.fn().mockResolvedValue(0),
         findMany: jest.fn().mockResolvedValue([{ id: 'deal1', cargoId: 'c1', status: 'CONFIRMED_BY_DRIVER', driver: { fullName: 'Ерлан' } }]),
@@ -936,5 +943,104 @@ describe('058 п.8: избранные грузы водителя', () => {
     const service = new CargosService(prisma, {} as any, {} as any);
     await service.listFavorites('d1');
     expect(prisma.cargoFavorite.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { driverId: 'd1', cargo: { status: 'PUBLISHED', company: { isBlocked: false } } } }));
+  });
+});
+
+describe('059: лента — фильтры, чипы «куда», сортировка, свёрнутые города', () => {
+  const city = (id: string, regionId: string | null, lat: number, lng: number) => ({ id, regionId, lat, lng });
+  const point = (c: ReturnType<typeof city>) => ({ cityId: c.id, lat: c.lat, lng: c.lng, city: c });
+  const almaty = city('almaty', null, 43.2389, 76.8897);
+  const astana = city('astana', null, 51.1694, 71.4491);
+  const at = (id: string, c: ReturnType<typeof city>, over: Record<string, unknown> = {}) =>
+    baseCargo({ id, pointId: `p-${c.id}`, point: point(c), destinationCity: null, ...over });
+
+  function setup(cargos: any[], opts: { rates?: Array<{ currency: string; rateToKzt: number }>; home?: unknown } = {}) {
+    const prisma: any = {
+      appSetting: { findUnique: jest.fn().mockResolvedValue(null) },
+      cargo: { findMany: jest.fn().mockResolvedValue(cargos) },
+      exchangeRate: { findMany: jest.fn().mockResolvedValue((opts.rates ?? []).map((r) => ({ ...r, effectiveDate: new Date() }))) },
+      deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
+      companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+      arrival: { findMany: jest.fn().mockResolvedValue([{ status: 'ON_SITE', point: { cityId: 'almaty', lat: 43.2389, lng: 76.8897, city: almaty } }]), findFirst: jest.fn().mockResolvedValue(null) },
+      response: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
+      bodyType: { findMany: jest.fn().mockResolvedValue([]) },
+      vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
+      city: { findUnique: jest.fn().mockResolvedValue(astana) },
+      driver: { findUnique: jest.fn().mockResolvedValue({ homeCity: opts.home ?? null, directions: [], anyCountry: true }) },
+    };
+    return { prisma, service: new CargosService(prisma, {} as any, {} as any) };
+  }
+
+  it('чипы «куда» из реальных грузов; «Россия» → только грузы в Россию', async () => {
+    const { service } = setup([at('ru1', almaty, { destinationCountryId: 'ru' }), at('ru2', almaty, { destinationCountryId: 'ru' }), at('uz', almaty, { destinationCountryId: 'uz' })]);
+    const all = await service.feed('d1');
+    expect(all.chips.all).toBe(3);
+    expect(all.chips.countries).toEqual([{ id: 'ru', count: 2 }, { id: 'uz', count: 1 }]);
+    const ru = await service.feed('d1', { toCountryId: 'ru' });
+    expect(ru.items.map((i: any) => i.id).sort()).toEqual(['ru1', 'ru2']);
+    expect(ru.chips.all).toBe(3); // чипы — без фильтра «куда»
+  });
+
+  it('«Грузы из других городов» свёрнуты: счётчик; показать — в ленте; «откуда» = другой город — он и есть город погрузки', async () => {
+    const { service } = setup([at('here', almaty), at('far1', astana), at('far2', astana)]);
+    const def = await service.feed('d1');
+    expect(def.items.map((i: any) => i.id)).toEqual(['here']);
+    expect(def.otherCitiesCount).toBe(2);
+    expect((await service.feed('d1', { showOtherCities: true })).total).toBe(3);
+    const fromAstana = await service.feed('d1', { fromCityId: 'astana' });
+    expect(fromAstana.originCityId).toBe('astana');
+  });
+
+  it('цена от–до в выбранной валюте — через ₸; ₸/км от — в ₸ при разных валютах груза', async () => {
+    const rates = [{ currency: 'USD', rateToKzt: 500 }, { currency: 'RUB', rateToKzt: 5 }];
+    const { service } = setup(
+      [
+        at('usd1000', almaty, { price: 1000, currency: 'USD', pricePerKm: 1, distanceKm: 1000 }), // 500 000 ₸, 500 ₸/км
+        at('rub50k', almaty, { price: 50000, currency: 'RUB', pricePerKm: 50, distanceKm: 1000 }), // 250 000 ₸, 250 ₸/км
+      ],
+      { rates },
+    );
+    expect((await service.feed('d1', { priceMin: 600, priceCurrency: 'USD' })).items.map((i: any) => i.id)).toEqual(['usd1000']); // от 300 000 ₸
+    expect((await service.feed('d1', { priceMax: 600, priceCurrency: 'USD' })).items.map((i: any) => i.id)).toEqual(['rub50k']);
+    expect((await service.feed('d1', { priceMin: 300000, priceCurrency: 'KZT' })).items.map((i: any) => i.id)).toEqual(['usd1000']);
+    expect((await service.feed('d1', { perKmMin: 300 })).items.map((i: any) => i.id)).toEqual(['usd1000']);
+  });
+
+  it('сортировка: выгоднее ₸/км, дешевле, новые', async () => {
+    const rates = [{ currency: 'USD', rateToKzt: 500 }];
+    const { service } = setup(
+      [
+        at('cheap', almaty, { price: 100, currency: 'USD', pricePerKm: 0.1, distanceKm: 1000, publishedAt: new Date('2026-10-01') }),
+        at('best', almaty, { price: 900, currency: 'USD', pricePerKm: 2, distanceKm: 450, publishedAt: new Date('2026-10-03') }),
+        at('mid', almaty, { price: 500, currency: 'USD', pricePerKm: 1, distanceKm: 500, publishedAt: new Date('2026-10-02') }),
+      ],
+      { rates },
+    );
+    expect((await service.feed('d1', { sort: 'per_km' })).items.map((i: any) => i.id)).toEqual(['best', 'mid', 'cheap']);
+    expect((await service.feed('d1', { sort: 'price_asc' })).items.map((i: any) => i.id)).toEqual(['cheap', 'mid', 'best']);
+    expect((await service.feed('d1', { sort: 'new' })).items.map((i: any) => i.id)).toEqual(['best', 'mid', 'cheap']);
+  });
+
+  it('счётчик для шторки (limit=0) — без загрузки карточек', async () => {
+    const { prisma, service } = setup([at('a', almaty), at('b', almaty)]);
+    const res = await service.feed('d1', { limit: 0 });
+    expect(res.total).toBe(2);
+    expect(res.items).toEqual([]);
+    expect(prisma.cargo.findMany).toHaveBeenCalledTimes(1);
+  });
+
+  it('в базу уходят: кузова, вес, «с авансом», дата погрузки', async () => {
+    const { prisma, service } = setup([]);
+    await service.feed('d1', { bodyTypeIds: ['tent'], weightMinT: 10, weightMaxT: 20, withAdvance: true, ready: '3d' });
+    const where = prisma.cargo.findMany.mock.calls[0][0].where;
+    expect(where.AND).toEqual(
+      expect.arrayContaining([
+        { weightKg: { gte: 10000 } },
+        { weightKg: { lte: 20000 } },
+        { advanceAmount: { gt: 0 } },
+        { OR: [{ bodyTypeId: { in: ['tent'] } }, { extraBodyTypeIds: { hasSome: ['tent'] } }] },
+        { readyDate: { lte: expect.any(Date) } },
+      ]),
+    );
   });
 });

@@ -5,6 +5,7 @@ import { RequestContext } from '../common/request-context';
 import { ResponsesService } from '../responses/responses.service';
 import { CreateResponseDto } from '../responses/dto/update-response.dto';
 import { CargosService, CompanyCargoTab } from './cargos.service';
+import { parseFeedQuery } from './feed-query';
 import { CreateCargoDto } from './dto/create-cargo.dto';
 import { UpdateCargoDto } from './dto/update-cargo.dto';
 import { CloseCargoDto } from './dto/close-cargo.dto';
@@ -22,12 +23,10 @@ export class CargosController {
     private readonly responses: ResponsesService,
   ) {}
 
+  /// Лента водителя; 059: фильтры, сортировка, чипы «куда», `limit=0` — только счётчик.
   @Get()
-  feed(@CurrentUser() ctx: RequestContext, @Query('limit') limit?: string, @Query('offset') offset?: string) {
-    return this.cargos.feed(ctx.driver?.id, {
-      limit: limit ? Number(limit) : undefined,
-      offset: offset ? Number(offset) : undefined,
-    });
+  feed(@CurrentUser() ctx: RequestContext, @Query() query: Record<string, unknown>) {
+    return this.cargos.feed(ctx.driver?.id, parseFeedQuery(query));
   }
 
   /// 058 п.8: «Избранное» водителя — опубликованные грузы со ☆ (до `:id`).

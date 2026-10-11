@@ -4,11 +4,12 @@ import { BadRequestException, ConflictException, Optional, ForbiddenException, I
 import { RedisService } from '../redis/redis.service';
 import { BodyTypeProfile, Cargo, CargoStatus, Company, PaymentForm, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { FeedQuery, FeedSort } from './feed-query';
 import { ResponsesService } from '../responses/responses.service';
 import { CreateCargoDto } from './dto/create-cargo.dto';
 import { UpdateCargoDto } from './dto/update-cargo.dto';
 import { CloseCargoDto } from './dto/close-cargo.dto';
-import { parseDateOnly, toDateOnly } from '../common/date-only';
+import { localDateOnly, parseDateOnly, toDateOnly } from '../common/date-only';
 import { haversineKm } from '../common/geo';
 import { CARGO_ARCHIVE_AFTER_MS } from './cargo-lifecycle';
 import { evaluateVehicleLoad } from '../deals/vehicle-load';
@@ -365,36 +366,77 @@ export class CargosService {
   /// — «домой» → выбранные страны → остальные, затем по дате готовности.
   /// Страница `limit/offset`; весь отсортированный набор считается в памяти
   /// (на старте — сотни грузов), `total` нужен клиенту для «показать ещё».
-  async feed(driverId?: string, page: { limit?: number; offset?: number } = {}) {
-    const limit = Math.min(Math.max(page.limit ?? FEED_DEFAULT_LIMIT, 1), FEED_MAX_LIMIT);
-    const offset = Math.max(page.offset ?? 0, 0);
+  async feed(driverId?: string, query: FeedQuery = {}) {
+    const limit = Math.min(Math.max(query.limit ?? FEED_DEFAULT_LIMIT, 0), FEED_MAX_LIMIT);
+    const offset = Math.max(query.offset ?? 0, 0);
 
-    // company.isBlocked (задача 026, п.5) — груз блокированной компании не
-    // трогаем (статус/история не меняются), просто скрываем из ленты
-    // водителя, пока компанию не разблокируют.
-    const cargos = await this.prisma.cargo.findMany({
-      where: { status: 'PUBLISHED', company: { isBlocked: false } },
-      include: { ...this.includeForDto, point: { include: { city: true } }, destinationCity: { select: { regionId: true } } },
+    // 059 п.4: в базе — простые фильтры, наружу — лёгкие строки (без связей
+    // компании и т.п.); полные карточки — только для страницы.
+    // company.isBlocked (задача 026, п.5) — груз блокированной компании
+    // скрываем из ленты, пока компанию не разблокируют.
+    const where: Prisma.CargoWhereInput = { status: 'PUBLISHED', company: { isBlocked: false } };
+    const and: Prisma.CargoWhereInput[] = [];
+    if (query.fromCityId) and.push({ point: { cityId: query.fromCityId } });
+    else if (query.fromCountryId) and.push({ point: { city: { countryId: query.fromCountryId } } });
+    if (query.weightMinT != null) and.push({ weightKg: { gte: query.weightMinT * 1000 } });
+    if (query.weightMaxT != null) and.push({ weightKg: { lte: query.weightMaxT * 1000 } });
+    if (query.withAdvance) and.push({ advanceAmount: { gt: 0 } });
+    if (query.ready && query.ready !== 'any') {
+      const days = { today: 0, '3d': 3, week: 7 }[query.ready];
+      const limitDay = parseDateOnly(localDateOnly(new Date(Date.now() + days * 86_400_000)));
+      and.push({ readyDate: { lte: limitDay } });
+    }
+    if (query.bodyTypeIds?.length) and.push({ OR: [{ bodyTypeId: { in: query.bodyTypeIds } }, { extraBodyTypeIds: { hasSome: query.bodyTypeIds } }] });
+    if (and.length) where.AND = and;
+
+    const rows = await this.prisma.cargo.findMany({
+      where,
+      select: {
+        id: true, pointId: true, destinationCountryId: true, destinationCityId: true, bodyTypeId: true, extraBodyTypeIds: true,
+        weightKg: true, volumeM3: true, palletCount: true, specs: true, price: true, currency: true, readyDate: true,
+        distanceKm: true, pricePerKm: true, publishedAt: true,
+        point: { select: { cityId: true, lat: true, lng: true, city: { select: { id: true, regionId: true, lat: true, lng: true } } } },
+        destinationCity: { select: { regionId: true } },
+      },
       orderBy: { readyDate: 'asc' },
     });
-    const body = driverId ? await this.driverCargoBody(driverId) : null;
-    const profileOf = body ? await this.bodyProfiles() : new Map<string, BodyTypeProfile>();
-    // 048 п.5: отсев по профилю кузова (вес всегда; м³/паллеты — объёмным; литры — цистерне…).
-    const fitting = body
-      ? cargos.filter((c) =>
-          cargoFitsBody(
-            { profiles: CargosService.cargoProfiles(c, profileOf), weightKg: c.weightKg, volumeM3: c.volumeM3, palletCount: c.palletCount, specs: c.specs as Record<string, unknown> | null },
-            body,
-          ),
-        )
-      : cargos;
 
-    const [{ origin, source }, driver] = driverId
+    // Цена и ₸/км — в тенге по курсу НБ РК (058 п.4: и RUB, UZS).
+    const rate = await this.kztRates();
+    const kzt = (amount: number | null, currency: string) => (amount == null || rate[currency] == null ? null : amount * rate[currency]!);
+    const priceFloor = query.priceMin != null ? kzt(query.priceMin, query.priceCurrency ?? 'KZT') : null;
+    const priceCeil = query.priceMax != null ? kzt(query.priceMax, query.priceCurrency ?? 'KZT') : null;
+
+    const body = driverId && !query.bodyTypeIds?.length ? await this.driverCargoBody(driverId) : null;
+    const profileOf = body ? await this.bodyProfiles() : new Map<string, BodyTypeProfile>();
+
+    const enriched = rows
+      .map((c) => {
+        const priceKzt = kzt(Number(c.price), c.currency);
+        const perKmKzt = c.pricePerKm != null ? kzt(Number(c.pricePerKm), c.currency) : null;
+        return { c, priceKzt, perKmKzt };
+      })
+      .filter(({ c, priceKzt, perKmKzt }) => {
+        if (priceFloor != null && (priceKzt == null || priceKzt < priceFloor)) return false;
+        if (priceCeil != null && (priceKzt == null || priceKzt > priceCeil)) return false;
+        if (query.perKmMin != null && (perKmKzt == null || perKmKzt < query.perKmMin)) return false;
+        // 048 п.5: отсев по профилю кузова моей машины (если кузова не выбраны в фильтре).
+        if (body && !cargoFitsBody({ profiles: CargosService.cargoProfiles(c, profileOf), weightKg: c.weightKg, volumeM3: c.volumeM3, palletCount: c.palletCount, specs: c.specs as Record<string, unknown> | null }, body)) return false;
+        return true;
+      });
+
+    const [{ origin: statusOrigin, source }, driver] = driverId
       ? await Promise.all([
           this.feedOrigin(driverId),
           this.prisma.driver.findUnique({ where: { id: driverId }, include: { homeCity: true, directions: true } }),
         ])
       : [{ origin: null, source: null }, null];
+    // 059 п.5: выбран другой город «откуда» — он и есть город погрузки.
+    let origin = statusOrigin;
+    if (query.fromCityId) {
+      const city = await this.prisma.city.findUnique({ where: { id: query.fromCityId } });
+      if (city) origin = { cityId: city.id, regionId: city.regionId, lat: CargosService.num(city.lat), lng: CargosService.num(city.lng) };
+    }
     const homeCountryId = driver?.homeCity?.countryId ?? null;
     const selected = new Set(driver?.directions?.map((d) => d.countryId) ?? []);
     // 045 п.7: страна с уточнёнными областями — груз «в выбранное», только если
@@ -406,7 +448,6 @@ export class CargosService {
       if (!regions || !cargo.destinationCity?.regionId) return true;
       return regions.has(cargo.destinationCity.regionId);
     };
-
     // 049 п.8 (CLAUDE.md): «домой» — город назначения в той же области, что и
     // домашний город; у домашнего города без области — по стране.
     const homeRegionId = driver?.homeCity?.regionId ?? null;
@@ -416,29 +457,68 @@ export class CargosService {
       return cargo.destinationCity?.regionId === homeRegionId;
     };
 
-    const ranked = fitting.map((cargo) => {
-      const pickupRank = origin ? CargosService.pickupRank(cargo.point, origin) : 2;
-      const section: 'home' | 'selected' | 'other' =
-        isHome(cargo)
-          ? 'home'
-          : (driver?.anyCountry ?? true) || inSelected(cargo)
-            ? 'selected'
-            : 'other';
-      return { cargo, pickupRank, section };
+    const ranked = enriched.map((e) => {
+      const pickupRank = origin ? CargosService.pickupRank(e.c.point, origin) : 2;
+      const home = isHome(e.c);
+      const section: 'home' | 'selected' | 'other' = home ? 'home' : (driver?.anyCountry ?? true) || inSelected(e.c) ? 'selected' : 'other';
+      return { ...e, pickupRank, section, home };
     });
-    const sectionOrder = { home: 0, selected: 1, other: 2 } as const;
-    ranked.sort(
-      (a, b) =>
-        a.pickupRank - b.pickupRank ||
-        sectionOrder[a.section] - sectionOrder[b.section] ||
-        a.cargo.readyDate.getTime() - b.cargo.readyDate.getTime(),
-    );
 
-    const pageRanked = ranked.slice(offset, offset + limit);
+    // 059 п.5: «Грузы из других городов» — свёрнуты, если город погрузки известен.
+    const collapse = !!origin && !query.showOtherCities;
+    const nearby = collapse ? ranked.filter((r) => r.pickupRank < 2) : ranked;
+    const otherCitiesCount = collapse ? ranked.length - nearby.length : 0;
+
+    // 059 п.1: чипы «куда» — из реальных грузов выборки (без фильтра «куда»).
+    const byCountry = new Map<string, number>();
+    const byCity = new Map<string, number>();
+    let homeCount = 0;
+    for (const r of nearby) {
+      byCountry.set(r.c.destinationCountryId, (byCountry.get(r.c.destinationCountryId) ?? 0) + 1);
+      if (r.c.destinationCityId) byCity.set(r.c.destinationCityId, (byCity.get(r.c.destinationCityId) ?? 0) + 1);
+      if (r.home) homeCount++;
+    }
+    const top = (m: Map<string, number>, n: number) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([id, count]) => ({ id, count }));
+    const chips = {
+      all: nearby.length,
+      home: homeCount,
+      countries: top(byCountry, 6),
+      cities: top(byCity, 4),
+    };
+
+    const matched = nearby.filter((r) => {
+      if (query.toHome && !r.home) return false;
+      if (query.toCityId) return r.c.destinationCityId === query.toCityId;
+      if (query.toCountryId) return r.c.destinationCountryId === query.toCountryId;
+      return true;
+    });
+
+    // 059 п.3: сортировка; по умолчанию — как раньше (город погрузки → домой → выбранные → дата).
+    const sectionOrder = { home: 0, selected: 1, other: 2 } as const;
+    const nullsLast = (a: number | null, b: number | null, dir: 1 | -1) => (a == null ? (b == null ? 0 : 1) : b == null ? -1 : (a - b) * dir);
+    const byDate = (a: (typeof matched)[number], b: (typeof matched)[number]) => a.c.readyDate.getTime() - b.c.readyDate.getTime();
+    const sorters: Record<FeedSort, (a: (typeof matched)[number], b: (typeof matched)[number]) => number> = {
+      default: (a, b) => a.pickupRank - b.pickupRank || sectionOrder[a.section] - sectionOrder[b.section] || byDate(a, b),
+      price_asc: (a, b) => nullsLast(a.priceKzt, b.priceKzt, 1) || byDate(a, b),
+      price_desc: (a, b) => nullsLast(a.priceKzt, b.priceKzt, -1) || byDate(a, b),
+      per_km: (a, b) => nullsLast(a.perKmKzt, b.perKmKzt, -1) || byDate(a, b),
+      ready: (a, b) => byDate(a, b) || a.pickupRank - b.pickupRank,
+      distance_asc: (a, b) => nullsLast(a.c.distanceKm, b.c.distanceKm, 1) || byDate(a, b),
+      distance_desc: (a, b) => nullsLast(a.c.distanceKm, b.c.distanceKm, -1) || byDate(a, b),
+      new: (a, b) => b.c.publishedAt.getTime() - a.c.publishedAt.getTime(),
+    };
+    matched.sort(sorters[query.sort ?? 'default']);
+
+    const meta = { total: matched.length, offset, limit, originCityId: origin?.cityId ?? null, originSource: query.fromCityId ? ('filter' as const) : source, chips, otherCitiesCount };
+    const pageRanked = limit === 0 ? [] : matched.slice(offset, offset + limit);
+    if (pageRanked.length === 0) return { items: [], ...meta };
+
+    // Полные карточки — только для страницы.
+    const pageIds = pageRanked.map((r) => r.c.id);
+    const full = new Map((await this.prisma.cargo.findMany({ where: { id: { in: pageIds } }, include: this.includeForDto })).map((c) => [c.id, c]));
     // 045 п.2: состояние груза для ЭТОГО водителя (вместо «Опубликован») и
     // сколько других водителей уже откликнулись — два запроса на страницу.
-    const pageIds = pageRanked.map((r) => r.cargo.id);
-    const [mine, others] = driverId && pageIds.length
+    const [mine, others] = driverId
       ? await Promise.all([
           this.prisma.response.findMany({ where: { cargoId: { in: pageIds }, driverId }, select: { cargoId: true, status: true } }),
           this.prisma.response.groupBy({
@@ -450,16 +530,30 @@ export class CargosService {
       : [[], []];
     const myStatus = new Map(mine.map((r) => [r.cargoId, r.status]));
     const othersCount = new Map(others.map((g) => [g.cargoId, g._count._all]));
-    const items = await Promise.all(
-      pageRanked.map(async ({ cargo, pickupRank, section }) => ({
-        ...(await this.toDto(cargo)),
-        pickupRank,
-        feedSection: section,
-        myResponseStatus: myStatus.get(cargo.id) ?? null,
-        responsesCount: othersCount.get(cargo.id) ?? 0,
-      })),
-    );
-    return { items, total: ranked.length, offset, limit, originCityId: origin?.cityId ?? null, originSource: source };
+    const items = (
+      await Promise.all(
+        pageRanked.map(async ({ c, pickupRank, section }) => {
+          const cargo = full.get(c.id);
+          if (!cargo) return null;
+          return {
+            ...(await this.toDto(cargo)),
+            pickupRank,
+            feedSection: section,
+            myResponseStatus: myStatus.get(c.id) ?? null,
+            responsesCount: othersCount.get(c.id) ?? 0,
+          };
+        }),
+      )
+    ).filter((x): x is NonNullable<typeof x> => x != null);
+    return { items, ...meta };
+  }
+
+  /// Курсы в ₸ (последний на валюту), ₸ = 1.
+  private async kztRates(): Promise<Record<string, number | undefined>> {
+    const rows = await this.prisma.exchangeRate.findMany({ orderBy: { effectiveDate: 'desc' } });
+    const out: Record<string, number | undefined> = { KZT: 1 };
+    for (const r of rows) if (out[r.currency] == null) out[r.currency] = Number(r.rateToKzt);
+    return out;
   }
 
   /// «Помещается к текущему: 8 т + 10 т из 20 т» (задача 040, п.6) — для

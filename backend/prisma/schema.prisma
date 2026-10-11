@@ -974,6 +974,9 @@ model Cargo {
 
   @@index([status, pointId, destinationCountryId])
   @@index([companyId])
+  /// 059: лента — выборка опубликованных по дате погрузки / «новые».
+  @@index([status, readyDate])
+  @@index([status, publishedAt])
   @@map("cargos")
 }
 
