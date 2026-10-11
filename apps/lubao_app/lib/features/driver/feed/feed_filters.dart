@@ -54,46 +54,53 @@ class FeedChipsBar extends ConsumerWidget {
             onSelected: (_) => onTap(),
           ),
         );
+    // 064 п.5: чипы «куда» — сразу видны слева и прокручиваются; «Фильтры» и
+    // «Сортировка» — иконками справа (с точкой, если активны): на SE / 360 с
+    // крупным шрифтом кнопки с подписями занимали всю ширину.
+    Widget iconButton({required Key key, required IconData icon, required String tooltip, required bool active, required VoidCallback onTap}) => Badge(
+          isLabelVisible: active,
+          smallSize: 8,
+          backgroundColor: AppColors.primary,
+          offset: const Offset(-6, 6),
+          child: IconButton(key: key, tooltip: tooltip, icon: Icon(icon, size: 22), onPressed: onTap),
+        );
     return SizedBox(
       height: 48,
-      child: ListView(
-        key: const Key('feedChipsBar'),
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+      child: Row(
         children: [
-          // Фильтры и сортировка — первыми: на узком экране видны сразу.
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: Badge(
-              isLabelVisible: filter.hasSheetFilters,
-              smallSize: 8,
-              backgroundColor: AppColors.primary,
-              child: ActionChip(
-                key: const Key('feedFiltersButton'),
-                avatar: const Icon(LucideIcons.slidersHorizontal, size: 16),
-                label: Text(t.feedFilters),
-                onPressed: () => showFeedFilterSheet(context, ref, refData),
-              ),
+          Expanded(
+            child: ListView(
+              key: const Key('feedChipsBar'),
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsetsDirectional.only(start: AppSpacing.screen, end: AppSpacing.xs),
+              children: [
+                chip('feedChipAll', t.feedChipAll('${chips.all}'), !filter.hasDestination, () => notifier.set(filter.withDestination())),
+                if (chips.home > 0) chip('feedChipHome', t.feedChipHome('${chips.home}'), filter.toHome, () => notifier.set(filter.withDestination(home: !filter.toHome))),
+                for (final c in chips.countries)
+                  chip('feedChipCountry-${c.id}', '${refData.countryById(c.id).name.forLanguageCode(locale)} ${c.count}', filter.toCountryId == c.id && filter.toCityId == null,
+                      () => notifier.set(filter.toCountryId == c.id && filter.toCityId == null ? filter.withDestination() : filter.withDestination(countryId: c.id))),
+                for (final c in chips.cities)
+                  if (refData.cityById(c.id) case final city?)
+                    chip('feedChipCity-${c.id}', '${city.name.forLanguageCode(locale)} ${c.count}', filter.toCityId == c.id,
+                        () => notifier.set(filter.toCityId == c.id ? filter.withDestination() : filter.withDestination(countryId: city.countryId, cityId: c.id))),
+              ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: ActionChip(
-              key: const Key('feedSortButton'),
-              avatar: const Icon(LucideIcons.arrowDownUp, size: 16),
-              label: Text(sortLabel(t, filter.sort)),
-              onPressed: () => _pickSort(context, ref),
-            ),
+          iconButton(
+            key: const Key('feedFiltersButton'),
+            icon: LucideIcons.slidersHorizontal,
+            tooltip: t.feedFilters,
+            active: filter.hasSheetFilters,
+            onTap: () => showFeedFilterSheet(context, ref, refData),
           ),
-          chip('feedChipAll', t.feedChipAll('${chips.all}'), !filter.hasDestination, () => notifier.set(filter.withDestination())),
-          if (chips.home > 0) chip('feedChipHome', t.feedChipHome('${chips.home}'), filter.toHome, () => notifier.set(filter.withDestination(home: !filter.toHome))),
-          for (final c in chips.countries)
-            chip('feedChipCountry-${c.id}', '${refData.countryById(c.id).name.forLanguageCode(locale)} ${c.count}', filter.toCountryId == c.id && filter.toCityId == null,
-                () => notifier.set(filter.toCountryId == c.id && filter.toCityId == null ? filter.withDestination() : filter.withDestination(countryId: c.id))),
-          for (final c in chips.cities)
-            if (refData.cityById(c.id) case final city?)
-              chip('feedChipCity-${c.id}', '${city.name.forLanguageCode(locale)} ${c.count}', filter.toCityId == c.id,
-                  () => notifier.set(filter.toCityId == c.id ? filter.withDestination() : filter.withDestination(countryId: city.countryId, cityId: c.id))),
+          iconButton(
+            key: const Key('feedSortButton'),
+            icon: LucideIcons.arrowDownUp,
+            tooltip: '${t.feedSortTitle}: ${sortLabel(t, filter.sort)}',
+            active: filter.sort != FeedSort.standard,
+            onTap: () => _pickSort(context, ref),
+          ),
+          const SizedBox(width: AppSpacing.sm),
         ],
       ),
     );
@@ -140,16 +147,28 @@ class ActiveFeedFilters extends ConsumerWidget {
     final locale = Localizations.localeOf(context).languageCode;
     final f = ref.watch(feedFilterProvider);
     final set = ref.read(feedFilterProvider.notifier).set;
+    String range(String Function(double) fmt, double? min, double? max) => min != null && max != null
+        ? '${fmt(min)}–${fmt(max)}'
+        : min != null
+            ? t.feedActiveFrom(fmt(min))
+            : t.feedActiveTo(fmt(max!));
     final items = <(String, String, FeedFilter)>[
+      // 064 п.6: «куда» — тоже здесь с ✕: пустая лента не бывает без видимой причины.
+      if (f.toHome)
+        ('to', '${t.feedFilterTo}: ${t.feedChipHome('').trim()}', f.withDestination())
+      else if (f.toCityId != null)
+        ('to', '${t.feedFilterTo}: ${refData.cityById(f.toCityId)?.name.forLanguageCode(locale) ?? ''}', f.withDestination())
+      else if (f.toCountryId != null)
+        ('to', '${t.feedFilterTo}: ${refData.countryById(f.toCountryId!).name.forLanguageCode(locale)}', f.withDestination()),
       if (f.fromCityId != null)
         ('from', '${t.feedFilterFrom}: ${refData.cityById(f.fromCityId)?.name.forLanguageCode(locale) ?? ''}', f.copyWith(fromCityId: null, fromCountryId: null))
       else if (f.fromCountryId != null)
         ('from', '${t.feedFilterFrom}: ${refData.countryById(f.fromCountryId!).name.forLanguageCode(locale)}', f.copyWith(fromCountryId: null)),
       for (final id in f.bodyTypeIds) ('body-$id', refData.bodyTypeById(id).name.forLanguageCode(locale), f.copyWith(bodyTypeIds: [...f.bodyTypeIds]..remove(id))),
       if (f.weightMinT != null || f.weightMaxT != null)
-        ('weight', t.feedActiveWeight('${f.weightMinT == null ? '0' : _num(f.weightMinT!)}–${f.weightMaxT == null ? '…' : _num(f.weightMaxT!)}'), f.copyWith(weightMinT: null, weightMaxT: null)),
+        ('weight', t.feedActiveWeight(range(_num, f.weightMinT, f.weightMaxT)), f.copyWith(weightMinT: null, weightMaxT: null)),
       if (f.priceMin != null || f.priceMax != null)
-        ('price', '${t.feedFilterPrice}: ${f.priceMin == null ? '0' : formatCurrencyAmount(f.priceMin!, f.priceCurrency)}–${f.priceMax == null ? '…' : formatCurrencyAmount(f.priceMax!, f.priceCurrency)}', f.copyWith(priceMin: null, priceMax: null)),
+        ('price', '${t.feedFilterPrice}: ${range((v) => formatCurrencyAmount(v, f.priceCurrency), f.priceMin, f.priceMax)}', f.copyWith(priceMin: null, priceMax: null)),
       if (f.perKmMin != null) ('perkm', t.feedActivePerKm('${f.perKmMin}'), f.copyWith(perKmMin: null)),
       if (f.ready != FeedReady.any) ('ready', readyLabel(t, f.ready), f.copyWith(ready: FeedReady.any)),
       if (f.withAdvance) ('advance', t.feedActiveAdvance, f.copyWith(withAdvance: false)),
@@ -220,14 +239,20 @@ class _FeedFilterSheetState extends ConsumerState<_FeedFilterSheet> {
     _refreshCount();
   }
 
+  // 064 п.4: номер запроса счётчика — устаревший ответ (пришёл после
+  // следующей правки) не перезаписывает новый.
+  int _countRequest = 0;
+
   void _refreshCount() {
     _debounce?.cancel();
+    final request = ++_countRequest;
+    setState(() => _count = null);
     _debounce = Timer(const Duration(milliseconds: 350), () async {
       try {
         final n = await ref.read(cargoRepositoryProvider).feedCount(_draft);
-        if (mounted) setState(() => _count = n);
+        if (mounted && request == _countRequest) setState(() => _count = n);
       } catch (_) {
-        if (mounted) setState(() => _count = null);
+        if (mounted && request == _countRequest) setState(() => _count = null);
       }
     });
   }
@@ -377,7 +402,7 @@ class _FeedFilterSheetState extends ConsumerState<_FeedFilterSheet> {
                   Expanded(
                     child: PrimaryButton(
                       key: const Key('feedFilterShow'),
-                      label: t.feedFilterShow(_count == null ? '…' : '$_count'),
+                      label: _count == null ? t.feedFilterShowAny : t.feedFilterShow(_count!),
                       onPressed: () {
                         ref.read(feedFilterProvider.notifier).set(_draft);
                         Navigator.pop(context);

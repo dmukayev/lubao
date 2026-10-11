@@ -3673,7 +3673,31 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get feedFilterTo => 'To';
 
   @override
-  String get feedFilterAnyCity => 'Any city';
+  String feedFilterShow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Show $count loads',
+      one: 'Show $count load',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get feedFilterShowAny => 'Show loads';
+
+  @override
+  String feedActiveFrom(String value) {
+    return 'from $value';
+  }
+
+  @override
+  String feedActiveTo(String value) {
+    return 'up to $value';
+  }
+
+  @override
+  String get feedSortTitle => 'Sort';
 
   @override
   String get feedFilterBody => 'Body type';
@@ -3716,11 +3740,6 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get feedFilterReset => 'Reset';
-
-  @override
-  String feedFilterShow(String count) {
-    return 'Show $count';
-  }
 
   @override
   String feedOtherCities(String count) {

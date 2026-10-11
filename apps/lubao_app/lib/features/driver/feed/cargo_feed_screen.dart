@@ -33,6 +33,11 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
   final List<Cargo> _more = [];
   int _total = 0;
   bool _loadingMore = false;
+  // 064 п.3: номер поколения ленты — ответ подгрузки, пришедший после смены
+  // фильтра или обновления, отбрасывается.
+  int _generation = 0;
+  // 064 п.10: подгрузка не удалась — кнопка «Повторить», без повтора на каждую прокрутку.
+  bool _loadMoreFailed = false;
 
   /// 045 п.11: первый вход после регистрации — шторка «Где вы сейчас?» сама,
   /// один раз (без отдельного шага «Ищете груз?» и без автоматического анонса).
@@ -50,24 +55,38 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
   }
 
   Future<void> _loadMore(CargoFeedPage first) async {
-    setState(() => _loadingMore = true);
+    final generation = _generation;
+    setState(() {
+      _loadingMore = true;
+      _loadMoreFailed = false;
+    });
     try {
       final page = await ref.read(cargoRepositoryProvider).feed(offset: first.items.length + _more.length, filter: ref.read(feedFilterProvider));
-      if (!mounted) return;
+      if (!mounted || generation != _generation) return;
       setState(() {
-        _more.addAll(page.items);
+        // 064 п.1: уже показанные грузы не дописываются второй раз.
+        final shown = {for (final c in first.items) c.id, for (final c in _more) c.id};
+        _more.addAll(page.items.where((c) => shown.add(c.id)));
         _total = page.total;
       });
     } catch (e) {
-      if (mounted) showApiError(context, e, onRetry: () => _loadMore(first));
+      if (mounted && generation == _generation) setState(() => _loadMoreFailed = true);
     } finally {
-      if (mounted) setState(() => _loadingMore = false);
+      if (mounted && generation == _generation) setState(() => _loadingMore = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    // 064 п.7: «откуда», выбранное вручную, — только до смены статуса.
+    ref.listen(myArrivalsProvider.select((a) => a.valueOrNull?.current?.pointId), (prev, next) {
+      if (prev == next) return;
+      final filter = ref.read(feedFilterProvider);
+      if (filter.fromCityId != null || filter.fromCountryId != null) {
+        ref.read(feedFilterProvider.notifier).set(filter.copyWith(fromCityId: null, fromCountryId: null));
+      }
+    });
     final referenceData = ref.watch(referenceDataProvider);
     final cargoFeed = ref.watch(cargoFeedProvider);
 
@@ -95,6 +114,9 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                 _firstPage = first;
                 _more.clear();
                 _total = first.total;
+                _generation++;
+                _loadingMore = false;
+                _loadMoreFailed = false;
               }
               PerfLog.feedShown();
               final items = [...first.items, ..._more];
@@ -113,7 +135,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                 child: NotificationListener<Notification>(
                   onNotification: (n) {
                     final metrics = n is ScrollNotification ? n.metrics : n is ScrollMetricsNotification ? n.metrics : null;
-                    if (metrics != null && metrics.axis == Axis.vertical && metrics.extentAfter < 800 && hasMore && !_loadingMore) {
+                    if (metrics != null && metrics.axis == Axis.vertical && metrics.extentAfter < 800 && hasMore && !_loadingMore && !_loadMoreFailed) {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (mounted && !_loadingMore) _loadMore(first);
                       });
@@ -164,6 +186,15 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                       const Padding(
                         padding: EdgeInsets.all(AppSpacing.md),
                         child: Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))),
+                      ),
+                    if (_loadMoreFailed && hasMore)
+                      Center(
+                        child: TextButton.icon(
+                          key: const Key('feedLoadMoreRetry'),
+                          icon: const Icon(LucideIcons.rotateCw, size: 16),
+                          onPressed: () => _loadMore(first),
+                          label: Text(t.commonRetry),
+                        ),
                       ),
                     // 059 п.5: грузы из других городов — свёрнуты строкой.
                     if (!hasMore && first.otherCitiesCount > 0 && !ref.watch(feedFilterProvider).showOtherCities)

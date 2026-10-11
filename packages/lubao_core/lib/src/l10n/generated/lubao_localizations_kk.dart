@@ -3671,7 +3671,30 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get feedFilterTo => 'Қайда';
 
   @override
-  String get feedFilterAnyCity => 'Кез келген қала';
+  String feedFilterShow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count жүкті көрсету',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get feedFilterShowAny => 'Жүктерді көрсету';
+
+  @override
+  String feedActiveFrom(String value) {
+    return '$value бастап';
+  }
+
+  @override
+  String feedActiveTo(String value) {
+    return '$value дейін';
+  }
+
+  @override
+  String get feedSortTitle => 'Сұрыптау';
 
   @override
   String get feedFilterBody => 'Шанақ';
@@ -3714,11 +3737,6 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get feedFilterReset => 'Тазалау';
-
-  @override
-  String feedFilterShow(String count) {
-    return 'Көрсету: $count';
-  }
 
   @override
   String feedOtherCities(String count) {

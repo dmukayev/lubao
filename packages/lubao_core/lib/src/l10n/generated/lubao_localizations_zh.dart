@@ -3588,7 +3588,30 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get feedFilterTo => '目的地';
 
   @override
-  String get feedFilterAnyCity => '任意城市';
+  String feedFilterShow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '显示 $count 个货物',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get feedFilterShowAny => '显示货物';
+
+  @override
+  String feedActiveFrom(String value) {
+    return '$value 起';
+  }
+
+  @override
+  String feedActiveTo(String value) {
+    return '至 $value';
+  }
+
+  @override
+  String get feedSortTitle => '排序';
 
   @override
   String get feedFilterBody => '车厢类型';
@@ -3631,11 +3654,6 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get feedFilterReset => '重置';
-
-  @override
-  String feedFilterShow(String count) {
-    return '显示 $count 条';
-  }
 
   @override
   String feedOtherCities(String count) {

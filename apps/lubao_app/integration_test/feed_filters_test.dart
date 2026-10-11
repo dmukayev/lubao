@@ -121,7 +121,7 @@ void main() {
       await tester.enterText(find.byKey(const Key('feedFilterWeight-max')), '20');
       await tester.pumpAndSettle(const Duration(seconds: 2));
       final expected = (await api.feed({'bodyTypeIds': tentId, 'weightMinT': 10, 'weightMaxT': 20}))['total'] as int;
-      await waitFor(tester, find.text(t.feedFilterShow('$expected')));
+      await waitFor(tester, find.text(t.feedFilterShow(expected)));
       expectNoOverflow(tester);
       await tester.tap(find.byKey(const Key('feedFilterShow')));
       await tester.pumpAndSettle(const Duration(seconds: 1));

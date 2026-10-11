@@ -128,9 +128,9 @@ class FeedFilter {
         if (showOtherCities) 'showOtherCities': 'true',
       };
 
+  /// 064 п.7: «откуда» на устройстве не храним — по умолчанию всегда город из
+  /// статуса водителя; выбранный вручную живёт до смены статуса.
   String toJsonString() => jsonEncode({
-        'fromCountryId': fromCountryId,
-        'fromCityId': fromCityId,
         'toCountryId': toCountryId,
         'toCityId': toCityId,
         'toHome': toHome,
@@ -152,8 +152,6 @@ class FeedFilter {
       final j = jsonDecode(raw) as Map<String, dynamic>;
       double? d(Object? v) => (v as num?)?.toDouble();
       return FeedFilter(
-        fromCountryId: j['fromCountryId'] as String?,
-        fromCityId: j['fromCityId'] as String?,
         toCountryId: j['toCountryId'] as String?,
         toCityId: j['toCityId'] as String?,
         toHome: j['toHome'] as bool? ?? false,

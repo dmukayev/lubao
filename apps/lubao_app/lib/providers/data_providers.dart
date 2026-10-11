@@ -7,10 +7,15 @@ import 'api_providers.dart';
 /// 059: фильтр и сортировка ленты — запоминается на устройстве.
 class FeedFilterNotifier extends StateNotifier<FeedFilter> {
   FeedFilterNotifier(this._store) : super(FeedFilter.empty) {
-    _store.load().then((saved) {
+    // Хранилище не ответило за 2 с — лента не ждёт, фильтр пустой.
+    ready = _store.load().timeout(const Duration(seconds: 2), onTimeout: () => FeedFilter.empty).then((saved) {
       if (mounted && state == FeedFilter.empty) state = saved;
     });
   }
+
+  /// 064 п.10: сохранённый фильтр прочитан — лента при старте ждёт его и
+  /// уходит одним запросом (а не «пустой» + «сохранённый»).
+  late final Future<void> ready;
 
   final FeedFilterStore _store;
 
@@ -25,7 +30,9 @@ final feedFilterStoreProvider = Provider<FeedFilterStore>((ref) => FeedFilterSto
 
 final feedFilterProvider = StateNotifierProvider<FeedFilterNotifier, FeedFilter>((ref) => FeedFilterNotifier(ref.watch(feedFilterStoreProvider)));
 
-final cargoFeedProvider = FutureProvider.autoDispose<CargoFeedPage>((ref) {
+final cargoFeedProvider = FutureProvider.autoDispose<CargoFeedPage>((ref) async {
+  // Сначала — сохранённый фильтр, потом подписка на него: один запрос при старте.
+  await ref.read(feedFilterProvider.notifier).ready;
   return ref.watch(cargoRepositoryProvider).feed(filter: ref.watch(feedFilterProvider));
 });
 

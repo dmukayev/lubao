@@ -115,6 +115,7 @@ Future<void> _pump(
       arrivalRepositoryProvider.overrideWithValue(arrivals),
       referenceDataProvider.overrideWith((ref) async => _refData),
       arrivalTemplateProvider.overrideWith((ref) async => null),
+      feedFilterStoreProvider.overrideWithValue(_MemoryFilterStore()),
     ],
     child: MaterialApp(
       locale: const Locale('ru'),
@@ -155,6 +156,21 @@ void main() {
     expect(cargos.requestedOffsets, [0, 2]);
     await tester.scrollUntilVisible(find.byKey(const Key('feedCargoCard-c3')), 300, scrollable: find.byType(Scrollable).first);
     expect(find.byKey(const Key('feedCargoCard-c3')), findsOneWidget);
+  });
+
+  testWidgets('064 п.1: груз, повторившийся на следующей странице, не дублируется (нет двух одинаковых ключей); один запрос при старте', (tester) async {
+    final cargos = _FakeCargoRepository({
+      0: CargoFeedPage(items: [_cargo('c1', pointId: 'p-almaty', rank: 0), _cargo('c2', pointId: 'p-almaty', rank: 0)], total: 4, offset: 0),
+      2: CargoFeedPage(items: [_cargo('c2', pointId: 'p-almaty', rank: 0), _cargo('c3', pointId: 'p-astana', rank: 2)], total: 4, offset: 2),
+      3: CargoFeedPage(items: [_cargo('c4', pointId: 'p-astana', rank: 2)], total: 4, offset: 3),
+    });
+    await _pump(tester, cargos: cargos, arrivals: _FakeArrivalRepository(const MyArrivals(current: null, all: [])));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(cargos.requestedOffsets.where((o) => o == 0), hasLength(1), reason: 'первая страница — одним запросом');
+    await tester.scrollUntilVisible(find.byKey(const Key('feedCargoCard-c4')), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.byKey(const Key('feedCargoCard-c2')), findsOneWidget);
+    expect(find.byKey(const Key('feedCargoCard-c4')), findsOneWidget);
   });
 
   testWidgets('несколько анонсов: текущий — крупно, остальные — строками с «Отменить»', (tester) async {
@@ -223,4 +239,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(cargos.requestedFilters.last.toCountryId, 'uz');
   });
+}
+
+
+/// Фильтр ленты в памяти: в виджет-тестах нет защищённого хранилища.
+class _MemoryFilterStore extends FeedFilterStore {
+  FeedFilter _saved = FeedFilter.empty;
+
+  @override
+  Future<FeedFilter> load() async => _saved;
+
+  @override
+  Future<void> save(FeedFilter filter) async => _saved = filter;
+
+  @override
+  Future<void> clear() async => _saved = FeedFilter.empty;
 }

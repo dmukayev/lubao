@@ -6828,11 +6828,35 @@ abstract class LubaoLocalizations {
   /// **'Куда'**
   String get feedFilterTo;
 
-  /// No description provided for @feedFilterAnyCity.
+  /// No description provided for @feedFilterShow.
   ///
   /// In ru, this message translates to:
-  /// **'Любой город'**
-  String get feedFilterAnyCity;
+  /// **'{count, plural, one{Показать {count} груз} few{Показать {count} груза} many{Показать {count} грузов} other{Показать {count} груза}}'**
+  String feedFilterShow(int count);
+
+  /// No description provided for @feedFilterShowAny.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показать грузы'**
+  String get feedFilterShowAny;
+
+  /// No description provided for @feedActiveFrom.
+  ///
+  /// In ru, this message translates to:
+  /// **'от {value}'**
+  String feedActiveFrom(String value);
+
+  /// No description provided for @feedActiveTo.
+  ///
+  /// In ru, this message translates to:
+  /// **'до {value}'**
+  String feedActiveTo(String value);
+
+  /// No description provided for @feedSortTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сортировка'**
+  String get feedSortTitle;
 
   /// No description provided for @feedFilterBody.
   ///
@@ -6917,12 +6941,6 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Сбросить'**
   String get feedFilterReset;
-
-  /// No description provided for @feedFilterShow.
-  ///
-  /// In ru, this message translates to:
-  /// **'Показать: {count}'**
-  String feedFilterShow(String count);
 
   /// No description provided for @feedOtherCities.
   ///
