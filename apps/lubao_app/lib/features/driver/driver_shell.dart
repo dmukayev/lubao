@@ -7,22 +7,24 @@ import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
+import '../../router/tab_scroll.dart';
 import 'trips/driver_trips_screen.dart';
 
 /// 053 п.6: отдельного списка уведомлений нет — непрочитанные сообщения и
 /// «Нужно ответить» цифрами на вкладках; обновляются по сокету.
 /// 056 п.6: внизу Грузы · Мои рейсы · Чаты · Профиль.
 class DriverShell extends ConsumerStatefulWidget {
-  const DriverShell({super.key, required this.child});
+  const DriverShell({super.key, required this.navigationShell});
 
-  final Widget child;
+  /// 060: вкладки в памяти (StatefulShellRoute.indexedStack).
+  final StatefulNavigationShell navigationShell;
 
   @override
   ConsumerState<DriverShell> createState() => _DriverShellState();
 }
 
 class _DriverShellState extends ConsumerState<DriverShell> {
-  static const _tabs = ['/driver/feed', '/driver/trips', '/driver/chats', '/driver/profile'];
+  static const _tabIds = ['driver.feed', 'driver.trips', 'driver.chats', 'driver.profile'];
 
   final _subs = <StreamSubscription<Object?>>[];
 
@@ -61,16 +63,11 @@ class _DriverShellState extends ConsumerState<DriverShell> {
     super.dispose();
   }
 
-  int _indexForLocation(String location) {
-    final index = _tabs.indexWhere((tab) => location.startsWith(tab));
-    return index < 0 ? 0 : index;
-  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    final location = GoRouterState.of(context).matchedLocation;
-    final currentIndex = _indexForLocation(location);
+    final currentIndex = widget.navigationShell.currentIndex;
     final unread = (ref.watch(myChatsProvider).valueOrNull ?? const <MyChatEntry>[]).fold<int>(0, (sum, c) => sum + c.unreadCount);
     // «Нужно ответить»: выбран — подтвердите, приглашён — ответьте.
     final waiting = tripsNeedAnswerCount(
@@ -79,16 +76,17 @@ class _DriverShellState extends ConsumerState<DriverShell> {
     );
 
     return Scaffold(
-      body: widget.child,
+      body: widget.navigationShell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
+        // 060: переключение мгновенное, данные — из памяти (свежие приходят
+        // по сокету); повторное нажатие — прокрутка наверх.
         onDestinationSelected: (index) {
-          if (index == 1) {
-            ref.invalidate(dealsMineProvider);
-            ref.invalidate(myResponsesProvider);
+          if (index == currentIndex) {
+            scrollTabToTop(_tabIds[index]);
+          } else {
+            widget.navigationShell.goBranch(index);
           }
-          if (index == 2) ref.invalidate(myChatsProvider);
-          context.go(_tabs[index]);
         },
         // Эталон 33: свои цветные иконки (design/brand/nav).
         destinations: [

@@ -9,11 +9,13 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../providers/api_providers.dart';
 import '../../shared/pd_consent.dart';
 import '../../shared/photo_picker.dart';
+import '../../../services/disk_bytes_cache.dart';
 
 /// Своё фото машины с сервера (053 п.5). Ключ — id документа: после
 /// «Переснять» id новый, миниатюра перечитывается.
 final ownVehiclePhotoProvider = FutureProvider.autoDispose.family<Uint8List, ({String vehicleId, String type, String documentId})>(
-  (ref, key) => ref.watch(driverRepositoryProvider).ownVehiclePhoto(key.vehicleId, key.type),
+  // 060 п.4: кэш на диске — по id документа (новое фото — новый id).
+  (ref, key) => DiskBytesCache.instance.getOrFetch('vphoto:${key.documentId}', () => ref.read(driverRepositoryProvider).ownVehiclePhoto(key.vehicleId, key.type)),
 );
 
 /// Фото спереди вместо иконки (053 п.4) — в гараже, выборе машины при анонсе,

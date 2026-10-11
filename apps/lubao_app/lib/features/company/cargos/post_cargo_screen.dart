@@ -15,6 +15,7 @@ import '../../shared/photo_picker.dart';
 import '../../shared/error_feedback.dart';
 import '../../shared/status_helpers.dart';
 import '../../../services/push_service.dart';
+import '../../shared/cached_photo.dart';
 
 class PostCargoScreen extends ConsumerStatefulWidget {
   const PostCargoScreen({super.key, this.cargo, this.template});
@@ -801,7 +802,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.network(url, width: 88, height: 88, fit: BoxFit.cover),
+                          child: CachedPhoto(url, size: 88),
                         ),
                         Positioned(
                           top: -8,

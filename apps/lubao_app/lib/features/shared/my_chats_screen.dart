@@ -60,7 +60,7 @@ class _MyChatsScreenState extends ConsumerState<MyChatsScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(t.chatsTabTitle)),
       body: chats.when(
-        loading: () => const LoadingView(),
+        loading: () => const SkeletonList(lines: 2),
         error: (e, st) {
           debugPrint('MyChatsScreen: $e');
           return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(myChatsProvider));

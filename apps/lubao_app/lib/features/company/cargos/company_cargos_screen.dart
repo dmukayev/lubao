@@ -323,7 +323,7 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
 
     Widget body;
     if (_items.isEmpty && _loading) {
-      body = const LoadingView();
+      body = const SkeletonList();
     } else if (_items.isEmpty && _error != null) {
       body = ErrorView(message: t.commonError, onRetry: () => _load(reset: true));
     } else if (_items.isEmpty) {

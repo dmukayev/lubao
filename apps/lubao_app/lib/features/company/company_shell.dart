@@ -7,6 +7,7 @@ import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
+import '../../router/tab_scroll.dart';
 
 /// 056 п.5: числа «Грузов» и новые отклики этого сотрудника — цифра на вкладке.
 final companyCargoCountsProvider = FutureProvider.autoDispose<Map<String, int>>((ref) {
@@ -14,9 +15,10 @@ final companyCargoCountsProvider = FutureProvider.autoDispose<Map<String, int>>(
 });
 
 class CompanyShell extends ConsumerStatefulWidget {
-  const CompanyShell({super.key, required this.child});
+  const CompanyShell({super.key, required this.navigationShell});
 
-  final Widget child;
+  /// 060: вкладки в памяти (StatefulShellRoute.indexedStack).
+  final StatefulNavigationShell navigationShell;
 
   @override
   ConsumerState<CompanyShell> createState() => _CompanyShellState();
@@ -25,6 +27,7 @@ class CompanyShell extends ConsumerStatefulWidget {
 class _CompanyShellState extends ConsumerState<CompanyShell> {
   /// 056 п.4: вкладки «Сделки» у логиста нет — «В работе» и архив в «Грузах».
   static const _tabs = ['/company/cargos', '/company/drivers', '/company/chats', '/company/profile'];
+  static const _tabIds = ['company.cargos', 'company.drivers', 'company.chats', 'company.profile'];
 
   String? _lastLocation;
   final _subs = <StreamSubscription<Object?>>[];
@@ -60,17 +63,17 @@ class _CompanyShellState extends ConsumerState<CompanyShell> {
     super.dispose();
   }
 
-  int _indexForLocation(String location) {
-    final index = _tabs.indexWhere((tab) => location.startsWith(tab));
-    return index < 0 ? 0 : index;
-  }
+  bool _isTab(String location) => _tabs.any(location.startsWith);
+
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
     final location = GoRouterState.of(context).matchedLocation;
     // Вернулись в «Грузы» (например, из откликов груза) — новые пересчитать.
-    if (_lastLocation != null && _lastLocation != location) {
+    // 060: между вкладками ничего не перечитываем — только при возврате с
+    // вложенного экрана (отклики, чат).
+    if (_lastLocation != null && _lastLocation != location && !_isTab(_lastLocation!)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         // Вернулись из откликов / из чата — новые и непрочитанные пересчитать.
@@ -79,18 +82,21 @@ class _CompanyShellState extends ConsumerState<CompanyShell> {
       });
     }
     _lastLocation = location;
-    final currentIndex = _indexForLocation(location);
+    final currentIndex = widget.navigationShell.currentIndex;
     final newResponses = ref.watch(companyCargoCountsProvider).valueOrNull?['newResponses'] ?? 0;
     final unread = (ref.watch(myChatsProvider).valueOrNull ?? const <MyChatEntry>[]).fold<int>(0, (sum, c) => sum + c.unreadCount);
 
     return Scaffold(
-      body: widget.child,
+      body: widget.navigationShell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
+        // 060: мгновенно, из памяти; повторное нажатие — наверх.
         onDestinationSelected: (index) {
-          if (index == 0) ref.invalidate(companyCargoCountsProvider);
-          if (index == 2) ref.invalidate(myChatsProvider);
-          context.go(_tabs[index]);
+          if (index == currentIndex) {
+            scrollTabToTop(_tabIds[index]);
+          } else {
+            widget.navigationShell.goBranch(index);
+          }
         },
         // Эталон 33: свои цветные иконки (design/brand/nav).
         destinations: [

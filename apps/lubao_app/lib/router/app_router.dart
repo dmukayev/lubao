@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 
+import 'tab_scroll.dart';
+
 import '../providers/app_update_provider.dart';
 import '../providers/auth_provider.dart';
 import '../features/onboarding/role_select_screen.dart';
@@ -143,15 +145,25 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/invite/:token',
         builder: (context, state) => AcceptInviteScreen(token: state.pathParameters['token']!),
       ),
-      ShellRoute(
-        builder: (context, state, child) => DriverShell(child: child),
-        routes: [
-          GoRoute(path: '/driver/feed', builder: (context, state) => const CargoFeedScreen()),
-          GoRoute(path: '/driver/chats', builder: (context, state) => const MyChatsScreen()),
-          // 056 п.6: «Сделки» водителя → «Мои рейсы»; старые ссылки и push — туда же.
-          GoRoute(path: '/driver/trips', builder: (context, state) => const DriverTripsScreen()),
-          GoRoute(path: '/driver/deals', redirect: (context, state) => '/driver/trips'),
-          GoRoute(path: '/driver/profile', builder: (context, state) => const DriverProfileScreen()),
+      // 060: вкладки в памяти (IndexedStack) — без перехода и чёрных полос,
+      // прокрутка и данные сохраняются; повторное нажатие — наверх.
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => DriverShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/driver/feed', builder: (context, state) => tabRoot('driver.feed', const CargoFeedScreen())),
+          ]),
+          StatefulShellBranch(routes: [
+            // 056 п.6: «Сделки» водителя → «Мои рейсы»; старые ссылки и push — туда же.
+            GoRoute(path: '/driver/trips', builder: (context, state) => tabRoot('driver.trips', const DriverTripsScreen())),
+            GoRoute(path: '/driver/deals', redirect: (context, state) => '/driver/trips'),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/driver/chats', builder: (context, state) => tabRoot('driver.chats', const MyChatsScreen())),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/driver/profile', builder: (context, state) => tabRoot('driver.profile', const DriverProfileScreen())),
+          ]),
         ],
       ),
       GoRoute(
@@ -177,21 +189,32 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/driver/responses', redirect: (context, state) => '/driver/trips'),
       GoRoute(path: '/driver/history', builder: (context, state) => const TripHistoryScreen()),
       GoRoute(path: '/driver/company/:id', builder: (context, state) => CompanyCargosPublicScreen(companyId: state.pathParameters['id']!)),
-      ShellRoute(
-        builder: (context, state, child) => CompanyShell(child: child),
-        routes: [
-          GoRoute(
-            path: '/company/cargos',
-            builder: (context, state) => CompanyCargosScreen(
-              key: ValueKey(state.uri.queryParameters['tab']),
-              initialTab: CompanyCargoTab.values.firstWhere((t) => t.name == state.uri.queryParameters['tab'], orElse: () => CompanyCargoTab.active),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => CompanyShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/company/cargos',
+              builder: (context, state) => tabRoot(
+                'company.cargos',
+                CompanyCargosScreen(
+                  key: ValueKey(state.uri.queryParameters['tab']),
+                  initialTab: CompanyCargoTab.values.firstWhere((t) => t.name == state.uri.queryParameters['tab'], orElse: () => CompanyCargoTab.active),
+                ),
+              ),
             ),
-          ),
-          GoRoute(path: '/company/drivers', builder: (context, state) => const DriversAtPointScreen()),
-          GoRoute(path: '/company/chats', builder: (context, state) => const MyChatsScreen()),
-          // 056 п.4: старые ссылки и push на «Сделки» логиста — «Грузы» → «В работе».
-          GoRoute(path: '/company/deals', redirect: (context, state) => '/company/cargos?tab=work'),
-          GoRoute(path: '/company/profile', builder: (context, state) => const CompanyProfileScreen()),
+            // 056 п.4: старые ссылки и push на «Сделки» логиста — «Грузы» → «В работе».
+            GoRoute(path: '/company/deals', redirect: (context, state) => '/company/cargos?tab=work'),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/company/drivers', builder: (context, state) => tabRoot('company.drivers', const DriversAtPointScreen())),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/company/chats', builder: (context, state) => tabRoot('company.chats', const MyChatsScreen())),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/company/profile', builder: (context, state) => tabRoot('company.profile', const CompanyProfileScreen())),
+          ]),
         ],
       ),
       GoRoute(

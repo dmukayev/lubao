@@ -18,6 +18,7 @@ import '../../shared/error_feedback.dart';
 import '../../shared/offer_sheet.dart';
 import '../../shared/share_action.dart';
 import 'favorite_button.dart';
+import '../../shared/cached_photo.dart';
 
 class CargoDetailScreen extends ConsumerStatefulWidget {
   const CargoDetailScreen({super.key, required this.cargoId});
@@ -570,7 +571,7 @@ class _CargoDetailBody extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(AppRadius.field),
                   child: GestureDetector(
                     onTap: () => _openPhoto(context, cargo.photoUrls, index),
-                    child: Image.network(cargo.photoUrls[index], width: 96, height: 96, fit: BoxFit.cover),
+                    child: CachedPhoto(cargo.photoUrls[index], size: 96),
                   ),
                 ),
               ),
@@ -696,7 +697,7 @@ class _CargoDetailBody extends ConsumerWidget {
           body: PageView.builder(
             controller: PageController(initialPage: initialIndex),
             itemCount: photoUrls.length,
-            itemBuilder: (context, index) => InteractiveViewer(child: Center(child: Image.network(photoUrls[index]))),
+            itemBuilder: (context, index) => InteractiveViewer(child: Center(child: CachedPhoto(photoUrls[index], fit: BoxFit.contain))),
           ),
         ),
       ),

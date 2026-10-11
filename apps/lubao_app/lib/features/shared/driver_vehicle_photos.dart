@@ -6,13 +6,15 @@ import 'package:lubao_core/lubao_core.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/api_providers.dart';
+import '../../services/disk_bytes_cache.dart';
 
 final _photosProvider = FutureProvider.autoDispose.family<List<({String documentId, String type, String? plateNumber})>, String>(
   (ref, driverId) => ref.watch(cargoRepositoryProvider).driverVehiclePhotos(driverId),
 );
 
 final _photoFileProvider = FutureProvider.autoDispose.family<Uint8List, (String, String)>(
-  (ref, key) => ref.watch(cargoRepositoryProvider).driverVehiclePhotoFile(key.$1, key.$2),
+  // 060 п.4: кэш на диске — по id документа.
+  (ref, key) => DiskBytesCache.instance.getOrFetch('vphoto:${key.$2}', () => ref.read(cargoRepositoryProvider).driverVehiclePhotoFile(key.$1, key.$2)),
 );
 
 /// Фото машины водителя у логиста (044 п.7): «Кто свободен», отклик. Нет фото —

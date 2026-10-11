@@ -63,7 +63,7 @@ class DriverTripsScreen extends ConsumerWidget {
 
     Widget body;
     if ((dealsAsync.isLoading && !dealsAsync.hasValue) || (responsesAsync.isLoading && !responsesAsync.hasValue)) {
-      body = const LoadingView();
+      body = const SkeletonList();
     } else if (dealsAsync.hasError || responsesAsync.hasError) {
       body = ErrorView(message: t.commonError, onRetry: () => _refresh(ref));
     } else {

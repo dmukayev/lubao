@@ -193,6 +193,15 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.bg,
+      // 060: за уезжающей страницей — фон приложения, а не чёрный навигатор
+      // (Android: zoom-переход с фоном; iOS: свой Cupertino-переход).
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ZoomPageTransitionsBuilder(backgroundColor: AppColors.bg),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       fontFamily: _fontFamily,
       fontFamilyFallback: _fontFamilyFallback,
       splashFactory: InkRipple.splashFactory,

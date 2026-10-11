@@ -5,12 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/api_providers.dart';
+import '../../services/disk_bytes_cache.dart';
 
 /// 054: миниатюра фото профиля водителя по версии (`?v` меняется при смене —
 /// кэш не показывает старое). Нет фото / сбой — null, у вызывающего буквы.
 final driverAvatarProvider = FutureProvider.family<Uint8List?, ({String driverId, String version})>((ref, key) async {
   try {
-    return await ref.watch(driverRepositoryProvider).driverAvatar(key.driverId);
+    // 060 п.4: кэш на диске по версии фото (новое фото — новая версия).
+    return await DiskBytesCache.instance.getOrFetch('avatar:${key.driverId}:${key.version}', () => ref.read(driverRepositoryProvider).driverAvatar(key.driverId));
   } catch (_) {
     return null;
   }

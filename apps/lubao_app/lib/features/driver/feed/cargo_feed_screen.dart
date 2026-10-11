@@ -72,13 +72,13 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
     return Scaffold(
       body: SafeArea(
         child: referenceData.when(
-          loading: () => const LoadingView(),
+          loading: () => const SkeletonList(),
           error: (e, st) {
             debugPrint('CargoFeedScreen (referenceData): $e');
             return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(referenceDataProvider));
           },
           data: (refData) => cargoFeed.when(
-            loading: () => const LoadingView(),
+            loading: () => const SkeletonList(),
             error: (e, st) {
               debugPrint('CargoFeedScreen (cargoFeed): $e');
               return ErrorView(

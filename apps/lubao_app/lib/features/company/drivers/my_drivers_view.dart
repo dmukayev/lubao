@@ -79,7 +79,7 @@ class MyDriversView extends ConsumerWidget {
       ),
     );
     return async.when(
-      loading: () => const LoadingView(),
+      loading: () => const SkeletonList(lines: 2),
       error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(myDriversProvider)),
       data: (list) => RefreshIndicator(
         onRefresh: () async => ref.invalidate(myDriversProvider),

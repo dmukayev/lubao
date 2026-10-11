@@ -24,6 +24,7 @@ export 'src/widgets/vehicle_photo_hint.dart';
 export 'src/widgets/person_avatar.dart';
 export 'src/widgets/specs_form.dart';
 export 'src/widgets/nav_svg_icon.dart';
+export 'src/widgets/skeleton_list.dart';
 export 'src/widgets/number_input.dart';
 export 'src/widgets/lubao_brand.dart';
 export 'src/widgets/whatsapp_icon.dart';
