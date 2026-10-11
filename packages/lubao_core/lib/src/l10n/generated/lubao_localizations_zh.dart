@@ -4082,6 +4082,36 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get cargoRepeat => '再发一次';
 
   @override
+  String kztMillionsApprox(String value) {
+    return '≈ $value百万 ₸';
+  }
+
+  @override
+  String get logistOneTruck => '1 辆车';
+
+  @override
+  String logistTrucksNeeded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '需要 $count 辆车',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cargoExpiresToday => '今天到期';
+
+  @override
+  String get cargoExpiresTomorrow => '明天到期';
+
+  @override
+  String get cargoNoResponses => '暂无响应';
+
+  @override
+  String get postCargoFab => '货物';
+
+  @override
   String get cargosArchiveCity => '城市';
 
   @override

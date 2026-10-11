@@ -4182,6 +4182,36 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get cargoRepeat => 'Repeat';
 
   @override
+  String kztMillionsApprox(String value) {
+    return '≈ ${value}M ₸';
+  }
+
+  @override
+  String get logistOneTruck => '1 truck';
+
+  @override
+  String logistTrucksNeeded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trucks needed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cargoExpiresToday => 'Expires today';
+
+  @override
+  String get cargoExpiresTomorrow => 'Expires tomorrow';
+
+  @override
+  String get cargoNoResponses => 'No responses yet';
+
+  @override
+  String get postCargoFab => 'Cargo';
+
+  @override
   String get cargosArchiveCity => 'City';
 
   @override

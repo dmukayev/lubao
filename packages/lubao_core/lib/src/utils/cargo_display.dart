@@ -25,6 +25,24 @@ String paymentWhenHowLine(LubaoLocalizations t, {PaymentForm? paymentForm, int? 
 String? advancePillText(LubaoLocalizations t, {double? advanceAmount, required Currency currency}) =>
     advanceAmount != null && advanceAmount > 0 ? t.advancePill(formatCurrencyAmount(advanceAmount, currency)) : null;
 
+/// 063 (эталон 35): машины у логиста — «1 машина», «нужно 5 машин», взяли часть — «нужно 2 · осталось 1».
+String logistTrucksLabel(LubaoLocalizations t, {required int needed, required int taken}) {
+  if (needed <= 1) return t.logistOneTruck;
+  if (taken > 0) return cargoTrucksLabel(t, needed: needed, taken: taken) ?? t.logistTrucksNeeded(needed);
+  return t.logistTrucksNeeded(needed);
+}
+
+/// 063 (эталон 35): пересчёт в ₸ коротко — «≈ 45,4 млн ₸» от миллиона, иначе «≈ 450 000 ₸».
+String kztApproxShort(LubaoLocalizations t, double kzt, {required String languageCode}) {
+  if (kzt >= 1000000) {
+    final millions = (kzt / 1000000 * 10).round() / 10;
+    var text = millions == millions.roundToDouble() ? millions.toStringAsFixed(0) : millions.toStringAsFixed(1);
+    if (languageCode == 'ru' || languageCode == 'kk') text = text.replaceAll('.', ',');
+    return t.kztMillionsApprox(text);
+  }
+  return '≈ ${kzt.round().toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ' ')} ₸';
+}
+
 String paymentFormShort(LubaoLocalizations t, PaymentForm form) => switch (form) {
       PaymentForm.cash => t.paymentFormCashShort,
       PaymentForm.card => t.paymentFormCardShort,

@@ -316,9 +316,14 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         // 062: «Сделка № 482 915-1».
-        title: Text(
-          deal?.cargoNumber != null && deal?.seq != null ? t.dealNumberTitle(formatDealNumber(deal!.cargoNumber!, deal.seq!)) : t.dealDetailTitle,
-          key: const Key('dealTitle'),
+        // Узкий экран и крупный шрифт: номер уменьшается, а не обрезается.
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(
+            deal?.cargoNumber != null && deal?.seq != null ? t.dealNumberTitle(formatDealNumber(deal!.cargoNumber!, deal.seq!)) : t.dealDetailTitle,
+            key: const Key('dealTitle'),
+          ),
         ),
         actions: [
           if (deal != null)
@@ -344,16 +349,17 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     if (!isDriver) ...[
                       DriverAvatar(driverId: deal.driverId, name: deal.driverName, version: deal.driverAvatarVersion, radius: 22),
                       const SizedBox(width: AppSpacing.sm),
                     ],
                     Expanded(child: Text(isDriver ? deal.companyName : deal.driverName, style: Theme.of(context).textTheme.titleLarge)),
-                    StatusBadge(label: statusLabel, color: statusColor),
                   ],
                 ),
+                // Плашка — отдельной строкой: имя не рвётся посреди слова на узком экране.
+                const SizedBox(height: 4),
+                StatusBadge(label: statusLabel, color: statusColor),
                 // 046 п.3: отмены второй стороны — «отменил 1 из 15 · после загрузки 1».
                 if (cancelStatsText(t, isDriver ? deal.companyCancelStats : deal.driverCancelStats) case final stats?) ...[
                   const SizedBox(height: 4),

@@ -108,11 +108,13 @@ class _CompanyCargosScreenState extends ConsumerState<CompanyCargosScreen> with 
           ],
         ),
       ),
+      // 063 (эталон 35): компактная «+ Груз».
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('companyPostCargoFab'),
         onPressed: () => _openForm('/company/cargos/new'),
-        icon: const Icon(LucideIcons.plus),
-        label: Text(t.postCargoTitle),
+        icon: const Icon(LucideIcons.plus, size: 20),
+        label: Text(t.postCargoFab),
+        tooltip: t.postCargoTitle,
       ),
       body: Column(
         children: [
@@ -385,64 +387,123 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
     final canRepeat = widget.tab != CompanyCargoTab.work;
     final showResponses = widget.tab == CompanyCargoTab.active;
 
-    // 058 п.3: флаги стран маршрута; п.1 — условия оплаты под ценой.
+    // 063 (эталон 35): маршрут одной строкой с флагами, номер справа; слева —
+    // кузов·вес, км·погрузка, машины; справа — цена, ≈ ₸ (или ₸/км для тенге),
+    // когда и как платят; аванс — плашкой; внизу — отклики и маленькие кнопки.
     final route = refData == null
         ? null
-        : cargoRouteLabels(refData, pointId: cargo.pointId, destinationCountryId: cargo.destinationCountryId, destinationCityId: cargo.destinationCityId, languageCode: locale, withCountry: true);
-    return CargoCard(
+        : cargoRouteLabels(refData, pointId: cargo.pointId, destinationCountryId: cargo.destinationCountryId, destinationCityId: cargo.destinationCityId, languageCode: locale);
+    final routeText = route == null ? destinationLabel : (route.origin == null ? route.destination : '${route.origin} → ${route.destination}');
+    // Плашка — только особые состояния: в «Активных» — «Истекает сегодня/завтра»,
+    // в работе и архиве — шаг сделки или статус груза, как раньше.
+    String? badgeLabel;
+    var badgeColor = statusColor;
+    if (widget.tab == CompanyCargoTab.active) {
+      final now = DateTime.now();
+      final daysLeft = DateTime(cargo.expiresAt.year, cargo.expiresAt.month, cargo.expiresAt.day).difference(DateTime(now.year, now.month, now.day)).inDays;
+      if (cargo.status == CargoStatus.published && daysLeft <= 1) {
+        badgeLabel = daysLeft <= 0 ? t.cargoExpiresToday : t.cargoExpiresTomorrow;
+        badgeColor = StatusBadge.warning;
+      } else if (cargo.status != CargoStatus.published) {
+        badgeLabel = statusLabel;
+      }
+    } else {
+      badgeLabel = statusLabel;
+    }
+    final grey = AppTextStyles.caption;
+    final kzt = refData?.convertToKzt(cargo.price, cargo.currency);
+    final perKmKzt = cargo.pricePerKm == null ? null : refData?.convertToKzt(cargo.pricePerKm!, cargo.currency);
+    final secondPrice = cargo.currency == Currency.kzt
+        ? (perKmKzt == null ? null : t.perKmKzt(formatThousands(perKmKzt.round())))
+        : (kzt == null ? null : kztApproxShort(t, kzt, languageCode: locale));
+    final whenHow = paymentWhenHowLine(t, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays);
+    final advance = advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency);
+    final size = cargoSizeLabel(t, weightKg: cargo.weightKg, volumeM3: cargo.volumeM3, languageCode: locale);
+    final left = [
+      [bodyType?.name.forLanguageCode(locale), if (size.isNotEmpty) size].whereType<String>().join(' · '),
+      [if (cargo.distanceKm != null) '${formatThousands(cargo.distanceKm!)} ${t.unitKm}', loadingDayLabel(t, cargo.readyDate)].join(' · '),
+      logistTrucksLabel(t, needed: cargo.trucksNeeded, taken: cargo.trucksTaken),
+    ];
+    final smallButton = OutlinedButton.styleFrom(
+      foregroundColor: AppColors.textSecondary,
+      side: const BorderSide(color: AppColors.divider),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      minimumSize: const Size(44, 40),
+      visualDensity: VisualDensity.compact,
+      textStyle: AppTextStyles.small.copyWith(fontWeight: FontWeight.w600),
+    );
+
+    return AppCard(
       key: Key('companyCargoCard-${cargo.id}'),
-      originLabel: route?.origin,
-      partialLabel: cargo.allowPartial ? t.feedBadgePartial : null,
-      destinationLabel: route?.destination ?? destinationLabel,
-      // 063: под ценой — когда и как; аванс — плашкой внизу.
-      termsLabel: paymentWhenHowLine(t, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays),
-      advanceLabel: advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency),
-      // Как у водителя в ленте: кузов, «21 т · 35 м³» и расстояние по дорогам.
-      bodyTypeLabel: [
-        bodyType?.name.forLanguageCode(locale) ?? '',
-        cargoSizeLabel(t, weightKg: cargo.weightKg, volumeM3: cargo.volumeM3, languageCode: locale),
-        cargoTrucksLabel(t, needed: cargo.trucksNeeded, taken: cargo.trucksTaken) ?? '',
-        if (cargo.distanceKm != null) '${formatThousands(cargo.distanceKm!)} ${t.unitKm}',
-      ].where((s) => s.isNotEmpty).join(' · '),
-      priceLabel: formatMoney(cargo.price, cargo.currency),
-      secondaryPriceLabel: refData == null ? null : formatKztConversion(refData.convertToKzt(cargo.price, cargo.currency)),
-      readyDateLabel: formatDate(cargo.readyDate),
-      statusLabel: statusLabel,
-      statusColor: statusColor,
       onTap: () => _open(cargo),
-      trailing: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 062: номер груза (в работе — номер сделки «482 915-1»).
-          if (cargo.number != null) Align(alignment: AlignmentDirectional.centerStart, child: CargoNumberText(number: cargo.number!, seq: deal?.seq)),
-          if (deal != null) _DealDriverRow(deal: deal),
-          if (showResponses || canRepeat)
+          Row(
+            children: [
+              Expanded(child: Text(routeText, key: Key('companyCargoRoute-${cargo.id}'), style: AppTextStyles.route, maxLines: 1, overflow: TextOverflow.ellipsis)),
+              const SizedBox(width: AppSpacing.sm),
+              // 062: номер груза (в работе — номер сделки «482 915-1»).
+              if (cargo.number != null) CargoNumberText(number: cargo.number!, seq: deal?.seq),
+            ],
+          ),
+          if (badgeLabel != null) ...[const SizedBox(height: AppSpacing.xs), StatusBadge(label: badgeLabel, color: badgeColor)],
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(left[0], style: AppTextStyles.bodyStrong),
+                    Text(left[1], style: grey),
+                    Text(left[2], key: Key('companyCargoTrucks-${cargo.id}'), style: grey),
+                    if (cargo.allowPartial) Text(t.feedBadgePartial, style: AppTextStyles.small.copyWith(color: AppColors.primary)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceCard),
+                  if (secondPrice != null) Text(secondPrice, style: AppTextStyles.small.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                  if (whenHow.isNotEmpty) Text(whenHow, key: Key('companyCargoTerms-${cargo.id}'), style: AppTextStyles.small.copyWith(color: AppColors.textSecondary)),
+                ],
+              ),
+            ],
+          ),
+          if (advance != null) ...[const SizedBox(height: AppSpacing.sm), AdvancePill(advance, key: Key('companyCargoAdvance-${cargo.id}'))],
+          if (deal != null) ...[const SizedBox(height: AppSpacing.sm), _DealDriverRow(deal: deal)],
+          if (showResponses || canRepeat) ...[
+            const Divider(height: AppSpacing.lg),
             Row(
               children: [
+                Expanded(
+                  child: showResponses
+                      ? Text.rich(
+                          key: Key('cargoResponsesLine-${cargo.id}'),
+                          cargo.responsesCount == 0
+                              ? TextSpan(text: t.cargoNoResponses, style: grey)
+                              : TextSpan(
+                                  text: t.cargoResponsesCount(cargo.responsesCount),
+                                  style: AppTextStyles.caption.copyWith(color: AppColors.text),
+                                  children: [
+                                    if (cargo.newResponsesCount > 0)
+                                      TextSpan(
+                                        text: ' · ${t.cargoResponsesNew(cargo.newResponsesCount)}',
+                                        style: AppTextStyles.caption.copyWith(color: AppColors.error, fontWeight: FontWeight.w700),
+                                      ),
+                                  ],
+                                ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
                 if (showResponses)
-                  Expanded(
-                    child: Text.rich(
-                      key: Key('cargoResponsesLine-${cargo.id}'),
-                      TextSpan(
-                        text: t.cargoResponsesCount(cargo.responsesCount),
-                        children: [
-                          if (cargo.newResponsesCount > 0)
-                            TextSpan(
-                              text: ' · ${t.cargoResponsesNew(cargo.newResponsesCount)}',
-                              style: AppTextStyles.caption.copyWith(color: AppColors.error, fontWeight: FontWeight.w700),
-                            ),
-                        ],
-                      ),
-                      style: AppTextStyles.caption,
-                    ),
-                  )
-                else
-                  const Spacer(),
-                if (showResponses)
-                  IconButton(
+                  OutlinedButton(
                     key: Key('cargoShare-${cargo.id}'),
-                    tooltip: t.shareButton,
-                    icon: const Icon(LucideIcons.share, size: 20, color: AppColors.primary),
+                    style: smallButton,
                     onPressed: () {
                       final rd = refData;
                       if (rd == null) return;
@@ -455,16 +516,21 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
                         buildText: (url) => cargoShareText(t, rd, cargo, url, locale),
                       );
                     },
+                    child: Icon(LucideIcons.share, size: 18, semanticLabel: t.shareButton),
                   ),
-                if (canRepeat)
-                  TextButton.icon(
+                if (canRepeat) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  OutlinedButton.icon(
                     key: Key('cargoRepeat-${cargo.id}'),
+                    style: smallButton,
                     onPressed: () => widget.onRepeat(cargo),
                     icon: const Icon(LucideIcons.rotateCw, size: 16),
                     label: Text(t.cargoRepeat),
                   ),
+                ],
               ],
             ),
+          ],
         ],
       ),
     );

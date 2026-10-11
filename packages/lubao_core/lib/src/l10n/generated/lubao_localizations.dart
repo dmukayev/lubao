@@ -7704,6 +7704,48 @@ abstract class LubaoLocalizations {
   /// **'Повторить'**
   String get cargoRepeat;
 
+  /// No description provided for @kztMillionsApprox.
+  ///
+  /// In ru, this message translates to:
+  /// **'≈ {value} млн ₸'**
+  String kztMillionsApprox(String value);
+
+  /// No description provided for @logistOneTruck.
+  ///
+  /// In ru, this message translates to:
+  /// **'1 машина'**
+  String get logistOneTruck;
+
+  /// No description provided for @logistTrucksNeeded.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, one{нужно {count} машина} few{нужно {count} машины} many{нужно {count} машин} other{нужно {count} машины}}'**
+  String logistTrucksNeeded(int count);
+
+  /// No description provided for @cargoExpiresToday.
+  ///
+  /// In ru, this message translates to:
+  /// **'Истекает сегодня'**
+  String get cargoExpiresToday;
+
+  /// No description provided for @cargoExpiresTomorrow.
+  ///
+  /// In ru, this message translates to:
+  /// **'Истекает завтра'**
+  String get cargoExpiresTomorrow;
+
+  /// No description provided for @cargoNoResponses.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откликов пока нет'**
+  String get cargoNoResponses;
+
+  /// No description provided for @postCargoFab.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз'**
+  String get postCargoFab;
+
   /// No description provided for @cargosArchiveCity.
   ///
   /// In ru, this message translates to:

@@ -4179,6 +4179,36 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get cargoRepeat => 'Қайталау';
 
   @override
+  String kztMillionsApprox(String value) {
+    return '≈ $value млн ₸';
+  }
+
+  @override
+  String get logistOneTruck => '1 көлік';
+
+  @override
+  String logistTrucksNeeded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count көлік керек',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cargoExpiresToday => 'Бүгін аяқталады';
+
+  @override
+  String get cargoExpiresTomorrow => 'Ертең аяқталады';
+
+  @override
+  String get cargoNoResponses => 'Әзірге өтінім жоқ';
+
+  @override
+  String get postCargoFab => 'Жүк';
+
+  @override
   String get cargosArchiveCity => 'Қала';
 
   @override

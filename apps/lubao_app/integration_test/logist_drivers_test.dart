@@ -256,6 +256,17 @@ void main() {
       await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text(t.navCargos)));
       await tester.pumpAndSettle();
       expect(position.pixels, lessThan(1));
+      // 063 (эталон 35): чистая карточка — без плашки «Опубликован» и даты
+      // публикации; на узком экране с крупным шрифтом видно больше одной карточки.
+      expect(find.descendant(of: list, matching: find.text(t.cargoStatusPublished)), findsNothing);
+      final screen = tester.getRect(list);
+      final cards = find.descendant(of: list, matching: find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('companyCargoCard-')));
+      final whole = cards.evaluate().where((e) {
+        final box = e.renderObject! as RenderBox;
+        final top = box.localToGlobal(Offset.zero).dy;
+        return top >= screen.top && top + box.size.height <= screen.bottom;
+      }).length;
+      expect(whole, greaterThanOrEqualTo(2), reason: 'на экране целиком $whole карточки');
       expectNoOverflow(tester);
     });
 
