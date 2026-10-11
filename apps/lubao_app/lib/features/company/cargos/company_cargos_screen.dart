@@ -440,13 +440,7 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
           Row(
             children: [
               // Маршрут — одной строкой: не помещается — уменьшается, город назначения не теряется.
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Text(routeText, key: Key('companyCargoRoute-${cargo.id}'), style: AppTextStyles.route.copyWith(fontSize: 18), maxLines: 1, softWrap: false),
-                ),
-              ),
+              Expanded(child: _RouteLine(text: routeText, textKey: Key('companyCargoRoute-${cargo.id}'))),
               const SizedBox(width: AppSpacing.sm),
               // Мелко (11–12 sp) и не растёт с крупным шрифтом — маршрут важнее.
               Text(
@@ -589,3 +583,32 @@ class _DealDriverRow extends StatelessWidget {
 /// Веб на широком экране — подпись «Поделиться всеми», на телефоне — «Все».
 bool kIsWebWide(BuildContext context) => MediaQuery.sizeOf(context).width >= 700;
 
+
+
+/// 065: маршрут одной строкой — не помещается, уменьшается (не меньше ¾),
+/// дальше — многоточие: город назначения не пропадает, текст не становится мелким.
+class _RouteLine extends StatelessWidget {
+  const _RouteLine({required this.text, required this.textKey});
+
+  final String text;
+  final Key textKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = AppTextStyles.route.copyWith(fontSize: 18);
+    return LayoutBuilder(builder: (context, constraints) {
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      final width = painter.width;
+      painter.dispose();
+      if (width <= constraints.maxWidth || width * 0.75 > constraints.maxWidth) {
+        return Text(text, key: textKey, style: style, maxLines: 1, overflow: TextOverflow.ellipsis);
+      }
+      return FittedBox(fit: BoxFit.scaleDown, alignment: AlignmentDirectional.centerStart, child: Text(text, key: textKey, style: style, maxLines: 1, softWrap: false));
+    });
+  }
+}
