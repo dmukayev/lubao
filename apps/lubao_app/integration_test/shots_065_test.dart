@@ -71,6 +71,7 @@ void main() {
 
     await run.step(tester, 'грузы-активные', () async {
       await loginLogist(tester);
+      await waitFor(tester, find.descendant(of: find.byType(NavigationBar), matching: find.text(t.navCargos)), timeout: const Duration(seconds: 30));
       await goTab(tester, t.navCargos);
       await waitFor(tester, find.byKey(const Key('companyCargosList-active')));
       await tester.pumpAndSettle(const Duration(seconds: 1));
