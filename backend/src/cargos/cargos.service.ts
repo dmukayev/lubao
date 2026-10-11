@@ -192,6 +192,8 @@ export class CargosService {
 
     return {
       id: cargo.id,
+      // 062: короткий номер для людей («№ 482 915»).
+      number: cargo.number,
       companyId: cargo.companyId,
       companyName: cargo.company.name,
       companyIsVerified: cargo.company.isVerified,
@@ -686,7 +688,7 @@ export class CargosService {
       ? await this.prisma.deal.findMany({
           where: { cargoId: { in: cargos.map((c) => c.id) }, status: { not: 'CANCELLED' } },
           orderBy: { createdAt: 'desc' },
-          select: { id: true, cargoId: true, status: true, driver: { select: { fullName: true } } },
+          select: { id: true, seq: true, cargoId: true, status: true, driver: { select: { fullName: true } } },
         })
       : [];
     const dealByCargo = new Map<string, (typeof deals)[number]>();
@@ -696,7 +698,7 @@ export class CargosService {
         const deal = dealByCargo.get(c.id);
         return {
           ...(await this.toDto(c)),
-          activeDeal: deal ? { id: deal.id, status: deal.status, driverName: deal.driver.fullName } : null,
+          activeDeal: deal ? { id: deal.id, seq: deal.seq, status: deal.status, driverName: deal.driver.fullName } : null,
         };
       }),
     );

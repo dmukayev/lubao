@@ -889,6 +889,8 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
               ),
               // Свёрнута при прокрутке (038, п.13) — только строка выше.
               if (!widget.collapsed) ...[
+                // 062: номер груза (есть сделка — номер сделки).
+                if (cargo.number != null && !widget.compact) CargoNumberText(number: cargo.number!, seq: deal?.seq),
                 if (detailParts.isNotEmpty && !widget.compact) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(

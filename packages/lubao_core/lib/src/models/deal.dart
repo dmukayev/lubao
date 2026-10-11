@@ -5,6 +5,8 @@ class Deal {
   const Deal({
     this.agreedPrice,
     required this.id,
+    this.cargoNumber,
+    this.seq,
     this.responseId,
     required this.cargoId,
     required this.driverId,
@@ -53,6 +55,9 @@ class Deal {
   bool get cancelledAfterLoad => cancelStage == 'AFTER_LOAD' || cancelStage == 'IN_TRANSIT';
 
   final String id;
+  /// 062: номер сделки — номер груза + машина («482 915-1»).
+  final int? cargoNumber;
+  final int? seq;
   /// 057 п.3: у отменённой сделки — null (отклик отпущен).
   final String? responseId;
   final String cargoId;
@@ -87,6 +92,8 @@ class Deal {
   factory Deal.fromJson(Map<String, dynamic> json) => Deal(
         agreedPrice: (json['agreedPrice'] as num?)?.toDouble(),
         id: json['id'] as String,
+        cargoNumber: json['cargoNumber'] as int?,
+        seq: json['seq'] as int?,
         responseId: json['responseId'] as String?,
         cargoId: json['cargoId'] as String,
         driverId: json['driverId'] as String,

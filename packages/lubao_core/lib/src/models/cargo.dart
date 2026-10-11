@@ -5,6 +5,7 @@ class Cargo {
   const Cargo({
     this.contactLastSeenAt,
     required this.id,
+    this.number,
     required this.companyId,
     required this.companyName,
     this.companyIsVerified = false,
@@ -74,6 +75,8 @@ class Cargo {
   final RouteMarket? market;
 
   final String id;
+  /// 062: короткий номер для людей — 6 цифр («№ 482 915»); null — старый API.
+  final int? number;
   final String companyId;
   final String companyName;
   final bool companyIsVerified;
@@ -145,6 +148,7 @@ class Cargo {
 
   factory Cargo.fromJson(Map<String, dynamic> json) => Cargo(
         id: json['id'] as String,
+        number: json['number'] as int?,
         companyId: json['companyId'] as String,
         companyName: json['companyName'] as String? ?? '',
         companyIsVerified: json['companyIsVerified'] as bool? ?? false,
@@ -394,13 +398,15 @@ class CreateCargoInput {
 enum CargoFeedSection { home, selected, other }
 
 class CargoActiveDeal {
-  const CargoActiveDeal({required this.id, required this.status, required this.driverName});
+  const CargoActiveDeal({required this.id, required this.status, required this.driverName, this.seq});
   final String id;
+  /// 062: номер машины по грузу — номер сделки «482 915-1».
+  final int? seq;
   final DealStatus status;
   final String driverName;
 
   factory CargoActiveDeal.fromJson(Map<String, dynamic> json) =>
-      CargoActiveDeal(id: json['id'] as String, status: dealStatusFromJson(json['status'] as String), driverName: json['driverName'] as String);
+      CargoActiveDeal(id: json['id'] as String, seq: json['seq'] as int?, status: dealStatusFromJson(json['status'] as String), driverName: json['driverName'] as String);
 }
 
 

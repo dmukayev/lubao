@@ -7230,6 +7230,24 @@ abstract class LubaoLocalizations {
   /// **'Водитель только что изменил цену — посмотрите новую и выберите снова'**
   String get offerPriceChanged;
 
+  /// No description provided for @cargoNumberLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'№ {number}'**
+  String cargoNumberLabel(Object number);
+
+  /// No description provided for @cargoNumberCopied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Номер {number} скопирован'**
+  String cargoNumberCopied(Object number);
+
+  /// No description provided for @dealNumberTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделка № {number}'**
+  String dealNumberTitle(Object number);
+
   /// No description provided for @offerCounterButton.
   ///
   /// In ru, this message translates to:

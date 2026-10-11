@@ -82,6 +82,9 @@ export class DealsService {
     ]);
     return {
       id: deal.id,
+      // 062: номер сделки — номер груза + машина («482 915-1»).
+      seq: deal.seq,
+      cargoNumber: deal.cargo.number,
       responseId: deal.responseId,
       cargoId: deal.cargoId,
       // 058 п.5: итоговая цена сделки (в валюте груза).

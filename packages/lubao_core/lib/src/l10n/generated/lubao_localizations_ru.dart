@@ -3891,6 +3891,21 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
       'Водитель только что изменил цену — посмотрите новую и выберите снова';
 
   @override
+  String cargoNumberLabel(Object number) {
+    return '№ $number';
+  }
+
+  @override
+  String cargoNumberCopied(Object number) {
+    return 'Номер $number скопирован';
+  }
+
+  @override
+  String dealNumberTitle(Object number) {
+    return 'Сделка № $number';
+  }
+
+  @override
   String get offerCounterButton => 'Встречная цена';
 
   @override

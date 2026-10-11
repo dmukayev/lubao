@@ -3905,6 +3905,21 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
       'Жүргізуші бағаны жаңа ғана өзгертті — жаңасын қарап, қайта таңдаңыз';
 
   @override
+  String cargoNumberLabel(Object number) {
+    return '№ $number';
+  }
+
+  @override
+  String cargoNumberCopied(Object number) {
+    return '$number нөмірі көшірілді';
+  }
+
+  @override
+  String dealNumberTitle(Object number) {
+    return '№ $number мәміле';
+  }
+
+  @override
   String get offerCounterButton => 'Қарсы баға';
 
   @override

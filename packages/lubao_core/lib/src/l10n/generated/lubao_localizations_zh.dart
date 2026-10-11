@@ -3813,6 +3813,21 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get offerPriceChanged => '司机刚刚修改了价格——请查看新价格后重新选择';
 
   @override
+  String cargoNumberLabel(Object number) {
+    return '编号 $number';
+  }
+
+  @override
+  String cargoNumberCopied(Object number) {
+    return '编号 $number 已复制';
+  }
+
+  @override
+  String dealNumberTitle(Object number) {
+    return '交易编号 $number';
+  }
+
+  @override
   String get offerCounterButton => '还价';
 
   @override

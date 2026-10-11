@@ -464,6 +464,8 @@ class _CargoDetailBody extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 062: номер груза — назвать по телефону, нажатие копирует.
+                if (cargo.number != null) ...[CargoNumberText(number: cargo.number!), const SizedBox(height: AppSpacing.xs)],
                 _RoutePoint(
                   color: AppColors.primary,
                   title: pointName,

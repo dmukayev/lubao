@@ -178,6 +178,8 @@ class _CargoSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 062: номер груза.
+          if (cargo.number != null) CargoNumberText(number: cargo.number!),
           Row(
             children: [
               Expanded(child: Text(destinationLabel, style: AppTextStyles.route)),

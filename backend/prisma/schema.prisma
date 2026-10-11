@@ -966,6 +966,8 @@ model Cargo {
   closedAt             DateTime?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
+  /// 062: короткий номер для людей — 6 цифр, не по порядку (выдаёт база).
+  number               Int                @unique @default(dbgenerated("lubao_cargo_number()"))
 
   responses     Response[]
   deals         Deal[]
@@ -1124,12 +1126,16 @@ model Deal {
   deliveredAt             DateTime?
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
+  /// 062: номер машины по грузу (1, 2, …) — номер сделки «482 915-1»; ставит
+  /// триггер базы при вставке.
+  seq                     Int               @default(0)
 
   contactEvents ContactEvent[]
   chats         Chat[]
   reviews       Review[]
   payments      Payment[]
 
+  @@unique([cargoId, seq])
   @@index([status])
   @@index([driverId])
   @@index([companyId])

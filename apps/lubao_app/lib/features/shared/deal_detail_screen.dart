@@ -315,7 +315,11 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
     final deal = dealAsync.valueOrNull;
     return Scaffold(
       appBar: AppBar(
-        title: Text(t.dealDetailTitle),
+        // 062: «Сделка № 482 915-1».
+        title: Text(
+          deal?.cargoNumber != null && deal?.seq != null ? t.dealNumberTitle(formatDealNumber(deal!.cargoNumber!, deal.seq!)) : t.dealDetailTitle,
+          key: const Key('dealTitle'),
+        ),
         actions: [
           if (deal != null)
             IconButton(

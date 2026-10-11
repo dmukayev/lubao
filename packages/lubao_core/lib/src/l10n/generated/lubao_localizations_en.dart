@@ -3907,6 +3907,21 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
       'The driver has just changed the price — check the new one and select again';
 
   @override
+  String cargoNumberLabel(Object number) {
+    return 'No. $number';
+  }
+
+  @override
+  String cargoNumberCopied(Object number) {
+    return 'Number $number copied';
+  }
+
+  @override
+  String dealNumberTitle(Object number) {
+    return 'Deal No. $number';
+  }
+
+  @override
   String get offerCounterButton => 'Counter-offer';
 
   @override

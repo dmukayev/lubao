@@ -411,6 +411,8 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
       trailing: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // 062: номер груза (в работе — номер сделки «482 915-1»).
+          if (cargo.number != null) Align(alignment: AlignmentDirectional.centerStart, child: CargoNumberText(number: cargo.number!, seq: deal?.seq)),
           if (deal != null) _DealDriverRow(deal: deal),
           if (showResponses || canRepeat)
             Row(
