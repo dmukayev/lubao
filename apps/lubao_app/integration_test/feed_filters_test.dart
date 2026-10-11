@@ -67,6 +67,25 @@ void main() {
         .map((e) => (e.widget.key! as ValueKey<String>).value.substring('feedCargoCard-'.length))
         .toSet();
 
+    // Чип в горизонтальной полосе над лентой: лента — наверх (повторное нажатие
+    // «Грузы»), полоса — до чипа, дождаться конца прокрутки, нажать.
+    Future<void> tapChip(Finder chip) async {
+      await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text(t.navFeed)));
+      await tester.pumpAndSettle();
+      await waitFor(tester, find.byKey(const Key('feedChipsBar')));
+      final bar = find.descendant(of: find.byKey(const Key('feedChipsBar')), matching: find.byType(Scrollable)).first;
+      if (chip.evaluate().isEmpty || !tester.getRect(chip).overlaps(tester.getRect(bar))) {
+        try {
+          await tester.scrollUntilVisible(chip, 120, scrollable: bar, maxScrolls: 30);
+        } catch (_) {
+          await tester.scrollUntilVisible(chip, -120, scrollable: bar, maxScrolls: 30);
+        }
+      }
+      await tester.ensureVisible(chip);
+      await tester.pumpAndSettle();
+      await tester.tap(chip);
+    }
+
     await run.step(tester, 'вход-водителя', () async {
       await loginDriver(tester, '7010000005');
       await waitFor(tester, find.byKey(const Key('feedChipsBar')));
@@ -74,13 +93,7 @@ void main() {
     });
 
     await run.step(tester, 'чип-россия-только-грузы-в-россию', () async {
-      final chip = find.byKey(Key('feedChipCountry-$ruId'));
-      // Полоса чипов горизонтальная — прокручиваем её до «России».
-      await tester.scrollUntilVisible(chip, 120, scrollable: find.descendant(of: find.byKey(const Key('feedChipsBar')), matching: find.byType(Scrollable)).first, maxScrolls: 30);
-      await tester.ensureVisible(chip);
-      // Дождаться конца прокрутки полосы — иначе нажатие уходит мимо чипа.
-      await tester.pumpAndSettle();
-      await tester.tap(chip);
+      await tapChip(find.byKey(Key('feedChipCountry-$ruId')));
       await tester.pumpAndSettle(const Duration(seconds: 1));
       final expected = ((await api.feed({'toCountryId': ruId}))['items'] as List).cast<Map>().map((c) => c['id'] as String).toSet();
       expect(expected.length, greaterThanOrEqualTo(2));
@@ -92,7 +105,7 @@ void main() {
       expect(visibleCardIds().difference(allRu), isEmpty, reason: 'в ленте только грузы в Россию');
       expectNoOverflow(tester);
       // Снова «Все».
-      await tester.tap(find.byKey(const Key('feedChipAll')));
+      await tapChip(find.byKey(const Key('feedChipAll')));
       await tester.pumpAndSettle(const Duration(seconds: 1));
     });
 
