@@ -1,3 +1,4 @@
+import { AuthErrors, CodeCheck } from '../auth/auth-errors';
 import * as crypto from 'crypto';
 import { BadRequestException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
@@ -119,17 +120,17 @@ export class SmsService {
 
     const locked = await client.get(this.minuteKey(phone));
     if (locked && !resend) {
-      throw new HttpException('Слишком частые запросы кода, попробуйте через минуту', HttpStatus.TOO_MANY_REQUESTS);
+      throw AuthErrors.rateLimited('Code requested too often, try again in a minute');
     }
 
     const hourCount = Number((await client.get(this.hourKey(phone))) ?? 0);
     if (hourCount >= MAX_PER_HOUR) {
-      throw new HttpException('Превышен лимит SMS за час, попробуйте позже', HttpStatus.TOO_MANY_REQUESTS);
+      throw AuthErrors.rateLimited('Превышен лимит SMS за час, попробуйте позже');
     }
 
     const ipHourCount = Number((await client.get(this.ipHourKey(ip))) ?? 0);
     if (ipHourCount >= MAX_PER_HOUR_PER_IP) {
-      throw new HttpException('Превышен лимит запросов кода с вашего адреса, попробуйте позже', HttpStatus.TOO_MANY_REQUESTS);
+      throw AuthErrors.rateLimited('Too many code requests from your address, try later');
     }
 
     const code = resend ? storedCode! : this.provider.generateCode();
@@ -173,19 +174,20 @@ export class SmsService {
   /// 006, 024 п.2). `INCR` в Redis — один атомарный шаг, так что при гонке
   /// только первые 5 параллельных запросов получают attempts ≤ 5 и доходят
   /// до сравнения кода, остальные сразу отваливаются.
-  async verifyCode(phone: string, code: string, ip?: string): Promise<boolean> {
+  async verifyCode(phone: string, code: string, ip?: string): Promise<CodeCheck> {
     const client = this.redis.client;
 
     if (ip) {
       const verifyIpCount = await client.incr(this.verifyIpHourKey(ip));
       if (verifyIpCount === 1) await client.expire(this.verifyIpHourKey(ip), HOUR_WINDOW_SECONDS);
       if (verifyIpCount > MAX_VERIFY_PER_HOUR_PER_IP) {
-        throw new HttpException('Превышен лимит проверок кода с вашего адреса, попробуйте позже', HttpStatus.TOO_MANY_REQUESTS);
+        throw AuthErrors.rateLimited('Too many code checks from your address, try later');
       }
     }
 
     const stored = await client.get(this.codeKey(phone));
-    if (!stored) return false;
+    // 073: кода нет — истёк (или не запрашивался): «Код устарел — отправьте новый».
+    if (!stored) return 'expired';
 
     const attemptsKey = this.attemptsKey(phone);
     const attempts = await client.incr(attemptsKey);
@@ -195,7 +197,7 @@ export class SmsService {
     }
     if (attempts > MAX_WRONG_ATTEMPTS) {
       await client.del(this.codeKey(phone));
-      throw new BadRequestException('Слишком много попыток, запросите новый код');
+      throw AuthErrors.codeAttemptsExceeded();
     }
 
     const storedBuf = Buffer.from(stored);
@@ -203,10 +205,10 @@ export class SmsService {
     const match = storedBuf.length === codeBuf.length && crypto.timingSafeEqual(storedBuf, codeBuf);
 
     if (!match) {
-      return false;
+      return 'invalid';
     }
 
     await Promise.all([client.del(this.codeKey(phone)), client.del(attemptsKey)]);
-    return true;
+    return 'ok';
   }
 }

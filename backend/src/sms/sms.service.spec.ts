@@ -59,9 +59,9 @@ describe('SmsService', () => {
       await service.requestCode('+77001112233', '1.1.1.1');
     });
 
-    it('tolerates up to 5 wrong attempts, still returning false', async () => {
+    it('tolerates up to 5 wrong attempts, still returning «invalid»', async () => {
       for (let i = 0; i < 5; i++) {
-        await expect(service.verifyCode('+77001112233', '0000')).resolves.toBe(false);
+        await expect(service.verifyCode('+77001112233', '0000')).resolves.toBe('invalid');
       }
     });
 
@@ -71,25 +71,25 @@ describe('SmsService', () => {
       }
       await expect(service.verifyCode('+77001112233', '0000')).rejects.toThrow(BadRequestException);
       // код сгорел — верный код тоже больше не проходит, нужен новый
-      await expect(service.verifyCode('+77001112233', '1234')).resolves.toBe(false);
+      await expect(service.verifyCode('+77001112233', '1234')).resolves.toBe('expired');
     });
 
     it('accepts the correct code within the attempt budget and clears state', async () => {
       await service.verifyCode('+77001112233', '0000');
-      await expect(service.verifyCode('+77001112233', '1234')).resolves.toBe(true);
+      await expect(service.verifyCode('+77001112233', '1234')).resolves.toBe('ok');
       // после успеха — код одноразовый, повторная проверка не проходит
-      await expect(service.verifyCode('+77001112233', '1234')).resolves.toBe(false);
+      await expect(service.verifyCode('+77001112233', '1234')).resolves.toBe('expired');
     });
 
-    it('returns false when no code was ever requested for the phone', async () => {
-      await expect(service.verifyCode('+77009998877', '1234')).resolves.toBe(false);
+    it('returns «expired» when no code was ever requested for the phone', async () => {
+      await expect(service.verifyCode('+77009998877', '1234')).resolves.toBe('expired');
     });
 
     it('20 parallel wrong attempts (race) still cap at 5 comparisons — old get→set logic let all 20 through (024 п.2)', async () => {
       const results = await Promise.allSettled(
         Array.from({ length: 20 }, () => service.verifyCode('+77001112233', '0000')),
       );
-      const falses = results.filter((r) => r.status === 'fulfilled' && r.value === false).length;
+      const falses = results.filter((r) => r.status === 'fulfilled' && r.value === 'invalid').length;
       const rejected = results.filter((r) => r.status === 'rejected').length;
       // Атомарный INCR гарантирует: ровно 5 запросов получают attempts 1..5
       // (сравнение кода), остальные 15 видят attempts>5 и падают с 429/400
@@ -133,7 +133,7 @@ describe('SmsService', () => {
         await service.verifyCode('+77001112233', '0000').catch(() => undefined);
       }
       // не 429 — просто код давно сгорел от собственного лимита попыток, не от IP
-      await expect(service.verifyCode('+77001112233', '0000')).resolves.toBe(false);
+      await expect(service.verifyCode('+77001112233', '0000')).resolves.toBe('expired');
     });
   });
 
@@ -181,7 +181,7 @@ describe('SmsService — WhatsApp → SMS (задача 042, п.3)', () => {
     expect(res).toMatchObject({ channel: 'sms' });
     expect(provider.sendCode).toHaveBeenCalledWith('+77010000001', '1234');
     // Код один и тот же — какой бы канал ни сработал, ввести можно его.
-    expect(await service.verifyCode('+77010000001', '1234')).toBe(true);
+    expect(await service.verifyCode('+77010000001', '1234')).toBe('ok');
   });
 
   it('без ключей WhatsApp канал выключен — работает обычный SMS, WhatsApp даже не вызывается', async () => {
@@ -200,7 +200,7 @@ describe('SmsService — WhatsApp → SMS (задача 042, п.3)', () => {
     expect(provider.sendCode).toHaveBeenCalledTimes(1);
     expect(provider.sendCode).toHaveBeenCalledWith('+77010000001', '1234');
     expect(whatsapp.sendCode).toHaveBeenCalledTimes(1);
-    expect(await service.verifyCode('+77010000001', '1234')).toBe(true);
+    expect(await service.verifyCode('+77010000001', '1234')).toBe('ok');
   });
 
   it('SMS-повтор разрешён один раз: после SMS обычный минутный лимит снова действует', async () => {

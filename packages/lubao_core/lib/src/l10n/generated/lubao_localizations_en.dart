@@ -2934,6 +2934,24 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get companyLoginInvalidCredentials => 'Wrong email or password';
 
   @override
+  String authLockedOut(String minutes) {
+    return 'Too many attempts. Try again in $minutes min';
+  }
+
+  @override
+  String get authInvalidCode => 'Wrong code';
+
+  @override
+  String get authCodeExpired => 'The code has expired — send a new one';
+
+  @override
+  String get authCodeAttempts => 'Too many attempts — send a new code';
+
+  @override
+  String get authPhoneOtherRole =>
+      'This number is already used by another account';
+
+  @override
   String get mapsOpen => 'Open in maps';
 
   @override

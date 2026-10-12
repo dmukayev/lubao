@@ -1,18 +1,10 @@
-import 'package:dio/dio.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/auth_provider.dart';
-
-/// true, если бэкенд отклонил вход из-за 15-минутной блокировки после
-/// 5 неверных попыток (см. auth.service.ts#loginAdmin) — отличаем от
-/// обычного "неверный email/пароль", чтобы объяснить пользователю причину.
-bool _isLockedOutError(Object error) {
-  if (error is! DioException) return false;
-  final data = error.response?.data;
-  return data is Map && data['message'] == 'Слишком много неверных попыток, попробуйте через 15 минут';
-}
 
 class AdminLoginScreen extends ConsumerStatefulWidget {
   const AdminLoginScreen({super.key});
@@ -25,12 +17,36 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _loading = false;
+  // 073: ошибка входа — под полем пароля; блокировка — с обратным отсчётом.
+  final _passwordFocus = FocusNode();
+  String? _passwordError;
+  Timer? _lockTimer;
+  int _lockLeftSec = 0;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordFocus.dispose();
+    _lockTimer?.cancel();
     super.dispose();
+  }
+
+  void _startLockCountdown(int seconds) {
+    _lockTimer?.cancel();
+    setState(() => _lockLeftSec = seconds);
+    _lockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return timer.cancel();
+      setState(() {
+        _lockLeftSec--;
+        if (_lockLeftSec <= 0) {
+          timer.cancel();
+          _passwordError = null;
+        } else {
+          _passwordError = context.l10n.authLockedOut('${(_lockLeftSec / 60).ceil()}');
+        }
+      });
+    });
   }
 
   Future<void> _submit() async {
@@ -39,9 +55,18 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
     try {
       await ref.read(sessionProvider.notifier).login(_emailController.text.trim(), _passwordController.text);
     } catch (e) {
-      if (mounted) {
-        final message = _isLockedOutError(e) ? t.adminLoginLockedOut : t.commonError;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      if (!mounted) return;
+      final lockSec = lockedOutSeconds(e);
+      if (lockSec != null) {
+        setState(() => _passwordError = t.authLockedOut('${(lockSec / 60).ceil()}'));
+        _startLockCountdown(lockSec);
+      } else if (authErrorCode(e) == 'INVALID_CREDENTIALS') {
+        setState(() => _passwordError = t.companyLoginInvalidCredentials);
+        _passwordController.clear();
+        _passwordFocus.requestFocus();
+      } else {
+        // «Что-то пошло не так» — только для неизвестных ошибок сервера.
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(authErrorText(t, e) ?? t.commonError)));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -70,9 +95,20 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 12),
-                AppTextField(label: t.adminLoginPasswordLabel, controller: _passwordController, obscureText: true),
+                AppTextField(
+                  key: const Key('adminLoginPassword'),
+                  label: t.adminLoginPasswordLabel,
+                  controller: _passwordController,
+                  focusNode: _passwordFocus,
+                  obscureText: true,
+                  errorText: _passwordError,
+                  onChanged: (_) {
+                    if (_passwordError != null && _lockLeftSec <= 0) setState(() => _passwordError = null);
+                  },
+                  onSubmitted: (_) => _submit(),
+                ),
                 const SizedBox(height: 16),
-                PrimaryButton(label: t.adminLoginSubmit, loading: _loading, onPressed: _submit),
+                PrimaryButton(label: t.adminLoginSubmit, loading: _loading, onPressed: _lockLeftSec > 0 ? null : _submit),
               ],
             ),
           ),

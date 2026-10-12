@@ -97,7 +97,7 @@ export class SessionService {
     // запросе; явный код ACCOUNT_BLOCKED, а не generic 401, чтобы клиент
     // показал понятный экран, а не бесконечный цикл релогина.
     if (session?.user.isBlocked) {
-      throw new ForbiddenException({ code: 'ACCOUNT_BLOCKED', message: 'Аккаунт заблокирован' });
+      throw new ForbiddenException({ code: 'ACCOUNT_BLOCKED', message: 'Account is blocked' });
     }
     if (session && !session.revokedAt && session.expiresAt > new Date()) {
       const newRefreshToken = this.tokens.generateRefreshToken();

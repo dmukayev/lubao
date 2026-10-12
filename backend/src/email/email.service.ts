@@ -1,3 +1,4 @@
+import { AuthErrors, CodeCheck } from '../auth/auth-errors';
 import * as crypto from 'crypto';
 import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
@@ -47,17 +48,17 @@ export class EmailService {
 
     const locked = await client.get(this.minuteKey(email));
     if (locked) {
-      throw new HttpException('Слишком частые запросы кода, попробуйте через минуту', HttpStatus.TOO_MANY_REQUESTS);
+      throw AuthErrors.rateLimited('Code requested too often, try again in a minute');
     }
 
     const hourCount = Number((await client.get(this.hourKey(email))) ?? 0);
     if (hourCount >= MAX_PER_HOUR) {
-      throw new HttpException('Превышен лимит писем за час, попробуйте позже', HttpStatus.TOO_MANY_REQUESTS);
+      throw AuthErrors.rateLimited('Превышен лимит писем за час, попробуйте позже');
     }
 
     const ipHourCount = Number((await client.get(this.ipHourKey(ip))) ?? 0);
     if (ipHourCount >= MAX_PER_HOUR_PER_IP) {
-      throw new HttpException('Превышен лимит запросов кода с вашего адреса, попробуйте позже', HttpStatus.TOO_MANY_REQUESTS);
+      throw AuthErrors.rateLimited('Too many code requests from your address, try later');
     }
 
     const code = this.provider.generateCode();
@@ -76,19 +77,20 @@ export class EmailService {
   /// Счётчик инкрементируется атомарно до сравнения кода — иначе
   /// параллельный перебор обходит лимит (ревью 006, 024 п.2; то же
   /// исправление, что и в SmsService.verifyCode — см. комментарий там).
-  async verifyCode(email: string, code: string, ip?: string): Promise<boolean> {
+  async verifyCode(email: string, code: string, ip?: string): Promise<CodeCheck> {
     const client = this.redis.client;
 
     if (ip) {
       const verifyIpCount = await client.incr(this.verifyIpHourKey(ip));
       if (verifyIpCount === 1) await client.expire(this.verifyIpHourKey(ip), HOUR_WINDOW_SECONDS);
       if (verifyIpCount > MAX_VERIFY_PER_HOUR_PER_IP) {
-        throw new HttpException('Превышен лимит проверок кода с вашего адреса, попробуйте позже', HttpStatus.TOO_MANY_REQUESTS);
+        throw AuthErrors.rateLimited('Too many code checks from your address, try later');
       }
     }
 
     const stored = await client.get(this.codeKey(email));
-    if (!stored) return false;
+    // 073: кода нет — истёк (или не запрашивался): «Код устарел — отправьте новый».
+    if (!stored) return 'expired';
 
     const attemptsKey = this.attemptsKey(email);
     const attempts = await client.incr(attemptsKey);
@@ -98,7 +100,7 @@ export class EmailService {
     }
     if (attempts > MAX_WRONG_ATTEMPTS) {
       await client.del(this.codeKey(email));
-      throw new BadRequestException('Слишком много попыток, запросите новый код');
+      throw AuthErrors.codeAttemptsExceeded();
     }
 
     const storedBuf = Buffer.from(stored);
@@ -106,11 +108,11 @@ export class EmailService {
     const match = storedBuf.length === codeBuf.length && crypto.timingSafeEqual(storedBuf, codeBuf);
 
     if (!match) {
-      return false;
+      return 'invalid';
     }
 
     await Promise.all([client.del(this.codeKey(email)), client.del(attemptsKey)]);
-    return true;
+    return 'ok';
   }
 
   /// Письмо без кода — приглашение сотрудника (задача 025). Без лимитов

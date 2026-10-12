@@ -59,6 +59,7 @@ export 'src/utils/app_version.dart';
 export 'src/observability/error_reporter.dart';
 
 export 'src/api/api_client.dart';
+export 'src/api/auth_error_text.dart';
 export 'src/repositories/auth_repository.dart';
 export 'src/repositories/reference_data_repository.dart';
 export 'src/repositories/driver_repository.dart';

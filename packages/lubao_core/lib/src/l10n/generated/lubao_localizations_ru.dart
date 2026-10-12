@@ -2920,6 +2920,24 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get companyLoginInvalidCredentials => 'Неверный email или пароль';
 
   @override
+  String authLockedOut(String minutes) {
+    return 'Слишком много попыток. Попробуйте через $minutes мин';
+  }
+
+  @override
+  String get authInvalidCode => 'Неверный код';
+
+  @override
+  String get authCodeExpired => 'Код устарел — отправьте новый';
+
+  @override
+  String get authCodeAttempts => 'Слишком много попыток — отправьте новый код';
+
+  @override
+  String get authPhoneOtherRole =>
+      'Этот номер уже используется в другом аккаунте';
+
+  @override
   String get mapsOpen => 'Открыть в картах';
 
   @override

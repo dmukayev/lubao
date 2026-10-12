@@ -19,6 +19,9 @@ String errorMessage(LubaoLocalizations t, Object error, {String? fallback}) {
       default:
         break;
     }
+    // 073: ошибки входа и кода — по коду сервера.
+    final auth = authErrorText(t, error);
+    if (auth != null) return auth;
     final coded = responseConflictText(t, error);
     if (coded != null) return coded;
     final status = error.response?.statusCode;

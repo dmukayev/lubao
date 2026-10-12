@@ -1,3 +1,4 @@
+import { AuthErrors, throwForCode } from './auth-errors';
 import { LoginCodeChannel } from '../sms/login-code-channels';
 import { OFFER_VERSION, PD_CONSENT_VERSION, pdConsentRequired } from './legal-consent';
 import {
@@ -51,7 +52,7 @@ function normalizeEmail(email: string): string {
 /// чтобы клиент мог показать отдельный экран, а не трактовать как 401.
 function assertNotBlocked(user: { isBlocked: boolean }): void {
   if (user.isBlocked) {
-    throw new ForbiddenException({ code: 'ACCOUNT_BLOCKED', message: 'Аккаунт заблокирован' });
+    throw new ForbiddenException({ code: 'ACCOUNT_BLOCKED', message: 'Account is blocked' });
   }
 }
 
@@ -86,8 +87,7 @@ export class AuthService {
    */
   async verifyDriverCode(phone: string, code: string, ip?: string, deviceName?: string, platform?: string) {
     const normalized = normalizePhone(phone);
-    const ok = await this.sms.verifyCode(normalized, code, ip);
-    if (!ok) throw new BadRequestException('Неверный или истёкший код');
+    throwForCode(await this.sms.verifyCode(normalized, code, ip));
     return this.loginDriverByPhone(normalized, deviceName, platform);
   }
 
@@ -99,7 +99,7 @@ export class AuthService {
     if (!user) {
       user = await this.prisma.user.create({ data: { role: 'DRIVER', phone: normalized } });
     } else if (user.role !== 'DRIVER') {
-      throw new BadRequestException('Этот номер уже используется другой ролью');
+      throw AuthErrors.phoneOtherRole();
     }
     assertNotBlocked(user);
 
@@ -123,18 +123,17 @@ export class AuthService {
    */
   async loginCompany(email: string, password: string, ip: string, deviceName?: string, platform?: string) {
     const normalizedEmail = normalizeEmail(email);
-    const locked = await this.isLockedOut('company', normalizedEmail);
-    if (locked) {
-      throw new UnauthorizedException('Слишком много неверных попыток, попробуйте через 15 минут');
-    }
+    const locked = await this.lockoutLeftSec('company', normalizedEmail);
+    if (locked > 0) throw AuthErrors.lockedOut(locked);
 
     const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
     const passwordOk =
       user?.role === 'COMPANY' && user.passwordHash ? await bcrypt.compare(password, user.passwordHash) : false;
 
     if (!passwordOk) {
-      await this.recordFailure('company', normalizedEmail);
-      throw new UnauthorizedException('Invalid email or password');
+      const lockedNow = await this.recordFailure('company', normalizedEmail);
+      if (lockedNow > 0) throw AuthErrors.lockedOut(lockedNow);
+      throw AuthErrors.invalidCredentials();
     }
     await this.clearLockout('company', normalizedEmail);
     assertNotBlocked(user!);
@@ -209,8 +208,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user?.email) throw new NotFoundException('User has no email');
 
-    const ok = await this.email.verifyCode(normalizeEmail(user.email), code, ip);
-    if (!ok) throw new BadRequestException('Неверный или истёкший код');
+    throwForCode(await this.email.verifyCode(normalizeEmail(user.email), code, ip));
 
     await this.prisma.user.update({ where: { id: userId }, data: { emailVerifiedAt: new Date() } });
   }
@@ -227,8 +225,7 @@ export class AuthService {
 
   async resetPassword(email: string, code: string, newPassword: string, ip?: string) {
     const normalizedEmail = normalizeEmail(email);
-    const ok = await this.email.verifyCode(normalizedEmail, code, ip);
-    if (!ok) throw new BadRequestException('Неверный или истёкший код');
+    throwForCode(await this.email.verifyCode(normalizedEmail, code, ip));
 
     const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user || user.role !== 'COMPANY') throw new NotFoundException('User not found');
@@ -242,10 +239,10 @@ export class AuthService {
   async loginAdmin(email: string, password: string, ip: string, deviceName?: string, platform?: string) {
     const normalizedEmail = normalizeEmail(email);
 
-    const locked = await this.isLockedOut('admin', normalizedEmail);
-    if (locked) {
+    const locked = await this.lockoutLeftSec('admin', normalizedEmail);
+    if (locked > 0) {
       await this.logAdminAttempt(null, normalizedEmail, ip, 'ADMIN_LOGIN_LOCKED');
-      throw new UnauthorizedException('Слишком много неверных попыток, попробуйте через 15 минут');
+      throw AuthErrors.lockedOut(locked);
     }
 
     const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
@@ -253,9 +250,10 @@ export class AuthService {
       user?.role === 'ADMIN' && user.passwordHash ? await bcrypt.compare(password, user.passwordHash) : false;
 
     if (!passwordOk) {
-      await this.recordFailure('admin', normalizedEmail);
+      const lockedNow = await this.recordFailure('admin', normalizedEmail);
       await this.logAdminAttempt(user?.id ?? null, normalizedEmail, ip, 'ADMIN_LOGIN_FAILURE');
-      throw new UnauthorizedException('Invalid email or password');
+      if (lockedNow > 0) throw AuthErrors.lockedOut(lockedNow);
+      throw AuthErrors.invalidCredentials();
     }
 
     await this.clearLockout('admin', normalizedEmail);
@@ -268,11 +266,14 @@ export class AuthService {
   /// Общая защита от перебора пароля — один и тот же Redis-паттерн для
   /// админа (задача 006) и логиста (задача 025), с отдельным неймспейсом
   /// по `scope`, чтобы блокировки не пересекались между ролями.
-  private async isLockedOut(scope: 'admin' | 'company', email: string): Promise<boolean> {
-    return (await this.redis.client.get(`${scope}:lockout:${email}`)) !== null;
+  /// Сколько секунд ещё действует блокировка (0 — не заблокирован).
+  private async lockoutLeftSec(scope: 'admin' | 'company', email: string): Promise<number> {
+    const ttl = await this.redis.client.ttl(`${scope}:lockout:${email}`);
+    return ttl > 0 ? ttl : 0;
   }
 
-  private async recordFailure(scope: 'admin' | 'company', email: string): Promise<void> {
+  /// Неверный пароль; этой попыткой заблокирован — сколько секунд блокировки, иначе 0.
+  private async recordFailure(scope: 'admin' | 'company', email: string): Promise<number> {
     const client = this.redis.client;
     const failKey = `${scope}:fail:${email}`;
     const lockKey = `${scope}:lockout:${email}`;
@@ -281,7 +282,9 @@ export class AuthService {
     if (attempts >= LOCKOUT_THRESHOLD) {
       await client.set(lockKey, '1', 'EX', LOCKOUT_SECONDS);
       await client.del(failKey);
+      return LOCKOUT_SECONDS;
     }
+    return 0;
   }
 
   private async clearLockout(scope: 'admin' | 'company', email: string): Promise<void> {

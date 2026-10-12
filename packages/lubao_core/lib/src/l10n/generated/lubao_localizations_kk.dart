@@ -2933,6 +2933,23 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get companyLoginInvalidCredentials => 'Email немесе құпиясөз қате';
 
   @override
+  String authLockedOut(String minutes) {
+    return 'Тым көп әрекет. $minutes минуттан кейін қайталаңыз';
+  }
+
+  @override
+  String get authInvalidCode => 'Код қате';
+
+  @override
+  String get authCodeExpired => 'Кодтың мерзімі өтті — жаңасын жіберіңіз';
+
+  @override
+  String get authCodeAttempts => 'Тым көп әрекет — жаңа код жіберіңіз';
+
+  @override
+  String get authPhoneOtherRole => 'Бұл нөмір басқа аккаунтта қолданылады';
+
+  @override
   String get mapsOpen => 'Картада ашу';
 
   @override

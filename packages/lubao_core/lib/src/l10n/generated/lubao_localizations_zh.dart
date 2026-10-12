@@ -2867,6 +2867,23 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get companyLoginInvalidCredentials => '邮箱或密码错误';
 
   @override
+  String authLockedOut(String minutes) {
+    return '尝试次数过多，请 $minutes 分钟后再试';
+  }
+
+  @override
+  String get authInvalidCode => '验证码错误';
+
+  @override
+  String get authCodeExpired => '验证码已过期——请重新发送';
+
+  @override
+  String get authCodeAttempts => '尝试次数过多——请重新发送验证码';
+
+  @override
+  String get authPhoneOtherRole => '该号码已被其他账号使用';
+
+  @override
   String get mapsOpen => '在地图中打开';
 
   @override

@@ -25,6 +25,10 @@ class FakeRedisClient {
   async expire(_key: string, _seconds: number): Promise<void> {
     // TTL countdown не важен для логики блокировки в этих тестах
   }
+  /// 073: оставшееся время блокировки — 15 мин, пока ключ есть; нет ключа — -2 (как в Redis).
+  async ttl(key: string): Promise<number> {
+    return this.store.has(key) ? 900 : -2;
+  }
 }
 
 describe('AuthService — admin lockout + audit log', () => {
@@ -53,11 +57,10 @@ describe('AuthService — admin lockout + audit log', () => {
 
   it('locks out after 5 consecutive wrong passwords — a 6th attempt with the CORRECT password is still rejected', async () => {
     for (let i = 0; i < 5; i++) {
-      await expect(service.loginAdmin(ADMIN_EMAIL, 'wrong-password', '1.1.1.1')).rejects.toThrow(UnauthorizedException);
+      await expect(service.loginAdmin(ADMIN_EMAIL, 'wrong-password', '1.1.1.1')).rejects.toThrow();
     }
-    await expect(service.loginAdmin(ADMIN_EMAIL, 'correct-password', '1.1.1.1')).rejects.toThrow(
-      'Слишком много неверных попыток, попробуйте через 15 минут',
-    );
+    // 073: блокировка — кодом и временем до разблокировки, текст — на клиенте.
+    await expect(service.loginAdmin(ADMIN_EMAIL, 'correct-password', '1.1.1.1')).rejects.toMatchObject({ status: 429, response: { code: 'LOCKED_OUT', retryAfterSec: 900 } });
   });
 
   it('writes exactly one AuditLog row per attempt, with the right action', async () => {
@@ -158,9 +161,7 @@ describe('AuthService.loginCompany (email + password, задача 025)', () => 
     for (let i = 0; i < 5; i++) {
       await expect(service.loginCompany('owner@example.com', 'wrong-password', '1.1.1.1')).rejects.toThrow();
     }
-    await expect(service.loginCompany('owner@example.com', 'correct-password', '1.1.1.1')).rejects.toThrow(
-      'Слишком много неверных попыток, попробуйте через 15 минут',
-    );
+    await expect(service.loginCompany('owner@example.com', 'correct-password', '1.1.1.1')).rejects.toMatchObject({ status: 429, response: { code: 'LOCKED_OUT', retryAfterSec: 900 } });
   });
 
   it('admin and company lockouts use separate namespaces — failing company login does not lock the admin', async () => {
@@ -279,14 +280,14 @@ describe('AuthService password reset (задача 025, п. 9)', () => {
   });
 
   it('resetPassword rejects a wrong/expired code', async () => {
-    email.verifyCode.mockResolvedValue(false);
+    email.verifyCode.mockResolvedValue('invalid');
     await expect(service.resetPassword('owner@example.com', '000000', 'newpassword1')).rejects.toThrow(
       BadRequestException,
     );
   });
 
   it('resetPassword sets the new password and revokes every session', async () => {
-    email.verifyCode.mockResolvedValue(true);
+    email.verifyCode.mockResolvedValue('ok');
     prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'COMPANY', email: 'owner@example.com' });
 
     await service.resetPassword('owner@example.com', '123456', 'newpassword1');
@@ -309,7 +310,7 @@ describe('AuthService email verification (задача 025, п. 7 — не бл�
 
   it('verifyEmail sets emailVerifiedAt on a correct code', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: 'u1', email: 'owner@example.com' });
-    email.verifyCode.mockResolvedValue(true);
+    email.verifyCode.mockResolvedValue('ok');
 
     await service.verifyEmail('u1', '123456');
     expect(prisma.user.update).toHaveBeenCalledWith(
@@ -319,7 +320,7 @@ describe('AuthService email verification (задача 025, п. 7 — не бл�
 
   it('verifyEmail rejects a wrong code without updating the user', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: 'u1', email: 'owner@example.com' });
-    email.verifyCode.mockResolvedValue(false);
+    email.verifyCode.mockResolvedValue('invalid');
 
     await expect(service.verifyEmail('u1', '000000')).rejects.toThrow(BadRequestException);
     expect(prisma.user.update).not.toHaveBeenCalled();
@@ -345,7 +346,7 @@ describe('AuthService — blocked accounts cannot log in (задача 026, п.5
     const prisma: any = {
       user: { findUnique: jest.fn().mockResolvedValue({ id: 'u1', role: 'DRIVER', phone: '+77011234567', isBlocked: true }) },
     };
-    const sms = { verifyCode: jest.fn().mockResolvedValue(true) };
+    const sms = { verifyCode: jest.fn().mockResolvedValue('ok') };
     const drivers = { findByUserId: jest.fn() };
     const sessions = { createSession: jest.fn() };
     const service = new AuthService(prisma, {} as any, drivers as any, {} as any, sms as any, {} as any, sessions as any);
@@ -362,5 +363,21 @@ describe('AuthService.setLocale (задача 013 — язык хранится 
 
     await service.setLocale('u1', 'en');
     expect(prisma.user.update).toHaveBeenCalledWith({ where: { id: 'u1' }, data: { locale: 'en' } });
+  });
+});
+
+describe('073: ошибки входа — кодом', () => {
+  it('неверный email или пароль — 401 INVALID_CREDENTIALS, одинаково для неизвестного email', async () => {
+    const prisma: any = { user: { findUnique: jest.fn().mockResolvedValue(null) } };
+    const service = new AuthService(prisma, { client: new FakeRedisClient() } as any, {} as any, {} as any, {} as any, {} as any, {} as any);
+    await expect(service.loginCompany('nobody@example.com', 'x', '1.1.1.1')).rejects.toMatchObject({ status: 401, response: { code: 'INVALID_CREDENTIALS' } });
+  });
+
+  it('код: неверный — INVALID_CODE, устарел — CODE_EXPIRED', async () => {
+    const sms = { verifyCode: jest.fn().mockResolvedValue('invalid') };
+    const service = new AuthService({} as any, { client: new FakeRedisClient() } as any, {} as any, {} as any, sms as any, {} as any, {} as any);
+    await expect(service.verifyDriverCode('+77010000001', '0000')).rejects.toMatchObject({ response: { code: 'INVALID_CODE' } });
+    sms.verifyCode.mockResolvedValue('expired');
+    await expect(service.verifyDriverCode('+77010000001', '0000')).rejects.toMatchObject({ response: { code: 'CODE_EXPIRED' } });
   });
 });

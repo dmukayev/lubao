@@ -60,9 +60,9 @@ describe('EmailService', () => {
       await service.requestCode('owner@yidao-logistics.cn', '1.1.1.1');
     });
 
-    it('tolerates up to 5 wrong attempts, still returning false', async () => {
+    it('tolerates up to 5 wrong attempts, still returning «invalid»', async () => {
       for (let i = 0; i < 5; i++) {
-        await expect(service.verifyCode('owner@yidao-logistics.cn', '000000')).resolves.toBe(false);
+        await expect(service.verifyCode('owner@yidao-logistics.cn', '000000')).resolves.toBe('invalid');
       }
     });
 
@@ -71,17 +71,17 @@ describe('EmailService', () => {
         await service.verifyCode('owner@yidao-logistics.cn', '000000');
       }
       await expect(service.verifyCode('owner@yidao-logistics.cn', '000000')).rejects.toThrow(BadRequestException);
-      await expect(service.verifyCode('owner@yidao-logistics.cn', '123456')).resolves.toBe(false);
+      await expect(service.verifyCode('owner@yidao-logistics.cn', '123456')).resolves.toBe('expired');
     });
 
     it('accepts the correct code within the attempt budget and clears state', async () => {
       await service.verifyCode('owner@yidao-logistics.cn', '000000');
-      await expect(service.verifyCode('owner@yidao-logistics.cn', '123456')).resolves.toBe(true);
-      await expect(service.verifyCode('owner@yidao-logistics.cn', '123456')).resolves.toBe(false);
+      await expect(service.verifyCode('owner@yidao-logistics.cn', '123456')).resolves.toBe('ok');
+      await expect(service.verifyCode('owner@yidao-logistics.cn', '123456')).resolves.toBe('expired');
     });
 
-    it('returns false when no code was ever requested for the email', async () => {
-      await expect(service.verifyCode('nobody@example.com', '123456')).resolves.toBe(false);
+    it('returns «expired» when no code was ever requested for the email', async () => {
+      await expect(service.verifyCode('nobody@example.com', '123456')).resolves.toBe('expired');
     });
   });
 

@@ -1,4 +1,5 @@
-import 'package:dio/dio.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,7 +8,6 @@ import 'package:lubao_core/lubao_core.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../shared/error_feedback.dart';
-import '../shared/status_helpers.dart';
 import '../shared/pd_consent.dart';
 
 /// Вход логиста — email и пароль по умолчанию (задача 025, заменяет вход
@@ -26,14 +26,37 @@ class CompanyLoginScreen extends ConsumerStatefulWidget {
 class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
   late final _emailController = TextEditingController(text: widget.prefillEmail);
   final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
   bool _loading = false;
+  // 073: ошибка входа — под полем пароля; блокировка — с обратным отсчётом.
+  final _passwordFocus = FocusNode();
+  String? _passwordError;
+  Timer? _lockTimer;
+  int _lockLeftSec = 0;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordFocus.dispose();
+    _lockTimer?.cancel();
     super.dispose();
+  }
+
+  void _startLockCountdown(int seconds) {
+    _lockTimer?.cancel();
+    setState(() => _lockLeftSec = seconds);
+    _lockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return timer.cancel();
+      setState(() {
+        _lockLeftSec--;
+        if (_lockLeftSec <= 0) {
+          timer.cancel();
+          _passwordError = null;
+        } else {
+          _passwordError = context.l10n.authLockedOut('${(_lockLeftSec / 60).ceil()}');
+        }
+      });
+    });
   }
 
   Future<void> _submit() async {
@@ -43,18 +66,20 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
       await ref.read(sessionProvider.notifier).loginCompany(_emailController.text.trim(), _passwordController.text);
       // Дальше решает редирект роутера.
     } catch (e) {
-      if (mounted) {
-        // Сеть / неверный пароль / сервер — разные тексты (живая проверка
-        // 2026-10-07: на всё было «Что-то пошло не так»).
-        final status = e is DioException ? e.response?.statusCode : null;
-        final message = isAccountBlockedError(e)
-            ? t.accountBlockedMessage
-            : isLockedOutError(e)
-                ? t.companyLoginLockedOut
-                : status == 401
-                    ? t.companyLoginInvalidCredentials
-                    : errorMessage(t, e);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      if (!mounted) return;
+      // 073: по коду сервера — понятный текст; «Что-то пошло не так» — только для неизвестных 5xx.
+      final lockSec = lockedOutSeconds(e);
+      final code = authErrorCode(e);
+      if (lockSec != null) {
+        setState(() => _passwordError = t.authLockedOut('${(lockSec / 60).ceil()}'));
+        _startLockCountdown(lockSec);
+      } else if (code == 'INVALID_CREDENTIALS') {
+        // Неверный пароль — под полем, поле очищается, курсор в нём.
+        setState(() => _passwordError = t.companyLoginInvalidCredentials);
+        _passwordController.clear();
+        _passwordFocus.requestFocus();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(authErrorText(t, e) ?? errorMessage(t, e))));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -90,22 +115,21 @@ class _CompanyLoginScreenState extends ConsumerState<CompanyLoginScreen> {
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 12),
+            // «Глаз» показать / скрыть — в самом поле (AppTextField).
             AppTextField(
               key: const Key('companyLoginPasswordField'),
               label: t.adminLoginPasswordLabel,
               controller: _passwordController,
-              obscureText: _obscurePassword,
+              focusNode: _passwordFocus,
+              obscureText: true,
+              errorText: _passwordError,
+              onChanged: (_) {
+                if (_passwordError != null && _lockLeftSec <= 0) setState(() => _passwordError = null);
+              },
               onSubmitted: (_) => _submit(),
             ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                child: Text(_obscurePassword ? t.companyLoginShowPassword : t.companyLoginHidePassword),
-              ),
-            ),
-            const SizedBox(height: 8),
-            PrimaryButton(key: const Key('companyLoginSubmitButton'), label: t.companyLoginVerify, loading: _loading, onPressed: _submit),
+            const SizedBox(height: 16),
+            PrimaryButton(key: const Key('companyLoginSubmitButton'), label: t.companyLoginVerify, loading: _loading, onPressed: _lockLeftSec > 0 ? null : _submit),
             const SizedBox(height: 16),
             // Две ссылки — в строку, а не влезают — переносом (не вылезают вправо).
             Wrap(

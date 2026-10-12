@@ -5556,6 +5556,36 @@ abstract class LubaoLocalizations {
   /// **'Неверный email или пароль'**
   String get companyLoginInvalidCredentials;
 
+  /// No description provided for @authLockedOut.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком много попыток. Попробуйте через {minutes} мин'**
+  String authLockedOut(String minutes);
+
+  /// No description provided for @authInvalidCode.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверный код'**
+  String get authInvalidCode;
+
+  /// No description provided for @authCodeExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Код устарел — отправьте новый'**
+  String get authCodeExpired;
+
+  /// No description provided for @authCodeAttempts.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком много попыток — отправьте новый код'**
+  String get authCodeAttempts;
+
+  /// No description provided for @authPhoneOtherRole.
+  ///
+  /// In ru, this message translates to:
+  /// **'Этот номер уже используется в другом аккаунте'**
+  String get authPhoneOtherRole;
+
   /// No description provided for @mapsOpen.
   ///
   /// In ru, this message translates to:

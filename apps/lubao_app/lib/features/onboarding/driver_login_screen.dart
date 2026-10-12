@@ -7,7 +7,6 @@ import 'package:lubao_core/lubao_core.dart';
 import '../../providers/api_providers.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/locale_provider.dart';
-import '../shared/status_helpers.dart';
 import '../shared/error_feedback.dart';
 import '../shared/pd_consent.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -211,11 +210,9 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
       // регистрацию, иначе сразу в ленту (см. app_router.dart).
     } catch (e) {
       if (mounted) {
-        final message = isAccountBlockedError(e)
-            ? t.accountBlockedMessage
-            : isTooManyAttemptsError(e)
-                ? t.driverOtpTooManyAttempts
-                : t.driverOtpInvalidCode;
+        // 073: «Неверный код», «Код устарел — отправьте новый», «Нет связи» — по
+        // коду сервера; раньше на любую ошибку было «Неверный код».
+        final message = authErrorText(t, e) ?? errorMessage(t, e);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
         for (final c in _codeControllers) {
           c.clear();

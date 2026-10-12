@@ -39,7 +39,11 @@ class ApiClient {
   }
 
   Future<void> _onError(DioException error, ErrorInterceptorHandler handler) async {
-    final isAuthRoute = error.requestOptions.path.startsWith('/auth/refresh');
+    // 073: 401 от самого входа (неверный пароль, код) — это ответ, а не
+    // истёкшая сессия: не обновляем токен и не подменяем ошибку (раньше чтение
+    // токена в браузере по http падало, и вместо «Неверный пароль» было
+    // «Что-то пошло не так»).
+    final isAuthRoute = isLoginPath(error.requestOptions.path);
     if (error.response?.statusCode != 401 || isAuthRoute) {
       handler.next(error);
       return;
@@ -57,6 +61,12 @@ class ApiClient {
     } on DioException catch (e) {
       handler.next(e);
     }
+  }
+
+  /// Запросы входа и обновления токена — ошибки отдаются как есть.
+  static bool isLoginPath(String path) {
+    const prefixes = ['/auth/refresh', '/auth/company/login', '/auth/company/register', '/auth/company/forgot-password', '/auth/company/reset-password', '/auth/admin/login', '/auth/phone/', '/auth/telegram/'];
+    return prefixes.any(path.startsWith);
   }
 
   Future<String?> _refreshAccessToken() {

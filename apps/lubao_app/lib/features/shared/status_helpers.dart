@@ -243,7 +243,7 @@ String? responseConflictText(LubaoLocalizations t, Object error) {
 bool isTooManyAttemptsError(Object error) {
   if (error is! DioException) return false;
   final data = error.response?.data;
-  return data is Map && data['message'] == 'Слишком много попыток, запросите новый код';
+  return data is Map && data['code'] == 'CODE_ATTEMPTS_EXCEEDED';
 }
 
 /// true, если вход заблокирован на 15 минут после 5 неверных паролей
@@ -251,7 +251,7 @@ bool isTooManyAttemptsError(Object error) {
 bool isLockedOutError(Object error) {
   if (error is! DioException) return false;
   final data = error.response?.data;
-  return data is Map && data['message'] == 'Слишком много неверных попыток, попробуйте через 15 минут';
+  return data is Map && data['code'] == 'LOCKED_OUT';
 }
 
 /// true, если аккаунт заблокирован админом (задача 026, п.5) — сервер
