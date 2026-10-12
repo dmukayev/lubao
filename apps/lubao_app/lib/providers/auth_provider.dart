@@ -9,6 +9,7 @@ import 'data_providers.dart';
 import 'tracking_provider.dart';
 import '../features/shared/cached_photo.dart';
 import '../features/shared/driver_avatar.dart';
+import '../features/company/cargos/post_cargo_screen.dart' show contactPhoneSavedProvider;
 import '../services/disk_bytes_cache.dart';
 
 /// true, пока идёт попытка восстановить сессию из secure storage при
@@ -193,6 +194,8 @@ class SessionController extends StateNotifier<Session?> {
     await DiskBytesCache.instance.clear();
     _ref.invalidate(driverAvatarProvider);
     _ref.invalidate(cachedPhotoProvider);
+    // Телефон, сохранённый из формы груза, — этого логиста, не следующего.
+    _ref.invalidate(contactPhoneSavedProvider);
   }
 
   /// 043 п.2: согласие на обработку ПДн дано — экран больше не показываем.

@@ -18,6 +18,10 @@ import '../../shared/status_helpers.dart';
 import '../../../services/push_service.dart';
 import '../../shared/cached_photo.dart';
 
+/// Телефон логиста сохранён из формы груза в этой сессии приложения — второй
+/// раз не спрашивать (профиль в сессии обновится при следующей загрузке).
+final contactPhoneSavedProvider = StateProvider<bool>((ref) => false);
+
 class PostCargoScreen extends ConsumerStatefulWidget {
   const PostCargoScreen({super.key, this.cargo, this.template});
 
@@ -374,7 +378,9 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     // read, а не watch: геттер зовётся и из обработчика публикации; экран
     // перестраивается сам — сессия обновляется через setState после сохранения.
     final session = ref.read(sessionProvider);
-    return _askPhone || (session?.companyMember?.contactPhone == null && session?.user.phone == null);
+    if (_askPhone) return true;
+    if (ref.read(contactPhoneSavedProvider)) return false;
+    return session?.companyMember?.contactPhone == null && session?.user.phone == null;
   }
 
   Future<void> _submit() async {
@@ -404,12 +410,12 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     if (_pointError != null || _destinationError != null || _bodyTypeError != null || _categoryError != null || _priceError != null || _weightError != null || !specsOk || _phoneError != null) return;
     setState(() => _saving = true);
     try {
-      // Сначала — телефон в «Мой профиль» на сервере, потом публикация; сессию
-      // в приложении обновляем после ухода с формы — иначе экран «Грузы»
-      // перестраивался и загружал список раньше, чем появлялся новый груз.
-      CompanyMember? savedMember;
+      // Сначала — телефон в «Мой профиль» на сервере, потом публикация. Сессию
+      // здесь не трогаем: её смена перестраивает навигацию (форма открывалась
+      // заново, список «Активные» — пустой); телефон помечаем отдельно.
       if (_needsPhone) {
-        savedMember = await ref.read(companyRepositoryProvider).updateMyContact(contactPhone: _phoneController.text.trim());
+        await ref.read(companyRepositoryProvider).updateMyContact(contactPhone: _phoneController.text.trim());
+        ref.read(contactPhoneSavedProvider.notifier).state = true;
         _askPhone = false;
       }
       final input = CreateCargoInput(
@@ -442,10 +448,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         unawaited(ref.read(pushServiceProvider).requestPermissionAndRegister());
       }
       ref.invalidate(myCargosProvider);
-      final session = ref.read(sessionProvider);
-      final notifier = ref.read(sessionProvider.notifier);
       if (mounted) Navigator.of(context).pop();
-      if (savedMember != null && session?.company != null) notifier.updateCompany(session!.company!, savedMember);
     } catch (e) {
       final code = e is DioException && e.response?.data is Map ? (e.response!.data as Map)['code'] : null;
       if (code == 'CONTACT_PHONE_REQUIRED') {
