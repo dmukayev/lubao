@@ -247,7 +247,7 @@ start_backend() {
   (
     cd backend
     DATABASE_URL="$E2E_DB_URL" REDIS_URL="redis://localhost:${REDIS_PORT:-6379}/1" PORT="$E2E_PORT" \
-      SMS_PROVIDER=console EMAIL_PROVIDER=console TRANSLATION_PROVIDER=noop NODE_ENV=development JOBS_DISABLED=true SMS_MINUTE_LOCK_SECONDS=0 LOGIN_CODE_CONSOLE_CHANNELS=whatsapp,telegram \
+      SMS_PROVIDER=console EMAIL_PROVIDER=console TRANSLATION_PROVIDER=noop NODE_ENV=development JOBS_DISABLED=true SMS_MINUTE_LOCK_SECONDS=0 SMS_HOURLY_LIMIT_PER_PHONE=1000 SMS_HOURLY_LIMIT_PER_IP=1000 SMS_VERIFY_HOURLY_LIMIT_PER_IP=1000 LOGIN_CODE_CONSOLE_CHANNELS=whatsapp,telegram \
       OCR_SERVICE_URL="http://localhost:${OCR_PORT}" \
       THROTTLE_USER_LIMIT=600 TELEGRAM_BOT_TOKEN=e2e-token TELEGRAM_BOT_USERNAME=lubao_e2e_bot TELEGRAM_WEBHOOK_SECRET=e2e-telegram-secret TELEGRAM_API_URL=http://127.0.0.1:9 `# сценарии жмут быстрее человека; сам лимит 60/мин — HTTP-тест в бэкенде` \
       exec node dist-e2e/src/main.js >"$RESULTS/backend.log" 2>&1

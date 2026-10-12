@@ -25,6 +25,18 @@ function minuteLockSeconds(): number {
 const HOUR_WINDOW_SECONDS = 60 * 60;
 const MAX_PER_HOUR = 5;
 const MAX_PER_HOUR_PER_IP = 20;
+
+/// Часовые лимиты кодов — для тестовых окружений с консольным SMS (e2e: все
+/// входы идут с одного адреса и одних номеров) можно поднять
+/// (`SMS_HOURLY_LIMIT_PER_PHONE`, `SMS_HOURLY_LIMIT_PER_IP`). С реальным
+/// провайдером и в production переменные игнорируются.
+export function hourlyLimit(envName: string, fallback: number): number {
+  const override = process.env[envName];
+  if (override === undefined || override === '') return fallback;
+  if (process.env.NODE_ENV === 'production' || process.env.SMS_PROVIDER === 'mobizon') return fallback;
+  const value = Number(override);
+  return Number.isInteger(value) && value > 0 ? value : fallback;
+}
 const MAX_WRONG_ATTEMPTS = 5;
 const MAX_VERIFY_PER_HOUR_PER_IP = 30;
 
@@ -124,12 +136,12 @@ export class SmsService {
     }
 
     const hourCount = Number((await client.get(this.hourKey(phone))) ?? 0);
-    if (hourCount >= MAX_PER_HOUR) {
+    if (hourCount >= hourlyLimit('SMS_HOURLY_LIMIT_PER_PHONE', MAX_PER_HOUR)) {
       throw AuthErrors.rateLimited('Превышен лимит SMS за час, попробуйте позже');
     }
 
     const ipHourCount = Number((await client.get(this.ipHourKey(ip))) ?? 0);
-    if (ipHourCount >= MAX_PER_HOUR_PER_IP) {
+    if (ipHourCount >= hourlyLimit('SMS_HOURLY_LIMIT_PER_IP', MAX_PER_HOUR_PER_IP)) {
       throw AuthErrors.rateLimited('Too many code requests from your address, try later');
     }
 
@@ -180,7 +192,7 @@ export class SmsService {
     if (ip) {
       const verifyIpCount = await client.incr(this.verifyIpHourKey(ip));
       if (verifyIpCount === 1) await client.expire(this.verifyIpHourKey(ip), HOUR_WINDOW_SECONDS);
-      if (verifyIpCount > MAX_VERIFY_PER_HOUR_PER_IP) {
+      if (verifyIpCount > hourlyLimit('SMS_VERIFY_HOURLY_LIMIT_PER_IP', MAX_VERIFY_PER_HOUR_PER_IP)) {
         throw AuthErrors.rateLimited('Too many code checks from your address, try later');
       }
     }

@@ -342,3 +342,24 @@ describe('SmsService — три канала из админки: WhatsApp / Tel
     expect(await service.channels()).toEqual(['sms']);
   });
 });
+
+describe('часовые лимиты кодов: поднимаются только вне production', () => {
+  const saved = { ...process.env };
+  afterEach(() => { process.env = { ...saved }; });
+
+  it('e2e (консольный SMS) — лимит из переменной; production и реальный провайдер — всегда по умолчанию', async () => {
+    const { hourlyLimit } = await import('./sms.service');
+    process.env.NODE_ENV = 'development';
+    process.env.SMS_PROVIDER = 'console';
+    process.env.SMS_HOURLY_LIMIT_PER_IP = '1000';
+    expect(hourlyLimit('SMS_HOURLY_LIMIT_PER_IP', 20)).toBe(1000);
+    process.env.NODE_ENV = 'production';
+    expect(hourlyLimit('SMS_HOURLY_LIMIT_PER_IP', 20)).toBe(20);
+    process.env.NODE_ENV = 'development';
+    process.env.SMS_PROVIDER = 'mobizon';
+    expect(hourlyLimit('SMS_HOURLY_LIMIT_PER_IP', 20)).toBe(20);
+    process.env.SMS_PROVIDER = 'console';
+    process.env.SMS_HOURLY_LIMIT_PER_IP = 'abc';
+    expect(hourlyLimit('SMS_HOURLY_LIMIT_PER_IP', 20)).toBe(20);
+  });
+});

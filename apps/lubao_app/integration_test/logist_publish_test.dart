@@ -359,7 +359,9 @@ void main() {
     await run.step(tester, 'отклик-ведёт-в-сделку', () async {
       final selected = find.byWidgetPredicate((w) => w.key is ValueKey && w.key.toString().contains('responseCard-'));
       await waitFor(tester, selected);
-      await tester.tap(selected.first);
+      // Нажатие по карточке (плашка статуса), а не по имени: имя открывает
+      // карточку водителя.
+      await tester.tap(find.descendant(of: selected.first, matching: find.byType(StatusBadge)).first);
       await waitFor(tester, find.byKey(const Key('dealTitle')));
       expectInsideSafeZone(tester);
       await tester.tap(find.byType(BackButton).first);
