@@ -1,11 +1,13 @@
 import { ValidationPipe } from '@nestjs/common';
-import { HttpAdapterHost, NestFactory } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { assertProductionConfig } from './config/production-guard';
 import { validationExceptionFactory } from './common/validation-errors';
-import { SentryExceptionFilter, initSentry } from './observability/sentry';
+import { initSentry } from './observability/sentry';
+import { ErrorCodeFilter } from './common/error-code.filter';
+import * as Sentry from '@sentry/node';
 
 async function bootstrap() {
   // Предохранитель прода (задача 043, п.3): с dev-настройками в production
@@ -15,7 +17,8 @@ async function bootstrap() {
   const sentryEnabled = initSentry();
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  if (sentryEnabled) app.useGlobalFilters(new SentryExceptionFilter(app.get(HttpAdapterHost).httpAdapter));
+  // 074: у каждой ошибки — код и номер; 5xx — в Sentry (если включён).
+  app.useGlobalFilters(new ErrorCodeFilter(sentryEnabled ? (e) => Sentry.captureException(e) : undefined));
   app.set('trust proxy', 1); // за nginx — иначе req.ip всегда внутренний IP контейнера
   // Заголовки безопасности (задача 043, п.4). CORP cross-origin: веб-клиенты
   // (кабинет логиста, админка) ходят сюда с другого origin.
