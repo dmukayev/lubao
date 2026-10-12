@@ -119,7 +119,7 @@ class BlacklistScreen extends ConsumerWidget {
               loading: () => const LoadingView(),
               error: (e, st) {
                 debugPrint('BlacklistScreen: $e');
-                return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(_blacklistProvider));
+                return ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(_blacklistProvider));
               },
               data: (list) => list.isEmpty
                   ? EmptyState(message: t.adminBlacklistEmpty, icon: LucideIcons.shieldCheck)

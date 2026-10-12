@@ -27,7 +27,7 @@ class CargoResponsesScreen extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         final t = context.l10n;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(responseConflictText(t, e) ?? t.commonError)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(responseConflictText(t, e) ?? errorMessage(t, e))));
       }
     }
     ref.invalidate(cargoResponsesProvider(cargoId));
@@ -98,7 +98,7 @@ class CargoResponsesScreen extends ConsumerWidget {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('CargoResponsesScreen: $e');
-          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(cargoResponsesProvider(cargoId)));
+          return ErrorView(message: errorMessage(t, e), onRetry: () => ref.invalidate(cargoResponsesProvider(cargoId)));
         },
         data: (list) {
           final inactive = list.where((r) => r.status == ResponseStatus.rejected || r.status == ResponseStatus.cancelled).toList();

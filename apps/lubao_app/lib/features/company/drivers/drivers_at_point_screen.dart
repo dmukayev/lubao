@@ -229,7 +229,7 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
       await ref.read(cargoRepositoryProvider).inviteDriver(selectedCargo.id, driver.driverId);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(responseConflictText(t, e) ?? t.commonError)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(responseConflictText(t, e) ?? errorMessage(t, e))));
       return;
     }
     if (!mounted) return;
@@ -352,7 +352,7 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('DriversAtPointScreen: $e');
-          return ErrorView(message: t.commonError);
+          return ErrorView(message: errorMessage(t, e));
         },
         data: (refData) {
           final selectedCountry = _countryId == null ? null : refData.countryById(_countryId!);
@@ -501,7 +501,7 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                   builder: (context, snapshot) {
                     final keepShown = _silentReload && snapshot.hasData;
                     if (_future == null || (snapshot.connectionState == ConnectionState.waiting && !keepShown)) return const LoadingView();
-                    if (snapshot.hasError) return ErrorView(message: t.commonError, onRetry: _reload);
+                    if (snapshot.hasError) return ErrorView(message: errorMessage(t, snapshot.error!), onRetry: _reload);
                     final list = snapshot.data ?? [];
                     if (list.isEmpty) return EmptyState(message: t.driversAtPointEmpty, icon: LucideIcons.users);
 

@@ -155,7 +155,7 @@ class _AdminDealsScreenState extends ConsumerState<AdminDealsScreen> {
                 loading: () => const LoadingView(),
                 error: (e, st) {
                   debugPrint('AdminDealsScreen: $e');
-                  return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminDealsSearchProvider(providerArgs)));
+                  return ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(adminDealsSearchProvider(providerArgs)));
                 },
                 data: (page) {
                   if (page.items.isEmpty) return EmptyState(message: t.adminDealsEmpty, icon: LucideIcons.fileCheck2);

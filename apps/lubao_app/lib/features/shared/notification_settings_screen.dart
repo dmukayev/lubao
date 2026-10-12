@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/api_providers.dart';
+import 'error_feedback.dart';
 
 final notificationEventSettingsProvider = FutureProvider.autoDispose<List<NotificationEventSetting>>((ref) {
   return ref.watch(notificationsRepositoryProvider).eventSettings();
@@ -56,7 +57,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('NotificationSettingsScreen: $e');
-          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(notificationEventSettingsProvider));
+          return ErrorView(message: errorMessage(t, e), onRetry: () => ref.invalidate(notificationEventSettingsProvider));
         },
         data: (list) => ListView(
           children: [

@@ -29,4 +29,16 @@ void main() {
     expect(ApiClient.isLoginPath('/auth/phone/verify'), isTrue);
     expect(ApiClient.isLoginPath('/cargos'), isFalse);
   });
+
+  test('074: общий текст ошибки — код → вид ответа → «Что-то пошло не так» с номером', () {
+    expect(apiErrorText(t, _err(404, {'code': 'CARGO_NOT_FOUND'})), t.errCargoNotFound);
+    expect(apiErrorText(t, _err(404, {'code': 'SOMETHING_NEW'})), t.errNotFound, reason: 'неизвестный код — по статусу');
+    expect(apiErrorText(t, _err(409, {})), t.errConflict);
+    expect(apiErrorText(t, _err(413, {})), t.errFileTooLarge);
+    expect(apiErrorText(t, _err(503, {'code': 'SERVER_ERROR', 'requestId': 'ab12cd34'})), t.errServerError);
+    expect(apiErrorText(t, _err(418, {'requestId': 'ab12cd34'})), t.errUnknownWithId('ab12cd34'));
+    expect(apiErrorText(t, DioException(requestOptions: RequestOptions(path: '/x'), type: DioExceptionType.receiveTimeout)), t.errTimeout);
+    expect(apiErrorText(t, DioException(requestOptions: RequestOptions(path: '/x'), type: DioExceptionType.connectionError)), t.errNoInternet);
+    expect(apiErrorText(t, StateError('x')), t.commonError);
+  });
 }

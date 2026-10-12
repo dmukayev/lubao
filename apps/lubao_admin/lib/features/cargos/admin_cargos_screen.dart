@@ -161,7 +161,7 @@ class _AdminCargosScreenState extends ConsumerState<AdminCargosScreen> {
                 loading: () => const LoadingView(),
                 error: (e, st) {
                   debugPrint('AdminCargosScreen: $e');
-                  return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminCargosSearchProvider(providerArgs)));
+                  return ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(adminCargosSearchProvider(providerArgs)));
                 },
                 data: (page) {
                   if (page.items.isEmpty) return EmptyState(message: t.adminCargosEmpty, icon: LucideIcons.truck);

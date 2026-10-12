@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../providers/api_providers.dart';
 import 'status_helpers.dart';
+import 'error_feedback.dart';
 
 final _packageProvider = FutureProvider.autoDispose.family<DriverDocumentsPackage, String>(
   (ref, dealId) => ref.watch(dealRepositoryProvider).driverDocuments(dealId),
@@ -34,7 +35,7 @@ class DriverDocumentsBlock extends ConsumerWidget {
       await launchUrl(link, mode: LaunchMode.externalApplication);
     } catch (e) {
       debugPrint('DriverDocumentsBlock: pdf: $e');
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.commonError)));
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage(context.l10n, e))));
     }
   }
 
@@ -50,7 +51,7 @@ class DriverDocumentsBlock extends ConsumerWidget {
         loading: () => const Padding(padding: EdgeInsets.all(AppSpacing.md), child: Center(child: CircularProgressIndicator())),
         error: (e, st) {
           final expired = e is DioException && (e.response?.data is Map) && (e.response!.data as Map)['code'] == 'DOCS_EXPIRED';
-          return Text(expired ? t.driverDocsExpired : t.commonError, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary));
+          return Text(expired ? t.driverDocsExpired : errorMessage(t, e), style: AppTextStyles.body.copyWith(color: AppColors.textSecondary));
         },
         data: (p) => Column(
           key: const Key('driverDocsPackage'),

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
+
+import 'error_feedback.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/api_providers.dart';
@@ -216,7 +218,7 @@ Future<void> showVehicleFullSheet(BuildContext context, VehicleFullError full) a
 
 /// Понятный текст для 409-ошибок действий с откликом/выбором водителя
 /// (задача 038, п.1–2) — `null`, если ошибка не из этого семейства
-/// (вызывающий показывает `commonError`).
+/// (вызывающий показывает общий текст ошибки — `errorMessage`).
 String? responseConflictText(LubaoLocalizations t, Object error) {
   if (error is! DioException) return null;
   final data = error.response?.data;
@@ -409,18 +411,6 @@ String systemMessageText(LubaoLocalizations t, String? code, Map<String, String>
   };
 }
 
-/// Понятный текст ошибок «Позвонить»/WhatsApp (043 п.11): номер выдаётся по
-/// нажатию — сервер может ответить «сначала откликнитесь», «лимит номеров на
-/// сегодня», «компания не проверена», «номера нет» или общим 429.
-String contactErrorText(LubaoLocalizations t, Object error) {
-  if (error is! DioException) return t.commonError;
-  final data = error.response?.data;
-  final code = data is Map ? data['code'] : null;
-  return switch (code) {
-    'RESPOND_FIRST' => t.contactRespondFirst,
-    'CONTACT_LIMIT' => t.contactDailyLimit,
-    'COMPANY_NOT_VERIFIED' => t.contactCompanyNotVerified,
-    'NO_PHONE' => t.contactNoPhone,
-    _ => error.response?.statusCode == 429 ? t.tooManyRequests : t.commonError,
-  };
-}
+/// Ошибки «Позвонить»/WhatsApp (043 п.11) — общий разбор по коду сервера (074):
+/// «сначала откликнитесь», лимит номеров, «номера нет», 429 и прочее.
+String contactErrorText(LubaoLocalizations t, Object error) => errorMessage(t, error);

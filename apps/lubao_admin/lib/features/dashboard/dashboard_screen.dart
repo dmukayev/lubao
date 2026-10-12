@@ -71,7 +71,7 @@ class DashboardScreen extends ConsumerWidget {
               loading: () => const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator())),
               error: (e, st) {
                 debugPrint('DashboardScreen (stats): $e');
-                return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminStatsProvider));
+                return ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(adminStatsProvider));
               },
               data: (s) => _StatsGrid(stats: s),
             ),
@@ -82,7 +82,7 @@ class DashboardScreen extends ConsumerWidget {
               loading: () => const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
               error: (e, st) {
                 debugPrint('DashboardScreen (attention): $e');
-                return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminAttentionProvider));
+                return ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(adminAttentionProvider));
               },
               data: (a) => _AttentionBlock(attention: a),
             ),
@@ -99,7 +99,7 @@ class DashboardScreen extends ConsumerWidget {
               loading: () => const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
               error: (e, st) {
                 debugPrint('DashboardScreen (events): $e');
-                return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminRecentEventsProvider));
+                return ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(adminRecentEventsProvider));
               },
               data: (list) => _RecentEventsList(events: list),
             ),
@@ -110,7 +110,7 @@ class DashboardScreen extends ConsumerWidget {
               loading: () => const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
               error: (e, st) {
                 debugPrint('DashboardScreen (cityStats): $e');
-                return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminCityStatsProvider));
+                return ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(adminCityStatsProvider));
               },
               data: (rows) => _CityStatsBlock(rows: rows),
             ),

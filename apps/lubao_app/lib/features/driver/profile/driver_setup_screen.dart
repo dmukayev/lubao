@@ -225,7 +225,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('DriverSetupScreen: $e');
-          return ErrorView(message: t.commonError);
+          return ErrorView(message: errorMessage(t, e));
         },
         data: (refData) {
           if (driver != null) _initFromDriver(driver);

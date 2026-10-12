@@ -116,7 +116,7 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
       _codeFocusNodes.first.requestFocus();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.commonError)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage(t, e))));
       }
     } finally {
       if (mounted) setState(() => _sendingCode = false);
@@ -259,7 +259,7 @@ class _DriverLoginScreenState extends ConsumerState<DriverLoginScreen> {
               loading: () => const LoadingView(),
               error: (e, st) {
                 debugPrint('DriverLoginScreen: $e');
-                return ErrorView(message: t.commonError);
+                return ErrorView(message: errorMessage(t, e));
               },
               data: (refData) {
                 final countries = refData.countries.where((c) => countryDialCodes.containsKey(c.code)).toList();

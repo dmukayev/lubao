@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../providers/api_providers.dart';
 import '../../providers/auth_provider.dart';
+import 'error_feedback.dart';
 
 /// Юридические страницы (043 п.2): `/legal/terms`, `/legal/privacy` на сайте
 /// приложения, раздел — по языку интерфейса.
@@ -50,7 +51,7 @@ class _PdConsentSheetState extends ConsumerState<_PdConsentSheet> {
       debugPrint('PdConsentSheet: $e');
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.commonError)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage(context.l10n, e))));
     }
   }
 

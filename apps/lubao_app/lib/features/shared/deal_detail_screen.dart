@@ -101,7 +101,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
           ));
         }
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.commonError)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage(context.l10n, e))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -339,7 +339,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('DealDetailScreen: $e');
-          return ErrorView(message: t.commonError);
+          return ErrorView(message: errorMessage(t, e));
         },
         data: (deal) {
           final (statusLabel, statusColor) = dealStatusPresentation(t, deal.status);
@@ -587,7 +587,7 @@ class _ReviewsSection extends ConsumerWidget {
       loading: () => const LoadingView(),
       error: (e, st) {
         debugPrint('DealDetailScreen (reviews): $e');
-        return Text(t.commonError);
+        return Text(errorMessage(t, e));
       },
       data: (reviews) {
         final myRole = session?.user.role == UserRole.driver ? UserRole.driver : UserRole.company;

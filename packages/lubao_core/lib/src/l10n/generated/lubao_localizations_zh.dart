@@ -2867,6 +2867,323 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get companyLoginInvalidCredentials => '邮箱或密码错误';
 
   @override
+  String get errBadRequest => '请检查填写的内容';
+
+  @override
+  String get errSessionExpired => '登录已过期，请重新登录';
+
+  @override
+  String get errForbidden => '无权访问';
+
+  @override
+  String get errNotFound => '未找到——可能已被删除';
+
+  @override
+  String get errConflict => '已被其他用户修改——请刷新';
+
+  @override
+  String get errFileTooLarge => '文件过大（不超过 10 MB）';
+
+  @override
+  String get errRateLimited => '操作过于频繁，请稍等一分钟';
+
+  @override
+  String get errServerError => '服务器暂时不可用，请稍后再试';
+
+  @override
+  String get errNotDriverAccount => '此操作仅限司机';
+
+  @override
+  String get errNotCompanyAccount => '此操作仅限公司';
+
+  @override
+  String get errAccountBlocked => '账号已被封禁，请联系客服';
+
+  @override
+  String get errAlreadyCompanyMember => '该用户已属于其他公司';
+
+  @override
+  String get errEmailTaken => '该邮箱已注册';
+
+  @override
+  String get errInvitationExpired => '邀请已过期——请索取新的邀请';
+
+  @override
+  String get errLinkExpired => '链接已过期';
+
+  @override
+  String get errPdConsentRequired => '需要同意个人数据处理';
+
+  @override
+  String get errTelegramDisabled => '目前无法通过 Telegram 登录——请用验证码登录';
+
+  @override
+  String get errNonceExpired => '登录链接已过期——请重新开始';
+
+  @override
+  String get errNonceUsed => '该登录链接已被使用';
+
+  @override
+  String get errInvalidCredentials => '邮箱或密码错误';
+
+  @override
+  String get errLockedOut => '尝试次数过多——请等待 15 分钟';
+
+  @override
+  String get errInvalidCode => '验证码错误';
+
+  @override
+  String get errCodeExpired => '验证码已过期——请重新发送';
+
+  @override
+  String get errCodeAttemptsExceeded => '尝试次数过多——请重新发送验证码';
+
+  @override
+  String get errPhoneOtherRole => '该号码已被其他账号使用';
+
+  @override
+  String get errTooManyRequests => '操作过于频繁，请稍等一分钟';
+
+  @override
+  String get errCargoNotFound => '未找到货物——可能已下架';
+
+  @override
+  String get errDriverNotFound => '未找到司机';
+
+  @override
+  String get errDealNotFound => '未找到交易';
+
+  @override
+  String get errCompanyNotFound => '未找到公司';
+
+  @override
+  String get errResponseNotFound => '未找到报名——可能已撤回';
+
+  @override
+  String get errDocumentNotFound => '未找到文件';
+
+  @override
+  String get errVehicleNotFound => '未找到车辆';
+
+  @override
+  String get errUserNotFound => '未找到用户';
+
+  @override
+  String get errPhotoNotFound => '未找到照片';
+
+  @override
+  String get errCityNotFound => '未找到城市';
+
+  @override
+  String get errComplaintNotFound => '未找到投诉';
+
+  @override
+  String get errMemberNotFound => '未找到员工';
+
+  @override
+  String get errLinkNotFound => '未找到链接';
+
+  @override
+  String get errArrivalNotFound => '未找到行程公告——可能已关闭';
+
+  @override
+  String get errPointNotFound => '未找到装货城市';
+
+  @override
+  String get errChatNotFound => '未找到聊天';
+
+  @override
+  String get errNotYourCargo => '这是其他公司的货物';
+
+  @override
+  String get errNotYourResponse => '这不是您的报名';
+
+  @override
+  String get errNotYourDeal => '这不是您的交易';
+
+  @override
+  String get errCompanyOnly => '此操作仅限公司';
+
+  @override
+  String get errNotVerified => '请先通过证件审核';
+
+  @override
+  String get errDriverNotVerified => '请先通过证件审核';
+
+  @override
+  String get errCompanyNotVerified => '公司尚未通过审核';
+
+  @override
+  String get errCargoNotAvailable => '货物已不可用';
+
+  @override
+  String get errCargoNotPublished => '货物已不在发布中';
+
+  @override
+  String get errCargoTaken => '货物已被其他司机接单';
+
+  @override
+  String get errCargoAlreadyHasDeal => '该货物的名额已满';
+
+  @override
+  String get errCargoCreateInProgress => '货物正在发布——请稍候';
+
+  @override
+  String get errPointRequired => '请选择装货城市';
+
+  @override
+  String get errCategoryRequired => '请选择货物类别';
+
+  @override
+  String get errBodyTypeRequired => '请选择车厢类型';
+
+  @override
+  String get errContactPhoneRequired => '请填写电话——否则司机无法联系您';
+
+  @override
+  String get errCurrencyLocked => '无法更改币种：已有带价格的报名或交易';
+
+  @override
+  String get errPriceChanged => '司机刚刚修改了价格——请查看新价格';
+
+  @override
+  String get errResponseNotPending => '报名已处理';
+
+  @override
+  String get errResponseAlreadyExists => '您已报名该货物';
+
+  @override
+  String get errCounterAlreadySent => '还价已发送';
+
+  @override
+  String get errCounterPending => '请先回复还价';
+
+  @override
+  String get errNoDriverPrice => '司机未提出报价';
+
+  @override
+  String get errNoPendingCounter => '没有待处理的还价';
+
+  @override
+  String get errInvalidBodyFields => '请检查车厢参数';
+
+  @override
+  String get errBodyHasNoSize => '该车厢没有尺寸';
+
+  @override
+  String get errVehicleFull => '车辆已满——货物装不下';
+
+  @override
+  String get errVehicleRequired => '请先在车库中添加车辆';
+
+  @override
+  String get errDealCannotCancel => '该交易已无法取消';
+
+  @override
+  String get errDealStatusChanged => '交易状态已变更——请刷新';
+
+  @override
+  String get errCancelAlreadyRequested => '已申请取消';
+
+  @override
+  String get errNoCancelRequest => '没有取消申请';
+
+  @override
+  String get errOwnCancelRequest => '这是您的申请——需由对方回复';
+
+  @override
+  String get errNoDispute => '该交易没有争议';
+
+  @override
+  String get errReasonRequired => '请填写原因';
+
+  @override
+  String get errReasonNotAllowed => '此处不能选择该原因';
+
+  @override
+  String get errReasonTextRequired => '请描述原因';
+
+  @override
+  String get errActiveDeals => '有未完成的交易——请先完成';
+
+  @override
+  String get errDocsExpired => '证件已过期——请更新';
+
+  @override
+  String get errDocsNotYet => '证件仍在审核中';
+
+  @override
+  String get errComplaintAlreadyOpen => '该交易已有投诉';
+
+  @override
+  String get errTooManyArrivals => '行程公告过多——请关闭多余的';
+
+  @override
+  String get errTerminalNeedsGeofence => '码头需要设置地理围栏';
+
+  @override
+  String get errRespondFirst => '请先报名该货物';
+
+  @override
+  String get errContactLimit => '今日查看号码次数已用完';
+
+  @override
+  String get errNoPhone => '未填写号码——请在聊天中联系';
+
+  @override
+  String get errCreateDriverLimit => '今日邀请次数已用完';
+
+  @override
+  String get errDriverLeftList => '司机已退出您的名单——无法再次邀请';
+
+  @override
+  String get errDriverBlacklisted => '司机在黑名单中';
+
+  @override
+  String get errBlacklistMatch => '与黑名单匹配';
+
+  @override
+  String get errOwnerHasMembers => '请先将公司移交给其他员工';
+
+  @override
+  String get errNoLicenseName => '驾照上未识别到姓名';
+
+  @override
+  String get errNoApprovedSelfie => '需要先有通过审核的自拍';
+
+  @override
+  String get errNoInvitation => '没有邀请';
+
+  @override
+  String get errIdentifierInvalid => '证件号码无效';
+
+  @override
+  String get errImageTooLarge => '照片过大（不超过 10 MB）';
+
+  @override
+  String get errInvalidImage => '无法读取照片——请选择其他照片';
+
+  @override
+  String get errInvalidFile => '文件不符合要求';
+
+  @override
+  String get errUnsupportedImageFormat => '不支持该照片格式（JPG、PNG、HEIC）';
+
+  @override
+  String get errUploadQuotaExceeded => '今日上传次数已用完';
+
+  @override
+  String get errNoInternet => '无网络连接，请检查后重试';
+
+  @override
+  String get errTimeout => '服务器响应超时，请重试';
+
+  @override
+  String errUnknownWithId(String id) {
+    return '出了点问题 · 错误编号 $id';
+  }
+
+  @override
   String authLockedOut(String minutes) {
     return '尝试次数过多，请 $minutes 分钟后再试';
   }

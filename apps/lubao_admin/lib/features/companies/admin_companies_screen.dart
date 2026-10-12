@@ -175,7 +175,7 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
                 loading: () => const LoadingView(),
                 error: (e, st) {
                   debugPrint('AdminCompaniesScreen: $e');
-                  return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminCompaniesSearchProvider(providerArgs)));
+                  return ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(adminCompaniesSearchProvider(providerArgs)));
                 },
                 data: (page) {
                   if (page.items.isEmpty) return EmptyState(message: t.adminCompaniesEmpty, icon: LucideIcons.building2);

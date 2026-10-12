@@ -97,14 +97,14 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
           loading: () => const SkeletonList(),
           error: (e, st) {
             debugPrint('CargoFeedScreen (referenceData): $e');
-            return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(referenceDataProvider));
+            return ErrorView(message: errorMessage(t, e), onRetry: () => ref.invalidate(referenceDataProvider));
           },
           data: (refData) => cargoFeed.when(
             loading: () => const SkeletonList(),
             error: (e, st) {
               debugPrint('CargoFeedScreen (cargoFeed): $e');
               return ErrorView(
-                message: t.commonError,
+                message: errorMessage(t, e),
                 onRetry: () => ref.invalidate(cargoFeedProvider),
                 retryLabel: t.commonRetry,
               );
@@ -505,7 +505,7 @@ class _AnonsCard extends ConsumerWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(t.commonError, style: AppTextStyles.body.copyWith(color: Colors.white)),
+              Text(errorMessage(t, e), style: AppTextStyles.body.copyWith(color: Colors.white)),
               TextButton(
                 onPressed: () => ref.invalidate(myArrivalsProvider),
                 child: Text(t.commonRetry, style: AppTextStyles.body.copyWith(color: Colors.white)),

@@ -10,6 +10,7 @@ import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
 import 'status_helpers.dart';
 import 'driver_avatar.dart';
+import 'error_feedback.dart';
 
 /// Вкладка «Чаты» (задача 017, п.1) — общая для водителя и логиста:
 /// чат теперь существует до сделки, нужен отдельный список, не только
@@ -63,7 +64,7 @@ class _MyChatsScreenState extends ConsumerState<MyChatsScreen> {
         loading: () => const SkeletonList(lines: 2),
         error: (e, st) {
           debugPrint('MyChatsScreen: $e');
-          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(myChatsProvider));
+          return ErrorView(message: errorMessage(t, e), onRetry: () => ref.invalidate(myChatsProvider));
         },
         data: (list) {
           if (list.isEmpty) return EmptyState(message: t.chatsEmpty, icon: LucideIcons.messageCircle);

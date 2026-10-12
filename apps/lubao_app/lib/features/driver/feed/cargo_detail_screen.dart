@@ -48,7 +48,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
       if (e.response?.statusCode != 409 && mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(responseConflictText(context.l10n, e) ?? context.l10n.commonError)));
+        ).showSnackBar(SnackBar(content: Text(responseConflictText(context.l10n, e) ?? errorMessage(context.l10n, e))));
       }
     } finally {
       if (mounted) setState(() => _responding = false);
@@ -172,7 +172,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(responseConflictText(context.l10n, e) ?? context.l10n.commonError)));
+        ).showSnackBar(SnackBar(content: Text(responseConflictText(context.l10n, e) ?? errorMessage(context.l10n, e))));
       }
     } finally {
       ref.invalidate(myCargoResponseProvider(widget.cargoId));
@@ -312,13 +312,13 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('CargoDetailScreen (cargo): $e');
-          return ErrorView(message: t.commonError);
+          return ErrorView(message: errorMessage(t, e));
         },
         data: (cargo) => referenceData.when(
           loading: () => const LoadingView(),
           error: (e, st) {
             debugPrint('CargoDetailScreen (referenceData): $e');
-            return ErrorView(message: t.commonError);
+            return ErrorView(message: errorMessage(t, e));
           },
           data: (refData) => _CargoDetailBody(cargo: cargo, refData: refData),
         ),

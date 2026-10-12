@@ -86,7 +86,7 @@ class _QueuePane extends ConsumerWidget {
           child: queue.when(
             loading: () => const LoadingView(),
             error: (e, st) => ErrorView(
-              message: t.commonError,
+              message: apiErrorText(t, e),
               retryLabel: t.commonRetry,
               onRetry: () => ref.invalidate(adminVerificationQueueProvider(type)),
             ),
@@ -181,7 +181,7 @@ class _DriverDetailPaneState extends ConsumerState<_DriverDetailPane> {
     return profile.when(
       loading: () => const LoadingView(),
       error: (e, st) => ErrorView(
-        message: t.commonError,
+        message: apiErrorText(t, e),
         retryLabel: t.commonRetry,
         onRetry: () => ref.invalidate(adminVerificationDriverProfileProvider(widget.id)),
       ),
@@ -380,7 +380,7 @@ class _CompanyDetailPaneState extends ConsumerState<_CompanyDetailPane> {
     return profile.when(
       loading: () => const LoadingView(),
       error: (e, st) => ErrorView(
-        message: t.commonError,
+        message: apiErrorText(t, e),
         retryLabel: t.commonRetry,
         onRetry: () => ref.invalidate(adminVerificationCompanyProfileProvider(widget.id)),
       ),

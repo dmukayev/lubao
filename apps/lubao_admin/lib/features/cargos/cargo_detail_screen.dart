@@ -63,7 +63,7 @@ class CargoDetailScreen extends ConsumerWidget {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('CargoDetailScreen: $e');
-          return ErrorView(message: t.commonError, onRetry: () => _reload(ref));
+          return ErrorView(message: apiErrorText(t, e), onRetry: () => _reload(ref));
         },
         data: (cargo) => SingleChildScrollView(
           padding: const EdgeInsets.all(24),

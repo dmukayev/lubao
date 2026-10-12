@@ -82,7 +82,7 @@ class _Queue extends ConsumerWidget {
         Expanded(
           child: complaints.when(
             loading: () => const LoadingView(),
-            error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(complaintsProvider)),
+            error: (e, st) => ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(complaintsProvider)),
             data: (list) {
               if (list.isEmpty) return EmptyState(message: t.adminComplaintsEmpty, icon: LucideIcons.flag);
               final selectedId = ref.watch(adminComplaintSelectedIdProvider);
@@ -141,7 +141,7 @@ class _Detail extends ConsumerWidget {
       if (context.mounted) {
         final data = e is DioException ? e.response?.data : null;
         final reason = data is Map ? data['message']?.toString() : null;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text([context.l10n.commonError, ?reason].join(': '))));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text([apiErrorText(context.l10n, e), ?reason].join(': '))));
       }
       return;
     }
@@ -156,7 +156,7 @@ class _Detail extends ConsumerWidget {
 
     return detailAsync.when(
       loading: () => const LoadingView(),
-      error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminComplaintDetailProvider(id))),
+      error: (e, st) => ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(adminComplaintDetailProvider(id))),
       data: (detail) {
         final c = detail.complaint;
         final isClosed = c.status == ComplaintStatus.resolved || c.status == ComplaintStatus.rejected;

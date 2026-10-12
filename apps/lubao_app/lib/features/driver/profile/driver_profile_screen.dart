@@ -12,6 +12,7 @@ import 'add_vehicle_banner.dart';
 import 'driver_companies.dart';
 import '../../shared/pre_verification_card.dart';
 import 'profile_avatar.dart';
+import '../../shared/error_feedback.dart';
 
 class DriverProfileScreen extends ConsumerStatefulWidget {
   const DriverProfileScreen({super.key});
@@ -46,7 +47,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
       if (mounted) ref.read(sessionProvider.notifier).updateDriver(updated);
     } catch (e) {
       debugPrint('DriverProfileScreen: accept license name: $e');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.commonError)));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage(context.l10n, e))));
     }
   }
 

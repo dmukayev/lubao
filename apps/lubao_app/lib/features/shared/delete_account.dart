@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/auth_provider.dart';
+import 'error_feedback.dart';
 
 /// «Удалить аккаунт» (043 п.1) — в профиле водителя и логиста. Подтверждение
 /// с объяснением, что останется (сделки и отзывы без имени), затем
@@ -45,7 +46,7 @@ class DeleteAccountButton extends ConsumerWidget {
     return switch (code) {
       'ACTIVE_DEALS' => t.profileDeleteAccountActiveDeals,
       'OWNER_HAS_MEMBERS' => t.profileDeleteAccountOwnerHasMembers,
-      _ => t.commonError,
+      _ => errorMessage(t, error),
     };
   }
 

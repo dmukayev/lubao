@@ -39,7 +39,7 @@ class _RoutePricesScreenState extends ConsumerState<RoutePricesScreen> {
       if (ok && mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.adminCsvSaved)));
     } catch (e) {
       debugPrint('RoutePricesScreen: csv: $e');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.commonError)));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(apiErrorText(t, e))));
     }
   }
 
@@ -89,7 +89,7 @@ class _RoutePricesScreenState extends ConsumerState<RoutePricesScreen> {
           const SizedBox(height: 16),
           rows.when(
             loading: () => const LoadingView(),
-            error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(_routePricesProvider)),
+            error: (e, st) => ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(_routePricesProvider)),
             data: (items) => items.isEmpty
                 ? AppCard(key: const Key('routePricesEmpty'), child: Text(t.adminRoutePricesEmpty))
                 : AppCard(

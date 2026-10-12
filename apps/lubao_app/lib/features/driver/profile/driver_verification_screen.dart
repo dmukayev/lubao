@@ -46,7 +46,7 @@ class DriverVerificationScreen extends ConsumerWidget {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('DriverVerificationScreen: $e');
-          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(driverVerificationDocumentsProvider));
+          return ErrorView(message: errorMessage(t, e), onRetry: () => ref.invalidate(driverVerificationDocumentsProvider));
         },
         data: (docs) {
           final byType = {for (final d in docs) d.type: d};

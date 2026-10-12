@@ -4,33 +4,25 @@ import 'package:lubao_core/lubao_core.dart';
 
 import 'status_helpers.dart';
 
-/// Единый обработчик ошибок API (задача 041, п.7): сеть/таймаут, сессия,
-/// запрещено, 4xx с кодом (занят груз, отклик закрыт…), 5xx — текст из ARB на
-/// языке пользователя; молчаливых `catch (_)` в действиях быть не должно.
-/// [fallback] — свой текст для «прочих» ошибок (например, «Не удалось загрузить фото»).
+/// Единый обработчик ошибок API (041 п.7, 074): ошибки полей (072) и
+/// конфликты откликов — своим разбором, остальное — общей функцией
+/// `apiErrorText` (lubao_core): нет сети / таймаут → код сервера → вид ответа →
+/// «Что-то пошло не так» с номером ошибки. [fallback] — свой текст вместо
+/// последнего (например, «Не удалось загрузить фото»).
 String errorMessage(LubaoLocalizations t, Object error, {String? fallback}) {
-  if (error is DioException) {
-    switch (error.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-      case DioExceptionType.connectionError:
-        return t.errorNetwork;
-      default:
-        break;
+  if (error is DioException && error.response != null) {
+    final data = error.response!.data;
+    final code = data is Map ? data['code'] : null;
+    final status = error.response!.statusCode;
+    if (code == 'VALIDATION_FAILED' || code == 'INVALID_SPECS' || ((status == 400 || status == 422) && code == null)) {
+      final fields = validationErrorText(t, data);
+      if (fields != null) return fields;
     }
-    // 073: ошибки входа и кода — по коду сервера.
-    final auth = authErrorText(t, error);
-    if (auth != null) return auth;
     final coded = responseConflictText(t, error);
     if (coded != null) return coded;
-    final status = error.response?.statusCode;
-    if (status == 401) return t.errorSessionExpired;
-    if (status == 403) return t.errorForbidden;
-    if (status == 400 || status == 422) return validationErrorText(t, error.response?.data) ?? fallback ?? t.errorInvalidData;
-    if (status != null && status >= 500) return t.errorServer;
   }
-  return fallback ?? t.commonError;
+  final text = apiErrorText(t, error);
+  return fallback != null && (text == t.commonError || text.startsWith(t.errUnknownWithId('').trim())) ? fallback : text;
 }
 
 /// SnackBar с понятной причиной; при [onRetry] — кнопка «Повторить».

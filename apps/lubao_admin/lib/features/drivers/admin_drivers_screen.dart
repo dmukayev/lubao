@@ -206,7 +206,7 @@ class _AdminDriversScreenState extends ConsumerState<AdminDriversScreen> {
                 loading: () => const LoadingView(),
                 error: (e, st) {
                   debugPrint('AdminDriversScreen: $e');
-                  return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminDriversSearchProvider(providerArgs)));
+                  return ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(adminDriversSearchProvider(providerArgs)));
                 },
                 data: (page) {
                   if (page.items.isEmpty) return EmptyState(message: t.adminDriversEmpty, icon: LucideIcons.user);

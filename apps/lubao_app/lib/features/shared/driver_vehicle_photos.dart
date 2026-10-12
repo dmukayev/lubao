@@ -8,6 +8,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../providers/api_providers.dart';
 import '../../services/disk_bytes_cache.dart';
+import 'error_feedback.dart';
 
 final _photosProvider = FutureProvider.autoDispose.family<List<({String documentId, String type, String? plateNumber})>, String>(
   (ref, driverId) => ref.watch(cargoRepositoryProvider).driverVehiclePhotos(driverId),
@@ -76,7 +77,7 @@ class DriverVehiclePhotos extends ConsumerWidget {
                 ? t.contactDailyLimit
                 : response?.statusCode == 404
                     ? t.vehiclePhotosNone
-                    : t.commonError;
+                    : errorMessage(t, e);
         return Text(text, key: const Key('driverVehiclePhotosUnavailable'), style: muted);
       },
       data: (list) => list.isEmpty

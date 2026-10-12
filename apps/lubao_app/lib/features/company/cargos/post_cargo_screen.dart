@@ -544,7 +544,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('PostCargoScreen: $e');
-          return ErrorView(message: t.commonError);
+          return ErrorView(message: errorMessage(t, e));
         },
         data: (refData) {
           final destinationOptions = refData.countryCityOptions(locale, wholeCountrySuffix: t.wholeCountrySuffix);

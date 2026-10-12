@@ -5556,6 +5556,636 @@ abstract class LubaoLocalizations {
   /// **'Неверный email или пароль'**
   String get companyLoginInvalidCredentials;
 
+  /// No description provided for @errBadRequest.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверьте введённые данные'**
+  String get errBadRequest;
+
+  /// No description provided for @errSessionExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сессия закончилась, войдите снова'**
+  String get errSessionExpired;
+
+  /// No description provided for @errForbidden.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет доступа'**
+  String get errForbidden;
+
+  /// No description provided for @errNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не найдено — возможно, уже удалено'**
+  String get errNotFound;
+
+  /// No description provided for @errConflict.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уже изменено другим пользователем — обновите'**
+  String get errConflict;
+
+  /// No description provided for @errFileTooLarge.
+  ///
+  /// In ru, this message translates to:
+  /// **'Файл слишком большой (до 10 МБ)'**
+  String get errFileTooLarge;
+
+  /// No description provided for @errRateLimited.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком часто, подождите минуту'**
+  String get errRateLimited;
+
+  /// No description provided for @errServerError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сервер временно недоступен, попробуйте позже'**
+  String get errServerError;
+
+  /// No description provided for @errNotDriverAccount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это действие — только для водителя'**
+  String get errNotDriverAccount;
+
+  /// No description provided for @errNotCompanyAccount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это действие — только для компании'**
+  String get errNotCompanyAccount;
+
+  /// No description provided for @errAccountBlocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аккаунт заблокирован. Обратитесь в поддержку'**
+  String get errAccountBlocked;
+
+  /// No description provided for @errAlreadyCompanyMember.
+  ///
+  /// In ru, this message translates to:
+  /// **'Этот пользователь уже в другой компании'**
+  String get errAlreadyCompanyMember;
+
+  /// No description provided for @errEmailTaken.
+  ///
+  /// In ru, this message translates to:
+  /// **'Этот email уже зарегистрирован'**
+  String get errEmailTaken;
+
+  /// No description provided for @errInvitationExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приглашение устарело — попросите новое'**
+  String get errInvitationExpired;
+
+  /// No description provided for @errLinkExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылка устарела'**
+  String get errLinkExpired;
+
+  /// No description provided for @errPdConsentRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нужно согласие на обработку персональных данных'**
+  String get errPdConsentRequired;
+
+  /// No description provided for @errTelegramDisabled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вход через Telegram сейчас недоступен — войдите по коду'**
+  String get errTelegramDisabled;
+
+  /// No description provided for @errNonceExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылка для входа устарела — начните заново'**
+  String get errNonceExpired;
+
+  /// No description provided for @errNonceUsed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Эта ссылка для входа уже использована'**
+  String get errNonceUsed;
+
+  /// No description provided for @errInvalidCredentials.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверный email или пароль'**
+  String get errInvalidCredentials;
+
+  /// No description provided for @errLockedOut.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком много попыток — подождите 15 минут'**
+  String get errLockedOut;
+
+  /// No description provided for @errInvalidCode.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверный код'**
+  String get errInvalidCode;
+
+  /// No description provided for @errCodeExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Код устарел — отправьте новый'**
+  String get errCodeExpired;
+
+  /// No description provided for @errCodeAttemptsExceeded.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком много попыток — отправьте новый код'**
+  String get errCodeAttemptsExceeded;
+
+  /// No description provided for @errPhoneOtherRole.
+  ///
+  /// In ru, this message translates to:
+  /// **'Этот номер уже используется в другом аккаунте'**
+  String get errPhoneOtherRole;
+
+  /// No description provided for @errTooManyRequests.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком часто, подождите минуту'**
+  String get errTooManyRequests;
+
+  /// No description provided for @errCargoNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз не найден — возможно, его уже сняли'**
+  String get errCargoNotFound;
+
+  /// No description provided for @errDriverNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель не найден'**
+  String get errDriverNotFound;
+
+  /// No description provided for @errDealNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделка не найдена'**
+  String get errDealNotFound;
+
+  /// No description provided for @errCompanyNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Компания не найдена'**
+  String get errCompanyNotFound;
+
+  /// No description provided for @errResponseNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отклик не найден — возможно, его отозвали'**
+  String get errResponseNotFound;
+
+  /// No description provided for @errDocumentNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Документ не найден'**
+  String get errDocumentNotFound;
+
+  /// No description provided for @errVehicleNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Машина не найдена'**
+  String get errVehicleNotFound;
+
+  /// No description provided for @errUserNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пользователь не найден'**
+  String get errUserNotFound;
+
+  /// No description provided for @errPhotoNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фото не найдено'**
+  String get errPhotoNotFound;
+
+  /// No description provided for @errCityNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город не найден'**
+  String get errCityNotFound;
+
+  /// No description provided for @errComplaintNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Жалоба не найдена'**
+  String get errComplaintNotFound;
+
+  /// No description provided for @errMemberNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сотрудник не найден'**
+  String get errMemberNotFound;
+
+  /// No description provided for @errLinkNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылка не найдена'**
+  String get errLinkNotFound;
+
+  /// No description provided for @errArrivalNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Анонс не найден — возможно, он уже закрыт'**
+  String get errArrivalNotFound;
+
+  /// No description provided for @errPointNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Город погрузки не найден'**
+  String get errPointNotFound;
+
+  /// No description provided for @errChatNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Чат не найден'**
+  String get errChatNotFound;
+
+  /// No description provided for @errNotYourCargo.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это груз другой компании'**
+  String get errNotYourCargo;
+
+  /// No description provided for @errNotYourResponse.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это не ваш отклик'**
+  String get errNotYourResponse;
+
+  /// No description provided for @errNotYourDeal.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это не ваша сделка'**
+  String get errNotYourDeal;
+
+  /// No description provided for @errCompanyOnly.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это действие — только для компании'**
+  String get errCompanyOnly;
+
+  /// No description provided for @errNotVerified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сначала пройдите проверку документов'**
+  String get errNotVerified;
+
+  /// No description provided for @errDriverNotVerified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сначала пройдите проверку документов'**
+  String get errDriverNotVerified;
+
+  /// No description provided for @errCompanyNotVerified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Компания ещё не прошла проверку'**
+  String get errCompanyNotVerified;
+
+  /// No description provided for @errCargoNotAvailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз уже недоступен'**
+  String get errCargoNotAvailable;
+
+  /// No description provided for @errCargoNotPublished.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз уже не опубликован'**
+  String get errCargoNotPublished;
+
+  /// No description provided for @errCargoTaken.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз уже взял другой водитель'**
+  String get errCargoTaken;
+
+  /// No description provided for @errCargoAlreadyHasDeal.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все места на этот груз уже заняты'**
+  String get errCargoAlreadyHasDeal;
+
+  /// No description provided for @errCargoCreateInProgress.
+  ///
+  /// In ru, this message translates to:
+  /// **'Груз уже публикуется — подождите секунду'**
+  String get errCargoCreateInProgress;
+
+  /// No description provided for @errPointRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите город погрузки'**
+  String get errPointRequired;
+
+  /// No description provided for @errCategoryRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите, что везёте'**
+  String get errCategoryRequired;
+
+  /// No description provided for @errBodyTypeRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите тип кузова'**
+  String get errBodyTypeRequired;
+
+  /// No description provided for @errContactPhoneRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите телефон — без него водитель не сможет позвонить'**
+  String get errContactPhoneRequired;
+
+  /// No description provided for @errCurrencyLocked.
+  ///
+  /// In ru, this message translates to:
+  /// **'Валюту нельзя менять: есть отклики с ценой или сделки'**
+  String get errCurrencyLocked;
+
+  /// No description provided for @errPriceChanged.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель только что изменил цену — посмотрите новую'**
+  String get errPriceChanged;
+
+  /// No description provided for @errResponseNotPending.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отклик уже рассмотрен'**
+  String get errResponseNotPending;
+
+  /// No description provided for @errResponseAlreadyExists.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы уже откликнулись на этот груз'**
+  String get errResponseAlreadyExists;
+
+  /// No description provided for @errCounterAlreadySent.
+  ///
+  /// In ru, this message translates to:
+  /// **'Встречная цена уже отправлена'**
+  String get errCounterAlreadySent;
+
+  /// No description provided for @errCounterPending.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сначала ответьте на встречную цену'**
+  String get errCounterPending;
+
+  /// No description provided for @errNoDriverPrice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель не предлагал свою цену'**
+  String get errNoDriverPrice;
+
+  /// No description provided for @errNoPendingCounter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Встречной цены нет'**
+  String get errNoPendingCounter;
+
+  /// No description provided for @errInvalidBodyFields.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверьте параметры кузова'**
+  String get errInvalidBodyFields;
+
+  /// No description provided for @errBodyHasNoSize.
+  ///
+  /// In ru, this message translates to:
+  /// **'У этого кузова нет размера'**
+  String get errBodyHasNoSize;
+
+  /// No description provided for @errVehicleFull.
+  ///
+  /// In ru, this message translates to:
+  /// **'Машина уже загружена — груз не поместится'**
+  String get errVehicleFull;
+
+  /// No description provided for @errVehicleRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сначала добавьте машину в гараж'**
+  String get errVehicleRequired;
+
+  /// No description provided for @errDealCannotCancel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Эту сделку уже нельзя отменить'**
+  String get errDealCannotCancel;
+
+  /// No description provided for @errDealStatusChanged.
+  ///
+  /// In ru, this message translates to:
+  /// **'Статус сделки уже изменился — обновите'**
+  String get errDealStatusChanged;
+
+  /// No description provided for @errCancelAlreadyRequested.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отмена уже запрошена'**
+  String get errCancelAlreadyRequested;
+
+  /// No description provided for @errNoCancelRequest.
+  ///
+  /// In ru, this message translates to:
+  /// **'Запроса на отмену нет'**
+  String get errNoCancelRequest;
+
+  /// No description provided for @errOwnCancelRequest.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это ваш запрос — ответить должна другая сторона'**
+  String get errOwnCancelRequest;
+
+  /// No description provided for @errNoDispute.
+  ///
+  /// In ru, this message translates to:
+  /// **'Спора по этой сделке нет'**
+  String get errNoDispute;
+
+  /// No description provided for @errReasonRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите причину'**
+  String get errReasonRequired;
+
+  /// No description provided for @errReasonNotAllowed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Эту причину здесь выбрать нельзя'**
+  String get errReasonNotAllowed;
+
+  /// No description provided for @errReasonTextRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опишите причину'**
+  String get errReasonTextRequired;
+
+  /// No description provided for @errActiveDeals.
+  ///
+  /// In ru, this message translates to:
+  /// **'Есть незавершённые сделки — сначала завершите их'**
+  String get errActiveDeals;
+
+  /// No description provided for @errDocsExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Срок действия документов истёк — обновите их'**
+  String get errDocsExpired;
+
+  /// No description provided for @errDocsNotYet.
+  ///
+  /// In ru, this message translates to:
+  /// **'Документы ещё на проверке'**
+  String get errDocsNotYet;
+
+  /// No description provided for @errComplaintAlreadyOpen.
+  ///
+  /// In ru, this message translates to:
+  /// **'Жалоба по этой сделке уже подана'**
+  String get errComplaintAlreadyOpen;
+
+  /// No description provided for @errTooManyArrivals.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком много анонсов — закройте лишние'**
+  String get errTooManyArrivals;
+
+  /// No description provided for @errTerminalNeedsGeofence.
+  ///
+  /// In ru, this message translates to:
+  /// **'Для терминала нужна геозона'**
+  String get errTerminalNeedsGeofence;
+
+  /// No description provided for @errRespondFirst.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сначала откликнитесь на груз'**
+  String get errRespondFirst;
+
+  /// No description provided for @errContactLimit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Лимит открытых номеров на сегодня исчерпан'**
+  String get errContactLimit;
+
+  /// No description provided for @errNoPhone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Номер не указан — напишите в чат'**
+  String get errNoPhone;
+
+  /// No description provided for @errCreateDriverLimit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Лимит приглашений на сегодня исчерпан'**
+  String get errCreateDriverLimit;
+
+  /// No description provided for @errDriverLeftList.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель вышел из вашего списка — пригласить снова нельзя'**
+  String get errDriverLeftList;
+
+  /// No description provided for @errDriverBlacklisted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель в чёрном списке'**
+  String get errDriverBlacklisted;
+
+  /// No description provided for @errBlacklistMatch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Совпадение с чёрным списком'**
+  String get errBlacklistMatch;
+
+  /// No description provided for @errOwnerHasMembers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сначала передайте компанию другому сотруднику'**
+  String get errOwnerHasMembers;
+
+  /// No description provided for @errNoLicenseName.
+  ///
+  /// In ru, this message translates to:
+  /// **'В правах не распознано имя'**
+  String get errNoLicenseName;
+
+  /// No description provided for @errNoApprovedSelfie.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сначала нужно одобренное селфи'**
+  String get errNoApprovedSelfie;
+
+  /// No description provided for @errNoInvitation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приглашения нет'**
+  String get errNoInvitation;
+
+  /// No description provided for @errIdentifierInvalid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверный номер документа'**
+  String get errIdentifierInvalid;
+
+  /// No description provided for @errImageTooLarge.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фото слишком большое (до 10 МБ)'**
+  String get errImageTooLarge;
+
+  /// No description provided for @errInvalidImage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось прочитать фото — выберите другое'**
+  String get errInvalidImage;
+
+  /// No description provided for @errInvalidFile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неподходящий файл'**
+  String get errInvalidFile;
+
+  /// No description provided for @errUnsupportedImageFormat.
+  ///
+  /// In ru, this message translates to:
+  /// **'Формат фото не поддерживается (JPG, PNG, HEIC)'**
+  String get errUnsupportedImageFormat;
+
+  /// No description provided for @errUploadQuotaExceeded.
+  ///
+  /// In ru, this message translates to:
+  /// **'Лимит загрузок на сегодня исчерпан'**
+  String get errUploadQuotaExceeded;
+
+  /// No description provided for @errNoInternet.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет интернета. Проверьте связь и повторите'**
+  String get errNoInternet;
+
+  /// No description provided for @errTimeout.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сервер долго не отвечает. Повторите'**
+  String get errTimeout;
+
+  /// No description provided for @errUnknownWithId.
+  ///
+  /// In ru, this message translates to:
+  /// **'Что-то пошло не так · ошибка {id}'**
+  String errUnknownWithId(String id);
+
   /// No description provided for @authLockedOut.
   ///
   /// In ru, this message translates to:

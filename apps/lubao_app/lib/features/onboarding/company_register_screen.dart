@@ -7,6 +7,7 @@ import '../../providers/api_providers.dart';
 import '../../providers/auth_provider.dart';
 import '../shared/status_helpers.dart';
 import '../shared/pd_consent.dart';
+import '../shared/error_feedback.dart';
 
 /// Регистрация компании — один экран, без предварительного входа (задача
 /// 025, заменяет пост-кодовый экран из 022): email, пароль, имя владельца,
@@ -116,7 +117,7 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
             ),
           ));
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.commonError)));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage(t, e))));
         }
       }
     } finally {
@@ -136,7 +137,7 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('CompanyRegisterScreen: $e');
-          return ErrorView(message: t.commonError);
+          return ErrorView(message: errorMessage(t, e));
         },
         data: (refData) {
           final china = refData.countries.where((c) => c.code == 'CN').firstOrNull;

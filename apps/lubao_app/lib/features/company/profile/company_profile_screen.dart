@@ -537,7 +537,7 @@ class _CompanyVerificationCardState extends ConsumerState<_CompanyVerificationCa
         padding: const EdgeInsets.all(AppSpacing.md),
         child: docsAsync.when(
           loading: () => const LoadingView(),
-          error: (e, st) => Text(t.commonError),
+          error: (e, st) => Text(errorMessage(t, e)),
           data: (docs) {
             final doc = docs.isEmpty ? null : docs.first;
             final (statusLabel, statusColor) = switch (doc?.status) {
@@ -691,7 +691,7 @@ class CompanyProfileScreen extends ConsumerWidget {
             loading: () => const LoadingView(),
             error: (e, st) {
               debugPrint('CompanyProfileScreen (members): $e');
-              return Text(t.commonError);
+              return Text(errorMessage(t, e));
             },
             data: (list) => Column(
               children: list

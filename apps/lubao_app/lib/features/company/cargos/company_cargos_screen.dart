@@ -16,6 +16,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../shared/share_link_prompt.dart';
 import '../company_shell.dart';
 import '../../../router/tab_scroll.dart';
+import '../../shared/error_feedback.dart';
 
 /// 056 п.2: «Грузы» логиста — Активные (по умолчанию) / В работе / Архив, с
 /// числами на вкладках. Нажатие: в «Активных» — отклики груза; в «В работе» и
@@ -336,7 +337,7 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
     if (_items.isEmpty && _loading) {
       body = const SkeletonList();
     } else if (_items.isEmpty && _error != null) {
-      body = ErrorView(message: t.commonError, onRetry: () => _load(reset: true));
+      body = ErrorView(message: errorMessage(t, _error!), onRetry: () => _load(reset: true));
     } else if (_items.isEmpty) {
       body = ListView(children: [
         const SizedBox(height: AppSpacing.xxl),

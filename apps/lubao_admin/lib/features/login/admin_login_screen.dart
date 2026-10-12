@@ -66,7 +66,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
         _passwordFocus.requestFocus();
       } else {
         // «Что-то пошло не так» — только для неизвестных ошибок сервера.
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(authErrorText(t, e) ?? t.commonError)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(authErrorText(t, e) ?? apiErrorText(t, e))));
       }
     } finally {
       if (mounted) setState(() => _loading = false);

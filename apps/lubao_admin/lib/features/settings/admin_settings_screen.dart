@@ -103,7 +103,7 @@ class AdminSettingsScreen extends ConsumerWidget {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('AdminSettingsScreen: $e');
-          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminSettingsProvider));
+          return ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(adminSettingsProvider));
         },
         data: (values) {
           final defaultCityId = values['defaultPointCityId'];
@@ -254,7 +254,7 @@ class _LoginCodeChannelsCard extends ConsumerWidget {
       messenger.showSnackBar(SnackBar(content: Text(t.adminLoginChannelsSaved)));
     } catch (e) {
       debugPrint('LoginCodeChannelsCard: $e');
-      messenger.showSnackBar(SnackBar(content: Text(t.commonError)));
+      messenger.showSnackBar(SnackBar(content: Text(apiErrorText(t, e))));
     }
     ref.invalidate(adminLoginCodeChannelsProvider);
   }
@@ -275,7 +275,7 @@ class _LoginCodeChannelsCard extends ConsumerWidget {
             loading: () => const LoadingView(),
             error: (e, st) {
               debugPrint('LoginCodeChannelsCard: $e');
-              return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminLoginCodeChannelsProvider));
+              return ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(adminLoginCodeChannelsProvider));
             },
             data: (list) => Column(
               children: [

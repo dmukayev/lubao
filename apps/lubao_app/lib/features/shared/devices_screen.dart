@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
 import 'status_helpers.dart';
+import 'error_feedback.dart';
 
 class DevicesScreen extends ConsumerWidget {
   const DevicesScreen({super.key});
@@ -43,7 +44,7 @@ class DevicesScreen extends ConsumerWidget {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('DevicesScreen: $e');
-          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(devicesProvider));
+          return ErrorView(message: errorMessage(t, e), onRetry: () => ref.invalidate(devicesProvider));
         },
         data: (devices) {
           if (devices.isEmpty) {

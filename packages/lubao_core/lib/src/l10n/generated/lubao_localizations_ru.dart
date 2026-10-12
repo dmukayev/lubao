@@ -2920,6 +2920,338 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get companyLoginInvalidCredentials => 'Неверный email или пароль';
 
   @override
+  String get errBadRequest => 'Проверьте введённые данные';
+
+  @override
+  String get errSessionExpired => 'Сессия закончилась, войдите снова';
+
+  @override
+  String get errForbidden => 'Нет доступа';
+
+  @override
+  String get errNotFound => 'Не найдено — возможно, уже удалено';
+
+  @override
+  String get errConflict => 'Уже изменено другим пользователем — обновите';
+
+  @override
+  String get errFileTooLarge => 'Файл слишком большой (до 10 МБ)';
+
+  @override
+  String get errRateLimited => 'Слишком часто, подождите минуту';
+
+  @override
+  String get errServerError => 'Сервер временно недоступен, попробуйте позже';
+
+  @override
+  String get errNotDriverAccount => 'Это действие — только для водителя';
+
+  @override
+  String get errNotCompanyAccount => 'Это действие — только для компании';
+
+  @override
+  String get errAccountBlocked =>
+      'Аккаунт заблокирован. Обратитесь в поддержку';
+
+  @override
+  String get errAlreadyCompanyMember =>
+      'Этот пользователь уже в другой компании';
+
+  @override
+  String get errEmailTaken => 'Этот email уже зарегистрирован';
+
+  @override
+  String get errInvitationExpired => 'Приглашение устарело — попросите новое';
+
+  @override
+  String get errLinkExpired => 'Ссылка устарела';
+
+  @override
+  String get errPdConsentRequired =>
+      'Нужно согласие на обработку персональных данных';
+
+  @override
+  String get errTelegramDisabled =>
+      'Вход через Telegram сейчас недоступен — войдите по коду';
+
+  @override
+  String get errNonceExpired => 'Ссылка для входа устарела — начните заново';
+
+  @override
+  String get errNonceUsed => 'Эта ссылка для входа уже использована';
+
+  @override
+  String get errInvalidCredentials => 'Неверный email или пароль';
+
+  @override
+  String get errLockedOut => 'Слишком много попыток — подождите 15 минут';
+
+  @override
+  String get errInvalidCode => 'Неверный код';
+
+  @override
+  String get errCodeExpired => 'Код устарел — отправьте новый';
+
+  @override
+  String get errCodeAttemptsExceeded =>
+      'Слишком много попыток — отправьте новый код';
+
+  @override
+  String get errPhoneOtherRole =>
+      'Этот номер уже используется в другом аккаунте';
+
+  @override
+  String get errTooManyRequests => 'Слишком часто, подождите минуту';
+
+  @override
+  String get errCargoNotFound => 'Груз не найден — возможно, его уже сняли';
+
+  @override
+  String get errDriverNotFound => 'Водитель не найден';
+
+  @override
+  String get errDealNotFound => 'Сделка не найдена';
+
+  @override
+  String get errCompanyNotFound => 'Компания не найдена';
+
+  @override
+  String get errResponseNotFound => 'Отклик не найден — возможно, его отозвали';
+
+  @override
+  String get errDocumentNotFound => 'Документ не найден';
+
+  @override
+  String get errVehicleNotFound => 'Машина не найдена';
+
+  @override
+  String get errUserNotFound => 'Пользователь не найден';
+
+  @override
+  String get errPhotoNotFound => 'Фото не найдено';
+
+  @override
+  String get errCityNotFound => 'Город не найден';
+
+  @override
+  String get errComplaintNotFound => 'Жалоба не найдена';
+
+  @override
+  String get errMemberNotFound => 'Сотрудник не найден';
+
+  @override
+  String get errLinkNotFound => 'Ссылка не найдена';
+
+  @override
+  String get errArrivalNotFound => 'Анонс не найден — возможно, он уже закрыт';
+
+  @override
+  String get errPointNotFound => 'Город погрузки не найден';
+
+  @override
+  String get errChatNotFound => 'Чат не найден';
+
+  @override
+  String get errNotYourCargo => 'Это груз другой компании';
+
+  @override
+  String get errNotYourResponse => 'Это не ваш отклик';
+
+  @override
+  String get errNotYourDeal => 'Это не ваша сделка';
+
+  @override
+  String get errCompanyOnly => 'Это действие — только для компании';
+
+  @override
+  String get errNotVerified => 'Сначала пройдите проверку документов';
+
+  @override
+  String get errDriverNotVerified => 'Сначала пройдите проверку документов';
+
+  @override
+  String get errCompanyNotVerified => 'Компания ещё не прошла проверку';
+
+  @override
+  String get errCargoNotAvailable => 'Груз уже недоступен';
+
+  @override
+  String get errCargoNotPublished => 'Груз уже не опубликован';
+
+  @override
+  String get errCargoTaken => 'Груз уже взял другой водитель';
+
+  @override
+  String get errCargoAlreadyHasDeal => 'Все места на этот груз уже заняты';
+
+  @override
+  String get errCargoCreateInProgress =>
+      'Груз уже публикуется — подождите секунду';
+
+  @override
+  String get errPointRequired => 'Выберите город погрузки';
+
+  @override
+  String get errCategoryRequired => 'Выберите, что везёте';
+
+  @override
+  String get errBodyTypeRequired => 'Выберите тип кузова';
+
+  @override
+  String get errContactPhoneRequired =>
+      'Укажите телефон — без него водитель не сможет позвонить';
+
+  @override
+  String get errCurrencyLocked =>
+      'Валюту нельзя менять: есть отклики с ценой или сделки';
+
+  @override
+  String get errPriceChanged =>
+      'Водитель только что изменил цену — посмотрите новую';
+
+  @override
+  String get errResponseNotPending => 'Отклик уже рассмотрен';
+
+  @override
+  String get errResponseAlreadyExists => 'Вы уже откликнулись на этот груз';
+
+  @override
+  String get errCounterAlreadySent => 'Встречная цена уже отправлена';
+
+  @override
+  String get errCounterPending => 'Сначала ответьте на встречную цену';
+
+  @override
+  String get errNoDriverPrice => 'Водитель не предлагал свою цену';
+
+  @override
+  String get errNoPendingCounter => 'Встречной цены нет';
+
+  @override
+  String get errInvalidBodyFields => 'Проверьте параметры кузова';
+
+  @override
+  String get errBodyHasNoSize => 'У этого кузова нет размера';
+
+  @override
+  String get errVehicleFull => 'Машина уже загружена — груз не поместится';
+
+  @override
+  String get errVehicleRequired => 'Сначала добавьте машину в гараж';
+
+  @override
+  String get errDealCannotCancel => 'Эту сделку уже нельзя отменить';
+
+  @override
+  String get errDealStatusChanged => 'Статус сделки уже изменился — обновите';
+
+  @override
+  String get errCancelAlreadyRequested => 'Отмена уже запрошена';
+
+  @override
+  String get errNoCancelRequest => 'Запроса на отмену нет';
+
+  @override
+  String get errOwnCancelRequest =>
+      'Это ваш запрос — ответить должна другая сторона';
+
+  @override
+  String get errNoDispute => 'Спора по этой сделке нет';
+
+  @override
+  String get errReasonRequired => 'Укажите причину';
+
+  @override
+  String get errReasonNotAllowed => 'Эту причину здесь выбрать нельзя';
+
+  @override
+  String get errReasonTextRequired => 'Опишите причину';
+
+  @override
+  String get errActiveDeals =>
+      'Есть незавершённые сделки — сначала завершите их';
+
+  @override
+  String get errDocsExpired => 'Срок действия документов истёк — обновите их';
+
+  @override
+  String get errDocsNotYet => 'Документы ещё на проверке';
+
+  @override
+  String get errComplaintAlreadyOpen => 'Жалоба по этой сделке уже подана';
+
+  @override
+  String get errTooManyArrivals => 'Слишком много анонсов — закройте лишние';
+
+  @override
+  String get errTerminalNeedsGeofence => 'Для терминала нужна геозона';
+
+  @override
+  String get errRespondFirst => 'Сначала откликнитесь на груз';
+
+  @override
+  String get errContactLimit => 'Лимит открытых номеров на сегодня исчерпан';
+
+  @override
+  String get errNoPhone => 'Номер не указан — напишите в чат';
+
+  @override
+  String get errCreateDriverLimit => 'Лимит приглашений на сегодня исчерпан';
+
+  @override
+  String get errDriverLeftList =>
+      'Водитель вышел из вашего списка — пригласить снова нельзя';
+
+  @override
+  String get errDriverBlacklisted => 'Водитель в чёрном списке';
+
+  @override
+  String get errBlacklistMatch => 'Совпадение с чёрным списком';
+
+  @override
+  String get errOwnerHasMembers =>
+      'Сначала передайте компанию другому сотруднику';
+
+  @override
+  String get errNoLicenseName => 'В правах не распознано имя';
+
+  @override
+  String get errNoApprovedSelfie => 'Сначала нужно одобренное селфи';
+
+  @override
+  String get errNoInvitation => 'Приглашения нет';
+
+  @override
+  String get errIdentifierInvalid => 'Неверный номер документа';
+
+  @override
+  String get errImageTooLarge => 'Фото слишком большое (до 10 МБ)';
+
+  @override
+  String get errInvalidImage => 'Не удалось прочитать фото — выберите другое';
+
+  @override
+  String get errInvalidFile => 'Неподходящий файл';
+
+  @override
+  String get errUnsupportedImageFormat =>
+      'Формат фото не поддерживается (JPG, PNG, HEIC)';
+
+  @override
+  String get errUploadQuotaExceeded => 'Лимит загрузок на сегодня исчерпан';
+
+  @override
+  String get errNoInternet => 'Нет интернета. Проверьте связь и повторите';
+
+  @override
+  String get errTimeout => 'Сервер долго не отвечает. Повторите';
+
+  @override
+  String errUnknownWithId(String id) {
+    return 'Что-то пошло не так · ошибка $id';
+  }
+
+  @override
   String authLockedOut(String minutes) {
     return 'Слишком много попыток. Попробуйте через $minutes мин';
   }

@@ -2934,6 +2934,343 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get companyLoginInvalidCredentials => 'Wrong email or password';
 
   @override
+  String get errBadRequest => 'Please check the data you entered';
+
+  @override
+  String get errSessionExpired =>
+      'Your session has ended, please sign in again';
+
+  @override
+  String get errForbidden => 'Access denied';
+
+  @override
+  String get errNotFound => 'Not found — it may have been deleted';
+
+  @override
+  String get errConflict => 'Already changed by someone else — refresh';
+
+  @override
+  String get errFileTooLarge => 'The file is too large (up to 10 MB)';
+
+  @override
+  String get errRateLimited => 'Too often, please wait a minute';
+
+  @override
+  String get errServerError =>
+      'The server is temporarily unavailable, try later';
+
+  @override
+  String get errNotDriverAccount => 'This action is for drivers only';
+
+  @override
+  String get errNotCompanyAccount => 'This action is for companies only';
+
+  @override
+  String get errAccountBlocked => 'The account is blocked. Contact support';
+
+  @override
+  String get errAlreadyCompanyMember =>
+      'This user already belongs to a company';
+
+  @override
+  String get errEmailTaken => 'This email is already registered';
+
+  @override
+  String get errInvitationExpired =>
+      'The invitation has expired — ask for a new one';
+
+  @override
+  String get errLinkExpired => 'The link has expired';
+
+  @override
+  String get errPdConsentRequired =>
+      'Consent to personal data processing is required';
+
+  @override
+  String get errTelegramDisabled =>
+      'Telegram sign-in is unavailable — use a code';
+
+  @override
+  String get errNonceExpired => 'The sign-in link has expired — start again';
+
+  @override
+  String get errNonceUsed => 'This sign-in link has already been used';
+
+  @override
+  String get errInvalidCredentials => 'Wrong email or password';
+
+  @override
+  String get errLockedOut => 'Too many attempts — wait 15 minutes';
+
+  @override
+  String get errInvalidCode => 'Wrong code';
+
+  @override
+  String get errCodeExpired => 'The code has expired — send a new one';
+
+  @override
+  String get errCodeAttemptsExceeded => 'Too many attempts — send a new code';
+
+  @override
+  String get errPhoneOtherRole =>
+      'This number is already used by another account';
+
+  @override
+  String get errTooManyRequests => 'Too often, please wait a minute';
+
+  @override
+  String get errCargoNotFound => 'Cargo not found — it may have been withdrawn';
+
+  @override
+  String get errDriverNotFound => 'Driver not found';
+
+  @override
+  String get errDealNotFound => 'Deal not found';
+
+  @override
+  String get errCompanyNotFound => 'Company not found';
+
+  @override
+  String get errResponseNotFound =>
+      'Response not found — it may have been withdrawn';
+
+  @override
+  String get errDocumentNotFound => 'Document not found';
+
+  @override
+  String get errVehicleNotFound => 'Vehicle not found';
+
+  @override
+  String get errUserNotFound => 'User not found';
+
+  @override
+  String get errPhotoNotFound => 'Photo not found';
+
+  @override
+  String get errCityNotFound => 'City not found';
+
+  @override
+  String get errComplaintNotFound => 'Complaint not found';
+
+  @override
+  String get errMemberNotFound => 'Employee not found';
+
+  @override
+  String get errLinkNotFound => 'Link not found';
+
+  @override
+  String get errArrivalNotFound => 'Announcement not found — it may be closed';
+
+  @override
+  String get errPointNotFound => 'Loading city not found';
+
+  @override
+  String get errChatNotFound => 'Chat not found';
+
+  @override
+  String get errNotYourCargo => 'This cargo belongs to another company';
+
+  @override
+  String get errNotYourResponse => 'This is not your response';
+
+  @override
+  String get errNotYourDeal => 'This is not your deal';
+
+  @override
+  String get errCompanyOnly => 'This action is for companies only';
+
+  @override
+  String get errNotVerified => 'Pass document verification first';
+
+  @override
+  String get errDriverNotVerified => 'Pass document verification first';
+
+  @override
+  String get errCompanyNotVerified => 'The company is not verified yet';
+
+  @override
+  String get errCargoNotAvailable => 'The cargo is no longer available';
+
+  @override
+  String get errCargoNotPublished => 'The cargo is no longer published';
+
+  @override
+  String get errCargoTaken => 'Another driver has already taken the cargo';
+
+  @override
+  String get errCargoAlreadyHasDeal => 'All places for this cargo are taken';
+
+  @override
+  String get errCargoCreateInProgress =>
+      'The cargo is being published — wait a second';
+
+  @override
+  String get errPointRequired => 'Choose the loading city';
+
+  @override
+  String get errCategoryRequired => 'Choose what you carry';
+
+  @override
+  String get errBodyTypeRequired => 'Choose the body type';
+
+  @override
+  String get errContactPhoneRequired =>
+      'Enter a phone number — otherwise drivers can\'t call you';
+
+  @override
+  String get errCurrencyLocked =>
+      'The currency can\'t change: there are priced responses or deals';
+
+  @override
+  String get errPriceChanged =>
+      'The driver has just changed the price — check the new one';
+
+  @override
+  String get errResponseNotPending => 'The response has already been handled';
+
+  @override
+  String get errResponseAlreadyExists =>
+      'You have already responded to this cargo';
+
+  @override
+  String get errCounterAlreadySent => 'The counter-offer has already been sent';
+
+  @override
+  String get errCounterPending => 'Answer the counter-offer first';
+
+  @override
+  String get errNoDriverPrice => 'The driver did not propose a price';
+
+  @override
+  String get errNoPendingCounter => 'There is no counter-offer';
+
+  @override
+  String get errInvalidBodyFields => 'Check the body parameters';
+
+  @override
+  String get errBodyHasNoSize => 'This body type has no size';
+
+  @override
+  String get errVehicleFull => 'The vehicle is full — the cargo won\'t fit';
+
+  @override
+  String get errVehicleRequired => 'Add a vehicle to the garage first';
+
+  @override
+  String get errDealCannotCancel => 'This deal can no longer be cancelled';
+
+  @override
+  String get errDealStatusChanged => 'The deal status has changed — refresh';
+
+  @override
+  String get errCancelAlreadyRequested =>
+      'Cancellation has already been requested';
+
+  @override
+  String get errNoCancelRequest => 'There is no cancellation request';
+
+  @override
+  String get errOwnCancelRequest =>
+      'This is your request — the other side must respond';
+
+  @override
+  String get errNoDispute => 'There is no dispute on this deal';
+
+  @override
+  String get errReasonRequired => 'Give a reason';
+
+  @override
+  String get errReasonNotAllowed => 'This reason can\'t be chosen here';
+
+  @override
+  String get errReasonTextRequired => 'Describe the reason';
+
+  @override
+  String get errActiveDeals => 'There are unfinished deals — finish them first';
+
+  @override
+  String get errDocsExpired => 'Your documents have expired — update them';
+
+  @override
+  String get errDocsNotYet => 'Your documents are still being checked';
+
+  @override
+  String get errComplaintAlreadyOpen =>
+      'A complaint about this deal is already open';
+
+  @override
+  String get errTooManyArrivals =>
+      'Too many announcements — close the extra ones';
+
+  @override
+  String get errTerminalNeedsGeofence => 'A terminal needs a geofence';
+
+  @override
+  String get errRespondFirst => 'Respond to the cargo first';
+
+  @override
+  String get errContactLimit => 'Today\'s limit of opened numbers is reached';
+
+  @override
+  String get errNoPhone => 'No number given — write in the chat';
+
+  @override
+  String get errCreateDriverLimit => 'Today\'s invitation limit is reached';
+
+  @override
+  String get errDriverLeftList =>
+      'The driver left your list — you can\'t invite them again';
+
+  @override
+  String get errDriverBlacklisted => 'The driver is blacklisted';
+
+  @override
+  String get errBlacklistMatch => 'Matches the blacklist';
+
+  @override
+  String get errOwnerHasMembers =>
+      'Hand the company over to another employee first';
+
+  @override
+  String get errNoLicenseName => 'No name recognized on the licence';
+
+  @override
+  String get errNoApprovedSelfie => 'An approved selfie is needed first';
+
+  @override
+  String get errNoInvitation => 'There is no invitation';
+
+  @override
+  String get errIdentifierInvalid => 'Invalid document number';
+
+  @override
+  String get errImageTooLarge => 'The photo is too large (up to 10 MB)';
+
+  @override
+  String get errInvalidImage => 'Couldn\'t read the photo — choose another';
+
+  @override
+  String get errInvalidFile => 'Unsupported file';
+
+  @override
+  String get errUnsupportedImageFormat =>
+      'Unsupported photo format (JPG, PNG, HEIC)';
+
+  @override
+  String get errUploadQuotaExceeded => 'Today\'s upload limit is reached';
+
+  @override
+  String get errNoInternet => 'No internet. Check your connection and retry';
+
+  @override
+  String get errTimeout => 'The server is taking too long. Retry';
+
+  @override
+  String errUnknownWithId(String id) {
+    return 'Something went wrong · error $id';
+  }
+
+  @override
   String authLockedOut(String minutes) {
     return 'Too many attempts. Try again in $minutes min';
   }

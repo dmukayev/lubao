@@ -683,7 +683,7 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
       ),
       body: referenceData.when(
         loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(referenceDataProvider)),
+        error: (e, st) => ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(referenceDataProvider)),
         data: (refData) => TabBarView(
           controller: _tabController,
           children: [
@@ -757,7 +757,7 @@ class _PendingCitiesList extends ConsumerWidget {
 
     return pending.when(
       loading: () => const LoadingView(),
-      error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(pendingCitiesProvider)),
+      error: (e, st) => ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(pendingCitiesProvider)),
       data: (list) {
         if (list.isEmpty) return EmptyState(message: t.adminPendingCitiesEmpty, icon: LucideIcons.mapPin);
 

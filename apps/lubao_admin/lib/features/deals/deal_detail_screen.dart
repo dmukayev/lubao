@@ -60,7 +60,7 @@ class DealDetailScreen extends ConsumerWidget {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('DealDetailScreen: $e');
-          return ErrorView(message: t.commonError, onRetry: () => _reload(ref));
+          return ErrorView(message: apiErrorText(t, e), onRetry: () => _reload(ref));
         },
         data: (deal) => SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -344,7 +344,7 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
     final messagesAsync = ref.watch(adminDealChatProvider(widget.dealId));
     return messagesAsync.when(
       loading: () => const LoadingView(),
-      error: (e, st) => ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminDealChatProvider(widget.dealId))),
+      error: (e, st) => ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(adminDealChatProvider(widget.dealId))),
       data: (messages) {
         if (messages.isEmpty) return Center(child: Text(t.adminNoChat));
         return ListView.separated(

@@ -2933,6 +2933,333 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get companyLoginInvalidCredentials => 'Email немесе құпиясөз қате';
 
   @override
+  String get errBadRequest => 'Енгізілген деректерді тексеріңіз';
+
+  @override
+  String get errSessionExpired => 'Сессия аяқталды, қайта кіріңіз';
+
+  @override
+  String get errForbidden => 'Қолжетімділік жоқ';
+
+  @override
+  String get errNotFound => 'Табылмады — мүмкін, жойылған';
+
+  @override
+  String get errConflict => 'Басқа пайдаланушы өзгертті — жаңартыңыз';
+
+  @override
+  String get errFileTooLarge => 'Файл тым үлкен (10 МБ дейін)';
+
+  @override
+  String get errRateLimited => 'Тым жиі, бір минут күтіңіз';
+
+  @override
+  String get errServerError => 'Сервер уақытша қолжетімсіз, кейінірек көріңіз';
+
+  @override
+  String get errNotDriverAccount => 'Бұл әрекет тек жүргізушіге арналған';
+
+  @override
+  String get errNotCompanyAccount => 'Бұл әрекет тек компанияға арналған';
+
+  @override
+  String get errAccountBlocked =>
+      'Аккаунт бұғатталған. Қолдау қызметіне жазыңыз';
+
+  @override
+  String get errAlreadyCompanyMember => 'Бұл пайдаланушы басқа компанияда';
+
+  @override
+  String get errEmailTaken => 'Бұл email тіркелген';
+
+  @override
+  String get errInvitationExpired => 'Шақырудың мерзімі өтті — жаңасын сұраңыз';
+
+  @override
+  String get errLinkExpired => 'Сілтеменің мерзімі өтті';
+
+  @override
+  String get errPdConsentRequired => 'Дербес деректерді өңдеуге келісім қажет';
+
+  @override
+  String get errTelegramDisabled =>
+      'Telegram арқылы кіру қазір қолжетімсіз — кодпен кіріңіз';
+
+  @override
+  String get errNonceExpired =>
+      'Кіру сілтемесінің мерзімі өтті — қайта бастаңыз';
+
+  @override
+  String get errNonceUsed => 'Бұл кіру сілтемесі қолданылған';
+
+  @override
+  String get errInvalidCredentials => 'Email немесе құпиясөз қате';
+
+  @override
+  String get errLockedOut => 'Тым көп әрекет — 15 минут күтіңіз';
+
+  @override
+  String get errInvalidCode => 'Код қате';
+
+  @override
+  String get errCodeExpired => 'Кодтың мерзімі өтті — жаңасын жіберіңіз';
+
+  @override
+  String get errCodeAttemptsExceeded => 'Тым көп әрекет — жаңа код жіберіңіз';
+
+  @override
+  String get errPhoneOtherRole => 'Бұл нөмір басқа аккаунтта қолданылады';
+
+  @override
+  String get errTooManyRequests => 'Тым жиі, бір минут күтіңіз';
+
+  @override
+  String get errCargoNotFound => 'Жүк табылмады — мүмкін, алынып тасталған';
+
+  @override
+  String get errDriverNotFound => 'Жүргізуші табылмады';
+
+  @override
+  String get errDealNotFound => 'Мәміле табылмады';
+
+  @override
+  String get errCompanyNotFound => 'Компания табылмады';
+
+  @override
+  String get errResponseNotFound => 'Өтінім табылмады — мүмкін, қайтарылған';
+
+  @override
+  String get errDocumentNotFound => 'Құжат табылмады';
+
+  @override
+  String get errVehicleNotFound => 'Көлік табылмады';
+
+  @override
+  String get errUserNotFound => 'Пайдаланушы табылмады';
+
+  @override
+  String get errPhotoNotFound => 'Фото табылмады';
+
+  @override
+  String get errCityNotFound => 'Қала табылмады';
+
+  @override
+  String get errComplaintNotFound => 'Шағым табылмады';
+
+  @override
+  String get errMemberNotFound => 'Қызметкер табылмады';
+
+  @override
+  String get errLinkNotFound => 'Сілтеме табылмады';
+
+  @override
+  String get errArrivalNotFound => 'Хабарландыру табылмады — мүмкін, жабылған';
+
+  @override
+  String get errPointNotFound => 'Тиеу қаласы табылмады';
+
+  @override
+  String get errChatNotFound => 'Чат табылмады';
+
+  @override
+  String get errNotYourCargo => 'Бұл басқа компанияның жүгі';
+
+  @override
+  String get errNotYourResponse => 'Бұл сіздің өтініміңіз емес';
+
+  @override
+  String get errNotYourDeal => 'Бұл сіздің мәмілеңіз емес';
+
+  @override
+  String get errCompanyOnly => 'Бұл әрекет тек компанияға арналған';
+
+  @override
+  String get errNotVerified => 'Алдымен құжаттарды тексеруден өтіңіз';
+
+  @override
+  String get errDriverNotVerified => 'Алдымен құжаттарды тексеруден өтіңіз';
+
+  @override
+  String get errCompanyNotVerified => 'Компания әлі тексерілмеген';
+
+  @override
+  String get errCargoNotAvailable => 'Жүк енді қолжетімсіз';
+
+  @override
+  String get errCargoNotPublished => 'Жүк енді жарияланбаған';
+
+  @override
+  String get errCargoTaken => 'Жүкті басқа жүргізуші алды';
+
+  @override
+  String get errCargoAlreadyHasDeal => 'Бұл жүктің барлық орны бос емес';
+
+  @override
+  String get errCargoCreateInProgress => 'Жүк жариялануда — бір сәт күтіңіз';
+
+  @override
+  String get errPointRequired => 'Тиеу қаласын таңдаңыз';
+
+  @override
+  String get errCategoryRequired => 'Не тасымалдайтыныңызды таңдаңыз';
+
+  @override
+  String get errBodyTypeRequired => 'Шанақ түрін таңдаңыз';
+
+  @override
+  String get errContactPhoneRequired =>
+      'Телефонды көрсетіңіз — онсыз жүргізуші қоңырау шала алмайды';
+
+  @override
+  String get errCurrencyLocked =>
+      'Валютаны өзгертуге болмайды: бағасы бар өтінімдер немесе мәмілелер бар';
+
+  @override
+  String get errPriceChanged =>
+      'Жүргізуші бағаны жаңа ғана өзгертті — жаңасын қараңыз';
+
+  @override
+  String get errResponseNotPending => 'Өтінім қаралды';
+
+  @override
+  String get errResponseAlreadyExists => 'Сіз бұл жүкке өтінім бердіңіз';
+
+  @override
+  String get errCounterAlreadySent => 'Қарсы баға жіберілді';
+
+  @override
+  String get errCounterPending => 'Алдымен қарсы бағаға жауап беріңіз';
+
+  @override
+  String get errNoDriverPrice => 'Жүргізуші өз бағасын ұсынбаған';
+
+  @override
+  String get errNoPendingCounter => 'Қарсы баға жоқ';
+
+  @override
+  String get errInvalidBodyFields => 'Шанақ параметрлерін тексеріңіз';
+
+  @override
+  String get errBodyHasNoSize => 'Бұл шанақтың өлшемі жоқ';
+
+  @override
+  String get errVehicleFull => 'Көлік толы — жүк сыймайды';
+
+  @override
+  String get errVehicleRequired => 'Алдымен гаражға көлік қосыңыз';
+
+  @override
+  String get errDealCannotCancel => 'Бұл мәмілені енді болдырмау мүмкін емес';
+
+  @override
+  String get errDealStatusChanged => 'Мәміле күйі өзгерді — жаңартыңыз';
+
+  @override
+  String get errCancelAlreadyRequested => 'Болдырмау сұралды';
+
+  @override
+  String get errNoCancelRequest => 'Болдырмау сұрауы жоқ';
+
+  @override
+  String get errOwnCancelRequest =>
+      'Бұл сіздің сұрауыңыз — екінші тарап жауап береді';
+
+  @override
+  String get errNoDispute => 'Бұл мәміле бойынша дау жоқ';
+
+  @override
+  String get errReasonRequired => 'Себебін көрсетіңіз';
+
+  @override
+  String get errReasonNotAllowed => 'Бұл себепті мұнда таңдауға болмайды';
+
+  @override
+  String get errReasonTextRequired => 'Себебін сипаттаңыз';
+
+  @override
+  String get errActiveDeals => 'Аяқталмаған мәмілелер бар — алдымен аяқтаңыз';
+
+  @override
+  String get errDocsExpired => 'Құжаттардың мерзімі өтті — жаңартыңыз';
+
+  @override
+  String get errDocsNotYet => 'Құжаттар әлі тексерілуде';
+
+  @override
+  String get errComplaintAlreadyOpen => 'Бұл мәміле бойынша шағым берілген';
+
+  @override
+  String get errTooManyArrivals => 'Хабарландырулар тым көп — артығын жабыңыз';
+
+  @override
+  String get errTerminalNeedsGeofence => 'Терминалға геоаймақ қажет';
+
+  @override
+  String get errRespondFirst => 'Алдымен жүкке өтінім беріңіз';
+
+  @override
+  String get errContactLimit => 'Бүгінгі ашылған нөмірлер шегі таусылды';
+
+  @override
+  String get errNoPhone => 'Нөмір көрсетілмеген — чатқа жазыңыз';
+
+  @override
+  String get errCreateDriverLimit => 'Бүгінгі шақырулар шегі таусылды';
+
+  @override
+  String get errDriverLeftList =>
+      'Жүргізуші тізіміңізден шықты — қайта шақыруға болмайды';
+
+  @override
+  String get errDriverBlacklisted => 'Жүргізуші қара тізімде';
+
+  @override
+  String get errBlacklistMatch => 'Қара тізіммен сәйкестік';
+
+  @override
+  String get errOwnerHasMembers =>
+      'Алдымен компанияны басқа қызметкерге беріңіз';
+
+  @override
+  String get errNoLicenseName => 'Куәлікте аты танылмады';
+
+  @override
+  String get errNoApprovedSelfie => 'Алдымен мақұлданған селфи қажет';
+
+  @override
+  String get errNoInvitation => 'Шақыру жоқ';
+
+  @override
+  String get errIdentifierInvalid => 'Құжат нөмірі қате';
+
+  @override
+  String get errImageTooLarge => 'Фото тым үлкен (10 МБ дейін)';
+
+  @override
+  String get errInvalidImage => 'Фото оқылмады — басқасын таңдаңыз';
+
+  @override
+  String get errInvalidFile => 'Файл жарамсыз';
+
+  @override
+  String get errUnsupportedImageFormat =>
+      'Фото пішімі қолдау көрсетілмейді (JPG, PNG, HEIC)';
+
+  @override
+  String get errUploadQuotaExceeded => 'Бүгінгі жүктеу шегі таусылды';
+
+  @override
+  String get errNoInternet => 'Интернет жоқ. Байланысты тексеріп, қайталаңыз';
+
+  @override
+  String get errTimeout => 'Сервер ұзақ жауап бермей тұр. Қайталаңыз';
+
+  @override
+  String errUnknownWithId(String id) {
+    return 'Бірдеңе дұрыс болмады · қате $id';
+  }
+
+  @override
   String authLockedOut(String minutes) {
     return 'Тым көп әрекет. $minutes минуттан кейін қайталаңыз';
   }

@@ -268,7 +268,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         // карточке сделки, с переходом к занимающей машину сделке.
         if (mounted) await showVehicleFullSheet(context, full);
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.commonError)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage(context.l10n, e))));
       }
     } finally {
       if (mounted) setState(() => _confirming = false);
@@ -368,7 +368,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               loading: () => const LoadingView(),
               error: (e, st) {
                 debugPrint('ChatScreen: $e');
-                return ErrorView(message: t.commonError);
+                return ErrorView(message: errorMessage(t, e));
               },
               data: (list) {
                 if (list.isEmpty) return EmptyState(message: t.chatEmpty, icon: LucideIcons.messageCircle);
@@ -612,7 +612,7 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
   void _reload() => ref.invalidate(chatThreadProvider(widget.chatId));
 
   /// Ошибки действий карточки — не молчать (задача 038, п.2): 409 с кодом
-  /// переводится в понятный текст, остальное — commonError. После ошибки
+  /// переводится в понятный текст, остальное — общий разбор (errorMessage). После ошибки
   /// карточка перезагружается: статус на сервере мог уйти вперёд (другая
   /// вкладка/логист), и кнопки должны отразить реальность.
   void _showError(Object error) {
@@ -946,7 +946,7 @@ class _CargoPickerSheet extends ConsumerWidget {
               constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
               child: cargosAsync.when(
                 loading: () => const LoadingView(),
-                error: (e, st) => ErrorView(message: t.commonError),
+                error: (e, st) => ErrorView(message: errorMessage(t, e)),
                 data: (cargos) => cargos.isEmpty
                     ? EmptyState(message: t.myCargosEmpty)
                     : ListView.builder(

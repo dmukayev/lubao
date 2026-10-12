@@ -192,7 +192,7 @@ class GarageScreen extends ConsumerWidget {
     } catch (e) {
       debugPrint('GarageScreen: failed to set vehicle size: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.commonError)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage(t, e))));
       }
     }
   }
@@ -231,7 +231,7 @@ class GarageScreen extends ConsumerWidget {
     } catch (e) {
       debugPrint('GarageScreen: failed to archive vehicle: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.commonError)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage(t, e))));
       }
     }
   }
@@ -247,7 +247,7 @@ class GarageScreen extends ConsumerWidget {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('GarageScreen: $e');
-          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(garageVehiclesProvider));
+          return ErrorView(message: errorMessage(t, e), onRetry: () => ref.invalidate(garageVehiclesProvider));
         },
         data: (vehicles) {
           final refData = ref.watch(referenceDataProvider).valueOrNull;

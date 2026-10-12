@@ -23,7 +23,7 @@ class AdminAuditScreen extends ConsumerWidget {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('AdminAuditScreen: $e');
-          return ErrorView(message: t.commonError, onRetry: () => ref.invalidate(adminAuditLogProvider));
+          return ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(adminAuditLogProvider));
         },
         data: (list) {
           if (list.isEmpty) return EmptyState(message: t.adminNoLog, icon: LucideIcons.listTree);

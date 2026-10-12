@@ -190,7 +190,7 @@ class DriverDetailScreen extends ConsumerWidget {
         loading: () => const LoadingView(),
         error: (e, st) {
           debugPrint('DriverDetailScreen: $e');
-          return ErrorView(message: t.commonError, onRetry: () => _reload(ref));
+          return ErrorView(message: apiErrorText(t, e), onRetry: () => _reload(ref));
         },
         data: (driver) => SingleChildScrollView(
           padding: const EdgeInsets.all(24),

@@ -7,6 +7,7 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/status_helpers.dart';
 import 'driver_trips_screen.dart';
+import '../../shared/error_feedback.dart';
 
 enum _HistoryFilter { all, delivered, failed }
 
@@ -67,7 +68,7 @@ class _TripHistoryScreenState extends ConsumerState<TripHistoryScreen> {
     if ((dealsAsync.isLoading && !dealsAsync.hasValue) || (responsesAsync.isLoading && !responsesAsync.hasValue)) {
       body = const LoadingView();
     } else if (dealsAsync.hasError || responsesAsync.hasError) {
-      body = ErrorView(message: t.commonError, onRetry: () {
+      body = ErrorView(message: errorMessage(t, dealsAsync.error ?? responsesAsync.error!), onRetry: () {
         ref.invalidate(dealsMineProvider);
         ref.invalidate(myResponsesProvider);
       });
