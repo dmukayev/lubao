@@ -6660,6 +6660,24 @@ abstract class LubaoLocalizations {
   /// **'Сколько машин нужно'**
   String get postCargoTrucks;
 
+  /// No description provided for @postCargoContactPhone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ваш телефон для водителей'**
+  String get postCargoContactPhone;
+
+  /// No description provided for @postCargoContactPhoneHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Водитель позвонит или напишет в WhatsApp. Номер сохранится в «Моём профиле».'**
+  String get postCargoContactPhoneHint;
+
+  /// No description provided for @postCargoPhoneRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите телефон — без него водитель не сможет позвонить'**
+  String get postCargoPhoneRequired;
+
   /// No description provided for @paymentWhenNow.
   ///
   /// In ru, this message translates to:

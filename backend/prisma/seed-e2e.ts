@@ -236,8 +236,9 @@ async function main() {
   });
   await prisma.companyMember.upsert({
     where: { userId: ownerUser.id },
-    update: { companyId: company.id, role: 'OWNER' },
-    create: { companyId: company.id, userId: ownerUser.id, role: 'OWNER' },
+    // Телефон логиста обязателен до публикации (decisions.md) — синтетический.
+    update: { companyId: company.id, role: 'OWNER', contactPhone: '+86 138 0000 0001' },
+    create: { companyId: company.id, userId: ownerUser.id, role: 'OWNER', contactPhone: '+86 138 0000 0001' },
   });
 
   const logistUser = await prisma.user.upsert({
@@ -247,8 +248,8 @@ async function main() {
   });
   await prisma.companyMember.upsert({
     where: { userId: logistUser.id },
-    update: { companyId: company.id, role: 'LOGIST' },
-    create: { companyId: company.id, userId: logistUser.id, role: 'LOGIST' },
+    update: { companyId: company.id, role: 'LOGIST', contactPhone: '+86 138 0000 0002' },
+    create: { companyId: company.id, userId: logistUser.id, role: 'LOGIST', contactPhone: '+86 138 0000 0002' },
   });
 
   // -----------------------------------------------------------------

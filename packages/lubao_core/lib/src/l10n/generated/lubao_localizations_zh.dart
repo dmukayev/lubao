@@ -3490,6 +3490,15 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoTrucks => '需要几辆车';
 
   @override
+  String get postCargoContactPhone => '供司机联系的电话';
+
+  @override
+  String get postCargoContactPhoneHint => '司机会打电话或发 WhatsApp。号码将保存在“我的资料”中。';
+
+  @override
+  String get postCargoPhoneRequired => '请填写电话——否则司机无法联系您';
+
+  @override
   String get paymentWhenNow => '立即';
 
   @override

@@ -6,8 +6,10 @@ import { IsPersonName } from '../../common/validators/person-name.validator';
 /// decisions.md «Компания: проверка, роли, контакты»). И владелец, и
 /// логист правят это у себя через PATCH /companies/me/contact.
 export class UpdateMyContactDto {
+  /// Не передано — имя не меняется (телефон из формы груза сохраняется отдельно).
+  @IsOptional()
   @IsPersonName()
-  fullName!: string;
+  fullName?: string;
 
   /// Телефон для водителей — любой код страны (+86, +7…), не привязан к
   /// формату User.phone (который используется для входа по SMS у

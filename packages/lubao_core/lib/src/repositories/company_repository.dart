@@ -58,9 +58,9 @@ class CompanyRepository {
 
   /// «Мой профиль» (задача 012) — у владельца и у логиста отдельно; то,
   /// что видит водитель по грузу, который этот сотрудник опубликовал.
-  Future<CompanyMember> updateMyContact({required String fullName, String? contactPhone, String? wechatId}) async {
+  Future<CompanyMember> updateMyContact({String? fullName, String? contactPhone, String? wechatId}) async {
     final res = await _client.dio.patch('/companies/me/contact', data: {
-      'fullName': fullName,
+      if (fullName != null) 'fullName': fullName,
       if (contactPhone != null) 'contactPhone': contactPhone,
       if (wechatId != null) 'wechatId': wechatId,
     });

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -44,6 +45,11 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   final _descriptionController = TextEditingController();
   // 058 п.1: условия оплаты — аванс (в валюте груза), форма, отсрочка.
   final _advanceController = TextEditingController();
+  // Телефон логиста для водителей — обязателен до публикации (decisions.md
+  // «Обязательные поля компании»); нет в профиле — поле прямо в форме.
+  final _phoneController = TextEditingController();
+  String? _phoneError;
+  bool _askPhone = false;
   final _delayController = TextEditingController();
   // 058 п.2: сколько машин нужно (1–20).
   final _trucksController = TextEditingController(text: '1');
@@ -190,6 +196,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     _priceController.dispose();
     _descriptionController.dispose();
     _advanceController.dispose();
+    _phoneController.dispose();
     _delayController.dispose();
     _trucksController.dispose();
     super.dispose();
@@ -361,9 +368,21 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     if (picked != null) setState(() => _readyDate = picked);
   }
 
+  /// Нет телефона ни в «Моём профиле», ни у пользователя — спросить в форме.
+  bool get _needsPhone {
+    if (_isEditing) return false;
+    final session = ref.watch(sessionProvider);
+    return _askPhone || (session?.companyMember?.contactPhone == null && session?.user.phone == null);
+  }
+
   Future<void> _submit() async {
     if (!_isEditing && !(ref.read(sessionProvider)?.company?.isVerified ?? false)) return;
     final t = context.l10n;
+    if (_needsPhone) {
+      final phone = _phoneController.text.trim();
+      setState(() => _phoneError = phone.replaceAll(RegExp(r'[^0-9]'), '').length < 5 ? t.postCargoPhoneRequired : null);
+      if (_phoneError != null) return;
+    }
     final refData = ref.read(referenceDataProvider).valueOrNull;
     final price = double.tryParse(_priceController.text.trim().replaceAll(',', '.'));
     setState(() {
@@ -385,6 +404,13 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     if (_pointError != null || _destinationError != null || _bodyTypeError != null || _categoryError != null || _priceError != null || _weightError != null || !specsOk) return;
     setState(() => _saving = true);
     try {
+      if (_needsPhone) {
+        // Сначала — телефон в «Мой профиль», потом публикация.
+        final member = await ref.read(companyRepositoryProvider).updateMyContact(contactPhone: _phoneController.text.trim());
+        final session = ref.read(sessionProvider);
+        if (session?.company != null) ref.read(sessionProvider.notifier).updateCompany(session!.company!, member);
+        _askPhone = false;
+      }
       final input = CreateCargoInput(
         pointId: _pointId!,
         allowPartial: _allowPartial && (refData?.partialLoadsEnabled ?? false),
@@ -417,7 +443,15 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       ref.invalidate(myCargosProvider);
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
-      if (mounted) showApiError(context, e, onRetry: _submit);
+      final code = e is DioException && e.response?.data is Map ? (e.response!.data as Map)['code'] : null;
+      if (code == 'CONTACT_PHONE_REQUIRED') {
+        if (mounted) setState(() {
+          _askPhone = true;
+          _phoneError = t.postCargoPhoneRequired;
+        });
+      } else if (mounted) {
+        showApiError(context, e, onRetry: _submit);
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -872,6 +906,19 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
               ),
               const SizedBox(height: 12),
               AppTextField(label: t.postCargoDescription, controller: _descriptionController, maxLines: 3),
+              if (_needsPhone) ...[
+                const SizedBox(height: 16),
+                AppTextField(
+                  key: const Key('postCargoContactPhone'),
+                  label: t.postCargoContactPhone,
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  errorText: _phoneError,
+                  onChanged: (_) => setState(() => _phoneError = null),
+                ),
+                const SizedBox(height: 4),
+                Text(t.postCargoContactPhoneHint, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+              ],
               const SizedBox(height: 24),
               PrimaryButton(
                 key: const Key('postCargoSubmit'),

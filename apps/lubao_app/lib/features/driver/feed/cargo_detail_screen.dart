@@ -344,6 +344,12 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
                           style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
                         ),
                       ),
+                    // Логист не указал телефон — «Позвонить» и WhatsApp неактивны: сказать почему.
+                    if (!contactLocked && !(cargoAsync.value!.hasContactPhone))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                        child: Text(t.contactNoPhone, key: const Key('cargoNoPhoneHint'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                      ),
                     Row(
                       children: [
                         IconSquareButton(

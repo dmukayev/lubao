@@ -3575,6 +3575,17 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get postCargoTrucks => 'Trucks needed';
 
   @override
+  String get postCargoContactPhone => 'Your phone for drivers';
+
+  @override
+  String get postCargoContactPhoneHint =>
+      'Drivers will call or message you on WhatsApp. The number is saved in My profile.';
+
+  @override
+  String get postCargoPhoneRequired =>
+      'Enter a phone number — otherwise drivers can\'t call you';
+
+  @override
   String get paymentWhenNow => 'right away';
 
   @override

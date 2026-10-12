@@ -3560,6 +3560,17 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get postCargoTrucks => 'Сколько машин нужно';
 
   @override
+  String get postCargoContactPhone => 'Ваш телефон для водителей';
+
+  @override
+  String get postCargoContactPhoneHint =>
+      'Водитель позвонит или напишет в WhatsApp. Номер сохранится в «Моём профиле».';
+
+  @override
+  String get postCargoPhoneRequired =>
+      'Укажите телефон — без него водитель не сможет позвонить';
+
+  @override
   String get paymentWhenNow => 'сразу';
 
   @override

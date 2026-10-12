@@ -854,11 +854,24 @@ export class CargosService {
     return cargo;
   }
 
+  /// decisions.md «Обязательные поля компании»: перед публикацией — телефон
+  /// логиста. Без него у водителя «Позвонить» и WhatsApp неактивны.
+  private async assertPublisherPhone(companyId: string, userId: string) {
+    const [member, publisher] = await Promise.all([
+      this.prisma.companyMember.findFirst({ where: { companyId, userId }, select: { contactPhone: true } }),
+      this.prisma.user.findUnique({ where: { id: userId }, select: { phone: true } }),
+    ]);
+    if (!member?.contactPhone && !publisher?.phone) {
+      throw new BadRequestException({ code: 'CONTACT_PHONE_REQUIRED', message: 'Add your contact phone in the profile before publishing' });
+    }
+  }
+
   async create(companyId: string, userId: string, companyIsVerified: boolean, dto: CreateCargoDto) {
     // Задача 012, п.4 — непроверенная компания может смотреть водителей на
     // точке и писать им, но не публиковать грузы (decisions.md «Компания:
     // проверка, роли, контакты»).
     if (!companyIsVerified) throw new ForbiddenException('COMPANY_NOT_VERIFIED');
+    await this.assertPublisherPhone(companyId, userId);
 
     // Город погрузки обязателен (задача 040, п.7).
     const point = await this.prisma.point.findUnique({ where: { id: dto.pointId } });

@@ -120,6 +120,12 @@ void main() {
 
     late String cargoId;
     await run.step(tester, 'публикация', () async {
+      // Новая компания: телефона логиста ещё нет — поле прямо в форме (синтетический номер).
+      final phone = find.byKey(const Key('postCargoContactPhone'));
+      expect(phone, findsOneWidget, reason: 'без телефона в профиле форма просит его перед публикацией');
+      await reveal(tester, phone);
+      await tester.enterText(phone, '+86 138 0000 0077');
+      await tester.pumpAndSettle();
       final submit = find.byKey(const Key('postCargoSubmit'));
       await reveal(tester, submit);
       await tester.tap(submit);

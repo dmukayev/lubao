@@ -34,6 +34,15 @@ function baseCargo(overrides: Partial<Record<string, unknown>> = {}) {
   };
 }
 
+
+// Телефон логиста перед публикацией проверяется отдельным тестом ниже;
+// в остальных тестах публикации он есть.
+let publisherPhoneStub: jest.SpyInstance;
+beforeEach(() => {
+  publisherPhoneStub = jest.spyOn(CargosService.prototype as any, 'assertPublisherPhone').mockResolvedValue(undefined);
+});
+afterEach(() => publisherPhoneStub.mockRestore());
+
 describe('CargosService — logist contact resolution (задача 017, decisions.md «Компания: проверка, роли, контакты»)', () => {
   it('uses the publishing logist\'s own contacts (CompanyMember.fullName/contactPhone/wechatId) when set, задача 012', async () => {
     const prisma: any = {
@@ -1154,5 +1163,20 @@ describe('061 п.4б/п.5: число машин под замком, валют
     prisma.deal.count.mockResolvedValue(1);
     await expect(service.update('c1', 'u1', 'OWNER', 'cargo1', { currency: 'KZT' } as any)).rejects.toMatchObject({ response: { code: 'CURRENCY_LOCKED' } });
     expect(prisma.deal.count).toHaveBeenLastCalledWith({ where: { cargoId: 'cargo1', status: { not: 'CANCELLED' } } });
+  });
+});
+
+describe('публикация без телефона логиста (decisions.md «Обязательные поля компании»)', () => {
+  it('нет ни телефона в профиле, ни у пользователя — 400 CONTACT_PHONE_REQUIRED; есть — проходит', async () => {
+    publisherPhoneStub.mockRestore();
+    const prisma: any = {
+      companyMember: { findFirst: jest.fn().mockResolvedValue({ contactPhone: null }) },
+      user: { findUnique: jest.fn().mockResolvedValue({ phone: null }) },
+    };
+    const service = new CargosService(prisma, {} as any, {} as any);
+    await expect((service as any).assertPublisherPhone('c1', 'u1')).rejects.toMatchObject({ response: { code: 'CONTACT_PHONE_REQUIRED' } });
+    await expect(service.create('c1', 'u1', true, { pointId: 'p1', readyDate: '2026-01-01' } as any)).rejects.toMatchObject({ response: { code: 'CONTACT_PHONE_REQUIRED' } });
+    prisma.companyMember.findFirst.mockResolvedValue({ contactPhone: '+77010000000' });
+    await expect((service as any).assertPublisherPhone('c1', 'u1')).resolves.toBeUndefined();
   });
 });

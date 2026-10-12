@@ -3573,6 +3573,17 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get postCargoTrucks => 'Қанша көлік керек';
 
   @override
+  String get postCargoContactPhone => 'Жүргізушілерге арналған телефоныңыз';
+
+  @override
+  String get postCargoContactPhoneHint =>
+      'Жүргізуші қоңырау шалады немесе WhatsApp-қа жазады. Нөмір «Менің профилімде» сақталады.';
+
+  @override
+  String get postCargoPhoneRequired =>
+      'Телефонды көрсетіңіз — онсыз жүргізуші қоңырау шала алмайды';
+
+  @override
   String get paymentWhenNow => 'бірден';
 
   @override
