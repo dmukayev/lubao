@@ -380,11 +380,9 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   Future<void> _submit() async {
     if (!_isEditing && !(ref.read(sessionProvider)?.company?.isVerified ?? false)) return;
     final t = context.l10n;
-    if (_needsPhone) {
-      final phone = _phoneController.text.trim();
-      setState(() => _phoneError = phone.replaceAll(RegExp(r'[^0-9]'), '').length < 5 ? t.postCargoPhoneRequired : null);
-      if (_phoneError != null) return;
-    }
+    // Телефон проверяется вместе с остальными полями — все ошибки видны сразу.
+    final needsPhone = _needsPhone;
+    setState(() => _phoneError = needsPhone && _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '').length < 5 ? t.postCargoPhoneRequired : null);
     final refData = ref.read(referenceDataProvider).valueOrNull;
     final price = double.tryParse(_priceController.text.trim().replaceAll(',', '.'));
     setState(() {
@@ -403,7 +401,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     if (!specsOk) setState(() => _showSpecsRequired = true);
     final sizesOk = _volumeError(t) == null && _palletError(t) == null && _advanceError(t) == null && _delayError(t) == null && _trucksError(t) == null;
     if (!sizesOk) return;
-    if (_pointError != null || _destinationError != null || _bodyTypeError != null || _categoryError != null || _priceError != null || _weightError != null || !specsOk) return;
+    if (_pointError != null || _destinationError != null || _bodyTypeError != null || _categoryError != null || _priceError != null || _weightError != null || !specsOk || _phoneError != null) return;
     setState(() => _saving = true);
     try {
       if (_needsPhone) {
