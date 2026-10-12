@@ -371,7 +371,9 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   /// Нет телефона ни в «Моём профиле», ни у пользователя — спросить в форме.
   bool get _needsPhone {
     if (_isEditing) return false;
-    final session = ref.watch(sessionProvider);
+    // read, а не watch: геттер зовётся и из обработчика публикации; экран
+    // перестраивается сам — сессия обновляется через setState после сохранения.
+    final session = ref.read(sessionProvider);
     return _askPhone || (session?.companyMember?.contactPhone == null && session?.user.phone == null);
   }
 
