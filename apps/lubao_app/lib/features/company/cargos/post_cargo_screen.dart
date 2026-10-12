@@ -404,11 +404,12 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     if (_pointError != null || _destinationError != null || _bodyTypeError != null || _categoryError != null || _priceError != null || _weightError != null || !specsOk || _phoneError != null) return;
     setState(() => _saving = true);
     try {
+      // Сначала — телефон в «Мой профиль» на сервере, потом публикация; сессию
+      // в приложении обновляем после ухода с формы — иначе экран «Грузы»
+      // перестраивался и загружал список раньше, чем появлялся новый груз.
+      CompanyMember? savedMember;
       if (_needsPhone) {
-        // Сначала — телефон в «Мой профиль», потом публикация.
-        final member = await ref.read(companyRepositoryProvider).updateMyContact(contactPhone: _phoneController.text.trim());
-        final session = ref.read(sessionProvider);
-        if (session?.company != null) ref.read(sessionProvider.notifier).updateCompany(session!.company!, member);
+        savedMember = await ref.read(companyRepositoryProvider).updateMyContact(contactPhone: _phoneController.text.trim());
         _askPhone = false;
       }
       final input = CreateCargoInput(
@@ -441,7 +442,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         unawaited(ref.read(pushServiceProvider).requestPermissionAndRegister());
       }
       ref.invalidate(myCargosProvider);
+      final session = ref.read(sessionProvider);
+      final notifier = ref.read(sessionProvider.notifier);
       if (mounted) Navigator.of(context).pop();
+      if (savedMember != null && session?.company != null) notifier.updateCompany(session!.company!, savedMember);
     } catch (e) {
       final code = e is DioException && e.response?.data is Map ? (e.response!.data as Map)['code'] : null;
       if (code == 'CONTACT_PHONE_REQUIRED') {
