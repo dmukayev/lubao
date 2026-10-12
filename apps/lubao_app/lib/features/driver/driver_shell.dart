@@ -38,7 +38,12 @@ class _DriverShellState extends ConsumerState<DriverShell> {
   Future<void> _refreshDriver() async {
     try {
       final fresh = await ref.read(driverRepositoryProvider).me();
-      if (mounted) ref.read(sessionProvider.notifier).updateDriver(fresh);
+      if (!mounted) return;
+      // Сессию меняем, только если с сервера пришло новое (проверка, имя, фото,
+      // рейтинг): иначе её смена перестраивала зависящие экраны и списки.
+      final current = ref.read(sessionProvider)?.driver;
+      String sig(Driver? d) => d == null ? '' : [d.isVerified, d.verificationStatus, d.fullName, d.avatarVersion, d.avatarOffer, d.ratingAvg, d.ratingCount, d.homeCityId].join('|');
+      if (sig(current) != sig(fresh)) ref.read(sessionProvider.notifier).updateDriver(fresh);
     } catch (e) {
       debugPrint('DriverShell: driver refresh failed: $e');
     }

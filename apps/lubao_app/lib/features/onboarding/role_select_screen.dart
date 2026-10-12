@@ -20,38 +20,57 @@ class RoleSelectScreen extends ConsumerWidget {
         actions: [
           LanguagePickerButton(
             languageCode: locale.languageCode,
-            onChanged: (code) => ref.read(localeProvider.notifier).state = Locale(code),
+            onChanged: (code) =>
+                ref.read(localeProvider.notifier).state = Locale(code),
           ),
         ],
       ),
+      // Прокрутка: на узком экране с крупным шрифтом (или под не убранной
+      // клавиатурой при возврате со входа) колонка не помещалась по высоте.
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const LubaoAppIcon(size: 96),
-              const SizedBox(height: 16),
-              Text(t.appName, style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 8),
-              Text(t.roleSelectTitle, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 4),
-              Text(t.roleSelectSubtitle, textAlign: TextAlign.center),
-              const SizedBox(height: 32),
-              PrimaryButton(
-                key: const Key('roleSelectDriverButton'),
-                label: t.roleDriver,
-                icon: LucideIcons.truck,
-                onPressed: () => context.push('/login/driver'),
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: (constraints.maxHeight - 48).clamp(
+                  0,
+                  double.infinity,
+                ),
               ),
-              const SizedBox(height: 12),
-              PrimaryButton(
-                key: const Key('roleSelectCompanyButton'),
-                label: t.roleCompany,
-                icon: LucideIcons.building2,
-                onPressed: () => context.push('/login/company'),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const LubaoAppIcon(size: 96),
+                  const SizedBox(height: 16),
+                  Text(
+                    t.appName,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    t.roleSelectTitle,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(t.roleSelectSubtitle, textAlign: TextAlign.center),
+                  const SizedBox(height: 32),
+                  PrimaryButton(
+                    key: const Key('roleSelectDriverButton'),
+                    label: t.roleDriver,
+                    icon: LucideIcons.truck,
+                    onPressed: () => context.push('/login/driver'),
+                  ),
+                  const SizedBox(height: 12),
+                  PrimaryButton(
+                    key: const Key('roleSelectCompanyButton'),
+                    label: t.roleCompany,
+                    icon: LucideIcons.building2,
+                    onPressed: () => context.push('/login/company'),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

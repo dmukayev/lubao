@@ -46,7 +46,9 @@ void main() {
       final phone = find.byKey(const Key('driverLoginPhoneField'));
       await waitAndReveal(tester, phone);
       await tester.tap(phone);
-      await tester.enterText(phone, '7010000003');
+      // Свой номер, которого нет в других сценариях: лишний запрос кода не
+      // съедает часовой лимит SMS у номеров, которыми входят другие шаги.
+      await tester.enterText(phone, '7010000097');
       await tester.pumpAndSettle();
       final send = find.byKey(const Key('driverLoginSendCodeButton'));
       await reveal(tester, send);
