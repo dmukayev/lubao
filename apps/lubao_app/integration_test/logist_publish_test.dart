@@ -122,8 +122,9 @@ void main() {
     await run.step(tester, 'публикация', () async {
       // Новая компания: телефона логиста ещё нет — поле прямо в форме (синтетический номер).
       final phone = find.byKey(const Key('postCargoContactPhone'));
-      expect(phone, findsOneWidget, reason: 'без телефона в профиле форма просит его перед публикацией');
+      // Поле внизу формы (ленивый список) — сначала прокрутить к нему.
       await reveal(tester, phone);
+      expect(phone, findsOneWidget, reason: 'без телефона в профиле форма просит его перед публикацией');
       await tester.enterText(phone, '+86 138 0000 0077');
       await tester.pumpAndSettle();
       final submit = find.byKey(const Key('postCargoSubmit'));
