@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/api_providers.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/data_providers.dart';
 import '../../router/tab_scroll.dart';
 import '../../services/stale_refresh.dart';
@@ -28,6 +29,20 @@ class _DriverShellState extends ConsumerState<DriverShell> {
   static const _tabIds = ['driver.feed', 'driver.trips', 'driver.chats', 'driver.profile'];
 
   final _subs = <StreamSubscription<Object?>>[];
+  late final AppLifecycleListener _lifecycle;
+
+  /// Статус проверки и профиль — свежие с сервера. Вкладки живут в памяти (060),
+  /// поэтому «Профиль» не перечитывал себя: админ подтвердил водителя, а тот
+  /// видел «на проверке» до перезапуска. Перечитываем при открытии «Профиля»,
+  /// возврате в приложение и переподключении к серверу.
+  Future<void> _refreshDriver() async {
+    try {
+      final fresh = await ref.read(driverRepositoryProvider).me();
+      if (mounted) ref.read(sessionProvider.notifier).updateDriver(fresh);
+    } catch (e) {
+      debugPrint('DriverShell: driver refresh failed: $e');
+    }
+  }
 
   @override
   void initState() {
@@ -53,7 +68,9 @@ class _DriverShellState extends ConsumerState<DriverShell> {
       ..add(realtime.onReconnected.listen((_) {
         chats(null);
         trips(null);
+        _refreshDriver();
       }));
+    _lifecycle = AppLifecycleListener(onResume: _refreshDriver);
   }
 
   @override
@@ -61,6 +78,7 @@ class _DriverShellState extends ConsumerState<DriverShell> {
     for (final s in _subs) {
       s.cancel();
     }
+    _lifecycle.dispose();
     super.dispose();
   }
 
@@ -94,6 +112,7 @@ class _DriverShellState extends ConsumerState<DriverShell> {
           } else {
             widget.navigationShell.goBranch(index);
           }
+          if (_tabIds[index] == 'driver.profile') _refreshDriver();
         },
         // Эталон 33: свои цветные иконки (design/brand/nav).
         destinations: [

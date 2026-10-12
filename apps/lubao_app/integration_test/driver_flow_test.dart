@@ -156,7 +156,9 @@ void main() {
     // грузится заново (нет запросов списков за 2 с); повторное нажатие — наверх.
     await run.step(tester, 'вкладки-туда-обратно-без-перезагрузки', () async {
       final container = ProviderScope.containerOf(tester.element(find.byType(NavigationBar)));
-      final listPaths = {'/cargos', '/deals/mine', '/responses/mine', '/chats', '/drivers/me'};
+      // /drivers/me не считаем: «Профиль» при открытии перечитывает статус
+      // проверки (админ подтвердил — водитель видит сразу), это не список.
+      final listPaths = {'/cargos', '/deals/mine', '/responses/mine', '/chats'};
       var listRequests = 0;
       final counter = InterceptorsWrapper(onRequest: (options, handler) {
         if (options.method == 'GET' && listPaths.contains(options.path)) listRequests++;
