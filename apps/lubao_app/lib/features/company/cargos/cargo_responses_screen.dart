@@ -13,6 +13,7 @@ import '../haul_hint.dart';
 import 'cargo_close_dialog.dart';
 import '../../shared/driver_vehicle_photos.dart';
 import '../../shared/driver_avatar.dart';
+import '../drivers/driver_card_screen.dart' show showDriverInfoSheet;
 import '../../shared/share_action.dart';
 
 class CargoResponsesScreen extends ConsumerWidget {
@@ -321,7 +322,7 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              DriverAvatar(driverId: response.driverId, name: response.driverName, version: response.avatarVersion, radius: 20),
+              DriverAvatar(driverId: response.driverId, name: response.driverName, version: response.avatarVersion, radius: 20, openCard: true),
               const SizedBox(width: AppSpacing.sm),
               // 056 п.5: точка у отклика, который сотрудник ещё не открывал.
               if (response.isNew) ...[
@@ -335,7 +336,7 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(response.driverName, style: AppTextStyles.bodyStrong),
+                    GestureDetector(key: Key('driverNameTap-${response.driverId}'), onTap: () => showDriverInfoSheet(context, driverId: response.driverId), child: Text(response.driverName, style: AppTextStyles.bodyStrong)),
                     // 058 п.7: «в сети» / «был сегодня в 20:15».
                     if (formatLastSeen(t, response.lastSeenAt) case final seen?)
                       Text(seen, key: Key('responseLastSeen-${response.id}'), style: AppTextStyles.caption.copyWith(color: seen == t.lastSeenOnline ? AppColors.success : AppColors.textSecondary)),

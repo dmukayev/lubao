@@ -6,6 +6,7 @@ import 'package:lubao_core/lubao_core.dart';
 
 import '../../providers/api_providers.dart';
 import '../../services/disk_bytes_cache.dart';
+import '../company/drivers/driver_card_screen.dart' show showDriverInfoSheet;
 
 /// 054: миниатюра фото профиля водителя по версии (`?v` меняется при смене —
 /// кэш не показывает старое). Нет фото / сбой — null, у вызывающего буквы.
@@ -25,7 +26,7 @@ final driverAvatarProvider = FutureProvider.autoDispose.family<Uint8List?, ({Str
 
 /// Фото водителя или буквы имени — во всех местах, где логист видит водителя.
 class DriverAvatar extends ConsumerWidget {
-  const DriverAvatar({super.key, required this.driverId, required this.name, this.version, this.radius = 24, this.fallback});
+  const DriverAvatar({super.key, required this.driverId, required this.name, this.version, this.radius = 24, this.fallback, this.openCard = false});
 
   final String driverId;
   final String name;
@@ -35,11 +36,17 @@ class DriverAvatar extends ConsumerWidget {
   /// Своя «буквенная» заглушка экрана (например, цветной кружок в «Кто свободен»).
   final Widget? fallback;
 
+  /// Логист нажал на фото — шторка с карточкой водителя и его фото.
+  final bool openCard;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final v = version;
     final bytes = v == null ? null : ref.watch(driverAvatarProvider((driverId: driverId, version: v))).valueOrNull;
-    if (bytes == null && fallback != null) return KeyedSubtree(key: Key('driverAvatar-$driverId-letters'), child: fallback!);
-    return PersonAvatar(key: Key('driverAvatar-$driverId-${bytes == null ? 'letters' : 'photo'}'), name: name, bytes: bytes, radius: radius);
+    final avatar = bytes == null && fallback != null
+        ? KeyedSubtree(key: Key('driverAvatar-$driverId-letters'), child: fallback!)
+        : PersonAvatar(key: Key('driverAvatar-$driverId-${bytes == null ? 'letters' : 'photo'}'), name: name, bytes: bytes, radius: radius);
+    if (!openCard || driverId.isEmpty) return avatar;
+    return GestureDetector(key: Key('driverAvatarTap-$driverId'), onTap: () => showDriverInfoSheet(context, driverId: driverId), child: avatar);
   }
 }

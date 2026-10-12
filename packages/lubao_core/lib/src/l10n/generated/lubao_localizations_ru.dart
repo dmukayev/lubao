@@ -4473,6 +4473,13 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get driverCardTitle => 'Водитель';
 
   @override
+  String get driverCardVehiclePhotos => 'Фото машины';
+
+  @override
+  String get vehiclePhotosAfterVerification =>
+      'Фото машины откроются после проверки компании';
+
+  @override
   String get driverCardNotLooking => 'Сейчас не ищет груз';
 
   @override

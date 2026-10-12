@@ -8190,6 +8190,18 @@ abstract class LubaoLocalizations {
   /// **'Водитель'**
   String get driverCardTitle;
 
+  /// No description provided for @driverCardVehiclePhotos.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фото машины'**
+  String get driverCardVehiclePhotos;
+
+  /// No description provided for @vehiclePhotosAfterVerification.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фото машины откроются после проверки компании'**
+  String get vehiclePhotosAfterVerification;
+
   /// No description provided for @driverCardNotLooking.
   ///
   /// In ru, this message translates to:

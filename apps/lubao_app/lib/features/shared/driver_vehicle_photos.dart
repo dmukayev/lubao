@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
@@ -28,15 +29,13 @@ Future<void> showDriverVehiclePhotos(BuildContext context, {required String driv
   );
 }
 
-class _PhotosSheet extends ConsumerWidget {
+class _PhotosSheet extends StatelessWidget {
   const _PhotosSheet({required this.driverId, required this.driverName});
   final String driverId;
   final String driverName;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.l10n;
-    final photos = ref.watch(_photosProvider(driverId));
+  Widget build(BuildContext context) {
     return Padding(
       key: const Key('driverVehiclePhotosSheet'),
       padding: const EdgeInsets.all(AppSpacing.screen),
@@ -46,48 +45,75 @@ class _PhotosSheet extends ConsumerWidget {
         children: [
           Text(driverName, style: AppTextStyles.title),
           const SizedBox(height: AppSpacing.md),
-          photos.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, st) => Text(t.commonError),
-            data: (list) => list.isEmpty
-                ? Text(t.vehiclePhotosNone, key: const Key('driverVehiclePhotosNone'), style: AppTextStyles.body.copyWith(color: AppColors.textSecondary))
-                : Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
-                    children: [
-                      for (final p in list)
-                        SizedBox(
-                          width: 150,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(AppRadius.field),
-                                child: SizedBox(
-                                  width: 150,
-                                  height: 100,
-                                  child: ref.watch(_photoFileProvider((driverId, p.documentId))).when(
-                                        loading: () => const Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))),
-                                        error: (e, st) => const Icon(LucideIcons.imageOff),
-                                        data: (bytes) => Image.memory(bytes, fit: BoxFit.cover),
-                                      ),
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                [p.type == 'VEHICLE_PHOTO_FRONT' ? t.vehiclePhotoFront : t.vehiclePhotoSide, if (p.plateNumber != null) p.plateNumber!].join(' · '),
-                                style: AppTextStyles.caption,
-                                maxLines: 2,
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-          ),
+          DriverVehiclePhotos(driverId: driverId),
           const SizedBox(height: AppSpacing.lg),
         ],
       ),
+    );
+  }
+}
+
+/// Фото машин водителя (044 п.7) — блоком: в шторке фото и в карточке водителя.
+/// Сервер отказал — понятная причина вместо «Ошибка»: фото машин видит только
+/// проверенная компания, которой водитель виден; есть суточный лимит.
+class DriverVehiclePhotos extends ConsumerWidget {
+  const DriverVehiclePhotos({super.key, required this.driverId});
+  final String driverId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.l10n;
+    final photos = ref.watch(_photosProvider(driverId));
+    final muted = AppTextStyles.body.copyWith(color: AppColors.textSecondary);
+    return photos.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, st) {
+        final response = e is DioException ? e.response : null;
+        final code = response?.data is Map ? (response!.data as Map)['code'] : null;
+        final text = code == 'COMPANY_NOT_VERIFIED' || (response?.data is Map && '${(response!.data as Map)['message']}'.contains('verified'))
+            ? t.vehiclePhotosAfterVerification
+            : response?.statusCode == 429
+                ? t.contactDailyLimit
+                : response?.statusCode == 404
+                    ? t.vehiclePhotosNone
+                    : t.commonError;
+        return Text(text, key: const Key('driverVehiclePhotosUnavailable'), style: muted);
+      },
+      data: (list) => list.isEmpty
+          ? Text(t.vehiclePhotosNone, key: const Key('driverVehiclePhotosNone'), style: muted)
+          : Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final p in list)
+                  SizedBox(
+                    width: 150,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(AppRadius.field),
+                          child: SizedBox(
+                            width: 150,
+                            height: 100,
+                            child: ref.watch(_photoFileProvider((driverId, p.documentId))).when(
+                                  loading: () => const Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))),
+                                  error: (e, st) => const Icon(LucideIcons.imageOff),
+                                  data: (bytes) => Image.memory(bytes, fit: BoxFit.cover, cacheWidth: (150 * MediaQuery.devicePixelRatioOf(context)).round()),
+                                ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          [p.type == 'VEHICLE_PHOTO_FRONT' ? t.vehiclePhotoFront : t.vehiclePhotoSide, if (p.plateNumber != null) p.plateNumber!].join(' · '),
+                          style: AppTextStyles.caption,
+                          maxLines: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
     );
   }
 }

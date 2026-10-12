@@ -115,7 +115,7 @@ class _MyDriverCard extends ConsumerWidget {
           Row(
             children: [
               if (driver.driverId != null) ...[
-                DriverAvatar(driverId: driver.driverId!, name: driver.name, version: driver.avatarVersion, radius: 20),
+                DriverAvatar(driverId: driver.driverId!, name: driver.name, version: driver.avatarVersion, radius: 20, openCard: !driver.pending),
                 const SizedBox(width: AppSpacing.sm),
               ],
               Expanded(

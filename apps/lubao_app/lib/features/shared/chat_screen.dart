@@ -298,6 +298,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               name: thread?.counterpartName ?? '',
               version: thread?.counterpartAvatarVersion,
               radius: 18,
+              // Логист нажал на фото водителя в шапке — карточка водителя.
+              openCard: !isDriver,
               fallback: CircleAvatar(
                 radius: 18,
                 backgroundColor: AppColors.accentSoft,

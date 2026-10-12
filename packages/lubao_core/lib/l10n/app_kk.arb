@@ -1490,6 +1490,8 @@
   "shareCompanyCargosTitle": "Компания жүктері",
   "adminShareStats": "Бөлісті: {links} · ашылды: {opens} · сілтемемен келді: {came}",
   "driverCardTitle": "Жүргізуші",
+  "driverCardVehiclePhotos": "Көліктің фотосы",
+  "vehiclePhotosAfterVerification": "Көлік фотолары компания тексерілгеннен кейін ашылады",
   "driverCardNotLooking": "Қазір жүк іздемейді",
   "driverCardTrips": "Lubao-дағы рейстер: {count}",
   "driverCardChat": "Жазу",

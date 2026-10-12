@@ -16,6 +16,7 @@ import '../../shared/status_helpers.dart';
 import '../haul_hint.dart';
 import '../../shared/driver_vehicle_photos.dart';
 import '../../shared/driver_avatar.dart';
+import 'driver_card_screen.dart' show showDriverInfoSheet;
 import 'invite_cargo_picker.dart';
 import 'my_drivers_view.dart';
 import '../../shared/error_feedback.dart';
@@ -872,6 +873,7 @@ class _DriverCard extends StatelessWidget {
                 name: driver.driverName,
                 version: driver.avatarVersion,
                 radius: 22,
+                openCard: true,
                 fallback: CircleAvatar(
                   radius: 22,
                   backgroundColor: _avatarColor(driver.driverId),
@@ -889,11 +891,15 @@ class _DriverCard extends StatelessWidget {
                     Row(
                       children: [
                         Flexible(
-                          child: Text(
-                            _shortName(driver.driverName),
-                            style: AppTextStyles.bodyStrong,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          child: GestureDetector(
+                            key: Key('driverNameTap-${driver.driverId}'),
+                            onTap: () => showDriverInfoSheet(context, driverId: driver.driverId),
+                            child: Text(
+                              _shortName(driver.driverName),
+                              style: AppTextStyles.bodyStrong,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ),
                         if (driver.isVerified) ...[

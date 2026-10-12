@@ -4477,6 +4477,13 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get driverCardTitle => 'Driver';
 
   @override
+  String get driverCardVehiclePhotos => 'Vehicle photos';
+
+  @override
+  String get vehiclePhotosAfterVerification =>
+      'Vehicle photos unlock after your company is verified';
+
+  @override
   String get driverCardNotLooking => 'Not looking for cargo right now';
 
   @override

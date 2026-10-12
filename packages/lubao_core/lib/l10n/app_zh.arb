@@ -1490,6 +1490,8 @@
   "shareCompanyCargosTitle": "公司货物",
   "adminShareStats": "分享：{links} · 打开：{opens} · 通过链接加入：{came}",
   "driverCardTitle": "司机",
+  "driverCardVehiclePhotos": "车辆照片",
+  "vehiclePhotosAfterVerification": "公司审核通过后可查看车辆照片",
   "driverCardNotLooking": "目前不在找货",
   "driverCardTrips": "Lubao 行程：{count}",
   "driverCardChat": "发消息",

@@ -4373,6 +4373,12 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get driverCardTitle => '司机';
 
   @override
+  String get driverCardVehiclePhotos => '车辆照片';
+
+  @override
+  String get vehiclePhotosAfterVerification => '公司审核通过后可查看车辆照片';
+
+  @override
   String get driverCardNotLooking => '目前不在找货';
 
   @override
