@@ -50,10 +50,21 @@ void main() {
       // съедает часовой лимит SMS у номеров, которыми входят другие шаги.
       await tester.enterText(phone, '7010000097');
       await tester.pumpAndSettle();
+      // Клавиатура на Android закрывала «Получить код» — убрать её; код не
+      // запросился — отправить ещё раз.
       final send = find.byKey(const Key('driverLoginSendCodeButton'));
-      await reveal(tester, send);
-      await tester.tap(send);
-      await waitFor(tester, find.byKey(const Key('driverLoginCodeDigit0')));
+      final digit = find.byKey(const Key('driverLoginCodeDigit0'));
+      for (var attempt = 0; attempt < 3 && digit.evaluate().isEmpty; attempt++) {
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        await reveal(tester, send);
+        await tester.tap(send);
+        final deadline = DateTime.now().add(const Duration(seconds: 8));
+        while (digit.evaluate().isEmpty && DateTime.now().isBefore(deadline)) {
+          await tester.pump(const Duration(milliseconds: 250));
+        }
+      }
+      await waitFor(tester, digit);
       const wrong = '0000';
       for (var i = 0; i < 4; i++) {
         await reveal(tester, find.byKey(Key('driverLoginCodeDigit$i')));

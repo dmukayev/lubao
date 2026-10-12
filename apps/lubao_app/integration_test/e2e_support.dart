@@ -661,13 +661,22 @@ Future<void> completeDriverWizard(WidgetTester tester, String fullName) async {
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(const Key('driverSetupNext')));
   await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('driverSetupBody-TENT')));
-  await tester.pumpAndSettle();
-  await reveal(tester, find.byKey(const Key('driverSetupCapacity-20')));
-  await tester.tap(find.byKey(const Key('driverSetupCapacity-20')));
-  await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('driverSetupNext')));
-  await tester.pumpAndSettle();
+  // Шаг 2 — кузов и тоннаж. На Android нажатие на плитку иногда промахивалось
+  // (сетка ещё прокручивалась) — тогда «Далее» оставлял на шаге 2: выбрать снова.
+  final tent = find.byKey(const Key('driverSetupBody-TENT'));
+  for (var attempt = 0; attempt < 3; attempt++) {
+    await waitAndReveal(tester, tent);
+    await tester.pumpAndSettle();
+    await tester.tap(tent);
+    await tester.pumpAndSettle();
+    await reveal(tester, find.byKey(const Key('driverSetupCapacity-20')));
+    await tester.tap(find.byKey(const Key('driverSetupCapacity-20')));
+    await tester.pumpAndSettle();
+    await reveal(tester, find.byKey(const Key('driverSetupNext')));
+    await tester.tap(find.byKey(const Key('driverSetupNext')));
+    await tester.pumpAndSettle();
+    if (tent.evaluate().isEmpty) break;
+  }
   await reveal(tester, find.byKey(const Key('driverSetupNext')));
   await tester.tap(find.byKey(const Key('driverSetupNext')));
   await tester.pumpAndSettle();
