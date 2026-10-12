@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
-class AppTextField extends StatelessWidget {
+import '../l10n/context_extension.dart';
+
+class AppTextField extends StatefulWidget {
   const AppTextField({
     super.key,
     required this.label,
@@ -35,22 +38,38 @@ class AppTextField extends StatelessWidget {
   /// заполнены при сабмите (задача 021: не молчать, а показать причину).
   final String? errorText;
 
-  @override
+   @override
+  State<AppTextField> createState() => _AppTextFieldState();
+}
+
+/// Поле пароля — со «глазом»: показать / скрыть введённое.
+class _AppTextFieldState extends State<AppTextField> {
+  late bool _hidden = widget.obscureText;
+
+ @override
   Widget build(BuildContext context) {
     return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      maxLines: maxLines,
-      onSubmitted: onSubmitted,
-      onChanged: onChanged,
-      enabled: enabled,
+      controller: widget.controller,
+      focusNode: widget.focusNode,
+      keyboardType: widget.keyboardType,
+      obscureText: widget.obscureText && _hidden,
+      maxLines: widget.maxLines,
+      onSubmitted: widget.onSubmitted,
+      onChanged: widget.onChanged,
+      enabled: widget.enabled,
       decoration: InputDecoration(
-        labelText: label,
-        hintText: hintText,
-        errorText: errorText,
-        suffixText: suffixText,
+        labelText: widget.label,
+        hintText: widget.hintText,
+        errorText: widget.errorText,
+        suffixText: widget.suffixText,
+        suffixIcon: widget.obscureText
+            ? IconButton(
+                key: const Key('passwordVisibilityToggle'),
+                tooltip: _hidden ? context.l10n.companyLoginShowPassword : context.l10n.companyLoginHidePassword,
+                icon: Icon(_hidden ? LucideIcons.eye : LucideIcons.eyeOff),
+                onPressed: () => setState(() => _hidden = !_hidden),
+              )
+            : null,
         border: const OutlineInputBorder(),
       ),
     );
