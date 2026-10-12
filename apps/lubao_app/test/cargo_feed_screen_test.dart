@@ -137,8 +137,8 @@ void main() {
     });
     await _pump(tester, cargos: cargos, arrivals: _FakeArrivalRepository(const MyArrivals(current: null, all: [])));
 
-    expect(find.text('Алматы → Узбекистан'), findsOneWidget);
-    expect(find.text('Астана → Узбекистан'), findsOneWidget);
+    expect(find.text('Алматы → 🇺🇿 Узбекистан'), findsOneWidget);
+    expect(find.text('Астана → 🇺🇿 Узбекистан'), findsOneWidget);
     expect(find.text('Догруз'), findsOneWidget);
     final first = tester.getTopLeft(find.byKey(const Key('feedCargoCard-here'))).dy;
     final second = tester.getTopLeft(find.byKey(const Key('feedCargoCard-far'))).dy;

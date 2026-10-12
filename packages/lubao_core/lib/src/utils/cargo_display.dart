@@ -63,8 +63,9 @@ String companyKindLabel(LubaoLocalizations t, CompanyKind kind) => switch (kind)
       CompanyKind.carrier => t.companyKindCarrier,
     };
 
-/// «🇰🇿 Хоргос» / «🇬🇪 Тбилиси, Грузия» — флаги только если страны маршрута
-/// разные (058 п.3). Города нет в справочнике — `null` для отправления.
+/// «🇰🇿 Хоргос» / «🇬🇪 Тбилиси, Грузия» — флаг у каждого города маршрута
+/// (decisions.md 2026-10-13, раньше — только при разных странах, 058 п.3).
+/// Города нет в справочнике — `null` для отправления.
 ({String? origin, String destination}) cargoRouteLabels(
   ReferenceData refData, {
   String? pointId,
@@ -76,8 +77,8 @@ String companyKindLabel(LubaoLocalizations t, CompanyKind kind) => switch (kind)
   final point = pointId == null ? null : refData.pointOrNull(pointId);
   final originCountryId = point == null ? null : refData.cityById(point.cityId)?.countryId;
   final destCountry = refData.countryById(destinationCountryId);
-  final flags = originCountryId != null && originCountryId != destinationCountryId;
-  String flagged(String? code, String text) => flags && flagEmoji(code).isNotEmpty ? '${flagEmoji(code)} $text' : text;
+  // decisions.md 2026-10-13: флаги всегда, и внутри одной страны.
+  String flagged(String? code, String text) => flagEmoji(code).isNotEmpty ? '${flagEmoji(code)} $text' : text;
 
   final originName = point?.name.forLanguageCode(languageCode);
   final city = refData.cityById(destinationCityId)?.name.forLanguageCode(languageCode);

@@ -7,8 +7,9 @@ describe('058 п.3: флаги стран маршрута', () => {
     expect(flagEmoji('XYZ')).toBe('');
   });
 
-  it('маршрут внутри одной страны — без флагов', () => {
-    expect(routeFlags('KZ', 'KZ')).toEqual(['', '']);
+  it('флаги всегда — и внутри одной страны (decisions.md 2026-10-13)', () => {
+    expect(routeFlags('KZ', 'KZ')).toEqual(['🇰🇿', '🇰🇿']);
+    expect(routeFlags(null, 'KZ')).toEqual(['', '🇰🇿']);
     expect(routeFlags('KZ', 'UZ')).toEqual(['🇰🇿', '🇺🇿']);
   });
 });

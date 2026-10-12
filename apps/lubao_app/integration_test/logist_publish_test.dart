@@ -162,7 +162,7 @@ void main() {
       await tester.pumpAndSettle();
       await waitForCondition(tester, () => shared.isNotEmpty);
       final text = shared.single;
-      expect(text, contains('→ Алматы'));
+      expect(text, contains('🇰🇿 Алматы'), reason: 'флаг у города всегда (decisions.md 2026-10-13)');
       expect(text, contains('18,5 ${t.unitTon}'));
       expect(text, contains(r'$1 500'), reason: 'цена как в ленте (груз в долларах)');
       expect(text, isNot(matches(RegExp(r'\+7\d'))), reason: 'телефона в тексте нет');
@@ -176,7 +176,7 @@ void main() {
       expect(shared.last.split('\n').first, contains('Urumqi Test Logistics'));
       final page = await Dio(BaseOptions(baseUrl: e2eApiBase, validateStatus: (_) => true, headers: {'Accept-Language': 'ru-RU'})).get<String>('/p$sharePath');
       expect(page.statusCode, 200);
-      expect(page.data, contains('→ Алматы'));
+      expect(page.data, contains('Алматы'));
       expect(page.data, contains('Откликнуться в приложении'));
       expect(page.data, isNot(matches(RegExp(r'\+7\d|tel:'))));
     });
