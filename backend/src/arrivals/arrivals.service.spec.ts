@@ -165,25 +165,26 @@ describe('ArrivalsService.announce', () => {
     await expect(service.announce('user-1', { arrivalId: 'nope', pointId: 'point-1', plannedAt: new Date().toISOString() })).rejects.toThrow(NotFoundException);
   });
 
-  it('does not move an ON_SITE arrival back to PLANNED or change its point — only trip details', async () => {
+  it('ON_SITE, тот же город — не возвращается в PLANNED, меняются только условия поездки', async () => {
     prisma.arrival.findMany.mockResolvedValue([{ id: 'arrival-1', status: 'ON_SITE', pointId: 'point-1', plannedDay: new Date() }]);
-    prisma.__tx.arrival.update.mockResolvedValue({
-      id: 'arrival-1',
-      pointId: 'point-1',
-      plannedAt: new Date(),
-      plannedDay: new Date(),
-      arrivedAt: new Date(),
-      waitDays: 1,
-      anyCountry: true,
-      status: 'ON_SITE',
-    });
+    prisma.__tx.arrival.update.mockResolvedValue({ id: 'arrival-1', pointId: 'point-1', plannedAt: new Date(), plannedDay: new Date(), arrivedAt: new Date(), waitDays: 1, anyCountry: true, status: 'ON_SITE' });
+
+    await service.announce('user-1', { arrivalId: 'arrival-1', pointId: 'point-1', plannedAt: new Date().toISOString(), anyCountry: true, waitDays: 1 });
+
+    const call = prisma.__tx.arrival.update.mock.calls[0][0];
+    expect(call.data.status).toBeUndefined();
+    expect(call.data).toEqual({ anyCountry: true, waitDays: 1 });
+  });
+
+  it('ON_SITE, сменил город («Изменить»: Уральск → Астана) — на месте в новом городе, статус остаётся ON_SITE', async () => {
+    prisma.arrival.findMany.mockResolvedValue([{ id: 'arrival-1', status: 'ON_SITE', pointId: 'point-1', plannedDay: new Date() }]);
+    prisma.__tx.arrival.update.mockResolvedValue({ id: 'arrival-1', pointId: 'point-99', plannedAt: new Date(), plannedDay: new Date(), arrivedAt: new Date(), waitDays: 1, anyCountry: true, status: 'ON_SITE' });
 
     await service.announce('user-1', { arrivalId: 'arrival-1', pointId: 'point-99', plannedAt: new Date().toISOString(), anyCountry: true, waitDays: 1 });
 
     const call = prisma.__tx.arrival.update.mock.calls[0][0];
     expect(call.data.status).toBeUndefined();
-    expect(call.data.pointId).toBeUndefined();
-    expect(call.data).toEqual({ anyCountry: true, waitDays: 1 });
+    expect(call.data).toMatchObject({ pointId: 'point-99', arrivedAt: expect.any(Date), lastConfirmedAt: expect.any(Date), dayAskedAt: null, anyCountry: true, waitDays: 1 });
   });
 });
 

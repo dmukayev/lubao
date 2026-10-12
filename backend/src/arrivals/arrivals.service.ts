@@ -269,7 +269,13 @@ export class ArrivalsService {
         existing && existing.status === 'ON_SITE'
           ? await tx.arrival.update({
               where: { id: existing.id },
-              data: { anyCountry, waitDays, ...(combo ?? {}) },
+              // Водитель на месте сменил город («Изменить» в анонсе: Уральск →
+              // Астана) — он на месте в новом городе; раньше город молча не
+              // менялся. Тот же город — дата и время приезда не трогаются.
+              data:
+                existing.pointId !== dto.pointId
+                  ? { pointId: dto.pointId, plannedAt: new Date(), plannedDay: parseDateOnly(localDateOnly(new Date())), arrivedAt: new Date(), lastConfirmedAt: new Date(), dayAskedAt: null, anyCountry, waitDays, ...(combo ?? {}) }
+                  : { anyCountry, waitDays, ...(combo ?? {}) },
             })
           : existing
             ? await tx.arrival.update({
