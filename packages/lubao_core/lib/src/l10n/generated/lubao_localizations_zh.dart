@@ -4769,7 +4769,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String driverCardOnSite(String city) {
-    return '已在$city';
+    return '已到达：$city';
   }
 
   @override

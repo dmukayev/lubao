@@ -1743,7 +1743,7 @@
   "driverCardNotLooking": "Not looking for cargo right now",
   "driverCardTrips": "Trips in Lubao: {count}",
   "driverCardChat": "Message",
-  "driverCardOnSite": "On site in {city}",
+  "driverCardOnSite": "On site: {city}",
   "driverCardVehicle": "Vehicle",
   "driverCardRigid": "Truck",
   "driverCardPermits": "Permits: {list}",

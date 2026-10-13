@@ -4889,7 +4889,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String driverCardOnSite(String city) {
-    return 'На месте в $city';
+    return 'На месте: $city';
   }
 
   @override

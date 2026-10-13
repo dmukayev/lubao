@@ -4882,7 +4882,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String driverCardOnSite(String city) {
-    return '$city қаласында орнында';
+    return 'Орнында: $city';
   }
 
   @override

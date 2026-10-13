@@ -43,6 +43,8 @@ Future<void> showDriverInfoSheet(BuildContext context, {required String driverId
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
+    // Поверх нижних вкладок: иначе панель закрывала кнопки внизу шторки.
+    useRootNavigator: true,
     builder: (sheetContext) => DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.9,
@@ -133,7 +135,8 @@ class DriverInfoView extends ConsumerWidget {
       loading: () => const LoadingView(),
       error: (e, st) => ErrorView(message: errorMessage(t, e), onRetry: () => ref.invalidate(_driverCardProvider(driverId))),
       data: (d) {
-        String tons(double v) => '${v.toStringAsFixed(v % 1 == 0 ? 0 : 1)} ${t.unitTon}';
+        // Неразрывный пробел: «20 т» не разрывается на две строки.
+        String tons(double v) => '${v.toStringAsFixed(v % 1 == 0 ? 0 : 1)}\u00A0${t.unitTon}';
         String? bodyName(String? id) => id == null || refData == null ? null : refData.bodyTypeById(id).name.forLanguageCode(locale);
         // Связка тягач + прицеп; старый сервер без связки — одна строка, как раньше.
         final vehicleLines = d.vehicles.isNotEmpty
@@ -144,7 +147,7 @@ class DriverInfoView extends ConsumerWidget {
                     if (v.brand != null && v.brand!.isNotEmpty) v.brand!,
                     ?bodyName(v.bodyTypeId),
                     if (v.capacityTons != null) tons(v.capacityTons!),
-                    if (v.volumeM3 != null) '${v.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+                    if (v.volumeM3 != null) '${v.volumeM3!.toStringAsFixed(0)}\u00A0${t.unitM3}',
                   ].join(' · '),
               ]
             : [
@@ -265,7 +268,9 @@ class DriverInfoView extends ConsumerWidget {
             LayoutBuilder(
               builder: (context, constraints) {
                 final scale = MediaQuery.textScalerOf(context).scale(1);
-                final inRow = constraints.maxWidth / scale >= actions.length * 120;
+                // Каждой кнопке — не меньше 160 dp при обычном шрифте: «Позвонить»
+                // не рвётся посреди слова на SE с крупным шрифтом.
+                final inRow = constraints.maxWidth / scale >= actions.length * 160;
                 if (inRow) {
                   return Row(children: [for (final (i, a) in actions.indexed) ...[if (i > 0) const SizedBox(width: AppSpacing.sm), Expanded(child: a)]]);
                 }

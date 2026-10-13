@@ -1618,7 +1618,7 @@
   "driverCardNotLooking": "Қазір жүк іздемейді",
   "driverCardTrips": "Lubao-дағы рейстер: {count}",
   "driverCardChat": "Жазу",
-  "driverCardOnSite": "{city} қаласында орнында",
+  "driverCardOnSite": "Орнында: {city}",
   "driverCardVehicle": "Көлік",
   "driverCardRigid": "Жүк көлігі",
   "driverCardPermits": "Рұқсаттар: {list}",

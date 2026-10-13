@@ -8961,7 +8961,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @driverCardOnSite.
   ///
   /// In ru, this message translates to:
-  /// **'На месте в {city}'**
+  /// **'На месте: {city}'**
   String driverCardOnSite(String city);
 
   /// No description provided for @driverCardVehicle.

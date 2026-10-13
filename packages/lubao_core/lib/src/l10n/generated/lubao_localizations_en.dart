@@ -4898,7 +4898,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String driverCardOnSite(String city) {
-    return 'On site in $city';
+    return 'On site: $city';
   }
 
   @override

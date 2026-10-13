@@ -1618,7 +1618,7 @@
   "driverCardNotLooking": "目前不在找货",
   "driverCardTrips": "Lubao 行程：{count}",
   "driverCardChat": "发消息",
-  "driverCardOnSite": "已在{city}",
+  "driverCardOnSite": "已到达：{city}",
   "driverCardVehicle": "车辆",
   "driverCardRigid": "单体货车",
   "driverCardPermits": "许可：{list}",

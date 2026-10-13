@@ -1843,7 +1843,7 @@
   "driverCardTrips": "Рейсов в Lubao: {count}",
   "@driverCardTrips": {"placeholders": {"count": {"type": "int"}}},
   "driverCardChat": "Написать",
-  "driverCardOnSite": "На месте в {city}",
+  "driverCardOnSite": "На месте: {city}",
   "@driverCardOnSite": { "placeholders": {"city": {"type": "String"}} },
   "driverCardVehicle": "Машина",
   "driverCardRigid": "Грузовик",
