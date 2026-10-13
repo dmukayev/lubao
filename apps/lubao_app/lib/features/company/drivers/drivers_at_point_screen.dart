@@ -194,7 +194,7 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     final locale = Localizations.localeOf(context).languageCode;
 
     // Понятный выбор: кружок у каждого груза, подсказка и «Пригласить».
-    final selectedCargo = await showInviteCargoPicker(context, driverName: driver.driverName, cargos: publishedCargos, refData: refData);
+    final selectedCargo = await showInviteCargoPicker(context, driverName: driver.driverName, cargos: publishedCargos, refData: refData, alreadyInvited: {for (final c in driver.invitedCargos) c.cargoId});
     if (selectedCargo == null || !mounted) return;
 
     // Задача 038, п.9 (037, п.3) — водитель уже занят и новый груз, похоже,
@@ -233,6 +233,9 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.driversAtPointInviteSent)));
+    // 071 п.4: в строке водителя появляется «Приглашён: …».
+    _reload(silent: true);
+    ref.invalidate(myDriversProvider);
   }
 
   /// Выбор из нижнего листа (задача 036, п.4): «Страна ▾» / «Кузов ▾» —
@@ -938,6 +941,15 @@ class _DriverCard extends StatelessWidget {
                     // 058 п.7: «в сети» / «был сегодня в 20:15».
                     if (formatLastSeen(t, driver.lastSeenAt) case final seen?)
                       Text(seen, key: Key('driverLastSeen-${driver.driverId}'), style: AppTextStyles.caption.copyWith(color: seen == t.lastSeenOnline ? AppColors.success : AppColors.textSecondary)),
+                    // 071 п.4: уже приглашён на груз компании.
+                    if (driver.invitedCargos.isNotEmpty)
+                      Text(
+                        t.driverInvitedTo(invitedRouteLabel(refData, driver.invitedCargos.first, locale)),
+                        key: Key('driverInvited-${driver.driverId}'),
+                        style: AppTextStyles.caption.copyWith(color: AppColors.accentText, fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     if (spec.isNotEmpty)
                       // 045 п.4: миниатюра кузова (40 px) перед строкой машины;
                       // фото машины — в карточке водителя (067).

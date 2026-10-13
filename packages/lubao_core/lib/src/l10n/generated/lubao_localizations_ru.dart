@@ -4678,6 +4678,48 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   }
 
   @override
+  String cargoInvitedCount(int count) {
+    return 'Приглашено: $count';
+  }
+
+  @override
+  String cargoInvitedBlockTitle(int count) {
+    return 'Приглашены ($count)';
+  }
+
+  @override
+  String cargoInviteWaitingLeft(int hours) {
+    return 'ждём ответа · осталось $hours ч';
+  }
+
+  @override
+  String get cargoInviteDeclined => 'отказался';
+
+  @override
+  String get cargoInviteExpired => 'истекло';
+
+  @override
+  String driverInvitedTo(String route) {
+    return 'Приглашён: $route';
+  }
+
+  @override
+  String cargoPublishedAtFull(String date) {
+    return 'Опубликован $date';
+  }
+
+  @override
+  String cargoPublishedBy(String name) {
+    return 'Опубликовал: $name';
+  }
+
+  @override
+  String get cargoUnpublish => 'Снять с публикации';
+
+  @override
+  String get cargoDescriptionTitle => 'Описание';
+
+  @override
   String cargoResponsesNew(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

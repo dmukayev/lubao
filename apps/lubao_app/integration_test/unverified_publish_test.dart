@@ -174,6 +174,19 @@ void main() {
       await waitFor(tester, find.byKey(const Key('driversPointChip')));
       await tester.tap(find.byKey(const Key('driversPointChip')));
       await pickCityByName(tester, 'korg', 'Хоргос');
+      // 071 п.4: логист приглашает водителя на свой груз — в строке «Приглашён: …».
+      final invite = find.byKey(const Key('driversAtPointInvite-$d4'));
+      await waitAndReveal(tester, invite);
+      await tester.tap(invite);
+      final option = find.byKey(Key('inviteCargo-$cargoId'));
+      await waitAndReveal(tester, option);
+      await tester.tap(option);
+      await tester.pumpAndSettle();
+      final submit = find.byKey(const Key('inviteCargoSubmit'));
+      await reveal(tester, submit);
+      await tester.tap(submit);
+      await waitAndReveal(tester, find.byKey(const Key('driverInvited-$d4')));
+      expectNoOverflow(tester);
       await openDriverCardByRow(tester, const Key('driversAtPointCard-$d4'));
       await waitFor(tester, find.descendant(of: find.byKey(const Key('driverCard')), matching: find.byKey(const Key('driverAvatar-$d4-photo'))), timeout: const Duration(seconds: 30));
       final photo = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('driverVehiclePhoto-'));
@@ -188,6 +201,50 @@ void main() {
       await tester.tap(find.byKey(const Key('driverCardClose')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('driverCard')), findsNothing);
+    });
+
+    // 071: логист открывает свой груз — фото, описание, условия, «Отклики»,
+    // блок «Приглашены» с водителем; в списке «Приглашено: 1».
+    await run.step(tester, 'полная-карточка-груза-логиста', () async {
+      final image = await makeSyntheticDocument('cargo-photo.png', ['SYNTHETIC CARGO', 'TILES', 'E2E']);
+      final upload = await companyApi.post('/uploads/image', data: FormData.fromMap({'file': MultipartFile.fromBytes(await image.readAsBytes(), filename: 'cargo-photo.png')}));
+      expect(upload.statusCode, lessThan(300), reason: 'загрузка фото груза: ${upload.data}');
+      final patched = await companyApi.patch('/cargos/$cargoId', data: {
+        'photoUrls': [(upload.data as Map)['url']],
+        'description': 'Плитка в коробках, грузить аккуратно',
+        'paymentForm': 'CASH',
+        'paymentDelayDays': 5,
+      });
+      expect(patched.statusCode, lessThan(300), reason: 'фото и описание груза: ${patched.data}');
+      await goTab(tester, t.navCargos);
+      final container = ProviderScope.containerOf(tester.element(find.byType(LubaoApp)));
+      container.invalidate(myCargosProvider);
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, 600));
+      await tester.pumpAndSettle();
+      final line = find.byKey(Key('cargoResponsesLine-$cargoId'));
+      await waitAndReveal(tester, line);
+      await waitFor(tester, find.descendant(of: line, matching: find.textContaining(t.cargoInvitedCount(1), findRichText: true)));
+      await tester.tap(find.byKey(Key('companyCargoCard-$cargoId')));
+      await waitFor(tester, find.byKey(const Key('companyCargoDetail')));
+      await waitFor(tester, find.byKey(const Key('cargoPhoto-0')));
+      expect(find.byKey(const Key('cargoDetailTerms')), findsOneWidget, reason: 'условия оплаты');
+      await waitAndReveal(tester, find.byKey(const Key('companyCargoDescription')));
+      expect(find.text('Плитка в коробках, грузить аккуратно'), findsOneWidget);
+      await waitAndReveal(tester, find.byKey(const Key('companyCargoResponsesTitle')));
+      await waitAndReveal(tester, find.byKey(const Key('companyCargoInvited-dddddddd-dddd-4ddd-8ddd-ddddddddd004')));
+      expectNoOverflow(tester);
+    });
+
+    await run.step(tester, 'фото-груза-на-весь-экран', () async {
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, 4000));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('cargoPhoto-0')));
+      await waitFor(tester, find.byKey(const Key('fullScreenPhotos')));
+      await tester.tap(find.byKey(const Key('fullScreenPhotosClose')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('fullScreenPhotos')), findsNothing);
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
     });
 
     await run.step(tester, 'водитель-видит-плашки', () async {

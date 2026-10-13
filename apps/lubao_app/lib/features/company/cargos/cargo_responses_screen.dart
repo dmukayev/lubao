@@ -14,6 +14,8 @@ import 'cargo_close_dialog.dart';
 import '../../shared/driver_avatar.dart';
 import '../drivers/driver_card_screen.dart' show showDriverInfoSheet;
 import '../../shared/share_action.dart';
+import '../../shared/cargo_info.dart';
+import '../../../providers/auth_provider.dart';
 
 class CargoResponsesScreen extends ConsumerWidget {
   const CargoResponsesScreen({super.key, required this.cargoId});
@@ -54,7 +56,6 @@ class CargoResponsesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
-    final locale = Localizations.localeOf(context).languageCode;
     final responses = ref.watch(cargoResponsesProvider(cargoId));
     final cargoAsync = ref.watch(cargoByIdProvider(cargoId));
     final referenceData = ref.watch(referenceDataProvider);
@@ -81,16 +82,6 @@ class CargoResponsesScreen extends ConsumerWidget {
                         buildText: (url) => cargoShareText(t, rd, cargo, url, Localizations.localeOf(context).languageCode));
                   },
                 ),
-                IconButton(
-                  tooltip: t.cargoEdit,
-                  icon: const Icon(LucideIcons.pencil),
-                  onPressed: () => _edit(context, cargo),
-                ),
-                IconButton(
-                  tooltip: t.cargoClose,
-                  icon: const Icon(LucideIcons.xCircle),
-                  onPressed: () => _close(context, ref),
-                ),
               ],
       ),
       body: responses.when(
@@ -100,55 +91,106 @@ class CargoResponsesScreen extends ConsumerWidget {
           return ErrorView(message: errorMessage(t, e), onRetry: () => ref.invalidate(cargoResponsesProvider(cargoId)));
         },
         data: (list) {
-          final inactive = list.where((r) => r.status == ResponseStatus.rejected || r.status == ResponseStatus.cancelled).toList();
-          Widget card(CargoResponse response, {bool waitingDriver = false}) => _ResponseCard(
+          // 071 п.4: приглашения — своим блоком: ждём ответа, отказался, истекло.
+          bool inviteClosed(CargoResponse r) =>
+              r.status == ResponseStatus.cancelled && (r.closeReason == ResponseCloseReason.inviteDeclined || r.closeReason == ResponseCloseReason.inviteExpired);
+          final invited = [...list.where((r) => r.status == ResponseStatus.invited), ...list.where(inviteClosed)];
+          final active = list.where((r) => r.status == ResponseStatus.selected || r.status == ResponseStatus.pending).toList();
+          final inactive = list.where((r) => (r.status == ResponseStatus.rejected || r.status == ResponseStatus.cancelled) && !inviteClosed(r)).toList();
+          final newCount = active.where((r) => r.isNew).length;
+          Widget card(CargoResponse response) => _ResponseCard(
                 response: response,
                 cargoWeightKg: cargo?.weightKg,
                 cargo: cargo,
                 refData: referenceData.valueOrNull,
-                waitingDriver: waitingDriver,
                 onUpdateStatus: (status, {expectedPrice}) => _updateStatus(context, ref, response.id, status, expectedPrice: expectedPrice),
               );
+          final refData = referenceData.valueOrNull;
           return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(cargoResponsesProvider(cargoId)),
+            onRefresh: () async {
+              ref.invalidate(cargoResponsesProvider(cargoId));
+              ref.invalidate(cargoByIdProvider(cargoId));
+            },
             child: ListView(
+              key: const Key('companyCargoDetail'),
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.screen),
               children: [
-                if (cargo != null && referenceData.valueOrNull != null)
-                  _CargoSummaryCard(cargo: cargo, refData: referenceData.valueOrNull!, locale: locale),
-                const SizedBox(height: AppSpacing.lg),
-                if (list.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
-                    child: EmptyState(message: t.responsesEmpty),
-                  )
-                else ...[
-                  // 056 п.5: сверху — ждут решения (порядок задаёт сервер), ниже
-                  // приглашённые «ждём ответа водителя», неактивные свёрнуты.
-                  for (final response in list.where((r) => r.status == ResponseStatus.selected || r.status == ResponseStatus.pending)) ...[
-                    card(response),
-                    const SizedBox(height: AppSpacing.sm),
-                  ],
-                  for (final response in list.where((r) => r.status == ResponseStatus.invited)) ...[
-                    card(response, waitingDriver: true),
-                    const SizedBox(height: AppSpacing.sm),
-                  ],
-                  if (inactive.isNotEmpty)
+                // 071 п.1: груз целиком — те же блоки, что у водителя.
+                if (cargo != null && refData != null) ...[
+                  if (cargo.photoUrls.isNotEmpty) ...[CargoPhotosStrip(photoUrls: cargo.photoUrls), const SizedBox(height: AppSpacing.md)],
+                  CargoMainCard(cargo: cargo, refData: refData, showMarket: false),
+                  const SizedBox(height: AppSpacing.sm),
+                  _CargoMeta(cargo: cargo),
+                  const SizedBox(height: AppSpacing.md),
+                  CargoParamsBlock(cargo: cargo, refData: refData),
+                  if (cargo.allowPartial)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-                      child: ExpansionTile(
-                        key: const Key('responsesInactive'),
-                        tilePadding: EdgeInsets.zero,
-                        title: Text(t.responsesInactive(inactive.length), style: AppTextStyles.bodyStrong.copyWith(color: AppColors.textSecondary)),
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.sm, AppSpacing.screen, 0),
+                      child: Text(t.feedBadgePartial, style: AppTextStyles.body.copyWith(color: AppColors.primary)),
+                    ),
+                  if (cargo.description != null && cargo.description!.trim().isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          for (final response in inactive) ...[
-                            card(response),
-                            const SizedBox(height: AppSpacing.sm),
-                          ],
+                          Text(t.cargoDescriptionTitle, style: AppTextStyles.caption),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(cargo.description!, key: const Key('companyCargoDescription'), style: AppTextStyles.body),
                         ],
                       ),
                     ),
+                  ],
+                  const SizedBox(height: AppSpacing.sm),
+                  _CargoActions(
+                    cargo: cargo,
+                    onEdit: () => _edit(context, cargo),
+                    onRepeat: () => context.push('/company/cargos/repeat', extra: cargo),
+                    onUnpublish: () => _close(context, ref),
+                  ),
                 ],
+                const SizedBox(height: AppSpacing.md),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                  child: Text(
+                    [
+                      active.isEmpty ? t.cargoNoResponses : t.cargoResponsesCount(active.length),
+                      if (newCount > 0) t.cargoResponsesNew(newCount),
+                    ].join(' · '),
+                    key: const Key('companyCargoResponsesTitle'),
+                    style: AppTextStyles.title,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                if (invited.isNotEmpty) ...[
+                  _InvitedBlock(responses: invited, cargoId: cargoId),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+                if (active.isEmpty && invited.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                    child: EmptyState(message: t.responsesEmpty),
+                  ),
+                // 056 п.5: сверху — ждут решения (порядок задаёт сервер), неактивные свёрнуты.
+                for (final response in active) ...[
+                  card(response),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+                if (inactive.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                    child: ExpansionTile(
+                      key: const Key('responsesInactive'),
+                      tilePadding: EdgeInsets.zero,
+                      title: Text(t.responsesInactive(inactive.length), style: AppTextStyles.bodyStrong.copyWith(color: AppColors.textSecondary)),
+                      children: [
+                        for (final response in inactive) ...[
+                          card(response),
+                          const SizedBox(height: AppSpacing.sm),
+                        ],
+                      ],
+                    ),
+                  ),
               ],
             ),
           );
@@ -158,38 +200,111 @@ class CargoResponsesScreen extends ConsumerWidget {
   }
 }
 
-class _CargoSummaryCard extends StatelessWidget {
-  const _CargoSummaryCard({required this.cargo, required this.refData, required this.locale});
+/// 071 п.1: номер — в карточке выше; здесь когда опубликован, статус и кто
+/// опубликовал (если не я).
+class _CargoMeta extends ConsumerWidget {
+  const _CargoMeta({required this.cargo});
 
   final Cargo cargo;
-  final ReferenceData refData;
-  final String locale;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.l10n;
+    final (statusLabel, statusColor) = cargoStatusPresentation(t, cargo.status);
+    final me = ref.watch(sessionProvider)?.user.id;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+      child: Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.xs,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          StatusBadge(label: statusLabel, color: statusColor),
+          Text(t.cargoPublishedAtFull(formatDateTime(cargo.publishedAt)), key: const Key('companyCargoPublishedAt'), style: AppTextStyles.caption),
+          if (cargo.contactUserId != null && cargo.contactUserId != me && (cargo.contactName ?? '').isNotEmpty)
+            Text(t.cargoPublishedBy(cargo.contactName!), key: const Key('companyCargoPublishedBy'), style: AppTextStyles.caption),
+        ],
+      ),
+    );
+  }
+}
+
+/// 071 п.2: действия маленькими серыми кнопками; в архиве — только «Повторить».
+class _CargoActions extends StatelessWidget {
+  const _CargoActions({required this.cargo, required this.onEdit, required this.onRepeat, required this.onUnpublish});
+
+  final Cargo cargo;
+  final VoidCallback onEdit;
+  final VoidCallback onRepeat;
+  final VoidCallback onUnpublish;
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    final country = refData.countryById(cargo.destinationCountryId);
-    final city = refData.cityById(cargo.destinationCityId);
-    final destinationLabel =
-        [city?.name.forLanguageCode(locale), country.name.forLanguageCode(locale)].whereType<String>().join(', ');
-    final (statusLabel, statusColor) = cargoStatusPresentation(t, cargo.status);
+    final archived = cargo.status == CargoStatus.archived || cargo.status == CargoStatus.expired || cargo.status == CargoStatus.cancelled;
+    final style = TextButton.styleFrom(foregroundColor: AppColors.textSecondary, visualDensity: VisualDensity.compact, textStyle: AppTextStyles.small.copyWith(fontWeight: FontWeight.w600));
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      child: Wrap(
+        children: [
+          if (!archived) TextButton.icon(key: const Key('companyCargoEdit'), style: style, onPressed: onEdit, icon: const Icon(LucideIcons.pencil, size: 16), label: Text(t.cargoEdit)),
+          TextButton.icon(key: const Key('companyCargoRepeat'), style: style, onPressed: onRepeat, icon: const Icon(LucideIcons.copy, size: 16), label: Text(t.cargoRepeat)),
+          if (cargo.status == CargoStatus.published)
+            TextButton.icon(key: const Key('companyCargoUnpublish'), style: style, onPressed: onUnpublish, icon: const Icon(LucideIcons.xCircle, size: 16), label: Text(t.cargoUnpublish)),
+        ],
+      ),
+    );
+  }
+}
+
+/// 071 п.4: «Приглашены (N)» — над откликами: ждём ответа · осталось 18 ч /
+/// отказался / истекло. Принял — уходит в отклики. Нажатие — карточка водителя.
+class _InvitedBlock extends StatelessWidget {
+  const _InvitedBlock({required this.responses, required this.cargoId});
+
+  final List<CargoResponse> responses;
+  final String cargoId;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    String statusOf(CargoResponse r) {
+      if (r.status == ResponseStatus.invited) {
+        final left = r.inviteExpiresAt?.difference(DateTime.now()).inHours;
+        return left == null ? t.responsesWaitingDriver : t.cargoInviteWaitingLeft(left < 1 ? 1 : left);
+      }
+      return r.closeReason == ResponseCloseReason.inviteDeclined ? t.cargoInviteDeclined : t.cargoInviteExpired;
+    }
 
     return AppCard(
+      key: const Key('companyCargoInvited'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 062: номер груза.
-          if (cargo.number != null) CargoNumberText(number: cargo.number!),
-          Row(
-            children: [
-              Expanded(child: Text(destinationLabel, style: AppTextStyles.route)),
-              StatusBadge(label: statusLabel, color: statusColor),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(formatDate(cargo.readyDate), style: AppTextStyles.caption),
-          const SizedBox(height: AppSpacing.sm),
-          Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceCard),
+          Text(t.cargoInvitedBlockTitle(responses.length), style: AppTextStyles.bodyStrong),
+          for (final r in responses)
+            InkWell(
+              key: Key('companyCargoInvited-${r.driverId}'),
+              onTap: () => showDriverInfoSheet(context, driverId: r.driverId, cargoId: cargoId),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                child: Row(
+                  children: [
+                    DriverAvatar(driverId: r.driverId, name: r.driverName, version: r.avatarVersion, radius: 18),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: Text(r.driverName, style: AppTextStyles.body, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    const SizedBox(width: AppSpacing.sm),
+                    Flexible(
+                      child: Text(
+                        statusOf(r),
+                        textAlign: TextAlign.end,
+                        style: AppTextStyles.caption.copyWith(color: r.status == ResponseStatus.invited ? AppColors.accentText : AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -202,7 +317,6 @@ class _ResponseCard extends ConsumerStatefulWidget {
     required this.cargoWeightKg,
     required this.refData,
     required this.onUpdateStatus,
-    this.waitingDriver = false,
     this.cargo,
   });
 
@@ -211,8 +325,6 @@ class _ResponseCard extends ConsumerStatefulWidget {
   /// 058 п.5: цена груза — «вы просили $10 300», валюта встречной цены.
   final Cargo? cargo;
 
-  /// Приглашён, ещё не ответил — пометка «ждём ответа водителя».
-  final bool waitingDriver;
   final double? cargoWeightKg;
   final ReferenceData? refData;
   final void Function(String status, {double? expectedPrice}) onUpdateStatus;
@@ -363,10 +475,6 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
               IconSquareButton(icon: LucideIcons.messageSquare, loading: _openingChat, onPressed: _chat),
             ],
           ),
-          if (widget.waitingDriver) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(context.l10n.responsesWaitingDriver, key: Key('responseWaitingDriver-${response.id}'), style: AppTextStyles.caption.copyWith(color: AppColors.accentText)),
-          ],
           // 033 п.9 / 038 п.14 — вместимость связки водителя в отклике:
           // «20 т · 90 м³ · 33 пал.».
           if (response.bodyTypeId != null || response.capacityTons != null || response.volumeM3 != null || response.palletsEuro != null) ...[

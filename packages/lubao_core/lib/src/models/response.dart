@@ -40,6 +40,8 @@ class CargoResponse {
     required this.driverId,
     required this.driverName,
     this.isNew = false,
+    this.inviteExpiresAt,
+    this.closeReason,
     this.onSiteAtPoint = false,
     this.avatarVersion,
     this.message,
@@ -63,6 +65,9 @@ class CargoResponse {
   });
 
   /// 058 п.5: своя цена водителя / встречная логиста.
+  /// 071 п.4: «ждём ответа · осталось 18 ч»; «отказался» / «истекло» — по причине закрытия.
+  final DateTime? inviteExpiresAt;
+  final ResponseCloseReason? closeReason;
   final ResponseOffer offer;
   final String id;
   final String cargoId;
@@ -117,6 +122,8 @@ class CargoResponse {
         driverId: json['driverId'] as String,
         driverName: json['driverName'] as String? ?? '',
         isNew: json['isNew'] as bool? ?? false,
+        inviteExpiresAt: json['inviteExpiresAt'] == null ? null : DateTime.parse(json['inviteExpiresAt'] as String),
+        closeReason: responseCloseReasonFromJson(json['closeReason'] as String?),
         onSiteAtPoint: json['onSiteAtPoint'] as bool? ?? false,
         avatarVersion: json['avatarVersion'] as String?,
         message: json['message'] as String?,

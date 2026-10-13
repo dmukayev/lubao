@@ -56,6 +56,7 @@ class ArrivalListing {
     this.cancelStats,
     required this.anyCountry,
     required this.directionCountryIds,
+    this.invitedCargos = const [],
   });
 
   final String arrivalId;
@@ -105,6 +106,8 @@ class ArrivalListing {
   final CancelStats? cancelStats;
   final bool anyCountry;
   final List<String> directionCountryIds;
+  /// 071 п.4: «Приглашён: Хоргос → Алматы».
+  final List<InvitedCargo> invitedCargos;
 
   /// 058 п.7: «в сети / был в сети».
   final DateTime? lastSeenAt;
@@ -141,6 +144,7 @@ class ArrivalListing {
         anyCountry: json['anyCountry'] as bool? ?? false,
         directionCountryIds:
             (json['directionCountryIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
+        invitedCargos: InvitedCargo.listFromJson(json['invitedCargos']),
       );
 }
 

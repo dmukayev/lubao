@@ -496,19 +496,21 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
                   child: showResponses
                       ? Text.rich(
                           key: Key('cargoResponsesLine-${cargo.id}'),
-                          cargo.responsesCount == 0
-                              ? TextSpan(text: t.cargoNoResponses, style: AppTextStyles.small.copyWith(color: AppColors.textSecondary))
-                              : TextSpan(
-                                  text: t.cargoResponsesCount(cargo.responsesCount),
-                                  style: AppTextStyles.small.copyWith(color: AppColors.text),
-                                  children: [
-                                    if (cargo.newResponsesCount > 0)
-                                      TextSpan(
-                                        text: ' · ${t.cargoResponsesNew(cargo.newResponsesCount)}',
-                                        style: AppTextStyles.small.copyWith(color: AppColors.error, fontWeight: FontWeight.w700),
-                                      ),
-                                  ],
+                          // 071 п.4: «Отклики: 3 · 2 новых · Приглашено: 2».
+                          TextSpan(children: [
+                            if (cargo.responsesCount == 0)
+                              TextSpan(text: t.cargoNoResponses, style: AppTextStyles.small.copyWith(color: AppColors.textSecondary))
+                            else ...[
+                              TextSpan(text: t.cargoResponsesCount(cargo.responsesCount), style: AppTextStyles.small.copyWith(color: AppColors.text)),
+                              if (cargo.newResponsesCount > 0)
+                                TextSpan(
+                                  text: ' · ${t.cargoResponsesNew(cargo.newResponsesCount)}',
+                                  style: AppTextStyles.small.copyWith(color: AppColors.error, fontWeight: FontWeight.w700),
                                 ),
+                            ],
+                            if (cargo.invitedCount > 0)
+                              TextSpan(text: ' · ${t.cargoInvitedCount(cargo.invitedCount)}', style: AppTextStyles.small.copyWith(color: AppColors.textSecondary)),
+                          ]),
                         )
                       : const SizedBox.shrink(),
                 ),
@@ -607,8 +609,11 @@ class _RouteLine extends StatelessWidget {
       )..layout();
       final width = painter.width;
       painter.dispose();
-      if (width <= constraints.maxWidth || width * 0.75 > constraints.maxWidth) {
-        return Text(text, key: textKey, style: style, maxLines: 1, overflow: TextOverflow.ellipsis);
+      if (width <= constraints.maxWidth) return Text(text, key: textKey, style: style, maxLines: 1);
+      // 071 п.6: не помещается и уменьшенным — на две строки (город назначения
+      // не пропадает целиком, как было с «Астана → …»).
+      if (width * 0.75 > constraints.maxWidth) {
+        return Text(text, key: textKey, style: style, maxLines: 2, overflow: TextOverflow.ellipsis);
       }
       return FittedBox(fit: BoxFit.scaleDown, alignment: AlignmentDirectional.centerStart, child: Text(text, key: textKey, style: style, maxLines: 1, softWrap: false));
     });

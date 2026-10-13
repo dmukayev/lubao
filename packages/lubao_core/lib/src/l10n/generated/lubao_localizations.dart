@@ -8604,6 +8604,66 @@ abstract class LubaoLocalizations {
   /// **'Отклики: {count}'**
   String cargoResponsesCount(int count);
 
+  /// No description provided for @cargoInvitedCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приглашено: {count}'**
+  String cargoInvitedCount(int count);
+
+  /// No description provided for @cargoInvitedBlockTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приглашены ({count})'**
+  String cargoInvitedBlockTitle(int count);
+
+  /// No description provided for @cargoInviteWaitingLeft.
+  ///
+  /// In ru, this message translates to:
+  /// **'ждём ответа · осталось {hours} ч'**
+  String cargoInviteWaitingLeft(int hours);
+
+  /// No description provided for @cargoInviteDeclined.
+  ///
+  /// In ru, this message translates to:
+  /// **'отказался'**
+  String get cargoInviteDeclined;
+
+  /// No description provided for @cargoInviteExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'истекло'**
+  String get cargoInviteExpired;
+
+  /// No description provided for @driverInvitedTo.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приглашён: {route}'**
+  String driverInvitedTo(String route);
+
+  /// No description provided for @cargoPublishedAtFull.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опубликован {date}'**
+  String cargoPublishedAtFull(String date);
+
+  /// No description provided for @cargoPublishedBy.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опубликовал: {name}'**
+  String cargoPublishedBy(String name);
+
+  /// No description provided for @cargoUnpublish.
+  ///
+  /// In ru, this message translates to:
+  /// **'Снять с публикации'**
+  String get cargoUnpublish;
+
+  /// No description provided for @cargoDescriptionTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Описание'**
+  String get cargoDescriptionTitle;
+
   /// No description provided for @cargoResponsesNew.
   ///
   /// In ru, this message translates to:

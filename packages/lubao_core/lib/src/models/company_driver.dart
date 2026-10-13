@@ -1,3 +1,5 @@
+import 'common.dart';
+
 /// 058 п.6: строка «Моих водителей» у логиста. `driverId` пуст — заведён
 /// компанией и ещё не входил; `pending` — ждёт входа / «Принять» (видно
 /// только имя).
@@ -17,8 +19,11 @@ class CompanyDriverEntry {
     this.lastSeenAt,
     this.searching = false,
     this.onSite = false,
+    this.invitedCargos = const [],
   });
 
+  /// 071 п.4: приглашён на опубликованные грузы компании.
+  final List<InvitedCargo> invitedCargos;
   final String? rowId;
   final String? driverId;
   final String name;
@@ -49,6 +54,7 @@ class CompanyDriverEntry {
         lastSeenAt: json['lastSeenAt'] == null ? null : DateTime.parse(json['lastSeenAt'] as String),
         searching: json['searching'] as bool? ?? false,
         onSite: json['onSite'] as bool? ?? false,
+        invitedCargos: InvitedCargo.listFromJson(json['invitedCargos']),
       );
 }
 

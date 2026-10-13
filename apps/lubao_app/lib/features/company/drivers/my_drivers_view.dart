@@ -27,11 +27,12 @@ class MyDriversView extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.driversAtPointNoCargos)));
       return;
     }
-    final cargo = await showInviteCargoPicker(context, driverName: driver.name, cargos: cargos, refData: ref.read(referenceDataProvider).valueOrNull);
+    final cargo = await showInviteCargoPicker(context, driverName: driver.name, cargos: cargos, refData: ref.read(referenceDataProvider).valueOrNull, alreadyInvited: {for (final c in driver.invitedCargos) c.cargoId});
     if (cargo == null || !context.mounted) return;
     try {
       await ref.read(cargoRepositoryProvider).inviteDriver(cargo.id, driver.driverId!);
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.driversAtPointInviteSent)));
+      ref.invalidate(myDriversProvider);
     } catch (e) {
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(responseConflictText(t, e) ?? errorMessage(t, e))));
     }
@@ -139,6 +140,13 @@ class _MyDriverCard extends ConsumerWidget {
                     ),
                     if (status.isNotEmpty)
                       Text(status, style: AppTextStyles.caption.copyWith(color: driver.searching || driver.onSite || seen == t.lastSeenOnline ? AppColors.success : AppColors.textSecondary)),
+                    // 071 п.4: уже приглашён на груз компании.
+                    if (ref.watch(referenceDataProvider).valueOrNull case final rd? when driver.invitedCargos.isNotEmpty)
+                      Text(
+                        t.driverInvitedTo(invitedRouteLabel(rd, driver.invitedCargos.first, Localizations.localeOf(context).languageCode)),
+                        key: Key('myDriverInvited-${driver.driverId}'),
+                        style: AppTextStyles.caption.copyWith(color: AppColors.accentText, fontWeight: FontWeight.w600),
+                      ),
                   ],
                 ),
               ),

@@ -4566,6 +4566,48 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   }
 
   @override
+  String cargoInvitedCount(int count) {
+    return '已邀请：$count';
+  }
+
+  @override
+  String cargoInvitedBlockTitle(int count) {
+    return '已邀请（$count）';
+  }
+
+  @override
+  String cargoInviteWaitingLeft(int hours) {
+    return '等待回复 · 剩余 $hours 小时';
+  }
+
+  @override
+  String get cargoInviteDeclined => '已拒绝';
+
+  @override
+  String get cargoInviteExpired => '已过期';
+
+  @override
+  String driverInvitedTo(String route) {
+    return '已邀请：$route';
+  }
+
+  @override
+  String cargoPublishedAtFull(String date) {
+    return '发布于 $date';
+  }
+
+  @override
+  String cargoPublishedBy(String name) {
+    return '发布人：$name';
+  }
+
+  @override
+  String get cargoUnpublish => '下架';
+
+  @override
+  String get cargoDescriptionTitle => '描述';
+
+  @override
   String cargoResponsesNew(int count) {
     return '$count 个新';
   }

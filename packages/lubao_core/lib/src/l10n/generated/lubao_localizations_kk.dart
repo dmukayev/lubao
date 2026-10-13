@@ -4680,6 +4680,48 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   }
 
   @override
+  String cargoInvitedCount(int count) {
+    return 'Шақырылды: $count';
+  }
+
+  @override
+  String cargoInvitedBlockTitle(int count) {
+    return 'Шақырылғандар ($count)';
+  }
+
+  @override
+  String cargoInviteWaitingLeft(int hours) {
+    return 'жауап күтілуде · $hours сағ қалды';
+  }
+
+  @override
+  String get cargoInviteDeclined => 'бас тартты';
+
+  @override
+  String get cargoInviteExpired => 'мерзімі өтті';
+
+  @override
+  String driverInvitedTo(String route) {
+    return 'Шақырылған: $route';
+  }
+
+  @override
+  String cargoPublishedAtFull(String date) {
+    return 'Жарияланды $date';
+  }
+
+  @override
+  String cargoPublishedBy(String name) {
+    return 'Жариялаған: $name';
+  }
+
+  @override
+  String get cargoUnpublish => 'Жариялаудан алу';
+
+  @override
+  String get cargoDescriptionTitle => 'Сипаттама';
+
+  @override
   String cargoResponsesNew(int count) {
     return '$count жаңа';
   }

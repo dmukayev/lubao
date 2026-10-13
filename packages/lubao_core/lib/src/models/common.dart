@@ -285,3 +285,25 @@ class CancelStats {
     );
   }
 }
+
+
+/// 071 п.4: груз компании, на который водитель приглашён и ещё не ответил —
+/// «Приглашён: Хоргос → Алматы».
+class InvitedCargo {
+  const InvitedCargo({required this.cargoId, required this.pointId, required this.destinationCountryId, this.destinationCityId});
+
+  final String cargoId;
+  final String pointId;
+  final String destinationCountryId;
+  final String? destinationCityId;
+
+  factory InvitedCargo.fromJson(Map<String, dynamic> json) => InvitedCargo(
+        cargoId: json['cargoId'] as String,
+        pointId: json['pointId'] as String,
+        destinationCountryId: json['destinationCountryId'] as String,
+        destinationCityId: json['destinationCityId'] as String?,
+      );
+
+  static List<InvitedCargo> listFromJson(dynamic json) =>
+      [for (final e in (json as List<dynamic>? ?? const [])) InvitedCargo.fromJson(e as Map<String, dynamic>)];
+}

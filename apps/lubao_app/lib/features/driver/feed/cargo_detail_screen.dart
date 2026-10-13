@@ -19,7 +19,7 @@ import '../../shared/offer_sheet.dart';
 import '../../shared/share_action.dart';
 import 'favorite_button.dart';
 import '../../shared/company_verified_badge.dart';
-import '../../shared/cached_photo.dart';
+import '../../shared/cargo_info.dart';
 
 class CargoDetailScreen extends ConsumerStatefulWidget {
   const CargoDetailScreen({super.key, required this.cargoId});
@@ -451,91 +451,12 @@ class _CargoDetailBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.l10n;
-    final locale = Localizations.localeOf(context).languageCode;
-    final bodyType = refData.bodyTypeById(cargo.bodyTypeId);
-    // 058 п.3: флаги стран маршрута (если страны разные).
-    final route = cargoRouteLabels(refData, pointId: cargo.pointId, destinationCountryId: cargo.destinationCountryId, destinationCityId: cargo.destinationCityId, languageCode: locale, withCountry: true);
-    final pointName = route.origin ?? '';
-    final destinationLabel = route.destination;
-    // 063: под ценой — когда и как платят всю сумму; аванс — отдельной плашкой.
-    final terms = paymentWhenHowLine(t, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays);
-    final advance = advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency);
-
-    final kzt = refData.convertToKzt(cargo.price, cargo.currency);
-    final usd = refData.convertToUsd(cargo.price, cargo.currency);
-
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 062: номер груза — назвать по телефону, нажатие копирует.
-                if (cargo.number != null) ...[CargoNumberText(number: cargo.number!), const SizedBox(height: AppSpacing.xs)],
-                _RoutePoint(
-                  color: AppColors.primary,
-                  title: pointName,
-                  // 047: категория и км по дороге — как в строке ленты.
-                  subtitle: [
-                    if (refData.categoryById(cargo.categoryId) case final c?) c.name.forLanguageCode(locale),
-                    if (cargo.distanceKm != null && cargo.distanceKm! > 0) '${formatThousands(cargo.distanceKm!)} ${t.unitKm}',
-                    formatDate(cargo.readyDate),
-                  ].join(' · '),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: Container(width: 2, height: 20, color: AppColors.divider),
-                ),
-                _RoutePoint(color: AppColors.accent, title: destinationLabel, subtitle: null),
-                const Divider(height: AppSpacing.xl * 2),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(t.cargoDetailPriceLabel, style: AppTextStyles.caption),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceDetail),
-                          if (terms.isNotEmpty) Text(terms, key: const Key('cargoDetailTerms'), style: AppTextStyles.body),
-                          if (advance != null) ...[const SizedBox(height: AppSpacing.xs), AdvancePill(advance, key: const Key('cargoDetailAdvance'))],
-                          if (cargoTrucksLabel(t, needed: cargo.trucksNeeded, taken: cargo.trucksTaken) case final trucks?)
-                            Text(trucks, key: const Key('cargoDetailTrucks'), style: AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        if (formatKztConversion(kzt) != null)
-                          Text(formatKztConversion(kzt)!, style: AppTextStyles.caption),
-                        if (usd != null) Text(formatMoney(usd, Currency.usd), style: AppTextStyles.caption),
-                        if ((cargo.pricePerKm == null ? null : refData.convertToKzt(cargo.pricePerKm!, cargo.currency)) case final perKm?)
-                          Text(
-                            t.perKmKzt(formatThousands(perKm.round())),
-                            key: const Key('cargoDetailPerKm'),
-                            style: AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-                // 047 п.6: «Рынок за месяц: 650–720 ₸/км» — если есть статистика по маршруту.
-                if (cargo.market != null) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    t.cargoMarketMonth(formatThousands(cargo.market!.p25.round()), formatThousands(cargo.market!.p75.round())),
-                    key: const Key('cargoDetailMarket'),
-                    style: AppTextStyles.caption,
-                  ),
-                ],
-              ],
-            ),
-          ),
+          CargoMainCard(cargo: cargo, refData: refData),
           if (cargo.allowPartial) ...[
             const SizedBox(height: AppSpacing.md),
             Padding(
@@ -544,49 +465,10 @@ class _CargoDetailBody extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.md),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _DetailChip(label: t.cargoBodyType, value: bodyType.name.forLanguageCode(locale), leading: BodyTypeIcon(bodyTypeCode: bodyType.code, width: 40)),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                if (cargo.weightKg != null)
-                  Expanded(
-                    child: _DetailChip(label: t.cargoWeight, value: formatCargoWeight(cargo.weightKg!, tonUnit: t.unitTon, kgUnit: t.unitKg, languageCode: Localizations.localeOf(context).languageCode)),
-                  ),
-                if (cargo.weightKg != null) const SizedBox(width: AppSpacing.sm),
-                if (cargo.volumeM3 != null)
-                  Expanded(
-                    child: _DetailChip(label: t.cargoVolume, value: '${cargo.volumeM3} ${t.unitM3}'),
-                  ),
-              ],
-            ),
-          ),
+          CargoParamsBlock(cargo: cargo, refData: refData),
           if (cargo.photoUrls.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-              child: Text(t.cargoPhotos, style: AppTextStyles.title),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            SizedBox(
-              height: 96,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-                itemCount: cargo.photoUrls.length,
-                separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.sm),
-                itemBuilder: (context, index) => ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.field),
-                  child: GestureDetector(
-                    onTap: () => _openPhoto(context, cargo.photoUrls, index),
-                    child: CachedPhoto(cargo.photoUrls[index], size: 96),
-                  ),
-                ),
-              ),
-            ),
+            CargoPhotosStrip(photoUrls: cargo.photoUrls),
           ],
           const SizedBox(height: AppSpacing.lg),
           AppCard(
@@ -713,22 +595,6 @@ class _CargoDetailBody extends ConsumerWidget {
       ),
     );
   }
-
-  void _openPhoto(BuildContext context, List<String> photoUrls, int initialIndex) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
-          body: PageView.builder(
-            controller: PageController(initialPage: initialIndex),
-            itemCount: photoUrls.length,
-            itemBuilder: (context, index) => InteractiveViewer(child: Center(child: CachedPhoto(photoUrls[index], fit: BoxFit.contain))),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 /// 066 п.5: «Пожаловаться на груз» — в очередь жалоб админки.
@@ -766,66 +632,3 @@ Future<void> _complainAboutCargo(BuildContext context, WidgetRef ref, String car
     if (context.mounted) showApiError(context, e);
   }
 }
-
-class _RoutePoint extends StatelessWidget {
-  const _RoutePoint({required this.color, required this.title, required this.subtitle});
-
-  final Color color;
-  final String title;
-  final String? subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: AppTextStyles.route),
-              if (subtitle != null) ...[const SizedBox(height: 2), Text(subtitle!, style: AppTextStyles.caption)],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DetailChip extends StatelessWidget {
-  const _DetailChip({required this.label, required this.value, this.leading});
-
-  final String label;
-  final String value;
-
-  /// Миниатюра кузова у «Тип кузова» (045 п.4).
-  final Widget? leading;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(AppRadius.field)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: AppTextStyles.caption),
-          const SizedBox(height: AppSpacing.xs),
-          if (leading != null) ...[leading!, const SizedBox(height: AppSpacing.xs)],
-          Text(value, style: AppTextStyles.bodyStrong),
-        ],
-      ),
-    );
-  }
-}
-

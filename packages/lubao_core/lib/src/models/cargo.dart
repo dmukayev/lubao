@@ -41,6 +41,7 @@ class Cargo {
     this.feedSection,
     this.myResponseStatus,
     this.responsesCount = 0,
+    this.invitedCount = 0,
     this.newResponsesCount = 0,
     this.activeDeal,
     this.cargoSpecs,
@@ -135,6 +136,8 @@ class Cargo {
   /// водителей уже откликнулись.
   final ResponseStatus? myResponseStatus;
   final int responsesCount;
+  /// 071 п.4: приглашённые водители, ещё не ответившие («Приглашено: 2»).
+  final int invitedCount;
 
   /// 056 п.5: отклики, которые этот сотрудник ещё не открывал (только логисту).
   final int newResponsesCount;
@@ -193,6 +196,7 @@ class Cargo {
         pickupRank: json['pickupRank'] as int?,
         myResponseStatus: json['myResponseStatus'] == null ? null : responseStatusFromJson(json['myResponseStatus'] as String),
         responsesCount: json['responsesCount'] as int? ?? 0,
+        invitedCount: json['invitedCount'] as int? ?? 0,
         newResponsesCount: json['newResponsesCount'] as int? ?? 0,
         activeDeal: json['activeDeal'] == null ? null : CargoActiveDeal.fromJson(json['activeDeal'] as Map<String, dynamic>),
         cargoSpecs: json['specs'] as Map<String, dynamic>?,
