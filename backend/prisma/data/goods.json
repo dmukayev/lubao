@@ -1,0 +1,4336 @@
+[
+ {
+  "slug": "ceramic_tile",
+  "hsCode": "690721",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 10,
+  "name": {
+   "ru": "Плитка керамическая",
+   "kk": "Керамикалық плитка",
+   "zh": "瓷砖",
+   "en": "Ceramic tiles"
+  },
+  "synonyms": {
+   "ru": [
+    "плитка",
+    "кафель",
+    "керамогранит",
+    "облицовочная плитка"
+   ],
+   "zh": [
+    "瓷砖",
+    "地砖",
+    "墙砖"
+   ],
+   "en": [
+    "tile",
+    "tiles",
+    "porcelain tile"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "sanitary_ware",
+  "hsCode": "691010",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 20,
+  "name": {
+   "ru": "Сантехника керамическая",
+   "kk": "Керамикалық сантехника",
+   "zh": "陶瓷卫浴",
+   "en": "Ceramic sanitary ware"
+  },
+  "synonyms": {
+   "ru": [
+    "унитаз",
+    "раковина",
+    "умывальник",
+    "сантехника"
+   ],
+   "zh": [
+    "马桶",
+    "洗手盆",
+    "卫浴"
+   ],
+   "en": [
+    "toilet",
+    "sink",
+    "washbasin"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "glass_sheet",
+  "hsCode": "700529",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 30,
+  "name": {
+   "ru": "Стекло листовое",
+   "kk": "Табақ шыны",
+   "zh": "平板玻璃",
+   "en": "Sheet glass"
+  },
+  "synonyms": {
+   "ru": [
+    "стекло",
+    "листовое стекло"
+   ],
+   "zh": [
+    "玻璃",
+    "平板玻璃"
+   ],
+   "en": [
+    "glass",
+    "float glass"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "cement",
+  "hsCode": "252329",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 40,
+  "name": {
+   "ru": "Цемент",
+   "kk": "Цемент",
+   "zh": "水泥",
+   "en": "Cement"
+  },
+  "synonyms": {
+   "ru": [
+    "цемент",
+    "портландцемент"
+   ],
+   "zh": [
+    "水泥"
+   ],
+   "en": [
+    "cement"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "plasterboard",
+  "hsCode": "680911",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 50,
+  "name": {
+   "ru": "Гипсокартон",
+   "kk": "Гипсокартон",
+   "zh": "石膏板",
+   "en": "Plasterboard"
+  },
+  "synonyms": {
+   "ru": [
+    "гипсокартон",
+    "гкл"
+   ],
+   "zh": [
+    "石膏板"
+   ],
+   "en": [
+    "drywall",
+    "gypsum board"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "laminate",
+  "hsCode": "441192",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 60,
+  "name": {
+   "ru": "Ламинат",
+   "kk": "Ламинат",
+   "zh": "强化地板",
+   "en": "Laminate flooring"
+  },
+  "synonyms": {
+   "ru": [
+    "ламинат",
+    "напольное покрытие"
+   ],
+   "zh": [
+    "地板",
+    "复合地板"
+   ],
+   "en": [
+    "laminate",
+    "flooring"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "plywood",
+  "hsCode": "441231",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 70,
+  "name": {
+   "ru": "Фанера",
+   "kk": "Фанера",
+   "zh": "胶合板",
+   "en": "Plywood"
+  },
+  "synonyms": {
+   "ru": [
+    "фанера"
+   ],
+   "zh": [
+    "胶合板",
+    "夹板"
+   ],
+   "en": [
+    "plywood"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "lumber",
+  "hsCode": "440711",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 80,
+  "name": {
+   "ru": "Пиломатериалы",
+   "kk": "Ағаш материалдары",
+   "zh": "锯材",
+   "en": "Sawn timber"
+  },
+  "synonyms": {
+   "ru": [
+    "доска",
+    "брус",
+    "пиломатериал",
+    "лес"
+   ],
+   "zh": [
+    "木材",
+    "板材"
+   ],
+   "en": [
+    "lumber",
+    "timber",
+    "boards"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "pvc_pipes",
+  "hsCode": "391723",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 90,
+  "name": {
+   "ru": "Трубы пластиковые",
+   "kk": "Пластик құбырлар",
+   "zh": "塑料管",
+   "en": "Plastic pipes"
+  },
+  "synonyms": {
+   "ru": [
+    "трубы пвх",
+    "пластиковые трубы",
+    "полипропиленовые трубы"
+   ],
+   "zh": [
+    "PVC管",
+    "塑料管",
+    "水管"
+   ],
+   "en": [
+    "pvc pipe",
+    "plastic pipe"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "wallpaper",
+  "hsCode": "481420",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 100,
+  "name": {
+   "ru": "Обои",
+   "kk": "Тұсқағаздар",
+   "zh": "壁纸",
+   "en": "Wallpaper"
+  },
+  "synonyms": {
+   "ru": [
+    "обои"
+   ],
+   "zh": [
+    "壁纸",
+    "墙纸"
+   ],
+   "en": [
+    "wallpaper"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "paint",
+  "hsCode": "320910",
+  "category": "DANGEROUS",
+  "bodyType": "TENT",
+  "isDangerous": true,
+  "sortOrder": 110,
+  "name": {
+   "ru": "Краска",
+   "kk": "Бояу",
+   "zh": "油漆",
+   "en": "Paint"
+  },
+  "synonyms": {
+   "ru": [
+    "краска",
+    "эмаль",
+    "лак"
+   ],
+   "zh": [
+    "油漆",
+    "涂料"
+   ],
+   "en": [
+    "paint",
+    "varnish",
+    "coating"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "insulation",
+  "hsCode": "680610",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 120,
+  "name": {
+   "ru": "Утеплитель минеральный",
+   "kk": "Минералды жылытқыш",
+   "zh": "保温棉",
+   "en": "Mineral wool insulation"
+  },
+  "synonyms": {
+   "ru": [
+    "утеплитель",
+    "минвата",
+    "вата минеральная"
+   ],
+   "zh": [
+    "保温棉",
+    "岩棉",
+    "矿棉"
+   ],
+   "en": [
+    "insulation",
+    "mineral wool",
+    "rock wool"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "roof_sheet",
+  "hsCode": "721070",
+  "category": "METAL",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 130,
+  "name": {
+   "ru": "Профнастил",
+   "kk": "Профнастил",
+   "zh": "彩钢板",
+   "en": "Profiled roofing sheet"
+  },
+  "synonyms": {
+   "ru": [
+    "профнастил",
+    "металлочерепица",
+    "профлист"
+   ],
+   "zh": [
+    "彩钢板",
+    "压型钢板"
+   ],
+   "en": [
+    "roofing sheet",
+    "corrugated sheet"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "doors",
+  "hsCode": "441829",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 140,
+  "name": {
+   "ru": "Двери деревянные",
+   "kk": "Ағаш есіктер",
+   "zh": "木门",
+   "en": "Wooden doors"
+  },
+  "synonyms": {
+   "ru": [
+    "двери",
+    "межкомнатные двери"
+   ],
+   "zh": [
+    "门",
+    "木门"
+   ],
+   "en": [
+    "doors",
+    "wooden doors"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "metal_doors",
+  "hsCode": "730830",
+  "category": "METAL",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 150,
+  "name": {
+   "ru": "Двери металлические",
+   "kk": "Металл есіктер",
+   "zh": "钢制门",
+   "en": "Steel doors"
+  },
+  "synonyms": {
+   "ru": [
+    "металлические двери",
+    "входные двери"
+   ],
+   "zh": [
+    "防盗门",
+    "钢门"
+   ],
+   "en": [
+    "steel doors",
+    "metal doors"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "windows_pvc",
+  "hsCode": "392520",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 160,
+  "name": {
+   "ru": "Окна пластиковые",
+   "kk": "Пластик терезелер",
+   "zh": "塑钢窗",
+   "en": "PVC windows"
+  },
+  "synonyms": {
+   "ru": [
+    "окна",
+    "пластиковые окна",
+    "стеклопакеты"
+   ],
+   "zh": [
+    "窗户",
+    "塑钢窗"
+   ],
+   "en": [
+    "windows",
+    "pvc windows"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "bricks",
+  "hsCode": "690410",
+  "category": "CONSTRUCTION",
+  "bodyType": "FLATBED",
+  "isDangerous": false,
+  "sortOrder": 170,
+  "name": {
+   "ru": "Кирпич",
+   "kk": "Кірпіш",
+   "zh": "砖",
+   "en": "Bricks"
+  },
+  "synonyms": {
+   "ru": [
+    "кирпич"
+   ],
+   "zh": [
+    "砖",
+    "砖块"
+   ],
+   "en": [
+    "bricks"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "stone_slab",
+  "hsCode": "680291",
+  "category": "CONSTRUCTION",
+  "bodyType": "FLATBED",
+  "isDangerous": false,
+  "sortOrder": 180,
+  "name": {
+   "ru": "Мрамор, гранит (плиты)",
+   "kk": "Мәрмәр, гранит (тақталар)",
+   "zh": "石材板",
+   "en": "Stone slabs"
+  },
+  "synonyms": {
+   "ru": [
+    "мрамор",
+    "гранит",
+    "камень",
+    "плиты каменные"
+   ],
+   "zh": [
+    "大理石",
+    "花岗岩",
+    "石材"
+   ],
+   "en": [
+    "marble",
+    "granite",
+    "stone"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "sanitary_fittings",
+  "hsCode": "848180",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 190,
+  "name": {
+   "ru": "Смесители и краны",
+   "kk": "Араластырғыштар мен крандар",
+   "zh": "水龙头",
+   "en": "Taps and valves"
+  },
+  "synonyms": {
+   "ru": [
+    "смеситель",
+    "кран",
+    "вентиль",
+    "арматура"
+   ],
+   "zh": [
+    "水龙头",
+    "阀门"
+   ],
+   "en": [
+    "faucet",
+    "tap",
+    "valve"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "bathtubs",
+  "hsCode": "392210",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 200,
+  "name": {
+   "ru": "Ванны и душевые кабины",
+   "kk": "Ванналар мен душ кабиналары",
+   "zh": "浴缸",
+   "en": "Bathtubs and shower cabins"
+  },
+  "synonyms": {
+   "ru": [
+    "ванна",
+    "душевая кабина"
+   ],
+   "zh": [
+    "浴缸",
+    "淋浴房"
+   ],
+   "en": [
+    "bathtub",
+    "shower cabin"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "rebar",
+  "hsCode": "721420",
+  "category": "METAL",
+  "bodyType": "FLATBED",
+  "isDangerous": false,
+  "sortOrder": 210,
+  "name": {
+   "ru": "Арматура",
+   "kk": "Арматура",
+   "zh": "螺纹钢",
+   "en": "Rebar"
+  },
+  "synonyms": {
+   "ru": [
+    "арматура",
+    "прут"
+   ],
+   "zh": [
+    "螺纹钢",
+    "钢筋"
+   ],
+   "en": [
+    "rebar",
+    "reinforcing bar"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "steel_sheet",
+  "hsCode": "720839",
+  "category": "METAL",
+  "bodyType": "FLATBED",
+  "isDangerous": false,
+  "sortOrder": 220,
+  "name": {
+   "ru": "Лист стальной",
+   "kk": "Болат табақ",
+   "zh": "钢板",
+   "en": "Steel sheet"
+  },
+  "synonyms": {
+   "ru": [
+    "лист стальной",
+    "металлолист",
+    "стальной лист"
+   ],
+   "zh": [
+    "钢板",
+    "卷板"
+   ],
+   "en": [
+    "steel sheet",
+    "steel plate"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "steel_coil",
+  "hsCode": "720827",
+  "category": "METAL",
+  "bodyType": "FLATBED",
+  "isDangerous": false,
+  "sortOrder": 230,
+  "name": {
+   "ru": "Рулонная сталь",
+   "kk": "Орама болат",
+   "zh": "钢卷",
+   "en": "Steel coils"
+  },
+  "synonyms": {
+   "ru": [
+    "рулон",
+    "рулонная сталь",
+    "штрипс"
+   ],
+   "zh": [
+    "钢卷",
+    "卷钢"
+   ],
+   "en": [
+    "steel coil"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "steel_pipes",
+  "hsCode": "730630",
+  "category": "METAL",
+  "bodyType": "FLATBED",
+  "isDangerous": false,
+  "sortOrder": 240,
+  "name": {
+   "ru": "Трубы стальные",
+   "kk": "Болат құбырлар",
+   "zh": "钢管",
+   "en": "Steel pipes"
+  },
+  "synonyms": {
+   "ru": [
+    "трубы",
+    "трубы стальные",
+    "профильная труба"
+   ],
+   "zh": [
+    "钢管",
+    "无缝钢管"
+   ],
+   "en": [
+    "steel pipe",
+    "steel tube"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "steel_profile",
+  "hsCode": "721631",
+  "category": "METAL",
+  "bodyType": "FLATBED",
+  "isDangerous": false,
+  "sortOrder": 250,
+  "name": {
+   "ru": "Металлопрокат (балка, швеллер, уголок)",
+   "kk": "Металл прокат",
+   "zh": "型钢",
+   "en": "Steel sections"
+  },
+  "synonyms": {
+   "ru": [
+    "балка",
+    "швеллер",
+    "уголок",
+    "металлопрокат"
+   ],
+   "zh": [
+    "型钢",
+    "工字钢",
+    "槽钢",
+    "角钢"
+   ],
+   "en": [
+    "beam",
+    "channel",
+    "angle"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "aluminium_profile",
+  "hsCode": "760429",
+  "category": "METAL",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 260,
+  "name": {
+   "ru": "Профиль алюминиевый",
+   "kk": "Алюминий профиль",
+   "zh": "铝型材",
+   "en": "Aluminium profiles"
+  },
+  "synonyms": {
+   "ru": [
+    "алюминиевый профиль",
+    "алюминий"
+   ],
+   "zh": [
+    "铝型材",
+    "铝材"
+   ],
+   "en": [
+    "aluminium profile",
+    "aluminum"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "wire",
+  "hsCode": "721710",
+  "category": "METAL",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 270,
+  "name": {
+   "ru": "Проволока стальная",
+   "kk": "Болат сым",
+   "zh": "钢丝",
+   "en": "Steel wire"
+  },
+  "synonyms": {
+   "ru": [
+    "проволока"
+   ],
+   "zh": [
+    "钢丝",
+    "铁丝"
+   ],
+   "en": [
+    "wire",
+    "steel wire"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "fasteners",
+  "hsCode": "731815",
+  "category": "METAL",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 280,
+  "name": {
+   "ru": "Крепёж (болты, гайки)",
+   "kk": "Бекіткіштер",
+   "zh": "紧固件",
+   "en": "Fasteners"
+  },
+  "synonyms": {
+   "ru": [
+    "болты",
+    "гайки",
+    "саморезы",
+    "крепеж",
+    "метизы"
+   ],
+   "zh": [
+    "螺丝",
+    "螺栓",
+    "紧固件"
+   ],
+   "en": [
+    "bolts",
+    "screws",
+    "fasteners"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "steel_structures",
+  "hsCode": "730890",
+  "category": "OVERSIZE",
+  "bodyType": "LOWLOADER",
+  "isDangerous": false,
+  "sortOrder": 290,
+  "name": {
+   "ru": "Металлоконструкции",
+   "kk": "Металл конструкциялар",
+   "zh": "钢结构",
+   "en": "Steel structures"
+  },
+  "synonyms": {
+   "ru": [
+    "металлоконструкции",
+    "каркас",
+    "ферма"
+   ],
+   "zh": [
+    "钢结构"
+   ],
+   "en": [
+    "steel structure",
+    "frame"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "copper",
+  "hsCode": "740311",
+  "category": "METAL",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 300,
+  "name": {
+   "ru": "Медь",
+   "kk": "Мыс",
+   "zh": "铜",
+   "en": "Copper"
+  },
+  "synonyms": {
+   "ru": [
+    "медь",
+    "медный катод"
+   ],
+   "zh": [
+    "铜",
+    "电解铜"
+   ],
+   "en": [
+    "copper"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "cable",
+  "hsCode": "854449",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 310,
+  "name": {
+   "ru": "Кабель электрический",
+   "kk": "Электр кабелі",
+   "zh": "电缆",
+   "en": "Electric cable"
+  },
+  "synonyms": {
+   "ru": [
+    "кабель",
+    "провод"
+   ],
+   "zh": [
+    "电缆",
+    "电线"
+   ],
+   "en": [
+    "cable",
+    "wire"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "machinery_parts",
+  "hsCode": "847990",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 320,
+  "name": {
+   "ru": "Оборудование промышленное",
+   "kk": "Өнеркәсіптік жабдық",
+   "zh": "工业设备",
+   "en": "Industrial equipment"
+  },
+  "synonyms": {
+   "ru": [
+    "оборудование",
+    "станок",
+    "линия",
+    "агрегат"
+   ],
+   "zh": [
+    "设备",
+    "机器",
+    "机械"
+   ],
+   "en": [
+    "equipment",
+    "machinery"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "cnc_machines",
+  "hsCode": "845811",
+  "category": "OVERSIZE",
+  "bodyType": "LOWLOADER",
+  "isDangerous": false,
+  "sortOrder": 330,
+  "name": {
+   "ru": "Станки",
+   "kk": "Станоктар",
+   "zh": "机床",
+   "en": "Machine tools"
+  },
+  "synonyms": {
+   "ru": [
+    "станок",
+    "токарный станок",
+    "фрезерный станок"
+   ],
+   "zh": [
+    "机床",
+    "车床",
+    "数控机床"
+   ],
+   "en": [
+    "machine tool",
+    "lathe",
+    "cnc"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "excavator",
+  "hsCode": "842952",
+  "category": "OVERSIZE",
+  "bodyType": "LOWLOADER",
+  "isDangerous": false,
+  "sortOrder": 340,
+  "name": {
+   "ru": "Экскаватор",
+   "kk": "Экскаватор",
+   "zh": "挖掘机",
+   "en": "Excavator"
+  },
+  "synonyms": {
+   "ru": [
+    "экскаватор",
+    "спецтехника"
+   ],
+   "zh": [
+    "挖掘机",
+    "挖机"
+   ],
+   "en": [
+    "excavator",
+    "digger"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "loader",
+  "hsCode": "842951",
+  "category": "OVERSIZE",
+  "bodyType": "LOWLOADER",
+  "isDangerous": false,
+  "sortOrder": 350,
+  "name": {
+   "ru": "Погрузчик фронтальный",
+   "kk": "Фронтальды тиегіш",
+   "zh": "装载机",
+   "en": "Wheel loader"
+  },
+  "synonyms": {
+   "ru": [
+    "погрузчик",
+    "фронтальный погрузчик"
+   ],
+   "zh": [
+    "装载机",
+    "铲车"
+   ],
+   "en": [
+    "loader",
+    "wheel loader"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "forklift",
+  "hsCode": "842720",
+  "category": "EQUIPMENT",
+  "bodyType": "FLATBED",
+  "isDangerous": false,
+  "sortOrder": 360,
+  "name": {
+   "ru": "Вилочный погрузчик",
+   "kk": "Ашалы тиегіш",
+   "zh": "叉车",
+   "en": "Forklift"
+  },
+  "synonyms": {
+   "ru": [
+    "погрузчик вилочный",
+    "кара"
+   ],
+   "zh": [
+    "叉车"
+   ],
+   "en": [
+    "forklift"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "tractor",
+  "hsCode": "870194",
+  "category": "OVERSIZE",
+  "bodyType": "LOWLOADER",
+  "isDangerous": false,
+  "sortOrder": 370,
+  "name": {
+   "ru": "Трактор",
+   "kk": "Трактор",
+   "zh": "拖拉机",
+   "en": "Tractor"
+  },
+  "synonyms": {
+   "ru": [
+    "трактор"
+   ],
+   "zh": [
+    "拖拉机"
+   ],
+   "en": [
+    "tractor"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "generator",
+  "hsCode": "850213",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 380,
+  "name": {
+   "ru": "Генератор",
+   "kk": "Генератор",
+   "zh": "发电机组",
+   "en": "Generator"
+  },
+  "synonyms": {
+   "ru": [
+    "генератор",
+    "электростанция"
+   ],
+   "zh": [
+    "发电机",
+    "发电机组"
+   ],
+   "en": [
+    "generator",
+    "genset"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "compressor",
+  "hsCode": "841440",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 390,
+  "name": {
+   "ru": "Компрессор",
+   "kk": "Компрессор",
+   "zh": "空压机",
+   "en": "Compressor"
+  },
+  "synonyms": {
+   "ru": [
+    "компрессор"
+   ],
+   "zh": [
+    "空压机",
+    "压缩机"
+   ],
+   "en": [
+    "compressor"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "pumps",
+  "hsCode": "841370",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 400,
+  "name": {
+   "ru": "Насосы",
+   "kk": "Сорғылар",
+   "zh": "水泵",
+   "en": "Pumps"
+  },
+  "synonyms": {
+   "ru": [
+    "насос",
+    "насосы"
+   ],
+   "zh": [
+    "水泵",
+    "泵"
+   ],
+   "en": [
+    "pump",
+    "pumps"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "transformer",
+  "hsCode": "850423",
+  "category": "OVERSIZE",
+  "bodyType": "LOWLOADER",
+  "isDangerous": false,
+  "sortOrder": 410,
+  "name": {
+   "ru": "Трансформатор",
+   "kk": "Трансформатор",
+   "zh": "变压器",
+   "en": "Transformer"
+  },
+  "synonyms": {
+   "ru": [
+    "трансформатор"
+   ],
+   "zh": [
+    "变压器"
+   ],
+   "en": [
+    "transformer"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "solar_panels",
+  "hsCode": "854143",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 420,
+  "name": {
+   "ru": "Солнечные панели",
+   "kk": "Күн панельдері",
+   "zh": "太阳能板",
+   "en": "Solar panels"
+  },
+  "synonyms": {
+   "ru": [
+    "солнечные панели",
+    "солнечные батареи"
+   ],
+   "zh": [
+    "太阳能板",
+    "光伏板"
+   ],
+   "en": [
+    "solar panel",
+    "pv module"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "electric_motors",
+  "hsCode": "850152",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 430,
+  "name": {
+   "ru": "Электродвигатели",
+   "kk": "Электр қозғалтқыштары",
+   "zh": "电机",
+   "en": "Electric motors"
+  },
+  "synonyms": {
+   "ru": [
+    "электродвигатель",
+    "мотор"
+   ],
+   "zh": [
+    "电机",
+    "电动机"
+   ],
+   "en": [
+    "electric motor"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "agri_machinery",
+  "hsCode": "843680",
+  "category": "OVERSIZE",
+  "bodyType": "LOWLOADER",
+  "isDangerous": false,
+  "sortOrder": 440,
+  "name": {
+   "ru": "Сельхозтехника",
+   "kk": "Ауыл шаруашылығы техникасы",
+   "zh": "农机",
+   "en": "Agricultural machinery"
+  },
+  "synonyms": {
+   "ru": [
+    "сельхозтехника",
+    "сеялка",
+    "культиватор"
+   ],
+   "zh": [
+    "农机",
+    "农业机械"
+   ],
+   "en": [
+    "agricultural machinery",
+    "seeder"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "welding",
+  "hsCode": "851531",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 450,
+  "name": {
+   "ru": "Сварочное оборудование",
+   "kk": "Дәнекерлеу жабдығы",
+   "zh": "焊机",
+   "en": "Welding equipment"
+  },
+  "synonyms": {
+   "ru": [
+    "сварочный аппарат",
+    "сварка"
+   ],
+   "zh": [
+    "焊机",
+    "电焊机"
+   ],
+   "en": [
+    "welding machine"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "elevator",
+  "hsCode": "842810",
+  "category": "OVERSIZE",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 460,
+  "name": {
+   "ru": "Лифты и эскалаторы",
+   "kk": "Лифттер мен эскалаторлар",
+   "zh": "电梯",
+   "en": "Lifts and escalators"
+  },
+  "synonyms": {
+   "ru": [
+    "лифт",
+    "эскалатор"
+   ],
+   "zh": [
+    "电梯",
+    "扶梯"
+   ],
+   "en": [
+    "elevator",
+    "lift",
+    "escalator"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "packaging_machine",
+  "hsCode": "842240",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 470,
+  "name": {
+   "ru": "Упаковочное оборудование",
+   "kk": "Орау жабдығы",
+   "zh": "包装机",
+   "en": "Packaging machines"
+  },
+  "synonyms": {
+   "ru": [
+    "упаковочное оборудование",
+    "фасовочная машина"
+   ],
+   "zh": [
+    "包装机"
+   ],
+   "en": [
+    "packaging machine"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "textile_machine",
+  "hsCode": "844400",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 480,
+  "name": {
+   "ru": "Текстильное оборудование",
+   "kk": "Тоқыма жабдығы",
+   "zh": "纺织机械",
+   "en": "Textile machinery"
+  },
+  "synonyms": {
+   "ru": [
+    "текстильное оборудование",
+    "швейное оборудование"
+   ],
+   "zh": [
+    "纺织机",
+    "纺织机械"
+   ],
+   "en": [
+    "textile machinery"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "sewing_machines",
+  "hsCode": "845221",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 490,
+  "name": {
+   "ru": "Швейные машины",
+   "kk": "Тігін машиналары",
+   "zh": "缝纫机",
+   "en": "Sewing machines"
+  },
+  "synonyms": {
+   "ru": [
+    "швейная машина"
+   ],
+   "zh": [
+    "缝纫机"
+   ],
+   "en": [
+    "sewing machine"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "phones",
+  "hsCode": "851713",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 500,
+  "name": {
+   "ru": "Телефоны",
+   "kk": "Телефондар",
+   "zh": "手机",
+   "en": "Mobile phones"
+  },
+  "synonyms": {
+   "ru": [
+    "телефон",
+    "смартфон",
+    "мобильный"
+   ],
+   "zh": [
+    "手机",
+    "智能手机"
+   ],
+   "en": [
+    "phone",
+    "smartphone",
+    "mobile"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "computers",
+  "hsCode": "847130",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 510,
+  "name": {
+   "ru": "Ноутбуки и компьютеры",
+   "kk": "Ноутбуктер мен компьютерлер",
+   "zh": "笔记本电脑",
+   "en": "Laptops and computers"
+  },
+  "synonyms": {
+   "ru": [
+    "ноутбук",
+    "компьютер",
+    "планшет"
+   ],
+   "zh": [
+    "电脑",
+    "笔记本",
+    "平板"
+   ],
+   "en": [
+    "laptop",
+    "computer",
+    "tablet"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "tv",
+  "hsCode": "852872",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 520,
+  "name": {
+   "ru": "Телевизоры",
+   "kk": "Теледидарлар",
+   "zh": "电视机",
+   "en": "TV sets"
+  },
+  "synonyms": {
+   "ru": [
+    "телевизор",
+    "тв"
+   ],
+   "zh": [
+    "电视",
+    "电视机"
+   ],
+   "en": [
+    "tv",
+    "television"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "fridges",
+  "hsCode": "841810",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 530,
+  "name": {
+   "ru": "Холодильники",
+   "kk": "Тоңазытқыштар",
+   "zh": "冰箱",
+   "en": "Refrigerators"
+  },
+  "synonyms": {
+   "ru": [
+    "холодильник",
+    "морозильник"
+   ],
+   "zh": [
+    "冰箱",
+    "冰柜"
+   ],
+   "en": [
+    "fridge",
+    "refrigerator",
+    "freezer"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "washing_machines",
+  "hsCode": "845011",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 540,
+  "name": {
+   "ru": "Стиральные машины",
+   "kk": "Кір жуғыш машиналар",
+   "zh": "洗衣机",
+   "en": "Washing machines"
+  },
+  "synonyms": {
+   "ru": [
+    "стиральная машина",
+    "стиралка"
+   ],
+   "zh": [
+    "洗衣机"
+   ],
+   "en": [
+    "washing machine"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "air_conditioners",
+  "hsCode": "841510",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 550,
+  "name": {
+   "ru": "Кондиционеры",
+   "kk": "Кондиционерлер",
+   "zh": "空调",
+   "en": "Air conditioners"
+  },
+  "synonyms": {
+   "ru": [
+    "кондиционер",
+    "сплит-система"
+   ],
+   "zh": [
+    "空调"
+   ],
+   "en": [
+    "air conditioner"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "microwaves",
+  "hsCode": "851650",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 560,
+  "name": {
+   "ru": "Микроволновые печи",
+   "kk": "Микротолқынды пештер",
+   "zh": "微波炉",
+   "en": "Microwave ovens"
+  },
+  "synonyms": {
+   "ru": [
+    "микроволновка",
+    "свч"
+   ],
+   "zh": [
+    "微波炉"
+   ],
+   "en": [
+    "microwave"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "small_appliances",
+  "hsCode": "850940",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 570,
+  "name": {
+   "ru": "Мелкая бытовая техника",
+   "kk": "Ұсақ тұрмыстық техника",
+   "zh": "小家电",
+   "en": "Small appliances"
+  },
+  "synonyms": {
+   "ru": [
+    "блендер",
+    "миксер",
+    "чайник",
+    "пылесос",
+    "бытовая техника"
+   ],
+   "zh": [
+    "小家电",
+    "电水壶",
+    "吸尘器",
+    "搅拌机"
+   ],
+   "en": [
+    "small appliances",
+    "kettle",
+    "vacuum cleaner"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "vacuum_cleaners",
+  "hsCode": "850811",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 580,
+  "name": {
+   "ru": "Пылесосы",
+   "kk": "Шаңсорғыштар",
+   "zh": "吸尘器",
+   "en": "Vacuum cleaners"
+  },
+  "synonyms": {
+   "ru": [
+    "пылесос"
+   ],
+   "zh": [
+    "吸尘器"
+   ],
+   "en": [
+    "vacuum cleaner"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "lighting",
+  "hsCode": "940542",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 590,
+  "name": {
+   "ru": "Светильники и лампы",
+   "kk": "Шамдар",
+   "zh": "灯具",
+   "en": "Lamps and lighting"
+  },
+  "synonyms": {
+   "ru": [
+    "светильник",
+    "лампа",
+    "люстра",
+    "светодиодные лампы"
+   ],
+   "zh": [
+    "灯",
+    "灯具",
+    "LED灯"
+   ],
+   "en": [
+    "lamp",
+    "light",
+    "led lighting"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "batteries",
+  "hsCode": "850760",
+  "category": "DANGEROUS",
+  "bodyType": "TENT",
+  "isDangerous": true,
+  "sortOrder": 600,
+  "name": {
+   "ru": "Аккумуляторы литиевые",
+   "kk": "Литий аккумуляторлар",
+   "zh": "锂电池",
+   "en": "Lithium batteries"
+  },
+  "synonyms": {
+   "ru": [
+    "аккумулятор",
+    "литиевые батареи",
+    "батарейки"
+   ],
+   "zh": [
+    "锂电池",
+    "电池"
+   ],
+   "en": [
+    "lithium battery",
+    "battery"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "car_batteries",
+  "hsCode": "850710",
+  "category": "DANGEROUS",
+  "bodyType": "TENT",
+  "isDangerous": true,
+  "sortOrder": 610,
+  "name": {
+   "ru": "Аккумуляторы автомобильные",
+   "kk": "Автомобиль аккумуляторлары",
+   "zh": "汽车电瓶",
+   "en": "Car batteries"
+  },
+  "synonyms": {
+   "ru": [
+    "аккумулятор автомобильный",
+    "акб"
+   ],
+   "zh": [
+    "电瓶",
+    "铅酸电池"
+   ],
+   "en": [
+    "car battery",
+    "lead-acid battery"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "electronics_parts",
+  "hsCode": "854239",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 620,
+  "name": {
+   "ru": "Электронные компоненты",
+   "kk": "Электрондық компоненттер",
+   "zh": "电子元件",
+   "en": "Electronic components"
+  },
+  "synonyms": {
+   "ru": [
+    "микросхемы",
+    "электроника",
+    "платы"
+   ],
+   "zh": [
+    "电子元件",
+    "芯片",
+    "电路板"
+   ],
+   "en": [
+    "electronic components",
+    "chips"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "cctv",
+  "hsCode": "852589",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 630,
+  "name": {
+   "ru": "Камеры видеонаблюдения",
+   "kk": "Бейнебақылау камералары",
+   "zh": "监控摄像头",
+   "en": "CCTV cameras"
+  },
+  "synonyms": {
+   "ru": [
+    "камеры",
+    "видеонаблюдение"
+   ],
+   "zh": [
+    "摄像头",
+    "监控"
+   ],
+   "en": [
+    "cctv",
+    "camera"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "furniture",
+  "hsCode": "940360",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 640,
+  "name": {
+   "ru": "Мебель",
+   "kk": "Жиһаз",
+   "zh": "家具",
+   "en": "Furniture"
+  },
+  "synonyms": {
+   "ru": [
+    "мебель",
+    "шкаф",
+    "стол",
+    "стулья"
+   ],
+   "zh": [
+    "家具",
+    "桌子",
+    "椅子",
+    "柜子"
+   ],
+   "en": [
+    "furniture",
+    "table",
+    "chairs"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "sofas",
+  "hsCode": "940161",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 650,
+  "name": {
+   "ru": "Мягкая мебель",
+   "kk": "Жұмсақ жиһаз",
+   "zh": "沙发",
+   "en": "Upholstered furniture"
+  },
+  "synonyms": {
+   "ru": [
+    "диван",
+    "кресло",
+    "мягкая мебель"
+   ],
+   "zh": [
+    "沙发"
+   ],
+   "en": [
+    "sofa",
+    "armchair"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "mattresses",
+  "hsCode": "940421",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 660,
+  "name": {
+   "ru": "Матрасы",
+   "kk": "Матрастар",
+   "zh": "床垫",
+   "en": "Mattresses"
+  },
+  "synonyms": {
+   "ru": [
+    "матрас"
+   ],
+   "zh": [
+    "床垫"
+   ],
+   "en": [
+    "mattress"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "office_furniture",
+  "hsCode": "940330",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 670,
+  "name": {
+   "ru": "Офисная мебель",
+   "kk": "Кеңсе жиһазы",
+   "zh": "办公家具",
+   "en": "Office furniture"
+  },
+  "synonyms": {
+   "ru": [
+    "офисная мебель",
+    "офисные столы"
+   ],
+   "zh": [
+    "办公家具"
+   ],
+   "en": [
+    "office furniture"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "kitchenware",
+  "hsCode": "732393",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 680,
+  "name": {
+   "ru": "Посуда",
+   "kk": "Ыдыс-аяқ",
+   "zh": "厨具",
+   "en": "Kitchenware"
+  },
+  "synonyms": {
+   "ru": [
+    "посуда",
+    "кастрюли",
+    "сковородки"
+   ],
+   "zh": [
+    "厨具",
+    "锅",
+    "餐具"
+   ],
+   "en": [
+    "kitchenware",
+    "cookware",
+    "pots"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "tableware",
+  "hsCode": "691110",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 690,
+  "name": {
+   "ru": "Посуда фарфоровая",
+   "kk": "Фарфор ыдыс",
+   "zh": "陶瓷餐具",
+   "en": "Porcelain tableware"
+  },
+  "synonyms": {
+   "ru": [
+    "тарелки",
+    "фарфор",
+    "керамическая посуда"
+   ],
+   "zh": [
+    "陶瓷餐具",
+    "盘子",
+    "碗"
+   ],
+   "en": [
+    "porcelain",
+    "plates",
+    "tableware"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "plastic_ware",
+  "hsCode": "392410",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 700,
+  "name": {
+   "ru": "Пластиковая посуда и хозтовары",
+   "kk": "Пластик ыдыс",
+   "zh": "塑料制品",
+   "en": "Plastic household goods"
+  },
+  "synonyms": {
+   "ru": [
+    "пластиковая посуда",
+    "хозтовары",
+    "ведра",
+    "контейнеры"
+   ],
+   "zh": [
+    "塑料制品",
+    "塑料盒"
+   ],
+   "en": [
+    "plastic ware",
+    "household plastics"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "carpets",
+  "hsCode": "570241",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 710,
+  "name": {
+   "ru": "Ковры",
+   "kk": "Кілемдер",
+   "zh": "地毯",
+   "en": "Carpets"
+  },
+  "synonyms": {
+   "ru": [
+    "ковер",
+    "ковры",
+    "палас"
+   ],
+   "zh": [
+    "地毯"
+   ],
+   "en": [
+    "carpet",
+    "rug"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "curtains",
+  "hsCode": "630319",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 720,
+  "name": {
+   "ru": "Шторы и текстиль для дома",
+   "kk": "Перделер",
+   "zh": "窗帘",
+   "en": "Curtains and home textiles"
+  },
+  "synonyms": {
+   "ru": [
+    "шторы",
+    "тюль",
+    "постельное белье",
+    "полотенца"
+   ],
+   "zh": [
+    "窗帘",
+    "床品",
+    "毛巾"
+   ],
+   "en": [
+    "curtains",
+    "bedding",
+    "towels"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "toys",
+  "hsCode": "950300",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 730,
+  "name": {
+   "ru": "Игрушки",
+   "kk": "Ойыншықтар",
+   "zh": "玩具",
+   "en": "Toys"
+  },
+  "synonyms": {
+   "ru": [
+    "игрушки",
+    "детские игрушки"
+   ],
+   "zh": [
+    "玩具"
+   ],
+   "en": [
+    "toys"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "stationery",
+  "hsCode": "482010",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 740,
+  "name": {
+   "ru": "Канцтовары",
+   "kk": "Кеңсе тауарлары",
+   "zh": "文具",
+   "en": "Stationery"
+  },
+  "synonyms": {
+   "ru": [
+    "канцтовары",
+    "тетради",
+    "ручки"
+   ],
+   "zh": [
+    "文具",
+    "本子",
+    "笔"
+   ],
+   "en": [
+    "stationery",
+    "notebooks",
+    "pens"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "sport_goods",
+  "hsCode": "950691",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 750,
+  "name": {
+   "ru": "Спорттовары и тренажёры",
+   "kk": "Спорт тауарлары",
+   "zh": "运动器材",
+   "en": "Sports goods"
+  },
+  "synonyms": {
+   "ru": [
+    "тренажер",
+    "спорттовары",
+    "велотренажер"
+   ],
+   "zh": [
+    "运动器材",
+    "健身器材"
+   ],
+   "en": [
+    "sports equipment",
+    "fitness"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "bicycles",
+  "hsCode": "871200",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 760,
+  "name": {
+   "ru": "Велосипеды",
+   "kk": "Велосипедтер",
+   "zh": "自行车",
+   "en": "Bicycles"
+  },
+  "synonyms": {
+   "ru": [
+    "велосипед"
+   ],
+   "zh": [
+    "自行车"
+   ],
+   "en": [
+    "bicycle",
+    "bike"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "e_scooters",
+  "hsCode": "871160",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 770,
+  "name": {
+   "ru": "Электросамокаты и электровелосипеды",
+   "kk": "Электросамокаттар",
+   "zh": "电动车",
+   "en": "E-scooters and e-bikes"
+  },
+  "synonyms": {
+   "ru": [
+    "электросамокат",
+    "электровелосипед",
+    "мопед"
+   ],
+   "zh": [
+    "电动车",
+    "电动滑板车"
+   ],
+   "en": [
+    "e-scooter",
+    "e-bike"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "cosmetics",
+  "hsCode": "330499",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 780,
+  "name": {
+   "ru": "Косметика",
+   "kk": "Косметика",
+   "zh": "化妆品",
+   "en": "Cosmetics"
+  },
+  "synonyms": {
+   "ru": [
+    "косметика",
+    "крем",
+    "парфюмерия"
+   ],
+   "zh": [
+    "化妆品",
+    "护肤品"
+   ],
+   "en": [
+    "cosmetics",
+    "cream"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "household_chemicals",
+  "hsCode": "340250",
+  "category": "DANGEROUS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 790,
+  "name": {
+   "ru": "Бытовая химия",
+   "kk": "Тұрмыстық химия",
+   "zh": "洗涤用品",
+   "en": "Household chemicals"
+  },
+  "synonyms": {
+   "ru": [
+    "моющие средства",
+    "бытовая химия",
+    "стиральный порошок"
+   ],
+   "zh": [
+    "洗衣粉",
+    "洗涤剂",
+    "清洁剂"
+   ],
+   "en": [
+    "detergent",
+    "washing powder"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "hygiene",
+  "hsCode": "961900",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 800,
+  "name": {
+   "ru": "Подгузники и гигиена",
+   "kk": "Жөргектер мен гигиена",
+   "zh": "纸尿裤",
+   "en": "Diapers and hygiene products"
+  },
+  "synonyms": {
+   "ru": [
+    "подгузники",
+    "памперсы",
+    "прокладки",
+    "салфетки"
+   ],
+   "zh": [
+    "纸尿裤",
+    "尿不湿",
+    "卫生巾"
+   ],
+   "en": [
+    "diapers",
+    "nappies",
+    "pads"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "paper_products",
+  "hsCode": "481810",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 810,
+  "name": {
+   "ru": "Бумажная продукция",
+   "kk": "Қағаз өнімдері",
+   "zh": "纸巾",
+   "en": "Paper products"
+  },
+  "synonyms": {
+   "ru": [
+    "туалетная бумага",
+    "салфетки бумажные",
+    "бумага"
+   ],
+   "zh": [
+    "纸巾",
+    "卫生纸"
+   ],
+   "en": [
+    "tissue",
+    "toilet paper"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "packaging",
+  "hsCode": "481910",
+  "category": "OTHER",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 820,
+  "name": {
+   "ru": "Упаковка, коробки",
+   "kk": "Қаптама, қораптар",
+   "zh": "纸箱",
+   "en": "Packaging, cartons"
+  },
+  "synonyms": {
+   "ru": [
+    "коробки",
+    "упаковка",
+    "картон",
+    "гофрокороб"
+   ],
+   "zh": [
+    "纸箱",
+    "包装",
+    "纸盒"
+   ],
+   "en": [
+    "boxes",
+    "cartons",
+    "packaging"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "plastic_bags",
+  "hsCode": "392321",
+  "category": "OTHER",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 830,
+  "name": {
+   "ru": "Пакеты полиэтиленовые",
+   "kk": "Полиэтилен пакеттер",
+   "zh": "塑料袋",
+   "en": "Plastic bags"
+  },
+  "synonyms": {
+   "ru": [
+    "пакеты",
+    "мешки",
+    "полиэтилен"
+   ],
+   "zh": [
+    "塑料袋",
+    "编织袋"
+   ],
+   "en": [
+    "plastic bags",
+    "sacks"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "clothing",
+  "hsCode": "620342",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 840,
+  "name": {
+   "ru": "Одежда",
+   "kk": "Киім",
+   "zh": "服装",
+   "en": "Clothing"
+  },
+  "synonyms": {
+   "ru": [
+    "одежда",
+    "брюки",
+    "куртки",
+    "текстиль"
+   ],
+   "zh": [
+    "服装",
+    "衣服"
+   ],
+   "en": [
+    "clothes",
+    "clothing",
+    "apparel"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "outerwear",
+  "hsCode": "620140",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 850,
+  "name": {
+   "ru": "Верхняя одежда",
+   "kk": "Сырт киім",
+   "zh": "外套",
+   "en": "Outerwear"
+  },
+  "synonyms": {
+   "ru": [
+    "куртка",
+    "пуховик",
+    "пальто"
+   ],
+   "zh": [
+    "外套",
+    "羽绒服"
+   ],
+   "en": [
+    "jacket",
+    "coat",
+    "down jacket"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "knitwear",
+  "hsCode": "611020",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 860,
+  "name": {
+   "ru": "Трикотаж",
+   "kk": "Трикотаж",
+   "zh": "针织品",
+   "en": "Knitwear"
+  },
+  "synonyms": {
+   "ru": [
+    "трикотаж",
+    "свитер",
+    "футболки"
+   ],
+   "zh": [
+    "针织衫",
+    "毛衣",
+    "T恤"
+   ],
+   "en": [
+    "knitwear",
+    "sweater",
+    "t-shirt"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "footwear",
+  "hsCode": "640299",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 870,
+  "name": {
+   "ru": "Обувь",
+   "kk": "Аяқ киім",
+   "zh": "鞋",
+   "en": "Footwear"
+  },
+  "synonyms": {
+   "ru": [
+    "обувь",
+    "кроссовки",
+    "ботинки",
+    "тапочки"
+   ],
+   "zh": [
+    "鞋",
+    "鞋子",
+    "运动鞋"
+   ],
+   "en": [
+    "shoes",
+    "footwear",
+    "sneakers"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "bags",
+  "hsCode": "420222",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 880,
+  "name": {
+   "ru": "Сумки",
+   "kk": "Сөмкелер",
+   "zh": "箱包",
+   "en": "Bags"
+  },
+  "synonyms": {
+   "ru": [
+    "сумки",
+    "рюкзаки",
+    "чемоданы"
+   ],
+   "zh": [
+    "箱包",
+    "包",
+    "背包"
+   ],
+   "en": [
+    "bags",
+    "backpacks",
+    "suitcases"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "fabric",
+  "hsCode": "540752",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 890,
+  "name": {
+   "ru": "Ткань",
+   "kk": "Мата",
+   "zh": "面料",
+   "en": "Fabric"
+  },
+  "synonyms": {
+   "ru": [
+    "ткань",
+    "текстиль",
+    "рулоны ткани"
+   ],
+   "zh": [
+    "面料",
+    "布料",
+    "布"
+   ],
+   "en": [
+    "fabric",
+    "textile",
+    "cloth"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "yarn",
+  "hsCode": "550922",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 900,
+  "name": {
+   "ru": "Пряжа и нитки",
+   "kk": "Иірілген жіп",
+   "zh": "纱线",
+   "en": "Yarn and thread"
+  },
+  "synonyms": {
+   "ru": [
+    "пряжа",
+    "нитки"
+   ],
+   "zh": [
+    "纱线",
+    "线"
+   ],
+   "en": [
+    "yarn",
+    "thread"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "workwear",
+  "hsCode": "621143",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 910,
+  "name": {
+   "ru": "Спецодежда",
+   "kk": "Арнайы киім",
+   "zh": "工作服",
+   "en": "Workwear"
+  },
+  "synonyms": {
+   "ru": [
+    "спецодежда",
+    "рабочая одежда"
+   ],
+   "zh": [
+    "工作服"
+   ],
+   "en": [
+    "workwear",
+    "uniform"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "hats_gloves",
+  "hsCode": "611610",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 920,
+  "name": {
+   "ru": "Перчатки",
+   "kk": "Қолғаптар",
+   "zh": "手套",
+   "en": "Gloves"
+  },
+  "synonyms": {
+   "ru": [
+    "перчатки",
+    "рабочие перчатки"
+   ],
+   "zh": [
+    "手套"
+   ],
+   "en": [
+    "gloves"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "car_parts",
+  "hsCode": "870899",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 930,
+  "name": {
+   "ru": "Автозапчасти",
+   "kk": "Автобөлшектер",
+   "zh": "汽车配件",
+   "en": "Car parts"
+  },
+  "synonyms": {
+   "ru": [
+    "запчасти",
+    "автозапчасти",
+    "детали"
+   ],
+   "zh": [
+    "汽车配件",
+    "配件",
+    "零件"
+   ],
+   "en": [
+    "car parts",
+    "spare parts",
+    "auto parts"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "tires",
+  "hsCode": "401120",
+  "category": "OTHER",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 940,
+  "name": {
+   "ru": "Шины",
+   "kk": "Шиналар",
+   "zh": "轮胎",
+   "en": "Tires"
+  },
+  "synonyms": {
+   "ru": [
+    "шины",
+    "покрышки",
+    "резина"
+   ],
+   "zh": [
+    "轮胎"
+   ],
+   "en": [
+    "tires",
+    "tyres"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "cars",
+  "hsCode": "870380",
+  "category": "OVERSIZE",
+  "bodyType": "CARCARRIER",
+  "isDangerous": false,
+  "sortOrder": 950,
+  "name": {
+   "ru": "Легковые автомобили",
+   "kk": "Жеңіл автокөліктер",
+   "zh": "小汽车",
+   "en": "Passenger cars"
+  },
+  "synonyms": {
+   "ru": [
+    "машины",
+    "легковые",
+    "автомобили",
+    "электромобили"
+   ],
+   "zh": [
+    "汽车",
+    "轿车",
+    "电动汽车"
+   ],
+   "en": [
+    "cars",
+    "passenger cars",
+    "electric cars"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "trucks",
+  "hsCode": "870423",
+  "category": "OVERSIZE",
+  "bodyType": "LOWLOADER",
+  "isDangerous": false,
+  "sortOrder": 960,
+  "name": {
+   "ru": "Грузовики и тягачи",
+   "kk": "Жүк көліктері",
+   "zh": "卡车",
+   "en": "Trucks"
+  },
+  "synonyms": {
+   "ru": [
+    "грузовик",
+    "тягач",
+    "самосвал"
+   ],
+   "zh": [
+    "卡车",
+    "货车",
+    "牵引车"
+   ],
+   "en": [
+    "truck",
+    "tractor unit"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "trailers",
+  "hsCode": "871639",
+  "category": "OVERSIZE",
+  "bodyType": "LOWLOADER",
+  "isDangerous": false,
+  "sortOrder": 970,
+  "name": {
+   "ru": "Прицепы и полуприцепы",
+   "kk": "Тіркемелер",
+   "zh": "挂车",
+   "en": "Trailers"
+  },
+  "synonyms": {
+   "ru": [
+    "прицеп",
+    "полуприцеп"
+   ],
+   "zh": [
+    "挂车",
+    "半挂车"
+   ],
+   "en": [
+    "trailer",
+    "semi-trailer"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "motorcycles",
+  "hsCode": "871120",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 980,
+  "name": {
+   "ru": "Мотоциклы",
+   "kk": "Мотоциклдер",
+   "zh": "摩托车",
+   "en": "Motorcycles"
+  },
+  "synonyms": {
+   "ru": [
+    "мотоцикл",
+    "мопед"
+   ],
+   "zh": [
+    "摩托车"
+   ],
+   "en": [
+    "motorcycle"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "wheels",
+  "hsCode": "870870",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 990,
+  "name": {
+   "ru": "Диски колёсные",
+   "kk": "Доңғалақ дискілері",
+   "zh": "轮毂",
+   "en": "Wheel rims"
+  },
+  "synonyms": {
+   "ru": [
+    "диски",
+    "колесные диски"
+   ],
+   "zh": [
+    "轮毂"
+   ],
+   "en": [
+    "rims",
+    "wheels"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "engine_oil",
+  "hsCode": "271019",
+  "category": "DANGEROUS",
+  "bodyType": "TENT",
+  "isDangerous": true,
+  "sortOrder": 1000,
+  "name": {
+   "ru": "Масло моторное",
+   "kk": "Мотор майы",
+   "zh": "机油",
+   "en": "Engine oil"
+  },
+  "synonyms": {
+   "ru": [
+    "масло",
+    "моторное масло",
+    "смазка"
+   ],
+   "zh": [
+    "机油",
+    "润滑油"
+   ],
+   "en": [
+    "engine oil",
+    "lubricant"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "vegetables",
+  "hsCode": "070200",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1010,
+  "name": {
+   "ru": "Овощи",
+   "kk": "Көкөністер",
+   "zh": "蔬菜",
+   "en": "Vegetables"
+  },
+  "synonyms": {
+   "ru": [
+    "овощи",
+    "помидоры",
+    "томаты"
+   ],
+   "zh": [
+    "蔬菜",
+    "西红柿"
+   ],
+   "en": [
+    "vegetables",
+    "tomatoes"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "fruits",
+  "hsCode": "080810",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1020,
+  "name": {
+   "ru": "Фрукты",
+   "kk": "Жемістер",
+   "zh": "水果",
+   "en": "Fruits"
+  },
+  "synonyms": {
+   "ru": [
+    "фрукты",
+    "яблоки"
+   ],
+   "zh": [
+    "水果",
+    "苹果"
+   ],
+   "en": [
+    "fruits",
+    "apples"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "citrus",
+  "hsCode": "080510",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1030,
+  "name": {
+   "ru": "Цитрусовые",
+   "kk": "Цитрустар",
+   "zh": "柑橘",
+   "en": "Citrus fruits"
+  },
+  "synonyms": {
+   "ru": [
+    "апельсины",
+    "мандарины",
+    "лимоны"
+   ],
+   "zh": [
+    "橙子",
+    "橘子",
+    "柠檬"
+   ],
+   "en": [
+    "oranges",
+    "mandarins",
+    "lemons"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "grapes",
+  "hsCode": "080610",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1040,
+  "name": {
+   "ru": "Виноград",
+   "kk": "Жүзім",
+   "zh": "葡萄",
+   "en": "Grapes"
+  },
+  "synonyms": {
+   "ru": [
+    "виноград"
+   ],
+   "zh": [
+    "葡萄"
+   ],
+   "en": [
+    "grapes"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "garlic",
+  "hsCode": "070320",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1050,
+  "name": {
+   "ru": "Чеснок",
+   "kk": "Сарымсақ",
+   "zh": "大蒜",
+   "en": "Garlic"
+  },
+  "synonyms": {
+   "ru": [
+    "чеснок"
+   ],
+   "zh": [
+    "大蒜"
+   ],
+   "en": [
+    "garlic"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "onion",
+  "hsCode": "070310",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1060,
+  "name": {
+   "ru": "Лук",
+   "kk": "Пияз",
+   "zh": "洋葱",
+   "en": "Onion"
+  },
+  "synonyms": {
+   "ru": [
+    "лук",
+    "лук репчатый"
+   ],
+   "zh": [
+    "洋葱"
+   ],
+   "en": [
+    "onion"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "potatoes",
+  "hsCode": "070190",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1070,
+  "name": {
+   "ru": "Картофель",
+   "kk": "Картоп",
+   "zh": "土豆",
+   "en": "Potatoes"
+  },
+  "synonyms": {
+   "ru": [
+    "картофель",
+    "картошка"
+   ],
+   "zh": [
+    "土豆",
+    "马铃薯"
+   ],
+   "en": [
+    "potatoes"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "dried_fruits",
+  "hsCode": "081340",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1080,
+  "name": {
+   "ru": "Сухофрукты",
+   "kk": "Кептірілген жемістер",
+   "zh": "干果",
+   "en": "Dried fruits"
+  },
+  "synonyms": {
+   "ru": [
+    "сухофрукты",
+    "изюм",
+    "курага"
+   ],
+   "zh": [
+    "干果",
+    "葡萄干"
+   ],
+   "en": [
+    "dried fruits",
+    "raisins"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "nuts",
+  "hsCode": "080232",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1090,
+  "name": {
+   "ru": "Орехи",
+   "kk": "Жаңғақтар",
+   "zh": "坚果",
+   "en": "Nuts"
+  },
+  "synonyms": {
+   "ru": [
+    "орехи",
+    "грецкий орех"
+   ],
+   "zh": [
+    "坚果",
+    "核桃"
+   ],
+   "en": [
+    "nuts",
+    "walnuts"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "frozen_meat",
+  "hsCode": "020230",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1100,
+  "name": {
+   "ru": "Мясо замороженное",
+   "kk": "Мұздатылған ет",
+   "zh": "冻肉",
+   "en": "Frozen meat"
+  },
+  "synonyms": {
+   "ru": [
+    "мясо",
+    "говядина",
+    "замороженное мясо"
+   ],
+   "zh": [
+    "冻肉",
+    "牛肉"
+   ],
+   "en": [
+    "frozen meat",
+    "beef"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "poultry",
+  "hsCode": "020714",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1110,
+  "name": {
+   "ru": "Мясо птицы",
+   "kk": "Құс еті",
+   "zh": "鸡肉",
+   "en": "Poultry"
+  },
+  "synonyms": {
+   "ru": [
+    "курица",
+    "мясо птицы",
+    "окорочка"
+   ],
+   "zh": [
+    "鸡肉",
+    "冻鸡"
+   ],
+   "en": [
+    "chicken",
+    "poultry"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "fish",
+  "hsCode": "030389",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1120,
+  "name": {
+   "ru": "Рыба замороженная",
+   "kk": "Мұздатылған балық",
+   "zh": "冻鱼",
+   "en": "Frozen fish"
+  },
+  "synonyms": {
+   "ru": [
+    "рыба"
+   ],
+   "zh": [
+    "冻鱼",
+    "鱼"
+   ],
+   "en": [
+    "frozen fish",
+    "fish"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "dairy",
+  "hsCode": "040690",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1130,
+  "name": {
+   "ru": "Молочная продукция",
+   "kk": "Сүт өнімдері",
+   "zh": "乳制品",
+   "en": "Dairy products"
+  },
+  "synonyms": {
+   "ru": [
+    "сыр",
+    "молоко",
+    "молочка"
+   ],
+   "zh": [
+    "奶酪",
+    "乳制品",
+    "牛奶"
+   ],
+   "en": [
+    "cheese",
+    "dairy",
+    "milk"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "flour",
+  "hsCode": "110100",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1140,
+  "name": {
+   "ru": "Мука",
+   "kk": "Ұн",
+   "zh": "面粉",
+   "en": "Flour"
+  },
+  "synonyms": {
+   "ru": [
+    "мука"
+   ],
+   "zh": [
+    "面粉"
+   ],
+   "en": [
+    "flour"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "grain",
+  "hsCode": "100199",
+  "category": "FOOD",
+  "bodyType": "GRAIN",
+  "isDangerous": false,
+  "sortOrder": 1150,
+  "name": {
+   "ru": "Зерно (пшеница)",
+   "kk": "Астық (бидай)",
+   "zh": "小麦",
+   "en": "Grain (wheat)"
+  },
+  "synonyms": {
+   "ru": [
+    "зерно",
+    "пшеница"
+   ],
+   "zh": [
+    "小麦",
+    "粮食"
+   ],
+   "en": [
+    "wheat",
+    "grain"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "barley",
+  "hsCode": "100390",
+  "category": "FOOD",
+  "bodyType": "GRAIN",
+  "isDangerous": false,
+  "sortOrder": 1160,
+  "name": {
+   "ru": "Ячмень",
+   "kk": "Арпа",
+   "zh": "大麦",
+   "en": "Barley"
+  },
+  "synonyms": {
+   "ru": [
+    "ячмень"
+   ],
+   "zh": [
+    "大麦"
+   ],
+   "en": [
+    "barley"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "rice",
+  "hsCode": "100630",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1170,
+  "name": {
+   "ru": "Рис",
+   "kk": "Күріш",
+   "zh": "大米",
+   "en": "Rice"
+  },
+  "synonyms": {
+   "ru": [
+    "рис"
+   ],
+   "zh": [
+    "大米"
+   ],
+   "en": [
+    "rice"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "sugar",
+  "hsCode": "170199",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1180,
+  "name": {
+   "ru": "Сахар",
+   "kk": "Қант",
+   "zh": "白糖",
+   "en": "Sugar"
+  },
+  "synonyms": {
+   "ru": [
+    "сахар"
+   ],
+   "zh": [
+    "白糖",
+    "糖"
+   ],
+   "en": [
+    "sugar"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "vegetable_oil",
+  "hsCode": "151219",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1190,
+  "name": {
+   "ru": "Масло растительное",
+   "kk": "Өсімдік майы",
+   "zh": "植物油",
+   "en": "Vegetable oil"
+  },
+  "synonyms": {
+   "ru": [
+    "подсолнечное масло",
+    "растительное масло"
+   ],
+   "zh": [
+    "葵花籽油",
+    "植物油"
+   ],
+   "en": [
+    "sunflower oil",
+    "vegetable oil"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "tea",
+  "hsCode": "090230",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1200,
+  "name": {
+   "ru": "Чай",
+   "kk": "Шай",
+   "zh": "茶叶",
+   "en": "Tea"
+  },
+  "synonyms": {
+   "ru": [
+    "чай"
+   ],
+   "zh": [
+    "茶叶",
+    "茶"
+   ],
+   "en": [
+    "tea"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "confectionery",
+  "hsCode": "170490",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1210,
+  "name": {
+   "ru": "Кондитерские изделия",
+   "kk": "Кондитер өнімдері",
+   "zh": "糖果",
+   "en": "Confectionery"
+  },
+  "synonyms": {
+   "ru": [
+    "конфеты",
+    "сладости",
+    "печенье"
+   ],
+   "zh": [
+    "糖果",
+    "饼干",
+    "零食"
+   ],
+   "en": [
+    "sweets",
+    "candy",
+    "biscuits"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "canned_food",
+  "hsCode": "200290",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1220,
+  "name": {
+   "ru": "Консервы",
+   "kk": "Консервілер",
+   "zh": "罐头",
+   "en": "Canned food"
+  },
+  "synonyms": {
+   "ru": [
+    "консервы",
+    "томатная паста"
+   ],
+   "zh": [
+    "罐头",
+    "番茄酱"
+   ],
+   "en": [
+    "canned food",
+    "tomato paste"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "noodles",
+  "hsCode": "190230",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1230,
+  "name": {
+   "ru": "Лапша и макароны",
+   "kk": "Кеспе мен макарон",
+   "zh": "面条",
+   "en": "Noodles and pasta"
+  },
+  "synonyms": {
+   "ru": [
+    "лапша",
+    "макароны"
+   ],
+   "zh": [
+    "面条",
+    "方便面"
+   ],
+   "en": [
+    "noodles",
+    "pasta"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "beverages",
+  "hsCode": "220210",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1240,
+  "name": {
+   "ru": "Напитки",
+   "kk": "Сусындар",
+   "zh": "饮料",
+   "en": "Beverages"
+  },
+  "synonyms": {
+   "ru": [
+    "напитки",
+    "вода",
+    "соки"
+   ],
+   "zh": [
+    "饮料",
+    "矿泉水",
+    "果汁"
+   ],
+   "en": [
+    "drinks",
+    "water",
+    "juice"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "feed",
+  "hsCode": "230990",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1250,
+  "name": {
+   "ru": "Корма для животных",
+   "kk": "Мал азығы",
+   "zh": "饲料",
+   "en": "Animal feed"
+  },
+  "synonyms": {
+   "ru": [
+    "корм",
+    "комбикорм"
+   ],
+   "zh": [
+    "饲料"
+   ],
+   "en": [
+    "feed",
+    "animal feed"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "seeds",
+  "hsCode": "120991",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1260,
+  "name": {
+   "ru": "Семена",
+   "kk": "Тұқымдар",
+   "zh": "种子",
+   "en": "Seeds"
+  },
+  "synonyms": {
+   "ru": [
+    "семена"
+   ],
+   "zh": [
+    "种子"
+   ],
+   "en": [
+    "seeds"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "cotton",
+  "hsCode": "520100",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1270,
+  "name": {
+   "ru": "Хлопок",
+   "kk": "Мақта",
+   "zh": "棉花",
+   "en": "Cotton"
+  },
+  "synonyms": {
+   "ru": [
+    "хлопок"
+   ],
+   "zh": [
+    "棉花"
+   ],
+   "en": [
+    "cotton"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "wool",
+  "hsCode": "510111",
+  "category": "OTHER",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1280,
+  "name": {
+   "ru": "Шерсть",
+   "kk": "Жүн",
+   "zh": "羊毛",
+   "en": "Wool"
+  },
+  "synonyms": {
+   "ru": [
+    "шерсть"
+   ],
+   "zh": [
+    "羊毛"
+   ],
+   "en": [
+    "wool"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "hides",
+  "hsCode": "410150",
+  "category": "OTHER",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1290,
+  "name": {
+   "ru": "Кожа и шкуры",
+   "kk": "Тері",
+   "zh": "皮革",
+   "en": "Hides and leather"
+  },
+  "synonyms": {
+   "ru": [
+    "шкуры",
+    "кожа"
+   ],
+   "zh": [
+    "皮革",
+    "牛皮"
+   ],
+   "en": [
+    "hides",
+    "leather"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "fertilizer",
+  "hsCode": "310230",
+  "category": "DANGEROUS",
+  "bodyType": "TENT",
+  "isDangerous": true,
+  "sortOrder": 1300,
+  "name": {
+   "ru": "Удобрения",
+   "kk": "Тыңайтқыштар",
+   "zh": "化肥",
+   "en": "Fertilizers"
+  },
+  "synonyms": {
+   "ru": [
+    "удобрения",
+    "селитра",
+    "карбамид"
+   ],
+   "zh": [
+    "化肥",
+    "尿素"
+   ],
+   "en": [
+    "fertilizer",
+    "urea"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "plastics_raw",
+  "hsCode": "390110",
+  "category": "OTHER",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1310,
+  "name": {
+   "ru": "Полиэтилен в гранулах",
+   "kk": "Түйіршікті полиэтилен",
+   "zh": "聚乙烯颗粒",
+   "en": "Polyethylene granules"
+  },
+  "synonyms": {
+   "ru": [
+    "гранулы",
+    "полиэтилен",
+    "пластик сырье",
+    "полипропилен"
+   ],
+   "zh": [
+    "塑料颗粒",
+    "聚乙烯",
+    "聚丙烯"
+   ],
+   "en": [
+    "plastic granules",
+    "polyethylene",
+    "polypropylene"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "chemicals",
+  "hsCode": "281511",
+  "category": "DANGEROUS",
+  "bodyType": "TENT",
+  "isDangerous": true,
+  "sortOrder": 1320,
+  "name": {
+   "ru": "Химия (каустическая сода и др.)",
+   "kk": "Химия",
+   "zh": "化工品",
+   "en": "Chemicals"
+  },
+  "synonyms": {
+   "ru": [
+    "химия",
+    "каустик",
+    "реактивы",
+    "кислота"
+   ],
+   "zh": [
+    "化工品",
+    "烧碱"
+   ],
+   "en": [
+    "chemicals",
+    "caustic soda"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "gas_cylinders",
+  "hsCode": "271111",
+  "category": "DANGEROUS",
+  "bodyType": "TANK",
+  "isDangerous": true,
+  "sortOrder": 1330,
+  "name": {
+   "ru": "Сжиженный газ",
+   "kk": "Сұйытылған газ",
+   "zh": "液化气",
+   "en": "Liquefied gas"
+  },
+  "synonyms": {
+   "ru": [
+    "газ",
+    "пропан",
+    "сжиженный газ"
+   ],
+   "zh": [
+    "液化气",
+    "丙烷"
+   ],
+   "en": [
+    "lpg",
+    "propane",
+    "gas"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "fuel",
+  "hsCode": "271020",
+  "category": "DANGEROUS",
+  "bodyType": "TANK",
+  "isDangerous": true,
+  "sortOrder": 1340,
+  "name": {
+   "ru": "Топливо (дизель)",
+   "kk": "Отын (дизель)",
+   "zh": "柴油",
+   "en": "Fuel (diesel)"
+  },
+  "synonyms": {
+   "ru": [
+    "дизель",
+    "солярка",
+    "топливо"
+   ],
+   "zh": [
+    "柴油",
+    "燃油"
+   ],
+   "en": [
+    "diesel",
+    "fuel"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "bitumen",
+  "hsCode": "271320",
+  "category": "DANGEROUS",
+  "bodyType": "TANK",
+  "isDangerous": true,
+  "sortOrder": 1350,
+  "name": {
+   "ru": "Битум",
+   "kk": "Битум",
+   "zh": "沥青",
+   "en": "Bitumen"
+  },
+  "synonyms": {
+   "ru": [
+    "битум"
+   ],
+   "zh": [
+    "沥青"
+   ],
+   "en": [
+    "bitumen",
+    "asphalt"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "pesticides",
+  "hsCode": "380893",
+  "category": "DANGEROUS",
+  "bodyType": "TENT",
+  "isDangerous": true,
+  "sortOrder": 1360,
+  "name": {
+   "ru": "Средства защиты растений",
+   "kk": "Өсімдіктерді қорғау құралдары",
+   "zh": "农药",
+   "en": "Pesticides"
+  },
+  "synonyms": {
+   "ru": [
+    "пестициды",
+    "гербициды",
+    "ядохимикаты"
+   ],
+   "zh": [
+    "农药",
+    "除草剂"
+   ],
+   "en": [
+    "pesticides",
+    "herbicides"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "medicines",
+  "hsCode": "300490",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "ISOTHERM",
+  "isDangerous": false,
+  "sortOrder": 1370,
+  "name": {
+   "ru": "Лекарства",
+   "kk": "Дәрілер",
+   "zh": "药品",
+   "en": "Medicines"
+  },
+  "synonyms": {
+   "ru": [
+    "лекарства",
+    "медикаменты"
+   ],
+   "zh": [
+    "药品",
+    "药"
+   ],
+   "en": [
+    "medicines",
+    "drugs"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "medical_equipment",
+  "hsCode": "901890",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1380,
+  "name": {
+   "ru": "Медицинское оборудование",
+   "kk": "Медициналық жабдық",
+   "zh": "医疗设备",
+   "en": "Medical equipment"
+  },
+  "synonyms": {
+   "ru": [
+    "медоборудование",
+    "медицинская техника"
+   ],
+   "zh": [
+    "医疗设备",
+    "医疗器械"
+   ],
+   "en": [
+    "medical equipment"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "ppe",
+  "hsCode": "630790",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1390,
+  "name": {
+   "ru": "Маски и СИЗ",
+   "kk": "Маскалар мен ЖҚҚ",
+   "zh": "口罩",
+   "en": "Masks and PPE"
+  },
+  "synonyms": {
+   "ru": [
+    "маски",
+    "сиз",
+    "защитные средства"
+   ],
+   "zh": [
+    "口罩",
+    "防护用品"
+   ],
+   "en": [
+    "masks",
+    "ppe"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "coal",
+  "hsCode": "270112",
+  "category": "DANGEROUS",
+  "bodyType": "DUMP",
+  "isDangerous": false,
+  "sortOrder": 1400,
+  "name": {
+   "ru": "Уголь",
+   "kk": "Көмір",
+   "zh": "煤",
+   "en": "Coal"
+  },
+  "synonyms": {
+   "ru": [
+    "уголь"
+   ],
+   "zh": [
+    "煤",
+    "煤炭"
+   ],
+   "en": [
+    "coal"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "ore",
+  "hsCode": "260300",
+  "category": "OTHER",
+  "bodyType": "DUMP",
+  "isDangerous": false,
+  "sortOrder": 1410,
+  "name": {
+   "ru": "Руда, концентрат",
+   "kk": "Кен, концентрат",
+   "zh": "矿石",
+   "en": "Ore, concentrate"
+  },
+  "synonyms": {
+   "ru": [
+    "руда",
+    "концентрат"
+   ],
+   "zh": [
+    "矿石",
+    "精矿"
+   ],
+   "en": [
+    "ore",
+    "concentrate"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "sand_gravel",
+  "hsCode": "251710",
+  "category": "CONSTRUCTION",
+  "bodyType": "DUMP",
+  "isDangerous": false,
+  "sortOrder": 1420,
+  "name": {
+   "ru": "Щебень, песок",
+   "kk": "Қиыршық тас, құм",
+   "zh": "碎石",
+   "en": "Crushed stone, sand"
+  },
+  "synonyms": {
+   "ru": [
+    "щебень",
+    "песок",
+    "гравий"
+   ],
+   "zh": [
+    "碎石",
+    "沙子"
+   ],
+   "en": [
+    "gravel",
+    "sand",
+    "crushed stone"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "scrap",
+  "hsCode": "720449",
+  "category": "METAL",
+  "bodyType": "DUMP",
+  "isDangerous": false,
+  "sortOrder": 1430,
+  "name": {
+   "ru": "Металлолом",
+   "kk": "Металл сынығы",
+   "zh": "废钢",
+   "en": "Scrap metal"
+  },
+  "synonyms": {
+   "ru": [
+    "металлолом",
+    "лом"
+   ],
+   "zh": [
+    "废钢",
+    "废铁"
+   ],
+   "en": [
+    "scrap",
+    "scrap metal"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "containers_empty",
+  "hsCode": "860900",
+  "category": "OTHER",
+  "bodyType": "CONTAINER",
+  "isDangerous": false,
+  "sortOrder": 1440,
+  "name": {
+   "ru": "Контейнеры порожние",
+   "kk": "Бос контейнерлер",
+   "zh": "空集装箱",
+   "en": "Empty containers"
+  },
+  "synonyms": {
+   "ru": [
+    "контейнер",
+    "пустой контейнер"
+   ],
+   "zh": [
+    "集装箱",
+    "空箱"
+   ],
+   "en": [
+    "container",
+    "empty container"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "consolidated",
+  "hsCode": null,
+  "category": "OTHER",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1450,
+  "name": {
+   "ru": "Сборный груз",
+   "kk": "Құрама жүк",
+   "zh": "拼箱货",
+   "en": "Groupage cargo"
+  },
+  "synonyms": {
+   "ru": [
+    "сборный груз",
+    "сборка",
+    "разное",
+    "консолидированный"
+   ],
+   "zh": [
+    "拼箱",
+    "杂货",
+    "散货"
+   ],
+   "en": [
+    "groupage",
+    "mixed cargo",
+    "consolidated"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "greenhouse",
+  "hsCode": "940690",
+  "category": "CONSTRUCTION",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1460,
+  "name": {
+   "ru": "Теплицы и конструкции",
+   "kk": "Жылыжайлар",
+   "zh": "温室",
+   "en": "Greenhouses"
+  },
+  "synonyms": {
+   "ru": [
+    "теплица",
+    "теплицы"
+   ],
+   "zh": [
+    "温室",
+    "大棚"
+   ],
+   "en": [
+    "greenhouse"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "pallets_wood",
+  "hsCode": "441520",
+  "category": "OTHER",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1470,
+  "name": {
+   "ru": "Поддоны деревянные",
+   "kk": "Ағаш поддондар",
+   "zh": "托盘",
+   "en": "Wooden pallets"
+  },
+  "synonyms": {
+   "ru": [
+    "поддоны",
+    "паллеты"
+   ],
+   "zh": [
+    "托盘",
+    "木托盘"
+   ],
+   "en": [
+    "pallets",
+    "wooden pallets"
+   ],
+   "kk": []
+  }
+ }
+]

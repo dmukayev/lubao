@@ -54,12 +54,12 @@ void main() {
       // 072: кнопка активна всегда — без оферты под галочкой ошибка, экран к ней.
       final submit = find.byKey(const Key('companyRegisterSubmit'));
       await reveal(tester, submit);
+      expect(find.byKey(const Key('legalLoginNotice')), findsOneWidget);
       await tester.tap(submit);
       await tester.pumpAndSettle();
       await waitFor(tester, find.byKey(const Key('companyRegisterOfferError')));
       expect(find.text(t.navDrivers), findsNothing, reason: 'без оферты регистрироваться нельзя');
       expect(find.byKey(const Key('companyRegisterOfferLink')), findsOneWidget);
-      expect(find.byKey(const Key('legalLoginNotice')), findsOneWidget);
       final offer = find.byKey(const Key('companyRegisterOfferCheckbox'));
       await reveal(tester, offer);
       await tester.tap(offer);

@@ -1,0 +1,386 @@
+[
+ {
+  "chapter": "01",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "02",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "03",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "04",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "05",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "06",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "07",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "08",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "09",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "10",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "11",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "12",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "13",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "14",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "15",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "16",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "17",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "18",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "19",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "20",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "21",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "22",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "23",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "24",
+  "category": "FOOD"
+ },
+ {
+  "chapter": "25",
+  "category": "CONSTRUCTION"
+ },
+ {
+  "chapter": "26",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "27",
+  "category": "DANGEROUS"
+ },
+ {
+  "chapter": "28",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "29",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "30",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "31",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "32",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "33",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "34",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "35",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "36",
+  "category": "DANGEROUS"
+ },
+ {
+  "chapter": "37",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "38",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "39",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "40",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "41",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "42",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "43",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "44",
+  "category": "CONSTRUCTION"
+ },
+ {
+  "chapter": "45",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "46",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "47",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "48",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "49",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "50",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "51",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "52",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "53",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "54",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "55",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "56",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "57",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "58",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "59",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "60",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "61",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "62",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "63",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "64",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "65",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "66",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "67",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "68",
+  "category": "CONSTRUCTION"
+ },
+ {
+  "chapter": "69",
+  "category": "CONSTRUCTION"
+ },
+ {
+  "chapter": "70",
+  "category": "CONSTRUCTION"
+ },
+ {
+  "chapter": "71",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "72",
+  "category": "METAL"
+ },
+ {
+  "chapter": "73",
+  "category": "METAL"
+ },
+ {
+  "chapter": "74",
+  "category": "METAL"
+ },
+ {
+  "chapter": "75",
+  "category": "METAL"
+ },
+ {
+  "chapter": "76",
+  "category": "METAL"
+ },
+ {
+  "chapter": "78",
+  "category": "METAL"
+ },
+ {
+  "chapter": "79",
+  "category": "METAL"
+ },
+ {
+  "chapter": "80",
+  "category": "METAL"
+ },
+ {
+  "chapter": "81",
+  "category": "METAL"
+ },
+ {
+  "chapter": "82",
+  "category": "METAL"
+ },
+ {
+  "chapter": "83",
+  "category": "METAL"
+ },
+ {
+  "chapter": "84",
+  "category": "EQUIPMENT"
+ },
+ {
+  "chapter": "85",
+  "category": "EQUIPMENT"
+ },
+ {
+  "chapter": "86",
+  "category": "OVERSIZE"
+ },
+ {
+  "chapter": "87",
+  "category": "EQUIPMENT"
+ },
+ {
+  "chapter": "88",
+  "category": "OVERSIZE"
+ },
+ {
+  "chapter": "89",
+  "category": "OVERSIZE"
+ },
+ {
+  "chapter": "90",
+  "category": "EQUIPMENT"
+ },
+ {
+  "chapter": "91",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "92",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "93",
+  "category": "OTHER"
+ },
+ {
+  "chapter": "94",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "95",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "96",
+  "category": "CONSUMER_GOODS"
+ },
+ {
+  "chapter": "97",
+  "category": "OTHER"
+ }
+]
