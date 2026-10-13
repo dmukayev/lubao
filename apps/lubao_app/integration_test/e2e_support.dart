@@ -724,23 +724,31 @@ Future<void> completeDriverWizard(WidgetTester tester, String fullName) async {
 }
 
 /// 075: «Что везёте?» — ввести запрос и выбрать первую подсказку (или «Добавить»).
-Future<void> pickGoods(WidgetTester tester, String query, {bool addOwn = false}) async {
+/// Возвращает текст выбранной подсказки (название товара или «Добавить: „…“»).
+Future<String> pickGoods(WidgetTester tester, String query, {bool addOwn = false}) async {
   final field = find.byKey(const Key('postCargoWhat'));
   await reveal(tester, field);
   await tester.enterText(field, query);
   await tester.pump(const Duration(milliseconds: 400));
   final target = find.byKey(Key(addOwn ? 'postCargoWhatAdd' : 'goodsHit-0'));
   await waitAndReveal(tester, target);
+  final label = tester.widget<Text>(find.descendant(of: target, matching: find.byType(Text)).first).data ?? '';
   await tester.tap(target);
   await tester.pumpAndSettle();
+  return label;
 }
 
-/// 075: текст поля «Что везёте?» — само поле после выбора может уйти за
-/// край экрана (find.text его не видит), поэтому — из контроллера.
-String goodsFieldText(WidgetTester tester) => tester
-    .widget<EditableText>(find.descendant(of: find.byKey(const Key('postCargoWhat'), skipOffstage: false), matching: find.byType(EditableText), skipOffstage: false))
-    .controller
-    .text;
+/// 075: текст поля «Что везёте?». После выбора список формы может стоять ниже
+/// поля (подсказки закрылись) — сначала прокрутить к нему вверх.
+Future<String> goodsFieldText(WidgetTester tester) async {
+  final field = find.byKey(const Key('postCargoWhat'));
+  if (field.evaluate().isEmpty) {
+    final list = find.ancestor(of: find.byKey(const Key('postCargoBodyType')), matching: find.byType(Scrollable)).first;
+    await tester.dragUntilVisible(field, list, const Offset(0, 300));
+    await tester.pumpAndSettle();
+  }
+  return tester.widget<EditableText>(find.descendant(of: field, matching: find.byType(EditableText))).controller.text;
+}
 
 /// 072: незаполненное поле — в видимой части экрана, с ошибкой и фокусом.
 void expectFieldShownWithError(WidgetTester tester, Key fieldKey, {bool focused = true}) {

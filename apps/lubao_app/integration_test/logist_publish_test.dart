@@ -112,8 +112,8 @@ void main() {
       await pickCityByName(tester, 'Astana', 'Астана');
       expect(find.text(t.postCargoPickupCityError), findsNothing);
       // 075: «6907» → «Плитка керамическая» → категория «Стройматериалы» сама.
-      await pickGoods(tester, '6907');
-      expect(goodsFieldText(tester), 'Плитка керамическая');
+      expect(await pickGoods(tester, '6907'), 'Плитка керамическая');
+      expect(await goodsFieldText(tester), 'Плитка керамическая');
       expect(find.byKey(const Key('postCargoCategoryError')), findsNothing);
       // 049 п.1: догруз выключен флагом — переключателя «Можно догрузом» нет.
       expect(find.byKey(const Key('postCargoAllowPartial')), findsNothing);
