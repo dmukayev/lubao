@@ -23,9 +23,9 @@ test('справочник: галочка «Паллеты» у типа куз
       await edit.first().click();
       await page.getByText('Профиль и поля').first().click();
       const dialog = page.getByRole('alertdialog');
-      const pallets = dialog.getByRole('checkbox', { name: /Паллеты/ });
+      // Подсказка — в подписи галочки (Flutter склеивает заголовок и подзаголовок).
+      const pallets = dialog.getByRole('checkbox', { name: /Паллеты[\s\S]*учитывать его в подборе/ });
       await expect(pallets).toBeVisible();
-      await expect(dialog.getByText(/учитывать его в подборе/)).toBeVisible();
       await pallets.click();
       await typeInto(page, dialog.getByRole('textbox').last(), 'E2E 068');
       await dialog.getByRole('button', { name: 'Сохранить' }).click();
