@@ -145,6 +145,8 @@ void main() {
       await waitAndReveal(tester, find.byKey(Key('companyVerifiedBadge-${verified['id']}')));
       expect(find.text(t.companyBadgeVerified), findsWidgets);
       expectNoOverflow(tester);
+      // Карточка могла уехать за экран, пока искали плашку другой компании.
+      await waitAndReveal(tester, find.byKey(Key('feedCargoCard-$cargoId')));
       await tester.tap(find.byKey(Key('feedCargoCard-$cargoId')));
       await waitFor(tester, find.byKey(const Key('companyUnverifiedBadge-detail')));
       expectInsideSafeZone(tester);

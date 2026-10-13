@@ -104,7 +104,8 @@ void main() {
       final button = tester.widget<PrimaryButton>(submit);
       expect(button.onPressed, isNotNull, reason: '066: «Опубликовать» активна у непроверенной компании');
       expectInsideSafeZone(tester);
-      await tester.pageBack();
+      Navigator.of(tester.element(submit)).pop();
+      await tester.pumpAndSettle();
       await waitFor(tester, find.byKey(const Key('companyPostCargoFab')));
     });
   });
