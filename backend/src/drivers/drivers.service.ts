@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { Driver, Prisma, VerificationDocType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { leaveTerminalIfOutside } from '../arrivals/arrival-lifecycle';
@@ -31,6 +32,7 @@ export class DriversService {
     private readonly identifiers?: IdentifiersService,
     private readonly recognition?: RecognitionService,
     private readonly uploads?: UploadsService,
+    @Optional() private readonly realtime?: RealtimeGateway,
   ) {}
 
   private async verificationStatus(userId: string, isVerified: boolean): Promise<'NONE' | 'PENDING' | 'APPROVED'> {
@@ -354,7 +356,7 @@ export class DriversService {
       data: { currentLat: lat, currentLng: lng, locationUpdatedAt: new Date() },
     });
     // Терминал с геозоной: вышел за радиус — анонс «на месте» гаснет (040, п.4).
-    await leaveTerminalIfOutside(this.prisma, existing.id, { lat, lng });
+    if (await leaveTerminalIfOutside(this.prisma, existing.id, { lat, lng })) this.realtime?.emitArrivalsUpdated();
     return this.toDto(updated);
   }
 

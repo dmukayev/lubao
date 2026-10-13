@@ -1,5 +1,6 @@
 import { cancelStatsFor } from '../deals/cancel-policy';
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { Arrival } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -22,6 +23,7 @@ export class ArrivalsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications?: NotificationsService,
+    @Optional() private readonly realtime?: RealtimeGateway,
   ) {}
 
   private async toDto(arrival: Arrival) {
@@ -94,6 +96,7 @@ export class ArrivalsService {
       }
     }
     if (expired || asked) this.logger.log(`arrivals sweep: expired=${expired}, asked=${asked}`);
+    if (expired) this.realtime?.emitArrivalsUpdated();
     return { expired, asked };
   }
 
@@ -308,6 +311,7 @@ export class ArrivalsService {
       return saved;
     });
 
+    this.realtime?.emitArrivalsUpdated({ pointId: arrival.pointId });
     return this.toDto(arrival);
   }
 
@@ -360,6 +364,7 @@ export class ArrivalsService {
           },
         });
       });
+      this.realtime?.emitArrivalsUpdated({ pointId: arrival.pointId });
       return this.toDto(arrival);
     }
 
@@ -393,6 +398,7 @@ export class ArrivalsService {
       return saved;
     });
 
+    this.realtime?.emitArrivalsUpdated({ pointId: arrival.pointId });
     return this.toDto(arrival);
   }
 
@@ -421,6 +427,7 @@ export class ArrivalsService {
 
     const status = existing.status === 'ON_SITE' ? 'COMPLETED' : 'CANCELLED';
     const arrival = await this.prisma.arrival.update({ where: { id: existing.id }, data: { status } });
+    this.realtime?.emitArrivalsUpdated({ pointId: arrival.pointId });
     return this.toDto(arrival);
   }
 

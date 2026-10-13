@@ -55,6 +55,26 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   void initState() {
     super.initState();
     _initCity();
+    // Водитель встал на линию или уехал — список перечитывается сам, тихо.
+    // Несколько событий подряд — одно перечитывание.
+    _arrivalsSub = ref.read(realtimeServiceProvider).onArrivalsUpdated.listen((_) {
+      _arrivalsDebounce?.cancel();
+      _arrivalsDebounce = Timer(const Duration(milliseconds: 500), () {
+        if (!mounted || _future == null) return;
+        _loadSummary();
+        _reload(silent: true);
+      });
+    });
+  }
+
+  StreamSubscription<Map<String, dynamic>>? _arrivalsSub;
+  Timer? _arrivalsDebounce;
+
+  @override
+  void dispose() {
+    _arrivalsDebounce?.cancel();
+    unawaited(_arrivalsSub?.cancel());
+    super.dispose();
   }
 
   /// По умолчанию — город последнего груза компании (040, п.8); нет грузов —

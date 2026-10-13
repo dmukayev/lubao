@@ -18,6 +18,8 @@ import 'e2e_support.dart';
 /// Водители сида (backend/prisma/seed-e2e.ts): D3 проверен, D4 — нет.
 const _d3Card = Key('driversAtPointCard-dddddddd-dddd-4ddd-8ddd-ddddddddd003');
 const _d4Card = Key('driversAtPointCard-dddddddd-dddd-4ddd-8ddd-ddddddddd004');
+/// D2 — не на точке; встаёт и уходит через API, пока у логиста открыт список.
+const _d2Card = Key('driversAtPointCard-dddddddd-dddd-4ddd-8ddd-ddddddddd002');
 /// D6 — «свободен в Алматы» на сегодня (040).
 const _d6Card = Key('driversAtPointCard-dddddddd-dddd-4ddd-8ddd-ddddddddd006');
 const _d3Id = 'dddddddd-dddd-4ddd-8ddd-ddddddddd003';
@@ -61,6 +63,17 @@ void main() {
         findsNothing,
         reason: 'у непроверенного водителя нет плашки «Проверен»',
       );
+    });
+
+    // Владелец: «водитель не появился, пока не обновишь страницу». Водитель
+    // встал на линию — карточка появляется сама; уехал — исчезает сама.
+    await run.step(tester, 'водитель-появляется-сам', () async {
+      expect(find.byKey(_d2Card), findsNothing);
+      final d2 = await DriverApi.login('+77010000002');
+      await d2.checkInAt('Хоргос');
+      await waitFor(tester, find.byKey(_d2Card, skipOffstage: false), timeout: const Duration(seconds: 15));
+      await d2.leave();
+      await waitForCondition(tester, () => find.byKey(_d2Card, skipOffstage: false).evaluate().isEmpty, timeout: const Duration(seconds: 15));
     });
 
     // Выбор груза для приглашения: подсказка, кружки, «Пригласить» — после выбора.

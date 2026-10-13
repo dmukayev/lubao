@@ -1,7 +1,7 @@
 import { DealsService } from './deals.service';
 
 const FAKE_CHAT_SYSTEM = { post: jest.fn(), postToChat: jest.fn() };
-const FAKE_REALTIME = { emitDealUpdated: jest.fn(), emitDealUpdatedToUser: jest.fn() };
+const FAKE_REALTIME = { emitDealUpdated: jest.fn(), emitDealUpdatedToUser: jest.fn(), emitArrivalsUpdated: jest.fn() };
 
 /// Пересчёт рейтинга при отмене (046 п.4): отзывы, отменённые сделки, вес из app_settings.
 const RATING_MOCKS = () => ({

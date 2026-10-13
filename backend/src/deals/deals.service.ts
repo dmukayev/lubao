@@ -309,6 +309,8 @@ export class DealsService {
     }
     // «Перевозка подтверждена» — системная строка в чат (задача 038, п.11).
     if (nextStatus === 'CONFIRMED_BY_DRIVER') {
+      // Анонс водителя погас — у логистов «Кто свободен» обновится сам.
+      this.realtime.emitArrivalsUpdated();
       await this.chatSystem.post({
         driverId: updated.driverId,
         companyId: updated.companyId,

@@ -490,6 +490,21 @@ class DriverApi {
     if (res.statusCode! >= 300) fail('Отклик водителя через API не удался: ${res.statusCode} ${res.data}');
   }
 
+  /// «Я на месте» в точке погрузки по её названию (ru) из справочника.
+  Future<void> checkInAt(String pointNameRu) async {
+    final ref = await _dio.get('/reference-data');
+    final points = ((ref.data as Map)['points'] as List).cast<Map>();
+    final point = points.firstWhere((p) => (p['name'] as Map)['ru'] == pointNameRu, orElse: () => fail('Нет точки $pointNameRu в справочнике'));
+    final res = await _dio.post('/arrivals/checkin', data: {'pointId': point['id']});
+    if (res.statusCode! >= 300) fail('«Я на месте» через API не удалось: ${res.statusCode} ${res.data}');
+  }
+
+  /// «Я уехал» — статус гаснет.
+  Future<void> leave() async {
+    final res = await _dio.post('/arrivals/cancel', data: {});
+    if (res.statusCode! >= 300) fail('«Я уехал» через API не удалось: ${res.statusCode} ${res.data}');
+  }
+
   /// Сообщение логисту в чат с компанией (по названию собеседника).
   Future<void> sendToCompanyChat(String companyName, String text) async {
     final chats = (await _dio.get('/chats')).data as List<dynamic>;

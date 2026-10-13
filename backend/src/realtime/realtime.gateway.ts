@@ -28,6 +28,10 @@ function userRoom(userId: string): string {
   return `user:${userId}`;
 }
 
+/// Все логисты — «Кто свободен» обновляется сразу, когда водитель встал на
+/// линию, уехал или его статус погас.
+const LOGISTS_ROOM = 'logists';
+
 /// Чат в реальном времени (задача 011, п.6-7): авторизация по тому же JWT,
 /// что и HTTP (006), комнаты по chatId, события message:new/message:read/
 /// typing. Клиент переподключается сам (socket.io-client делает это из
@@ -88,6 +92,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   handleConnection(client: Socket): void {
     const ctx: RequestContext | undefined = client.data.ctx;
     if (ctx) client.join(userRoom(ctx.user.id));
+    if (ctx?.companyMember) client.join(LOGISTS_ROOM);
   }
 
   handleDisconnect(client: Socket): void {
@@ -168,5 +173,11 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   /// приглашений в ленте, у логиста числа «Грузов» обновляются без «обновить».
   emitResponsesUpdated(userIds: string[], payload: { cargoId: string }): void {
     for (const userId of new Set(userIds)) this.server.to(userRoom(userId)).emit('responses:updated', payload);
+  }
+
+  /// Водитель встал на линию, уехал, его статус погас или ушёл в рейс —
+  /// у логистов «Кто свободен» перечитывается сам, без «обновить».
+  emitArrivalsUpdated(payload: { pointId?: string | null } = {}): void {
+    this.server?.to(LOGISTS_ROOM).emit('arrivals:updated', payload);
   }
 }

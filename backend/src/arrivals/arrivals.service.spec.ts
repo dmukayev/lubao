@@ -412,6 +412,31 @@ describe('ArrivalsService.confirmStillLooking / cancel', () => {
   });
 });
 
+describe('ArrivalsService — «Кто свободен» у логистов обновляется сразу', () => {
+  it('«уехал» шлёт arrivals:updated логистам с городом анонса', async () => {
+    const prisma = makePrisma();
+    const realtime = { emitArrivalsUpdated: jest.fn() };
+    const service = new ArrivalsService(prisma, undefined, realtime as any);
+    prisma.driver.findUnique.mockResolvedValue({ id: 'driver-1' });
+    const plannedDay = new Date('2999-01-01');
+    prisma.arrival.findMany.mockResolvedValue([{ id: 'here', status: 'ON_SITE', plannedDay }]);
+    prisma.arrival.update.mockResolvedValue({ id: 'here', pointId: 'p-1', plannedAt: new Date(), plannedDay, arrivedAt: new Date(), waitDays: 2, anyCountry: false, status: 'COMPLETED' });
+
+    await service.cancel('user-1');
+
+    expect(realtime.emitArrivalsUpdated).toHaveBeenCalledWith({ pointId: 'p-1' });
+  });
+
+  it('статус погас по сроку — тоже arrivals:updated; ничего не погасло — тишина', async () => {
+    const prisma = makePrisma();
+    const realtime = { emitArrivalsUpdated: jest.fn() };
+    const service = new ArrivalsService(prisma, undefined, realtime as any);
+    prisma.arrival.findMany.mockResolvedValue([]);
+    await service.sweep({ notify: false });
+    expect(realtime.emitArrivalsUpdated).not.toHaveBeenCalled();
+  });
+});
+
 describe('ArrivalsService.repeat', () => {
   it('throws when there is no previous announcement', async () => {
     const prisma = makePrisma();
