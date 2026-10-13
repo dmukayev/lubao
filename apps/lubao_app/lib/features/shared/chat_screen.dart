@@ -17,6 +17,7 @@ import 'company_verified_badge.dart';
 import 'location_permission.dart';
 import 'tracking_consent_sheet.dart';
 import 'driver_avatar.dart';
+import '../../services/local_data.dart';
 
 /// Название языка для «Пишет на …» — из ARB на языке читателя (041, п.9).
 String? _languageName(LubaoLocalizations t, String? code) => switch (code) {
@@ -41,7 +42,11 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _controller = TextEditingController();
-  bool _sending = false;
+  /// 078: отправленное, но ещё не дошедшее до сервера («ожидает отправки»):
+  /// хранится на телефоне и уходит, когда появится связь.
+  List<OutgoingMessage> _outbox = const [];
+  bool _flushing = false;
+  late final ApiClient _api;
   bool _sharingLocation = false;
   bool _confirming = false;
   // Задача 038, п.13 — карточка груза сворачивается при прокрутке истории
@@ -93,6 +98,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
     _reconnectedSub = realtime.onReconnected.listen((_) {
       ref.invalidate(chatMessagesProvider(widget.chatId));
+      unawaited(_flush());
     });
     // Задача 038, п.12 — вторая сторона видит отзыв отклика/привязку
     // груза/смену статуса сделки сразу: карточка и кнопки обновляются по
@@ -111,8 +117,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
     _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (!realtime.isConnected) ref.invalidate(chatMessagesProvider(widget.chatId));
+      if (_outbox.isNotEmpty) unawaited(_flush());
     });
     _markRead();
+    _api = ref.read(apiClientProvider);
+    _api.offline.addListener(_onConnectivity);
+    unawaited(ref.read(localDataProvider).outbox(widget.chatId).then((saved) {
+      if (!mounted || saved.isEmpty) return;
+      setState(() => _outbox = [...saved, ..._outbox]);
+      unawaited(_flush());
+    }));
+  }
+
+  /// Связь вернулась — отправить очередь.
+  void _onConnectivity() {
+    if (!_api.offline.value && _outbox.isNotEmpty) unawaited(_flush());
   }
 
   /// Фоновая отметка «прочитано»: сбой (нет сети, чужой чат) не должен
@@ -125,6 +144,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
+    _api.offline.removeListener(_onConnectivity);
     _realtime.leaveChat(widget.chatId);
     _messageNewSub?.cancel();
     _messageReadSub?.cancel();
@@ -137,22 +157,48 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.dispose();
   }
 
+  /// 078: сообщение сразу встаёт в очередь (на экране — «ожидает отправки»)
+  /// и уходит; без связи остаётся в очереди и уходит, когда связь появится.
   Future<void> _send([String? text]) async {
     final message = (text ?? _controller.text).trim();
     if (message.isEmpty) return;
-    setState(() => _sending = true);
+    // Быстрый ответ/📍 (готовый text) не стирает набираемое в поле (038 п.11).
+    if (text == null) _controller.clear();
+    final pending = OutgoingMessage(localId: '${DateTime.now().microsecondsSinceEpoch}', text: message, createdAt: DateTime.now());
+    setState(() => _outbox = [..._outbox, pending]);
+    await ref.read(localDataProvider).saveOutbox(widget.chatId, _outbox);
+    await _flush();
+  }
+
+  /// Отправить очередь по порядку. Нет связи — остановиться (сообщения ждут);
+  /// сервер отказал — сообщение убрать из очереди, текст вернуть в поле.
+  Future<void> _flush() async {
+    if (_flushing || _outbox.isEmpty) return;
+    _flushing = true;
     try {
-      await ref.read(chatRepositoryProvider).send(widget.chatId, message);
-      // Задача 038, п.11 — быстрый ответ/📍 (готовый text) не должен
-      // стирать черновик, который пользователь набирает в поле ввода.
-      if (text == null) _controller.clear();
-      ref.invalidate(chatMessagesProvider(widget.chatId));
-    } catch (e) {
-      // Сообщение не ушло — текст остаётся в поле, пользователь видит причину.
-      if (mounted) showApiError(context, e, onRetry: () => _send(text));
+      while (mounted && _outbox.isNotEmpty) {
+        final next = _outbox.first;
+        try {
+          await ref.read(chatRepositoryProvider).send(widget.chatId, next.text);
+        } catch (e) {
+          if (e is DioException && ApiClient.isConnectivityError(e)) return;
+          if (!mounted) return;
+          await _dropFromOutbox(next);
+          if (_controller.text.trim().isEmpty) _controller.text = next.text;
+          if (mounted) showApiError(context, e, onRetry: () => _send());
+          return;
+        }
+        await _dropFromOutbox(next);
+        ref.invalidate(chatMessagesProvider(widget.chatId));
+      }
     } finally {
-      if (mounted) setState(() => _sending = false);
+      _flushing = false;
     }
+  }
+
+  Future<void> _dropFromOutbox(OutgoingMessage message) async {
+    if (mounted) setState(() => _outbox = [for (final m in _outbox) if (m.localId != message.localId) m]);
+    await ref.read(localDataProvider).saveOutbox(widget.chatId, _outbox);
   }
 
   /// «Перевод недоступен · повторить» (задача 010, п.7).
@@ -385,7 +431,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 return ErrorView(message: errorMessage(t, e));
               },
               data: (list) {
-                if (list.isEmpty) return EmptyState(message: t.chatEmpty, icon: LucideIcons.messageCircle);
+                if (list.isEmpty && _outbox.isEmpty) return EmptyState(message: t.chatEmpty, icon: LucideIcons.messageCircle);
                 final showConfirmCard = isDriver && deal?.status == DealStatus.selected;
 
                 // Собираем плоский список сверху вниз (старые -> новые), с
@@ -430,6 +476,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               color: message.isRead ? AppColors.primary : AppColors.textSecondary,
                             ),
                           ],
+                        ],
+                      ),
+                    ],
+                  ));
+                }
+                // 078: ещё не дошедшие — в конце, с пометкой «ожидает отправки».
+                for (final pending in _outbox) {
+                  rows.add(Column(
+                    key: Key('chatPendingMessage-${pending.localId}'),
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Opacity(opacity: 0.7, child: ChatBubble(text: pending.text, isMine: true)),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(LucideIcons.clock, size: 14, color: AppColors.textSecondary),
+                          const SizedBox(width: AppSpacing.xs),
+                          Text(t.chatPendingSend, style: AppTextStyles.caption),
                         ],
                       ),
                     ],
@@ -512,7 +576,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   IconSquareButton(
                     key: const Key('chatSendButton'),
                     icon: LucideIcons.send,
-                    onPressed: _sending ? null : () => _send(),
+                    onPressed: () => _send(),
                   ),
                 ],
               ),

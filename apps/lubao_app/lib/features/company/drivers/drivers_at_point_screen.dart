@@ -20,6 +20,7 @@ import 'invite_cargo_picker.dart';
 import 'my_drivers_view.dart';
 import '../../shared/error_feedback.dart';
 import '../../../services/stale_refresh.dart';
+import '../../shared/chat_opener.dart';
 
 class DriversAtPointScreen extends ConsumerStatefulWidget {
   const DriversAtPointScreen({super.key});
@@ -49,7 +50,6 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
   // 061 п.10: тихое обновление — прошлый список остаётся, пока грузится новый.
   bool _silentReload = false;
   Future<List<ArrivalSummaryDay>>? _summaryFuture;
-  String? _openingChatDriverId;
 
   @override
   void initState() {
@@ -167,27 +167,9 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     await launchUrl(Uri.parse('https://wa.me/$digits'), mode: LaunchMode.externalApplication);
   }
 
+  /// 078: чат открывается сразу, тред — в фоне.
   Future<void> _chat(ArrivalListing driver) async {
-    setState(() => _openingChatDriverId = driver.driverId);
-    try {
-      final thread = await ref.read(chatRepositoryProvider).findOrCreate(driverId: driver.driverId);
-      if (mounted) context.push('/chat/${thread.id}');
-    } catch (e) {
-      debugPrint('DriversAtPointScreen: failed to open chat: $e');
-      if (mounted) {
-        final t = context.l10n;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.chatOpenFailed),
-            // С кнопкой Flutter не убирает SnackBar сам (persist) — висел до нажатия.
-            persist: false,
-            action: SnackBarAction(label: t.commonRetry, onPressed: () => _chat(driver)),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _openingChatDriverId = null);
-    }
+    openChat(context, ChatTarget(driverId: driver.driverId, title: driver.driverName));
   }
 
   /// 058 п.6: ☆ у водителя — в «Мои» / убрать.
@@ -575,7 +557,6 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
                               driver: driver,
                               refData: refData,
                               isChinaCompany: isChinaCompany,
-                              openingChat: _openingChatDriverId == driver.driverId,
                               onCall: _call,
                               onWhatsapp: _whatsapp,
                               onChat: _chat,
@@ -757,7 +738,6 @@ class _DriverCard extends StatelessWidget {
     required this.driver,
     required this.refData,
     required this.isChinaCompany,
-    required this.openingChat,
     required this.onCall,
     required this.onWhatsapp,
     required this.onChat,
@@ -772,7 +752,6 @@ class _DriverCard extends StatelessWidget {
   final ArrivalListing driver;
   final ReferenceData refData;
   final bool isChinaCompany;
-  final bool openingChat;
   final ValueChanged<ArrivalListing> onCall;
   final ValueChanged<ArrivalListing> onWhatsapp;
   final ValueChanged<ArrivalListing> onChat;
@@ -854,7 +833,6 @@ class _DriverCard extends StatelessWidget {
         key: Key('driversAtPointChat-${driver.driverId}'),
         size: 34,
         icon: LucideIcons.messageSquare,
-        loading: openingChat,
         onPressed: () => onChat(driver),
       ),
       if (!isChinaCompany) ...[

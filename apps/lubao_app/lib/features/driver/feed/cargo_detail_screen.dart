@@ -20,6 +20,7 @@ import '../../shared/share_action.dart';
 import 'favorite_button.dart';
 import '../../shared/company_verified_badge.dart';
 import '../../shared/cargo_info.dart';
+import '../../shared/chat_opener.dart';
 
 class CargoDetailScreen extends ConsumerStatefulWidget {
   const CargoDetailScreen({super.key, required this.cargoId});
@@ -32,7 +33,6 @@ class CargoDetailScreen extends ConsumerStatefulWidget {
 
 class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
   bool _responding = false;
-  bool _openingChat = false;
 
   /// «Готов взять» — и первый отклик, и согласие на приглашение (INVITED → PENDING).
   Future<void> _respond() async {
@@ -217,26 +217,10 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
+  /// 078: чат открывается сразу, тред — в фоне.
   Future<void> _chat(Cargo cargo) async {
-    setState(() => _openingChat = true);
-    try {
-      final thread = await ref.read(chatRepositoryProvider).findOrCreate(cargoId: cargo.id);
-      if (mounted) context.push('/chat/${thread.id}');
-    } catch (e) {
-      debugPrint('CargoDetailScreen: failed to open chat: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.chatOpenFailed),
-            // С кнопкой Flutter не убирает SnackBar сам (persist) — висел до нажатия.
-            persist: false,
-            action: SnackBarAction(label: context.l10n.commonRetry, onPressed: () => _chat(cargo)),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _openingChat = false);
-    }
+    final locale = Localizations.localeOf(context).languageCode;
+    openChat(context, ChatTarget(cargoId: cargo.id, title: companyDisplayName(cargo.companyName, cargo.companyNameLatin, locale)));
   }
 
   /// Нижняя кнопка по реальному состоянию отклика (041): «Откликнуться» /
@@ -364,7 +348,6 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
                           key: const Key('cargoDetailChatButton'),
                           icon: LucideIcons.messageSquare,
                           size: AppSizes.buttonHeight,
-                          loading: _openingChat,
                           onPressed: () => _chat(cargoAsync.value!),
                         ),
                         const SizedBox(width: AppSpacing.sm),

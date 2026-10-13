@@ -17,6 +17,7 @@ import '../driver/feed/driver_status.dart';
 import 'driver_documents_block.dart';
 import '../driver/profile/vehicle_photos.dart';
 import 'driver_avatar.dart';
+import 'chat_opener.dart';
 
 class DealDetailScreen extends ConsumerStatefulWidget {
   const DealDetailScreen({super.key, required this.dealId});
@@ -29,34 +30,22 @@ class DealDetailScreen extends ConsumerStatefulWidget {
 
 class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
   bool _busy = false;
-  bool _openingChat = false;
 
   /// Чат теперь по `chatId`, не по `dealId` (задача 017, п.1) — находим
   /// существующий чат пары водитель+компания по грузу этой сделки (он уже
   /// привязан к сделке на бэкенде) и переходим в него.
   Future<void> _openChat(Deal deal) async {
-    setState(() => _openingChat = true);
-    try {
-      final session = ref.read(sessionProvider);
-      final thread = await ref.read(chatRepositoryProvider).findOrCreate(
-            driverId: session?.driver != null ? null : deal.driverId,
-            cargoId: deal.cargoId,
-          );
-      if (mounted) context.push('/chat/${thread.id}');
-    } catch (e) {
-      debugPrint('DealDetailScreen: failed to open chat: $e');
-      if (mounted) {
-        final t = context.l10n;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(t.chatOpenFailed),
-          // С кнопкой Flutter не убирает SnackBar сам (persist) — висел до нажатия.
-          persist: false,
-          action: SnackBarAction(label: t.commonRetry, onPressed: () => _openChat(deal)),
-        ));
-      }
-    } finally {
-      if (mounted) setState(() => _openingChat = false);
-    }
+    // 078: чат открывается сразу, тред — в фоне.
+    final isDriver = ref.read(sessionProvider)?.driver != null;
+    final locale = Localizations.localeOf(context).languageCode;
+    openChat(
+      context,
+      ChatTarget(
+        driverId: isDriver ? null : deal.driverId,
+        cargoId: deal.cargoId,
+        title: isDriver ? companyDisplayName(deal.companyName, deal.companyNameLatin, locale) : deal.driverName,
+      ),
+    );
   }
 
   Future<void> _advance(DealStatus next) async {
@@ -352,10 +341,8 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
         actions: [
           if (deal != null)
             IconButton(
-              icon: _openingChat
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(LucideIcons.messageCircle),
-              onPressed: _openingChat ? null : () => _openChat(deal),
+              icon: const Icon(LucideIcons.messageCircle),
+              onPressed: () => _openChat(deal),
             ),
         ],
       ),
