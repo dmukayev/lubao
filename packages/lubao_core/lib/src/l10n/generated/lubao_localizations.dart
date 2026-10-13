@@ -6582,6 +6582,12 @@ abstract class LubaoLocalizations {
   /// **'Я принимаю оферту: Lubao — информационная площадка, не перевозчик и не сторона договора перевозки'**
   String get companyRegisterOfferAccept;
 
+  /// No description provided for @companyRegisterOfferRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отметьте, что принимаете оферту'**
+  String get companyRegisterOfferRequired;
+
   /// No description provided for @legalLoginNotice.
   ///
   /// In ru, this message translates to:

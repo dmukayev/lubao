@@ -3482,6 +3482,10 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
       'Офертаны қабылдаймын: Lubao — ақпараттық алаң, тасымалдаушы емес және тасымал шартының тарапы емес';
 
   @override
+  String get companyRegisterOfferRequired =>
+      'Офертаны қабылдайтыныңызды белгілеңіз';
+
+  @override
   String legalLoginNotice(String terms, String privacy) {
     return 'Жалғастыра отырып, сіз $terms мен $privacy қабылдайсыз';
   }

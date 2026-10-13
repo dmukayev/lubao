@@ -101,6 +101,8 @@ void main() {
 
     expect(find.text('Выберите город'), findsOneWidget);
     expect(find.text('Какая у вас машина?'), findsNothing);
+    // 072: поле города мигнуло рамкой — дождаться конца мигания.
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('selecting "Нет моего города" opens the fallback sheet and completing it finishes registration',

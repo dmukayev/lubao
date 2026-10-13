@@ -37,6 +37,7 @@ export 'src/widgets/app_text_field.dart';
 export 'src/widgets/cargo_card.dart';
 export 'src/widgets/linkified_text.dart';
 export 'src/widgets/selectable_tile.dart';
+export 'src/widgets/field_scroller.dart';
 export 'src/widgets/country_code.dart';
 export 'src/widgets/chat_bubble.dart';
 export 'src/widgets/quick_reply_chip.dart';

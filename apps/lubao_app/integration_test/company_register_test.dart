@@ -51,9 +51,13 @@ void main() {
 
     // 043 п.2: без принятой оферты кнопка неактивна.
     await run.step(tester, 'оферта-галочка', () async {
+      // 072: кнопка активна всегда — без оферты под галочкой ошибка, экран к ней.
       final submit = find.byKey(const Key('companyRegisterSubmit'));
       await reveal(tester, submit);
-      expect(tester.widget<PrimaryButton>(submit).onPressed, isNull, reason: 'без оферты регистрироваться нельзя');
+      await tester.tap(submit);
+      await tester.pumpAndSettle();
+      await waitFor(tester, find.byKey(const Key('companyRegisterOfferError')));
+      expect(find.text(t.navDrivers), findsNothing, reason: 'без оферты регистрироваться нельзя');
       expect(find.byKey(const Key('companyRegisterOfferLink')), findsOneWidget);
       expect(find.byKey(const Key('legalLoginNotice')), findsOneWidget);
       final offer = find.byKey(const Key('companyRegisterOfferCheckbox'));

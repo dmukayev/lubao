@@ -123,8 +123,12 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
   void dispose() {
     _fullNameController.dispose();
     _plateController.dispose();
+    _fields.dispose();
     super.dispose();
   }
+
+  /// 072: прокрутка к первому незаполненному полю.
+  final _fields = FieldScroller();
 
   bool _validateStep0() {
     final t = context.l10n;
@@ -133,13 +137,22 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
       _fullNameError = isValidPersonName(fullName) ? null : t.driverSetupFullNameError;
       _homeCityError = _homeCityId == null ? t.driverSetupHomeCityError : null;
     });
+    _revealFirstInvalid();
     return _fullNameError == null && _homeCityError == null;
   }
 
   bool _validateStep1() {
     final t = context.l10n;
     setState(() => _bodyTypeError = _bodyTypeId == null ? t.driverSetupBodyTypeError : null);
+    _revealFirstInvalid();
     return _bodyTypeError == null;
+  }
+
+  /// 072: первое незаполненное поле — прокрутить к нему, имя — с фокусом.
+  void _revealFirstInvalid() {
+    final invalid = {if (_fullNameError != null) 'fullName', if (_homeCityError != null) 'homeCityId', if (_bodyTypeError != null) 'bodyTypeId'};
+    if (invalid.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fields.showFirstInvalid(const ['fullName', 'homeCityId', 'bodyTypeId'], invalid));
   }
 
   void _goNext() {
@@ -165,7 +178,10 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
       // Кузов — только в регистрации; при правке профиля машины не меняются (041, п.6).
       _bodyTypeError = widget.isRegistration && _bodyTypeId == null ? t.driverSetupBodyTypeError : null;
     });
-    if (_fullNameError != null || _homeCityError != null || _bodyTypeError != null) return;
+    if (_fullNameError != null || _homeCityError != null || _bodyTypeError != null) {
+      _revealFirstInvalid();
+      return;
+    }
     // Параметры кузова здесь необязательны, но вне пределов справочника не
     // отправляем — причина уже написана под полем.
     final body = _bodyTypeId == null ? null : ref.read(referenceDataProvider).valueOrNull?.bodyTypeById(_bodyTypeId!);
@@ -239,15 +255,19 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                     .label;
 
           final step0Fields = [
-            AppTextField(
+            FieldAnchor(scroller: _fields, name: 'fullName', child: AppTextField(
               key: const Key('driverSetupFullName'),
+              focusNode: _fields.focusOf('fullName'),
               // 045 п.10: при регистрации — только имя; полное ФИО придёт из прав.
               label: widget.isRegistration ? t.driverSetupFirstName : t.driverSetupFullName,
               controller: _fullNameController,
               errorText: _fullNameError,
-            ),
+              onChanged: (_) {
+                if (_fullNameError != null) setState(() => _fullNameError = null);
+              },
+            )),
             const SizedBox(height: AppSpacing.md),
-            Autocomplete<CountryCityOption>(
+            FieldAnchor(scroller: _fields, name: 'homeCityId', child: Autocomplete<CountryCityOption>(
               initialValue: TextEditingValue(text: initialCityLabel),
               displayStringForOption: (o) => o.label,
               optionsBuilder: (value) {
@@ -301,7 +321,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
                   errorText: _homeCityError,
                 );
               },
-            ),
+            )),
           ];
 
           final Widget permitChips = Wrap(
@@ -326,7 +346,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
 
           final step1Fields = [
             if (widget.isRegistration) ...[
-              Text(t.driverSetupVehicleTitle, style: AppTextStyles.headline),
+              FieldAnchor(scroller: _fields, name: 'bodyTypeId', child: Text(t.driverSetupVehicleTitle, style: AppTextStyles.headline)),
               const SizedBox(height: AppSpacing.xs),
               Text(t.driverSetupVehicleSubtitle, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: AppSpacing.lg),
@@ -497,6 +517,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
 
           if (!widget.isRegistration) {
             return ListView(
+              cacheExtent: 20000,
               padding: const EdgeInsets.all(AppSpacing.screen),
               children: [
                 ...step0Fields,
@@ -537,6 +558,7 @@ class _DriverSetupScreenState extends ConsumerState<DriverSetupScreen> {
               ),
               Expanded(
                 child: ListView(
+                  cacheExtent: 20000,
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
                   children: stepFields,
                 ),

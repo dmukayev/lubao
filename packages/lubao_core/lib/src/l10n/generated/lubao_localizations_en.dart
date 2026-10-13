@@ -3494,6 +3494,9 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
       'I accept the offer: Lubao is an information platform, not a carrier and not a party to the transport contract';
 
   @override
+  String get companyRegisterOfferRequired => 'Tick that you accept the offer';
+
+  @override
   String legalLoginNotice(String terms, String privacy) {
     return 'By continuing, you accept the $terms and $privacy';
   }

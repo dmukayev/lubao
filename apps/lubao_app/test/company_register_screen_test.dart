@@ -153,5 +153,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Выберите страну'), findsOneWidget);
+    // 072: экран прокрутился к выбору страны и мигнул рамкой — дождаться конца мигания.
+    await tester.pump(const Duration(seconds: 2));
   });
 }

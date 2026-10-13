@@ -1222,6 +1222,7 @@
   "appUpdateButton": "Жаңарту",
   "legalOffer": "Компанияларға арналған оферта",
   "companyRegisterOfferAccept": "Офертаны қабылдаймын: Lubao — ақпараттық алаң, тасымалдаушы емес және тасымал шартының тарапы емес",
+  "companyRegisterOfferRequired": "Офертаны қабылдайтыныңызды белгілеңіз",
   "legalLoginNotice": "Жалғастыра отырып, сіз {terms} мен {privacy} қабылдайсыз",
   "legalTermsLink": "Шарттарды",
   "legalPrivacyLink": "Құпиялылық саясатын",

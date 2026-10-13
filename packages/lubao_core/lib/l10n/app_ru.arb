@@ -1367,6 +1367,7 @@
   "appUpdateButton": "Обновить",
   "legalOffer": "Оферта для компаний",
   "companyRegisterOfferAccept": "Я принимаю оферту: Lubao — информационная площадка, не перевозчик и не сторона договора перевозки",
+  "companyRegisterOfferRequired": "Отметьте, что принимаете оферту",
   "legalLoginNotice": "Продолжая, вы принимаете {terms} и {privacy}",
   "@legalLoginNotice": {"placeholders": {"terms": {"type": "String"}, "privacy": {"type": "String"}}},
   "legalTermsLink": "Условия",

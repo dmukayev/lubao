@@ -1347,6 +1347,7 @@
   "appUpdateButton": "Update",
   "legalOffer": "Offer for companies",
   "companyRegisterOfferAccept": "I accept the offer: Lubao is an information platform, not a carrier and not a party to the transport contract",
+  "companyRegisterOfferRequired": "Tick that you accept the offer",
   "legalLoginNotice": "By continuing, you accept the {terms} and {privacy}",
   "legalTermsLink": "Terms",
   "legalPrivacyLink": "Privacy policy",

@@ -55,6 +55,20 @@ String? _fieldLabel(LubaoLocalizations t, String field) => switch (field.split('
       _ => null,
     };
 
+/// 072: ответ сервера `VALIDATION_FAILED` → текст ошибки для каждого поля
+/// (по имени поля сервера) — форма покажет его под полем и прокрутит к нему.
+Map<String, String> serverFieldErrors(LubaoLocalizations t, Object error) {
+  final data = error is DioException ? error.response?.data : null;
+  if (data is! Map || data['fields'] is! List) return const {};
+  final out = <String, String>{};
+  for (final raw in data['fields'] as List) {
+    if (raw is! Map || raw['field'] == null) continue;
+    final text = validationErrorText(t, {...data, 'fields': [raw]});
+    if (text != null) out[raw['field'].toString().split('.').last] = text;
+  }
+  return out;
+}
+
 /// Ответ сервера `VALIDATION_FAILED` (поле, правило, предел) → «Длина внутри,
 /// м — не больше 20». Поле без подписи — null (общий текст).
 String? validationErrorText(LubaoLocalizations t, Object? data) {

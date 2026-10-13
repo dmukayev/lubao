@@ -48,6 +48,9 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
   String? _ownerNameError;
   String? _companyNameError;
   String? _countryError;
+  String? _offerError;
+  /// 072: прокрутка к первому незаполненному полю.
+  final _fields = FieldScroller();
 
   @override
   void initState() {
@@ -63,6 +66,7 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
     _companyNameController.dispose();
     _companyNameLatinController.dispose();
     _latinDebounce?.cancel();
+    _fields.dispose();
     super.dispose();
   }
 
@@ -108,13 +112,20 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
       _companyNameError = companyName.length < 2 ? t.companyRegisterNameError : null;
       _companyNameLatinError = _needsLatin && !isValidLatinCompanyName(_companyNameLatinController.text) ? t.companyRegisterLatinError : null;
       _countryError = _countryId == null ? t.companyRegisterCountryError : null;
+      _offerError = _offerAccepted ? null : t.companyRegisterOfferRequired;
     });
-    if (_emailError != null ||
-        _passwordError != null ||
-        _ownerNameError != null ||
-        _companyNameError != null ||
-        _companyNameLatinError != null ||
-        _countryError != null) {
+    // 072: первое неверное поле — прокрутить к нему (текст — с фокусом).
+    final invalid = {
+      if (_emailError != null) 'email',
+      if (_passwordError != null) 'password',
+      if (_ownerNameError != null) 'ownerName',
+      if (_companyNameError != null) 'companyName',
+      if (_companyNameLatinError != null) 'companyNameLatin',
+      if (_countryError != null) 'countryId',
+      if (_offerError != null) 'offer',
+    };
+    if (invalid.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _fields.showFirstInvalid(const ['email', 'password', 'ownerName', 'companyName', 'companyNameLatin', 'countryId', 'offer'], invalid));
       return;
     }
 
@@ -172,23 +183,26 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
           final otherCountries = refData.countries.where((c) => c.code != 'CN' && c.code != 'KZ').toList();
 
           return ListView(
+            cacheExtent: 20000,
             padding: const EdgeInsets.all(AppSpacing.screen),
             children: [
-              AppTextField(
+              FieldAnchor(scroller: _fields, name: 'email', child: AppTextField(
                 key: const Key('companyRegisterEmail'),
+                focusNode: _fields.focusOf('email'),
                 label: t.companyLoginEmailLabel,
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 errorText: _emailError,
-              ),
+              )),
               const SizedBox(height: AppSpacing.md),
-              AppTextField(
+              FieldAnchor(scroller: _fields, name: 'password', child: AppTextField(
                 key: const Key('companyRegisterPassword'),
+                focusNode: _fields.focusOf('password'),
                 label: t.adminLoginPasswordLabel,
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 errorText: _passwordError,
-              ),
+              )),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -196,23 +210,26 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
                   child: Text(_obscurePassword ? t.companyLoginShowPassword : t.companyLoginHidePassword),
                 ),
               ),
-              AppTextField(
+              FieldAnchor(scroller: _fields, name: 'ownerName', child: AppTextField(
                 key: const Key('companyRegisterOwnerName'),
+                focusNode: _fields.focusOf('ownerName'),
                 label: t.companyRegisterOwnerName,
                 controller: _ownerNameController,
                 errorText: _ownerNameError,
-              ),
+              )),
               const SizedBox(height: AppSpacing.md),
-              AppTextField(
+              FieldAnchor(scroller: _fields, name: 'companyName', child: AppTextField(
                 key: const Key('companyRegisterCompanyName'),
+                focusNode: _fields.focusOf('companyName'),
                 label: t.companyRegisterCompanyName,
                 controller: _companyNameController,
                 errorText: _companyNameError,
-              ),
+              )),
               if (_needsLatin) ...[
                 const SizedBox(height: AppSpacing.md),
-                AppTextField(
+                FieldAnchor(scroller: _fields, name: 'companyNameLatin', child: AppTextField(
                   key: const Key('companyRegisterCompanyNameLatin'),
+                focusNode: _fields.focusOf('companyNameLatin'),
                   label: t.companyRegisterLatinName,
                   hintText: 'Horgos Ruida Trading',
                   controller: _companyNameLatinController,
@@ -221,14 +238,14 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
                     _companyNameLatinTouched = true;
                     if (_companyNameLatinError != null) setState(() => _companyNameLatinError = null);
                   },
-                ),
+                )),
                 const SizedBox(height: 4),
                 Text(t.companyRegisterLatinHint, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
               ],
               const SizedBox(height: AppSpacing.xl),
               Text(t.companyRegisterCountry, style: AppTextStyles.bodyStrong),
               const SizedBox(height: AppSpacing.sm),
-              Wrap(
+              FieldAnchor(scroller: _fields, name: 'countryId', child: Wrap(
                 spacing: AppSpacing.sm,
                 runSpacing: AppSpacing.sm,
                 children: [
@@ -251,7 +268,7 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
                     onTap: () => setState(() => _showAllCountries = true),
                   ),
                 ],
-              ),
+              )),
               if (_showAllCountries) ...[
                 const SizedBox(height: AppSpacing.md),
                 InputDecorator(
@@ -291,14 +308,18 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
               ),
               const SizedBox(height: AppSpacing.xl),
               // 043 п.2: оферта для компании — без галочки зарегистрироваться нельзя.
-              CheckboxListTile(
+              FieldAnchor(scroller: _fields, name: 'offer', child: CheckboxListTile(
                 key: const Key('companyRegisterOfferCheckbox'),
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
                 value: _offerAccepted,
-                onChanged: _saving ? null : (v) => setState(() => _offerAccepted = v ?? false),
+                onChanged: _saving ? null : (v) => setState(() {
+                  _offerAccepted = v ?? false;
+                  if (_offerAccepted) _offerError = null;
+                }),
                 title: Text(t.companyRegisterOfferAccept, style: AppTextStyles.body),
-              ),
+              )),
+              if (_offerError != null) Text(_offerError!, key: const Key('companyRegisterOfferError'), style: AppTextStyles.caption.copyWith(color: AppColors.error)),
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: TextButton(
@@ -312,7 +333,8 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
                 key: const Key('companyRegisterSubmit'),
                 label: t.companyRegisterSubmit,
                 loading: _saving,
-                onPressed: _offerAccepted ? _submit : null,
+                // 072: кнопка всегда активна — без оферты подсветим галочку.
+                onPressed: _submit,
               ),
               const SizedBox(height: AppSpacing.md),
               const LegalNotice(),

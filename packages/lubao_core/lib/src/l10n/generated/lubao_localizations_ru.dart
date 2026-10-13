@@ -3474,6 +3474,9 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
       'Я принимаю оферту: Lubao — информационная площадка, не перевозчик и не сторона договора перевозки';
 
   @override
+  String get companyRegisterOfferRequired => 'Отметьте, что принимаете оферту';
+
+  @override
   String legalLoginNotice(String terms, String privacy) {
     return 'Продолжая, вы принимаете $terms и $privacy';
   }

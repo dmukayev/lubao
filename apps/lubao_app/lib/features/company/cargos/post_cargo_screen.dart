@@ -42,6 +42,11 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   final _volumeController = TextEditingController();
   final _weightController = TextEditingController();
   final _palletController = TextEditingController();
+  /// 072: прокрутка к первому незаполненному полю.
+  final _fields = FieldScroller();
+  static const _fieldOrder = ['pointId', 'destinationCountryId', 'categoryId', 'bodyTypeId', 'specs', 'volumeM3', 'weightKg', 'palletCount', 'trucksNeeded', 'price', 'paymentDelayDays', 'advanceAmount', 'contactPhone'];
+  /// Поля, ошибки сервера по которым форма показывает у поля (остальное — всплывашкой).
+  static const _serverFields = {'price', 'weightKg'};
   // «Подходит N водителям на точке» (задача 033, п.10) — пересчитывается
   // по кнопке-подсказке, не на каждый символ.
   int? _fitCount;
@@ -198,6 +203,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     _volumeController.dispose();
     _weightController.dispose();
     _palletController.dispose();
+    _fields.dispose();
     _priceController.dispose();
     _descriptionController.dispose();
     _advanceController.dispose();
@@ -406,9 +412,26 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     // Поля груза по кузову (литры, число машин…) — ошибки под полями.
     final specsOk = _bodyTypeId == null || refData == null || specsValid(refData.bodyTypeById(_bodyTypeId!).cargoFields, _specs);
     if (!specsOk) setState(() => _showSpecsRequired = true);
-    final sizesOk = _volumeError(t) == null && _palletError(t) == null && _advanceError(t) == null && _delayError(t) == null && _trucksError(t) == null;
-    if (!sizesOk) return;
-    if (_pointError != null || _destinationError != null || _bodyTypeError != null || _categoryError != null || _priceError != null || _weightError != null || !specsOk || _phoneError != null) return;
+    // 072: первое неверное поле — прокрутить к нему (фокус или мигание рамки).
+    final invalid = <String>{
+      if (_pointError != null) 'pointId',
+      if (_destinationError != null) 'destinationCountryId',
+      if (_categoryError != null) 'categoryId',
+      if (_bodyTypeError != null) 'bodyTypeId',
+      if (!specsOk) 'specs',
+      if (_volumeError(t) != null) 'volumeM3',
+      if (_weightError != null) 'weightKg',
+      if (_palletError(t) != null) 'palletCount',
+      if (_trucksError(t) != null) 'trucksNeeded',
+      if (_priceError != null) 'price',
+      if (_delayError(t) != null) 'paymentDelayDays',
+      if (_advanceError(t) != null) 'advanceAmount',
+      if (_phoneError != null) 'contactPhone',
+    };
+    if (invalid.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _fields.showFirstInvalid(_fieldOrder, invalid));
+      return;
+    }
     setState(() => _saving = true);
     try {
       // Сначала — телефон в «Мой профиль» на сервере, потом публикация. Сессию
@@ -452,13 +475,26 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       final code = e is DioException && e.response?.data is Map ? (e.response!.data as Map)['code'] : null;
-      if (code == 'COMPANY_ACTIVE_LIMIT' || code == 'COMPANY_PAUSED') {
+      // 072: ошибки сервера по полям — под полем, с прокруткой к первому.
+      final fieldErrors = serverFieldErrors(t, e);
+      if (fieldErrors.isNotEmpty && fieldErrors.keys.any(_serverFields.contains)) {
+        if (mounted) {
+          setState(() {
+            _priceError = fieldErrors['price'] ?? _priceError;
+            _weightError = fieldErrors['weightKg'] ?? _weightError;
+          });
+          WidgetsBinding.instance.addPostFrameCallback((_) => _fields.showFirstInvalid(_fieldOrder, fieldErrors.keys.toSet()));
+        }
+      } else if (code == 'COMPANY_ACTIVE_LIMIT' || code == 'COMPANY_PAUSED') {
         if (mounted) await _showVerificationNeeded(e);
       } else if (code == 'CONTACT_PHONE_REQUIRED') {
-        if (mounted) setState(() {
-          _askPhone = true;
-          _phoneError = t.postCargoPhoneRequired;
-        });
+        if (mounted) {
+          setState(() {
+            _askPhone = true;
+            _phoneError = t.postCargoPhoneRequired;
+          });
+          WidgetsBinding.instance.addPostFrameCallback((_) => _fields.reveal('contactPhone'));
+        }
       } else if (mounted) {
         showApiError(context, e, onRetry: _submit);
       }
@@ -503,6 +539,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
             Expanded(
               child: AppTextField(
                 key: const Key('postCargoWeight'),
+                      focusNode: _fields.focusOf('weightKg'),
                 label: t.postCargoWeight,
                 errorText: _weightError,
                 controller: _weightController,
@@ -574,17 +611,19 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
           }
 
           return ListView(
+            // 072: поля за краем экрана уже построены — к ним можно прокрутить.
+            cacheExtent: 20000,
             padding: const EdgeInsets.all(16),
             children: [
-              CityField(
+              FieldAnchor(scroller: _fields, name: 'pointId', child: CityField(
                 key: const Key('postCargoPickupCity'),
                 label: t.postCargoPickupCity,
                 value: _pointId == null ? null : refData.pointOrNull(_pointId!)?.name.forLanguageCode(locale),
                 errorText: _pointError,
                 onTap: () => _pickCity(refData),
-              ),
+              )),
               const SizedBox(height: 12),
-              Autocomplete<CountryCityOption>(
+              FieldAnchor(scroller: _fields, name: 'destinationCountryId', child: Autocomplete<CountryCityOption>(
                 initialValue: TextEditingValue(text: initialDestinationLabel),
                 displayStringForOption: (o) => o.label,
                 optionsBuilder: (value) {
@@ -602,6 +641,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   setState(() {
                     _countryId = option.countryId;
                     _cityId = option.cityId;
+                    _destinationError = null;
                   });
                   unawaited(_loadMarket());
                 },
@@ -614,12 +654,12 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   focusNode: focusNode,
                   onSubmitted: (_) => onSubmitted(),
                 ),
-              ),
+              )),
               const SizedBox(height: 12),
               // 047 п.1, 7: категория — чипами, обязательна.
               Text(t.postCargoCategory, style: AppTextStyles.bodyStrong),
               const SizedBox(height: 8),
-              Wrap(
+              FieldAnchor(scroller: _fields, name: 'categoryId', child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
@@ -634,13 +674,13 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                       }),
                     ),
                 ],
-              ),
+              )),
               if (_categoryError != null) ...[
                 const SizedBox(height: 4),
                 Text(_categoryError!, key: const Key('postCargoCategoryError'), style: AppTextStyles.caption.copyWith(color: Theme.of(context).colorScheme.error)),
               ],
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
+              FieldAnchor(scroller: _fields, name: 'bodyTypeId', child: DropdownButtonFormField<String>(
                 key: const Key('postCargoBodyType'),
                 initialValue: _bodyTypeId,
                 decoration: InputDecoration(labelText: t.postCargoBodyType, border: const OutlineInputBorder(), errorText: _bodyTypeError),
@@ -649,16 +689,17 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                     .toList(),
                 onChanged: (value) => setState(() {
                   _bodyTypeId = value;
+                  _bodyTypeError = null;
                   _specs = {};
                 }),
-              ),
+              )),
               const SizedBox(height: 12),
               // 048 п.4: поля груза по профилю выбранного кузова (продукт и литры,
               // тип контейнера, число машин…) и другие подходящие кузова.
               if (_bodyTypeId != null && refData.bodyTypeById(_bodyTypeId!).cargoFields.isNotEmpty) ...[
                 Text(t.cargoSpecsTitle, style: AppTextStyles.bodyStrong),
                 const SizedBox(height: 8),
-                SpecsForm(
+                FieldAnchor(scroller: _fields, name: 'specs', child: SpecsForm(
                   key: ValueKey('cargoSpecs-$_bodyTypeId'),
                   showRequired: _showSpecsRequired,
                   fields: refData.bodyTypeById(_bodyTypeId!).cargoFields,
@@ -667,7 +708,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                     setState(() => _specs = v);
                     _refreshFitCount();
                   },
-                ),
+                )),
               ],
               if (_bodyTypeId != null) ...[
                 Text(t.cargoExtraBodyTypes, style: AppTextStyles.bodyStrong),
@@ -695,8 +736,9 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   // 048 п.4: м³ — объёмным и насыпным, паллеты — только объёмным.
                   if (_showVolume(refData))
                   Expanded(
-                    child: AppTextField(
+                    child: FieldAnchor(scroller: _fields, name: 'volumeM3', child: AppTextField(
                       key: const Key('postCargoVolume'),
+                      focusNode: _fields.focusOf('volumeM3'),
                       label: t.postCargoVolume,
                       controller: _volumeController,
                       errorText: _volumeError(t),
@@ -705,12 +747,12 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                         setState(() {});
                         _refreshFitCount();
                       },
-                    ),
+                    )),
                   ),
                 ],
               ),
               if (_showVolume(refData)) const SizedBox(height: 12),
-              _weightField(t),
+              FieldAnchor(scroller: _fields, name: 'weightKg', child: _weightField(t)),
               if (_showPallets(refData)) ...[
                 const SizedBox(height: 12),
                 AppTextField(
@@ -739,14 +781,15 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   onChanged: (value) => setState(() => _allowPartial = value),
                 ),
               const SizedBox(height: 12),
-              AppTextField(
+              FieldAnchor(scroller: _fields, name: 'trucksNeeded', child: AppTextField(
                 key: const Key('postCargoTrucks'),
+                      focusNode: _fields.focusOf('trucksNeeded'),
                 label: t.postCargoTrucks,
                 controller: _trucksController,
                 errorText: _trucksError(t),
                 keyboardType: TextInputType.number,
                 onChanged: (_) => setState(() {}),
-              ),
+              )),
               const SizedBox(height: 12),
               if (_distanceLabel(t, refData) case final distance?) ...[
                 Text(distance, key: const Key('postCargoDistanceHint'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
@@ -768,15 +811,16 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: AppTextField(
+                    child: FieldAnchor(scroller: _fields, name: 'price', child: AppTextField(
                       key: const Key('postCargoPrice'),
+                      focusNode: _fields.focusOf('price'),
                       label: t.postCargoPriceTotal,
                       errorText: _priceError,
                       controller: _priceController,
                       keyboardType: TextInputType.number,
-                      // Цена за км под расстоянием пересчитывается на ходу.
-                      onChanged: (_) => setState(() {}),
-                    ),
+                      // Цена за км под расстоянием пересчитывается на ходу; 072: ошибка уходит при вводе.
+                      onChanged: (_) => setState(() => _priceError = null),
+                    )),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -804,15 +848,16 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
               ),
               if (_restLater) ...[
                 const SizedBox(height: 8),
-                AppTextField(
+                FieldAnchor(scroller: _fields, name: 'paymentDelayDays', child: AppTextField(
                   key: const Key('postCargoPaymentDelay'),
+                      focusNode: _fields.focusOf('paymentDelayDays'),
                   label: t.postCargoWhenPay,
                   suffixText: t.postCargoDaysAfterUnload,
                   controller: _delayController,
                   errorText: _delayError(t),
                   keyboardType: TextInputType.number,
                   onChanged: (_) => setState(() {}),
-                ),
+                )),
               ],
               const SizedBox(height: 12),
               Text(t.postCargoHowPay, style: AppTextStyles.caption),
@@ -832,15 +877,16 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 style: AppTextStyles.caption,
               ),
               const SizedBox(height: 4),
-              AppTextField(
+              FieldAnchor(scroller: _fields, name: 'advanceAmount', child: AppTextField(
                 key: const Key('postCargoAdvance'),
+                      focusNode: _fields.focusOf('advanceAmount'),
                 label: t.postCargoAdvanceTitle,
                 suffixText: currencySymbol(_currency),
                 controller: _advanceController,
                 errorText: _advanceError(t),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 onChanged: (_) => setState(() {}),
-              ),
+              )),
               if (_advanceHint(t) case final hint?) ...[
                 const SizedBox(height: 8),
                 Container(
@@ -916,14 +962,15 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
               AppTextField(label: t.postCargoDescription, controller: _descriptionController, maxLines: 3),
               if (_needsPhone) ...[
                 const SizedBox(height: 16),
-                AppTextField(
+                FieldAnchor(scroller: _fields, name: 'contactPhone', child: AppTextField(
                   key: const Key('postCargoContactPhone'),
+                      focusNode: _fields.focusOf('contactPhone'),
                   label: t.postCargoContactPhone,
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   errorText: _phoneError,
                   onChanged: (_) => setState(() => _phoneError = null),
-                ),
+                )),
                 const SizedBox(height: 4),
                 Text(t.postCargoContactPhoneHint, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
               ],

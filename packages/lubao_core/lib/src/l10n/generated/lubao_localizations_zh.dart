@@ -3397,6 +3397,9 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
       '我接受要约：Lubao 是信息平台，不是承运人，也不是运输合同的当事方';
 
   @override
+  String get companyRegisterOfferRequired => '请勾选接受要约';
+
+  @override
   String legalLoginNotice(String terms, String privacy) {
     return '继续即表示您接受$terms和$privacy';
   }
