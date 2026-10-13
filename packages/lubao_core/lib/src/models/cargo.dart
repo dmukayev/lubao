@@ -8,6 +8,7 @@ class Cargo {
     this.number,
     required this.companyId,
     required this.companyName,
+    this.companyNameLatin,
     this.companyIsVerified = false,
     this.companyRatingAvg = 0,
     this.companyRatingCount = 0,
@@ -79,6 +80,8 @@ class Cargo {
   final int? number;
   final String companyId;
   final String companyName;
+  /// 069: латинское название китайской компании — водителю вместо иероглифов.
+  final String? companyNameLatin;
   final bool companyIsVerified;
   final double companyRatingAvg;
   final int companyRatingCount;
@@ -151,6 +154,7 @@ class Cargo {
         number: json['number'] as int?,
         companyId: json['companyId'] as String,
         companyName: json['companyName'] as String? ?? '',
+        companyNameLatin: json['companyNameLatin'] as String?,
         companyIsVerified: json['companyIsVerified'] as bool? ?? false,
         companyRatingAvg: (json['companyRatingAvg'] as num?)?.toDouble() ?? 0,
         companyRatingCount: json['companyRatingCount'] as int? ?? 0,

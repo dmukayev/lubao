@@ -1,5 +1,6 @@
-import { IsIn, IsEmail, IsOptional, IsString, Length } from 'class-validator';
+import { IsIn, IsEmail, IsOptional, IsString, Length, Matches } from 'class-validator';
 import { IsPersonName } from '../../common/validators/person-name.validator';
+import { LATIN_NAME_PATTERN } from '../../companies/latin-name';
 
 /// Регистрация логиста в один экран — email, пароль, имя, компания, страна
 /// (задача 025). `ownerName`/`companyName`/`companyNameRu`/`countryId` те
@@ -24,6 +25,12 @@ export class RegisterCompanyAuthDto {
   @IsString()
   @Length(2, 120)
   companyNameRu?: string;
+
+  /// 069: латинское название — обязательно, если в названии иероглифы.
+  @IsOptional()
+  @IsString()
+  @Matches(LATIN_NAME_PATTERN)
+  companyNameLatin?: string;
 
   @IsString()
   countryId!: string;

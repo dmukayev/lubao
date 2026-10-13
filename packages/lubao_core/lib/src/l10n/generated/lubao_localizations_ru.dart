@@ -180,6 +180,31 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get companyRegisterCompanyName => 'Название компании';
 
   @override
+  String get companyRegisterLatinName => 'Название латиницей';
+
+  @override
+  String get companyRegisterLatinHint => 'Так вашу компанию увидят водители';
+
+  @override
+  String get companyRegisterLatinError =>
+      'Латиница, цифры, пробел и . , & - ( ) \' — от 2 до 100 знаков';
+
+  @override
+  String get errLatinNameRequired =>
+      'Укажите название компании латиницей — так её увидят водители';
+
+  @override
+  String get adminCompanyNameLatin => 'Латиницей';
+
+  @override
+  String adminAttentionCompaniesWithoutLatin(int count) {
+    return 'Китайские компании без латинского названия: $count';
+  }
+
+  @override
+  String get adminFilterNoLatin => 'Без латиницы';
+
+  @override
   String get companyRegisterCompanyNameRu => 'Название по-русски';
 
   @override

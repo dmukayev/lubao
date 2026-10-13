@@ -91,7 +91,7 @@ class AuthRepository {
     required String password,
     required String ownerName,
     required String companyName,
-    String? companyNameRu,
+    String? companyNameLatin,
     required String countryId,
     CompanyKind? kind,
   }) async {
@@ -102,11 +102,19 @@ class AuthRepository {
       'password': password,
       'ownerName': ownerName,
       'companyName': companyName,
-      if (companyNameRu != null) 'companyNameRu': companyNameRu,
+      if (companyNameLatin != null) 'companyNameLatin': companyNameLatin,
       'countryId': countryId,
       'offerVersion': offerVersion,
     });
     return _sessionFromTokenResponse(res.data as Map<String, dynamic>);
+  }
+
+  /// 069: подсказка латинского названия для китайского (пиньинь на сервере,
+  /// локальная библиотека). `needed` — в названии иероглифы.
+  Future<({bool needed, String? latin})> latinNameSuggestion(String name) async {
+    final res = await _client.dio.get('/auth/company/latin-name', queryParameters: {'name': name});
+    final data = res.data as Map<String, dynamic>;
+    return (needed: data['needed'] as bool? ?? false, latin: data['latin'] as String?);
   }
 
   Future<void> requestPasswordReset({required String email}) async {

@@ -21,6 +21,7 @@ import { DriverBody, cargoFitsBody } from '../body-types/profile-fit';
 import { newResponsesByCargo } from '../responses/new-responses';
 import { VISIBLE_COMPANY } from './visible-company';
 import { pauseAfterComplaints } from '../companies/publishing-pause';
+import { companyLatin } from '../companies/latin-name';
 
 /// 056 п.2: вкладки «Грузов» логиста по статусу груза. Доставленный груз
 /// архивируется (deals.service: DELIVERED → ARCHIVED), сделка в работе — IN_DEAL.
@@ -198,6 +199,8 @@ export class CargosService {
       number: cargo.number,
       companyId: cargo.companyId,
       companyName: cargo.company.name,
+      // 069: водителю — латиницей вместо иероглифов (приложение выбирает по языку).
+      companyNameLatin: companyLatin(cargo.company),
       companyIsVerified: cargo.company.isVerified,
       companyRatingAvg: Number(cargo.company.ratingAvg),
       companyRatingCount: cargo.company.ratingCount,

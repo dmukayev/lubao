@@ -12,7 +12,7 @@ import '../shared/responsive.dart';
 const _pageSize = 50;
 
 /// 066 п.5: «не проверены, с грузами» и «на паузе» — из «Требует внимания».
-enum _StatusFilter { all, pending, activeUnverified, paused, verified, blocked }
+enum _StatusFilter { all, pending, activeUnverified, paused, noLatin, verified, blocked }
 
 class AdminCompaniesScreen extends ConsumerStatefulWidget {
   const AdminCompaniesScreen({super.key, this.queryParams = const {}});
@@ -60,6 +60,7 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
       'pending' => _StatusFilter.pending,
       'activeUnverified' => _StatusFilter.activeUnverified,
       'paused' => _StatusFilter.paused,
+      'noLatin' => _StatusFilter.noLatin,
       'verified' => _StatusFilter.verified,
       'blocked' => _StatusFilter.blocked,
       _ => _StatusFilter.all,
@@ -104,6 +105,7 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
         onSite: switch (_filter) {
           _StatusFilter.activeUnverified => 'activeCargos',
           _StatusFilter.paused => 'paused',
+          _StatusFilter.noLatin => 'noLatin',
           _ => null,
         },
         page: _page,
@@ -119,6 +121,7 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
             _StatusFilter.pending => t.adminFilterPending,
             _StatusFilter.activeUnverified => t.adminFilterActiveUnverified,
             _StatusFilter.paused => t.adminFilterPaused,
+            _StatusFilter.noLatin => t.adminFilterNoLatin,
             _StatusFilter.verified => t.adminFilterVerified,
             _StatusFilter.blocked => t.adminFilterBlocked,
           }),

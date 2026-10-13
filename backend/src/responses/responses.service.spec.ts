@@ -124,7 +124,7 @@ describe('ResponsesService.updateStatus — attaches the pre-deal chat (зада
 
     expect(tx.response.updateMany).toHaveBeenCalledWith({ where: { id: 'r1', status: { in: ['PENDING', 'INVITED'] } }, data: { status: 'REJECTED', closeReason: 'REJECTED_BY_LOGIST' } });
     expect(tx.deal.create).not.toHaveBeenCalled();
-    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u1'] }, 'RESPONSE_REJECTED', { cargoId: 'cargo1', companyName: 'Acme' });
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u1'] }, 'RESPONSE_REJECTED', { cargoId: 'cargo1', companyName: 'Acme', companyNameLatin: null });
   });
 
   it('throws NotFoundException for an unknown response', async () => {
@@ -322,7 +322,7 @@ describe('ResponsesService.createDealDirect — attaches the pre-deal chat too (
     expect(notifications.notify).toHaveBeenCalledWith(
       { userIds: ['user-d1'] },
       'CARGO_INVITE',
-      { cargoId: 'cargo1', companyName: 'Acme' },
+      { cargoId: 'cargo1', companyName: 'Acme', companyNameLatin: null },
     );
   });
 
@@ -531,7 +531,7 @@ describe('ResponsesService — приглашение с согласием, г�
     expect(tx.response.create).toHaveBeenCalledWith(expect.objectContaining({ data: { cargoId: 'cargo1', driverId: 'd1', status: 'INVITED' } }));
     expect(tx.deal.create).not.toHaveBeenCalled();
     expect(tx.response.updateMany).not.toHaveBeenCalled();
-    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u1'] }, 'CARGO_INVITE', { cargoId: 'cargo1', companyName: 'Acme' });
+    expect(notifications.notify).toHaveBeenCalledWith({ userIds: ['u1'] }, 'CARGO_INVITE', { cargoId: 'cargo1', companyName: 'Acme', companyNameLatin: null });
     expect(chat.post).toHaveBeenCalledWith(expect.objectContaining({ code: 'DRIVER_INVITED' }));
   });
 

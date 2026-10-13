@@ -1,8 +1,9 @@
 import { CARGO_CURRENCIES, CargoCurrency, RATE_CURRENCIES, RateCurrency } from '../../common/currencies';
-import { IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsISO8601, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, Max, MaxLength, Matches, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { BooleanQuery } from '../../common/boolean-query.decorator';
 import { IsPersonName } from '../../common/validators/person-name.validator';
+import { LATIN_NAME_PATTERN } from '../../companies/latin-name';
 
 export class ReviewVerificationDocumentDto {
   @IsIn(['APPROVED', 'REJECTED'])
@@ -99,6 +100,12 @@ export class SearchQueryDto {
   @BooleanQuery()
   @IsBoolean()
   paused?: boolean;
+
+  /// 069: китайские компании без латинского названия.
+  @IsOptional()
+  @BooleanQuery()
+  @IsBoolean()
+  noLatin?: boolean;
 
   /// Водитель сейчас ON_SITE (п.3 задачи 028 — плитка «на точке сегодня»
   /// на сводке ссылается на `/drivers?onSite=today`).
@@ -577,6 +584,12 @@ export class AdminUpdateCompanyDto {
   @IsOptional()
   @IsString()
   nameRu?: string;
+
+  /// 069: латинское название китайской компании.
+  @IsOptional()
+  @IsString()
+  @Matches(LATIN_NAME_PATTERN)
+  nameLatin?: string;
 
   @IsOptional()
   @IsString()

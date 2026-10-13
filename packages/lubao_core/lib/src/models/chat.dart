@@ -10,6 +10,7 @@ class ChatThread {
     required this.companyId,
     required this.counterpartName,
     this.companyName,
+    this.companyNameLatin,
     this.companyIsVerified = false,
     this.counterpartAvatarVersion,
     this.counterpartLocale,
@@ -29,6 +30,7 @@ class ChatThread {
   final String counterpartName;
   /// 066: водителю — компания собеседника и плашка «Проверена / Не проверена».
   final String? companyName;
+  final String? companyNameLatin;
   final bool companyIsVerified;
   final String? counterpartAvatarVersion;
   final String? counterpartLocale;
@@ -58,6 +60,7 @@ class ChatThread {
         companyId: json['companyId'] as String,
         counterpartName: json['counterpartName'] as String? ?? '',
         companyName: json['companyName'] as String?,
+        companyNameLatin: json['companyNameLatin'] as String?,
         companyIsVerified: json['companyIsVerified'] as bool? ?? false,
         counterpartAvatarVersion: json['counterpartAvatarVersion'] as String?,
         counterpartLocale: json['counterpartLocale'] as String?,

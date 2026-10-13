@@ -26,6 +26,11 @@ class _FakeAuthRepository extends AuthRepository {
   String? lastOwnerName;
   String? lastCompanyName;
   String? lastCountryId;
+  String? lastCompanyNameLatin;
+
+  /// 069: подсказка латинского названия (на сервере — пиньинь).
+  @override
+  Future<({bool needed, String? latin})> latinNameSuggestion(String name) async => (needed: true, latin: 'Xinjiang Ceshi Logistics');
   CompanyKind? lastKind;
 
   @override
@@ -37,7 +42,7 @@ class _FakeAuthRepository extends AuthRepository {
     required String password,
     required String ownerName,
     required String companyName,
-    String? companyNameRu,
+    String? companyNameLatin,
     required String countryId,
     CompanyKind? kind,
   }) async {
@@ -46,10 +51,11 @@ class _FakeAuthRepository extends AuthRepository {
     lastOwnerName = ownerName;
     lastCompanyName = companyName;
     lastCountryId = countryId;
+    lastCompanyNameLatin = companyNameLatin;
     final company = Company(
       id: 'company-1',
       name: companyName,
-      nameRu: companyNameRu,
+      nameLatin: companyNameLatin,
       countryId: countryId,
       isVerified: false,
       ratingAvg: 0,
@@ -86,6 +92,11 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, 'Пароль'), 'password123');
     await tester.enterText(find.widgetWithText(TextField, 'Ваше имя'), 'Ли Вэй');
     await tester.enterText(find.widgetWithText(TextField, 'Название компании'), '新疆测试物流');
+    // 069: иероглифы — поле латиницей заполняется подсказкой (через 400 мс).
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('companyRegisterCompanyNameLatin')), findsOneWidget);
+    expect(find.text('Xinjiang Ceshi Logistics'), findsOneWidget);
     await tester.tap(find.text('Китай'));
     await tester.pumpAndSettle();
     // 058 п.8а: тип компании — перевозчик.
@@ -108,6 +119,7 @@ void main() {
     expect(authRepo.lastOwnerName, 'Ли Вэй');
     expect(authRepo.lastCompanyName, '新疆测试物流');
     expect(authRepo.lastCountryId, 'cn-1');
+    expect(authRepo.lastCompanyNameLatin, 'Xinjiang Ceshi Logistics');
     expect(authRepo.lastKind, CompanyKind.carrier);
   });
 

@@ -355,7 +355,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                       DriverAvatar(driverId: deal.driverId, name: deal.driverName, version: deal.driverAvatarVersion, radius: 22, openCard: true),
                       const SizedBox(width: AppSpacing.sm),
                     ],
-                    Expanded(child: Text(isDriver ? deal.companyName : deal.driverName, style: Theme.of(context).textTheme.titleLarge)),
+                    Expanded(child: Text(isDriver ? companyDisplayName(deal.companyName, deal.companyNameLatin, Localizations.localeOf(context).languageCode) : deal.driverName, style: Theme.of(context).textTheme.titleLarge)),
                   ],
                 ),
                 // 066: водителю — «Проверена / Не проверена» у компании.
@@ -469,7 +469,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                 ],
                 // 044 п.4: что и кому открывается при подтверждении.
                 if (isDriver && deal.nextStatus == DealStatus.confirmedByDriver) ...[
-                  Text(t.dealConfirmDocsNotice(deal.companyName), key: const Key('dealConfirmDocsNotice'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                  Text(t.dealConfirmDocsNotice(companyDisplayName(deal.companyName, deal.companyNameLatin, Localizations.localeOf(context).languageCode)), key: const Key('dealConfirmDocsNotice'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
                 ],
                 if (isDriver && deal.nextStatus != null) ...[
@@ -524,7 +524,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
           else if (mine)
             Text(t.dealCancelRequestedByMe(until), style: AppTextStyles.body)
           else ...[
-            Text(t.dealCancelRequestedByOther(isDriver ? deal.companyName : deal.driverName, reason, until), style: AppTextStyles.body),
+            Text(t.dealCancelRequestedByOther(isDriver ? companyDisplayName(deal.companyName, deal.companyNameLatin, Localizations.localeOf(context).languageCode) : deal.driverName, reason, until), style: AppTextStyles.body),
             const SizedBox(height: AppSpacing.md),
             PrimaryButton(
               key: const Key('dealCancelConfirm'),

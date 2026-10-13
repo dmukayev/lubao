@@ -128,3 +128,14 @@ String presetLabel(LubaoLocalizations t, String locale, BodySizePreset preset, {
   ].join(' · ');
   return '$name\n$size';
 }
+
+/// 069: название компании для водителя — латиницей вместо иероглифов; в
+/// китайском интерфейсе (и без латиницы) — оригинал.
+String companyDisplayName(String name, String? latin, String languageCode) =>
+    languageCode == 'zh' || latin == null || latin.isEmpty ? name : latin;
+
+/// 069: иероглифы (CJK) в названии — нужно латинское название.
+bool hasChineseCharacters(String text) => RegExp(r'[㐀-鿿豈-﫿]').hasMatch(text);
+
+/// 069: латинское название — латиница, цифры, пробел и `. , & - ( ) '`, 2–100.
+bool isValidLatinCompanyName(String text) => RegExp(r"^[A-Za-z0-9 .,&\-()']{2,100}$").hasMatch(text.trim());

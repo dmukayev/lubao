@@ -69,6 +69,7 @@ String? errorCodeText(LubaoLocalizations t, String code) => switch (code) {
   'CONTACT_PHONE_REQUIRED' => t.errContactPhoneRequired,
   'COMPANY_ACTIVE_LIMIT' => t.errCompanyActiveLimit,
   'COMPANY_PAUSED' => t.errCompanyPaused,
+  'LATIN_NAME_REQUIRED' => t.errLatinNameRequired,
   'CURRENCY_LOCKED' => t.errCurrencyLocked,
   'PRICE_CHANGED' => t.errPriceChanged,
   'RESPONSE_NOT_PENDING' => t.errResponseNotPending,

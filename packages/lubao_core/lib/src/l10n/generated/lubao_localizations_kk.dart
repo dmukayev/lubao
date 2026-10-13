@@ -179,6 +179,32 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get companyRegisterCompanyName => 'Компания атауы';
 
   @override
+  String get companyRegisterLatinName => 'Атауы латынша';
+
+  @override
+  String get companyRegisterLatinHint =>
+      'Жүргізушілер компанияңызды осылай көреді';
+
+  @override
+  String get companyRegisterLatinError =>
+      'Латын әріптері, сандар, бос орын және . , & - ( ) \' — 2-ден 100 таңбаға дейін';
+
+  @override
+  String get errLatinNameRequired =>
+      'Компания атауын латынша жазыңыз — жүргізушілер оны осылай көреді';
+
+  @override
+  String get adminCompanyNameLatin => 'Латынша';
+
+  @override
+  String adminAttentionCompaniesWithoutLatin(int count) {
+    return 'Латынша атауы жоқ қытай компаниялары: $count';
+  }
+
+  @override
+  String get adminFilterNoLatin => 'Латыншасыз';
+
+  @override
   String get companyRegisterCompanyNameRu => 'Орысша атауы';
 
   @override

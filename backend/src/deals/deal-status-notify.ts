@@ -3,6 +3,7 @@ import { Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { resolveCargoContactUserId } from '../cargos/resolve-contact';
+import { companyLatin } from '../companies/latin-name';
 
 export type DealActor = 'DRIVER' | 'COMPANY' | 'ADMIN';
 
@@ -59,7 +60,7 @@ async function send(
         destinationCountry: { select: { name: true } },
       },
     }),
-    prisma.company.findUnique({ where: { id: deal.companyId }, select: { name: true } }),
+    prisma.company.findUnique({ where: { id: deal.companyId }, select: { name: true, nameRu: true, nameLatin: true } }),
   ]);
   if (!driver || !cargo) return;
 
@@ -70,6 +71,7 @@ async function send(
     status,
     driverName: driver.fullName,
     companyName: company?.name ?? '',
+    companyNameLatin: companyLatin(company),
     origin: cargo.point?.name ?? null,
     destination: cargo.destinationCity?.name ?? cargo.destinationCountry?.name ?? null,
     // 046: причина — кодом из списка (текст подставит шаблон на языке получателя), «Другое» — текстом.

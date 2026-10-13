@@ -23,6 +23,7 @@ import {
 import { RegisterCompanyAuthDto } from './dto/register-company.dto';
 import { PdConsentDto } from './dto/pd-consent.dto';
 import { AcceptInviteDto } from '../companies/dto/invite.dto';
+import { hasCjk, suggestLatinName } from '../companies/latin-name';
 
 @Controller('auth')
 export class AuthController {
@@ -51,6 +52,15 @@ export class AuthController {
   @Post('phone/verify')
   verifyCode(@Body() dto: VerifyCodeDto, @ClientIp() ip: string) {
     return this.auth.verifyDriverCode(dto.phone, dto.code, ip, dto.deviceName, dto.platform);
+  }
+
+  /// 069: подсказка латинского названия для китайского (пиньинь, локальная
+  /// библиотека, без облака) — форма регистрации заполняет поле, логист правит.
+  @Public()
+  @Get('company/latin-name')
+  latinName(@Query('name') name?: string) {
+    const text = (name ?? '').slice(0, 120);
+    return { needed: hasCjk(text), latin: hasCjk(text) ? suggestLatinName(text) : null };
   }
 
   @Public()

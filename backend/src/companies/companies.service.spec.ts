@@ -53,7 +53,7 @@ describe('CompaniesService.registerOwnedCompany', () => {
     expect(result.companyMember).toEqual(expect.objectContaining({ role: 'OWNER', userId: 'user-1' }));
   });
 
-  it('falls back companyNameRu to companyName when not provided', async () => {
+  it('069: русское название не спрашиваем — без него nameRu пустое; у китайского названия — латиница обязательна', async () => {
     prisma.companyMember.findUnique.mockResolvedValue(null);
     prisma.country.findUnique.mockResolvedValue({ id: 'cn-1', code: 'CN' });
 
@@ -72,7 +72,10 @@ describe('CompaniesService.registerOwnedCompany', () => {
     );
 
     await service.registerOwnedCompany('user-1', { ownerName: 'Ли Вэй', companyName: 'Yidao', countryId: 'cn-1' });
-    expect(capturedData.nameRu).toBe('Yidao');
+    expect(capturedData.nameRu).toBeNull();
+    await expect(service.registerOwnedCompany('user-1', { ownerName: 'Ли Вэй', companyName: '瑞达贸易', countryId: 'cn-1' })).rejects.toMatchObject({ response: { code: 'LATIN_NAME_REQUIRED' } });
+    await service.registerOwnedCompany('user-1', { ownerName: 'Ли Вэй', companyName: '瑞达贸易', companyNameLatin: 'Ruida Trading', countryId: 'cn-1' });
+    expect(capturedData.nameLatin).toBe('Ruida Trading');
   });
 
   it('turns a P2002 unique-constraint race on CompanyMember.userId into 400, not 500 (024 п.7)', async () => {

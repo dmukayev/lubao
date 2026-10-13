@@ -356,13 +356,14 @@ class AdminRepository {
 
   /// Поиск/фильтр/пагинация (задача 026, п.2/п.10) — таблица компаний в
   /// админке, а не весь список целиком (на пилоте уже сотни строк).
-  Future<AdminSearchPage<AdminCompanyRow>> searchCompanies({String? q, bool? verified, bool? blocked, bool? activeCargos, bool? paused, int page = 1, int pageSize = 50}) async {
+  Future<AdminSearchPage<AdminCompanyRow>> searchCompanies({String? q, bool? verified, bool? blocked, bool? activeCargos, bool? paused, bool? noLatin, int page = 1, int pageSize = 50}) async {
     final res = await _client.dio.get('/admin/companies', queryParameters: {
       if (q != null && q.isNotEmpty) 'q': q,
       if (verified != null) 'verified': verified,
       if (blocked != null) 'blocked': blocked,
       if (activeCargos != null) 'activeCargos': activeCargos,
       if (paused != null) 'paused': paused,
+      if (noLatin != null) 'noLatin': noLatin,
       'page': page,
       'pageSize': pageSize,
     });
@@ -405,6 +406,7 @@ class AdminRepository {
     String id, {
     String? name,
     String? nameRu,
+    String? nameLatin,
     String? countryId,
     String? city,
     String? legalAddress,
@@ -414,6 +416,7 @@ class AdminRepository {
     await _client.dio.patch('/admin/companies/$id', data: {
       if (name != null) 'name': name,
       if (nameRu != null) 'nameRu': nameRu,
+      if (nameLatin != null) 'nameLatin': nameLatin,
       if (countryId != null) 'countryId': countryId,
       if (city != null) 'city': city,
       if (legalAddress != null) 'legalAddress': legalAddress,

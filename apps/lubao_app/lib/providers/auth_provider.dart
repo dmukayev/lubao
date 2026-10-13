@@ -81,7 +81,7 @@ class SessionController extends StateNotifier<Session?> {
     required String password,
     required String ownerName,
     required String companyName,
-    String? companyNameRu,
+    String? companyNameLatin,
     required String countryId,
     CompanyKind? kind,
   }) async {
@@ -90,7 +90,7 @@ class SessionController extends StateNotifier<Session?> {
           password: password,
           ownerName: ownerName,
           companyName: companyName,
-          companyNameRu: companyNameRu,
+          companyNameLatin: companyNameLatin,
           countryId: countryId,
           kind: kind,
         );

@@ -21,6 +21,12 @@ export interface NotifyTarget {
 /// частых событий, и кладёт готовые к отправке задания в очередь на Redis
 /// (retry — на уровне BullMQ, см. notifications.module.ts). Бизнес-логика
 /// вызывающей стороны не знает о провайдерах push/WeCom вообще.
+/// 069: китайское название компании — латиницей во всех языках, кроме китайского.
+export function localizeCompanyName(payload: NotificationPayload, locale: string): NotificationPayload {
+  if (locale === 'zh' || !payload.companyNameLatin) return payload;
+  return { ...payload, companyName: payload.companyNameLatin };
+}
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -65,7 +71,7 @@ export class NotificationsService {
 
     const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { locale: true } });
     const locale: Locale = user?.locale ?? 'ru';
-    const rendered = def.render(locale, payload);
+    const rendered = def.render(locale, localizeCompanyName(payload, locale));
     const deepLink = def.deepLink(payload);
 
     await Promise.all(
@@ -123,7 +129,7 @@ export class NotificationsService {
       include: { user: { select: { locale: true } } },
     });
     const locale: Locale = owner?.user.locale ?? 'ru';
-    const rendered = def.render(locale, payload);
+    const rendered = def.render(locale, localizeCompanyName(payload, locale));
 
     try {
       await withTimeout(

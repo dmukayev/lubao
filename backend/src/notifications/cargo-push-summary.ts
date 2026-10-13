@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { I18nName } from './notification-events';
+import { companyLatin } from '../companies/latin-name';
 
 /// 053 п.6а: суть груза для push водителю («Приглашение», «Вас выбрали») —
 /// маршрут из справочника, цена, вес, кузов, дата погрузки, компания.
@@ -10,6 +11,7 @@ export interface CargoPushSummary {
   /// 062: короткий номер груза.
   cargoNumber: number;
   companyName: string;
+  companyNameLatin: string | null;
   origin: I18nName | null;
   destination: I18nName | null;
   price: number;
@@ -46,7 +48,7 @@ async function load(prisma: Pick<PrismaService, 'cargo'>, cargoId: string): Prom
       paymentDelayDays: true,
       weightKg: true,
       readyDate: true,
-      company: { select: { name: true } },
+      company: { select: { name: true, nameRu: true, nameLatin: true } },
       point: { select: { name: true } },
       destinationCity: { select: { name: true } },
       destinationCountry: { select: { name: true } },
@@ -59,6 +61,7 @@ async function load(prisma: Pick<PrismaService, 'cargo'>, cargoId: string): Prom
     cargoId,
     cargoNumber: cargo.number,
     companyName: cargo.company?.name ?? '',
+    companyNameLatin: companyLatin(cargo.company),
     origin: (cargo.point?.name as I18nName | undefined) ?? null,
     destination: ((cargo.destinationCity?.name ?? cargo.destinationCountry?.name) as I18nName | undefined) ?? null,
     price: num(cargo.price) ?? 0,

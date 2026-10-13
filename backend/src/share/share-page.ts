@@ -95,6 +95,8 @@ export interface PageCargo {
   currency: string;
   readyDate: Date;
   companyName: string;
+  /// 069: латинское название китайской компании (кроме китайской страницы).
+  companyNameLatin?: string | null;
   /// 066: плашка «Проверена» / серое «Не проверена» у компании.
   companyIsVerified: boolean;
   companyRatingAvg: number;
@@ -202,7 +204,7 @@ ${similar.length ? `<div class="card"><b>${escapeHtml(t.similar)}</b>${similar.m
   const body = `<div class="card hero" data-testid="share-cargo">${numberLine}<h1>${escapeHtml(r)}</h1><div class="big">${escapeHtml(money(cargo.price, cargo.currency, l))}</div><div class="muted">${escapeHtml(perKm.trim())}</div>${terms(cargo, l) ? `<div data-testid="share-terms">${escapeHtml(terms(cargo, l))}</div>` : ''}${advance(cargo, l) ? `<div class="advance" data-testid="share-advance">${escapeHtml(advance(cargo, l).replace(/^./, (c) => c.toLocaleUpperCase(l)))}</div>` : ''}</div>
 <div class="card"><div>🚛 <b>${escapeHtml(r)}</b>${cargo.distanceKm ? ` · ${groupThousands(cargo.distanceKm)} ${escapeHtml(t.km)}` : ''}</div>
 <div>${escapeHtml(cargoFacts(cargo, l))}</div><div>💰 ${escapeHtml(money(cargo.price, cargo.currency, l) + perKm)}</div>
-<div>📅 ${escapeHtml(t.loading)} ${escapeHtml(shortDate(cargo.readyDate, l))}</div><div class="muted">${escapeHtml(cargo.companyName + rating)}${companyBadge(cargo.companyIsVerified, l)}</div></div>
+<div>📅 ${escapeHtml(t.loading)} ${escapeHtml(shortDate(cargo.readyDate, l))}</div><div class="muted">${escapeHtml((l === 'zh' ? cargo.companyName : cargo.companyNameLatin ?? cargo.companyName) + rating)}${companyBadge(cargo.companyIsVerified, l)}</div></div>
 ${actions(l, links, t.respond)}`;
   const description = [cargoFacts(cargo, l), money(cargo.price, cargo.currency, l), terms(cargo, l), advance(cargo, l), `${t.loading} ${shortDate(cargo.readyDate, l)}`].filter(Boolean).join(' · ');
   return layout(l, `${r} · ${money(cargo.price, cargo.currency, l)}`, description, body, links, false);

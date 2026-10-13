@@ -368,6 +368,10 @@ export class AdminService {
       staleDeals,
       unverifiedCompanies,
       pausedCompanies,
+      // 069: китайское название без латинского — водитель видит иероглифы.
+      companiesWithoutLatin: Number(
+        (await this.prisma.$queryRaw<Array<{ count: bigint }>>`SELECT COUNT(*)::bigint AS count FROM companies WHERE "nameLatin" IS NULL AND name ~ '[\u3400-\u9fff]'`)[0]?.count ?? 0,
+      ),
       pendingCities,
       blacklistMatches,
       suspiciousContacts: await this.suspiciousContacts(),
@@ -2144,6 +2148,12 @@ export class AdminService {
     return { items, total };
   }
 
+  /// 069: компании с иероглифами в названии.
+  private async companyIdsWithCjkName(): Promise<string[]> {
+    const rows = await this.prisma.$queryRaw<Array<{ id: string }>>`SELECT id FROM companies WHERE name ~ '[\u3400-\u9fff]'`;
+    return rows.map((r) => r.id);
+  }
+
   async searchCompanies(query: SearchQueryDto) {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? DEFAULT_PAGE_SIZE;
@@ -2155,6 +2165,7 @@ export class AdminService {
       // 066 п.5: «Требует внимания» → непроверенные с грузами в ленте / на паузе.
       ...(query.activeCargos ? { cargos: { some: { status: 'PUBLISHED' } } } : {}),
       ...(query.paused ? { publishingPausedAt: { not: null } } : {}),
+      ...(query.noLatin ? { nameLatin: null, id: { in: await this.companyIdsWithCjkName() } } : {}),
       ...(q
         ? {
             OR: [
@@ -2418,6 +2429,7 @@ export class AdminService {
       id: company.id,
       name: company.name,
       nameRu: company.nameRu,
+      nameLatin: company.nameLatin,
       countryId: company.countryId,
       countryName: company.country.name,
       city: company.city,
@@ -2660,6 +2672,7 @@ export class AdminService {
     const fields: Array<[string, unknown, unknown]> = [
       ['name', company.name, dto.name],
       ['nameRu', company.nameRu, dto.nameRu],
+      ['nameLatin', company.nameLatin, dto.nameLatin],
       ['countryId', company.countryId, dto.countryId],
       ['city', company.city, dto.city],
       ['legalAddress', company.legalAddress, dto.legalAddress],
@@ -2671,7 +2684,7 @@ export class AdminService {
 
     await this.prisma.company.update({
       where: { id },
-      data: { name: dto.name, nameRu: dto.nameRu, countryId: dto.countryId, city: dto.city, legalAddress: dto.legalAddress, taxId: dto.taxId },
+      data: { name: dto.name, nameRu: dto.nameRu, nameLatin: dto.nameLatin, countryId: dto.countryId, city: dto.city, legalAddress: dto.legalAddress, taxId: dto.taxId },
     });
     await this.logAudit(adminUserId, 'COMPANY_UPDATED', 'Company', id, { reason: dto.reason, changes });
 

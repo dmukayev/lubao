@@ -16,6 +16,7 @@ import { INVITATION_TTL_HOURS } from './invitation-ttl';
 import { markResponsesSeen } from './new-responses';
 import { bumpShareReferral } from '../share/share.service';
 import { currentVehicleCombo } from '../deals/vehicle-combo';
+import { companyLatin } from '../companies/latin-name';
 
 type ResponseWithDriver = CargoResponseEntity & { driver: Driver };
 
@@ -81,7 +82,7 @@ export class ResponsesService {
         cargo: {
           select: {
             id: true, status: true, pointId: true, destinationCountryId: true, destinationCityId: true, bodyTypeId: true, categoryId: true,
-            weightKg: true, volumeM3: true, price: true, currency: true, readyDate: true, company: { select: { name: true, isVerified: true } },
+            weightKg: true, volumeM3: true, price: true, currency: true, readyDate: true, company: { select: { name: true, nameRu: true, nameLatin: true, isVerified: true } },
             // 058 п.1: условия оплаты — в «Моих рейсах».
             advanceAmount: true, paymentForm: true, paymentDelayDays: true,
           },
@@ -114,6 +115,7 @@ export class ResponsesService {
         paymentForm: r.cargo.paymentForm ?? null,
         paymentDelayDays: r.cargo.paymentDelayDays ?? null,
         companyName: r.cargo.company.name,
+        companyNameLatin: companyLatin(r.cargo.company),
         // 066: плашка «Проверена / Не проверена».
         companyIsVerified: r.cargo.company.isVerified,
         price: Number(r.cargo.price),
@@ -596,8 +598,8 @@ export class ResponsesService {
     if (!userIds.length) return;
     this.touch(userIds, cargoId);
     try {
-      const company = await this.prisma.company.findUnique({ where: { id: companyId }, select: { name: true } });
-      await this.notifications.notify({ userIds }, 'RESPONSE_REJECTED', { cargoId, companyName: company?.name ?? '' });
+      const company = await this.prisma.company.findUnique({ where: { id: companyId }, select: { name: true, nameRu: true, nameLatin: true } });
+      await this.notifications.notify({ userIds }, 'RESPONSE_REJECTED', { cargoId, companyName: company?.name ?? '', companyNameLatin: companyLatin(company) });
     } catch {
       // уведомление не критично
     }
@@ -653,6 +655,7 @@ export class ResponsesService {
     await this.notifications.notify({ userIds: [response.driver.userId] }, 'COUNTER_OFFER', {
       cargoId: response.cargoId,
       companyName: response.cargo.company.name,
+      companyNameLatin: companyLatin(response.cargo.company),
       price,
       currency: response.cargo.currency,
     });
@@ -732,6 +735,7 @@ export class ResponsesService {
       ...(await loadCargoPushSummary(this.prisma, cargoId)),
       cargoId,
       companyName: cargo.company.name,
+      companyNameLatin: companyLatin(cargo.company),
     });
     await this.chatSystem.post({
       driverId,
@@ -804,6 +808,7 @@ export class ResponsesService {
       ...(await loadCargoPushSummary(this.prisma, cargoId)),
       cargoId,
       companyName: cargo.company.name,
+      companyNameLatin: companyLatin(cargo.company),
     });
 
     // «Выбран водитель» — системно в чат пары (задача 038, п.11/12).

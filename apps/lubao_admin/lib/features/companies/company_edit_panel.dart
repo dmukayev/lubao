@@ -7,6 +7,7 @@ class CompanyEditResult {
   const CompanyEditResult({
     required this.name,
     required this.nameRu,
+    this.nameLatin,
     required this.countryId,
     required this.city,
     required this.legalAddress,
@@ -16,6 +17,7 @@ class CompanyEditResult {
 
   final String name;
   final String? nameRu;
+  final String? nameLatin;
   final String countryId;
   final String? city;
   final String? legalAddress;
@@ -32,6 +34,7 @@ Future<CompanyEditResult?> showCompanyEditPanel(
   final locale = Localizations.localeOf(context).languageCode;
   final nameController = TextEditingController(text: company.name);
   final nameRuController = TextEditingController(text: company.nameRu ?? '');
+  final nameLatinController = TextEditingController(text: company.nameLatin ?? '');
   final cityController = TextEditingController(text: company.city ?? '');
   final legalAddressController = TextEditingController(text: company.legalAddress ?? '');
   final taxIdController = TextEditingController(text: company.taxId ?? '');
@@ -40,13 +43,16 @@ Future<CompanyEditResult?> showCompanyEditPanel(
   final reason = await showEditSidePanel(
     context: context,
     title: company.name,
-    canSave: () => nameController.text.trim().isNotEmpty,
+    // 069: латинское название — латиница, цифры и . , & - ( ) ' (или пусто).
+    canSave: () => nameController.text.trim().isNotEmpty && (nameLatinController.text.trim().isEmpty || isValidLatinCompanyName(nameLatinController.text)),
     fieldsBuilder: (context, setState) {
       final t = context.l10n;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppTextField(label: t.companyRegisterCompanyName, controller: nameController, onChanged: (_) => setState(() {})),
+          const SizedBox(height: 12),
+          AppTextField(key: const Key('adminCompanyNameLatin'), label: t.companyRegisterLatinName, controller: nameLatinController, onChanged: (_) => setState(() {})),
           const SizedBox(height: 12),
           AppTextField(label: t.companyRegisterCompanyNameRu, controller: nameRuController, onChanged: (_) => setState(() {})),
           const SizedBox(height: 12),
@@ -72,6 +78,7 @@ Future<CompanyEditResult?> showCompanyEditPanel(
   return CompanyEditResult(
     name: nameController.text.trim(),
     nameRu: nameRuController.text.trim().isEmpty ? null : nameRuController.text.trim(),
+    nameLatin: nameLatinController.text.trim().isEmpty ? null : nameLatinController.text.trim(),
     countryId: countryId,
     city: cityController.text.trim().isEmpty ? null : cityController.text.trim(),
     legalAddress: legalAddressController.text.trim().isEmpty ? null : legalAddressController.text.trim(),

@@ -178,6 +178,30 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get companyRegisterCompanyName => '公司名称';
 
   @override
+  String get companyRegisterLatinName => '拉丁字母名称';
+
+  @override
+  String get companyRegisterLatinHint => '司机将看到这个名称';
+
+  @override
+  String get companyRegisterLatinError =>
+      '拉丁字母、数字、空格及 . , & - ( ) \'，2–100 个字符';
+
+  @override
+  String get errLatinNameRequired => '请填写公司的拉丁字母名称——司机将看到这个名称';
+
+  @override
+  String get adminCompanyNameLatin => '拉丁字母';
+
+  @override
+  String adminAttentionCompaniesWithoutLatin(int count) {
+    return '没有拉丁字母名称的中国公司：$count';
+  }
+
+  @override
+  String get adminFilterNoLatin => '无拉丁名称';
+
+  @override
   String get companyRegisterCompanyNameRu => '俄语名称';
 
   @override

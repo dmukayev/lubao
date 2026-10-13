@@ -67,6 +67,7 @@ final adminCompaniesSearchProvider =
         blocked: query.blocked,
         activeCargos: query.onSite == 'activeCargos' ? true : null,
         paused: query.onSite == 'paused' ? true : null,
+        noLatin: query.onSite == 'noLatin' ? true : null,
         page: query.page,
       );
 });

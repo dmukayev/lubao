@@ -290,6 +290,7 @@ class Company {
     required this.id,
     required this.name,
     this.nameRu,
+    this.nameLatin,
     required this.countryId,
     this.city,
     this.legalAddress,
@@ -306,6 +307,8 @@ class Company {
   final String id;
   final String name;
   final String? nameRu;
+  /// 069: латинское название китайской компании.
+  final String? nameLatin;
   final String countryId;
   final String? city;
   final String? legalAddress;
@@ -322,6 +325,7 @@ class Company {
         id: json['id'] as String,
         name: json['name'] as String,
         nameRu: json['nameRu'] as String?,
+        nameLatin: json['nameLatin'] as String?,
         countryId: json['countryId'] as String,
         city: json['city'] as String?,
         legalAddress: json['legalAddress'] as String?,

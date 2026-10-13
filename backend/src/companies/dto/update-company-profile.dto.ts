@@ -1,4 +1,5 @@
-import { IsIn, IsOptional, IsString, Length } from 'class-validator';
+import { Matches, IsIn, IsOptional, IsString, Length } from 'class-validator';
+import { LATIN_NAME_PATTERN } from '../latin-name';
 
 /// Поля компании, которые может менять сама компания (владелец) — не всё,
 /// что видит админ (задача 012: «Город — нет, по желанию в профиле»;
@@ -26,4 +27,10 @@ export class UpdateCompanyProfileDto {
   @IsOptional()
   @IsIn(['SHIPPER', 'FORWARDER', 'CARRIER'])
   kind?: 'SHIPPER' | 'FORWARDER' | 'CARRIER';
+
+  /// 069: латинское название (для китайского названия).
+  @IsOptional()
+  @IsString()
+  @Matches(LATIN_NAME_PATTERN)
+  nameLatin?: string;
 }

@@ -181,6 +181,32 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get companyRegisterCompanyName => 'Company name';
 
   @override
+  String get companyRegisterLatinName => 'Name in Latin letters';
+
+  @override
+  String get companyRegisterLatinHint =>
+      'This is how drivers will see your company';
+
+  @override
+  String get companyRegisterLatinError =>
+      'Latin letters, digits, spaces and . , & - ( ) \' — 2 to 100 characters';
+
+  @override
+  String get errLatinNameRequired =>
+      'Enter the company name in Latin letters — this is how drivers will see it';
+
+  @override
+  String get adminCompanyNameLatin => 'Latin';
+
+  @override
+  String adminAttentionCompaniesWithoutLatin(int count) {
+    return 'Chinese companies without a Latin name: $count';
+  }
+
+  @override
+  String get adminFilterNoLatin => 'No Latin name';
+
+  @override
   String get companyRegisterCompanyNameRu => 'Name in Russian';
 
   @override

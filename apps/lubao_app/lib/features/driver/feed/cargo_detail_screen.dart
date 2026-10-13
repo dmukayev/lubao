@@ -599,7 +599,7 @@ class _CargoDetailBody extends ConsumerWidget {
                       radius: 22,
                       backgroundColor: AppColors.accentSoft,
                       child: Text(
-                        cargo.companyName.isEmpty ? '' : cargo.companyName.substring(0, 1).toUpperCase(),
+                        companyDisplayName(cargo.companyName, cargo.companyNameLatin, Localizations.localeOf(context).languageCode).isEmpty ? '' : companyDisplayName(cargo.companyName, cargo.companyNameLatin, Localizations.localeOf(context).languageCode).substring(0, 1).toUpperCase(),
                         style: AppTextStyles.bodyStrong.copyWith(color: AppColors.accentText),
                       ),
                     ),
@@ -613,10 +613,13 @@ class _CargoDetailBody extends ConsumerWidget {
                             spacing: AppSpacing.xs,
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              Text(cargo.companyName, style: AppTextStyles.bodyStrong),
+                              Text(companyDisplayName(cargo.companyName, cargo.companyNameLatin, Localizations.localeOf(context).languageCode), key: const Key('cargoDetailCompanyName'), style: AppTextStyles.bodyStrong),
                               CompanyVerifiedBadge(isVerified: cargo.companyIsVerified, keySuffix: 'detail'),
                             ],
                           ),
+                          // 069: латиницей — а оригинал мелко серым.
+                          if (companyDisplayName(cargo.companyName, cargo.companyNameLatin, Localizations.localeOf(context).languageCode) != cargo.companyName)
+                            Text(cargo.companyName, key: const Key('cargoDetailCompanyOriginal'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
                           // 058 п.8а: грузовладелец / экспедитор / перевозчик.
                           Text(
                             [companyKindLabel(t, cargo.companyKind), ?formatLastSeen(t, cargo.contactLastSeenAt)].join(' · '),

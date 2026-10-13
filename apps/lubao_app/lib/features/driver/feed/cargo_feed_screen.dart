@@ -369,7 +369,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
         const SizedBox(height: 2),
         Text.rich(
           TextSpan(children: [
-            TextSpan(text: cargo.companyName),
+            TextSpan(text: companyDisplayName(cargo.companyName, cargo.companyNameLatin, Localizations.localeOf(context).languageCode)),
             CompanyVerifiedBadge.span(isVerified: cargo.companyIsVerified, keySuffix: cargo.id),
             if (companyLine.isNotEmpty) TextSpan(text: ' · $companyLine'),
           ]),

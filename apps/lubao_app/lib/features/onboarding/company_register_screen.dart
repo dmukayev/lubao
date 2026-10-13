@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,12 +29,16 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
   final _passwordController = TextEditingController();
   final _ownerNameController = TextEditingController();
   final _companyNameController = TextEditingController();
-  final _companyNameRuController = TextEditingController();
+  final _companyNameLatinController = TextEditingController();
   String? _countryId;
   // 058 п.8а: тип компании (по умолчанию экспедитор).
   CompanyKind _kind = CompanyKind.forwarder;
   bool _showAllCountries = false;
-  bool _companyNameRuTouched = false;
+  /// 069: латинское название — для китайского названия; логист правит подсказку.
+  bool _companyNameLatinTouched = false;
+  bool _needsLatin = false;
+  Timer? _latinDebounce;
+  String? _companyNameLatinError;
   bool _obscurePassword = true;
   bool _offerAccepted = false;
   bool _saving = false;
@@ -46,11 +52,7 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
   @override
   void initState() {
     super.initState();
-    _companyNameController.addListener(() {
-      if (!_companyNameRuTouched) {
-        _companyNameRuController.text = _companyNameController.text;
-      }
-    });
+    _companyNameController.addListener(_onCompanyNameChanged);
   }
 
   @override
@@ -59,8 +61,31 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
     _passwordController.dispose();
     _ownerNameController.dispose();
     _companyNameController.dispose();
-    _companyNameRuController.dispose();
+    _companyNameLatinController.dispose();
+    _latinDebounce?.cancel();
     super.dispose();
+  }
+
+  /// 069: иероглифы в названии → поле «Название латиницей» с пиньинем (сервер,
+  /// локальная библиотека). Кириллица и латиница — поля нет.
+  void _onCompanyNameChanged() {
+    final name = _companyNameController.text.trim();
+    final needs = hasChineseCharacters(name);
+    if (needs != _needsLatin) setState(() => _needsLatin = needs);
+    _latinDebounce?.cancel();
+    if (!needs || _companyNameLatinTouched) return;
+    _latinDebounce = Timer(const Duration(milliseconds: 400), () async {
+      try {
+        final suggestion = await ref.read(authRepositoryProvider).latinNameSuggestion(name);
+        if (!mounted || _companyNameLatinTouched || _companyNameController.text.trim() != name) return;
+        if (suggestion.latin != null) {
+          _companyNameLatinController.text = suggestion.latin!;
+          setState(() => _companyNameLatinError = null);
+        }
+      } catch (e) {
+        debugPrint('CompanyRegister: latin name suggestion failed: $e');
+      }
+    });
   }
 
   void _selectCountry(String id) {
@@ -81,12 +106,14 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
       _passwordError = password.length >= 8 ? null : t.companyRegisterPasswordError;
       _ownerNameError = isValidPersonName(ownerName) ? null : t.driverSetupFullNameError;
       _companyNameError = companyName.length < 2 ? t.companyRegisterNameError : null;
+      _companyNameLatinError = _needsLatin && !isValidLatinCompanyName(_companyNameLatinController.text) ? t.companyRegisterLatinError : null;
       _countryError = _countryId == null ? t.companyRegisterCountryError : null;
     });
     if (_emailError != null ||
         _passwordError != null ||
         _ownerNameError != null ||
         _companyNameError != null ||
+        _companyNameLatinError != null ||
         _countryError != null) {
       return;
     }
@@ -98,7 +125,7 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
             password: password,
             ownerName: ownerName,
             companyName: companyName,
-            companyNameRu: _companyNameRuController.text.trim().isEmpty ? null : _companyNameRuController.text.trim(),
+            companyNameLatin: _needsLatin ? _companyNameLatinController.text.trim() : null,
             countryId: _countryId!,
             kind: _kind,
           );
@@ -182,12 +209,22 @@ class _CompanyRegisterScreenState extends ConsumerState<CompanyRegisterScreen> {
                 controller: _companyNameController,
                 errorText: _companyNameError,
               ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: t.companyRegisterCompanyNameRu,
-                controller: _companyNameRuController,
-                onChanged: (_) => _companyNameRuTouched = true,
-              ),
+              if (_needsLatin) ...[
+                const SizedBox(height: AppSpacing.md),
+                AppTextField(
+                  key: const Key('companyRegisterCompanyNameLatin'),
+                  label: t.companyRegisterLatinName,
+                  hintText: 'Horgos Ruida Trading',
+                  controller: _companyNameLatinController,
+                  errorText: _companyNameLatinError,
+                  onChanged: (_) {
+                    _companyNameLatinTouched = true;
+                    if (_companyNameLatinError != null) setState(() => _companyNameLatinError = null);
+                  },
+                ),
+                const SizedBox(height: 4),
+                Text(t.companyRegisterLatinHint, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+              ],
               const SizedBox(height: AppSpacing.xl),
               Text(t.companyRegisterCountry, style: AppTextStyles.bodyStrong),
               const SizedBox(height: AppSpacing.sm),

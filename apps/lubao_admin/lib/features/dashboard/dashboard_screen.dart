@@ -263,6 +263,8 @@ class _AttentionBlock extends ConsumerWidget {
         (t.adminAttentionUnverifiedCompanies(attention.unverifiedCompanies), false, '/companies?filter=activeUnverified'),
       // 066 п.5: публикация на паузе после жалоб водителей.
       if (attention.pausedCompanies > 0) (t.adminAttentionPausedCompanies(attention.pausedCompanies), true, '/companies?filter=paused'),
+      // 069: водитель видит иероглифы вместо названия.
+      if (attention.companiesWithoutLatin > 0) (t.adminAttentionCompaniesWithoutLatin(attention.companiesWithoutLatin), false, '/companies?filter=noLatin'),
       if (attention.pendingCities > 0) (t.adminAttentionPendingCities(attention.pendingCities), false, '/reference'),
       // 032 п.11 (038) — совпадения подтверждённых идентификаторов с
       // активным чёрным списком (кроме самих заблокированных).

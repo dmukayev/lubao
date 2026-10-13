@@ -9,6 +9,7 @@ import { ChatSystemMessagesService } from './chat-system-messages.service';
 import { TranslationService } from '../translation/translation.service';
 import { ContactPolicyService } from '../contact-events/contact-policy.service';
 import { avatarVersion } from '../drivers/avatar-version';
+import { companyLatin } from '../companies/latin-name';
 
 const CHAT_PREVIEW_LENGTH = 80;
 
@@ -163,7 +164,9 @@ export class ChatsService {
     // роли, контакты»). companyMember.fullName/contactPhone/wechatId —
     // пока сотрудник не заполнил «Мой профиль», откатываемся на название
     // компании/User.phone, как было раньше, а не показываем пусто.
-    const counterpartName = ctx.driver ? companyMember?.fullName ?? companyMember?.company.name ?? '' : driver.fullName;
+    // 069: без имени логиста — название компании, у китайской — латиницей (кроме китайского интерфейса).
+    const companyLabel = (ctx.user.locale !== 'zh' ? companyLatin(companyMember?.company) : null) ?? companyMember?.company?.name;
+    const counterpartName = ctx.driver ? companyMember?.fullName ?? companyLabel ?? '' : driver.fullName;
     const counterpartLocale = ctx.driver ? companyMember?.user.locale : driver.user.locale;
     // Задача 035 — закреплённая карточка груза в чате решает, какую
     // кнопку показать («Готов взять» / «Отклик отправлен»+«Отозвать» /
@@ -181,6 +184,7 @@ export class ChatsService {
       counterpartName,
       // 066: водителю — компания и плашка «Проверена / Не проверена».
       companyName: ctx.driver ? companyMember?.company?.name ?? null : null,
+      companyNameLatin: ctx.driver ? companyLatin(companyMember?.company) : null,
       companyIsVerified: ctx.driver ? companyMember?.company?.isVerified ?? false : false,
       // 054: логист видит фото водителя в чате; водителю фото логиста не показываем.
       counterpartAvatarVersion: ctx.driver ? null : avatarVersion(driver),

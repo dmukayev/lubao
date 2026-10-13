@@ -636,6 +636,9 @@ model Company {
   id              String    @id @default(uuid())
   name            String
   nameRu          String?
+  /// 069: название латиницей — обязательно, если в `name` иероглифы; водитель
+  /// видит его вместо оригинала (у логиста и в китайском интерфейсе — оригинал).
+  nameLatin       String?
   countryId       String
   country         Country   @relation(fields: [countryId], references: [id])
   city            String?

@@ -124,6 +124,7 @@ class CompanyDetailScreen extends ConsumerWidget {
           id,
           name: result.name,
           nameRu: result.nameRu,
+          nameLatin: result.nameLatin,
           countryId: result.countryId,
           city: result.city,
           legalAddress: result.legalAddress,
@@ -310,6 +311,8 @@ class _Header extends StatelessWidget {
                 ),
             ],
           ),
+          // 069: оба названия — латиницей (так видят водители) и оригинал.
+          if (company.nameLatin != null) Text('${t.adminCompanyNameLatin}: ${company.nameLatin}', key: const Key('adminCompanyLatinName'), style: Theme.of(context).textTheme.bodyMedium),
           if (company.nameRu != null) Text(company.nameRu!, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 8),
           Text(company.countryName.forLanguageCode(Localizations.localeOf(context).languageCode)),

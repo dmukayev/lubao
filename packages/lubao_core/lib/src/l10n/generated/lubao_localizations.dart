@@ -408,6 +408,48 @@ abstract class LubaoLocalizations {
   /// **'Название компании'**
   String get companyRegisterCompanyName;
 
+  /// No description provided for @companyRegisterLatinName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название латиницей'**
+  String get companyRegisterLatinName;
+
+  /// No description provided for @companyRegisterLatinHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Так вашу компанию увидят водители'**
+  String get companyRegisterLatinHint;
+
+  /// No description provided for @companyRegisterLatinError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Латиница, цифры, пробел и . , & - ( ) \' — от 2 до 100 знаков'**
+  String get companyRegisterLatinError;
+
+  /// No description provided for @errLatinNameRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите название компании латиницей — так её увидят водители'**
+  String get errLatinNameRequired;
+
+  /// No description provided for @adminCompanyNameLatin.
+  ///
+  /// In ru, this message translates to:
+  /// **'Латиницей'**
+  String get adminCompanyNameLatin;
+
+  /// No description provided for @adminAttentionCompaniesWithoutLatin.
+  ///
+  /// In ru, this message translates to:
+  /// **'Китайские компании без латинского названия: {count}'**
+  String adminAttentionCompaniesWithoutLatin(int count);
+
+  /// No description provided for @adminFilterNoLatin.
+  ///
+  /// In ru, this message translates to:
+  /// **'Без латиницы'**
+  String get adminFilterNoLatin;
+
   /// No description provided for @companyRegisterCompanyNameRu.
   ///
   /// In ru, this message translates to:

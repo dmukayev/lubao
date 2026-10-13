@@ -14,8 +14,16 @@ import { UpdateCompanyProfileDto } from './dto/update-company-profile.dto';
 import { UpdateMyContactDto } from './dto/update-my-contact.dto';
 import { CreateCompanyVerificationDocumentDto } from './dto/create-company-verification-document.dto';
 import { isValidRegistrationNumber } from './registration-number';
+import { hasCjk } from './latin-name';
 
 const INVITE_TTL_DAYS = 7;
+
+/// 069: в названии иероглифы — нужно латинское название (водитель их не прочтёт).
+export function assertLatinName(name: string, latin: string | undefined | null) {
+  if (hasCjk(name) && !latin?.trim()) {
+    throw new BadRequestException({ code: 'LATIN_NAME_REQUIRED', message: 'Latin company name is required for a Chinese name', fields: [{ field: 'companyNameLatin', rule: 'required' }] });
+  }
+}
 
 @Injectable()
 export class CompaniesService {
@@ -32,6 +40,7 @@ export class CompaniesService {
       id: company.id,
       name: company.name,
       nameRu: company.nameRu,
+      nameLatin: company.nameLatin,
       countryId: company.countryId,
       city: company.city,
       legalAddress: company.legalAddress,
@@ -81,7 +90,7 @@ export class CompaniesService {
     }
     const updated = await this.prisma.company.update({
       where: { id: companyId },
-      data: { city: dto.city, legalAddress: dto.legalAddress, taxId: dto.taxId, kind: dto.kind },
+      data: { city: dto.city, legalAddress: dto.legalAddress, taxId: dto.taxId, kind: dto.kind, nameLatin: dto.nameLatin?.trim() },
     });
     return this.toCompanyDto(updated);
   }
@@ -129,6 +138,7 @@ export class CompaniesService {
   /// (решение 2026-10-04) — отдельных прав для CompanyMemberRole.OWNER не
   /// заводим, это уже так во всех местах, где проверяется роль.
   async registerOwnedCompany(userId: string, dto: RegisterCompanyDto, opts: { offerVersion?: string } = {}) {
+    assertLatinName(dto.companyName, dto.companyNameLatin);
     const existingMember = await this.prisma.companyMember.findUnique({ where: { userId } });
     if (existingMember) throw new BadRequestException('User is already a member of a company');
 
@@ -142,7 +152,9 @@ export class CompaniesService {
         const company = await tx.company.create({
           data: {
             name: dto.companyName,
-            nameRu: dto.companyNameRu ?? dto.companyName,
+            // 069: русское название больше не спрашиваем; у китайского — латиница.
+            nameRu: dto.companyNameRu ?? null,
+            nameLatin: dto.companyNameLatin?.trim() || null,
             countryId: dto.countryId,
             ...(dto.kind ? { kind: dto.kind } : {}),
             ...(opts.offerVersion ? { offerAcceptedAt: new Date(), offerVersion: opts.offerVersion } : {}),

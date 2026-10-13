@@ -599,4 +599,21 @@ assert(csv.status === 200 && csv.text.includes('median_kzt_per_km'), 'админ
   assert((await feedIds(d1.token)).includes(first.json.id), 'после снятия паузы груз снова в ленте');
 }
 
+// ---- 069. Латинское название китайской компании ----
+{
+  const cn = refData.countries.find((c) => c.code === 'CN');
+  const hint = (await api('GET', `/auth/company/latin-name?name=${encodeURIComponent('霍尔果斯瑞达贸易有限公司')}`)).json;
+  assert(hint.needed === true && hint.latin === 'Horgos Ruida Trading Co., Ltd.', 'подсказка латинского названия — пиньинь', JSON.stringify(hint));
+  assert((await api('GET', `/auth/company/latin-name?name=${encodeURIComponent('ТОО Транс')}`)).json.needed === false, 'кириллица — латиница не нужна');
+  const base = { password: 'E2eLubao2026!', ownerName: 'Ли Вэй', companyName: '瑞达贸易', countryId: cn.id, offerVersion: '2026-10-08' };
+  const noLatin = await api('POST', '/auth/company/register', { body: { ...base, email: `e2e-069a-${Date.now()}@lubao-test.cn` } });
+  assert(noLatin.status === 400 && noLatin.json.code === 'LATIN_NAME_REQUIRED', 'китайское название без латиницы — 400 LATIN_NAME_REQUIRED', `status=${noLatin.status}`);
+  const badLatin = await api('POST', '/auth/company/register', { body: { ...base, email: `e2e-069b-${Date.now()}@lubao-test.cn`, companyNameLatin: 'Ruida 贸易' } });
+  assert(badLatin.status === 400, 'латинское название с иероглифами отклоняется', `status=${badLatin.status}`);
+  const ok = await api('POST', '/auth/company/register', { body: { ...base, email: `e2e-069c-${Date.now()}@lubao-test.cn`, companyNameLatin: 'Ruida Trading' } });
+  assert(ok.status < 300 && ok.json.company?.nameLatin === 'Ruida Trading', 'китайская компания с латинским названием регистрируется', `status=${ok.status}`);
+  const att = (await get('/admin/attention')).json;
+  assert(typeof att.companiesWithoutLatin === 'number', '«Требует внимания»: китайские компании без латиницы', JSON.stringify(att.companiesWithoutLatin));
+}
+
 console.log(`Готово: ${checks} проверок.`);

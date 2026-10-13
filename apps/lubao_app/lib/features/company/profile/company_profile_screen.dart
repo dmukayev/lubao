@@ -358,6 +358,10 @@ Future<void> _showCompanyEditDialog(BuildContext context, WidgetRef ref, Company
   final addressController = TextEditingController(text: company.legalAddress ?? '');
   final taxIdController = TextEditingController(text: company.taxId ?? '');
   var kind = company.kind;
+  // 069: китайское название — латинское, так компанию видят водители.
+  final needsLatin = hasChineseCharacters(company.name);
+  final latinController = TextEditingController(text: company.nameLatin ?? '');
+  String? latinError;
   String? error;
   bool saving = false;
 
@@ -370,6 +374,12 @@ Future<void> _showCompanyEditDialog(BuildContext context, WidgetRef ref, Company
           child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (needsLatin) ...[
+              AppTextField(key: const Key('companyEditLatinName'), label: t.companyRegisterLatinName, hintText: 'Horgos Ruida Trading', controller: latinController, errorText: latinError),
+              const SizedBox(height: 4),
+              Align(alignment: Alignment.centerLeft, child: Text(t.companyRegisterLatinHint, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary))),
+              const SizedBox(height: AppSpacing.md),
+            ],
             AppTextField(label: t.companyEditCityLabel, controller: cityController),
             const SizedBox(height: AppSpacing.md),
             AppTextField(label: t.companyEditLegalAddressLabel, controller: addressController),
@@ -396,9 +406,14 @@ Future<void> _showCompanyEditDialog(BuildContext context, WidgetRef ref, Company
             onPressed: saving
                 ? null
                 : () async {
+                    if (needsLatin && !isValidLatinCompanyName(latinController.text)) {
+                      setState(() => latinError = t.companyRegisterLatinError);
+                      return;
+                    }
                     setState(() => saving = true);
                     try {
                       final updated = await ref.read(companyRepositoryProvider).updateProfile(
+                            nameLatin: needsLatin ? latinController.text.trim() : null,
                             city: cityController.text.trim(),
                             legalAddress: addressController.text.trim(),
                             taxId: taxIdController.text.trim(),
@@ -636,7 +651,10 @@ class CompanyProfileScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(company?.name ?? '', style: Theme.of(context).textTheme.headlineSmall),
-                    if (company?.nameRu != null && company!.nameRu!.isNotEmpty && company.nameRu != company.name)
+                    // 069: латинское название — так компанию видят водители; у старых — nameRu.
+                    if (company?.nameLatin case final latin? when latin.isNotEmpty)
+                      Text(latin, key: const Key('companyProfileLatinName'), style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary))
+                    else if (company?.nameRu != null && company!.nameRu!.isNotEmpty && company.nameRu != company.name)
                       Text(company.nameRu!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
                     if (company != null) Text(companyKindLabel(t, company.kind), key: const Key('companyProfileKind'), style: AppTextStyles.caption),
                   ],

@@ -25,7 +25,7 @@ class CompanyCargosPublicScreen extends ConsumerWidget {
     final refData = ref.watch(referenceDataProvider).valueOrNull;
     final locale = Localizations.localeOf(context).languageCode;
     return Scaffold(
-      appBar: AppBar(title: Text(cargos.valueOrNull?.firstOrNull?.companyName ?? t.shareCompanyCargosTitle)),
+      appBar: AppBar(title: Text(switch (cargos.valueOrNull?.firstOrNull) { final c? => companyDisplayName(c.companyName, c.companyNameLatin, locale), null => t.shareCompanyCargosTitle })),
       body: cargos.when(
         loading: () => const LoadingView(),
         error: (e, st) => ErrorView(message: errorMessage(t, e), onRetry: () => ref.invalidate(_companyCargosProvider(companyId))),

@@ -20,6 +20,7 @@ import { EmailService } from '../email/email.service';
 import { SessionService, TokenPair } from './session.service';
 import { RegisterCompanyAuthDto } from './dto/register-company.dto';
 import { AcceptInviteDto } from '../companies/dto/invite.dto';
+import { assertLatinName } from '../companies/companies.service';
 
 const LOCKOUT_THRESHOLD = 5;
 const LOCKOUT_SECONDS = 15 * 60;
@@ -160,6 +161,8 @@ export class AuthService {
    * на qq.com/163.com ненадёжна.
    */
   async registerCompany(dto: RegisterCompanyAuthDto, ip: string) {
+    // 069: до создания учётки — иначе пользователь остался бы без компании.
+    assertLatinName(dto.companyName, dto.companyNameLatin);
     if (dto.offerVersion !== OFFER_VERSION) {
       throw new BadRequestException({ code: 'OFFER_VERSION_MISMATCH', version: OFFER_VERSION });
     }

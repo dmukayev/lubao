@@ -222,6 +222,7 @@ class _TripCargo {
     required this.currency,
     required this.readyDate,
     required this.companyName,
+    this.companyNameLatin,
     this.companyIsVerified = false,
     this.advanceAmount,
     this.paymentForm,
@@ -243,6 +244,7 @@ class _TripCargo {
   final Currency currency;
   final DateTime readyDate;
   final String companyName;
+  final String? companyNameLatin;
   /// 066: плашка «Проверена / Не проверена».
   final bool companyIsVerified;
 
@@ -258,6 +260,7 @@ class _TripCargo {
         currency: r.currency,
         readyDate: r.readyDate,
         companyName: r.companyName,
+        companyNameLatin: r.companyNameLatin,
         companyIsVerified: r.companyIsVerified,
         advanceAmount: r.advanceAmount,
         paymentForm: r.paymentForm,
@@ -280,6 +283,7 @@ class _TripCargo {
       currency: c.currency,
       readyDate: c.readyDate,
       companyName: d.companyName,
+      companyNameLatin: d.companyNameLatin,
       companyIsVerified: d.companyIsVerified,
       advanceAmount: c.advanceAmount,
       paymentForm: c.paymentForm,
@@ -300,6 +304,7 @@ class _TripCargo {
         currency: c.currency,
         readyDate: c.readyDate,
         companyName: c.companyName,
+        companyNameLatin: c.companyNameLatin,
         companyIsVerified: c.companyIsVerified,
         advanceAmount: c.advanceAmount,
         paymentForm: c.paymentForm,
@@ -308,7 +313,7 @@ class _TripCargo {
 
   factory _TripCargo.fromDeal(Deal d) =>
       fromDealOrNull(d) ??
-      _TripCargo(destinationCountryId: '', bodyTypeId: '', price: 0, currency: Currency.kzt, readyDate: d.createdAt, companyName: d.companyName, companyIsVerified: d.companyIsVerified);
+      _TripCargo(destinationCountryId: '', bodyTypeId: '', price: 0, currency: Currency.kzt, readyDate: d.createdAt, companyName: d.companyName, companyNameLatin: d.companyNameLatin, companyIsVerified: d.companyIsVerified);
 }
 
 /// Карточка рейса по эталону 32: маршрут и цена, «категория · вес · кузов ·
@@ -371,7 +376,7 @@ class _TripCard extends StatelessWidget {
           Text(details, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
           if (cargo.companyName.isNotEmpty)
             Text.rich(
-              TextSpan(children: [TextSpan(text: cargo.companyName), CompanyVerifiedBadge.span(isVerified: cargo.companyIsVerified)]),
+              TextSpan(children: [TextSpan(text: companyDisplayName(cargo.companyName, cargo.companyNameLatin, locale)), CompanyVerifiedBadge.span(isVerified: cargo.companyIsVerified)]),
               style: AppTextStyles.small.copyWith(color: AppColors.textSecondary),
             ),
           if (advance != null) ...[const SizedBox(height: AppSpacing.sm), AdvancePill(advance)],

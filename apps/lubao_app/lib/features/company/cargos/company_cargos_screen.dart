@@ -80,7 +80,8 @@ class _CompanyCargosScreenState extends ConsumerState<CompanyCargosScreen> with 
       kind: ShareKind.company,
       targetId: company.id,
       dialogTitle: t.shareDialogAll,
-      buildText: (url) => companyShareText(t, refData, company.name, active, url, lang),
+      // 069: текст уходит водителям — китайское название латиницей.
+      buildText: (url) => companyShareText(t, refData, company.nameLatin ?? company.name, active, url, lang),
     );
   }
 

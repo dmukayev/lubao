@@ -26,6 +26,7 @@ import { toDateOnly } from '../common/date-only';
 import { avatarVersion } from '../drivers/avatar-version';
 import { currentVehicleCombo } from './vehicle-combo';
 import { pauseAfterComplaints } from '../companies/publishing-pause';
+import { companyLatin } from '../companies/latin-name';
 
 function rethrowStatusRace(e: unknown): never {
   if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') throw new ConflictException('DEAL_STATUS_CHANGED');
@@ -98,6 +99,7 @@ export class DealsService {
       trailerId: deal.trailerId,
       companyId: deal.companyId,
       companyName: deal.company.name,
+      companyNameLatin: companyLatin(deal.company),
       // 066: плашка «Проверена / Не проверена».
       companyIsVerified: deal.company.isVerified,
       status: deal.status,

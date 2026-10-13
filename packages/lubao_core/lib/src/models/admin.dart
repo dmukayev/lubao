@@ -1001,6 +1001,7 @@ class AdminCompanyDetail {
     this.shareStats = const AdminShareStats(),
     required this.name,
     this.nameRu,
+    this.nameLatin,
     required this.countryId,
     required this.countryName,
     this.city,
@@ -1028,6 +1029,8 @@ class AdminCompanyDetail {
   final AdminShareStats shareStats;
   final String name;
   final String? nameRu;
+  /// 069: латинское название китайской компании.
+  final String? nameLatin;
   final String countryId;
   final I18nText countryName;
   final String? city;
@@ -1062,6 +1065,7 @@ class AdminCompanyDetail {
       shareStats: AdminShareStats.fromJson(json['shareStats']),
         name: json['name'] as String,
         nameRu: json['nameRu'] as String?,
+        nameLatin: json['nameLatin'] as String?,
         countryId: json['countryId'] as String,
         countryName: I18nText.fromJson(json['countryName'] as Map<String, dynamic>),
         city: json['city'] as String?,
@@ -1216,6 +1220,7 @@ class AdminAttention {
     required this.staleDeals,
     required this.unverifiedCompanies,
     this.pausedCompanies = 0,
+    this.companiesWithoutLatin = 0,
     required this.pendingCities,
     this.blacklistMatches = 0,
     this.suspiciousContacts = const [],
@@ -1232,6 +1237,8 @@ class AdminAttention {
   /// 066 п.5: непроверенные компании с грузами в ленте; на паузе после жалоб.
   final int unverifiedCompanies;
   final int pausedCompanies;
+  /// 069: китайские компании без латинского названия.
+  final int companiesWithoutLatin;
   final int pendingCities;
 
   /// «Совпадения с чёрным списком» (задача 032, п.11 / 038).
@@ -1249,6 +1256,7 @@ class AdminAttention {
       staleDeals: json['staleDeals'] as int,
       unverifiedCompanies: json['unverifiedCompanies'] as int,
       pausedCompanies: json['pausedCompanies'] as int? ?? 0,
+      companiesWithoutLatin: json['companiesWithoutLatin'] as int? ?? 0,
       pendingCities: json['pendingCities'] as int,
       blacklistMatches: json['blacklistMatches'] as int? ?? 0,
       suspiciousContacts: [
