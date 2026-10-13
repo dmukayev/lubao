@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import '../offline/response_cache.dart';
 import 'token_storage.dart';
 
 class ApiClient {
@@ -9,7 +11,79 @@ class ApiClient {
       : dio = Dio(BaseOptions(baseUrl: baseUrl, connectTimeout: const Duration(seconds: 10), receiveTimeout: const Duration(seconds: 20))),
         _refreshDio = refreshDio ?? Dio(BaseOptions(baseUrl: baseUrl, connectTimeout: const Duration(seconds: 10), receiveTimeout: const Duration(seconds: 20))),
         tokenStorage = tokenStorage ?? TokenStorage() {
-    dio.interceptors.add(InterceptorsWrapper(onRequest: _onRequest, onError: _onError));
+    dio.interceptors.add(InterceptorsWrapper(onRequest: _onRequest, onResponse: _onResponse, onError: _onError));
+  }
+
+  // --- 078: «сначала показать, потом обновить», режим без связи -------------
+
+  /// Хранилище ответов (в приложении — файлы на диске).
+  CacheStore cacheStore = MemoryCacheStore();
+
+  /// Чей кэш — id пользователя; нет сессии — не кэшируем.
+  String? cacheScope;
+
+  /// Нет связи с сервером: последний запрос не долетел. Любой ответ — снова есть.
+  final offline = ValueNotifier<bool>(false);
+
+  /// e2e: «выключить сеть» — запросы падают, как без связи.
+  bool simulateOffline = false;
+
+  /// e2e: журнал запросов «МЕТОД путь» — проверить, что повторно не ходим.
+  final requestLog = <String>[];
+
+  /// Изменений (POST/PATCH/…) за этот запуск; после изменения сохранённое
+  /// показываем только если оно уже обновлено после него — без мигания старым.
+  int _mutations = 0;
+  final _freshKeys = <String>{};
+
+  static bool isConnectivityError(DioException e) =>
+      e.type == DioExceptionType.connectionError ||
+      e.type == DioExceptionType.connectionTimeout ||
+      e.type == DioExceptionType.sendTimeout ||
+      e.type == DioExceptionType.receiveTimeout ||
+      (e.type == DioExceptionType.unknown && e.response == null);
+
+  /// Сохранённый ответ для мгновенного показа (или null: нет, устарел, чужой).
+  Future<CachedResponse?> peek(String path, {Map<String, dynamic>? query}) async {
+    final scope = cacheScope;
+    final policy = CachePolicy.forPath(path);
+    if (scope == null || policy == null) return null;
+    final key = cacheKey(scope, path, query);
+    if (_mutations > 0 && !_freshKeys.contains(key)) return null;
+    final raw = await cacheStore.read(key);
+    final cached = raw == null ? null : CachedResponse.decode(raw);
+    if (cached == null || cached.age > policy.maxAge) return null;
+    return cached;
+  }
+
+  /// Выход / смена пользователя — всё сохранённое стереть.
+  Future<void> clearCache() async {
+    _freshKeys.clear();
+    await cacheStore.clear();
+  }
+
+  Future<void> _onResponse(Response<dynamic> response, ResponseInterceptorHandler handler) async {
+    if (response.requestOptions.extra['fromCache'] != true) offline.value = false;
+    final options = response.requestOptions;
+    final status = response.statusCode ?? 0;
+    if (options.method != 'GET') {
+      if (status >= 200 && status < 300) {
+        _mutations++;
+        _freshKeys.clear();
+      }
+    } else if (status == 200 && options.extra['fromCache'] != true) {
+      final scope = cacheScope;
+      final policy = CachePolicy.forPath(options.path);
+      if (scope != null && policy != null) {
+        final key = cacheKey(scope, options.path, options.queryParameters);
+        var data = stripPhones(response.data);
+        final keep = policy.keepLast;
+        if (keep != null && data is List && data.length > keep) data = data.sublist(data.length - keep);
+        _freshKeys.add(key);
+        unawaited(cacheStore.write(key, CachedResponse(data, DateTime.now()).encode()).catchError((Object _) {}));
+      }
+    }
+    handler.next(response);
   }
 
   final Dio dio;
@@ -31,6 +105,11 @@ class ApiClient {
   Stream<void> get onSessionExpired => _sessionExpiredController.stream;
 
   Future<void> _onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    if (kDebugMode) requestLog.add('${options.method} ${options.path}');
+    if (simulateOffline) {
+      handler.reject(DioException(requestOptions: options, type: DioExceptionType.connectionError, message: 'e2e: offline'), true);
+      return;
+    }
     final token = await tokenStorage.readAccess();
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
@@ -39,6 +118,22 @@ class ApiClient {
   }
 
   Future<void> _onError(DioException error, ErrorInterceptorHandler handler) async {
+    // 078: нет связи — показать сохранённое (если есть), поднять флаг «нет связи».
+    if (isConnectivityError(error)) {
+      offline.value = true;
+      final options = error.requestOptions;
+      final scope = cacheScope;
+      if (options.method == 'GET' && scope != null && CachePolicy.forPath(options.path) != null) {
+        final raw = await cacheStore.read(cacheKey(scope, options.path, options.queryParameters));
+        final cached = raw == null ? null : CachedResponse.decode(raw);
+        if (cached != null) {
+          handler.resolve(Response(requestOptions: options..extra['fromCache'] = true, data: cached.data, statusCode: 200));
+          return;
+        }
+      }
+      handler.next(error);
+      return;
+    }
     // 073: 401 от самого входа (неверный пароль, код) — это ответ, а не
     // истёкшая сессия: не обновляем токен и не подменяем ошибку (раньше чтение
     // токена в браузере по http падало, и вместо «Неверный пароль» было

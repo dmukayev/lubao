@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, Tar
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 
+import '../services/data_cache_store.dart';
+
 /// На физическом устройстве (не симулятор/эмулятор) "localhost" указывает
 /// на само устройство, а не на Mac с бэкендом — поэтому базовый URL можно
 /// переопределить: `flutter run --dart-define=API_BASE_URL=http://<lan-ip>:3000`.
@@ -17,7 +19,8 @@ String _defaultBaseUrl() {
   return 'http://localhost:3000';
 }
 
-final apiClientProvider = Provider<ApiClient>((ref) => ApiClient(baseUrl: _defaultBaseUrl()));
+/// 078: ответы сервера сохраняются на телефоне — «сначала показать, потом обновить».
+final apiClientProvider = Provider<ApiClient>((ref) => ApiClient(baseUrl: _defaultBaseUrl())..cacheStore = DataCacheStore());
 
 final authRepositoryProvider = Provider((ref) => AuthRepository(ref.watch(apiClientProvider)));
 final referenceDataRepositoryProvider = Provider((ref) => ReferenceDataRepository(ref.watch(apiClientProvider)));
@@ -41,6 +44,8 @@ final realtimeServiceProvider = Provider<RealtimeService>((ref) {
   return service;
 });
 
-final referenceDataProvider = FutureProvider<ReferenceData>((ref) {
-  return ref.watch(referenceDataRepositoryProvider).fetch();
+/// 078: справочники — из сохранённого сразу, свежие — в фоне.
+final referenceDataProvider = StreamProvider<ReferenceData>((ref) {
+  return cacheFirst(ref.watch(apiClientProvider), '/reference-data',
+      parse: ReferenceDataRepository.parse, fetch: () => ref.watch(referenceDataRepositoryProvider).fetch());
 });

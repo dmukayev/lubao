@@ -10,8 +10,11 @@ import '../../shared/error_feedback.dart';
 import '../../shared/status_helpers.dart';
 
 /// Отклики водителя (041, п.9) — источник «Моих рейсов» и «Истории рейсов».
-final myResponsesProvider = FutureProvider.autoDispose<List<MyResponseEntry>>((ref) {
-  return ref.watch(cargoRepositoryProvider).myResponses();
+/// 078: «Мои рейсы» — из сохранённого сразу (и без связи), свежие — в фоне.
+final myResponsesProvider = StreamProvider.autoDispose<List<MyResponseEntry>>((ref) {
+  return cacheFirst(ref.watch(apiClientProvider), '/responses/mine',
+      parse: (d) => [for (final e in d as List<dynamic>) MyResponseEntry.fromJson(e as Map<String, dynamic>)],
+      fetch: () => ref.watch(cargoRepositoryProvider).myResponses());
 });
 
 /// Сколько часов осталось ответить на приглашение (не меньше 1, пока не истекло).

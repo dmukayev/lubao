@@ -14,7 +14,11 @@ class ArrivalRepository {
     // (задача 027) — но на пустое тело без Content-Type (старые/прокси-ответы)
     // Dio кладёт в res.data пустую строку, а не null, так что проверка типа
     // всё равно нужна как защита от этого случая.
-    final data = res.data;
+    return parseMine(res.data);
+  }
+
+  /// Разбор ответа `/arrivals/me` — и для сохранённого на телефоне (078).
+  static MyArrivals parseMine(Object? data) {
     if (data is! Map<String, dynamic>) return const MyArrivals(current: null, all: []);
     final arrival = data['arrival'];
     final all = (data['arrivals'] as List<dynamic>?)?.map((e) => Arrival.fromJson(e as Map<String, dynamic>)).toList() ?? const <Arrival>[];

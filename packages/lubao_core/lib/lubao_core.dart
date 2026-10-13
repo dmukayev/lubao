@@ -67,6 +67,8 @@ export 'src/repositories/reference_data_repository.dart';
 export 'src/repositories/driver_repository.dart';
 export 'src/repositories/company_repository.dart';
 export 'src/offline/contact_event_queue.dart';
+export 'src/offline/response_cache.dart';
+export 'src/offline/cache_first.dart';
 export 'src/offline/pending_contact_event.dart';
 export 'src/offline/recent_points_store.dart';
 export 'src/offline/weight_unit_store.dart';

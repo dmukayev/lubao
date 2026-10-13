@@ -120,9 +120,9 @@ Future<_FakeArrivalRepository> _pump(WidgetTester tester, {required Size size, d
     overrides: [
       authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
       arrivalRepositoryProvider.overrideWithValue(arrivals),
-      myCargosProvider.overrideWith((ref) async => [_lastCargo()]),
+      myCargosProvider.overrideWith((ref) => Stream.value([_lastCargo()])),
       recentPointsStoreProvider.overrideWithValue(_FakeRecentPoints()),
-      referenceDataProvider.overrideWith((ref) async => _refData(twoPoints: twoPoints)),
+      referenceDataProvider.overrideWith((ref) => Stream.value(_refData(twoPoints: twoPoints))),
     ],
     child: MaterialApp(
       locale: Locale(locale),
