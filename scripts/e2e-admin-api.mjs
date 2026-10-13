@@ -616,4 +616,24 @@ assert(csv.status === 200 && csv.text.includes('median_kzt_per_km'), 'админ
   assert(typeof att.companiesWithoutLatin === 'number', '«Требует внимания»: китайские компании без латиницы', JSON.stringify(att.companiesWithoutLatin));
 }
 
+// ---- 075. «Что везёте?» — поиск по коду и названию на 4 языках ----
+{
+  const owner = (await api('POST', '/auth/company/login', { body: { email: 'e2e-owner@lubao-test.kz', password: 'E2eLubao2026!', deviceName: 'e2e', platform: 'ios' } })).json.accessToken;
+  const search = async (q) => (await api('GET', `/goods/search?q=${encodeURIComponent(q)}`, { token: owner })).json;
+  const byCode = await search('6907');
+  assert(byCode[0]?.type === 'goods' && byCode[0].hsCode === '690721' && byCode.some((h) => h.type === 'hs'), '«6907» — сначала товар «плитка», затем официальные коды', JSON.stringify(byCode.slice(0, 2)));
+  const construction = ref040.cargoCategories.find((c) => c.code === 'CONSTRUCTION').id;
+  assert(byCode[0].categoryId === construction, 'категория плитки — «Стройматериалы»');
+  for (const q of ['плитка', '瓷砖', 'tiles', 'кафель']) {
+    const hits = await search(q);
+    assert(hits.some((h) => h.hsCode === '690721' && h.type === 'goods'), `«${q}» находит плитку`, JSON.stringify(hits.slice(0, 1)));
+  }
+  const hsOnly = await search('8701');
+  assert(hsOnly.every((h) => h.hsCode.startsWith('8701')), 'код по началу — только 8701…');
+  const nothing = await search('ыыыыыы');
+  assert(Array.isArray(nothing) && nothing.length === 0, 'несуществующее — пусто (в форме «Добавить»)');
+  const words = await get('/admin/reference/goods-new-words');
+  assert(words.status === 200, '«Новые слова» в админке открываются');
+}
+
 console.log(`Готово: ${checks} проверок.`);

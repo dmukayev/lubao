@@ -723,6 +723,18 @@ Future<void> completeDriverWizard(WidgetTester tester, String fullName) async {
   await tester.pumpAndSettle();
 }
 
+/// 075: «Что везёте?» — ввести запрос и выбрать первую подсказку (или «Добавить»).
+Future<void> pickGoods(WidgetTester tester, String query, {bool addOwn = false}) async {
+  final field = find.byKey(const Key('postCargoWhat'));
+  await reveal(tester, field);
+  await tester.enterText(field, query);
+  await tester.pump(const Duration(milliseconds: 400));
+  final target = find.byKey(Key(addOwn ? 'postCargoWhatAdd' : 'goodsHit-0'));
+  await waitAndReveal(tester, target);
+  await tester.tap(target);
+  await tester.pumpAndSettle();
+}
+
 /// 072: незаполненное поле — в видимой части экрана, с ошибкой и фокусом.
 void expectFieldShownWithError(WidgetTester tester, Key fieldKey, {bool focused = true}) {
   final field = find.byKey(fieldKey);

@@ -4332,5 +4332,148 @@
    ],
    "kk": []
   }
+ },
+ {
+  "slug": "eggs",
+  "hsCode": "040721",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1480,
+  "name": {
+   "ru": "Яйца",
+   "kk": "Жұмыртқа",
+   "zh": "鸡蛋",
+   "en": "Eggs"
+  },
+  "synonyms": {
+   "ru": [
+    "яйца",
+    "яйцо куриное"
+   ],
+   "zh": [
+    "鸡蛋"
+   ],
+   "en": [
+    "eggs"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "honey",
+  "hsCode": "040900",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1490,
+  "name": {
+   "ru": "Мёд",
+   "kk": "Бал",
+   "zh": "蜂蜜",
+   "en": "Honey"
+  },
+  "synonyms": {
+   "ru": [
+    "мед",
+    "мёд"
+   ],
+   "zh": [
+    "蜂蜜"
+   ],
+   "en": [
+    "honey"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "watermelons",
+  "hsCode": "080711",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1500,
+  "name": {
+   "ru": "Арбузы и дыни",
+   "kk": "Қарбыз бен қауын",
+   "zh": "西瓜",
+   "en": "Watermelons and melons"
+  },
+  "synonyms": {
+   "ru": [
+    "арбуз",
+    "дыня",
+    "бахчевые"
+   ],
+   "zh": [
+    "西瓜",
+    "甜瓜"
+   ],
+   "en": [
+    "watermelon",
+    "melon"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "air_filters",
+  "hsCode": "842131",
+  "category": "EQUIPMENT",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1510,
+  "name": {
+   "ru": "Фильтры воздушные",
+   "kk": "Ауа сүзгілері",
+   "zh": "空气滤清器",
+   "en": "Air filters"
+  },
+  "synonyms": {
+   "ru": [
+    "фильтр",
+    "воздушный фильтр"
+   ],
+   "zh": [
+    "滤清器",
+    "空滤"
+   ],
+   "en": [
+    "air filter",
+    "filter"
+   ],
+   "kk": []
+  }
+ },
+ {
+  "slug": "tents",
+  "hsCode": "630622",
+  "category": "CONSUMER_GOODS",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1520,
+  "name": {
+   "ru": "Палатки и тенты",
+   "kk": "Шатырлар мен тенттер",
+   "zh": "帐篷",
+   "en": "Tents and tarpaulins"
+  },
+  "synonyms": {
+   "ru": [
+    "палатка",
+    "тент",
+    "брезент"
+   ],
+   "zh": [
+    "帐篷",
+    "篷布"
+   ],
+   "en": [
+    "tent",
+    "tarpaulin"
+   ],
+   "kk": []
+  }
  }
 ]

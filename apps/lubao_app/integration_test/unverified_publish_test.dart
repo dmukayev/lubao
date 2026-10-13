@@ -102,6 +102,10 @@ void main() {
       await tester.pumpAndSettle();
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
+      // 075: «瓷砖» находит ту же плитку; а свой вариант — «Добавить: „…“».
+      await pickGoods(tester, '瓷砖');
+      expect(find.text('Плитка керамическая'), findsWidgets);
+      await pickGoods(tester, 'Тестовый груз 075', addOwn: true);
       final category = find.byKey(const Key('postCargoCategory-CONSTRUCTION'));
       await reveal(tester, category);
       await tester.tap(category);
@@ -133,6 +137,7 @@ void main() {
       await waitFor(tester, find.byKey(const Key('companyPostCargoFab')));
       final cargos = await container.read(myCargosProvider.future);
       expect(cargos, hasLength(1));
+      expect(cargos.single.goodsName?.ru, 'Тестовый груз 075', reason: '075: свой вариант логиста');
       expect(cargos.single.companyIsVerified, isFalse);
       cargoId = cargos.single.id;
       await waitAndReveal(tester, find.byKey(Key('companyCargoCard-$cargoId')));
@@ -269,6 +274,8 @@ void main() {
       // 069: водитель видит латинское название вместо иероглифов.
       expect(find.descendant(of: find.byKey(Key('feedCargoCard-$cargoId')), matching: find.textContaining(latinName, findRichText: true)), findsOneWidget);
       expect(find.descendant(of: find.byKey(Key('feedCargoCard-$cargoId')), matching: find.textContaining(chineseName, findRichText: true)), findsNothing);
+      // 075: в ленте — что везут, а не категория.
+      expect(find.descendant(of: find.byKey(Key('feedCargoCard-$cargoId')), matching: find.textContaining('Тестовый груз 075', findRichText: true)), findsWidgets);
       expect(find.text(t.companyBadgeUnverified), findsWidgets);
       await waitAndReveal(tester, find.byKey(Key('companyVerifiedBadge-${verified['id']}')));
       expect(find.text(t.companyBadgeVerified), findsWidgets);

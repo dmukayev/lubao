@@ -111,10 +111,9 @@ void main() {
       await tester.tap(field);
       await pickCityByName(tester, 'Astana', 'Астана');
       expect(find.text(t.postCargoPickupCityError), findsNothing);
-      final category = find.byKey(const Key('postCargoCategory-CONSTRUCTION'));
-      await reveal(tester, category);
-      await tester.tap(category);
-      await tester.pumpAndSettle();
+      // 075: «6907» → «Плитка керамическая» → категория «Стройматериалы» сама.
+      await pickGoods(tester, '6907');
+      expect(find.text('Плитка керамическая'), findsWidgets);
       expect(find.byKey(const Key('postCargoCategoryError')), findsNothing);
       // 049 п.1: догруз выключен флагом — переключателя «Можно догрузом» нет.
       expect(find.byKey(const Key('postCargoAllowPartial')), findsNothing);
@@ -143,7 +142,9 @@ void main() {
       final refData = await container.read(referenceDataProvider.future);
       expect(refData.pointOrNull(cargo.pointId)?.name.ru, 'Астана', reason: 'город погрузки — из выбора, не первая точка');
       // 047: категория ушла, расстояние Астана → Алматы посчитано (в e2e — из кэша пар городов).
-      expect(refData.categoryById(cargo.categoryId)?.code, 'CONSTRUCTION');
+      expect(refData.categoryById(cargo.categoryId)?.code, 'CONSTRUCTION', reason: '075: категория — из товара');
+      expect(cargo.goodsName?.ru, 'Плитка керамическая');
+      expect(cargo.hsCode, '690721');
       expect(cargo.distanceKm, 1230);
       expect(cargo.pricePerKm, closeTo(1500 / 1230, 0.01));
       cargoId = cargo.id;
@@ -268,6 +269,8 @@ void main() {
       final card = find.byKey(Key('feedCargoCard-$cargoId'));
       await waitAndReveal(tester, card, timeout: const Duration(seconds: 30));
       expect(find.descendant(of: card, matching: find.textContaining('18,5 ${t.unitTon}')), findsOneWidget);
+      // 075: водитель видит товар («Плитка керамическая»), а не категорию.
+      expect(find.descendant(of: card, matching: find.textContaining('Плитка керамическая', findRichText: true)), findsWidgets);
       // 052: вход по ссылке → экран груза; водитель делится чужим грузом.
       GoRouter.of(tester.element(find.byType(NavigationBar))).go(sharePath);
       await waitFor(tester, find.byKey(const Key('cargoDetailShare')), timeout: const Duration(seconds: 30));
