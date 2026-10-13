@@ -13,7 +13,7 @@ export class CreateCargoDto {
   goodsText?: string | null;
 
   @IsOptional()
-  @Matches(/^\d{6}$/)
+  @Matches(/^(\d{4}|\d{6})$/)
   hsCode?: string | null;
 
   /// 047: категория груза из справочника — обязательна при публикации.

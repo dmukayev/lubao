@@ -239,7 +239,7 @@
  },
  {
   "slug": "pvc_pipes",
-  "hsCode": "391723",
+  "hsCode": "3917",
   "category": "CONSTRUCTION",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -270,7 +270,7 @@
  },
  {
   "slug": "wallpaper",
-  "hsCode": "481420",
+  "hsCode": "4814",
   "category": "CONSTRUCTION",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -297,7 +297,7 @@
  },
  {
   "slug": "paint",
-  "hsCode": "320910",
+  "hsCode": null,
   "category": "DANGEROUS",
   "bodyType": "TENT",
   "isDangerous": true,
@@ -390,7 +390,7 @@
  },
  {
   "slug": "doors",
-  "hsCode": "441829",
+  "hsCode": "4418",
   "category": "CONSTRUCTION",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -808,7 +808,7 @@
  },
  {
   "slug": "fasteners",
-  "hsCode": "731815",
+  "hsCode": "7318",
   "category": "METAL",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -842,7 +842,7 @@
  },
  {
   "slug": "steel_structures",
-  "hsCode": "730890",
+  "hsCode": "7308",
   "category": "OVERSIZE",
   "bodyType": "LOWLOADER",
   "isDangerous": false,
@@ -899,7 +899,7 @@
  },
  {
   "slug": "cable",
-  "hsCode": "854449",
+  "hsCode": "8544",
   "category": "EQUIPMENT",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -928,7 +928,7 @@
  },
  {
   "slug": "machinery_parts",
-  "hsCode": "847990",
+  "hsCode": null,
   "category": "EQUIPMENT",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -960,7 +960,7 @@
  },
  {
   "slug": "cnc_machines",
-  "hsCode": "845811",
+  "hsCode": null,
   "category": "OVERSIZE",
   "bodyType": "LOWLOADER",
   "isDangerous": false,
@@ -1103,7 +1103,7 @@
  },
  {
   "slug": "generator",
-  "hsCode": "850213",
+  "hsCode": "8502",
   "category": "EQUIPMENT",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -1132,7 +1132,7 @@
  },
  {
   "slug": "compressor",
-  "hsCode": "841440",
+  "hsCode": "8414",
   "category": "EQUIPMENT",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -1159,7 +1159,7 @@
  },
  {
   "slug": "pumps",
-  "hsCode": "841370",
+  "hsCode": "8413",
   "category": "EQUIPMENT",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -1243,7 +1243,7 @@
  },
  {
   "slug": "electric_motors",
-  "hsCode": "850152",
+  "hsCode": "8501",
   "category": "EQUIPMENT",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -1271,7 +1271,7 @@
  },
  {
   "slug": "agri_machinery",
-  "hsCode": "843680",
+  "hsCode": null,
   "category": "OVERSIZE",
   "bodyType": "LOWLOADER",
   "isDangerous": false,
@@ -1329,7 +1329,7 @@
  },
  {
   "slug": "elevator",
-  "hsCode": "842810",
+  "hsCode": "8428",
   "category": "OVERSIZE",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -1643,7 +1643,7 @@
  },
  {
   "slug": "small_appliances",
-  "hsCode": "850940",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -1704,7 +1704,7 @@
  },
  {
   "slug": "lighting",
-  "hsCode": "940542",
+  "hsCode": "9405",
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -1796,7 +1796,7 @@
  },
  {
   "slug": "electronics_parts",
-  "hsCode": "854239",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -1856,7 +1856,7 @@
  },
  {
   "slug": "furniture",
-  "hsCode": "940360",
+  "hsCode": "9403",
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -1890,7 +1890,7 @@
  },
  {
   "slug": "sofas",
-  "hsCode": "940161",
+  "hsCode": "9401",
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -1945,7 +1945,7 @@
  },
  {
   "slug": "office_furniture",
-  "hsCode": "940330",
+  "hsCode": "9403",
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -1972,16 +1972,16 @@
  },
  {
   "slug": "kitchenware",
-  "hsCode": "732393",
+  "hsCode": "7323",
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
   "sortOrder": 680,
   "name": {
-   "ru": "Посуда",
-   "kk": "Ыдыс-аяқ",
-   "zh": "厨具",
-   "en": "Kitchenware"
+   "ru": "Посуда металлическая",
+   "kk": "Металл ыдыс-аяқ",
+   "zh": "金属餐具",
+   "en": "Metal kitchenware"
   },
   "synonyms": {
    "ru": [
@@ -1999,7 +1999,9 @@
     "cookware",
     "pots"
    ],
-   "kk": []
+   "kk": [
+    "ыдыс"
+   ]
   }
  },
  {
@@ -2036,7 +2038,7 @@
  },
  {
   "slug": "plastic_ware",
-  "hsCode": "392410",
+  "hsCode": "3924",
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2096,7 +2098,7 @@
  },
  {
   "slug": "curtains",
-  "hsCode": "630319",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2129,7 +2131,7 @@
  },
  {
   "slug": "toys",
-  "hsCode": "950300",
+  "hsCode": "9503",
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2156,7 +2158,7 @@
  },
  {
   "slug": "stationery",
-  "hsCode": "482010",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2188,7 +2190,7 @@
  },
  {
   "slug": "sport_goods",
-  "hsCode": "950691",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2275,7 +2277,7 @@
  },
  {
   "slug": "cosmetics",
-  "hsCode": "330499",
+  "hsCode": "3304",
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2305,7 +2307,7 @@
  },
  {
   "slug": "household_chemicals",
-  "hsCode": "340250",
+  "hsCode": "3402",
   "category": "DANGEROUS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2336,7 +2338,7 @@
  },
  {
   "slug": "hygiene",
-  "hsCode": "961900",
+  "hsCode": "9619",
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2462,7 +2464,7 @@
  },
  {
   "slug": "clothing",
-  "hsCode": "620342",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2494,7 +2496,7 @@
  },
  {
   "slug": "outerwear",
-  "hsCode": "620140",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2525,7 +2527,7 @@
  },
  {
   "slug": "knitwear",
-  "hsCode": "611020",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2557,7 +2559,7 @@
  },
  {
   "slug": "footwear",
-  "hsCode": "640299",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2590,7 +2592,7 @@
  },
  {
   "slug": "bags",
-  "hsCode": "420222",
+  "hsCode": "4202",
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2622,7 +2624,7 @@
  },
  {
   "slug": "fabric",
-  "hsCode": "540752",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2654,7 +2656,7 @@
  },
  {
   "slug": "yarn",
-  "hsCode": "550922",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2683,7 +2685,7 @@
  },
  {
   "slug": "workwear",
-  "hsCode": "621143",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2711,7 +2713,7 @@
  },
  {
   "slug": "hats_gloves",
-  "hsCode": "611610",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2738,7 +2740,7 @@
  },
  {
   "slug": "car_parts",
-  "hsCode": "870899",
+  "hsCode": "8708",
   "category": "EQUIPMENT",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -2947,7 +2949,7 @@
  },
  {
   "slug": "engine_oil",
-  "hsCode": "271019",
+  "hsCode": "2710",
   "category": "DANGEROUS",
   "bodyType": "TENT",
   "isDangerous": true,
@@ -2977,16 +2979,16 @@
  },
  {
   "slug": "vegetables",
-  "hsCode": "070200",
+  "hsCode": null,
   "category": "FOOD",
   "bodyType": "REFRIGERATOR",
   "isDangerous": false,
   "sortOrder": 1010,
   "name": {
-   "ru": "Овощи",
-   "kk": "Көкөністер",
-   "zh": "蔬菜",
-   "en": "Vegetables"
+   "ru": "Овощи (разные)",
+   "kk": "Көкөністер (әртүрлі)",
+   "zh": "蔬菜（各类）",
+   "en": "Vegetables (assorted)"
   },
   "synonyms": {
    "ru": [
@@ -3007,16 +3009,16 @@
  },
  {
   "slug": "fruits",
-  "hsCode": "080810",
+  "hsCode": null,
   "category": "FOOD",
   "bodyType": "REFRIGERATOR",
   "isDangerous": false,
   "sortOrder": 1020,
   "name": {
-   "ru": "Фрукты",
-   "kk": "Жемістер",
-   "zh": "水果",
-   "en": "Fruits"
+   "ru": "Фрукты (разные)",
+   "kk": "Жемістер (әртүрлі)",
+   "zh": "水果（各类）",
+   "en": "Fruit (assorted)"
   },
   "synonyms": {
    "ru": [
@@ -3175,7 +3177,7 @@
  },
  {
   "slug": "dried_fruits",
-  "hsCode": "081340",
+  "hsCode": "0813",
   "category": "FOOD",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -3205,7 +3207,7 @@
  },
  {
   "slug": "nuts",
-  "hsCode": "080232",
+  "hsCode": "0802",
   "category": "FOOD",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -3234,16 +3236,16 @@
  },
  {
   "slug": "frozen_meat",
-  "hsCode": "020230",
+  "hsCode": "0202",
   "category": "FOOD",
   "bodyType": "REFRIGERATOR",
   "isDangerous": false,
   "sortOrder": 1100,
   "name": {
-   "ru": "Мясо замороженное",
-   "kk": "Мұздатылған ет",
-   "zh": "冻肉",
-   "en": "Frozen meat"
+   "ru": "Говядина замороженная",
+   "kk": "Мұздатылған сиыр еті",
+   "zh": "冷冻牛肉",
+   "en": "Frozen beef"
   },
   "synonyms": {
    "ru": [
@@ -3257,9 +3259,13 @@
    ],
    "en": [
     "frozen meat",
-    "beef"
+    "beef",
+    "meat"
    ],
-   "kk": []
+   "kk": [
+    "ет",
+    "сиыр еті"
+   ]
   }
  },
  {
@@ -3294,7 +3300,7 @@
  },
  {
   "slug": "fish",
-  "hsCode": "030389",
+  "hsCode": "0303",
   "category": "FOOD",
   "bodyType": "REFRIGERATOR",
   "isDangerous": false,
@@ -3322,7 +3328,7 @@
  },
  {
   "slug": "dairy",
-  "hsCode": "040690",
+  "hsCode": null,
   "category": "FOOD",
   "bodyType": "REFRIGERATOR",
   "isDangerous": false,
@@ -3360,14 +3366,15 @@
   "isDangerous": false,
   "sortOrder": 1140,
   "name": {
-   "ru": "Мука",
-   "kk": "Ұн",
-   "zh": "面粉",
-   "en": "Flour"
+   "ru": "Мука пшеничная",
+   "kk": "Бидай ұны",
+   "zh": "小麦粉",
+   "en": "Wheat flour"
   },
   "synonyms": {
    "ru": [
-    "мука"
+    "мука",
+    "пшеничная мука"
    ],
    "zh": [
     "面粉"
@@ -3375,7 +3382,9 @@
    "en": [
     "flour"
    ],
-   "kk": []
+   "kk": [
+    "ұн"
+   ]
   }
  },
  {
@@ -3488,13 +3497,13 @@
  },
  {
   "slug": "vegetable_oil",
-  "hsCode": "151219",
+  "hsCode": null,
   "category": "FOOD",
   "bodyType": "TENT",
   "isDangerous": false,
   "sortOrder": 1190,
   "name": {
-   "ru": "Масло растительное",
+   "ru": "Масло растительное (подсолнечное и др.)",
    "kk": "Өсімдік майы",
    "zh": "植物油",
    "en": "Vegetable oil"
@@ -3502,17 +3511,22 @@
   "synonyms": {
    "ru": [
     "подсолнечное масло",
-    "растительное масло"
+    "растительное масло",
+    "масло"
    ],
    "zh": [
     "葵花籽油",
-    "植物油"
+    "植物油",
+    "食用油"
    ],
    "en": [
     "sunflower oil",
-    "vegetable oil"
+    "vegetable oil",
+    "oil"
    ],
-   "kk": []
+   "kk": [
+    "май"
+   ]
   }
  },
  {
@@ -3544,7 +3558,7 @@
  },
  {
   "slug": "confectionery",
-  "hsCode": "170490",
+  "hsCode": null,
   "category": "FOOD",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -3576,16 +3590,16 @@
  },
  {
   "slug": "canned_food",
-  "hsCode": "200290",
+  "hsCode": null,
   "category": "FOOD",
   "bodyType": "TENT",
   "isDangerous": false,
   "sortOrder": 1220,
   "name": {
-   "ru": "Консервы",
-   "kk": "Консервілер",
-   "zh": "罐头",
-   "en": "Canned food"
+   "ru": "Консервы овощные",
+   "kk": "Көкөніс консервілері",
+   "zh": "蔬菜罐头",
+   "en": "Canned vegetables"
   },
   "synonyms": {
    "ru": [
@@ -3600,7 +3614,9 @@
     "canned food",
     "tomato paste"
    ],
-   "kk": []
+   "kk": [
+    "консерві"
+   ]
   }
  },
  {
@@ -3634,7 +3650,7 @@
  },
  {
   "slug": "beverages",
-  "hsCode": "220210",
+  "hsCode": "2202",
   "category": "FOOD",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -3666,7 +3682,7 @@
  },
  {
   "slug": "feed",
-  "hsCode": "230990",
+  "hsCode": "2309",
   "category": "FOOD",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -3694,7 +3710,7 @@
  },
  {
   "slug": "seeds",
-  "hsCode": "120991",
+  "hsCode": "1209",
   "category": "FOOD",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -3801,7 +3817,7 @@
  },
  {
   "slug": "fertilizer",
-  "hsCode": "310230",
+  "hsCode": null,
   "category": "DANGEROUS",
   "bodyType": "TENT",
   "isDangerous": true,
@@ -3864,7 +3880,7 @@
  },
  {
   "slug": "chemicals",
-  "hsCode": "281511",
+  "hsCode": null,
   "category": "DANGEROUS",
   "bodyType": "TENT",
   "isDangerous": true,
@@ -3926,7 +3942,7 @@
  },
  {
   "slug": "fuel",
-  "hsCode": "271020",
+  "hsCode": "2710",
   "category": "DANGEROUS",
   "bodyType": "TANK",
   "isDangerous": true,
@@ -3983,7 +3999,7 @@
  },
  {
   "slug": "pesticides",
-  "hsCode": "380893",
+  "hsCode": "3808",
   "category": "DANGEROUS",
   "bodyType": "TENT",
   "isDangerous": true,
@@ -4013,7 +4029,7 @@
  },
  {
   "slug": "medicines",
-  "hsCode": "300490",
+  "hsCode": "3004",
   "category": "CONSUMER_GOODS",
   "bodyType": "ISOTHERM",
   "isDangerous": false,
@@ -4042,7 +4058,7 @@
  },
  {
   "slug": "medical_equipment",
-  "hsCode": "901890",
+  "hsCode": "9018",
   "category": "EQUIPMENT",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -4070,7 +4086,7 @@
  },
  {
   "slug": "ppe",
-  "hsCode": "630790",
+  "hsCode": null,
   "category": "CONSUMER_GOODS",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -4127,7 +4143,7 @@
  },
  {
   "slug": "ore",
-  "hsCode": "260300",
+  "hsCode": null,
   "category": "OTHER",
   "bodyType": "DUMP",
   "isDangerous": false,
@@ -4278,7 +4294,7 @@
  },
  {
   "slug": "greenhouse",
-  "hsCode": "940690",
+  "hsCode": null,
   "category": "CONSTRUCTION",
   "bodyType": "TENT",
   "isDangerous": false,
@@ -4474,6 +4490,456 @@
     "tarpaulin"
    ],
    "kk": []
+  }
+ },
+ {
+  "slug": "corn_grain",
+  "hsCode": "100590",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1530,
+  "name": {
+   "ru": "Кукуруза (зерно)",
+   "kk": "Жүгері (дән)",
+   "zh": "玉米（粒）",
+   "en": "Corn (grain)"
+  },
+  "synonyms": {
+   "ru": [
+    "кукуруза",
+    "кукурузное зерно",
+    "маис"
+   ],
+   "kk": [
+    "жүгері",
+    "жүгері дәні"
+   ],
+   "zh": [
+    "玉米",
+    "玉米粒"
+   ],
+   "en": [
+    "corn",
+    "maize"
+   ]
+  }
+ },
+ {
+  "slug": "corn_canned",
+  "hsCode": "200580",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1540,
+  "name": {
+   "ru": "Кукуруза консервированная",
+   "kk": "Консервіленген жүгері",
+   "zh": "玉米罐头",
+   "en": "Canned sweet corn"
+  },
+  "synonyms": {
+   "ru": [
+    "кукуруза",
+    "сладкая кукуруза",
+    "консервированная кукуруза"
+   ],
+   "kk": [
+    "жүгері",
+    "консерві жүгері"
+   ],
+   "zh": [
+    "玉米",
+    "甜玉米",
+    "玉米罐头"
+   ],
+   "en": [
+    "corn",
+    "sweet corn",
+    "canned corn"
+   ]
+  }
+ },
+ {
+  "slug": "corn_flour",
+  "hsCode": "110220",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1550,
+  "name": {
+   "ru": "Мука кукурузная",
+   "kk": "Жүгері ұны",
+   "zh": "玉米粉",
+   "en": "Corn flour"
+  },
+  "synonyms": {
+   "ru": [
+    "кукуруза",
+    "кукурузная мука",
+    "мука"
+   ],
+   "kk": [
+    "жүгері",
+    "ұн"
+   ],
+   "zh": [
+    "玉米",
+    "玉米粉",
+    "玉米面"
+   ],
+   "en": [
+    "corn",
+    "corn flour",
+    "cornmeal"
+   ]
+  }
+ },
+ {
+  "slug": "corn_starch",
+  "hsCode": "110812",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1560,
+  "name": {
+   "ru": "Крахмал кукурузный",
+   "kk": "Жүгері крахмалы",
+   "zh": "玉米淀粉",
+   "en": "Corn starch"
+  },
+  "synonyms": {
+   "ru": [
+    "кукуруза",
+    "крахмал"
+   ],
+   "kk": [
+    "жүгері",
+    "крахмал"
+   ],
+   "zh": [
+    "玉米",
+    "淀粉"
+   ],
+   "en": [
+    "corn",
+    "starch",
+    "cornstarch"
+   ]
+  }
+ },
+ {
+  "slug": "tomatoes_fresh",
+  "hsCode": "0702",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1570,
+  "name": {
+   "ru": "Помидоры (свежие)",
+   "kk": "Қызанақ (жаңа)",
+   "zh": "西红柿（新鲜）",
+   "en": "Tomatoes (fresh)"
+  },
+  "synonyms": {
+   "ru": [
+    "помидоры",
+    "томаты",
+    "помидор"
+   ],
+   "kk": [
+    "қызанақ"
+   ],
+   "zh": [
+    "西红柿",
+    "番茄"
+   ],
+   "en": [
+    "tomato",
+    "tomatoes"
+   ]
+  }
+ },
+ {
+  "slug": "tomato_paste",
+  "hsCode": "200290",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1580,
+  "name": {
+   "ru": "Томатная паста",
+   "kk": "Қызанақ пастасы",
+   "zh": "番茄酱",
+   "en": "Tomato paste"
+  },
+  "synonyms": {
+   "ru": [
+    "томаты",
+    "помидоры",
+    "томатная паста",
+    "паста"
+   ],
+   "kk": [
+    "қызанақ",
+    "паста"
+   ],
+   "zh": [
+    "番茄",
+    "番茄酱"
+   ],
+   "en": [
+    "tomato",
+    "tomato paste"
+   ]
+  }
+ },
+ {
+  "slug": "apples",
+  "hsCode": "0808",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1590,
+  "name": {
+   "ru": "Яблоки",
+   "kk": "Алма",
+   "zh": "苹果",
+   "en": "Apples"
+  },
+  "synonyms": {
+   "ru": [
+    "яблоки",
+    "яблоко"
+   ],
+   "kk": [
+    "алма"
+   ],
+   "zh": [
+    "苹果"
+   ],
+   "en": [
+    "apple",
+    "apples"
+   ]
+  }
+ },
+ {
+  "slug": "apple_juice",
+  "hsCode": "2009",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1600,
+  "name": {
+   "ru": "Соки",
+   "kk": "Шырындар",
+   "zh": "果汁",
+   "en": "Juices"
+  },
+  "synonyms": {
+   "ru": [
+    "сок",
+    "яблочный сок",
+    "соки"
+   ],
+   "kk": [
+    "шырын"
+   ],
+   "zh": [
+    "果汁",
+    "苹果汁"
+   ],
+   "en": [
+    "juice",
+    "apple juice"
+   ]
+  }
+ },
+ {
+  "slug": "cheese",
+  "hsCode": "0406",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1610,
+  "name": {
+   "ru": "Сыр",
+   "kk": "Ірімшік",
+   "zh": "奶酪",
+   "en": "Cheese"
+  },
+  "synonyms": {
+   "ru": [
+    "сыр"
+   ],
+   "kk": [
+    "ірімшік",
+    "сыр"
+   ],
+   "zh": [
+    "奶酪",
+    "芝士"
+   ],
+   "en": [
+    "cheese"
+   ]
+  }
+ },
+ {
+  "slug": "milk_powder",
+  "hsCode": "0402",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1620,
+  "name": {
+   "ru": "Молоко сухое",
+   "kk": "Құрғақ сүт",
+   "zh": "奶粉",
+   "en": "Milk powder"
+  },
+  "synonyms": {
+   "ru": [
+    "молоко",
+    "сухое молоко"
+   ],
+   "kk": [
+    "сүт"
+   ],
+   "zh": [
+    "奶粉",
+    "牛奶"
+   ],
+   "en": [
+    "milk",
+    "milk powder"
+   ]
+  }
+ },
+ {
+  "slug": "fries_frozen",
+  "hsCode": "200410",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1630,
+  "name": {
+   "ru": "Картофель фри замороженный",
+   "kk": "Мұздатылған фри картобы",
+   "zh": "冷冻薯条",
+   "en": "Frozen french fries"
+  },
+  "synonyms": {
+   "ru": [
+    "картофель",
+    "картошка",
+    "фри"
+   ],
+   "kk": [
+    "картоп"
+   ],
+   "zh": [
+    "土豆",
+    "薯条"
+   ],
+   "en": [
+    "potato",
+    "fries"
+   ]
+  }
+ },
+ {
+  "slug": "lamb",
+  "hsCode": "0204",
+  "category": "FOOD",
+  "bodyType": "REFRIGERATOR",
+  "isDangerous": false,
+  "sortOrder": 1640,
+  "name": {
+   "ru": "Баранина",
+   "kk": "Қой еті",
+   "zh": "羊肉",
+   "en": "Lamb, mutton"
+  },
+  "synonyms": {
+   "ru": [
+    "мясо",
+    "баранина"
+   ],
+   "kk": [
+    "ет",
+    "қой еті"
+   ],
+   "zh": [
+    "羊肉"
+   ],
+   "en": [
+    "meat",
+    "lamb",
+    "mutton"
+   ]
+  }
+ },
+ {
+  "slug": "chocolate",
+  "hsCode": "1806",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1650,
+  "name": {
+   "ru": "Шоколад",
+   "kk": "Шоколад",
+   "zh": "巧克力",
+   "en": "Chocolate"
+  },
+  "synonyms": {
+   "ru": [
+    "шоколад",
+    "конфеты"
+   ],
+   "kk": [
+    "шоколад"
+   ],
+   "zh": [
+    "巧克力"
+   ],
+   "en": [
+    "chocolate"
+   ]
+  }
+ },
+ {
+  "slug": "cookies",
+  "hsCode": "1905",
+  "category": "FOOD",
+  "bodyType": "TENT",
+  "isDangerous": false,
+  "sortOrder": 1660,
+  "name": {
+   "ru": "Печенье и выпечка",
+   "kk": "Печенье",
+   "zh": "饼干",
+   "en": "Biscuits and bakery"
+  },
+  "synonyms": {
+   "ru": [
+    "печенье",
+    "выпечка",
+    "вафли"
+   ],
+   "kk": [
+    "печенье"
+   ],
+   "zh": [
+    "饼干",
+    "糕点"
+   ],
+   "en": [
+    "biscuits",
+    "cookies"
+   ]
   }
  }
 ]

@@ -16,8 +16,9 @@ export class AdminGoodsDto {
   @IsObject()
   synonyms?: Record<string, string[]>;
 
+  /// 077: код необязателен — позиция (4 знака) или субпозиция (6).
   @IsOptional()
-  @Matches(/^(\d{6})?$/)
+  @Matches(/^(\d{4}|\d{6})?$/)
   hsCode?: string | null;
 
   @IsOptional()

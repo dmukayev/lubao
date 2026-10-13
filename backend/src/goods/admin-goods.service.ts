@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AdminGoodsDto, AdminHsChapterDto, AdminHsNameDto } from './admin-goods.dto';
 import { goodsSearchText } from './goods-text';
+import { hsCodeExists } from './goods.service';
 
 /// 075 п.10–11: справочники «Товары», «Коды HS», «Главы → категории» и
 /// «Новые слова» (свои варианты логистов) — каждое изменение в журнал.
@@ -14,10 +15,14 @@ export class AdminGoodsService {
     return this.prisma.auditLog.create({ data: { actorUserId, action, entityType, entityId, metadata } });
   }
 
-  async listGoods(q?: string) {
+  /// `noCode` (077 п.8) — товары, у которых код ещё не проставлен.
+  async listGoods(q?: string, noCode = false) {
     const query = q?.trim().toLowerCase();
     return this.prisma.goods.findMany({
-      where: query ? { OR: [{ searchText: { contains: query } }, { hsCode: { startsWith: query } }, { slug: { contains: query } }] } : {},
+      where: {
+        ...(query ? { OR: [{ searchText: { contains: query } }, { hsCode: { startsWith: query } }, { slug: { contains: query } }] } : {}),
+        ...(noCode ? { hsCode: null } : {}),
+      },
       orderBy: [{ sortOrder: 'asc' }, { slug: 'asc' }],
       take: 500,
     });
@@ -74,7 +79,7 @@ export class AdminGoodsService {
   }
 
   private async assertRefs(dto: AdminGoodsDto) {
-    if (dto.hsCode && !(await this.prisma.hsCode.findUnique({ where: { code: dto.hsCode } }))) throw new BadRequestException({ code: 'HS_CODE_NOT_FOUND', message: 'Unknown HS code' });
+    if (dto.hsCode && !(await hsCodeExists(this.prisma, dto.hsCode))) throw new BadRequestException({ code: 'HS_CODE_NOT_FOUND', message: 'Unknown HS code' });
     if (dto.categoryId && !(await this.prisma.cargoCategory.findUnique({ where: { id: dto.categoryId } }))) throw new BadRequestException({ code: 'CATEGORY_REQUIRED', message: 'Unknown category' });
     if (dto.suggestedBodyTypeId && !(await this.prisma.bodyType.findUnique({ where: { id: dto.suggestedBodyTypeId } }))) throw new BadRequestException({ code: 'BODY_TYPE_REQUIRED', message: 'Unknown body type' });
   }

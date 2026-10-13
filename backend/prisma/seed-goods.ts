@@ -44,5 +44,16 @@ export async function seedGoods(prisma: PrismaClient) {
       })),
     skipDuplicates: true,
   });
-  console.log(`seed-goods: ${hs.length} кодов HS, ${chapters.length} глав, ${goods.length} товаров`);
+  // 077: уточнения из файла (названия, синонимы, код) — только у товаров,
+  // которые не правили в админке (updatedAt ≈ createdAt); правки админа не трогаем.
+  const existing = await prisma.goods.findMany({ select: { id: true, slug: true, createdAt: true, updatedAt: true } });
+  const untouched = new Map(existing.filter((e) => e.updatedAt.getTime() - e.createdAt.getTime() < 2000).map((e) => [e.slug, e.id]));
+  let refreshed = 0;
+  for (const g of goods) {
+    const id = untouched.get(g.slug);
+    if (!id) continue;
+    await prisma.$executeRaw`UPDATE goods SET name = ${JSON.stringify(g.name)}::jsonb, synonyms = ${JSON.stringify(g.synonyms)}::jsonb, "hsCode" = ${g.hsCode}, "searchText" = ${goodsSearchText(g.name, g.synonyms)} WHERE id = ${id}`;
+    refreshed += 1;
+  }
+  console.log(`seed-goods: ${hs.length} кодов HS, ${chapters.length} глав, ${goods.length} товаров, обновлено из файла ${refreshed}`);
 }

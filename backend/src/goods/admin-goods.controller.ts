@@ -14,9 +14,9 @@ export class AdminGoodsController {
   constructor(private readonly goods: AdminGoodsService) {}
 
   @Get('goods')
-  listGoods(@CurrentUser() ctx: RequestContext, @Query('q') q?: string) {
+  listGoods(@CurrentUser() ctx: RequestContext, @Query('q') q?: string, @Query('noCode') noCode?: string) {
     assertAdmin(ctx);
-    return this.goods.listGoods(q);
+    return this.goods.listGoods(q, noCode === 'true' || noCode === '1');
   }
 
   @Post('goods')

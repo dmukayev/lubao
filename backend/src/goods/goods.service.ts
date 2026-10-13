@@ -14,6 +14,13 @@ export type GoodsHit = {
 };
 
 const MAX_HITS = 20;
+
+/// 077: код товара — субпозиция (6 знаков) или позиция (4): есть ли он в HS.
+export async function hsCodeExists(prisma: PrismaService, code: string): Promise<boolean> {
+  if (/^\d{6}$/.test(code)) return !!(await prisma.hsCode.findUnique({ where: { code }, select: { code: true } }));
+  if (/^\d{4}$/.test(code)) return !!(await prisma.hsCode.findFirst({ where: { heading: code }, select: { code: true } }));
+  return false;
+}
 const LOCALES: Locale[] = ['ru', 'kk', 'zh', 'en'];
 
 /// 075 (decisions.md «„Что везёте?“ — поиск по названию и коду ТН ВЭД»):
@@ -27,8 +34,8 @@ export class GoodsService {
     @Optional() private readonly translation?: TranslationService,
   ) {}
 
-  /// Цифры (2–6) — по началу кода; иначе — по названиям и синонимам на всех
-  /// языках, затем по официальным названиям HS. Сначала популярные.
+  /// Цифры (2–6) — по началу кода (товары, затем коды HS); иначе — только
+  /// товары по названиям и синонимам на всех языках (077). Сначала популярные.
   async search(q: string): Promise<GoodsHit[]> {
     const query = q.trim().toLowerCase();
     if (!query) return [];
@@ -52,14 +59,9 @@ export class GoodsService {
     const goods = goodsIds.length ? await this.prisma.goods.findMany({ where: { id: { in: goodsIds.map((g) => g.id) } } }) : [];
     const byId = new Map(goods.map((g) => [g.id, g]));
     const ordered = goodsIds.map((g) => byId.get(g.id)).filter((g): g is NonNullable<typeof g> => !!g);
-    const left = MAX_HITS - ordered.length;
-    const hs = left > 0
-      ? await this.prisma.$queryRaw<Array<{ code: string; name: Prisma.JsonValue }>>`
-          SELECT code, name FROM hs_codes WHERE "searchText" ILIKE ${like}
-          ORDER BY (CASE WHEN "searchText" ILIKE ${prefix + '%'} THEN 0 ELSE 1 END), length("searchText"), code
-          LIMIT ${left}`
-      : [];
-    return [...ordered.map((g) => this.goodsHit(g)), ...hs.map(hsHit)];
+    // 077: по буквам — только товары простыми словами; официальные названия
+    // ТН ВЭД длинные и путают (коды ищутся только цифрами).
+    return ordered.map((g) => this.goodsHit(g));
   }
 
   /// Последние 10 разных товаров компании — до ввода.
@@ -87,9 +89,8 @@ export class GoodsService {
       goodsId = goods.id;
       hsCode = hsCode ?? goods.hsCode;
     }
-    if (hsCode) {
-      const hs = await this.prisma.hsCode.findUnique({ where: { code: hsCode }, select: { code: true } });
-      if (!hs) throw new BadRequestException({ code: 'HS_CODE_NOT_FOUND', message: 'Unknown HS code' });
+    if (hsCode && !(await hsCodeExists(this.prisma, hsCode))) {
+      throw new BadRequestException({ code: 'HS_CODE_NOT_FOUND', message: 'Unknown HS code' });
     }
     return { goodsId, hsCode };
   }
