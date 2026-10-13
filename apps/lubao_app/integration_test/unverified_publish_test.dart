@@ -230,7 +230,7 @@ void main() {
       await tester.pumpAndSettle();
       final line = find.byKey(Key('cargoResponsesLine-$cargoId'));
       await waitAndReveal(tester, line);
-      await waitFor(tester, find.descendant(of: line, matching: find.textContaining(t.cargoInvitedCount(1), findRichText: true)));
+      await waitFor(tester, find.byKey(Key('cargoInvitedCount-$cargoId')));
       await tester.tap(find.byKey(Key('companyCargoCard-$cargoId')));
       await waitFor(tester, find.byKey(const Key('companyCargoDetail')));
       await waitFor(tester, find.byKey(const Key('cargoPhoto-0')));

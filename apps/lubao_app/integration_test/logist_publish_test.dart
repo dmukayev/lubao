@@ -318,7 +318,8 @@ void main() {
       await waitFor(tester, find.descendant(of: line, matching: find.textContaining(t.cargoResponsesNew(1)), matchRoot: true));
       await waitFor(tester, find.descendant(of: find.byKey(const Key('navCargosBadge')), matching: find.text('1')));
       await tester.tap(find.byKey(Key('companyCargoCard-$cargoId')));
-      await waitFor(tester, find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('responseNewDot-')));
+      // 071: отклики — под полной карточкой груза, прокрутить к ним.
+      await waitAndReveal(tester, find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('responseNewDot-')));
       expectNoOverflow(tester);
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
@@ -338,7 +339,7 @@ void main() {
       final card = find.byKey(Key('companyCargoCard-$cargoId'));
       await tester.pumpAndSettle();
       await tester.tap(card);
-      await waitFor(tester, find.byKey(const Key('responseSelectButton')));
+      await waitAndReveal(tester, find.byKey(const Key('responseSelectButton')));
       expectInsideSafeZone(tester);
       await tester.tap(find.byKey(const Key('responseSelectButton')));
       await tester.pumpAndSettle();
@@ -360,7 +361,7 @@ void main() {
     // никакого перехода — теперь статус сделки и нажатие открывает её.
     await run.step(tester, 'отклик-ведёт-в-сделку', () async {
       final selected = find.byWidgetPredicate((w) => w.key is ValueKey && w.key.toString().contains('responseCard-'));
-      await waitFor(tester, selected);
+      await waitAndReveal(tester, selected);
       // Нажатие по карточке (плашка статуса), а не по имени: имя открывает
       // карточку водителя.
       await tester.tap(find.descendant(of: selected.first, matching: find.byType(StatusBadge)).first);

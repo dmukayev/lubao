@@ -508,8 +508,26 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
                                   style: AppTextStyles.small.copyWith(color: AppColors.error, fontWeight: FontWeight.w700),
                                 ),
                             ],
-                            if (cargo.invitedCount > 0)
-                              TextSpan(text: ' · ${t.cargoInvitedCount(cargo.invitedCount)}', style: AppTextStyles.small.copyWith(color: AppColors.textSecondary)),
+                            // Приглашено — компактно (значок и число), чтобы строка не росла
+                            // на узком экране; полный текст — для экранного диктора.
+                            if (cargo.invitedCount > 0) ...[
+                              TextSpan(text: ' · ', style: AppTextStyles.small.copyWith(color: AppColors.textSecondary)),
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
+                                child: Semantics(
+                                  label: t.cargoInvitedCount(cargo.invitedCount),
+                                  child: Row(
+                                    key: Key('cargoInvitedCount-${cargo.id}'),
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(LucideIcons.send, size: 12, color: AppColors.textSecondary),
+                                      const SizedBox(width: 2),
+                                      Text('${cargo.invitedCount}', style: AppTextStyles.small.copyWith(color: AppColors.textSecondary)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ]),
                         )
                       : const SizedBox.shrink(),
