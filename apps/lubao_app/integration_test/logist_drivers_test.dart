@@ -251,6 +251,11 @@ void main() {
       await openDriverCardByRow(tester, _d3Card);
       await waitFor(tester, find.descendant(of: find.byKey(const Key('driverCard')), matching: find.byKey(const Key('driverAvatar-$_d3Id-photo'))), timeout: const Duration(seconds: 30));
       expect(find.byKey(const Key('driverCardStatus')), findsOneWidget);
+      expectNoOverflow(tester);
+    });
+
+    // Снимок выше — верх шторки (фото, статус); дальше фото машины и кнопки.
+    await run.step(tester, 'карточка-водителя-фото-машины-и-кнопки', () async {
       final photo = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('driverVehiclePhoto-'));
       await waitAndReveal(tester, photo, timeout: const Duration(seconds: 30));
       expectNoOverflow(tester);
@@ -261,6 +266,10 @@ void main() {
       await waitAndReveal(tester, find.byKey(const Key('driverCardCall')));
       expectInsideSafeZone(tester);
       expectNoOverflow(tester);
+    });
+
+    // Снимок выше — шторка открыта; здесь ✕ закрывает её.
+    await run.step(tester, 'карточка-водителя-крестик', () async {
       await tester.tap(find.byKey(const Key('driverCardClose')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('driverCard')), findsNothing, reason: '✕ закрывает шторку');

@@ -149,6 +149,10 @@ void main() {
       expect(find.byKey(const Key('driverVehiclePhotosUnavailable')), findsNothing, reason: 'фото машины без проверки компании');
       await waitAndReveal(tester, find.byKey(const Key('driverCardCall')));
       expectNoOverflow(tester);
+    });
+
+    // Снимок выше — шторка открыта; здесь ✕ закрывает её.
+    await run.step(tester, 'карточка-водителя-крестик', () async {
       await tester.tap(find.byKey(const Key('driverCardClose')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('driverCard')), findsNothing);
