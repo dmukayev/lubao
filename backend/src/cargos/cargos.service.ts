@@ -275,7 +275,7 @@ export class CargosService {
     const arrival = await this.prisma.arrival.findFirst({
       where: { driverId, status: { in: ['PLANNED', 'ON_SITE'] } },
       orderBy: { createdAt: 'desc' },
-      include: { trailer: { include: { bodyType: { select: { profile: true } } } }, tractor: { include: { bodyType: { select: { profile: true } } } } },
+      include: { trailer: { include: { bodyType: { select: { profile: true, showPallets: true } } } }, tractor: { include: { bodyType: { select: { profile: true, showPallets: true } } } } },
     });
     const fromArrival = arrival?.trailer ?? (arrival?.tractor?.kind === 'RIGID' ? arrival.tractor : null);
     const vehicle =
@@ -284,7 +284,7 @@ export class CargosService {
         where: { driverId, kind: { in: ['TRAILER', 'RIGID'] }, isArchived: false },
         // TRAILER раньше RIGID («kind: desc» — 'TRAILER' > 'RIGID' по алфавиту).
         orderBy: [{ kind: 'desc' }, { createdAt: 'asc' }],
-        include: { bodyType: { select: { profile: true } } },
+        include: { bodyType: { select: { profile: true, showPallets: true } } },
       }));
     if (!vehicle) {
       // 045 п.5 / 048 п.7: машины ещё нет — кузов, тоннаж и «основа» из регистрации.
@@ -305,7 +305,8 @@ export class CargosService {
       profile: vehicle.bodyType?.profile ?? null,
       capacityTons: vehicle.capacityTons != null ? Number(vehicle.capacityTons) : null,
       volumeM3: vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null,
-      palletsEuro: vehicle.palletsEuro ?? null,
+      // 068: паллеты в подборе — только если у кузова включено поле паллет.
+      palletsEuro: vehicle.bodyType?.showPallets ? vehicle.palletsEuro ?? null : null,
       specs: (vehicle.specs as Record<string, unknown> | null) ?? null,
     };
   }
@@ -746,8 +747,8 @@ export class CargosService {
     const arrivals = await this.prisma.arrival.findMany({
       where: { status: { in: ['PLANNED', 'ON_SITE'] }, ...(params.pointId ? { pointId: params.pointId } : {}) },
       include: {
-        trailer: { include: { bodyType: { select: { profile: true } } } },
-        tractor: { include: { bodyType: { select: { profile: true } } } },
+        trailer: { include: { bodyType: { select: { profile: true, showPallets: true } } } },
+        tractor: { include: { bodyType: { select: { profile: true, showPallets: true } } } },
         driver: { select: { preferredCapacityTons: true, preferredSpecs: true, preferredBodyType: { select: { profile: true } } } },
       },
     });
@@ -769,7 +770,8 @@ export class CargosService {
             profile: vehicle.bodyType?.profile ?? null,
             capacityTons: vehicle.capacityTons != null ? Number(vehicle.capacityTons) : null,
             volumeM3: vehicle.volumeM3 != null ? Number(vehicle.volumeM3) : null,
-            palletsEuro: vehicle.palletsEuro ?? null,
+            // 068: паллеты в подборе — только если у кузова включено поле паллет.
+      palletsEuro: vehicle.bodyType?.showPallets ? vehicle.palletsEuro ?? null : null,
             specs: (vehicle.specs as Record<string, unknown> | null) ?? null,
           }
         : {

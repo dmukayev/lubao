@@ -2223,7 +2223,7 @@ export class AdminService {
         homeCity: { select: { name: true } },
         directions: { include: { country: { select: { name: true } } } },
         permits: { include: { permit: { select: { name: true } } } },
-        vehicles: { include: { bodyType: { select: { name: true } } }, orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }] },
+        vehicles: { include: { bodyType: { select: { name: true, showPallets: true } } }, orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }] },
       },
     });
     if (!driver) throw new NotFoundException('Driver not found');
@@ -2315,7 +2315,8 @@ export class AdminService {
         lengthM: v.lengthM ? Number(v.lengthM) : null,
         // Задача 033, п.11 — размер кузова в карточке машины.
         volumeM3: v.volumeM3 != null ? Number(v.volumeM3) : null,
-        palletsEuro: v.palletsEuro ?? null,
+        // 068: паллеты — только если у кузова включено поле паллет.
+        palletsEuro: v.bodyType?.showPallets ? v.palletsEuro ?? null : null,
         plateNumber: v.plateNumber,
         vin: v.vin,
         brand: v.brand,
@@ -3048,8 +3049,8 @@ export class AdminService {
       }
     });
     if (errors.length) throw new BadRequestException({ code: 'INVALID_BODY_FIELDS', message: 'Invalid body type fields', errors });
-    const updated = await this.prisma.bodyType.update({ where: { id }, data: { profile: dto.profile, fields: dto.fields as Prisma.InputJsonValue } });
-    await this.logAudit(adminUserId, 'BODY_TYPE_PROFILE_UPDATED', 'BodyType', id, { profile: dto.profile, fields: dto.fields.length, reason: dto.reason });
+    const updated = await this.prisma.bodyType.update({ where: { id }, data: { profile: dto.profile, fields: dto.fields as Prisma.InputJsonValue, showPallets: dto.showPallets } });
+    await this.logAudit(adminUserId, 'BODY_TYPE_PROFILE_UPDATED', 'BodyType', id, { profile: dto.profile, fields: dto.fields.length, showPallets: dto.showPallets, reason: dto.reason });
     return updated;
   }
 

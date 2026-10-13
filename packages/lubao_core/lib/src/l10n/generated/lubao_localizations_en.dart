@@ -3754,6 +3754,13 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get adminBodyTypeProfile => 'Profile';
 
   @override
+  String get adminBodyTypeShowPallets => 'Pallets';
+
+  @override
+  String get adminBodyTypeShowPalletsHint =>
+      'Show the pallets field to drivers and logisticians and use it in matching';
+
+  @override
   String get adminBodyTypeFieldsJson => 'Fields (JSON)';
 
   @override

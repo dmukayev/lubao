@@ -389,7 +389,7 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
                         widget.refData!.bodyTypeById(response.bodyTypeId!).name.forLanguageCode(Localizations.localeOf(context).languageCode),
                       if (response.capacityTons != null) '${response.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
                       if (response.volumeM3 != null && isVolumeBodyType(bodyCode)) '${response.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
-                      if (response.palletsEuro != null && isVolumeBodyType(bodyCode)) '${response.palletsEuro} ${t.unitPallets}',
+                      if (response.palletsEuro != null && isVolumeBodyType(bodyCode) && response.bodyTypeId != null && (widget.refData?.bodyTypeById(response.bodyTypeId!).showPallets ?? false)) '${response.palletsEuro} ${t.unitPallets}',
                     ].join(' · '),
                     style: AppTextStyles.caption,
                   ),

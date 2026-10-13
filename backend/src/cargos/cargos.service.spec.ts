@@ -278,6 +278,31 @@ describe('CargosService — отсев грузов по размеру маши
 
     expect(result.items.map((c: any) => c.id)).toEqual(['small']);
   });
+
+  it('068: паллеты отсеивают груз только если у кузова включено поле паллет', async () => {
+    const manyPallets = baseCargo({ id: 'pallets', volumeM3: null, palletCount: 40 });
+    const run = async (showPallets: boolean) => {
+      const prisma: any = {
+        cargo: { findMany: jest.fn().mockResolvedValue([manyPallets]) },
+        exchangeRate: { findMany: jest.fn().mockResolvedValue([]) },
+        deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
+        companyMember: { findFirst: jest.fn().mockResolvedValue(null) },
+        driver: { findUnique: jest.fn().mockResolvedValue(null) },
+        response: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
+        bodyType: { findMany: jest.fn().mockResolvedValue([]) },
+        arrival: {
+          findFirst: jest.fn().mockResolvedValue({
+            trailer: { capacityTons: 20, volumeM3: 90, palletsEuro: 33, kind: 'TRAILER', bodyType: { profile: 'VOLUME', showPallets } },
+            tractor: null,
+          }),
+          findMany: jest.fn().mockResolvedValue([]),
+        },
+      };
+      return (await new CargosService(prisma, {} as any, {} as any).feed('d1', { showOtherCities: true })).items.map((c: any) => c.id);
+    };
+    expect(await run(false)).toEqual(['pallets']);
+    expect(await run(true)).toEqual([]);
+  });
 });
 
 describe('CargosService.create — компания публикует без проверки (066)', () => {

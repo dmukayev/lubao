@@ -116,3 +116,15 @@ String? formatLastSeen(LubaoLocalizations t, DateTime? lastSeenAt, {DateTime? no
   if (day == today.subtract(const Duration(days: 1))) return t.lastSeenYesterday;
   return t.lastSeenDate('${two(seen.day)}.${two(seen.month)}${seen.year == current.year ? '' : '.${seen.year}'}');
 }
+
+/// Подпись шаблона размера кузова: «Стандарт\n≈ 90 м³», паллеты — только если
+/// у кузова включено поле паллет (068): «≈ 90 м³ · 33 пал.».
+String presetLabel(LubaoLocalizations t, String locale, BodySizePreset preset, {required bool showPallets}) {
+  final name = preset.name.forLanguageCode(locale);
+  if (preset.volumeM3 == null) return name;
+  final size = [
+    '≈ ${preset.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
+    if (showPallets && preset.palletsEuro != null) '${preset.palletsEuro} ${t.unitPallets}',
+  ].join(' · ');
+  return '$name\n$size';
+}

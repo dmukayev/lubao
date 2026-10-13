@@ -277,6 +277,7 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
   Future<void> _editBodyTypeProfile(BodyType item) async {
     final t = context.l10n;
     var profile = item.profile;
+    var showPallets = item.showPallets;
     final fieldsController = TextEditingController(text: const JsonEncoder.withIndent('  ').convert(item.rawFields));
     final reasonController = TextEditingController();
     final ok = await showDialog<bool>(
@@ -295,6 +296,15 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
                     decoration: InputDecoration(labelText: t.adminBodyTypeProfile),
                     items: [for (final p in const ['VOLUME', 'PLATFORM', 'CONTAINER', 'BULK', 'TANK', 'CAR_CARRIER']) DropdownMenuItem(value: p, child: Text(p))],
                     onChanged: (v) => setState(() => profile = v ?? profile),
+                  ),
+                  // 068: «Паллеты» — поле паллет у этого кузова, без новой версии приложения.
+                  CheckboxListTile(
+                    key: const Key('adminBodyTypeShowPallets'),
+                    contentPadding: EdgeInsets.zero,
+                    value: showPallets,
+                    onChanged: (v) => setState(() => showPallets = v ?? false),
+                    title: Text(t.adminBodyTypeShowPallets),
+                    subtitle: Text(t.adminBodyTypeShowPalletsHint),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -342,7 +352,7 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
       return;
     }
     try {
-      await ref.read(adminRepositoryProvider).updateBodyTypeProfile(item.id, profile: profile, fields: fields, reason: reasonController.text.trim().isEmpty ? '—' : reasonController.text.trim());
+      await ref.read(adminRepositoryProvider).updateBodyTypeProfile(item.id, profile: profile, fields: fields, showPallets: showPallets, reason: reasonController.text.trim().isEmpty ? '—' : reasonController.text.trim());
       ref.invalidate(referenceDataProvider);
     } on DioException catch (e) {
       final data = e.response?.data;
@@ -688,7 +698,7 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
           controller: _tabController,
           children: [
             _SimpleList(
-              items: refData.bodyTypes.map((b) => (b.id, '${b.name.forLanguageCode(locale)} · ${b.profile}', b.isActive, () => _bodyTypeActions(b))).toList(),
+              items: refData.bodyTypes.map((b) => (b.id, '${b.name.forLanguageCode(locale)} · ${b.profile}${b.showPallets ? ' · ${t.adminBodyTypeShowPallets}' : ''}', b.isActive, () => _bodyTypeActions(b))).toList(),
               onAdd: _addBodyType,
               addLabel: t.adminAddBodyType,
             ),
@@ -822,7 +832,8 @@ class _SimpleList extends StatelessWidget {
             return ListTile(
               title: Text(name),
               subtitle: Text(isActive ? t.adminActive : t.adminInactive),
-              trailing: IconButton(icon: const Icon(LucideIcons.pencil), onPressed: onEdit),
+              // Подпись кнопки — с названием строки (доступность и e2e: «Редактировать: Тентованный»).
+              trailing: IconButton(tooltip: '${t.adminEdit}: $name', icon: const Icon(LucideIcons.pencil), onPressed: onEdit),
             );
           },
         ),

@@ -466,6 +466,8 @@ export class ArrivalsService {
     // либо сама машина для RIGID-одиночки), не первой попавшейся машины
     // гаража. Старые записи без связки (до миграции 031) — по-прежнему
     // берём единственную TRAILER/RIGID машину водителя.
+    // 068: кузова с включённым полем паллет — у остальных паллеты не отдаём.
+    const palletBodyTypes = new Set((await this.prisma.bodyType.findMany({ where: { showPallets: true }, select: { id: true } })).map((b) => b.id));
     const rows = await Promise.all(
       dayFiltered.map(async (arrival) => {
         const vehicle = arrival.trailerId
@@ -560,7 +562,7 @@ export class ArrivalsService {
       capacityTons: r.body.capacityTons != null ? Number(r.body.capacityTons) : null,
       // Задача 033, п.9 — «тент · 20 т · 90 м³ · 33 пал.» в «Кто будет».
       volumeM3: r.vehicle?.volumeM3 != null ? Number(r.vehicle.volumeM3) : null,
-      palletsEuro: r.vehicle?.palletsEuro ?? null,
+      palletsEuro: r.vehicle?.bodyTypeId && palletBodyTypes.has(r.vehicle.bodyTypeId) ? r.vehicle.palletsEuro ?? null : null,
       // Задача 037, п.7 / 038, п.8 — «Уже везёт: 8 т из 20 т · … · погрузка …».
       committedWeightKg: committedByDriver.get(r.arrival.driver.id)?.committedWeightKg ?? 0,
       activeDealsCount: committedByDriver.get(r.arrival.driver.id)?.activeDealsCount ?? 0,

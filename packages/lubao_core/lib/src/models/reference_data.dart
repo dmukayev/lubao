@@ -102,6 +102,9 @@ class BodyField {
   final String kind;
   final I18nText label;
   final String? unit;
+
+  /// 068: поле паллет (европаллеты) — скрыто, если у кузова выключено.
+  bool get isPallets => key == 'palletsEuro' || unit == 'pallets';
   final bool forVehicle;
   final bool forCargo;
   final bool required;
@@ -138,7 +141,12 @@ class BodyType {
     this.profile = 'VOLUME',
     this.fields = const [],
     this.rawFields = const [],
+    this.showPallets = false,
   });
+
+  /// 068: поле паллет у кузова включено в админке. Выключено — паллет нет
+  /// нигде (поле в `fields` уже убрано, в строках машины и груза их не пишем).
+  final bool showPallets;
 
   final String id;
   final String code;
@@ -154,21 +162,31 @@ class BodyType {
   final List<dynamic> rawFields;
 
   bool get isVolume => profile == 'VOLUME';
+
+  /// 068: паллеты у машины/груза этого кузова показываются (объёмный и включено).
+  bool get palletsShown => isVolume && showPallets;
   List<BodyField> get vehicleFields => fields.where((f) => f.forVehicle).toList();
   List<BodyField> get cargoFields => fields.where((f) => f.forCargo).toList();
   List<BodyField> get primaryFields => fields.where((f) => f.forVehicle && f.primary).toList();
   bool get hasCapacity => fields.isEmpty || fields.any((f) => f.key == 'capacityTons');
 
-  factory BodyType.fromJson(Map<String, dynamic> json) => BodyType(
-        id: json['id'] as String,
-        code: json['code'] as String,
-        name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
-        isActive: json['isActive'] as bool? ?? true,
-        sortOrder: json['sortOrder'] as int? ?? 0,
-        profile: json['profile'] as String? ?? 'VOLUME',
-        fields: [for (final f in json['fields'] as List<dynamic>? ?? const []) BodyField.fromJson(f as Map<String, dynamic>)],
-        rawFields: json['fields'] as List<dynamic>? ?? const [],
-      );
+  factory BodyType.fromJson(Map<String, dynamic> json) {
+    final showPallets = json['showPallets'] as bool? ?? false;
+    return BodyType(
+      id: json['id'] as String,
+      code: json['code'] as String,
+      name: I18nText.fromJson(json['name'] as Map<String, dynamic>),
+      isActive: json['isActive'] as bool? ?? true,
+      sortOrder: json['sortOrder'] as int? ?? 0,
+      profile: json['profile'] as String? ?? 'VOLUME',
+      fields: [
+        for (final f in json['fields'] as List<dynamic>? ?? const [])
+          if (BodyField.fromJson(f as Map<String, dynamic>) case final field when showPallets || !field.isPallets) field,
+      ],
+      rawFields: json['fields'] as List<dynamic>? ?? const [],
+      showPallets: showPallets,
+    );
+  }
 }
 
 class Permit {

@@ -335,9 +335,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                     for (final preset in refData.sizePresetsForBodyType(_bodyTypeId))
                       SelectableTile(
                         key: Key('addVehicleSizePreset-${preset.id}'),
-                        label: preset.volumeM3 != null && preset.palletsEuro != null
-                            ? '${preset.name.forLanguageCode(locale)}\n≈ ${preset.volumeM3!.toStringAsFixed(0)} ${t.unitM3} · ${preset.palletsEuro} ${t.unitPallets}'
-                            : preset.name.forLanguageCode(locale),
+                        label: presetLabel(t, locale, preset, showPallets: _bodyTypeId != null && refData.bodyTypeById(_bodyTypeId!).showPallets),
                         selected: !_customSize && _sizePresetId == preset.id,
                         onTap: () => setState(() {
                           _sizePresetId = preset.id;

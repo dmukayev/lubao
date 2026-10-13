@@ -36,6 +36,7 @@ function makePrisma() {
       createMany: jest.fn().mockResolvedValue(undefined),
     },
     vehicle: { findFirst: jest.fn().mockResolvedValue(null) },
+    bodyType: { findMany: jest.fn().mockResolvedValue([]) },
     // Задача 037, п.7 — «Уже везёт…» в «Кто будет на точке».
     deal: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
     driverDirection: { findMany: jest.fn().mockResolvedValue([]) },

@@ -1295,6 +1295,8 @@
   "adminBodyTypeNameEdit": "名称与排序",
   "adminBodyTypeProfileEdit": "类型与字段",
   "adminBodyTypeProfile": "类型",
+  "adminBodyTypeShowPallets": "托盘",
+  "adminBodyTypeShowPalletsHint": "向司机和物流人员显示托盘字段，并在匹配时计入",
   "adminBodyTypeFieldsJson": "字段（JSON）",
   "adminBodyTypeFieldsInvalid": "字段未保存：{errors}",
   "dealStatusCancelRequested": "已申请取消",

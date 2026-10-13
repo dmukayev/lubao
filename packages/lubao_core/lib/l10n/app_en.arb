@@ -1420,6 +1420,8 @@
   "adminBodyTypeNameEdit": "Name and order",
   "adminBodyTypeProfileEdit": "Profile and fields",
   "adminBodyTypeProfile": "Profile",
+  "adminBodyTypeShowPallets": "Pallets",
+  "adminBodyTypeShowPalletsHint": "Show the pallets field to drivers and logisticians and use it in matching",
   "adminBodyTypeFieldsJson": "Fields (JSON)",
   "adminBodyTypeFieldsInvalid": "Fields not saved: {errors}",
   "dealStatusCancelRequested": "Cancellation requested",

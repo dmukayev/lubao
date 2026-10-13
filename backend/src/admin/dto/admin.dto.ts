@@ -761,6 +761,11 @@ export class AdminBodyTypeProfileDto {
   @IsArray()
   fields!: unknown[];
 
+  /// 068: «Паллеты» — поле паллет у этого кузова; не передано — без изменений.
+  @IsOptional()
+  @IsBoolean()
+  showPallets?: boolean;
+
   @IsNotEmpty()
   @MaxLength(1000)
   @IsString()

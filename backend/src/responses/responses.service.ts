@@ -187,7 +187,7 @@ export class ResponsesService {
     const bodies = bodyIds.length
       ? await this.prisma.vehicle.findMany({
           where: { id: { in: bodyIds } },
-          select: { id: true, bodyTypeId: true, capacityTons: true, volumeM3: true, palletsEuro: true, specs: true },
+          select: { id: true, bodyTypeId: true, capacityTons: true, volumeM3: true, palletsEuro: true, specs: true, bodyType: { select: { showPallets: true } } },
         })
       : [];
     const bodyByVehicle = new Map(bodies.map((v) => [v.id, v]));
@@ -216,7 +216,8 @@ export class ResponsesService {
         capacityTons: body?.capacityTons != null ? Number(body.capacityTons) : r.driver.preferredCapacityTons != null ? Number(r.driver.preferredCapacityTons) : null,
         // 033 п.9 (хвост, 038 п.14) — объём/паллеты связки в отклике.
         volumeM3: body?.volumeM3 != null ? Number(body.volumeM3) : null,
-        palletsEuro: body?.palletsEuro ?? null,
+        // 068: паллеты — только если у кузова включено поле паллет.
+        palletsEuro: body?.bodyType?.showPallets ? body.palletsEuro ?? null : null,
         committedWeightKg: info?.committedWeightKg ?? 0,
         activeDealsCount: info?.activeDealsCount ?? 0,
         committedHasUnknownWeight: info?.committedHasUnknownWeight ?? false,

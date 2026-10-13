@@ -69,7 +69,7 @@ export async function evaluateVehicleLoad(
   }
 
   const bodyVehicleId = trailerId ?? tractorId;
-  const vehicle = bodyVehicleId ? await db.vehicle.findUnique({ where: { id: bodyVehicleId }, include: { bodyType: { select: { profile: true } } } }) : null;
+  const vehicle = bodyVehicleId ? await db.vehicle.findUnique({ where: { id: bodyVehicleId }, include: { bodyType: { select: { profile: true, showPallets: true } } } }) : null;
   const capacityKg = vehicle?.capacityTons != null ? Number(vehicle.capacityTons) * 1000 : null;
 
   const allCargos = [cargo, ...activeDeals.map((d) => d.cargo).filter((c): c is NonNullable<typeof c> => c != null)];
@@ -107,7 +107,8 @@ export async function evaluateVehicleLoad(
     const totalM3 = allCargos.reduce((sum, c) => sum + Number(c.volumeM3), 0);
     if (totalM3 > Number(vehicle.volumeM3)) return result('FULL');
   }
-  if (vehicle?.palletsEuro != null && allCargos.every((c) => c.palletCount != null)) {
+  // 068: паллеты — только если у кузова включено поле паллет.
+  if (vehicle?.bodyType?.showPallets && vehicle.palletsEuro != null && allCargos.every((c) => c.palletCount != null)) {
     const totalPallets = allCargos.reduce((sum, c) => sum + (c.palletCount as number), 0);
     if (totalPallets > vehicle.palletsEuro) return result('FULL');
   }

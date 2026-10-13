@@ -82,6 +82,8 @@ void main() {
         await tester.pumpAndSettle();
       }
       expect(find.text('1500'), findsOneWidget);
+      // 068: паллеты скрыты по умолчанию — поля «Паллеты» в форме нет.
+      expect(find.text(t.postCargoPallets), findsNothing, reason: '068: в форме груза нет паллет');
       expectInsideSafeZone(tester);
     });
 

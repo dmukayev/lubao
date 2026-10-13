@@ -782,7 +782,7 @@ class _DriverCard extends StatelessWidget {
       if (driver.capacityTons != null) '${driver.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
       // 045 п.6: «м³ · пал.» — только у объёмных кузовов.
       if (driver.volumeM3 != null && isVolumeBodyType(bodyType?.code)) '${driver.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
-      if (driver.palletsEuro != null && isVolumeBodyType(bodyType?.code)) '${driver.palletsEuro} ${t.unitPallets}',
+      if (driver.palletsEuro != null && (bodyType?.palletsShown ?? false)) '${driver.palletsEuro} ${t.unitPallets}',
       if (countries.isNotEmpty) countries,
     ].join(' · ');
 

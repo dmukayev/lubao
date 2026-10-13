@@ -3653,6 +3653,12 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get adminBodyTypeProfile => '类型';
 
   @override
+  String get adminBodyTypeShowPallets => '托盘';
+
+  @override
+  String get adminBodyTypeShowPalletsHint => '向司机和物流人员显示托盘字段，并在匹配时计入';
+
+  @override
   String get adminBodyTypeFieldsJson => '字段（JSON）';
 
   @override

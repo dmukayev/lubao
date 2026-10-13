@@ -3742,6 +3742,13 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get adminBodyTypeProfile => 'Профиль';
 
   @override
+  String get adminBodyTypeShowPallets => 'Паллеттер';
+
+  @override
+  String get adminBodyTypeShowPalletsHint =>
+      'Жүргізушілер мен логистерге паллет өрісін көрсету және іріктеуде ескеру';
+
+  @override
   String get adminBodyTypeFieldsJson => 'Өрістер (JSON)';
 
   @override

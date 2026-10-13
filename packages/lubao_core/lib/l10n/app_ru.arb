@@ -1459,6 +1459,8 @@
   "adminBodyTypeNameEdit": "Название и порядок",
   "adminBodyTypeProfileEdit": "Профиль и поля",
   "adminBodyTypeProfile": "Профиль",
+  "adminBodyTypeShowPallets": "Паллеты",
+  "adminBodyTypeShowPalletsHint": "Показывать водителям и логистам поле паллет и учитывать его в подборе",
   "adminBodyTypeFieldsJson": "Поля (JSON)",
   "adminBodyTypeFieldsInvalid": "Поля не сохранены: {errors}",
   "@adminBodyTypeFieldsInvalid": {"placeholders": {"errors": {"type": "String"}}},

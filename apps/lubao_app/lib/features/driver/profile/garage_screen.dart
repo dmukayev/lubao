@@ -145,9 +145,7 @@ class GarageScreen extends ConsumerWidget {
                 children: [
                   for (final preset in presets)
                     SelectableTile(
-                      label: preset.volumeM3 != null && preset.palletsEuro != null
-                          ? '${preset.name.forLanguageCode(locale)}\n≈ ${preset.volumeM3!.toStringAsFixed(0)} ${t.unitM3} · ${preset.palletsEuro} ${t.unitPallets}'
-                          : preset.name.forLanguageCode(locale),
+                      label: presetLabel(t, locale, preset, showPallets: vehicle.bodyTypeId != null && refData.bodyTypeById(vehicle.bodyTypeId!).showPallets),
                       selected: vehicle.sizePresetId == preset.id,
                       onTap: () => Navigator.pop(sheetContext, preset),
                     ),
@@ -397,7 +395,8 @@ class _VehicleCard extends StatelessWidget {
         if (vehicle.capacityTons != null) '${vehicle.capacityTons!.toStringAsFixed(0)} ${t.unitTon}',
         // 045 п.6: «м³ · пал.» — только у объёмных кузовов.
         if (vehicle.volumeM3 != null && isVolumeBodyType(bodyTypeCode)) '${vehicle.volumeM3!.toStringAsFixed(0)} ${t.unitM3}',
-        if (vehicle.palletsEuro != null && isVolumeBodyType(bodyTypeCode)) '${vehicle.palletsEuro} ${t.unitPallets}',
+        // 068: паллеты — только если у кузова включено поле паллет.
+        if (vehicle.palletsEuro != null && isVolumeBodyType(bodyTypeCode) && (bt?.showPallets ?? false)) '${vehicle.palletsEuro} ${t.unitPallets}',
       ] else if (vehicle.vin != null && vehicle.vin!.length > 4)
         '${t.garageVin} …${vehicle.vin!.substring(vehicle.vin!.length - 4)}',
     ];

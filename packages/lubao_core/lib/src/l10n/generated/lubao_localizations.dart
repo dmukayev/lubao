@@ -7020,6 +7020,18 @@ abstract class LubaoLocalizations {
   /// **'Профиль'**
   String get adminBodyTypeProfile;
 
+  /// No description provided for @adminBodyTypeShowPallets.
+  ///
+  /// In ru, this message translates to:
+  /// **'Паллеты'**
+  String get adminBodyTypeShowPallets;
+
+  /// No description provided for @adminBodyTypeShowPalletsHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показывать водителям и логистам поле паллет и учитывать его в подборе'**
+  String get adminBodyTypeShowPalletsHint;
+
   /// No description provided for @adminBodyTypeFieldsJson.
   ///
   /// In ru, this message translates to:

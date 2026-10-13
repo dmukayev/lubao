@@ -230,7 +230,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     return bt == null || bt.isVolume || bt.profile == 'BULK';
   }
 
-  bool _showPallets(ReferenceData refData) => _bodyType(refData)?.isVolume ?? true;
+  /// 068: поле паллет — только у объёмного кузова с включёнными паллетами.
+  bool _showPallets(ReferenceData refData) => _bodyType(refData)?.palletsShown ?? false;
 
   /// Поле (кг или т) → кг; запятая как разделитель допускается.
   double? _weightKg() => weightInputToKg(_weightController.text, _weightUnit);

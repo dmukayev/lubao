@@ -1295,6 +1295,8 @@
   "adminBodyTypeNameEdit": "Атауы мен реті",
   "adminBodyTypeProfileEdit": "Профиль және өрістер",
   "adminBodyTypeProfile": "Профиль",
+  "adminBodyTypeShowPallets": "Паллеттер",
+  "adminBodyTypeShowPalletsHint": "Жүргізушілер мен логистерге паллет өрісін көрсету және іріктеуде ескеру",
   "adminBodyTypeFieldsJson": "Өрістер (JSON)",
   "adminBodyTypeFieldsInvalid": "Өрістер сақталмады: {errors}",
   "dealStatusCancelRequested": "Болдырмау сұралды",

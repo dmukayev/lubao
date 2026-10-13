@@ -353,6 +353,9 @@ model BodyType {
   /// required, primary, min, max, options}]) — правятся в админке без релиза.
   profile   BodyTypeProfile @default(VOLUME)
   fields    Json            @default("[]")
+  /// 068: поле паллет у этого кузова — показывать и учитывать в подборе и
+  /// догрузе. По умолчанию выключено у всех; включается галочкой в админке.
+  showPallets Boolean       @default(false)
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 

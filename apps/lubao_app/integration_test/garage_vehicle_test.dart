@@ -70,6 +70,8 @@ void main() {
       // Шаблон размера (033): первый из предложенных для «Тент».
       final preset = find.byWidgetPredicate((w) => w.key is ValueKey && w.key.toString().contains('addVehicleSizePreset-')).first;
       await reveal(tester, preset);
+      // 068: паллеты скрыты по умолчанию — в шаблонах только «≈ 90 м³».
+      expect(find.textContaining(t.unitPallets), findsNothing, reason: '068: в гараже нет паллет');
       await tester.tap(preset);
       await tester.pumpAndSettle();
       expectInsideSafeZone(tester);
@@ -121,8 +123,9 @@ void main() {
       expect(find.text(t.garagePending), findsWidgets);
       // Сбоку фото нет — мягкое напоминание в карточке.
       expect(find.text(t.garagePhotosReminder), findsWidgets);
-      // Размер прицепа из шаблона виден в карточке: «… м³ · … пал.».
+      // Размер прицепа из шаблона виден в карточке: «… м³», паллет нет (068).
       expect(find.textContaining(t.unitM3), findsWidgets);
+      expect(find.textContaining(t.unitPallets), findsNothing, reason: '068: в карточке машины нет паллет');
       expectNoOverflow(tester);
     });
 
