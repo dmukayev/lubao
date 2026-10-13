@@ -85,8 +85,8 @@ Future<_FakeCargoRepository> _pump(WidgetTester tester, {List<Cargo> previous = 
     overrides: [
       cargoRepositoryProvider.overrideWithValue(repo),
       recentPointsStoreProvider.overrideWithValue(_FakeRecentPoints()),
-      referenceDataProvider.overrideWith((ref) async => _refDataWith(partialLoads: partialLoads)),
-      myCargosProvider.overrideWith((ref) async => previous),
+      referenceDataProvider.overrideWith((ref) => Stream.value(_refDataWith(partialLoads: partialLoads))),
+      myCargosProvider.overrideWith((ref) => Stream.value(previous)),
     ],
     child: MaterialApp(
       locale: const Locale('ru'),

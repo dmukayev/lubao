@@ -113,7 +113,7 @@ Future<void> _pump(
     overrides: [
       cargoRepositoryProvider.overrideWithValue(cargos),
       arrivalRepositoryProvider.overrideWithValue(arrivals),
-      referenceDataProvider.overrideWith((ref) async => _refData),
+      referenceDataProvider.overrideWith((ref) => Stream.value(_refData)),
       arrivalTemplateProvider.overrideWith((ref) async => null),
       feedFilterStoreProvider.overrideWithValue(_MemoryFilterStore()),
     ],

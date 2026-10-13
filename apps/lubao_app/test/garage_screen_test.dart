@@ -31,7 +31,7 @@ GarageVehicle _vehicle({
 
 Future<void> _pump(WidgetTester tester, List<GarageVehicle> vehicles) async {
   await tester.pumpWidget(ProviderScope(
-    overrides: [garageVehiclesProvider.overrideWith((ref) async => vehicles)],
+    overrides: [garageVehiclesProvider.overrideWith((ref) => Stream.value(vehicles))],
     child: MaterialApp(
       locale: const Locale('ru'),
       supportedLocales: supportedLocales,

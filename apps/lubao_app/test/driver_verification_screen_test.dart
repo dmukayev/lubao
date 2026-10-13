@@ -38,7 +38,7 @@ void main() {
 
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        driverVerificationDocumentsProvider.overrideWith((ref) async => [_doc()]),
+        driverVerificationDocumentsProvider.overrideWith((ref) => Stream.value([_doc()])),
         driverDocumentRecognitionProvider('doc1').overrideWith((ref) async => _recognition()),
       ],
       child: MaterialApp(
@@ -63,7 +63,7 @@ void main() {
 
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        driverVerificationDocumentsProvider.overrideWith((ref) async => [_doc()]),
+        driverVerificationDocumentsProvider.overrideWith((ref) => Stream.value([_doc()])),
         driverDocumentRecognitionProvider('doc1').overrideWith((ref) async => _recognition()),
       ],
       child: MaterialApp(

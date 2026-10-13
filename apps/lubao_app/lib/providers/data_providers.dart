@@ -3,6 +3,18 @@ import 'package:lubao_core/lubao_core.dart';
 
 import 'api_providers.dart';
 
+/// 078 (decisions.md «Сначала показать, потом обновить»): экран открывается из
+/// сохранённого на телефоне мгновенно, свежее подтягивается следом; без связи
+/// остаётся сохранённое.
+Stream<T> _cached<T>(Ref ref, String path, T Function(Object? data) parse, Future<T> Function() fetch, {Map<String, dynamic>? query}) =>
+    cacheFirst(ref.watch(apiClientProvider), path, query: query, parse: parse, fetch: fetch);
+
+List<T> _list<T>(Object? data, T Function(Map<String, dynamic> json) fromJson) =>
+    [for (final e in data as List<dynamic>) fromJson(e as Map<String, dynamic>)];
+
+/// 078: лента показана из сохранённого старше часа — пометка «обновляется».
+final feedFromCacheAtProvider = StateProvider<DateTime?>((ref) => null);
+
 /// Первая страница ленты водителя; порядок и отсев — на сервере (040, п.5).
 /// 059: фильтр и сортировка ленты — запоминается на устройстве.
 class FeedFilterNotifier extends StateNotifier<FeedFilter> {
@@ -30,10 +42,31 @@ final feedFilterStoreProvider = Provider<FeedFilterStore>((ref) => FeedFilterSto
 
 final feedFilterProvider = StateNotifierProvider<FeedFilterNotifier, FeedFilter>((ref) => FeedFilterNotifier(ref.watch(feedFilterStoreProvider)));
 
-final cargoFeedProvider = FutureProvider.autoDispose<CargoFeedPage>((ref) async {
+final cargoFeedProvider = StreamProvider.autoDispose<CargoFeedPage>((ref) async* {
   // Сначала — сохранённый фильтр, потом подписка на него: один запрос при старте.
   await ref.read(feedFilterProvider.notifier).ready;
-  return ref.watch(cargoRepositoryProvider).feed(filter: ref.watch(feedFilterProvider));
+  final filter = ref.watch(feedFilterProvider);
+  final repo = ref.watch(cargoRepositoryProvider);
+  // 078: сохранённая лента — не старше 6 ч (CachePolicy); старше часа — с
+  // пометкой «обновляется», пока не пришла свежая.
+  final cached = await ref.watch(apiClientProvider).peek('/cargos', query: {'limit': 30, 'offset': 0, ...filter.toQuery()});
+  if (cached != null) {
+    try {
+      final page = CargoFeedPage.fromJson(cached.data as Map<String, dynamic>);
+      if (cached.age > const Duration(hours: 1)) ref.read(feedFromCacheAtProvider.notifier).state = cached.savedAt;
+      yield page;
+    } catch (_) {}
+  }
+  CargoFeedPage? fresh;
+  try {
+    fresh = await repo.feed(filter: filter);
+  } catch (_) {
+    if (cached == null) rethrow;
+  }
+  if (fresh != null) {
+    ref.read(feedFromCacheAtProvider.notifier).state = null;
+    yield fresh;
+  }
 });
 
 /// «Помещается к текущему» (040, п.6): есть только у водителя с активной сделкой.
@@ -41,46 +74,46 @@ final partialHintProvider = FutureProvider.autoDispose.family<PartialHint?, Stri
   return ref.watch(cargoRepositoryProvider).partialHint(cargoId);
 });
 
-final myCargosProvider = FutureProvider.autoDispose<List<Cargo>>((ref) {
-  return ref.watch(cargoRepositoryProvider).mine();
+final myCargosProvider = StreamProvider.autoDispose<List<Cargo>>((ref) {
+  return _cached(ref, '/cargos/mine', (d) => _list(d, Cargo.fromJson), () => ref.watch(cargoRepositoryProvider).mine());
 });
 
 /// Мой отклик на груз — состояние кнопки в карточке водителя (041).
-final myCargoResponseProvider = FutureProvider.autoDispose.family<MyCargoResponse?, String>((ref, cargoId) {
-  return ref.watch(cargoRepositoryProvider).myResponse(cargoId);
+final myCargoResponseProvider = StreamProvider.autoDispose.family<MyCargoResponse?, String>((ref, cargoId) {
+  return _cached(ref, '/cargos/$cargoId/my-response', (d) => (d as Map<String, dynamic>)['response'] == null ? null : MyCargoResponse.fromJson(d['response'] as Map<String, dynamic>), () => ref.watch(cargoRepositoryProvider).myResponse(cargoId));
 });
 
-final cargoByIdProvider = FutureProvider.autoDispose.family<Cargo, String>((ref, id) {
-  return ref.watch(cargoRepositoryProvider).byId(id);
+final cargoByIdProvider = StreamProvider.autoDispose.family<Cargo, String>((ref, id) {
+  return _cached(ref, '/cargos/$id', (d) => Cargo.fromJson(d as Map<String, dynamic>), () => ref.watch(cargoRepositoryProvider).byId(id));
 });
 
 final cargoResponsesProvider = FutureProvider.autoDispose.family<List<CargoResponse>, String>((ref, cargoId) {
   return ref.watch(cargoRepositoryProvider).responsesFor(cargoId);
 });
 
-final dealsMineProvider = FutureProvider.autoDispose<List<Deal>>((ref) {
-  return ref.watch(dealRepositoryProvider).mine();
+final dealsMineProvider = StreamProvider.autoDispose<List<Deal>>((ref) {
+  return _cached(ref, '/deals/mine', (d) => _list(d, Deal.fromJson), () => ref.watch(dealRepositoryProvider).mine());
 });
 
-final dealByIdProvider = FutureProvider.autoDispose.family<Deal, String>((ref, id) {
-  return ref.watch(dealRepositoryProvider).byId(id);
+final dealByIdProvider = StreamProvider.autoDispose.family<Deal, String>((ref, id) {
+  return _cached(ref, '/deals/$id', (d) => Deal.fromJson(d as Map<String, dynamic>), () => ref.watch(dealRepositoryProvider).byId(id));
 });
 
 final reviewsForDealProvider = FutureProvider.autoDispose.family<List<Review>, String>((ref, dealId) {
   return ref.watch(reviewRepositoryProvider).forDeal(dealId);
 });
 
-final chatMessagesProvider = FutureProvider.autoDispose.family<List<ChatMessage>, String>((ref, chatId) {
-  return ref.watch(chatRepositoryProvider).messages(chatId);
+final chatMessagesProvider = StreamProvider.autoDispose.family<List<ChatMessage>, String>((ref, chatId) {
+  return _cached(ref, '/chats/$chatId/messages', (d) => _list(d, ChatMessage.fromJson), () => ref.watch(chatRepositoryProvider).messages(chatId));
 });
 
-final chatThreadProvider = FutureProvider.autoDispose.family<ChatThread, String>((ref, chatId) {
-  return ref.watch(chatRepositoryProvider).thread(chatId);
+final chatThreadProvider = StreamProvider.autoDispose.family<ChatThread, String>((ref, chatId) {
+  return _cached(ref, '/chats/$chatId', (d) => ChatThread.fromJson(d as Map<String, dynamic>), () => ref.watch(chatRepositoryProvider).thread(chatId));
 });
 
 /// Мои чаты (задача 017, п.1) — вкладка «Чаты» у водителя и логиста.
-final myChatsProvider = FutureProvider.autoDispose<List<MyChatEntry>>((ref) {
-  return ref.watch(chatRepositoryProvider).myChats();
+final myChatsProvider = StreamProvider.autoDispose<List<MyChatEntry>>((ref) {
+  return _cached(ref, '/chats', (d) => _list(d, MyChatEntry.fromJson), () => ref.watch(chatRepositoryProvider).myChats());
 });
 
 /// Кандидаты на «Нашёл в Lubao» при закрытии груза (п.6).
@@ -98,16 +131,16 @@ final companyVerificationDocumentsProvider = FutureProvider.autoDispose<List<Ver
 });
 
 /// Мои активные анонсы (040: их может быть несколько).
-final myArrivalsProvider = FutureProvider.autoDispose<MyArrivals>((ref) {
-  return ref.watch(arrivalRepositoryProvider).mine();
+final myArrivalsProvider = StreamProvider.autoDispose<MyArrivals>((ref) {
+  return _cached(ref, '/arrivals/me', ArrivalRepository.parseMine, () => ref.watch(arrivalRepositoryProvider).mine());
 });
 
 final arrivalTemplateProvider = FutureProvider.autoDispose<ArrivalTemplate?>((ref) {
   return ref.watch(arrivalRepositoryProvider).lastTemplate();
 });
 
-final driverVerificationDocumentsProvider = FutureProvider.autoDispose<List<VerificationDocument>>((ref) {
-  return ref.watch(driverRepositoryProvider).verificationDocuments();
+final driverVerificationDocumentsProvider = StreamProvider.autoDispose<List<VerificationDocument>>((ref) {
+  return _cached(ref, '/drivers/me/verification-documents', (d) => _list(d, VerificationDocument.fromJson), () => ref.watch(driverRepositoryProvider).verificationDocuments());
 });
 
 /// Блок «Распознано» под документом (задача 031, п.25).
@@ -116,8 +149,8 @@ final driverDocumentRecognitionProvider = FutureProvider.autoDispose.family<Admi
 });
 
 /// Гараж (задача 031, этап B) — тягачи и прицепы водителя.
-final garageVehiclesProvider = FutureProvider.autoDispose<List<GarageVehicle>>((ref) {
-  return ref.watch(driverRepositoryProvider).vehicles();
+final garageVehiclesProvider = StreamProvider.autoDispose<List<GarageVehicle>>((ref) {
+  return _cached(ref, '/drivers/me/vehicles', (d) => _list(d, GarageVehicle.fromJson), () => ref.watch(driverRepositoryProvider).vehicles());
 });
 
 final devicesProvider = FutureProvider.autoDispose<List<DeviceSession>>((ref) {
@@ -125,13 +158,13 @@ final devicesProvider = FutureProvider.autoDispose<List<DeviceSession>>((ref) {
 });
 
 /// 058 п.8: избранные грузы водителя (☆ в ленте и карточке, раздел в «Моих рейсах»).
-final favoriteCargosProvider = FutureProvider.autoDispose<List<Cargo>>((ref) {
-  return ref.watch(cargoRepositoryProvider).favorites();
+final favoriteCargosProvider = StreamProvider.autoDispose<List<Cargo>>((ref) {
+  return _cached(ref, '/cargos/favorites', (d) => _list(d, Cargo.fromJson), () => ref.watch(cargoRepositoryProvider).favorites());
 });
 
 /// 058 п.6: «Мои водители» компании.
-final myDriversProvider = FutureProvider.autoDispose<List<CompanyDriverEntry>>((ref) {
-  return ref.watch(companyDriversRepositoryProvider).mine();
+final myDriversProvider = StreamProvider.autoDispose<List<CompanyDriverEntry>>((ref) {
+  return _cached(ref, '/company-drivers', (d) => _list(d, CompanyDriverEntry.fromJson), () => ref.watch(companyDriversRepositoryProvider).mine());
 });
 
 /// 058 п.6: «Компании, где я в списке» и приглашения водителю.

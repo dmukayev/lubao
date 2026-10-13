@@ -86,7 +86,7 @@ void main() {
       overrides: [
         arrivalRepositoryProvider.overrideWithValue(fakeRepo),
         recentPointsStoreProvider.overrideWithValue(_FakeRecentPoints()),
-        garageVehiclesProvider.overrideWith((ref) async => const []),
+        garageVehiclesProvider.overrideWith((ref) => Stream.value(const <GarageVehicle>[])),
       ],
       child: MaterialApp(
         locale: const Locale('ru'),
@@ -132,7 +132,7 @@ void main() {
       overrides: [
         arrivalRepositoryProvider.overrideWithValue(fakeRepo),
         recentPointsStoreProvider.overrideWithValue(_FakeRecentPoints()),
-        garageVehiclesProvider.overrideWith((ref) async => const []),
+        garageVehiclesProvider.overrideWith((ref) => Stream.value(const <GarageVehicle>[])),
       ],
       child: MaterialApp(
         locale: const Locale('ru'),
@@ -169,7 +169,7 @@ void main() {
       overrides: [
         arrivalRepositoryProvider.overrideWithValue(fakeRepo),
         recentPointsStoreProvider.overrideWithValue(recent ?? _FakeRecentPoints()),
-        garageVehiclesProvider.overrideWith((ref) async => const []),
+        garageVehiclesProvider.overrideWith((ref) => Stream.value(const <GarageVehicle>[])),
       ],
       child: MaterialApp(
         locale: const Locale('ru'),

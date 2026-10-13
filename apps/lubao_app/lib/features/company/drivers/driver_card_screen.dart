@@ -14,8 +14,10 @@ import '../../shared/driver_avatar.dart';
 import '../../shared/driver_vehicle_photos.dart';
 import '../../shared/error_feedback.dart';
 
-final _driverCardProvider = FutureProvider.autoDispose.family<DriverCard, String>((ref, id) {
-  return ref.watch(driverRepositoryProvider).card(id);
+/// 078: открытая карточка водителя хранится сутки — повторно открывается сразу.
+final _driverCardProvider = StreamProvider.autoDispose.family<DriverCard, String>((ref, id) {
+  return cacheFirst(ref.watch(apiClientProvider), '/drivers/$id/card',
+      parse: (d) => DriverCard.fromJson(d as Map<String, dynamic>), fetch: () => ref.watch(driverRepositoryProvider).card(id));
 });
 
 /// 057 п.6: логист открыл ссылку водителя (/d/…) — карточка этого водителя,

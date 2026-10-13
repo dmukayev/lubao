@@ -8,7 +8,12 @@ class ReferenceDataRepository {
 
   Future<ReferenceData> fetch() async {
     final res = await _client.dio.get('/reference-data');
-    final data = res.data as Map<String, dynamic>;
+    return parse(res.data);
+  }
+
+  /// Разбор ответа `/reference-data` — и для сохранённого на телефоне (078).
+  static ReferenceData parse(Object? raw) {
+    final data = raw as Map<String, dynamic>;
     return ReferenceData(
       countries: (data['countries'] as List<dynamic>)
           .map((e) => Country.fromJson(e as Map<String, dynamic>))

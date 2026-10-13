@@ -76,7 +76,7 @@ void main() {
     final authRepo = _FakeAuthRepository();
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        referenceDataProvider.overrideWith((ref) async => _fixture),
+        referenceDataProvider.overrideWith((ref) => Stream.value(_fixture)),
         authRepositoryProvider.overrideWithValue(authRepo),
       ],
       child: MaterialApp(
@@ -126,7 +126,7 @@ void main() {
   testWidgets('submitting without picking a country shows the inline error', (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
-        referenceDataProvider.overrideWith((ref) async => _fixture),
+        referenceDataProvider.overrideWith((ref) => Stream.value(_fixture)),
         authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
       ],
       child: MaterialApp(

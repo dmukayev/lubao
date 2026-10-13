@@ -62,7 +62,7 @@ Widget _wrap(Widget child, {required _FakeDriverRepository driverRepo}) {
   ]);
   return ProviderScope(
     overrides: [
-      referenceDataProvider.overrideWith((ref) async => _fixture),
+      referenceDataProvider.overrideWith((ref) => Stream.value(_fixture)),
       driverRepositoryProvider.overrideWithValue(driverRepo),
     ],
     child: MaterialApp.router(

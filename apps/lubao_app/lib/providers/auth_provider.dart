@@ -8,6 +8,7 @@ import 'locale_provider.dart';
 import 'data_providers.dart';
 import 'tracking_provider.dart';
 import '../features/shared/cached_photo.dart';
+import '../services/local_data.dart';
 import '../features/shared/driver_avatar.dart';
 import '../features/company/cargos/post_cargo_screen.dart' show contactPhoneSavedProvider;
 import '../services/disk_bytes_cache.dart';
@@ -192,6 +193,12 @@ class SessionController extends StateNotifier<Session?> {
   /// 061 п.9: фото, увиденные этим человеком, — не следующему на телефоне.
   Future<void> _clearImages() async {
     await DiskBytesCache.instance.clear();
+    // 078: сохранённые ответы, связи «водитель/груз → чат», черновики и
+    // очередь сообщений — этого человека, не следующего на телефоне.
+    final api = _ref.read(apiClientProvider);
+    api.cacheScope = null;
+    await api.clearCache();
+    await _ref.read(localStoreProvider).clear();
     _ref.invalidate(driverAvatarProvider);
     _ref.invalidate(cachedPhotoProvider);
     // Телефон, сохранённый из формы груза, — этого логиста, не следующего.

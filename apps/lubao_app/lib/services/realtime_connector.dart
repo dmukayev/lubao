@@ -17,6 +17,8 @@ import '../providers/auth_provider.dart';
 class RealtimeConnector {
   RealtimeConnector(this._ref) {
     _ref.listen<Session?>(sessionProvider, (previous, next) {
+      // 078: сохранённые ответы — свои у каждого пользователя.
+      _ref.read(apiClientProvider).cacheScope = next?.user.id;
       if (next != null) {
         _ref.read(realtimeServiceProvider).connect();
         unawaited(_ref.read(cargoRepositoryProvider).flushPendingContactEvents());
