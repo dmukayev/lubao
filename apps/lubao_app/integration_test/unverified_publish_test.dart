@@ -182,6 +182,9 @@ void main() {
       await tester.tap(find.byKey(const Key('driversPointChip')));
       await pickCityByName(tester, 'korg', 'Хоргос');
       // 071 п.4: логист приглашает водителя на свой груз — в строке «Приглашён: …».
+      // Список после смены города перестраивается — сначала дождаться карточки.
+      await waitFor(tester, find.byKey(const Key('driversAtPointCard-$d4')), timeout: const Duration(seconds: 30));
+      await tester.pumpAndSettle();
       final invite = find.byKey(const Key('driversAtPointInvite-$d4'));
       await waitAndReveal(tester, invite);
       await tester.tap(invite);

@@ -628,9 +628,10 @@ class _RouteLine extends StatelessWidget {
       final width = painter.width;
       painter.dispose();
       if (width <= constraints.maxWidth) return Text(text, key: textKey, style: style, maxLines: 1);
-      // 071 п.6: не помещается и уменьшенным — на две строки (город назначения
-      // не пропадает целиком, как было с «Астана → …»).
-      if (width * 0.75 > constraints.maxWidth) {
+      // 071 п.6: не помещается и уменьшенным до 60% — на две строки (город
+      // назначения не пропадает целиком, как было с «Астана → …»); иначе одна
+      // строка, уменьшенная, — карточка не растёт (на 360 dp видно две).
+      if (width * 0.6 > constraints.maxWidth) {
         return Text(text, key: textKey, style: style, maxLines: 2, overflow: TextOverflow.ellipsis);
       }
       return FittedBox(fit: BoxFit.scaleDown, alignment: AlignmentDirectional.centerStart, child: Text(text, key: textKey, style: style, maxLines: 1, softWrap: false));
