@@ -3995,6 +3995,75 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get postCargoCategory => 'What are you shipping';
 
   @override
+  String cargoHsCode(String code) {
+    return 'HS code $code';
+  }
+
+  @override
+  String get cargoDangerousGoods => 'Dangerous goods';
+
+  @override
+  String get postCargoWhatTitle => 'What are you shipping?';
+
+  @override
+  String get postCargoWhatHint => 'Name or HS code';
+
+  @override
+  String postCargoWhatAdd(String text) {
+    return 'Add: “$text”';
+  }
+
+  @override
+  String get postCargoWhatRequired => 'Say what you are shipping';
+
+  @override
+  String get postCargoWhatPickCategory => 'Pick a category';
+
+  @override
+  String get errGoodsNotFound =>
+      'No such goods in the directory — pick from the suggestions';
+
+  @override
+  String get errHsCodeNotFound => 'No such HS code';
+
+  @override
+  String get adminGoodsTab => 'Goods';
+
+  @override
+  String get adminHsCodesTab => 'HS codes';
+
+  @override
+  String get adminHsChaptersTab => 'Chapters → categories';
+
+  @override
+  String get adminNewWordsTab => 'New words';
+
+  @override
+  String get adminGoodsAddFromWord => 'Add to goods';
+
+  @override
+  String adminGoodsSynonyms(String lang) {
+    return 'Synonyms $lang (comma-separated)';
+  }
+
+  @override
+  String get adminGoodsHsCode => 'HS code (6 digits)';
+
+  @override
+  String get adminGoodsDangerous => 'Dangerous (ADR)';
+
+  @override
+  String get adminGoodsBodyHint => 'Suggested body type';
+
+  @override
+  String get adminGoodsSlug => 'Record code (Latin)';
+
+  @override
+  String adminNewWordsCount(int count) {
+    return '$count times';
+  }
+
+  @override
   String get postCargoCategoryRequired => 'Choose a cargo category';
 
   @override

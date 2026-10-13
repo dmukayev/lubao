@@ -7428,6 +7428,126 @@ abstract class LubaoLocalizations {
   /// **'Что везёте'**
   String get postCargoCategory;
 
+  /// No description provided for @cargoHsCode.
+  ///
+  /// In ru, this message translates to:
+  /// **'Код ТН ВЭД {code}'**
+  String cargoHsCode(String code);
+
+  /// No description provided for @cargoDangerousGoods.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опасный груз'**
+  String get cargoDangerousGoods;
+
+  /// No description provided for @postCargoWhatTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Что везёте?'**
+  String get postCargoWhatTitle;
+
+  /// No description provided for @postCargoWhatHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название или код ТН ВЭД'**
+  String get postCargoWhatHint;
+
+  /// No description provided for @postCargoWhatAdd.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить: «{text}»'**
+  String postCargoWhatAdd(String text);
+
+  /// No description provided for @postCargoWhatRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите, что везёте'**
+  String get postCargoWhatRequired;
+
+  /// No description provided for @postCargoWhatPickCategory.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите категорию'**
+  String get postCargoWhatPickCategory;
+
+  /// No description provided for @errGoodsNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Такого товара нет в справочнике — выберите из подсказок'**
+  String get errGoodsNotFound;
+
+  /// No description provided for @errHsCodeNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'Такого кода ТН ВЭД нет'**
+  String get errHsCodeNotFound;
+
+  /// No description provided for @adminGoodsTab.
+  ///
+  /// In ru, this message translates to:
+  /// **'Товары'**
+  String get adminGoodsTab;
+
+  /// No description provided for @adminHsCodesTab.
+  ///
+  /// In ru, this message translates to:
+  /// **'Коды ТН ВЭД'**
+  String get adminHsCodesTab;
+
+  /// No description provided for @adminHsChaptersTab.
+  ///
+  /// In ru, this message translates to:
+  /// **'Главы → категории'**
+  String get adminHsChaptersTab;
+
+  /// No description provided for @adminNewWordsTab.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новые слова'**
+  String get adminNewWordsTab;
+
+  /// No description provided for @adminGoodsAddFromWord.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить в товары'**
+  String get adminGoodsAddFromWord;
+
+  /// No description provided for @adminGoodsSynonyms.
+  ///
+  /// In ru, this message translates to:
+  /// **'Синонимы {lang} (через запятую)'**
+  String adminGoodsSynonyms(String lang);
+
+  /// No description provided for @adminGoodsHsCode.
+  ///
+  /// In ru, this message translates to:
+  /// **'Код ТН ВЭД (6 цифр)'**
+  String get adminGoodsHsCode;
+
+  /// No description provided for @adminGoodsDangerous.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опасный груз (ADR)'**
+  String get adminGoodsDangerous;
+
+  /// No description provided for @adminGoodsBodyHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подсказка кузова'**
+  String get adminGoodsBodyHint;
+
+  /// No description provided for @adminGoodsSlug.
+  ///
+  /// In ru, this message translates to:
+  /// **'Код записи (латиница)'**
+  String get adminGoodsSlug;
+
+  /// No description provided for @adminNewWordsCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count} раз'**
+  String adminNewWordsCount(int count);
+
   /// No description provided for @postCargoCategoryRequired.
   ///
   /// In ru, this message translates to:

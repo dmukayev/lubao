@@ -38,7 +38,7 @@ class CargoMainCard extends StatelessWidget {
             title: route.origin ?? '',
             // 047: категория и км по дороге — как в строке ленты.
             subtitle: [
-              if (refData.categoryById(cargo.categoryId) case final c?) c.name.forLanguageCode(locale),
+              ?cargoWhatLabel(refData, goodsName: cargo.goodsName, categoryId: cargo.categoryId, languageCode: locale),
               if (cargo.distanceKm != null && cargo.distanceKm! > 0) '${formatThousands(cargo.distanceKm!)} ${t.unitKm}',
               formatDate(cargo.readyDate),
             ].join(' · '),
@@ -48,6 +48,16 @@ class CargoMainCard extends StatelessWidget {
             child: Container(width: 2, height: 20, color: AppColors.divider),
           ),
           CargoRoutePoint(color: AppColors.accent, title: route.destination, subtitle: null),
+          // 075: код HS — мелко серым; опасный груз — пометкой.
+          if (cargo.hsCode != null || cargo.goodsIsDangerous)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: Text(
+                [if (cargo.hsCode != null) t.cargoHsCode(cargo.hsCode!), if (cargo.goodsIsDangerous) t.cargoDangerousGoods].join(' · '),
+                key: const Key('cargoDetailHsCode'),
+                style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+              ),
+            ),
           const Divider(height: AppSpacing.xl * 2),
           // 076: справа — общий столбец цены (065, эталон 35): цена → «≈ ₸» →
           // ₸/км → «через N дн. · нал.»; слева — подпись, аванс, машины.

@@ -3974,6 +3974,75 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get postCargoCategory => 'Что везёте';
 
   @override
+  String cargoHsCode(String code) {
+    return 'Код ТН ВЭД $code';
+  }
+
+  @override
+  String get cargoDangerousGoods => 'Опасный груз';
+
+  @override
+  String get postCargoWhatTitle => 'Что везёте?';
+
+  @override
+  String get postCargoWhatHint => 'Название или код ТН ВЭД';
+
+  @override
+  String postCargoWhatAdd(String text) {
+    return 'Добавить: «$text»';
+  }
+
+  @override
+  String get postCargoWhatRequired => 'Укажите, что везёте';
+
+  @override
+  String get postCargoWhatPickCategory => 'Выберите категорию';
+
+  @override
+  String get errGoodsNotFound =>
+      'Такого товара нет в справочнике — выберите из подсказок';
+
+  @override
+  String get errHsCodeNotFound => 'Такого кода ТН ВЭД нет';
+
+  @override
+  String get adminGoodsTab => 'Товары';
+
+  @override
+  String get adminHsCodesTab => 'Коды ТН ВЭД';
+
+  @override
+  String get adminHsChaptersTab => 'Главы → категории';
+
+  @override
+  String get adminNewWordsTab => 'Новые слова';
+
+  @override
+  String get adminGoodsAddFromWord => 'Добавить в товары';
+
+  @override
+  String adminGoodsSynonyms(String lang) {
+    return 'Синонимы $lang (через запятую)';
+  }
+
+  @override
+  String get adminGoodsHsCode => 'Код ТН ВЭД (6 цифр)';
+
+  @override
+  String get adminGoodsDangerous => 'Опасный груз (ADR)';
+
+  @override
+  String get adminGoodsBodyHint => 'Подсказка кузова';
+
+  @override
+  String get adminGoodsSlug => 'Код записи (латиница)';
+
+  @override
+  String adminNewWordsCount(int count) {
+    return '$count раз';
+  }
+
+  @override
   String get postCargoCategoryRequired => 'Выберите категорию груза';
 
   @override

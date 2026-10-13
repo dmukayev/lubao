@@ -17,6 +17,7 @@ import { markResponsesSeen } from './new-responses';
 import { bumpShareReferral } from '../share/share.service';
 import { currentVehicleCombo } from '../deals/vehicle-combo';
 import { companyLatin } from '../companies/latin-name';
+import { goodsLabel } from '../goods/goods-label';
 
 type ResponseWithDriver = CargoResponseEntity & { driver: Driver };
 
@@ -82,7 +83,7 @@ export class ResponsesService {
         cargo: {
           select: {
             id: true, status: true, pointId: true, destinationCountryId: true, destinationCityId: true, bodyTypeId: true, categoryId: true,
-            weightKg: true, volumeM3: true, price: true, currency: true, readyDate: true, company: { select: { name: true, nameRu: true, nameLatin: true, isVerified: true } },
+            weightKg: true, volumeM3: true, price: true, currency: true, readyDate: true, company: { select: { name: true, nameRu: true, nameLatin: true, isVerified: true } }, goods: { select: { name: true } }, goodsText: true, goodsTextLocale: true, goodsTextTranslations: true,
             // 058 п.1: условия оплаты — в «Моих рейсах».
             advanceAmount: true, paymentForm: true, paymentDelayDays: true,
           },
@@ -109,6 +110,7 @@ export class ResponsesService {
         destinationCityId: r.cargo.destinationCityId,
         bodyTypeId: r.cargo.bodyTypeId,
         categoryId: r.cargo.categoryId,
+        goodsName: goodsLabel(r.cargo),
         weightKg: r.cargo.weightKg != null ? Number(r.cargo.weightKg) : null,
         volumeM3: r.cargo.volumeM3 != null ? Number(r.cargo.volumeM3) : null,
         advanceAmount: r.cargo.advanceAmount != null ? Number(r.cargo.advanceAmount) : null,

@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lubao_core/lubao_core.dart';
 
+import 'goods_field.dart';
+
 import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
@@ -44,7 +46,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   final _palletController = TextEditingController();
   /// 072: прокрутка к первому незаполненному полю.
   final _fields = FieldScroller();
-  static const _fieldOrder = ['pointId', 'destinationCountryId', 'categoryId', 'bodyTypeId', 'specs', 'volumeM3', 'weightKg', 'palletCount', 'trucksNeeded', 'price', 'paymentDelayDays', 'advanceAmount', 'contactPhone'];
+  static const _fieldOrder = ['pointId', 'destinationCountryId', 'goods', 'categoryId', 'bodyTypeId', 'specs', 'volumeM3', 'weightKg', 'palletCount', 'trucksNeeded', 'price', 'paymentDelayDays', 'advanceAmount', 'contactPhone'];
   /// Поля, ошибки сервера по которым форма показывает у поля (остальное — всплывашкой).
   static const _serverFields = {'price', 'weightKg'};
   // «Подходит N водителям на точке» (задача 033, п.10) — пересчитывается
@@ -75,6 +77,12 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   /// 047: категория груза (обязательна) и «рынок за месяц» по маршруту.
   String? _categoryId;
   String? _categoryError;
+  /// 075: что везут — товар из справочника, свой текст, код HS.
+  String? _goodsId;
+  String? _goodsText;
+  String? _hsCode;
+  String _goodsLabel = '';
+  String? _goodsError;
   RouteMarket? _market;
   // Расстояние по дорогам для выбранной пары городов; null и _distanceLoading —
   // «Считаем расстояние…» (новая пара на сервере считается до ~30 с).
@@ -118,6 +126,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       _cityId = cargo.destinationCityId;
       _bodyTypeId = cargo.bodyTypeId;
       _categoryId = cargo.categoryId;
+      _goodsId = cargo.goodsId;
+      _goodsText = cargo.goodsText;
+      _hsCode = cargo.hsCode;
+      _goodsLabel = cargo.goodsText ?? '';
       _specs = {...?cargo.cargoSpecs};
       _extraBodyTypeIds.addAll(cargo.extraBodyTypeIds);
       _currency = cargo.currency;
@@ -403,6 +415,8 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       _destinationError = _countryId == null ? t.postCargoDestinationError : null;
       _bodyTypeError = _bodyTypeId == null ? t.postCargoBodyTypeError : null;
       _categoryError = _categoryId == null ? t.postCargoCategoryRequired : null;
+      // 075: пустое «Что везёте?» — ошибка у поля (072).
+      _goodsError = _goodsId == null && (_goodsText ?? '').trim().isEmpty ? t.postCargoWhatRequired : null;
       _priceError = price == null ? t.postCargoPriceError : null;
       // 055: в кг или т; пусто — можно, иначе 0 < вес ≤ 60 т (сервер — свой максимум).
       final weightText = _weightController.text.trim();
@@ -416,6 +430,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     final invalid = <String>{
       if (_pointError != null) 'pointId',
       if (_destinationError != null) 'destinationCountryId',
+      if (_goodsError != null) 'goods',
       if (_categoryError != null) 'categoryId',
       if (_bodyTypeError != null) 'bodyTypeId',
       if (!specsOk) 'specs',
@@ -449,6 +464,9 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         destinationCityId: _cityId,
         bodyTypeId: _bodyTypeId!,
         categoryId: _categoryId,
+        goodsId: _goodsId,
+        goodsText: _goodsId == null ? _goodsText : null,
+        hsCode: _hsCode,
         weightKg: _weightKg(),
         volumeM3: refData == null || _showVolume(refData) ? parseDecimal(_volumeController.text) : null,
         palletCount: refData == null || _showPallets(refData) ? int.tryParse(_palletController.text) : null,
@@ -655,6 +673,45 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                   onSubmitted: (_) => onSubmitted(),
                 ),
               )),
+              const SizedBox(height: 12),
+              // 075: «Что везёте?» — поиск товара по названию и коду, свой вариант.
+              FieldAnchor(
+                scroller: _fields,
+                name: 'goods',
+                child: GoodsField(
+                  initialText: _goodsLabel.isNotEmpty ? _goodsLabel : (widget.cargo ?? widget.template)?.goodsName?.forLanguageCode(locale) ?? '',
+                  focusNode: _fields.focusOf('goods'),
+                  errorText: _goodsError,
+                  onSelected: (hit, label) => setState(() {
+                    _goodsId = hit.goodsId;
+                    _hsCode = hit.hsCode;
+                    _goodsText = hit.goodsId == null ? label : null;
+                    _goodsError = null;
+                    // Категория — из товара или главы кода; видна ниже и меняется.
+                    if (hit.categoryId != null) {
+                      _categoryId = hit.categoryId;
+                      _categoryError = null;
+                    }
+                    // Подсказка кузова — если кузов ещё не выбран.
+                    if (_bodyTypeId == null && hit.suggestedBodyTypeId != null) _bodyTypeId = hit.suggestedBodyTypeId;
+                  }),
+                  onOwnText: (text) => setState(() {
+                    _goodsId = null;
+                    _hsCode = null;
+                    _goodsText = text;
+                    _goodsError = null;
+                  }),
+                  onCleared: () {
+                    if (_goodsId != null || _hsCode != null || _goodsText != null) {
+                      setState(() {
+                        _goodsId = null;
+                        _hsCode = null;
+                        _goodsText = null;
+                      });
+                    }
+                  },
+                ),
+              ),
               const SizedBox(height: 12),
               // 047 п.1, 7: категория — чипами, обязательна.
               Text(t.postCargoCategory, style: AppTextStyles.bodyStrong),

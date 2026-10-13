@@ -104,7 +104,7 @@ class _InviteCargoPickerState extends State<_InviteCargoPicker> {
                         invitedLabel: widget.alreadyInvited.contains(c.id) ? t.driverInvitedTo(_route(c, locale)) : null,
                         route: _route(c, locale),
                         details: [
-                          if (rd != null) rd.categoryById(c.categoryId)?.name.forLanguageCode(locale),
+                          if (rd != null) cargoWhatLabel(rd, goodsName: c.goodsName, categoryId: c.categoryId, languageCode: locale),
                           if (c.weightKg != null) formatCargoWeight(c.weightKg!, tonUnit: t.unitTon, kgUnit: t.unitKg, languageCode: locale),
                           if (rd != null) rd.bodyTypeById(c.bodyTypeId).name.forLanguageCode(locale),
                           formatDate(c.readyDate),

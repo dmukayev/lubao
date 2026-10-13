@@ -216,6 +216,7 @@ class _TripCargo {
     this.destinationCityId,
     required this.bodyTypeId,
     this.categoryId,
+    this.goodsName,
     this.weightKg,
     this.volumeM3,
     required this.price,
@@ -239,6 +240,8 @@ class _TripCargo {
   final String? destinationCityId;
   final String bodyTypeId;
   final String? categoryId;
+  /// 075: что везут.
+  final I18nText? goodsName;
   final double? weightKg;
   final double price;
   final Currency currency;
@@ -254,6 +257,7 @@ class _TripCargo {
         destinationCityId: r.destinationCityId,
         bodyTypeId: r.bodyTypeId,
         categoryId: r.categoryId,
+        goodsName: r.goodsName,
         weightKg: r.weightKg,
         volumeM3: r.volumeM3,
         price: r.price,
@@ -276,6 +280,7 @@ class _TripCargo {
       destinationCityId: c.destinationCityId,
       bodyTypeId: c.bodyTypeId,
       categoryId: c.categoryId,
+      goodsName: c.goodsName,
       weightKg: c.weightKg,
       volumeM3: c.volumeM3,
       // 058 п.5: в рейсе — итоговая цена сделки.
@@ -298,6 +303,7 @@ class _TripCargo {
         destinationCityId: c.destinationCityId,
         bodyTypeId: c.bodyTypeId,
         categoryId: c.categoryId,
+        goodsName: c.goodsName,
         weightKg: c.weightKg,
         volumeM3: c.volumeM3,
         price: c.price,
@@ -344,7 +350,7 @@ class _TripCard extends StatelessWidget {
     final terms = paymentWhenHowLine(t, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays);
     final advance = advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency);
     final details = [
-      if (cargo.categoryId != null) rd?.categoryById(cargo.categoryId)?.name.forLanguageCode(locale),
+      if (rd != null) cargoWhatLabel(rd, goodsName: cargo.goodsName, categoryId: cargo.categoryId, languageCode: locale),
       if (size.isNotEmpty) size,
       if (rd != null && cargo.bodyTypeId.isNotEmpty) rd.bodyTypeById(cargo.bodyTypeId).name.forLanguageCode(locale),
       formatDate(cargo.readyDate),

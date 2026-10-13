@@ -780,6 +780,44 @@ class AdminRepository {
       if (rejectReason != null) 'rejectReason': rejectReason,
     });
   }
+  // 075: справочники «Что везёте?».
+  Future<List<AdminGoods>> goods({String? q}) async {
+    final res = await _client.dio.get('/admin/reference/goods', queryParameters: {if (q != null && q.isNotEmpty) 'q': q});
+    return (res.data as List<dynamic>).map((e) => AdminGoods.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> saveGoods({String? id, required Map<String, dynamic> data, required String reason}) async {
+    final body = {...data, 'reason': reason};
+    if (id == null) {
+      await _client.dio.post('/admin/reference/goods', data: body);
+    } else {
+      await _client.dio.patch('/admin/reference/goods/$id', data: body);
+    }
+  }
+
+  Future<AdminSearchPage<AdminHsCode>> hsCodes({String? q, int page = 1}) async {
+    final res = await _client.dio.get('/admin/reference/hs-codes', queryParameters: {if (q != null && q.isNotEmpty) 'q': q, 'page': page});
+    final data = res.data as Map<String, dynamic>;
+    return AdminSearchPage(items: (data['items'] as List<dynamic>).map((e) => AdminHsCode.fromJson(e as Map<String, dynamic>)).toList(), total: data['total'] as int);
+  }
+
+  Future<void> renameHsCode(String code, {required Map<String, String> name, required String reason}) async {
+    await _client.dio.patch('/admin/reference/hs-codes/$code', data: {'name': name, 'reason': reason});
+  }
+
+  Future<List<AdminHsChapter>> hsChapters() async {
+    final res = await _client.dio.get('/admin/reference/hs-chapters');
+    return (res.data as List<dynamic>).map((e) => AdminHsChapter.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> setHsChapterCategory(String chapter, {required String categoryId, required String reason}) async {
+    await _client.dio.patch('/admin/reference/hs-chapters/$chapter', data: {'categoryId': categoryId, 'reason': reason});
+  }
+
+  Future<List<AdminNewWord>> goodsNewWords() async {
+    final res = await _client.dio.get('/admin/reference/goods-new-words');
+    return (res.data as List<dynamic>).map((e) => AdminNewWord.fromJson(e as Map<String, dynamic>)).toList();
+  }
 }
 
 /// Канал кода входа в админке: без ключей (`configured=false`) — серый.
@@ -825,4 +863,5 @@ class AdminBlockedIdentifier {
         liftedAt: json['liftedAt'] == null ? null : DateTime.parse(json['liftedAt'] as String),
         liftReason: json['liftReason'] as String?,
       );
+
 }

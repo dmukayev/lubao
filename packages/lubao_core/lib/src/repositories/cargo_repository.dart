@@ -156,6 +156,18 @@ class CargoRepository {
     return (res.data as List<dynamic>).map((e) => Cargo.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  /// 075: «Что везёте?» — подсказки по коду (цифры) или названию на 4 языках.
+  Future<List<GoodsHit>> searchGoods(String q) async {
+    final res = await _client.dio.get('/goods/search', queryParameters: {'q': q});
+    return (res.data as List<dynamic>).map((e) => GoodsHit.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// 075: частые товары компании — до ввода.
+  Future<List<GoodsHit>> recentGoods() async {
+    final res = await _client.dio.get('/goods/recent');
+    return (res.data as List<dynamic>).map((e) => GoodsHit.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
   /// 066 п.5: жалоба водителя на груз — в очередь жалоб админки.
   Future<void> complain(String cargoId, {required String reason}) async {
     await _client.dio.post('/cargos/$cargoId/complaint', data: {'reason': reason});

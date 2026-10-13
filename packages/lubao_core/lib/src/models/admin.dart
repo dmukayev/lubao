@@ -1881,3 +1881,68 @@ class AdminRoutePrice {
         dealPoints: json['dealPoints'] as int? ?? 0,
       );
 }
+
+/// 075: товар в справочнике админки.
+class AdminGoods {
+  const AdminGoods({
+    required this.id,
+    required this.slug,
+    required this.name,
+    required this.synonyms,
+    this.hsCode,
+    required this.categoryId,
+    this.suggestedBodyTypeId,
+    this.isDangerous = false,
+    this.sortOrder = 0,
+    this.isActive = true,
+  });
+
+  final String id;
+  final String slug;
+  final I18nText name;
+  final Map<String, List<String>> synonyms;
+  final String? hsCode;
+  final String categoryId;
+  final String? suggestedBodyTypeId;
+  final bool isDangerous;
+  final int sortOrder;
+  final bool isActive;
+
+  factory AdminGoods.fromJson(Map<String, dynamic> json) => AdminGoods(
+        id: json['id'] as String,
+        slug: json['slug'] as String,
+        name: I18nText.fromJson(Map<String, dynamic>.from(json['name'] as Map)),
+        synonyms: {
+          for (final e in (json['synonyms'] as Map? ?? const {}).entries) e.key as String: [for (final v in (e.value as List? ?? const [])) v as String],
+        },
+        hsCode: json['hsCode'] as String?,
+        categoryId: json['categoryId'] as String,
+        suggestedBodyTypeId: json['suggestedBodyTypeId'] as String?,
+        isDangerous: json['isDangerous'] as bool? ?? false,
+        sortOrder: json['sortOrder'] as int? ?? 0,
+        isActive: json['isActive'] as bool? ?? true,
+      );
+}
+
+/// 075: код HS-6 и глава → категория.
+class AdminHsCode {
+  const AdminHsCode({required this.code, required this.name});
+  final String code;
+  final I18nText name;
+  factory AdminHsCode.fromJson(Map<String, dynamic> json) => AdminHsCode(code: json['code'] as String, name: I18nText.fromJson(Map<String, dynamic>.from(json['name'] as Map)));
+}
+
+class AdminHsChapter {
+  const AdminHsChapter({required this.chapter, required this.categoryId});
+  final String chapter;
+  final String categoryId;
+  factory AdminHsChapter.fromJson(Map<String, dynamic> json) => AdminHsChapter(chapter: json['chapter'] as String, categoryId: json['categoryId'] as String);
+}
+
+/// 075 п.11: свой вариант логистов, сколько раз встречался.
+class AdminNewWord {
+  const AdminNewWord({required this.text, required this.count});
+  final String text;
+  final int count;
+  factory AdminNewWord.fromJson(Map<String, dynamic> json) => AdminNewWord(text: json['text'] as String? ?? '', count: json['count'] as int? ?? 0);
+}

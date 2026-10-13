@@ -3884,6 +3884,74 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoCategory => '货物类别';
 
   @override
+  String cargoHsCode(String code) {
+    return '海关编码 $code';
+  }
+
+  @override
+  String get cargoDangerousGoods => '危险品';
+
+  @override
+  String get postCargoWhatTitle => '运什么货？';
+
+  @override
+  String get postCargoWhatHint => '名称或海关编码';
+
+  @override
+  String postCargoWhatAdd(String text) {
+    return '添加：“$text”';
+  }
+
+  @override
+  String get postCargoWhatRequired => '请填写货物名称';
+
+  @override
+  String get postCargoWhatPickCategory => '请选择类别';
+
+  @override
+  String get errGoodsNotFound => '目录中没有该货物——请从提示中选择';
+
+  @override
+  String get errHsCodeNotFound => '没有该海关编码';
+
+  @override
+  String get adminGoodsTab => '货物';
+
+  @override
+  String get adminHsCodesTab => '海关编码';
+
+  @override
+  String get adminHsChaptersTab => '章 → 类别';
+
+  @override
+  String get adminNewWordsTab => '新词';
+
+  @override
+  String get adminGoodsAddFromWord => '加入货物目录';
+
+  @override
+  String adminGoodsSynonyms(String lang) {
+    return '同义词 $lang（逗号分隔）';
+  }
+
+  @override
+  String get adminGoodsHsCode => '海关编码（6位）';
+
+  @override
+  String get adminGoodsDangerous => '危险品（ADR）';
+
+  @override
+  String get adminGoodsBodyHint => '建议车型';
+
+  @override
+  String get adminGoodsSlug => '记录代码（拉丁字母）';
+
+  @override
+  String adminNewWordsCount(int count) {
+    return '$count 次';
+  }
+
+  @override
   String get postCargoCategoryRequired => '请选择货物类别';
 
   @override

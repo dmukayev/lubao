@@ -418,7 +418,8 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
     final advance = advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency);
     final size = cargoSizeLabel(t, weightKg: cargo.weightKg, volumeM3: cargo.volumeM3, languageCode: locale);
     final left = [
-      [bodyType?.name.forLanguageCode(locale), if (size.isNotEmpty) size].whereType<String>().join(' · '),
+      // 075: что везут — первым.
+      [if (refData != null) cargoWhatLabel(refData, goodsName: cargo.goodsName, categoryId: cargo.categoryId, languageCode: locale), bodyType?.name.forLanguageCode(locale), if (size.isNotEmpty) size].whereType<String>().join(' · '),
       [if (cargo.distanceKm != null) '${formatThousands(cargo.distanceKm!)} ${t.unitKm}', loadingDayLabel(t, cargo.readyDate)].join(' · '),
       logistTrucksLabel(t, needed: cargo.trucksNeeded, taken: cargo.trucksTaken),
     ];

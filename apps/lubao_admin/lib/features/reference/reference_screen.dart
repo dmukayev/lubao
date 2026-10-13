@@ -7,6 +7,7 @@ import 'package:lubao_core/lubao_core.dart';
 import '../../providers/api_providers.dart';
 import '../../providers/data_providers.dart';
 import '../shared/edit_side_panel.dart';
+import 'goods_tabs.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 /// Правка названия на 4 языках + включить/выключить + порядок (задача 028,
@@ -86,7 +87,7 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 7, vsync: this);
+    _tabController = TabController(length: 11, vsync: this);
   }
 
   @override
@@ -689,6 +690,11 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
           Tab(text: t.navFeed),
           Tab(text: t.adminCitiesTab),
           Tab(text: t.adminPendingCitiesTab),
+          // 075: «Что везёте?».
+          Tab(text: t.adminGoodsTab),
+          Tab(text: t.adminHsCodesTab),
+          Tab(text: t.adminHsChaptersTab),
+          Tab(text: t.adminNewWordsTab),
         ]),
       ),
       body: referenceData.when(
@@ -746,6 +752,11 @@ class _ReferenceScreenState extends ConsumerState<ReferenceScreen> with SingleTi
               onMerge: (pending) => _mergePendingCity(pending, refData.cities, locale),
               onReject: _rejectPendingCity,
             ),
+            // 075: «Что везёте?».
+            GoodsTab(refData: refData),
+            const HsCodesTab(),
+            HsChaptersTab(refData: refData),
+            GoodsNewWordsTab(refData: refData),
           ],
         ),
       ),

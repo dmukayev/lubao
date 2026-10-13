@@ -244,7 +244,8 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
     final origin = route.origin;
     final destination = route.destination;
     final bodyType = refData.bodyTypeById(cargo.bodyTypeId);
-    final category = refData.categoryById(cargo.categoryId)?.name.forLanguageCode(locale);
+    // 075: товар на языке водителя («Плитка»); старые грузы — категория.
+    final category = cargoWhatLabel(refData, goodsName: cargo.goodsName, categoryId: cargo.categoryId, languageCode: locale);
     final isHomeSection = cargo.feedSection == CargoFeedSection.home;
     final accent = cargo.pickupRank == 0 || isHomeSection;
     final (stateLabel, stateColor) = switch (cargo.myResponseStatus) {

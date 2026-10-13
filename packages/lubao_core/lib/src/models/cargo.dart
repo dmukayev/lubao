@@ -45,6 +45,11 @@ class Cargo {
     this.newResponsesCount = 0,
     this.activeDeal,
     this.cargoSpecs,
+    this.goodsId,
+    this.goodsName,
+    this.goodsText,
+    this.hsCode,
+    this.goodsIsDangerous = false,
     this.extraBodyTypeIds = const [],
     this.categoryId,
     this.distanceKm,
@@ -147,6 +152,15 @@ class Cargo {
 
   /// 048: параметры груза по профилю и другие подходящие кузова.
   final Map<String, dynamic>? cargoSpecs;
+
+  /// 075: что везут — товар из справочника (`goodsId`), свой текст логиста,
+  /// код HS-6; `goodsName` — готовое название на 4 языках (товар или свой текст
+  /// с переводами). Нет — показываем категорию, как у старых грузов.
+  final String? goodsId;
+  final I18nText? goodsName;
+  final String? goodsText;
+  final String? hsCode;
+  final bool goodsIsDangerous;
   final List<String> extraBodyTypeIds;
 
   /// 058 п.7: логист груза «в сети / был в сети».
@@ -200,6 +214,11 @@ class Cargo {
         newResponsesCount: json['newResponsesCount'] as int? ?? 0,
         activeDeal: json['activeDeal'] == null ? null : CargoActiveDeal.fromJson(json['activeDeal'] as Map<String, dynamic>),
         cargoSpecs: json['specs'] as Map<String, dynamic>?,
+        goodsId: (json['goods'] as Map<String, dynamic>?)?['id'] as String?,
+        goodsName: json['goodsName'] is Map ? I18nText.fromJson(Map<String, dynamic>.from(json['goodsName'] as Map)) : null,
+        goodsText: json['goodsText'] as String?,
+        hsCode: json['hsCode'] as String?,
+        goodsIsDangerous: (json['goods'] as Map<String, dynamic>?)?['isDangerous'] as bool? ?? false,
         extraBodyTypeIds: (json['extraBodyTypeIds'] as List<dynamic>? ?? const []).cast<String>(),
         categoryId: json['categoryId'] as String?,
         distanceKm: json['distanceKm'] as int?,
@@ -333,6 +352,9 @@ class CreateCargoInput {
     this.volumeM3,
     this.palletCount,
     this.specs,
+    this.goodsId,
+    this.goodsText,
+    this.hsCode,
     this.extraBodyTypeIds = const [],
     this.categoryId,
     this.photoUrls = const [],
@@ -371,6 +393,10 @@ class CreateCargoInput {
 
   /// 048: параметры груза по профилю и другие подходящие кузова.
   final Map<String, dynamic>? specs;
+  /// 075: товар, свой текст, код HS.
+  final String? goodsId;
+  final String? goodsText;
+  final String? hsCode;
   final List<String> extraBodyTypeIds;
 
   /// 047: категория груза — обязательна при публикации.
@@ -387,6 +413,9 @@ class CreateCargoInput {
         if (volumeM3 != null) 'volumeM3': volumeM3,
         if (palletCount != null) 'palletCount': palletCount,
         if (specs != null) 'specs': specs,
+        'goodsId': goodsId,
+        'goodsText': goodsText,
+        'hsCode': hsCode,
         'extraBodyTypeIds': extraBodyTypeIds,
         if (photoUrls.isNotEmpty) 'photoUrls': photoUrls,
         'price': price,
@@ -445,4 +474,28 @@ class RouteHint {
   const RouteHint({this.market, this.distanceKm});
   final RouteMarket? market;
   final int? distanceKm;
+}
+
+
+/// 075: подсказка «Что везёте?» — товар из справочника или официальный код HS.
+class GoodsHit {
+  const GoodsHit({required this.isGoods, this.goodsId, this.hsCode, required this.name, this.categoryId, this.suggestedBodyTypeId, this.isDangerous = false});
+
+  final bool isGoods;
+  final String? goodsId;
+  final String? hsCode;
+  final I18nText name;
+  final String? categoryId;
+  final String? suggestedBodyTypeId;
+  final bool isDangerous;
+
+  factory GoodsHit.fromJson(Map<String, dynamic> json) => GoodsHit(
+        isGoods: json['type'] == 'goods',
+        goodsId: json['goodsId'] as String?,
+        hsCode: json['hsCode'] as String?,
+        name: I18nText.fromJson(Map<String, dynamic>.from(json['name'] as Map? ?? const {})),
+        categoryId: json['categoryId'] as String?,
+        suggestedBodyTypeId: json['suggestedBodyTypeId'] as String?,
+        isDangerous: json['isDangerous'] as bool? ?? false,
+      );
 }

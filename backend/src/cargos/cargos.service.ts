@@ -23,6 +23,7 @@ import { VISIBLE_COMPANY } from './visible-company';
 import { pauseAfterComplaints } from '../companies/publishing-pause';
 import { companyLatin } from '../companies/latin-name';
 import { GoodsService } from '../goods/goods.service';
+import { goodsLabel } from '../goods/goods-label';
 
 /// 056 п.2: вкладки «Грузов» логиста по статусу груза. Доставленный груз
 /// архивируется (deals.service: DELIVERED → ARCHIVED), сделка в работе — IN_DEAL.
@@ -234,6 +235,8 @@ export class CargosService {
       // 075: что везут — товар (название на 4 языках), свой текст с переводами, код HS.
       goods: cargo.goods ? { id: cargo.goods.id, name: cargo.goods.name, hsCode: cargo.goods.hsCode, isDangerous: cargo.goods.isDangerous } : null,
       goodsText: cargo.goodsText ?? null,
+      /// Готовое название на 4 языках (товар или свой текст с переводами) — для показа.
+      goodsName: goodsLabel(cargo),
       goodsTextLocale: cargo.goodsTextLocale ?? null,
       goodsTextTranslations: cargo.goodsTextTranslations ?? null,
       hsCode: cargo.hsCode ?? null,

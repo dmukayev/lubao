@@ -200,6 +200,7 @@ class MyResponseEntry {
     this.paymentDelayDays,
     this.offer = ResponseOffer.none,
     this.companyName = '',
+    this.goodsName,
     this.companyNameLatin,
     this.companyIsVerified = false,
     this.closeReason,
@@ -229,6 +230,8 @@ class MyResponseEntry {
   final String? categoryId;
   final double? weightKg;
   final String companyName;
+  /// 075: что везут — название на 4 языках.
+  final I18nText? goodsName;
   final String? companyNameLatin;
   /// 066: плашка «Проверена / Не проверена».
   final bool companyIsVerified;
@@ -264,6 +267,7 @@ class MyResponseEntry {
       companyName: cargo['companyName'] as String? ?? '',
       companyIsVerified: cargo['companyIsVerified'] as bool? ?? false,
       companyNameLatin: cargo['companyNameLatin'] as String?,
+      goodsName: cargo['goodsName'] is Map ? I18nText.fromJson(Map<String, dynamic>.from(cargo['goodsName'] as Map)) : null,
       closeReason: responseCloseReasonFromJson(json['closeReason'] as String?),
       inviteExpiresAt: json['inviteExpiresAt'] == null ? null : DateTime.parse(json['inviteExpiresAt'] as String),
       dealId: json['dealId'] as String?,

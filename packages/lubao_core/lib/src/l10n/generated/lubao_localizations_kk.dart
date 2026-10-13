@@ -3984,6 +3984,75 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get postCargoCategory => 'Не тасымалдайсыз';
 
   @override
+  String cargoHsCode(String code) {
+    return 'СЭҚ ТН коды $code';
+  }
+
+  @override
+  String get cargoDangerousGoods => 'Қауіпті жүк';
+
+  @override
+  String get postCargoWhatTitle => 'Не тасымалдайсыз?';
+
+  @override
+  String get postCargoWhatHint => 'Атауы немесе СЭҚ ТН коды';
+
+  @override
+  String postCargoWhatAdd(String text) {
+    return 'Қосу: «$text»';
+  }
+
+  @override
+  String get postCargoWhatRequired => 'Не тасымалдайтыныңызды көрсетіңіз';
+
+  @override
+  String get postCargoWhatPickCategory => 'Санатты таңдаңыз';
+
+  @override
+  String get errGoodsNotFound =>
+      'Мұндай тауар анықтамалықта жоқ — ұсыныстардан таңдаңыз';
+
+  @override
+  String get errHsCodeNotFound => 'Мұндай СЭҚ ТН коды жоқ';
+
+  @override
+  String get adminGoodsTab => 'Тауарлар';
+
+  @override
+  String get adminHsCodesTab => 'СЭҚ ТН кодтары';
+
+  @override
+  String get adminHsChaptersTab => 'Тараулар → санаттар';
+
+  @override
+  String get adminNewWordsTab => 'Жаңа сөздер';
+
+  @override
+  String get adminGoodsAddFromWord => 'Тауарларға қосу';
+
+  @override
+  String adminGoodsSynonyms(String lang) {
+    return 'Синонимдер $lang (үтір арқылы)';
+  }
+
+  @override
+  String get adminGoodsHsCode => 'СЭҚ ТН коды (6 сан)';
+
+  @override
+  String get adminGoodsDangerous => 'Қауіпті жүк (ADR)';
+
+  @override
+  String get adminGoodsBodyHint => 'Шанақ ұсынысы';
+
+  @override
+  String get adminGoodsSlug => 'Жазба коды (латын)';
+
+  @override
+  String adminNewWordsCount(int count) {
+    return '$count рет';
+  }
+
+  @override
   String get postCargoCategoryRequired => 'Жүк санатын таңдаңыз';
 
   @override

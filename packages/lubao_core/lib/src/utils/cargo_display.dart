@@ -139,3 +139,12 @@ bool hasChineseCharacters(String text) => RegExp(r'[㐀-鿿豈-﫿]').hasMatch(t
 
 /// 069: латинское название — латиница, цифры, пробел и `. , & - ( ) '`, 2–100.
 bool isValidLatinCompanyName(String text) => RegExp(r"^[A-Za-z0-9 .,&\-()']{2,100}$").hasMatch(text.trim());
+
+
+/// 075: что везут — товар на языке читателя («Плитка керамическая»); у старых
+/// грузов без товара — название категории.
+String? cargoWhatLabel(ReferenceData refData, {I18nText? goodsName, String? categoryId, required String languageCode}) {
+  final goods = goodsName?.forLanguageCode(languageCode);
+  if (goods != null && goods.trim().isNotEmpty) return goods;
+  return refData.categoryById(categoryId)?.name.forLanguageCode(languageCode);
+}

@@ -61,7 +61,8 @@ String _weightBody(LubaoLocalizations t, ReferenceData refData, Cargo c, String 
 /// Откликнуться: lubao.kz/c/7Kx2
 String cargoShareText(LubaoLocalizations t, ReferenceData refData, Cargo c, String url, String lang) {
   final km = c.distanceKm == null ? '' : ' · ${_group(c.distanceKm!.round())} ${t.unitKm}';
-  final category = refData.categoryById(c.categoryId)?.name.forLanguageCode(lang);
+  // 075: товар («Плитка») вместо категории; старые грузы — категория.
+  final category = cargoWhatLabel(refData, goodsName: c.goodsName, categoryId: c.categoryId, languageCode: lang);
   final size = cargoSizeLabel(t, weightKg: c.weightKg, volumeM3: c.volumeM3, languageCode: lang);
   final facts = [
     if (category != null) category,
