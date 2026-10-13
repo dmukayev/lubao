@@ -124,6 +124,8 @@ void main() {
       await tester.enterText(field, 'куку');
       await tester.pump(const Duration(milliseconds: 400));
       await waitAndReveal(tester, find.byKey(const Key('goodsHit-2')));
+      // 072 п.5: ошибка «Укажите, что везёте» ушла, как только начали вводить.
+      expect(find.text(t.postCargoWhatRequired), findsNothing);
       final texts = [
         for (final e in find.descendant(of: find.byKey(const Key('postCargoWhatSuggestions')), matching: find.byType(Text)).evaluate())
           (e.widget as Text).data ?? '',

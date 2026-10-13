@@ -714,11 +714,13 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                     _goodsError = null;
                   }),
                   onCleared: () {
-                    if (_goodsId != null || _hsCode != null || _goodsText != null) {
+                    // 072 п.5: ошибка уходит, как только поле начали исправлять.
+                    if (_goodsId != null || _hsCode != null || _goodsText != null || _goodsError != null) {
                       setState(() {
                         _goodsId = null;
                         _hsCode = null;
                         _goodsText = null;
+                        _goodsError = null;
                       });
                     }
                   },
