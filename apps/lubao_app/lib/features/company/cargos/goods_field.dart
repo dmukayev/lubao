@@ -7,9 +7,9 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../providers/api_providers.dart';
 
-/// 075 (decisions.md «„Что везёте?“ — поиск по названию и коду ТН ВЭД»):
-/// одно поле с подсказками — цифры ищут по коду HS, буквы — по названиям и
-/// синонимам на 4 языках; до ввода — частые товары компании. Последняя строка
+/// 075/077 (decisions.md «„Что везёте?“ — один вопрос»): одно поле с
+/// подсказками — товары простыми словами («Название · Категория», без кодов);
+/// цифры ищут по коду HS, буквы — по названиям и синонимам на 4 языках; до ввода — частые товары компании. Последняя строка
 /// всегда «Добавить: „…“» — свой текст логиста.
 class GoodsField extends ConsumerStatefulWidget {
   const GoodsField({
@@ -134,8 +134,8 @@ class _GoodsFieldState extends ConsumerState<GoodsField> {
                         children: [
                           Text(hit.name.forLanguageCode(locale), style: AppTextStyles.body, maxLines: 2, overflow: TextOverflow.ellipsis),
                           Text(
+                            // 077: в подсказке — «Название · Категория», без кода ТН ВЭД.
                             [
-                              ?hit.hsCode,
                               if (refData != null && hit.categoryId != null) ?refData.categoryById(hit.categoryId)?.name.forLanguageCode(locale),
                               if (hit.isDangerous) t.cargoDangerousGoods,
                             ].join(' · '),

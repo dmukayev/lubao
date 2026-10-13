@@ -77,6 +77,17 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   /// 047: категория груза (обязательна) и «рынок за месяц» по маршруту.
   String? _categoryId;
   String? _categoryError;
+  /// «изменить» у строки категории раскрыл чипы (077).
+  bool _categoryExpanded = false;
+
+  /// Товар (или код) выбран и категория из него — строкой; свой вариант,
+  /// категорию не определить или «изменить» — чипами; поле пусто — ничего.
+  _CategoryMode get _categoryMode {
+    final picked = _goodsId != null || _hsCode != null;
+    if (picked && _categoryId != null && !_categoryExpanded) return _CategoryMode.line;
+    if (_goodsText != null || picked || _categoryExpanded) return _CategoryMode.chips;
+    return _CategoryMode.hidden;
+  }
   /// 075: что везут — товар из справочника, свой текст, код HS.
   String? _goodsId;
   String? _goodsText;
@@ -687,6 +698,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                     _hsCode = hit.hsCode;
                     _goodsText = hit.goodsId == null ? label : null;
                     _goodsError = null;
+                    _categoryExpanded = false;
                     // Категория — из товара или главы кода; видна ниже и меняется.
                     if (hit.categoryId != null) {
                       _categoryId = hit.categoryId;
@@ -713,28 +725,57 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              // 047 п.1, 7: категория — чипами, обязательна.
-              Text(t.postCargoCategory, style: AppTextStyles.bodyStrong),
-              const SizedBox(height: 8),
-              FieldAnchor(scroller: _fields, name: 'categoryId', child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final c in refData.cargoCategories.where((c) => c.isActive || c.id == _categoryId))
-                    ChoiceChip(
-                      key: Key('postCargoCategory-${c.code}'),
-                      label: Text(c.name.forLanguageCode(locale)),
-                      selected: _categoryId == c.id,
-                      onSelected: (_) => setState(() {
-                        _categoryId = c.id;
-                        _categoryError = null;
-                      }),
+              // 077 (decisions.md «„Что везёте?“ — один вопрос»): товар выбран —
+              // категория одной строкой «Категория: … · изменить»; чипы — только
+              // для своего варианта (категорию не определить) или по «изменить».
+              if (_categoryMode == _CategoryMode.line)
+                FieldAnchor(
+                  scroller: _fields,
+                  name: 'categoryId',
+                  child: Text.rich(
+                    key: const Key('postCargoCategoryLine'),
+                    TextSpan(
+                      style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                      children: [
+                        TextSpan(text: '${t.postCargoCategoryLine(refData.cargoCategories.where((c) => c.id == _categoryId).firstOrNull?.name.forLanguageCode(locale) ?? '')} · '),
+                        WidgetSpan(
+                          alignment: PlaceholderAlignment.baseline,
+                          baseline: TextBaseline.alphabetic,
+                          child: InkWell(
+                            key: const Key('postCargoCategoryChange'),
+                            onTap: () => setState(() => _categoryExpanded = true),
+                            child: Text(t.postCargoCategoryChange, style: AppTextStyles.caption.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                ),
+              if (_categoryMode == _CategoryMode.chips) ...[
+                Text(t.postCargoCategory, style: AppTextStyles.bodyStrong),
+                const SizedBox(height: 8),
+                FieldAnchor(scroller: _fields, name: 'categoryId', child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final c in refData.cargoCategories.where((c) => c.isActive || c.id == _categoryId))
+                      ChoiceChip(
+                        key: Key('postCargoCategory-${c.code}'),
+                        label: Text(c.name.forLanguageCode(locale)),
+                        selected: _categoryId == c.id,
+                        onSelected: (_) => setState(() {
+                          _categoryId = c.id;
+                          _categoryError = null;
+                          // Выбор по «изменить» — чипы снова сворачиваются в строку.
+                          _categoryExpanded = false;
+                        }),
+                      ),
+                  ],
+                )),
+                if (_categoryError != null) ...[
+                  const SizedBox(height: 4),
+                  Text(_categoryError!, key: const Key('postCargoCategoryError'), style: AppTextStyles.caption.copyWith(color: Theme.of(context).colorScheme.error)),
                 ],
-              )),
-              if (_categoryError != null) ...[
-                const SizedBox(height: 4),
-                Text(_categoryError!, key: const Key('postCargoCategoryError'), style: AppTextStyles.caption.copyWith(color: Theme.of(context).colorScheme.error)),
               ],
               const SizedBox(height: 12),
               FieldAnchor(scroller: _fields, name: 'bodyTypeId', child: DropdownButtonFormField<String>(
@@ -1101,3 +1142,5 @@ class _PaySegments extends StatelessWidget {
     );
   }
 }
+
+enum _CategoryMode { hidden, line, chips }

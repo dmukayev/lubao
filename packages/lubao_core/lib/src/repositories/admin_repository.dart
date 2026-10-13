@@ -781,8 +781,9 @@ class AdminRepository {
     });
   }
   // 075: справочники «Что везёте?».
-  Future<List<AdminGoods>> goods({String? q}) async {
-    final res = await _client.dio.get('/admin/reference/goods', queryParameters: {if (q != null && q.isNotEmpty) 'q': q});
+  /// `noCode` (077) — только товары, у которых код ещё не проставлен.
+  Future<List<AdminGoods>> goods({String? q, bool noCode = false}) async {
+    final res = await _client.dio.get('/admin/reference/goods', queryParameters: {if (q != null && q.isNotEmpty) 'q': q, if (noCode) 'noCode': 'true'});
     return (res.data as List<dynamic>).map((e) => AdminGoods.fromJson(e as Map<String, dynamic>)).toList();
   }
 

@@ -97,9 +97,11 @@ void main() {
       await tester.drag(find.byType(ListView).first, const Offset(0, 3000));
       await tester.pumpAndSettle();
       expect(find.text(t.postCargoPickupCityError), findsOneWidget);
-      // 047 п.1: без категории тоже не публикуется.
-      await reveal(tester, find.byKey(const Key('postCargoCategoryError')));
-      expect(find.text(t.postCargoCategoryRequired), findsOneWidget);
+      // 075/077: без «Что везёте?» не публикуется; чипов категорий в пустой
+      // форме нет — один вопрос.
+      await reveal(tester, find.byKey(const Key('postCargoWhat')));
+      expect(find.text(t.postCargoWhatRequired), findsOneWidget);
+      expect(find.byKey(const Key('postCargoCategory-CONSTRUCTION')), findsNothing);
       // Назад наверх — поле города ленивое, следующий шаг начинается с него.
       await tester.drag(find.byType(ListView).first, const Offset(0, 3000));
       await tester.pumpAndSettle();
@@ -111,10 +113,50 @@ void main() {
       await tester.tap(field);
       await pickCityByName(tester, 'Astana', 'Астана');
       expect(find.text(t.postCargoPickupCityError), findsNothing);
-      // 075: «6907» → «Плитка керамическая» → категория «Стройматериалы» сама.
+    });
+
+    // 077: «куку» — несколько товаров с понятными названиями, без кодов ТН ВЭД.
+    await run.step(tester, 'подсказки-куку', () async {
+      final field = find.byKey(const Key('postCargoWhat'));
+      await reveal(tester, field);
+      await tester.tap(field);
+      await tester.pumpAndSettle();
+      await tester.enterText(field, 'куку');
+      await tester.pump(const Duration(milliseconds: 400));
+      await waitAndReveal(tester, find.byKey(const Key('goodsHit-2')));
+      final texts = [
+        for (final e in find.descendant(of: find.byKey(const Key('postCargoWhatSuggestions')), matching: find.byType(Text)).evaluate())
+          (e.widget as Text).data ?? '',
+      ];
+      expect(texts.where((x) => x.contains('Кукуруза') || x.contains('кукуруз')).length, greaterThanOrEqualTo(3), reason: '$texts');
+      expect(texts.any((x) => RegExp(r'\d{4}').hasMatch(x)), isFalse, reason: 'в подсказках нет кодов: $texts');
+      expect(find.byKey(const Key('postCargoWhatAdd')), findsOneWidget);
+    });
+
+    // 075: «6907» → «Плитка керамическая» → категория «Стройматериалы» сама;
+    // 077: чипов нет — одна строка «Категория: Стройматериалы · изменить».
+    await run.step(tester, 'товар-выбран-строка-категории', () async {
       expect(await pickGoods(tester, '6907'), 'Плитка керамическая');
       expect(await goodsFieldText(tester), 'Плитка керамическая');
       expect(find.byKey(const Key('postCargoCategoryError')), findsNothing);
+      final line = find.byKey(const Key('postCargoCategoryLine'));
+      await reveal(tester, line);
+      expect(find.textContaining(t.postCargoCategoryLine('Стройматериалы')), findsOneWidget);
+      expect(find.byKey(const Key('postCargoCategory-CONSTRUCTION')), findsNothing);
+      expectNoOverflow(tester);
+    });
+
+    // «изменить» раскрывает чипы на месте; выбор — снова строка.
+    await run.step(tester, 'категория-изменить', () async {
+      await tester.tap(find.byKey(const Key('postCargoCategoryChange')));
+      await tester.pumpAndSettle();
+      expect(find.text(t.postCargoCategory), findsOneWidget);
+      final chip = find.byKey(const Key('postCargoCategory-CONSTRUCTION'));
+      await reveal(tester, chip);
+      await tester.tap(chip);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('postCargoCategory-CONSTRUCTION')), findsNothing);
+      await reveal(tester, find.byKey(const Key('postCargoCategoryLine')));
       // 049 п.1: догруз выключен флагом — переключателя «Можно догрузом» нет.
       expect(find.byKey(const Key('postCargoAllowPartial')), findsNothing);
     });
@@ -230,6 +272,9 @@ void main() {
       await tester.tap(repeat);
       await waitFor(tester, find.byKey(const Key('postCargoDestination')));
       // Форма длиннее экрана SE с крупным шрифтом — поля ниже, прокручиваем.
+      // 077: товар прежний — категория строкой, без чипов.
+      await waitAndReveal(tester, find.byKey(const Key('postCargoCategoryLine')));
+      expect(find.byKey(const Key('postCargoCategory-CONSTRUCTION')), findsNothing);
       await waitAndReveal(tester, find.text('18500'));
       await waitAndReveal(tester, find.text('1500'));
       expect(find.text(t.postCargoTitle), findsWidgets, reason: 'новый груз, не редактирование');

@@ -106,6 +106,16 @@ void main() {
       expect(await pickGoods(tester, '瓷砖'), 'Плитка керамическая');
       expect(await goodsFieldText(tester), 'Плитка керамическая');
       await pickGoods(tester, 'Тестовый груз 075', addOwn: true);
+      // 077: свой вариант — категорию не определить: чипы под «Категория»,
+      // строки «Категория: … · изменить» нет.
+      final heading = find.text(t.postCargoCategory);
+      await reveal(tester, heading);
+      expect(find.byKey(const Key('postCargoCategoryLine')), findsNothing);
+      expect(find.byKey(const Key('postCargoCategory-FOOD')), findsOneWidget);
+      expectNoOverflow(tester);
+    });
+
+    await run.step(tester, 'свой-вариант-публикация', () async {
       final category = find.byKey(const Key('postCargoCategory-CONSTRUCTION'));
       await reveal(tester, category);
       await tester.tap(category);

@@ -3981,7 +3981,18 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   }
 
   @override
-  String get postCargoCategory => 'Не тасымалдайсыз';
+  String get postCargoCategory => 'Санат';
+
+  @override
+  String postCargoCategoryLine(String category) {
+    return 'Санат: $category';
+  }
+
+  @override
+  String get postCargoCategoryChange => 'өзгерту';
+
+  @override
+  String get adminGoodsNoCode => 'Кодсыз';
 
   @override
   String cargoHsCode(String code) {

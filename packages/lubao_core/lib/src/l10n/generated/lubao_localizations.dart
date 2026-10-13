@@ -7425,8 +7425,26 @@ abstract class LubaoLocalizations {
   /// No description provided for @postCargoCategory.
   ///
   /// In ru, this message translates to:
-  /// **'Что везёте'**
+  /// **'Категория'**
   String get postCargoCategory;
+
+  /// No description provided for @postCargoCategoryLine.
+  ///
+  /// In ru, this message translates to:
+  /// **'Категория: {category}'**
+  String postCargoCategoryLine(String category);
+
+  /// No description provided for @postCargoCategoryChange.
+  ///
+  /// In ru, this message translates to:
+  /// **'изменить'**
+  String get postCargoCategoryChange;
+
+  /// No description provided for @adminGoodsNoCode.
+  ///
+  /// In ru, this message translates to:
+  /// **'Без кода'**
+  String get adminGoodsNoCode;
 
   /// No description provided for @cargoHsCode.
   ///

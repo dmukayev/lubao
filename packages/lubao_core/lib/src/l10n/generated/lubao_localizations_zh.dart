@@ -3884,6 +3884,17 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get postCargoCategory => '货物类别';
 
   @override
+  String postCargoCategoryLine(String category) {
+    return '类别：$category';
+  }
+
+  @override
+  String get postCargoCategoryChange => '更改';
+
+  @override
+  String get adminGoodsNoCode => '无编码';
+
+  @override
   String cargoHsCode(String code) {
     return '海关编码 $code';
   }

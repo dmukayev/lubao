@@ -31,7 +31,7 @@ Future<void> showGoodsEditPanel(BuildContext context, WidgetRef ref, {AdminGoods
     canSave: () =>
         names['ru']!.text.trim().isNotEmpty &&
         (goods != null || RegExp(r'^[a-z0-9_]{2,60}$').hasMatch(slug.text.trim())) &&
-        (hs.text.trim().isEmpty || RegExp(r'^\d{6}$').hasMatch(hs.text.trim())),
+        (hs.text.trim().isEmpty || RegExp(r'^(\d{4}|\d{6})$').hasMatch(hs.text.trim())),
     fieldsBuilder: (context, setState) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -86,7 +86,8 @@ Future<void> showGoodsEditPanel(BuildContext context, WidgetRef ref, {AdminGoods
       );
 }
 
-final _goodsSearchProvider = FutureProvider.autoDispose.family<List<AdminGoods>, String>((ref, q) => ref.watch(adminRepositoryProvider).goods(q: q));
+final _goodsSearchProvider = FutureProvider.autoDispose.family<List<AdminGoods>, ({String q, bool noCode})>(
+    (ref, f) => ref.watch(adminRepositoryProvider).goods(q: f.q, noCode: f.noCode));
 
 class GoodsTab extends ConsumerStatefulWidget {
   const GoodsTab({super.key, required this.refData});
@@ -98,6 +99,10 @@ class GoodsTab extends ConsumerStatefulWidget {
 
 class _GoodsTabState extends ConsumerState<GoodsTab> {
   String _q = '';
+  /// 077 п.8: «Без кода» — товары, у которых код ещё не проставлен.
+  bool _noCode = false;
+
+  ({String q, bool noCode}) get _filter => (q: _q, noCode: _noCode);
   Timer? _debounce;
 
   @override
@@ -110,26 +115,39 @@ class _GoodsTabState extends ConsumerState<GoodsTab> {
   Widget build(BuildContext context) {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
-    final goods = ref.watch(_goodsSearchProvider(_q));
+    final goods = ref.watch(_goodsSearchProvider(_filter));
     return Stack(
       children: [
         Column(
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: AppTextField(
-                key: const Key('adminGoodsSearch'),
-                label: t.commonSearch,
-                onChanged: (v) {
-                  _debounce?.cancel();
-                  _debounce = Timer(const Duration(milliseconds: 300), () => setState(() => _q = v.trim()));
-                },
+              child: Row(
+                children: [
+                  Expanded(
+                    child: AppTextField(
+                      key: const Key('adminGoodsSearch'),
+                      label: t.commonSearch,
+                      onChanged: (v) {
+                        _debounce?.cancel();
+                        _debounce = Timer(const Duration(milliseconds: 300), () => setState(() => _q = v.trim()));
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  FilterChip(
+                    key: const Key('adminGoodsNoCode'),
+                    label: Text(t.adminGoodsNoCode),
+                    selected: _noCode,
+                    onSelected: (v) => setState(() => _noCode = v),
+                  ),
+                ],
               ),
             ),
             Expanded(
               child: goods.when(
                 loading: () => const LoadingView(),
-                error: (e, st) => ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(_goodsSearchProvider(_q))),
+                error: (e, st) => ErrorView(message: apiErrorText(t, e), onRetry: () => ref.invalidate(_goodsSearchProvider(_filter))),
                 data: (list) => ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
                   itemCount: list.length,
@@ -137,13 +155,13 @@ class _GoodsTabState extends ConsumerState<GoodsTab> {
                     final g = list[i];
                     return ListTile(
                       title: Text(g.name.forLanguageCode(locale)),
-                      subtitle: Text([?g.hsCode, ?widget.refData.categoryById(g.categoryId)?.name.forLanguageCode(locale), if (g.isDangerous) 'ADR', if (!g.isActive) t.adminInactive].join(' · ')),
+                      subtitle: Text([g.hsCode ?? t.adminGoodsNoCode, ?widget.refData.categoryById(g.categoryId)?.name.forLanguageCode(locale), if (g.isDangerous) 'ADR', if (!g.isActive) t.adminInactive].join(' · ')),
                       trailing: IconButton(
                         tooltip: '${t.adminEdit}: ${g.name.forLanguageCode(locale)}',
                         icon: const Icon(LucideIcons.pencil),
                         onPressed: () async {
                           await showGoodsEditPanel(context, ref, goods: g, refData: widget.refData);
-                          ref.invalidate(_goodsSearchProvider(_q));
+                          ref.invalidate(_goodsSearchProvider(_filter));
                         },
                       ),
                     );
@@ -160,7 +178,7 @@ class _GoodsTabState extends ConsumerState<GoodsTab> {
             key: const Key('adminGoodsAdd'),
             onPressed: () async {
               await showGoodsEditPanel(context, ref, refData: widget.refData);
-              ref.invalidate(_goodsSearchProvider(_q));
+              ref.invalidate(_goodsSearchProvider(_filter));
             },
             icon: const Icon(LucideIcons.plus),
             label: Text(t.adminGoodsTab),

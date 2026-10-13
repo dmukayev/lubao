@@ -632,6 +632,15 @@ assert(csv.status === 200 && csv.text.includes('median_kzt_per_km'), 'админ
   assert(hsOnly.every((h) => h.hsCode.startsWith('8701')), 'код по началу — только 8701…');
   const nothing = await search('ыыыыыы');
   assert(Array.isArray(nothing) && nothing.length === 0, 'несуществующее — пусто (в форме «Добавить»)');
+  // 077: по буквам — только товары, без официальных названий ТН ВЭД.
+  for (const q of ['плитка', 'куку', 'tiles']) {
+    const hits = await search(q);
+    assert(hits.every((h) => h.type === 'goods'), `«${q}» — только товары, без кодов HS`, JSON.stringify(hits.filter((h) => h.type !== 'goods').slice(0, 1)));
+  }
+  const corn = await search('куку');
+  assert(corn.filter((h) => /кукуруз/i.test(h.name.ru)).length >= 3, '«куку» — несколько товаров с понятными названиями', JSON.stringify(corn.map((h) => h.name.ru)));
+  const noCode = await get('/admin/reference/goods?noCode=true');
+  assert(noCode.status === 200 && noCode.json.length > 0 && noCode.json.every((g) => g.hsCode === null), '077: фильтр «без кода» в админке');
   const words = await get('/admin/reference/goods-new-words');
   assert(words.status === 200, '«Новые слова» в админке открываются');
 }
