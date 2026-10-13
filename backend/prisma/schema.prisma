@@ -652,6 +652,12 @@ model Company {
   /// User.isBlocked у каждого сотрудника: блокировка компании блокирует
   /// всех её участников И скрывает активные грузы из ленты водителя.
   isBlocked       Boolean   @default(false)
+  /// 066 п.5: две жалобы водителей на непроверенную компанию — публикация на
+  /// паузе (новые грузы нельзя, активные скрыты из ленты) до проверки или
+  /// до снятия паузы админом. null — не на паузе.
+  publishingPausedAt DateTime?
+  /// Админ снял паузу — жалобы до этого момента больше не считаются.
+  complaintsResetAt  DateTime?
   ratingAvg       Decimal   @default(0) @db.Decimal(3, 2)
   ratingCount     Int       @default(0)
   /// 049 п.9: см. Driver.pendingPenalty.

@@ -48,6 +48,7 @@ import {
   SetVerifiedDto,
 } from './dto/admin.dto';
 import { localDateOnly, parseDateOnly, toDateOnly } from '../common/date-only';
+import { driverComplaintsAgainst } from '../companies/publishing-pause';
 
 /// Единственный обязательный документ компании на пилоте — свидетельство о
 /// регистрации (营业执照 / справка с БИН), см. decisions.md «Компания:
@@ -318,7 +319,7 @@ export class AdminService {
   async attention() {
     const staleBefore = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
 
-    const [pendingDriverDocs, pendingCompanyDocs, oldestPendingDoc, openComplaints, staleDeals, unverifiedCompanies, pendingCities] =
+    const [pendingDriverDocs, pendingCompanyDocs, oldestPendingDoc, openComplaints, staleDeals, unverifiedCompanies, pendingCities, pausedCompanies] =
       await Promise.all([
         this.prisma.verificationDocument.findMany({
           where: { status: 'PENDING', driverId: { not: null } },
@@ -337,8 +338,10 @@ export class AdminService {
         }),
         this.prisma.complaint.count({ where: { status: { in: ['OPEN', 'IN_REVIEW'] } } }),
         this.prisma.deal.count({ where: { status: { notIn: ['DELIVERED', 'CANCELLED'] }, updatedAt: { lt: staleBefore } } }),
-        this.prisma.company.count({ where: { isVerified: false } }),
+        // 066 п.5: непроверенные компании, у которых грузы уже в ленте.
+        this.prisma.company.count({ where: { isVerified: false, cargos: { some: { status: 'PUBLISHED' } } } }),
         this.prisma.city.count({ where: { cityStatus: 'PENDING' } }),
+        this.prisma.company.count({ where: { publishingPausedAt: { not: null } } }),
       ]);
 
     // Задача 032, п.11 (038) — «Совпадения с чёрным списком»: сколько
@@ -364,6 +367,7 @@ export class AdminService {
       openComplaints,
       staleDeals,
       unverifiedCompanies,
+      pausedCompanies,
       pendingCities,
       blacklistMatches,
       suspiciousContacts: await this.suspiciousContacts(),
@@ -2148,6 +2152,9 @@ export class AdminService {
     const where: Record<string, unknown> = {
       ...(query.verified !== undefined ? { isVerified: query.verified } : {}),
       ...(query.blocked !== undefined ? { isBlocked: query.blocked } : {}),
+      // 066 п.5: «Требует внимания» → непроверенные с грузами в ленте / на паузе.
+      ...(query.activeCargos ? { cargos: { some: { status: 'PUBLISHED' } } } : {}),
+      ...(query.paused ? { publishingPausedAt: { not: null } } : {}),
       ...(q
         ? {
             OR: [
@@ -2167,7 +2174,7 @@ export class AdminService {
         include: {
           members: { where: { role: 'OWNER' }, include: { user: { select: { name: true, email: true } } }, take: 1 },
           verificationDocuments: { where: { status: 'PENDING' }, select: { id: true } },
-          _count: { select: { members: true, cargos: true, deals: true } },
+          _count: { select: { members: true, cargos: { where: { status: 'PUBLISHED' } }, deals: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
@@ -2187,6 +2194,7 @@ export class AdminService {
       isVerified: c.isVerified,
       pendingDocsCount: c.verificationDocuments.length,
       isBlocked: c.isBlocked,
+      publishingPaused: c.publishingPausedAt != null,
       ratingAvg: Number(c.ratingAvg),
       ratingCount: c.ratingCount,
     }));
@@ -2416,6 +2424,8 @@ export class AdminService {
       taxId: company.taxId,
       isVerified: company.isVerified,
       isBlocked: company.isBlocked,
+      publishingPausedAt: company.publishingPausedAt,
+      driverComplaints: await driverComplaintsAgainst(this.prisma, company.id, company.complaintsResetAt),
       ratingAvg: Number(company.ratingAvg),
       ratingCount: company.ratingCount,
       identifiers: companyIdentifiers.identifiers,
@@ -2595,7 +2605,11 @@ export class AdminService {
       }
     }
 
-    const updated = await this.prisma.company.update({ where: { id }, data: { isVerified: dto.isVerified } });
+    // 066 п.5: проверка снимает паузу после жалоб.
+    const updated = await this.prisma.company.update({
+      where: { id },
+      data: dto.isVerified ? { isVerified: true, publishingPausedAt: null, complaintsResetAt: company.publishingPausedAt ? new Date() : undefined } : { isVerified: false },
+    });
     await this.logAudit(adminUserId, dto.isVerified ? 'COMPANY_VERIFIED' : 'COMPANY_UNVERIFIED', 'Company', id, {
       reason: dto.reason,
       force: dto.force ?? false,
@@ -2607,6 +2621,16 @@ export class AdminService {
       if (owner) await this.notifications?.notify({ userIds: [owner.userId] }, 'VERIFICATION_APPROVED', {});
     }
     return { id: updated.id, isVerified: updated.isVerified };
+  }
+
+  /// 066 п.5: «Снять паузу» — грузы снова в ленте; жалобы до этого момента
+  /// больше не считаются (новая пауза — только по новым жалобам).
+  async unpauseCompany(id: string, adminUserId: string, reason: string) {
+    const company = await this.prisma.company.findUnique({ where: { id }, select: { publishingPausedAt: true } });
+    if (!company) throw new NotFoundException('Company not found');
+    await this.prisma.company.update({ where: { id }, data: { publishingPausedAt: null, complaintsResetAt: new Date() } });
+    await this.logAudit(adminUserId, 'COMPANY_PUBLISHING_UNPAUSED', 'Company', id, { reason });
+    return { id, publishingPausedAt: null };
   }
 
   /// «Сбросить пароль» (задача 025, п. 10) — для владельца, который не

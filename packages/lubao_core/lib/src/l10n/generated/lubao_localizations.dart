@@ -3363,7 +3363,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @adminAttentionUnverifiedCompanies.
   ///
   /// In ru, this message translates to:
-  /// **'Непроверенных компаний: {count}'**
+  /// **'Не проверены, грузы в ленте: {count}'**
   String adminAttentionUnverifiedCompanies(int count);
 
   /// No description provided for @adminAttentionPendingCities.
@@ -4905,7 +4905,7 @@ abstract class LubaoLocalizations {
   /// No description provided for @companyNotVerifiedBannerText.
   ///
   /// In ru, this message translates to:
-  /// **'Компания не проверена — загрузите свидетельство о регистрации ниже'**
+  /// **'Компания не проверена — грузы публикуются, но водители видят «Не проверена». Загрузите свидетельство ниже'**
   String get companyNotVerifiedBannerText;
 
   /// No description provided for @companyEditTitle.
@@ -5903,6 +5903,84 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Укажите телефон — без него водитель не сможет позвонить'**
   String get errContactPhoneRequired;
+
+  /// No description provided for @errCompanyActiveLimit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Без проверки можно держать 10 активных грузов. Пройдите проверку компании, чтобы публиковать больше'**
+  String get errCompanyActiveLimit;
+
+  /// No description provided for @errCompanyPaused.
+  ///
+  /// In ru, this message translates to:
+  /// **'Публикация приостановлена после жалоб водителей. Пройдите проверку компании — пауза снимется'**
+  String get errCompanyPaused;
+
+  /// No description provided for @companyBadgeVerified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверена'**
+  String get companyBadgeVerified;
+
+  /// No description provided for @companyBadgeUnverified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не проверена'**
+  String get companyBadgeUnverified;
+
+  /// No description provided for @postCargoLimitTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нужна проверка компании'**
+  String get postCargoLimitTitle;
+
+  /// No description provided for @postCargoGoVerify.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пройти проверку'**
+  String get postCargoGoVerify;
+
+  /// No description provided for @cargoComplainTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пожаловаться на груз'**
+  String get cargoComplainTitle;
+
+  /// No description provided for @cargoComplainBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Что не так с грузом или компанией? Администратор разберётся.'**
+  String get cargoComplainBody;
+
+  /// No description provided for @adminAttentionPausedCompanies.
+  ///
+  /// In ru, this message translates to:
+  /// **'На паузе после жалоб: {count}'**
+  String adminAttentionPausedCompanies(int count);
+
+  /// No description provided for @adminFilterActiveUnverified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не проверены, с грузами'**
+  String get adminFilterActiveUnverified;
+
+  /// No description provided for @adminFilterPaused.
+  ///
+  /// In ru, this message translates to:
+  /// **'На паузе'**
+  String get adminFilterPaused;
+
+  /// No description provided for @adminCompanyPausedBanner.
+  ///
+  /// In ru, this message translates to:
+  /// **'Публикация на паузе: жалобы водителей — {count}. Грузы скрыты из ленты, новые не публикуются.'**
+  String adminCompanyPausedBanner(int count);
+
+  /// No description provided for @adminCompanyUnpause.
+  ///
+  /// In ru, this message translates to:
+  /// **'Снять паузу'**
+  String get adminCompanyUnpause;
 
   /// No description provided for @errCurrencyLocked.
   ///
@@ -7683,19 +7761,19 @@ abstract class LubaoLocalizations {
   /// No description provided for @preVerifyCompanyCan.
   ///
   /// In ru, this message translates to:
-  /// **'Можно: смотреть водителей и писать им'**
+  /// **'Можно: публиковать до 10 грузов, звонить и писать водителям'**
   String get preVerifyCompanyCan;
 
   /// No description provided for @preVerifyCompanyCannot.
   ///
   /// In ru, this message translates to:
-  /// **'Нельзя: публиковать грузы и звонить водителям'**
+  /// **'Нельзя: больше 10 активных грузов; водители видят «Не проверена»'**
   String get preVerifyCompanyCannot;
 
   /// No description provided for @preVerifyCompanyAfter.
   ///
   /// In ru, this message translates to:
-  /// **'Грузы и звонки — после проверки компании'**
+  /// **'После проверки — без лимита и с плашкой «Проверена»'**
   String get preVerifyCompanyAfter;
 
   /// No description provided for @driversTabAll.

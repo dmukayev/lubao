@@ -38,6 +38,15 @@ class CompanyDetailScreen extends ConsumerWidget {
     await _reload(ref);
   }
 
+  /// 066 п.5: снять паузу публикации после жалоб водителей.
+  Future<void> _unpause(BuildContext context, WidgetRef ref) async {
+    final t = context.l10n;
+    final reason = await showReasonDialog(context, title: t.adminCompanyUnpause, confirmLabel: t.adminCompanyUnpause);
+    if (reason == null) return;
+    await ref.read(adminRepositoryProvider).unpauseCompany(id, reason: reason);
+    await _reload(ref);
+  }
+
   Future<void> _toggleVerified(BuildContext context, WidgetRef ref, AdminCompanyDetail company) async {
     final t = context.l10n;
     final settingVerified = !company.isVerified;
@@ -216,6 +225,7 @@ class CompanyDetailScreen extends ConsumerWidget {
                 onEdit: () => _edit(context, ref, company),
                 onBlock: () => _block(context, ref),
                 onUnblock: () => _unblock(context, ref),
+                onUnpause: () => _unpause(context, ref),
                 onResetPassword: () => _resetPassword(context, ref),
                 onToggleVerified: () => _toggleVerified(context, ref, company),
               ),
@@ -263,12 +273,13 @@ class CompanyDetailScreen extends ConsumerWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.company, required this.onEdit, required this.onBlock, required this.onUnblock, required this.onResetPassword, required this.onToggleVerified});
+  const _Header({required this.company, required this.onEdit, required this.onBlock, required this.onUnblock, required this.onUnpause, required this.onResetPassword, required this.onToggleVerified});
 
   final AdminCompanyDetail company;
   final VoidCallback onEdit;
   final VoidCallback onBlock;
   final VoidCallback onUnblock;
+  final VoidCallback onUnpause;
   final VoidCallback onResetPassword;
   final VoidCallback onToggleVerified;
 
@@ -309,11 +320,29 @@ class _Header extends StatelessWidget {
             key: const Key('adminCompanyShareStats'),
             style: AppTextStyles.caption,
           ),
+          // 066 п.5: пауза публикации после жалоб — грузы скрыты из ленты.
+          if (company.publishingPausedAt != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              key: const Key('adminCompanyPausedBanner'),
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: AppColors.accentSoft, borderRadius: BorderRadius.circular(AppRadius.field)),
+              child: Text(t.adminCompanyPausedBanner(company.driverComplaints), style: AppTextStyles.body),
+            ),
+          ],
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
+              if (company.publishingPausedAt != null)
+                FilledButton(
+                  key: const Key('adminCompanyUnpause'),
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, AppSizes.buttonHeight)),
+                  onPressed: onUnpause,
+                  child: Text(t.adminCompanyUnpause),
+                ),
               OutlinedButton(
                 style: OutlinedButton.styleFrom(minimumSize: const Size(0, AppSizes.buttonHeight)),
                 onPressed: onEdit,

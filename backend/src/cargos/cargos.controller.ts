@@ -10,6 +10,7 @@ import { CreateCargoDto } from './dto/create-cargo.dto';
 import { UpdateCargoDto } from './dto/update-cargo.dto';
 import { CloseCargoDto } from './dto/close-cargo.dto';
 import { RevealContactDto } from '../contact-events/dto/reveal-contact.dto';
+import { DealComplaintDto } from '../deals/dto/deal-status.dto';
 
 class InviteDriverDto {
   @IsString()
@@ -212,6 +213,14 @@ export class CargosController {
   @HttpCode(200)
   contact(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: RevealContactDto) {
     return this.cargos.revealContact(ctx, id, dto.type);
+  }
+
+  /// 066 п.5: «Пожаловаться» водителя на груз — без сделки; две жалобы
+  /// разных водителей ставят непроверенную компанию на паузу.
+  @Post(':id/complaint')
+  complain(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: DealComplaintDto) {
+    if (!ctx.driver) throw new ForbiddenException('Not a driver account');
+    return this.cargos.complain(id, ctx.user.id, dto.reason, dto.description);
   }
 
   /// «Договорились?» → «Да» (push с кнопками, 042): отклик + сигнал логисту.

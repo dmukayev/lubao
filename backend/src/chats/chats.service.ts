@@ -179,6 +179,9 @@ export class ChatsService {
       driverId: chat.driverId,
       companyId: chat.companyId,
       counterpartName,
+      // 066: водителю — компания и плашка «Проверена / Не проверена».
+      companyName: ctx.driver ? companyMember?.company?.name ?? null : null,
+      companyIsVerified: ctx.driver ? companyMember?.company?.isVerified ?? false : false,
       // 054: логист видит фото водителя в чате; водителю фото логиста не показываем.
       counterpartAvatarVersion: ctx.driver ? null : avatarVersion(driver),
       counterpartLocale,
@@ -221,7 +224,6 @@ export class ChatsService {
       else if (!ctx.driver.isVerified) throw new ForbiddenException({ code: 'RESPOND_FIRST', message: 'Verification required' });
       phone = companyMember?.contactPhone ?? companyMember?.user.phone;
     } else {
-      this.contactPolicy.assertCompanyMayContactDriver(ctx.companyMember!.company);
       phone = driver.user.phone;
     }
     if (!phone) throw new NotFoundException({ code: 'NO_PHONE', message: 'Counterpart has no phone' });

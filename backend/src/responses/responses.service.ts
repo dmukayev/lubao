@@ -81,7 +81,7 @@ export class ResponsesService {
         cargo: {
           select: {
             id: true, status: true, pointId: true, destinationCountryId: true, destinationCityId: true, bodyTypeId: true, categoryId: true,
-            weightKg: true, volumeM3: true, price: true, currency: true, readyDate: true, company: { select: { name: true } },
+            weightKg: true, volumeM3: true, price: true, currency: true, readyDate: true, company: { select: { name: true, isVerified: true } },
             // 058 п.1: условия оплаты — в «Моих рейсах».
             advanceAmount: true, paymentForm: true, paymentDelayDays: true,
           },
@@ -114,6 +114,8 @@ export class ResponsesService {
         paymentForm: r.cargo.paymentForm ?? null,
         paymentDelayDays: r.cargo.paymentDelayDays ?? null,
         companyName: r.cargo.company.name,
+        // 066: плашка «Проверена / Не проверена».
+        companyIsVerified: r.cargo.company.isVerified,
         price: Number(r.cargo.price),
         currency: r.cargo.currency,
         readyDate: toDateOnly(r.cargo.readyDate),

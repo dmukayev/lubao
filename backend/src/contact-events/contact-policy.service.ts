@@ -31,7 +31,8 @@ export class ContactPolicyService {
     }
   }
 
-  /// Логист видит номер водителя только из проверенной компании.
+  /// 066: номер водителя видит и непроверенная компания — защищают суточный
+  /// лимит (`consume`) и журнал `contact_events`.
   /// 049 п.6: водитель «виден» компании — у него активный анонс («Кто свободен»),
   /// отклик на её груз или сделка с ней. Иначе фото машин и номера ей не отдаём.
   async driverVisibleToCompany(driverId: string, companyId: string): Promise<boolean> {
@@ -41,12 +42,6 @@ export class ContactPolicyService {
       this.prisma.deal.findFirst({ where: { driverId, companyId }, select: { id: true } }),
     ]);
     return !!(arrival || response || deal);
-  }
-
-  assertCompanyMayContactDriver(company: { isVerified: boolean }): void {
-    if (!company.isVerified) {
-      throw new ForbiddenException({ code: 'COMPANY_NOT_VERIFIED', message: 'Company must be verified to see driver phones' });
-    }
   }
 
   /// Суточный лимит разных номеров: повторное открытие того же номера в тот же

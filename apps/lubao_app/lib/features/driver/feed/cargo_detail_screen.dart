@@ -18,6 +18,7 @@ import '../../shared/error_feedback.dart';
 import '../../shared/offer_sheet.dart';
 import '../../shared/share_action.dart';
 import 'favorite_button.dart';
+import '../../shared/company_verified_badge.dart';
 import '../../shared/cached_photo.dart';
 
 class CargoDetailScreen extends ConsumerStatefulWidget {
@@ -607,13 +608,13 @@ class _CargoDetailBody extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          // 066: «Проверена» с галочкой / серое «Не проверена».
+                          Wrap(
+                            spacing: AppSpacing.xs,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              Flexible(child: Text(cargo.companyName, style: AppTextStyles.bodyStrong)),
-                              if (cargo.companyIsVerified) ...[
-                                const SizedBox(width: AppSpacing.xs),
-                                const Icon(LucideIcons.badgeCheck, size: 16, color: AppColors.primary),
-                              ],
+                              Text(cargo.companyName, style: AppTextStyles.bodyStrong),
+                              CompanyVerifiedBadge(isVerified: cargo.companyIsVerified, keySuffix: 'detail'),
                             ],
                           ),
                           // 058 п.8а: грузовладелец / экспедитор / перевозчик.
@@ -692,6 +693,18 @@ class _CargoDetailBody extends ConsumerWidget {
               ],
             ),
           ),
+          // 066 п.5: жалоба на груз без сделки — две от разных водителей
+          // ставят непроверенную компанию на паузу.
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              key: const Key('cargoDetailComplain'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+              onPressed: () => _complainAboutCargo(context, ref, cargo.id),
+              icon: const Icon(LucideIcons.flag, size: 16),
+              label: Text(t.cargoComplainTitle),
+            ),
+          ),
           const SizedBox(height: AppSpacing.xxl),
         ],
       ),
@@ -712,6 +725,42 @@ class _CargoDetailBody extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+/// 066 п.5: «Пожаловаться на груз» — в очередь жалоб админки.
+Future<void> _complainAboutCargo(BuildContext context, WidgetRef ref, String cargoId) async {
+  final t = context.l10n;
+  final controller = TextEditingController();
+  final text = await showDialog<String>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      key: const Key('cargoComplainDialog'),
+      title: Text(t.cargoComplainTitle),
+      // Узкий экран + крупный шрифт + клавиатура (iPhone SE): прокрутка, а не переполнение.
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.cargoComplainBody, style: AppTextStyles.body),
+            const SizedBox(height: AppSpacing.sm),
+            AppTextField(key: const Key('cargoComplainText'), label: t.complaintReasonLabel, controller: controller, maxLines: 3),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
+        FilledButton(key: const Key('cargoComplainSubmit'), onPressed: () => Navigator.pop(dialogContext, controller.text), child: Text(t.complaintSend)),
+      ],
+    ),
+  );
+  if (text == null || text.trim().isEmpty || !context.mounted) return;
+  try {
+    await ref.read(cargoRepositoryProvider).complain(cargoId, reason: text.trim());
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.complaintSent)));
+  } catch (e) {
+    if (context.mounted) showApiError(context, e);
   }
 }
 

@@ -156,6 +156,11 @@ class CargoRepository {
     return (res.data as List<dynamic>).map((e) => Cargo.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  /// 066 п.5: жалоба водителя на груз — в очередь жалоб админки.
+  Future<void> complain(String cargoId, {required String reason}) async {
+    await _client.dio.post('/cargos/$cargoId/complaint', data: {'reason': reason});
+  }
+
   Future<void> setFavorite(String cargoId, bool on) async {
     if (on) {
       await _client.dio.post('/cargos/$cargoId/favorite');

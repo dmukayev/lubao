@@ -260,7 +260,9 @@ class _AttentionBlock extends ConsumerWidget {
       if (attention.openComplaints > 0) (t.adminAttentionOpenComplaints(attention.openComplaints), false, '/complaints'),
       if (attention.staleDeals > 0) (t.adminAttentionStaleDeals(attention.staleDeals), true, '/deals?stale=true'),
       if (attention.unverifiedCompanies > 0)
-        (t.adminAttentionUnverifiedCompanies(attention.unverifiedCompanies), false, '/companies?filter=pending'),
+        (t.adminAttentionUnverifiedCompanies(attention.unverifiedCompanies), false, '/companies?filter=activeUnverified'),
+      // 066 п.5: публикация на паузе после жалоб водителей.
+      if (attention.pausedCompanies > 0) (t.adminAttentionPausedCompanies(attention.pausedCompanies), true, '/companies?filter=paused'),
       if (attention.pendingCities > 0) (t.adminAttentionPendingCities(attention.pendingCities), false, '/reference'),
       // 032 п.11 (038) — совпадения подтверждённых идентификаторов с
       // активным чёрным списком (кроме самих заблокированных).

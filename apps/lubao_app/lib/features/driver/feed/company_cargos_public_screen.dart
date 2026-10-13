@@ -6,6 +6,7 @@ import 'package:lubao_core/lubao_core.dart';
 import '../../../providers/api_providers.dart';
 import '../../shared/status_helpers.dart';
 import '../../shared/error_feedback.dart';
+import '../../shared/company_verified_badge.dart';
 
 final _companyCargosProvider = FutureProvider.autoDispose.family<List<Cargo>, String>((ref, companyId) {
   return ref.watch(cargoRepositoryProvider).byCompany(companyId);
@@ -37,11 +38,17 @@ class CompanyCargosPublicScreen extends ConsumerWidget {
               // 058 п.7/8а: тип компании и когда логист был в сети.
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen, vertical: AppSpacing.xs),
-                child: Text(
-                  [
-                    companyKindLabel(t, list.first.companyKind),
-                    ?formatLastSeen(t, list.map((c) => c.contactLastSeenAt).whereType<DateTime>().fold<DateTime?>(null, (a, b) => a == null || b.isAfter(a) ? b : a)),
-                  ].join(' · '),
+                child: Text.rich(
+                  TextSpan(children: [
+                    TextSpan(
+                      text: [
+                        companyKindLabel(t, list.first.companyKind),
+                        ?formatLastSeen(t, list.map((c) => c.contactLastSeenAt).whereType<DateTime>().fold<DateTime?>(null, (a, b) => a == null || b.isAfter(a) ? b : a)),
+                      ].join(' · '),
+                    ),
+                    // 066: плашка «Проверена / Не проверена» в профиле компании.
+                    CompanyVerifiedBadge.span(isVerified: list.first.companyIsVerified, keySuffix: 'company'),
+                  ]),
                   key: const Key('companyPublicMeta'),
                   style: AppTextStyles.caption,
                 ),

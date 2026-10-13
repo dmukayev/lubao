@@ -11,7 +11,8 @@ import '../shared/responsive.dart';
 
 const _pageSize = 50;
 
-enum _StatusFilter { all, pending, verified, blocked }
+/// 066 п.5: «не проверены, с грузами» и «на паузе» — из «Требует внимания».
+enum _StatusFilter { all, pending, activeUnverified, paused, verified, blocked }
 
 class AdminCompaniesScreen extends ConsumerStatefulWidget {
   const AdminCompaniesScreen({super.key, this.queryParams = const {}});
@@ -57,6 +58,8 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
     _page = int.tryParse(params['page'] ?? '') ?? 1;
     _filter = switch (params['filter']) {
       'pending' => _StatusFilter.pending,
+      'activeUnverified' => _StatusFilter.activeUnverified,
+      'paused' => _StatusFilter.paused,
       'verified' => _StatusFilter.verified,
       'blocked' => _StatusFilter.blocked,
       _ => _StatusFilter.all,
@@ -94,11 +97,15 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
         q: _q,
         verified: switch (_filter) {
           _StatusFilter.verified => true,
-          _StatusFilter.pending => false,
+          _StatusFilter.pending || _StatusFilter.activeUnverified => false,
           _ => null,
         },
         blocked: _filter == _StatusFilter.blocked ? true : null,
-        onSite: null,
+        onSite: switch (_filter) {
+          _StatusFilter.activeUnverified => 'activeCargos',
+          _StatusFilter.paused => 'paused',
+          _ => null,
+        },
         page: _page,
       );
 
@@ -110,6 +117,8 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
           label: Text(switch (f) {
             _StatusFilter.all => t.adminFilterAll,
             _StatusFilter.pending => t.adminFilterPending,
+            _StatusFilter.activeUnverified => t.adminFilterActiveUnverified,
+            _StatusFilter.paused => t.adminFilterPaused,
             _StatusFilter.verified => t.adminFilterVerified,
             _StatusFilter.blocked => t.adminFilterBlocked,
           }),
@@ -195,7 +204,7 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
                                       onTap: () => context.push('/companies/${c.id}'),
                                       title: Text(c.name),
                                       subtitle: Text('${c.ownerEmail ?? c.ownerName ?? '—'} · ${c.employeeCount}'),
-                                      trailing: _StatusCell(isVerified: c.isVerified, isBlocked: c.isBlocked, pendingDocsCount: c.pendingDocsCount),
+                                      trailing: _StatusCell(isVerified: c.isVerified, isBlocked: c.isBlocked, isPaused: c.publishingPaused, pendingDocsCount: c.pendingDocsCount),
                                     ),
                                   );
                                 },
@@ -222,7 +231,7 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
                                               DataCell(Text(c.ownerEmail ?? c.ownerName ?? '—')),
                                               DataCell(Text('${c.employeeCount}')),
                                               DataCell(Text('${c.activeCargoCount}')),
-                                              DataCell(_StatusCell(isVerified: c.isVerified, isBlocked: c.isBlocked, pendingDocsCount: c.pendingDocsCount)),
+                                              DataCell(_StatusCell(isVerified: c.isVerified, isBlocked: c.isBlocked, isPaused: c.publishingPaused, pendingDocsCount: c.pendingDocsCount)),
                                               DataCell(Text('★ ${formatRating(c.ratingAvg, c.ratingCount)} (${c.ratingCount})')),
                                               DataCell(Text('${c.dealCount}')),
                                             ],
@@ -255,10 +264,11 @@ class _AdminCompaniesScreenState extends ConsumerState<AdminCompaniesScreen> {
 }
 
 class _StatusCell extends StatelessWidget {
-  const _StatusCell({required this.isVerified, required this.isBlocked, required this.pendingDocsCount});
+  const _StatusCell({required this.isVerified, required this.isBlocked, this.isPaused = false, required this.pendingDocsCount});
 
   final bool isVerified;
   final bool isBlocked;
+  final bool isPaused;
   final int pendingDocsCount;
 
   @override
@@ -273,6 +283,10 @@ class _StatusCell extends StatelessWidget {
           StatusBadge(label: t.adminVerified, color: StatusBadge.success)
         else
           StatusBadge(label: t.adminNotVerified, color: StatusBadge.neutral),
+        if (isPaused && !isBlocked) ...[
+          const SizedBox(width: 6),
+          StatusBadge(label: t.adminFilterPaused, color: StatusBadge.warning),
+        ],
         if (pendingDocsCount > 0) ...[
           const SizedBox(width: 6),
           Text('($pendingDocsCount)', style: Theme.of(context).textTheme.bodySmall),

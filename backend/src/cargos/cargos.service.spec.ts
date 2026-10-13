@@ -203,7 +203,7 @@ describe('CargosService.feed — hides blocked companies\' cargo (задача 0
     await service.feed();
 
     expect(prisma.cargo.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { status: 'PUBLISHED', company: { isBlocked: false } } }),
+      expect.objectContaining({ where: { status: 'PUBLISHED', company: { isBlocked: false, publishingPausedAt: null } } }),
     );
   });
 });
@@ -280,14 +280,40 @@ describe('CargosService — отсев грузов по размеру маши
   });
 });
 
-describe('CargosService.create — непроверенная компания не публикует грузы (задача 012, п.4)', () => {
-  it('throws COMPANY_NOT_VERIFIED when the company is not verified, without touching the database', async () => {
-    const prisma: any = { point: { findUnique: jest.fn() }, cargo: { create: jest.fn() } };
-    const service = new CargosService(prisma, {} as any, {} as any);
+describe('CargosService.create — компания публикует без проверки (066)', () => {
+  const dto = { pointId: 'p1', readyDate: '2026-01-01', destinationCountryId: 'kz', bodyTypeId: 'bt1', price: 100, currency: 'USD', categoryId: 'cat1' } as any;
+  const publishable = (company: Record<string, unknown>, activeCount = 0): any => ({
+    company: { findUnique: jest.fn().mockResolvedValue({ isVerified: false, publishingPausedAt: null, ...company }) },
+    point: { findUnique: jest.fn().mockResolvedValue({ id: 'p1', isActive: true }) },
+    cargo: { count: jest.fn().mockResolvedValue(activeCount), create: jest.fn().mockResolvedValue({ id: 'cargo1' }), findUnique: jest.fn().mockResolvedValue(baseCargo()) },
+    cargoCategory: { findUnique: jest.fn().mockResolvedValue({ isActive: true }) },
+    deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
+    companyMember: { findFirst: jest.fn().mockResolvedValue({ contactPhone: '+70000000000', fullName: 'L', wechatId: null, user: { id: 'u1', name: 'L', phone: null, lastSeenAt: null } }) },
+    user: { findUnique: jest.fn().mockResolvedValue(null) },
+    bodyType: { findUnique: jest.fn().mockResolvedValue({ fields: [] }), findMany: jest.fn().mockResolvedValue([]) },
+    appSetting: { findUnique: jest.fn().mockResolvedValue(null) },
+  });
 
-    await expect(service.create('c1', 'u1', false, { readyDate: '2026-01-01' } as any)).rejects.toThrow(ForbiddenException);
-    expect(prisma.point.findUnique).not.toHaveBeenCalled();
-    expect(prisma.cargo.create).not.toHaveBeenCalled();
+  it('непроверенная компания публикует; 11-й активный — COMPANY_ACTIVE_LIMIT', async () => {
+    const prisma = publishable({}, 9);
+    await new CargosService(prisma, {} as any, {} as any).create('c1', 'u1', false, dto);
+    expect(prisma.cargo.create).toHaveBeenCalled();
+    expect(prisma.cargo.count.mock.calls[0][0].where).toEqual({ companyId: 'c1', status: 'PUBLISHED' });
+
+    const full = publishable({}, 10);
+    await expect(new CargosService(full, {} as any, {} as any).create('c1', 'u1', false, dto)).rejects.toMatchObject({ response: { code: 'COMPANY_ACTIVE_LIMIT' } });
+    expect(full.cargo.create).not.toHaveBeenCalled();
+  });
+
+  it('проверенной лимита нет; пауза после жалоб — COMPANY_PAUSED', async () => {
+    const verified = publishable({ isVerified: true }, 50);
+    await new CargosService(verified, {} as any, {} as any).create('c1', 'u1', true, dto);
+    expect(verified.cargo.create).toHaveBeenCalled();
+    expect(verified.cargo.count).not.toHaveBeenCalled();
+
+    const paused = publishable({ isVerified: false, publishingPausedAt: new Date() });
+    await expect(new CargosService(paused, {} as any, {} as any).create('c1', 'u1', false, dto)).rejects.toMatchObject({ response: { code: 'COMPANY_PAUSED' } });
+    expect(paused.cargo.create).not.toHaveBeenCalled();
   });
 
   it('a verified company publishes normally', async () => {
@@ -955,7 +981,7 @@ describe('058 п.8: избранные грузы водителя', () => {
     const prisma: any = { cargoFavorite: { findMany: jest.fn().mockResolvedValue([]) } };
     const service = new CargosService(prisma, {} as any, {} as any);
     await service.listFavorites('d1');
-    expect(prisma.cargoFavorite.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { driverId: 'd1', cargo: { status: 'PUBLISHED', company: { isBlocked: false } } } }));
+    expect(prisma.cargoFavorite.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { driverId: 'd1', cargo: { status: 'PUBLISHED', company: { isBlocked: false, publishingPausedAt: null } } } }));
   });
 });
 

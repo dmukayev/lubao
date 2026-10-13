@@ -193,6 +193,7 @@ class MyResponseEntry {
     this.paymentDelayDays,
     this.offer = ResponseOffer.none,
     this.companyName = '',
+    this.companyIsVerified = false,
     this.closeReason,
     this.inviteExpiresAt,
     this.dealId,
@@ -220,6 +221,8 @@ class MyResponseEntry {
   final String? categoryId;
   final double? weightKg;
   final String companyName;
+  /// 066: плашка «Проверена / Не проверена».
+  final bool companyIsVerified;
   final ResponseCloseReason? closeReason;
 
   /// «Вас пригласили — осталось 18 ч».
@@ -250,6 +253,7 @@ class MyResponseEntry {
       paymentDelayDays: cargo['paymentDelayDays'] as int?,
       offer: ResponseOffer.fromJson(json),
       companyName: cargo['companyName'] as String? ?? '',
+      companyIsVerified: cargo['companyIsVerified'] as bool? ?? false,
       closeReason: responseCloseReasonFromJson(json['closeReason'] as String?),
       inviteExpiresAt: json['inviteExpiresAt'] == null ? null : DateTime.parse(json['inviteExpiresAt'] as String),
       dealId: json['dealId'] as String?,

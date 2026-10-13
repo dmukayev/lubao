@@ -103,11 +103,10 @@ export class DriversController {
     source.stream.pipe(res);
   }
 
-  /// 049 п.6: фото и номера машин — только проверенной компании, которой водитель
+  /// 049 п.6: фото и номера машин — компании (066: и непроверенной), которой водитель
   /// виден (анонс, отклик, сделка); суточный лимит как у номеров (свой счётчик).
   private async assertMayViewVehiclePhotos(ctx: RequestContext, driverId: string) {
     if (!ctx.companyMember) throw new ForbiddenException('Only company accounts');
-    this.contactPolicy.assertCompanyMayContactDriver(ctx.companyMember.company);
     if (!(await this.contactPolicy.driverVisibleToCompany(driverId, ctx.companyMember.companyId))) {
       throw new NotFoundException('Driver not found');
     }
@@ -149,12 +148,11 @@ export class DriversController {
   }
 
   /// «Позвонить»/WhatsApp логиста (043 п.11): номер водителя — по нажатию,
-  /// только проверенной компании, с суточным лимитом; в списках номера нет.
+  /// любой компании (066), с суточным лимитом; в списках номера нет.
   @Post(':id/contact')
   @HttpCode(200)
   async contact(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: RevealContactDto) {
     if (!ctx.companyMember) throw new ForbiddenException('Only company accounts call drivers');
-    this.contactPolicy.assertCompanyMayContactDriver(ctx.companyMember.company);
     const driver = await this.prisma.driver.findUnique({ where: { id }, select: { id: true, user: { select: { phone: true } } } });
     if (!driver) throw new NotFoundException('Driver not found');
     if (!driver.user.phone) throw new NotFoundException({ code: 'NO_PHONE', message: 'Driver has no phone' });

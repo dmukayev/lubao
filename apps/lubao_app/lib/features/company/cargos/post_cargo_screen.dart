@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lubao_core/lubao_core.dart';
 
@@ -384,7 +385,6 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_isEditing && !(ref.read(sessionProvider)?.company?.isVerified ?? false)) return;
     final t = context.l10n;
     // Телефон проверяется вместе с остальными полями — все ошибки видны сразу.
     final needsPhone = _needsPhone;
@@ -451,7 +451,9 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       final code = e is DioException && e.response?.data is Map ? (e.response!.data as Map)['code'] : null;
-      if (code == 'CONTACT_PHONE_REQUIRED') {
+      if (code == 'COMPANY_ACTIVE_LIMIT' || code == 'COMPANY_PAUSED') {
+        if (mounted) await _showVerificationNeeded(e);
+      } else if (code == 'CONTACT_PHONE_REQUIRED') {
         if (mounted) setState(() {
           _askPhone = true;
           _phoneError = t.postCargoPhoneRequired;
@@ -462,6 +464,26 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  /// 066 (decisions.md «Компания публикует грузы без проверки»): лимит 10
+  /// активных грузов до проверки или пауза после жалоб — понятный текст и
+  /// «Пройти проверку» (профиль компании, загрузка свидетельства).
+  Future<void> _showVerificationNeeded(Object error) async {
+    final t = context.l10n;
+    final goVerify = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        key: const Key('postCargoLimitDialog'),
+        title: Text(t.postCargoLimitTitle),
+        content: SingleChildScrollView(child: Text(errorMessage(t, error), style: AppTextStyles.body)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.commonCancel)),
+          FilledButton(key: const Key('postCargoGoVerify'), onPressed: () => Navigator.pop(dialogContext, true), child: Text(t.postCargoGoVerify)),
+        ],
+      ),
+    );
+    if (goVerify == true && mounted) context.go('/company/profile');
   }
 
   /// 055: «Вес» — переключатель `кг | т` справа, пересчёт под полем и
@@ -532,11 +554,6 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final referenceData = ref.watch(referenceDataProvider);
-    // Задача 012, п.4 — непроверенная компания не публикует новые грузы
-    // (decisions.md «Компания: проверка, роли, контакты»); редактировать
-    // уже опубликованный груз можно — isVerified тут не при чём.
-    final isVerified = ref.watch(sessionProvider.select((s) => s?.company?.isVerified)) ?? false;
-    final blockedByVerification = !_isEditing && !isVerified;
 
     return Scaffold(
       appBar: AppBar(title: Text(_isEditing ? t.editCargoTitle : t.postCargoTitle)),
@@ -558,23 +575,6 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              if (blockedByVerification) ...[
-                Card(
-                  key: const Key('postCargoVerificationBanner'),
-                  color: AppColors.primarySoft,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        const Icon(LucideIcons.shieldAlert),
-                        const SizedBox(width: 12),
-                        Expanded(child: Text(t.postCargoVerificationRequired)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
               CityField(
                 key: const Key('postCargoPickupCity'),
                 label: t.postCargoPickupCity,
@@ -931,7 +931,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 key: const Key('postCargoSubmit'),
                 label: _isEditing ? t.commonSave : t.postCargoSubmit,
                 loading: _saving,
-                onPressed: blockedByVerification ? null : _submit,
+                onPressed: _submit,
               ),
             ],
           );

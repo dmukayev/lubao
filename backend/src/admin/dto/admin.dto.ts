@@ -89,6 +89,17 @@ export class SearchQueryDto {
   @IsBoolean()
   blocked?: boolean;
 
+  /// 066 п.5: компании с грузами в ленте / на паузе после жалоб.
+  @IsOptional()
+  @BooleanQuery()
+  @IsBoolean()
+  activeCargos?: boolean;
+
+  @IsOptional()
+  @BooleanQuery()
+  @IsBoolean()
+  paused?: boolean;
+
   /// Водитель сейчас ON_SITE (п.3 задачи 028 — плитка «на точке сегодня»
   /// на сводке ссылается на `/drivers?onSite=today`).
   @IsOptional()

@@ -19,6 +19,8 @@ import { RequestContext } from '../common/request-context';
 import { validateSpecs } from '../body-types/specs';
 import { DriverBody, cargoFitsBody } from '../body-types/profile-fit';
 import { newResponsesByCargo } from '../responses/new-responses';
+import { VISIBLE_COMPANY } from './visible-company';
+import { pauseAfterComplaints } from '../companies/publishing-pause';
 
 /// 056 п.2: вкладки «Грузов» логиста по статусу груза. Доставленный груз
 /// архивируется (deals.service: DELIVERED → ARCHIVED), сделка в работе — IN_DEAL.
@@ -385,7 +387,7 @@ export class CargosService {
     // компании и т.п.); полные карточки — только для страницы.
     // company.isBlocked (задача 026, п.5) — груз блокированной компании
     // скрываем из ленты, пока компанию не разблокируют.
-    const where: Prisma.CargoWhereInput = { status: 'PUBLISHED', company: { isBlocked: false } };
+    const where: Prisma.CargoWhereInput = { status: 'PUBLISHED', company: VISIBLE_COMPANY };
     const and: Prisma.CargoWhereInput[] = [];
     if (query.fromCityId) and.push({ point: { cityId: query.fromCityId } });
     else if (query.fromCountryId) and.push({ point: { city: { countryId: query.fromCountryId } } });
@@ -786,7 +788,7 @@ export class CargosService {
   async publishedByCompany(companyId: string) {
     const cargos = await this.prisma.cargo.findMany({
       // 057 п.7: грузы заблокированной компании по ссылке не показываем.
-      where: { companyId, status: 'PUBLISHED', company: { isBlocked: false } },
+      where: { companyId, status: 'PUBLISHED', company: VISIBLE_COMPANY },
       include: this.includeForDto,
       orderBy: { readyDate: 'asc' },
       take: 50,
@@ -822,7 +824,7 @@ export class CargosService {
   /// «Избранное» в «Моих рейсах» — пока груз опубликован; новые сверху.
   async listFavorites(driverId: string) {
     const rows = await this.prisma.cargoFavorite.findMany({
-      where: { driverId, cargo: { status: 'PUBLISHED', company: { isBlocked: false } } },
+      where: { driverId, cargo: { status: 'PUBLISHED', company: VISIBLE_COMPANY } },
       orderBy: { createdAt: 'desc' },
       include: { cargo: { include: this.includeForDto } },
     });
@@ -866,11 +868,27 @@ export class CargosService {
     }
   }
 
+  /// 066: непроверенная компания публикует сразу, но не больше стольких
+  /// активных грузов; «Повторить» — тот же create, лимит общий.
+  static UNVERIFIED_ACTIVE_LIMIT = 10;
+
+  /// decisions.md «Компания публикует грузы без проверки»: у проверенной
+  /// ограничений нет (проверка снимает и паузу); у непроверенной — пауза
+  /// после жалоб и лимит активных грузов.
+  private async assertMayPublish(companyId: string, companyIsVerified: boolean) {
+    if (companyIsVerified) return;
+    const company = await this.prisma.company.findUnique({ where: { id: companyId }, select: { isVerified: true, publishingPausedAt: true } });
+    if (!company) throw new NotFoundException('Company not found');
+    if (company.isVerified) return;
+    if (company.publishingPausedAt) throw new ForbiddenException({ code: 'COMPANY_PAUSED', message: 'Publishing is paused after complaints until verification' });
+    const active = await this.prisma.cargo.count({ where: { companyId, status: 'PUBLISHED' } });
+    if (active >= CargosService.UNVERIFIED_ACTIVE_LIMIT) {
+      throw new ForbiddenException({ code: 'COMPANY_ACTIVE_LIMIT', limit: CargosService.UNVERIFIED_ACTIVE_LIMIT, message: 'Verify the company to publish more cargos' });
+    }
+  }
+
   async create(companyId: string, userId: string, companyIsVerified: boolean, dto: CreateCargoDto) {
-    // Задача 012, п.4 — непроверенная компания может смотреть водителей на
-    // точке и писать им, но не публиковать грузы (decisions.md «Компания:
-    // проверка, роли, контакты»).
-    if (!companyIsVerified) throw new ForbiddenException('COMPANY_NOT_VERIFIED');
+    await this.assertMayPublish(companyId, companyIsVerified);
     await this.assertPublisherPhone(companyId, userId);
 
     // Город погрузки обязателен (задача 040, п.7).
@@ -909,9 +927,25 @@ export class CargosService {
       },
       select: { id: true },
     });
-    // Публикует только проверенная компания (проверено выше) — точка LISTED.
-    await this.applyPricingBounded(created.id, true);
+    // 066: в статистику цен — только грузы проверенных компаний (как в fillMissingDistances).
+    await this.applyPricingBounded(created.id, companyIsVerified);
     return this.toDto(await this.findEntity(created.id));
+  }
+
+  /// 066 п.5: жалоба водителя на груз (одна открытая от автора на груз).
+  async complain(cargoId: string, reporterUserId: string, reason: string, description?: string) {
+    const cargo = await this.prisma.cargo.findUnique({ where: { id: cargoId }, select: { companyId: true } });
+    if (!cargo) throw new NotFoundException('Cargo not found');
+    const open = await this.prisma.complaint.findFirst({
+      where: { reporterUserId, targetType: 'CARGO', targetId: cargoId, status: { in: ['OPEN', 'IN_REVIEW'] } },
+      select: { id: true },
+    });
+    if (open) throw new ConflictException('COMPLAINT_ALREADY_OPEN');
+    const created = await this.prisma.complaint.create({
+      data: { reporterUserId, targetType: 'CARGO', targetId: cargoId, reason: reason.trim(), description: description?.trim() || null },
+    });
+    await pauseAfterComplaints(this.prisma, cargo.companyId);
+    return { id: created.id, status: created.status };
   }
 
   async assertOwnedBy(cargoId: string, companyId: string) {

@@ -656,7 +656,7 @@ class CompanyProfileScreen extends ConsumerWidget {
               Text(company == null ? ' —' : ' ${formatRating(company.ratingAvg, company.ratingCount)}${company.ratingCount == 0 ? '' : ' (${company.ratingCount})'}'),
               const SizedBox(width: 12),
               StatusBadge(
-                label: (company?.isVerified ?? false) ? t.profileVerified : t.profileNotVerified,
+                label: (company?.isVerified ?? false) ? t.companyBadgeVerified : t.companyBadgeUnverified,
                 color: (company?.isVerified ?? false) ? StatusBadge.success : StatusBadge.neutral,
               ),
             ],

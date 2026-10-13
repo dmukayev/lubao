@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, ShareLink } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { VISIBLE_COMPANY } from '../cargos/visible-company';
 import { I18nName } from '../notifications/notification-events';
 import { PageCargo, PageDriver, PageLinks, PageLocale, renderCargoPage, renderCompanyPage, renderDriverPage } from './share-page';
 import { SHARE_PATH, ShareService, shareBaseUrl } from './share.service';
@@ -11,7 +12,7 @@ const cargoInclude = {
   destinationCountry: { select: { name: true, code: true } },
   category: { select: { name: true } },
   bodyType: { select: { name: true } },
-  company: { select: { name: true, ratingAvg: true, ratingCount: true, isBlocked: true } },
+  company: { select: { name: true, ratingAvg: true, ratingCount: true, isBlocked: true, isVerified: true } },
 } as const;
 type CargoRow = Prisma.CargoGetPayload<{ include: typeof cargoInclude }>;
 
@@ -66,6 +67,7 @@ function toPageCargo(c: CargoRow): PageCargo {
     currency: c.currency,
     readyDate: c.readyDate,
     companyName: c.company?.name ?? '',
+    companyIsVerified: c.company?.isVerified ?? false,
     companyRatingAvg: Number(c.company?.ratingAvg ?? 0),
     companyRatingCount: c.company?.ratingCount ?? 0,
   };
@@ -114,7 +116,7 @@ export class SharePagesService {
       if (cargo && cargo.status === 'PUBLISHED' && !cargo.company?.isBlocked) return renderCargoPage(locale, toPageCargo(cargo), [], links, cargoHref);
       // «Уже неактуально» + 3–5 похожих: опубликованные туда же (страна назначения), ближайшие по дате.
       const similar = await this.prisma.cargo.findMany({
-        where: { status: 'PUBLISHED', company: { isBlocked: false }, id: { not: link.targetId }, ...(cargo ? { destinationCountryId: cargo.destinationCountryId } : {}) },
+        where: { status: 'PUBLISHED', company: VISIBLE_COMPANY, id: { not: link.targetId }, ...(cargo ? { destinationCountryId: cargo.destinationCountryId } : {}) },
         include: cargoInclude,
         orderBy: { readyDate: 'asc' },
         take: 5,
@@ -122,9 +124,9 @@ export class SharePagesService {
       return renderCargoPage(locale, null, similar.map(toPageCargo), links, cargoHref);
     }
     if (link.type === 'COMPANY') {
-      const company = await this.prisma.company.findUnique({ where: { id: link.targetId }, select: { name: true, isBlocked: true } });
-      const cargos = await this.prisma.cargo.findMany({ where: { companyId: link.targetId, status: 'PUBLISHED', company: { isBlocked: false } }, include: cargoInclude, orderBy: { readyDate: 'asc' }, take: 30 });
-      return renderCompanyPage(locale, company?.name ?? '', cargos.map(toPageCargo), links, cargoHref);
+      const company = await this.prisma.company.findUnique({ where: { id: link.targetId }, select: { name: true, isBlocked: true, isVerified: true } });
+      const cargos = await this.prisma.cargo.findMany({ where: { companyId: link.targetId, status: 'PUBLISHED', company: VISIBLE_COMPANY }, include: cargoInclude, orderBy: { readyDate: 'asc' }, take: 30 });
+      return renderCompanyPage(locale, company?.name ?? '', cargos.map(toPageCargo), links, cargoHref, company?.isVerified ?? false);
     }
     return renderDriverPage(locale, await this.driver(link.targetId), links);
   }

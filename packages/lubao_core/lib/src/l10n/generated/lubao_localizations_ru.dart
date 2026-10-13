@@ -1767,7 +1767,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String adminAttentionUnverifiedCompanies(int count) {
-    return 'Непроверенных компаний: $count';
+    return 'Не проверены, грузы в ленте: $count';
   }
 
   @override
@@ -2574,7 +2574,7 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get companyNotVerifiedBannerText =>
-      'Компания не проверена — загрузите свидетельство о регистрации ниже';
+      'Компания не проверена — грузы публикуются, но водители видят «Не проверена». Загрузите свидетельство ниже';
 
   @override
   String get companyEditTitle => 'Данные компании';
@@ -3100,6 +3100,52 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   @override
   String get errContactPhoneRequired =>
       'Укажите телефон — без него водитель не сможет позвонить';
+
+  @override
+  String get errCompanyActiveLimit =>
+      'Без проверки можно держать 10 активных грузов. Пройдите проверку компании, чтобы публиковать больше';
+
+  @override
+  String get errCompanyPaused =>
+      'Публикация приостановлена после жалоб водителей. Пройдите проверку компании — пауза снимется';
+
+  @override
+  String get companyBadgeVerified => 'Проверена';
+
+  @override
+  String get companyBadgeUnverified => 'Не проверена';
+
+  @override
+  String get postCargoLimitTitle => 'Нужна проверка компании';
+
+  @override
+  String get postCargoGoVerify => 'Пройти проверку';
+
+  @override
+  String get cargoComplainTitle => 'Пожаловаться на груз';
+
+  @override
+  String get cargoComplainBody =>
+      'Что не так с грузом или компанией? Администратор разберётся.';
+
+  @override
+  String adminAttentionPausedCompanies(int count) {
+    return 'На паузе после жалоб: $count';
+  }
+
+  @override
+  String get adminFilterActiveUnverified => 'Не проверены, с грузами';
+
+  @override
+  String get adminFilterPaused => 'На паузе';
+
+  @override
+  String adminCompanyPausedBanner(int count) {
+    return 'Публикация на паузе: жалобы водителей — $count. Грузы скрыты из ленты, новые не публикуются.';
+  }
+
+  @override
+  String get adminCompanyUnpause => 'Снять паузу';
 
   @override
   String get errCurrencyLocked =>
@@ -4127,15 +4173,16 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get preVerifyDriverAfter => 'Откроется после проверки документов';
 
   @override
-  String get preVerifyCompanyCan => 'Можно: смотреть водителей и писать им';
+  String get preVerifyCompanyCan =>
+      'Можно: публиковать до 10 грузов, звонить и писать водителям';
 
   @override
   String get preVerifyCompanyCannot =>
-      'Нельзя: публиковать грузы и звонить водителям';
+      'Нельзя: больше 10 активных грузов; водители видят «Не проверена»';
 
   @override
   String get preVerifyCompanyAfter =>
-      'Грузы и звонки — после проверки компании';
+      'После проверки — без лимита и с плашкой «Проверена»';
 
   @override
   String get driversTabAll => 'Все';

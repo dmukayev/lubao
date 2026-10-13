@@ -308,7 +308,7 @@ describe('AdminService.driverDetail / companyDetail — document links go throug
       cargo: { findMany: jest.fn().mockResolvedValue([]) },
       deal: { findMany: jest.fn().mockResolvedValue([]) },
       review: { findMany: jest.fn().mockResolvedValue([]) },
-      complaint: { count: jest.fn().mockResolvedValue(0) },
+      complaint: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
       auditLog: { findMany: jest.fn().mockResolvedValue([]) },
       shareLink: { aggregate: jest.fn().mockResolvedValue({ _count: { _all: 0 }, _sum: { opens: null } }) },
       user: { count: jest.fn().mockResolvedValue(0) },

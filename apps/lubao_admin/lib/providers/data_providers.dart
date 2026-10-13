@@ -52,8 +52,9 @@ final adminComplaintDetailProvider = FutureProvider.autoDispose.family<AdminComp
 
 /// Параметры поиска/фильтра/пагинации (задача 026) — record, не класс:
 /// Riverpod сравнивает family-параметры по равенству, а записи уже имеют
-/// value-equality из коробки. `onSite` — только для водителей (плитка
-/// «на точке» на сводке, задача 028 п.3), у компаний всегда null.
+/// value-equality из коробки. `onSite` — особый фильтр: у водителей плитка
+/// «на точке» на сводке (задача 028 п.3), у компаний (066 п.5)
+/// `activeCargos` — с грузами в ленте, `paused` — на паузе после жалоб.
 typedef AdminSearchQuery = ({String q, bool? verified, bool? blocked, String? onSite, int page});
 
 const defaultAdminSearchQuery = (q: '', verified: null, blocked: null, onSite: null, page: 1);
@@ -64,6 +65,8 @@ final adminCompaniesSearchProvider =
         q: query.q,
         verified: query.verified,
         blocked: query.blocked,
+        activeCargos: query.onSite == 'activeCargos' ? true : null,
+        paused: query.onSite == 'paused' ? true : null,
         page: query.page,
       );
 });

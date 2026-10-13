@@ -8,6 +8,7 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import 'favorite_button.dart';
+import '../../shared/company_verified_badge.dart';
 import '../../shared/cargo_price_column.dart';
 import 'feed_filters.dart';
 import '../profile/driver_companies.dart';
@@ -261,8 +262,8 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
     final grey = AppTextStyles.body.copyWith(color: AppColors.textSecondary);
     final blue = AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600);
     final small = AppTextStyles.small.copyWith(color: AppColors.textSecondary);
+    // 066: компания + «Проверена / Не проверена», дальше рейтинг и отклики.
     final companyLine = [
-      cargo.companyName,
       if (cargo.companyRatingCount > 0) '★ ${cargo.companyRatingAvg.toStringAsFixed(1)}',
       if (cargo.responsesCount > 0 && cargo.myResponseStatus == null) t.feedRespondedCount(cargo.responsesCount),
     ].join(' · ');
@@ -366,7 +367,16 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
           ),
         ),
         const SizedBox(height: 2),
-        Text(companyLine, style: small, maxLines: 2, overflow: TextOverflow.ellipsis),
+        Text.rich(
+          TextSpan(children: [
+            TextSpan(text: cargo.companyName),
+            CompanyVerifiedBadge.span(isVerified: cargo.companyIsVerified, keySuffix: cargo.id),
+            if (companyLine.isNotEmpty) TextSpan(text: ' · $companyLine'),
+          ]),
+          style: small,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
       ],
     );
   }

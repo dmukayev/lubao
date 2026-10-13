@@ -22,28 +22,28 @@ const T: Record<PageLocale, Record<string, string>> = {
     stale: 'Уже неактуально', staleCargo: 'Этот груз уже забрали или сняли.', staleDriver: 'Водитель уже не ищет груз.', similar: 'Похожие грузы',
     companyCargos: 'Грузы компании', noActive: 'Сейчас активных грузов нет', driver: 'Водитель', verified: 'Проверен', trips: 'рейсов в Lubao',
     lookingFrom: 'Ищет груз из', direction: 'Направление', anyCountry: 'любое', offer: 'Предложить груз в приложении', contactOnly: 'Связаться можно только в приложении Lubao — без телефона.',
-    tagline: 'Lubao — биржа грузов', open: 'Открыть',
+    tagline: 'Lubao — биржа грузов', open: 'Открыть', companyVerified: 'Проверена', companyUnverified: 'Не проверена',
   },
   kk: {
     cargo: 'Жүк', km: 'км', loading: 'тиеу', perKm: '/км', respond: 'Қолданбада жауап беру', android: 'Android үшін орнату', ios: 'iPhone үшін орнату',
     stale: 'Енді өзекті емес', staleCargo: 'Бұл жүкті алып кетті немесе алып тастады.', staleDriver: 'Жүргізуші енді жүк іздемейді.', similar: 'Ұқсас жүктер',
     companyCargos: 'Компания жүктері', noActive: 'Қазір белсенді жүк жоқ', driver: 'Жүргізуші', verified: 'Тексерілген', trips: 'Lubao-дағы рейс',
     lookingFrom: 'Жүк іздейді:', direction: 'Бағыты', anyCountry: 'кез келген', offer: 'Қолданбада жүк ұсыну', contactOnly: 'Тек Lubao қолданбасында байланысуға болады — телефонсыз.',
-    tagline: 'Lubao — жүк биржасы', open: 'Ашу',
+    tagline: 'Lubao — жүк биржасы', open: 'Ашу', companyVerified: 'Тексерілген', companyUnverified: 'Тексерілмеген',
   },
   zh: {
     cargo: '货物', km: '公里', loading: '装货', perKm: '/公里', respond: '在应用中响应', android: '安装 Android 版', ios: '安装 iPhone 版',
     stale: '已失效', staleCargo: '该货物已被承运或下架。', staleDriver: '该司机已不再找货。', similar: '相似货物',
     companyCargos: '公司货物', noActive: '目前没有进行中的货物', driver: '司机', verified: '已认证', trips: '次 Lubao 行程',
     lookingFrom: '找货地点：', direction: '方向', anyCountry: '任意', offer: '在应用中推荐货物', contactOnly: '只能在 Lubao 应用内联系 — 不显示电话。',
-    tagline: 'Lubao — 货运平台', open: '打开',
+    tagline: 'Lubao — 货运平台', open: '打开', companyVerified: '已认证', companyUnverified: '未认证',
   },
   en: {
     cargo: 'Cargo', km: 'km', loading: 'loading', perKm: '/km', respond: 'Respond in the app', android: 'Install for Android', ios: 'Install for iPhone',
     stale: 'No longer available', staleCargo: 'This cargo has been taken or withdrawn.', staleDriver: 'The driver is no longer looking for cargo.', similar: 'Similar cargo',
     companyCargos: 'Company cargo', noActive: 'No active cargo right now', driver: 'Driver', verified: 'Verified', trips: 'trips in Lubao',
     lookingFrom: 'Looking for cargo from', direction: 'Direction', anyCountry: 'any', offer: 'Offer cargo in the app', contactOnly: 'Contact only in the Lubao app — no phone numbers.',
-    tagline: 'Lubao — freight exchange', open: 'Open',
+    tagline: 'Lubao — freight exchange', open: 'Open', companyVerified: 'Verified', companyUnverified: 'Not verified',
   },
 };
 
@@ -95,6 +95,8 @@ export interface PageCargo {
   currency: string;
   readyDate: Date;
   companyName: string;
+  /// 066: плашка «Проверена» / серое «Не проверена» у компании.
+  companyIsVerified: boolean;
   companyRatingAvg: number;
   companyRatingCount: number;
 }
@@ -178,6 +180,14 @@ main{max-width:560px;margin:0 auto;padding:16px}.brand{color:#E86B1E;font-weight
 </style></head><body><main><div class="brand">Lubao</div>${body}<p class="muted small">${escapeHtml(t.tagline)}</p></main></body></html>`;
 }
 
+/// 066: «✓ Проверена» зелёной плашкой, у непроверенной — серое «Не проверена» мелко.
+function companyBadge(isVerified: boolean, l: PageLocale): string {
+  const t = T[l];
+  return isVerified
+    ? ` <span class="pill" data-testid="share-company-verified">✓ ${escapeHtml(t.companyVerified)}</span>`
+    : ` <span class="muted small" data-testid="share-company-unverified">${escapeHtml(t.companyUnverified)}</span>`;
+}
+
 export function renderCargoPage(l: PageLocale, cargo: PageCargo | null, similar: PageCargo[], links: PageLinks, similarHref: (c: PageCargo) => string): string {
   const t = T[l];
   if (!cargo) {
@@ -192,15 +202,15 @@ ${similar.length ? `<div class="card"><b>${escapeHtml(t.similar)}</b>${similar.m
   const body = `<div class="card hero" data-testid="share-cargo">${numberLine}<h1>${escapeHtml(r)}</h1><div class="big">${escapeHtml(money(cargo.price, cargo.currency, l))}</div><div class="muted">${escapeHtml(perKm.trim())}</div>${terms(cargo, l) ? `<div data-testid="share-terms">${escapeHtml(terms(cargo, l))}</div>` : ''}${advance(cargo, l) ? `<div class="advance" data-testid="share-advance">${escapeHtml(advance(cargo, l).replace(/^./, (c) => c.toLocaleUpperCase(l)))}</div>` : ''}</div>
 <div class="card"><div>🚛 <b>${escapeHtml(r)}</b>${cargo.distanceKm ? ` · ${groupThousands(cargo.distanceKm)} ${escapeHtml(t.km)}` : ''}</div>
 <div>${escapeHtml(cargoFacts(cargo, l))}</div><div>💰 ${escapeHtml(money(cargo.price, cargo.currency, l) + perKm)}</div>
-<div>📅 ${escapeHtml(t.loading)} ${escapeHtml(shortDate(cargo.readyDate, l))}</div><div class="muted">${escapeHtml(cargo.companyName + rating)}</div></div>
+<div>📅 ${escapeHtml(t.loading)} ${escapeHtml(shortDate(cargo.readyDate, l))}</div><div class="muted">${escapeHtml(cargo.companyName + rating)}${companyBadge(cargo.companyIsVerified, l)}</div></div>
 ${actions(l, links, t.respond)}`;
   const description = [cargoFacts(cargo, l), money(cargo.price, cargo.currency, l), terms(cargo, l), advance(cargo, l), `${t.loading} ${shortDate(cargo.readyDate, l)}`].filter(Boolean).join(' · ');
   return layout(l, `${r} · ${money(cargo.price, cargo.currency, l)}`, description, body, links, false);
 }
 
-export function renderCompanyPage(l: PageLocale, companyName: string, cargos: PageCargo[], links: PageLinks, cargoHref: (c: PageCargo) => string): string {
+export function renderCompanyPage(l: PageLocale, companyName: string, cargos: PageCargo[], links: PageLinks, cargoHref: (c: PageCargo) => string, companyIsVerified = false): string {
   const t = T[l];
-  const body = `<div class="card" data-testid="share-company"><h1>${escapeHtml(companyName)}</h1><div class="muted">${escapeHtml(t.companyCargos)}</div>
+  const body = `<div class="card" data-testid="share-company"><h1>${escapeHtml(companyName)}</h1><div>${companyBadge(companyIsVerified, l).trim()}</div><div class="muted">${escapeHtml(t.companyCargos)}</div>
 ${cargos.length ? cargos.map((c) => cargoRow(c, l, cargoHref(c))).join('') : `<p class="muted">${escapeHtml(t.noActive)}</p>`}</div>${actions(l, links, t.respond)}`;
   return layout(l, `${companyName} — ${t.companyCargos}`, cargos.slice(0, 3).map((c) => route(c, l)).join('; ') || t.noActive, body, links, false);
 }

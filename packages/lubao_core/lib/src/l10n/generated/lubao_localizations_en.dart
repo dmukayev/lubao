@@ -1775,7 +1775,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String adminAttentionUnverifiedCompanies(int count) {
-    return 'Unverified companies: $count';
+    return 'Unverified with cargo in the feed: $count';
   }
 
   @override
@@ -2585,7 +2585,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get companyNotVerifiedBannerText =>
-      'The company is not verified — upload the registration certificate below';
+      'The company is not verified — cargo is published, but drivers see “Not verified”. Upload the certificate below';
 
   @override
   String get companyEditTitle => 'Company details';
@@ -3116,6 +3116,52 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   @override
   String get errContactPhoneRequired =>
       'Enter a phone number — otherwise drivers can\'t call you';
+
+  @override
+  String get errCompanyActiveLimit =>
+      'Without verification you can have up to 10 active cargos. Verify the company to publish more';
+
+  @override
+  String get errCompanyPaused =>
+      'Publishing is paused after drivers\' complaints. Verify the company to lift the pause';
+
+  @override
+  String get companyBadgeVerified => 'Verified';
+
+  @override
+  String get companyBadgeUnverified => 'Not verified';
+
+  @override
+  String get postCargoLimitTitle => 'Company verification needed';
+
+  @override
+  String get postCargoGoVerify => 'Get verified';
+
+  @override
+  String get cargoComplainTitle => 'Report this cargo';
+
+  @override
+  String get cargoComplainBody =>
+      'What\'s wrong with the cargo or the company? An administrator will look into it.';
+
+  @override
+  String adminAttentionPausedCompanies(int count) {
+    return 'Paused after complaints: $count';
+  }
+
+  @override
+  String get adminFilterActiveUnverified => 'Unverified with cargo';
+
+  @override
+  String get adminFilterPaused => 'Paused';
+
+  @override
+  String adminCompanyPausedBanner(int count) {
+    return 'Publishing is paused: driver complaints — $count. Cargo is hidden from the feed, new cargo can\'t be published.';
+  }
+
+  @override
+  String get adminCompanyUnpause => 'Lift the pause';
 
   @override
   String get errCurrencyLocked =>
@@ -4146,15 +4192,16 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
       'Unlocks after your documents are verified';
 
   @override
-  String get preVerifyCompanyCan => 'You can: see drivers and message them';
+  String get preVerifyCompanyCan =>
+      'You can: publish up to 10 cargos, call and message drivers';
 
   @override
   String get preVerifyCompanyCannot =>
-      'You can\'t: publish cargo or call drivers';
+      'You can\'t: have more than 10 active cargos; drivers see “Not verified”';
 
   @override
   String get preVerifyCompanyAfter =>
-      'Cargo and calls unlock after your company is verified';
+      'After verification — no limit and a “Verified” badge';
 
   @override
   String get driversTabAll => 'All';

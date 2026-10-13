@@ -14,6 +14,7 @@ class Deal {
     this.driverAvatarVersion,
     required this.companyId,
     required this.companyName,
+    this.companyIsVerified = false,
     required this.status,
     this.cancelReason,
     this.cancelReasonCode,
@@ -66,6 +67,8 @@ class Deal {
   final String? driverAvatarVersion;
   final String companyId;
   final String companyName;
+  /// 066: плашка «Проверена / Не проверена».
+  final bool companyIsVerified;
   final DealStatus status;
   final String? cancelReason;
 
@@ -101,6 +104,7 @@ class Deal {
         driverAvatarVersion: json['driverAvatarVersion'] as String?,
         companyId: json['companyId'] as String,
         companyName: json['companyName'] as String? ?? '',
+        companyIsVerified: json['companyIsVerified'] as bool? ?? false,
         status: dealStatusFromJson(json['status'] as String),
         cancelReason: json['cancelReason'] as String?,
         cancelReasonCode: json['cancelReasonCode'] as String?,

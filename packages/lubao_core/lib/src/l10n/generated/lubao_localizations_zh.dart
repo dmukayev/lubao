@@ -1741,7 +1741,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String adminAttentionUnverifiedCompanies(int count) {
-    return '未验证公司：$count';
+    return '未认证但货物已上架：$count';
   }
 
   @override
@@ -2532,7 +2532,8 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
       '发布货物功能将在公司验证通过后开放——请在公司资料中上传注册证书';
 
   @override
-  String get companyNotVerifiedBannerText => '公司尚未通过验证——请在下方上传注册证书';
+  String get companyNotVerifiedBannerText =>
+      '公司尚未认证——货物可以发布，但司机会看到“未认证”。请在下方上传注册证书';
 
   @override
   String get companyEditTitle => '公司信息';
@@ -3039,6 +3040,49 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get errContactPhoneRequired => '请填写电话——否则司机无法联系您';
+
+  @override
+  String get errCompanyActiveLimit => '未认证公司最多可有 10 个进行中的货物。完成公司认证即可发布更多';
+
+  @override
+  String get errCompanyPaused => '因司机投诉，发布已暂停。完成公司认证后即可恢复';
+
+  @override
+  String get companyBadgeVerified => '已认证';
+
+  @override
+  String get companyBadgeUnverified => '未认证';
+
+  @override
+  String get postCargoLimitTitle => '需要公司认证';
+
+  @override
+  String get postCargoGoVerify => '去认证';
+
+  @override
+  String get cargoComplainTitle => '投诉该货物';
+
+  @override
+  String get cargoComplainBody => '货物或公司有什么问题？管理员会处理。';
+
+  @override
+  String adminAttentionPausedCompanies(int count) {
+    return '因投诉暂停：$count';
+  }
+
+  @override
+  String get adminFilterActiveUnverified => '未认证且有货物';
+
+  @override
+  String get adminFilterPaused => '已暂停';
+
+  @override
+  String adminCompanyPausedBanner(int count) {
+    return '发布已暂停：司机投诉 $count 条。货物已从列表隐藏，不能发布新货物。';
+  }
+
+  @override
+  String get adminCompanyUnpause => '解除暂停';
 
   @override
   String get errCurrencyLocked => '无法更改币种：已有带价格的报名或交易';
@@ -4035,13 +4079,13 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get preVerifyDriverAfter => '证件审核通过后开放';
 
   @override
-  String get preVerifyCompanyCan => '可以：查看司机并给他们发消息';
+  String get preVerifyCompanyCan => '可以：发布最多 10 个货物，给司机打电话和发消息';
 
   @override
-  String get preVerifyCompanyCannot => '不可以：发布货物、给司机打电话';
+  String get preVerifyCompanyCannot => '不可以：超过 10 个进行中的货物；司机会看到“未认证”';
 
   @override
-  String get preVerifyCompanyAfter => '公司审核通过后可发布货物和打电话';
+  String get preVerifyCompanyAfter => '认证后——不限数量，并显示“已认证”标记';
 
   @override
   String get driversTabAll => '全部';

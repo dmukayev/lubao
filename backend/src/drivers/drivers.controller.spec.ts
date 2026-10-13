@@ -19,8 +19,8 @@ describe('DriversController.vehiclePhotos — доступ', () => {
   }
   const ctx = (isVerified: boolean) => ({ user: { id: 'logist-1' }, companyMember: { companyId: 'c1', company: { isVerified } } }) as any;
 
-  it('непроверенная компания — 403', async () => {
-    await expect(setup({ arrival: { id: 'a' } }).controller.vehiclePhotos(ctx(false), 'd1')).rejects.toBeInstanceOf(ForbiddenException);
+  it('066: непроверенная компания видит фото так же, как проверенная', async () => {
+    await expect(setup({ arrival: { id: 'a' } }).controller.vehiclePhotos(ctx(false), 'd1')).resolves.toEqual([]);
   });
 
   it('водитель компании не виден (нет анонса, отклика, сделки) — 404, перебор id ничего не даёт', async () => {

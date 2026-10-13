@@ -25,6 +25,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { toDateOnly } from '../common/date-only';
 import { avatarVersion } from '../drivers/avatar-version';
 import { currentVehicleCombo } from './vehicle-combo';
+import { pauseAfterComplaints } from '../companies/publishing-pause';
 
 function rethrowStatusRace(e: unknown): never {
   if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') throw new ConflictException('DEAL_STATUS_CHANGED');
@@ -97,6 +98,8 @@ export class DealsService {
       trailerId: deal.trailerId,
       companyId: deal.companyId,
       companyName: deal.company.name,
+      // 066: плашка «Проверена / Не проверена».
+      companyIsVerified: deal.company.isVerified,
       status: deal.status,
       cancelReason: deal.cancelReason,
       cancelReasonCode: deal.cancelReasonCode,
@@ -396,6 +399,8 @@ export class DealsService {
     const created = await this.prisma.complaint.create({
       data: { reporterUserId, targetType: 'DEAL', targetId: id, reason: reason.trim(), description: description?.trim() || null },
     });
+    // 066 п.5: жалоба водителя — в счёт паузы публикации компании.
+    if (ctx.driverId) await pauseAfterComplaints(this.prisma, deal.companyId);
     return { id: created.id, status: created.status };
   }
 

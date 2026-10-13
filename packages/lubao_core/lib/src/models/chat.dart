@@ -9,6 +9,8 @@ class ChatThread {
     required this.driverId,
     required this.companyId,
     required this.counterpartName,
+    this.companyName,
+    this.companyIsVerified = false,
     this.counterpartAvatarVersion,
     this.counterpartLocale,
     this.counterpartHasPhone = false,
@@ -25,6 +27,9 @@ class ChatThread {
   final String driverId;
   final String companyId;
   final String counterpartName;
+  /// 066: водителю — компания собеседника и плашка «Проверена / Не проверена».
+  final String? companyName;
+  final bool companyIsVerified;
   final String? counterpartAvatarVersion;
   final String? counterpartLocale;
   /// Номер собеседника — только по нажатию (043 п.11, `ChatRepository.revealContact`).
@@ -52,6 +57,8 @@ class ChatThread {
         driverId: json['driverId'] as String,
         companyId: json['companyId'] as String,
         counterpartName: json['counterpartName'] as String? ?? '',
+        companyName: json['companyName'] as String?,
+        companyIsVerified: json['companyIsVerified'] as bool? ?? false,
         counterpartAvatarVersion: json['counterpartAvatarVersion'] as String?,
         counterpartLocale: json['counterpartLocale'] as String?,
         lastSeenAt: json['counterpartLastSeenAt'] == null ? null : DateTime.parse(json['counterpartLastSeenAt'] as String),

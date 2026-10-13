@@ -13,6 +13,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/data_providers.dart';
 import 'status_helpers.dart';
 import 'error_feedback.dart';
+import 'company_verified_badge.dart';
 import 'location_permission.dart';
 import 'tracking_consent_sheet.dart';
 import 'driver_avatar.dart';
@@ -315,11 +316,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    thread?.counterpartName ?? t.chatTitle,
-                    style: AppTextStyles.bodyStrong,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  // 066: водителю — плашка компании «Проверена / Не проверена» рядом с именем.
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          thread?.counterpartName ?? t.chatTitle,
+                          style: AppTextStyles.bodyStrong,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isDriver && thread?.companyName != null) ...[
+                        const SizedBox(width: AppSpacing.xs),
+                        CompanyVerifiedBadge(isVerified: thread!.companyIsVerified, keySuffix: 'chat'),
+                      ],
+                    ],
                   ),
                   // 058 п.7: «в сети» и «пишет на …» — одной строкой: шапка не
                   // выше AppBar (иначе заезжала под строку статуса на SE).

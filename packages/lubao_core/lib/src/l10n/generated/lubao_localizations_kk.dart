@@ -1771,7 +1771,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String adminAttentionUnverifiedCompanies(int count) {
-    return 'Тексерілмеген компаниялар: $count';
+    return 'Тексерілмеген, жүктері лентада: $count';
   }
 
   @override
@@ -2584,7 +2584,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get companyNotVerifiedBannerText =>
-      'Компания тексерілмеген — төмендегі тіркеу туралы куәлікті жүктеңіз';
+      'Компания тексерілмеген — жүктер жарияланады, бірақ жүргізушілер «Тексерілмеген» деп көреді. Төменде куәлікті жүктеңіз';
 
   @override
   String get companyEditTitle => 'Компания деректері';
@@ -3109,6 +3109,52 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   @override
   String get errContactPhoneRequired =>
       'Телефонды көрсетіңіз — онсыз жүргізуші қоңырау шала алмайды';
+
+  @override
+  String get errCompanyActiveLimit =>
+      'Тексерусіз 10 белсенді жүкке дейін болады. Көбірек жариялау үшін компанияны тексеруден өткізіңіз';
+
+  @override
+  String get errCompanyPaused =>
+      'Жүргізушілердің шағымдарынан кейін жариялау тоқтатылды. Компанияны тексеруден өткізіңіз — үзіліс алынады';
+
+  @override
+  String get companyBadgeVerified => 'Тексерілген';
+
+  @override
+  String get companyBadgeUnverified => 'Тексерілмеген';
+
+  @override
+  String get postCargoLimitTitle => 'Компанияны тексеру керек';
+
+  @override
+  String get postCargoGoVerify => 'Тексеруден өту';
+
+  @override
+  String get cargoComplainTitle => 'Жүкке шағымдану';
+
+  @override
+  String get cargoComplainBody =>
+      'Жүкте немесе компанияда не дұрыс емес? Әкімші қарап шығады.';
+
+  @override
+  String adminAttentionPausedCompanies(int count) {
+    return 'Шағымнан кейін үзілісте: $count';
+  }
+
+  @override
+  String get adminFilterActiveUnverified => 'Тексерілмеген, жүгі бар';
+
+  @override
+  String get adminFilterPaused => 'Үзілісте';
+
+  @override
+  String adminCompanyPausedBanner(int count) {
+    return 'Жариялау үзілісте: жүргізуші шағымдары — $count. Жүктер лентадан жасырылған, жаңалары жарияланбайды.';
+  }
+
+  @override
+  String get adminCompanyUnpause => 'Үзілісті алу';
 
   @override
   String get errCurrencyLocked =>
@@ -4132,15 +4178,15 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String get preVerifyCompanyCan =>
-      'Болады: жүргізушілерді көру және оларға жазу';
+      'Болады: 10 жүкке дейін жариялау, жүргізушілерге қоңырау шалу және жазу';
 
   @override
   String get preVerifyCompanyCannot =>
-      'Болмайды: жүк жариялау және жүргізушілерге қоңырау шалу';
+      'Болмайды: 10-нан артық белсенді жүк; жүргізушілер «Тексерілмеген» деп көреді';
 
   @override
   String get preVerifyCompanyAfter =>
-      'Жүктер мен қоңыраулар — компания тексерілгеннен кейін';
+      'Тексеруден кейін — шектеусіз және «Тексерілген» белгісімен';
 
   @override
   String get driversTabAll => 'Барлығы';

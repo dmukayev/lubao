@@ -41,12 +41,6 @@ describe('ContactPolicyService', () => {
     expect(prisma.response.findFirst.mock.calls[0][0].where.status).toEqual({ in: ['PENDING', 'SELECTED'] });
   });
 
-  it('логист непроверенной компании — COMPANY_NOT_VERIFIED', () => {
-    const { service } = setup();
-    expect(() => service.assertCompanyMayContactDriver({ isVerified: false })).toThrow(ForbiddenException);
-    expect(() => service.assertCompanyMayContactDriver({ isVerified: true })).not.toThrow();
-  });
-
   it('31-й разный номер за сутки — 429 и запись в журнал; повтор того же номера лимит не тратит', async () => {
     const { prisma, service } = setup();
     for (let i = 0; i < 30; i++) await service.consume('u1', `cargo:${i}`);

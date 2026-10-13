@@ -10,6 +10,7 @@ import '../../providers/data_providers.dart';
 import 'status_helpers.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'error_feedback.dart';
+import 'company_verified_badge.dart';
 import 'tracking_consent_sheet.dart';
 import 'map_links.dart';
 import '../driver/feed/driver_status.dart';
@@ -357,6 +358,8 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                     Expanded(child: Text(isDriver ? deal.companyName : deal.driverName, style: Theme.of(context).textTheme.titleLarge)),
                   ],
                 ),
+                // 066: водителю — «Проверена / Не проверена» у компании.
+                if (isDriver) CompanyVerifiedBadge(isVerified: deal.companyIsVerified, keySuffix: 'deal'),
                 // Плашка — отдельной строкой: имя не рвётся посреди слова на узком экране.
                 const SizedBox(height: 4),
                 StatusBadge(label: statusLabel, color: statusColor),

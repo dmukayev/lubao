@@ -8,7 +8,7 @@ const links = { appUrl: 'https://app.lubao.kz/c/Abc2345', androidUrl: 'https://a
 const cargo: PageCargo = {
   id: 'c1', origin: { ru: 'Алматы', en: 'Almaty', zh: '阿拉木图', kk: 'Алматы' }, destination: { ru: 'Астана', en: 'Astana', zh: '阿斯塔纳', kk: 'Астана' },
   category: { ru: 'Стройматериалы', en: 'Building materials' }, bodyType: { ru: 'Тент', en: 'Tent' }, weightKg: 20000, distanceKm: 1230,
-  price: 850000, pricePerKm: 691, currency: 'KZT', readyDate: new Date('2026-10-09T00:00:00Z'), companyName: 'ТОО <Транс>', companyRatingAvg: 4.8, companyRatingCount: 3,
+  price: 850000, pricePerKm: 691, currency: 'KZT', readyDate: new Date('2026-10-09T00:00:00Z'), companyName: 'ТОО <Транс>', companyIsVerified: false, companyRatingAvg: 4.8, companyRatingCount: 3,
 };
 
 describe('коды и язык страницы', () => {

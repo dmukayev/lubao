@@ -5,6 +5,7 @@ import 'package:lubao_core/lubao_core.dart';
 
 import '../../../providers/api_providers.dart';
 import '../../../providers/data_providers.dart';
+import '../../shared/company_verified_badge.dart';
 import '../../shared/error_feedback.dart';
 import '../../shared/status_helpers.dart';
 
@@ -221,6 +222,7 @@ class _TripCargo {
     required this.currency,
     required this.readyDate,
     required this.companyName,
+    this.companyIsVerified = false,
     this.advanceAmount,
     this.paymentForm,
     this.paymentDelayDays,
@@ -241,6 +243,8 @@ class _TripCargo {
   final Currency currency;
   final DateTime readyDate;
   final String companyName;
+  /// 066: плашка «Проверена / Не проверена».
+  final bool companyIsVerified;
 
   factory _TripCargo.fromResponse(MyResponseEntry r) => _TripCargo(
         pointId: r.pointId,
@@ -254,6 +258,7 @@ class _TripCargo {
         currency: r.currency,
         readyDate: r.readyDate,
         companyName: r.companyName,
+        companyIsVerified: r.companyIsVerified,
         advanceAmount: r.advanceAmount,
         paymentForm: r.paymentForm,
         paymentDelayDays: r.paymentDelayDays,
@@ -275,6 +280,7 @@ class _TripCargo {
       currency: c.currency,
       readyDate: c.readyDate,
       companyName: d.companyName,
+      companyIsVerified: d.companyIsVerified,
       advanceAmount: c.advanceAmount,
       paymentForm: c.paymentForm,
       paymentDelayDays: c.paymentDelayDays,
@@ -294,6 +300,7 @@ class _TripCargo {
         currency: c.currency,
         readyDate: c.readyDate,
         companyName: c.companyName,
+        companyIsVerified: c.companyIsVerified,
         advanceAmount: c.advanceAmount,
         paymentForm: c.paymentForm,
         paymentDelayDays: c.paymentDelayDays,
@@ -301,7 +308,7 @@ class _TripCargo {
 
   factory _TripCargo.fromDeal(Deal d) =>
       fromDealOrNull(d) ??
-      _TripCargo(destinationCountryId: '', bodyTypeId: '', price: 0, currency: Currency.kzt, readyDate: d.createdAt, companyName: d.companyName);
+      _TripCargo(destinationCountryId: '', bodyTypeId: '', price: 0, currency: Currency.kzt, readyDate: d.createdAt, companyName: d.companyName, companyIsVerified: d.companyIsVerified);
 }
 
 /// Карточка рейса по эталону 32: маршрут и цена, «категория · вес · кузов ·
@@ -362,7 +369,11 @@ class _TripCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(details, style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
-          if (cargo.companyName.isNotEmpty) Text(cargo.companyName, style: AppTextStyles.small.copyWith(color: AppColors.textSecondary)),
+          if (cargo.companyName.isNotEmpty)
+            Text.rich(
+              TextSpan(children: [TextSpan(text: cargo.companyName), CompanyVerifiedBadge.span(isVerified: cargo.companyIsVerified)]),
+              style: AppTextStyles.small.copyWith(color: AppColors.textSecondary),
+            ),
           if (advance != null) ...[const SizedBox(height: AppSpacing.sm), AdvancePill(advance)],
           if (badge != null) ...[const SizedBox(height: AppSpacing.sm), badge!],
           if (actions.isNotEmpty) ...[const SizedBox(height: AppSpacing.sm), Row(children: actions)],

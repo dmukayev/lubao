@@ -330,7 +330,8 @@ assert(driverContact.status === 200 && driverContact.json.phone === DEL_PHONE, '
 const newCo = await api('POST', '/auth/company/register', { body: { email: `e2e-unverified-${Date.now()}@lubao-test.kz`, password: 'E2eLubao2026!', ownerName: 'Тест Непроверенный', companyName: 'Unverified LLC', countryId: refData.countries[0].id, offerVersion: '2026-10-08' } });
 assert(newCo.status < 300, 'новая компания с офертой регистрируется', `status=${newCo.status}`);
 const unverifiedContact = await api('POST', `/drivers/${delDriverId}/contact`, { token: newCo.json.accessToken, body: { type: 'CALL' } });
-assert(unverifiedContact.status === 403 && unverifiedContact.json.code === 'COMPANY_NOT_VERIFIED', 'непроверенная компания номер водителя не получает', `status=${unverifiedContact.status}`);
+// 066: непроверенная компания видит номер так же, как проверенная (лимит ≈30 в сутки общий).
+assert(unverifiedContact.status === 200 && unverifiedContact.json.phone === DEL_PHONE, 'непроверенная компания получает номер водителя по нажатию', `status=${unverifiedContact.status}`);
 const contactAdmin = (await get(`/admin/drivers/${delDriverId}`)).json;
 assert((contactAdmin.stats?.calls ?? 0) >= 2, 'звонки записаны в contact_events (карточка админки)', JSON.stringify(contactAdmin.stats ?? {}));
 
@@ -559,6 +560,43 @@ assert(csv.status === 200 && csv.text.includes('median_kzt_per_km'), 'админ
   const dealHits = (await get(`/admin/deals?q=${encodeURIComponent(deal.number)}`)).json.items;
   assert(dealHits.length === 1 && dealHits[0].id === deal.id, 'поиск сделки по номеру с машиной');
   assert((await get(`/admin/deals/${deal.id}`)).json.number === deal.number, 'номер в карточке сделки');
+}
+
+// ---- 066. Публикация без проверки: лимит 10, жалобы → пауза, админ снимает ----
+{
+  const co = await api('POST', '/auth/company/register', { body: { email: `e2e-066-${Date.now()}@lubao-test.kz`, password: 'E2eLubao2026!', ownerName: 'Тест Без Проверки', companyName: 'NoCheck LLC', countryId: refData.countries[0].id, offerVersion: '2026-10-08' } });
+  const coToken = co.json.accessToken;
+  const body = { pointId: almaty048.id, destinationCountryId: kz046, bodyTypeId: tentType.id, categoryId: otherCategoryId, price: 500, currency: 'USD', readyDate: '2030-04-01' };
+  const noPhone = await api('POST', '/cargos', { token: coToken, body });
+  assert(noPhone.status === 400 && noPhone.json.code === 'CONTACT_PHONE_REQUIRED', 'без телефона логиста — не публикуется', `status=${noPhone.status}`);
+  await api('PATCH', '/companies/me/contact', { token: coToken, body: { contactPhone: '+77010000080' } });
+  const first = await api('POST', '/cargos', { token: coToken, body });
+  assert(first.status < 300 && first.json.companyIsVerified === false, 'новая компания публикует сразу, без проверки и документов', `status=${first.status} ${first.text.slice(0, 120)}`);
+  for (let i = 2; i <= 10; i++) await api('POST', '/cargos', { token: coToken, body: { ...body, price: 500 + i } });
+  const eleventh = await api('POST', '/cargos', { token: coToken, body: { ...body, price: 611 } });
+  assert(eleventh.status === 403 && eleventh.json.code === 'COMPANY_ACTIVE_LIMIT', '11-й активный груз непроверенной компании — COMPANY_ACTIVE_LIMIT', `status=${eleventh.status}`);
+  const coId = first.json.companyId;
+  const att = (await get('/admin/attention')).json;
+  assert(att.unverifiedCompanies >= 1, '«Требует внимания»: непроверенные компании с грузами', JSON.stringify(att.unverifiedCompanies));
+  const activeList = (await get('/admin/companies?verified=false&activeCargos=true&pageSize=200')).json.items;
+  assert(activeList.some((c) => c.id === coId && c.activeCargoCount === 10), 'список «не проверены, с грузами» — компания с 10 активными');
+
+  const d1 = await newDriver('+77010000081', tentType.id, { capacityTons: 20 });
+  const d2 = await newDriver('+77010000082', tentType.id, { capacityTons: 20 });
+  assert((await feedIds(d1.token)).includes(first.json.id), 'груз непроверенной компании в ленте водителя');
+  const c1 = await api('POST', `/cargos/${first.json.id}/complaint`, { token: d1.token, body: { reason: 'Тест 066: не отвечает' } });
+  assert(c1.status < 300, 'водитель жалуется на груз', `status=${c1.status}`);
+  assert(((await get(`/admin/companies/${coId}`)).json.publishingPausedAt ?? null) === null, 'одна жалоба — без паузы');
+  await api('POST', `/cargos/${first.json.id}/complaint`, { token: d2.token, body: { reason: 'Тест 066: предоплата' } });
+  const paused = (await get(`/admin/companies/${coId}`)).json;
+  assert(!!paused.publishingPausedAt && paused.driverComplaints === 2, 'жалобы двух водителей — публикация на паузе', JSON.stringify({ p: paused.publishingPausedAt, n: paused.driverComplaints }));
+  assert(!(await feedIds(d1.token)).includes(first.json.id), 'на паузе — грузы скрыты из ленты');
+  const pausedPublish = await api('POST', '/cargos', { token: coToken, body });
+  assert(pausedPublish.status === 403 && pausedPublish.json.code === 'COMPANY_PAUSED', 'на паузе новый груз — COMPANY_PAUSED', `status=${pausedPublish.status}`);
+  assert((await get('/admin/attention')).json.pausedCompanies >= 1, '«Требует внимания»: компании на паузе');
+  const unpause = await api('POST', `/admin/companies/${coId}/unpause`, { token, body: { reason: 'E2E: разобрались' } });
+  assert(unpause.status < 300, 'админ снимает паузу', `status=${unpause.status}`);
+  assert((await feedIds(d1.token)).includes(first.json.id), 'после снятия паузы груз снова в ленте');
 }
 
 console.log(`Готово: ${checks} проверок.`);

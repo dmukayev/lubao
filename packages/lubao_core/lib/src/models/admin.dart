@@ -862,10 +862,13 @@ class AdminCompanyRow {
     required this.isVerified,
     required this.pendingDocsCount,
     required this.isBlocked,
+    this.publishingPaused = false,
     required this.ratingAvg,
     required this.ratingCount,
   });
 
+  /// 066 п.5: публикация на паузе после жалоб водителей.
+  final bool publishingPaused;
   final String id;
   final String name;
   final String? nameRu;
@@ -896,6 +899,7 @@ class AdminCompanyRow {
       isVerified: json['isVerified'] as bool,
       pendingDocsCount: json['pendingDocsCount'] as int,
       isBlocked: json['isBlocked'] as bool,
+      publishingPaused: json['publishingPaused'] as bool? ?? false,
       ratingAvg: (json['ratingAvg'] as num).toDouble(),
       ratingCount: json['ratingCount'] as int,
     );
@@ -1004,6 +1008,8 @@ class AdminCompanyDetail {
     this.taxId,
     required this.isVerified,
     required this.isBlocked,
+    this.publishingPausedAt,
+    this.driverComplaints = 0,
     required this.ratingAvg,
     required this.ratingCount,
     required this.documents,
@@ -1029,6 +1035,9 @@ class AdminCompanyDetail {
   final String? taxId;
   final bool isVerified;
   final bool isBlocked;
+  /// 066 п.5: пауза публикации и жалобы водителей с последнего снятия паузы.
+  final DateTime? publishingPausedAt;
+  final int driverComplaints;
   final double ratingAvg;
   final int ratingCount;
   final List<AdminCardDocument> documents;
@@ -1060,6 +1069,8 @@ class AdminCompanyDetail {
         taxId: json['taxId'] as String?,
         isVerified: json['isVerified'] as bool,
         isBlocked: json['isBlocked'] as bool,
+        publishingPausedAt: json['publishingPausedAt'] == null ? null : DateTime.parse(json['publishingPausedAt'] as String),
+        driverComplaints: json['driverComplaints'] as int? ?? 0,
         ratingAvg: (json['ratingAvg'] as num).toDouble(),
         ratingCount: json['ratingCount'] as int,
         documents: (json['documents'] as List<dynamic>).map((e) => AdminCardDocument.fromJson(e as Map<String, dynamic>)).toList(),
@@ -1204,6 +1215,7 @@ class AdminAttention {
     required this.openComplaints,
     required this.staleDeals,
     required this.unverifiedCompanies,
+    this.pausedCompanies = 0,
     required this.pendingCities,
     this.blacklistMatches = 0,
     this.suspiciousContacts = const [],
@@ -1217,7 +1229,9 @@ class AdminAttention {
   final int pendingVerificationOldestAgeHours;
   final int openComplaints;
   final int staleDeals;
+  /// 066 п.5: непроверенные компании с грузами в ленте; на паузе после жалоб.
   final int unverifiedCompanies;
+  final int pausedCompanies;
   final int pendingCities;
 
   /// «Совпадения с чёрным списком» (задача 032, п.11 / 038).
@@ -1234,6 +1248,7 @@ class AdminAttention {
       openComplaints: json['openComplaints'] as int,
       staleDeals: json['staleDeals'] as int,
       unverifiedCompanies: json['unverifiedCompanies'] as int,
+      pausedCompanies: json['pausedCompanies'] as int? ?? 0,
       pendingCities: json['pendingCities'] as int,
       blacklistMatches: json['blacklistMatches'] as int? ?? 0,
       suspiciousContacts: [

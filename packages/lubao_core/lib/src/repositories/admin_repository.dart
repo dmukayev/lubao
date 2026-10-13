@@ -356,11 +356,13 @@ class AdminRepository {
 
   /// Поиск/фильтр/пагинация (задача 026, п.2/п.10) — таблица компаний в
   /// админке, а не весь список целиком (на пилоте уже сотни строк).
-  Future<AdminSearchPage<AdminCompanyRow>> searchCompanies({String? q, bool? verified, bool? blocked, int page = 1, int pageSize = 50}) async {
+  Future<AdminSearchPage<AdminCompanyRow>> searchCompanies({String? q, bool? verified, bool? blocked, bool? activeCargos, bool? paused, int page = 1, int pageSize = 50}) async {
     final res = await _client.dio.get('/admin/companies', queryParameters: {
       if (q != null && q.isNotEmpty) 'q': q,
       if (verified != null) 'verified': verified,
       if (blocked != null) 'blocked': blocked,
+      if (activeCargos != null) 'activeCargos': activeCargos,
+      if (paused != null) 'paused': paused,
       'page': page,
       'pageSize': pageSize,
     });
@@ -440,6 +442,11 @@ class AdminRepository {
 
   Future<void> blockCompany(String companyId, {required String reason}) async {
     await _client.dio.post('/admin/companies/$companyId/block', data: {'reason': reason});
+  }
+
+  /// 066 п.5: снять паузу публикации после жалоб.
+  Future<void> unpauseCompany(String companyId, {required String reason}) async {
+    await _client.dio.post('/admin/companies/$companyId/unpause', data: {'reason': reason});
   }
 
   Future<void> unblockCompany(String companyId, {required String reason}) async {

@@ -364,6 +364,12 @@ export class AdminController {
     return this.admin.setCompanyVerified(id, ctx.user.id, dto);
   }
 
+  @Post('companies/:id/unpause')
+  unpauseCompany(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminReasonDto) {
+    assertAdmin(ctx);
+    return this.admin.unpauseCompany(id, ctx.user.id, dto.reason);
+  }
+
   @Patch('companies/:id')
   updateCompany(@CurrentUser() ctx: RequestContext, @Param('id') id: string, @Body() dto: AdminUpdateCompanyDto) {
     assertAdmin(ctx);
