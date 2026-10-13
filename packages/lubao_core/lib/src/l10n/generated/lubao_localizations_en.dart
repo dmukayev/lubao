@@ -994,7 +994,7 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String chatWritesIn(String language) {
-    return 'Writing in $language';
+    return 'User\'s language: $language';
   }
 
   @override

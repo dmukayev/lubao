@@ -991,7 +991,7 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
 
   @override
   String chatWritesIn(String language) {
-    return '$language тілінде жазады';
+    return 'Пайдаланушы тілі — $language';
   }
 
   @override

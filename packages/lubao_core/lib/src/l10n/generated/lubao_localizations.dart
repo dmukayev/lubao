@@ -1911,31 +1911,31 @@ abstract class LubaoLocalizations {
   /// No description provided for @chatWritesIn.
   ///
   /// In ru, this message translates to:
-  /// **'Пишет на {language}'**
+  /// **'Язык пользователя — {language}'**
   String chatWritesIn(String language);
 
   /// No description provided for @languageNameRu.
   ///
   /// In ru, this message translates to:
-  /// **'русском'**
+  /// **'русский'**
   String get languageNameRu;
 
   /// No description provided for @languageNameKk.
   ///
   /// In ru, this message translates to:
-  /// **'казахском'**
+  /// **'казахский'**
   String get languageNameKk;
 
   /// No description provided for @languageNameZh.
   ///
   /// In ru, this message translates to:
-  /// **'китайском'**
+  /// **'китайский'**
   String get languageNameZh;
 
   /// No description provided for @languageNameEn.
   ///
   /// In ru, this message translates to:
-  /// **'английском'**
+  /// **'английский'**
   String get languageNameEn;
 
   /// No description provided for @chatToday.

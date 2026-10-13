@@ -308,7 +308,7 @@
   "chatLoadingPlaceLinkInvalid": "https:// сілтемесі керек, ұзындығы 500 таңбаға дейін",
   "chatTranslatedBadge": "Аударылды",
   "chatShowOriginal": "түпнұсқа",
-  "chatWritesIn": "{language} тілінде жазады",
+  "chatWritesIn": "Пайдаланушы тілі — {language}",
   "languageNameRu": "орыс",
   "languageNameKk": "қазақ",
   "languageNameZh": "қытай",

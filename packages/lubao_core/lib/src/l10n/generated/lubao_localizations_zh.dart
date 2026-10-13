@@ -968,7 +968,7 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String chatWritesIn(String language) {
-    return '使用$language书写';
+    return '用户语言：$language';
   }
 
   @override

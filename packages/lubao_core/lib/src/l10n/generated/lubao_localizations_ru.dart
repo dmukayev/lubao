@@ -986,20 +986,20 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String chatWritesIn(String language) {
-    return 'Пишет на $language';
+    return 'Язык пользователя — $language';
   }
 
   @override
-  String get languageNameRu => 'русском';
+  String get languageNameRu => 'русский';
 
   @override
-  String get languageNameKk => 'казахском';
+  String get languageNameKk => 'казахский';
 
   @override
-  String get languageNameZh => 'китайском';
+  String get languageNameZh => 'китайский';
 
   @override
-  String get languageNameEn => 'английском';
+  String get languageNameEn => 'английский';
 
   @override
   String get chatToday => 'Сегодня';

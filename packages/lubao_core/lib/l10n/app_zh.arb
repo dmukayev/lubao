@@ -308,7 +308,7 @@
   "chatLoadingPlaceLinkInvalid": "需要 https:// 链接，长度不超过 500 字符",
   "chatTranslatedBadge": "已翻译",
   "chatShowOriginal": "原文",
-  "chatWritesIn": "使用{language}书写",
+  "chatWritesIn": "用户语言：{language}",
   "languageNameRu": "俄语",
   "languageNameKk": "哈萨克语",
   "languageNameZh": "中文",

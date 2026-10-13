@@ -399,11 +399,11 @@
   "chatLoadingPlaceLinkInvalid": "Нужна ссылка https:// длиной до 500 символов",
   "chatTranslatedBadge": "Переведено",
   "chatShowOriginal": "оригинал",
-  "chatWritesIn": "Пишет на {language}",
-  "languageNameRu": "русском",
-  "languageNameKk": "казахском",
-  "languageNameZh": "китайском",
-  "languageNameEn": "английском",
+  "chatWritesIn": "Язык пользователя — {language}",
+  "languageNameRu": "русский",
+  "languageNameKk": "казахский",
+  "languageNameZh": "китайский",
+  "languageNameEn": "английский",
   "@chatWritesIn": {
     "placeholders": {
       "language": {

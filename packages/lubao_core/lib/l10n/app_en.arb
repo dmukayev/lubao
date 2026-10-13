@@ -391,7 +391,7 @@
   "chatLoadingPlaceLinkInvalid": "Needs an https:// link, up to 500 characters",
   "chatTranslatedBadge": "Translated",
   "chatShowOriginal": "original",
-  "chatWritesIn": "Writing in {language}",
+  "chatWritesIn": "User's language: {language}",
   "languageNameRu": "Russian",
   "languageNameKk": "Kazakh",
   "languageNameZh": "Chinese",
