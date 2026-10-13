@@ -131,6 +131,8 @@ void main() {
       expect(texts.where((x) => x.contains('Кукуруза') || x.contains('кукуруз')).length, greaterThanOrEqualTo(3), reason: '$texts');
       expect(texts.any((x) => RegExp(r'\d{4}').hasMatch(x)), isFalse, reason: 'в подсказках нет кодов: $texts');
       expect(find.byKey(const Key('postCargoWhatAdd')), findsOneWidget);
+      // Для снимка — поле и начало подсказок.
+      await reveal(tester, field);
     });
 
     // 075: «6907» → «Плитка керамическая» → категория «Стройматериалы» сама;

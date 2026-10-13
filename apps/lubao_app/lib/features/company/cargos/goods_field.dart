@@ -64,6 +64,9 @@ class _GoodsFieldState extends ConsumerState<GoodsField> {
 
   void _onChanged(String value) {
     widget.onCleared();
+    // Подсказки к прежнему тексту убрать сразу — пока не пришли новые, по
+    // ошибке не выбрать товар от прошлого запроса («куку» → «6907»).
+    if (_hits.isNotEmpty) setState(() => _hits = const []);
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 250), () => _search(value));
   }
