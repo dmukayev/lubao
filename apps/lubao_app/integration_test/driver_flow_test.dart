@@ -290,5 +290,29 @@ void main() {
       expectInsideSafeZone(tester);
       expectNoOverflow(tester);
     });
+
+    // 070: в синей карточке нет «Изменить» — город с карандашом открывает
+    // изменение, «Отменить» / «Я уехал» — таблеткой справа от города.
+    await run.step(tester, 'анонс-город-и-кнопка-справа', () async {
+      await goTab(tester, t.navFeed);
+      await waitAndReveal(tester, find.byKey(const Key('anonsCityName')));
+      expect(find.text(t.driverHomeEditButton), findsNothing, reason: '070: кнопки «Изменить» нет');
+      final city = tester.getRect(find.byKey(const Key('anonsCityName')));
+      final leave = tester.getRect(find.byKey(const Key('anonsLeaveButton')));
+      expect(leave.left, greaterThan(city.left), reason: 'кнопка справа от города');
+      expect((leave.center.dy - city.center.dy).abs(), lessThan(city.height), reason: 'в одной строке с городом');
+      expectInsideSafeZone(tester);
+      expectNoOverflow(tester);
+    });
+
+    await run.step(tester, 'анонс-отменить-и-повторить', () async {
+      await tester.tap(find.byKey(const Key('anonsLeaveButton')));
+      await waitFor(tester, find.byKey(const Key('driverAnnounceArrivalButton')));
+      expect(find.byKey(const Key('anonsCityName')), findsNothing, reason: 'анонс снят');
+      // Вернуть анонс как был — следующим сценариям нужен водитель в Астане.
+      await tester.tap(find.text(t.driverHomeRepeatButton));
+      await waitFor(tester, find.byWidgetPredicate((w) => w is Text && w.key == const Key('anonsCityName') && w.data == 'Астана'));
+      expectNoOverflow(tester);
+    });
   });
 }

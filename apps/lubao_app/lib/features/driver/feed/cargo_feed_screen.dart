@@ -595,13 +595,52 @@ class _AnonsCard extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text(cityName, key: const Key('anonsCityName'), style: AppTextStyles.headline.copyWith(color: Colors.white)),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                isOnSite
-                    ? t.driverHomeSince(formatDateTime(arrival.arrivedAt ?? arrival.plannedAt))
-                    : t.driverHomePlannedFor(formatDate(arrival.plannedDay)),
-                style: AppTextStyles.body.copyWith(color: Colors.white.withAlpha(200)),
+              // 070: город и дата — нажатие открывает изменение анонса (вместо
+              // кнопки «Изменить»); справа «Я уехал» / «Отменить» таблеткой.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      key: const Key('anonsEditButton'),
+                      borderRadius: BorderRadius.circular(AppRadius.field),
+                      onTap: () => _openSheet(context, ref, editing: arrival),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  cityName,
+                                  key: const Key('anonsCityName'),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.headline.copyWith(color: Colors.white),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.xs),
+                              const Icon(LucideIcons.pencil, size: 16, color: Colors.white),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            isOnSite
+                                ? t.driverHomeSince(formatDateTime(arrival.arrivedAt ?? arrival.plannedAt))
+                                : t.driverHomePlannedFor(formatDate(arrival.plannedDay)),
+                            style: AppTextStyles.body.copyWith(color: Colors.white.withAlpha(200)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  _PillButton(
+                    key: const Key('anonsLeaveButton'),
+                    label: isOnSite ? t.driverHomeLeaveButton : t.driverHomeCancelButton,
+                    onTap: () => _run(context, ref, () => repo.cancel(arrivalId: arrival.id)),
+                  ),
+                ],
               ),
               if (countryChips.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.md),
@@ -625,23 +664,6 @@ class _AnonsCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
               ],
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    key: const Key('anonsEditButton'),
-                    onPressed: () => _openSheet(context, ref, editing: arrival),
-                    child: Text(t.driverHomeEditButton, style: AppTextStyles.caption.copyWith(color: Colors.white)),
-                  ),
-                  TextButton(
-                    onPressed: () => _run(context, ref, () => repo.cancel(arrivalId: arrival.id)),
-                    child: Text(
-                      isOnSite ? t.driverHomeLeaveButton : t.driverHomeCancelButton,
-                      style: AppTextStyles.caption.copyWith(color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
               for (final other in mine.others)
                 _OtherArrivalRow(
                   key: Key('otherArrival-${other.id}'),
@@ -771,6 +793,31 @@ class _OtherArrivalRow extends StatelessWidget {
           ),
           if (arrival.ask != null) _Question(arrival: arrival, onStillLooking: onStillLooking, onLeft: onCancel),
         ],
+      ),
+    );
+  }
+}
+
+/// 070: «Я уехал» / «Отменить» в строке города — белая полупрозрачная таблетка;
+/// не сжимается, длинный город обрезается слева от неё.
+class _PillButton extends StatelessWidget {
+  const _PillButton({super.key, required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withAlpha(38),
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          child: Text(label, maxLines: 1, style: AppTextStyles.small.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+        ),
       ),
     );
   }
