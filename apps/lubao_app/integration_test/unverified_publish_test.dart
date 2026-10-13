@@ -234,7 +234,7 @@ void main() {
       await tester.tap(find.byKey(Key('companyCargoCard-$cargoId')));
       await waitFor(tester, find.byKey(const Key('companyCargoDetail')));
       await waitFor(tester, find.byKey(const Key('cargoPhoto-0')));
-      expect(find.byKey(const Key('cargoDetailTerms')), findsOneWidget, reason: 'условия оплаты');
+      expect(find.byKey(Key('cargoDetailTerms-$cargoId')), findsOneWidget, reason: 'условия оплаты');
       await waitAndReveal(tester, find.byKey(const Key('companyCargoDescription')));
       expect(find.text('Плитка в коробках, грузить аккуратно'), findsOneWidget);
       await waitAndReveal(tester, find.byKey(const Key('companyCargoResponsesTitle')));

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import 'cached_photo.dart';
+import 'cargo_price_column.dart';
 import 'fullscreen_photos.dart';
 import 'status_helpers.dart';
 
@@ -24,10 +25,7 @@ class CargoMainCard extends StatelessWidget {
     // 058 п.3: флаги стран маршрута.
     final route = cargoRouteLabels(refData, pointId: cargo.pointId, destinationCountryId: cargo.destinationCountryId, destinationCityId: cargo.destinationCityId, languageCode: locale, withCountry: true);
     // 063: под ценой — когда и как платят всю сумму; аванс — отдельной плашкой.
-    final terms = paymentWhenHowLine(t, paymentForm: cargo.paymentForm, paymentDelayDays: cargo.paymentDelayDays);
     final advance = advancePillText(t, advanceAmount: cargo.advanceAmount, currency: cargo.currency);
-    final kzt = refData.convertToKzt(cargo.price, cargo.currency);
-    final usd = refData.convertToUsd(cargo.price, cargo.currency);
 
     return AppCard(
       child: Column(
@@ -51,36 +49,26 @@ class CargoMainCard extends StatelessWidget {
           ),
           CargoRoutePoint(color: AppColors.accent, title: route.destination, subtitle: null),
           const Divider(height: AppSpacing.xl * 2),
+          // 076: справа — общий столбец цены (065, эталон 35): цена → «≈ ₸» →
+          // ₸/км → «через N дн. · нал.»; слева — подпись, аванс, машины.
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(t.cargoDetailPriceLabel, style: AppTextStyles.caption),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(formatMoney(cargo.price, cargo.currency), style: AppTextStyles.priceDetail),
-                    if (terms.isNotEmpty) Text(terms, key: const Key('cargoDetailTerms'), style: AppTextStyles.body),
                     if (advance != null) ...[const SizedBox(height: AppSpacing.xs), AdvancePill(advance, key: const Key('cargoDetailAdvance'))],
-                    if (cargoTrucksLabel(t, needed: cargo.trucksNeeded, taken: cargo.trucksTaken) case final trucks?)
+                    if (cargoTrucksLabel(t, needed: cargo.trucksNeeded, taken: cargo.trucksTaken) case final trucks?) ...[
+                      const SizedBox(height: AppSpacing.xs),
                       Text(trucks, key: const Key('cargoDetailTrucks'), style: AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                    ],
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (formatKztConversion(kzt) != null) Text(formatKztConversion(kzt)!, style: AppTextStyles.caption),
-                  if (usd != null) Text(formatMoney(usd, Currency.usd), style: AppTextStyles.caption),
-                  if ((cargo.pricePerKm == null ? null : refData.convertToKzt(cargo.pricePerKm!, cargo.currency)) case final perKm?)
-                    Text(
-                      t.perKmKzt(formatThousands(perKm.round())),
-                      key: const Key('cargoDetailPerKm'),
-                      style: AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
-                    ),
-                ],
-              ),
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(child: CargoPriceColumn(cargo: cargo, refData: refData, keyPrefix: 'cargoDetail')),
             ],
           ),
           // 047 п.6: «Рынок за месяц: 650–720 ₸/км» — если есть статистика по маршруту.

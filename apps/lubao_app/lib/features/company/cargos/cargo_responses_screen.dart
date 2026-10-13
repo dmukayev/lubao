@@ -151,6 +151,11 @@ class CargoResponsesScreen extends ConsumerWidget {
                   ),
                 ],
                 const SizedBox(height: AppSpacing.md),
+                // 076: «Приглашены» — над «Откликами» (071 п.4).
+                if (invited.isNotEmpty) ...[
+                  _InvitedBlock(responses: invited, cargoId: cargoId),
+                  const SizedBox(height: AppSpacing.md),
+                ],
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
                   child: Text(
@@ -163,10 +168,6 @@ class CargoResponsesScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                if (invited.isNotEmpty) ...[
-                  _InvitedBlock(responses: invited, cargoId: cargoId),
-                  const SizedBox(height: AppSpacing.sm),
-                ],
                 if (active.isEmpty && invited.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
@@ -292,15 +293,19 @@ class _InvitedBlock extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                 child: Row(
                   children: [
-                    DriverAvatar(driverId: r.driverId, name: r.driverName, version: r.avatarVersion, radius: 18),
+                    // 076: аватар 40 px, как в откликах; статус — второй строкой.
+                    DriverAvatar(driverId: r.driverId, name: r.driverName, version: r.avatarVersion, radius: 20),
                     const SizedBox(width: AppSpacing.sm),
-                    Expanded(child: Text(r.driverName, style: AppTextStyles.body, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    const SizedBox(width: AppSpacing.sm),
-                    Flexible(
-                      child: Text(
-                        statusOf(r),
-                        textAlign: TextAlign.end,
-                        style: AppTextStyles.caption.copyWith(color: r.status == ResponseStatus.invited ? AppColors.accentText : AppColors.textSecondary),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(r.driverName, style: AppTextStyles.body, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text(
+                            statusOf(r),
+                            style: AppTextStyles.caption.copyWith(color: r.status == ResponseStatus.invited ? AppColors.accentText : AppColors.textSecondary),
+                          ),
+                        ],
                       ),
                     ),
                   ],

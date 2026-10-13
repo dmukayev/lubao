@@ -92,7 +92,9 @@ class DriverVehiclePhotos extends ConsumerWidget {
                         Text(
                           [p.type == 'VEHICLE_PHOTO_FRONT' ? t.vehiclePhotoFront : t.vehiclePhotoSide, if (p.plateNumber != null) p.plateNumber!].join(' · '),
                           style: AppTextStyles.caption,
-                          maxLines: 2,
+                          // 076: одной строкой с многоточием, не узким столбиком.
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
