@@ -7,7 +7,20 @@ async function listCount(page: Page, kind: 'drivers' | 'companies' | 'cargos'): 
   const desktop = (page.viewportSize()?.width ?? 0) >= 800;
   if (desktop) return (await page.getByRole('row').count()) - 1;
   const pattern = { drivers: /\+7\d{10}/, companies: /@/, cargos: /→/ }[kind];
-  return page.getByRole('button', { name: pattern }).count();
+  // Узкий экран: ленивый список строит только видимые строки — считаем с прокруткой
+  // до конца, по уникальным подписям.
+  const seen = new Set<string>();
+  let idle = 0;
+  const x = Math.round((page.viewportSize()?.width ?? 390) / 2);
+  while (idle < 3) {
+    const before = seen.size;
+    for (const name of await page.getByRole('button', { name: pattern }).evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') ?? e.textContent ?? ''))) seen.add(name);
+    idle = seen.size === before ? idle + 1 : 0;
+    await page.mouse.move(x, 500);
+    await page.mouse.wheel(0, 400);
+    await page.waitForTimeout(500);
+  }
+  return seen.size;
 }
 
 test('сводка: плитки и «Требует внимания» ведут в согласованные списки', async ({ page }, info) => {

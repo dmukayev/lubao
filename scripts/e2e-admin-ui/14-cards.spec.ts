@@ -1,11 +1,14 @@
 // Сценарий 14: карточки водителя, компании, груза и сделки открываются без
 // белого экрана; правка имени водителя не меняет госномер.
 import { expect, test, type Page } from '@playwright/test';
-import { adminToken, api, login, openRoute, Steps, tapAt, typeInto } from './helpers';
+import { adminToken, api, login, openRoute, scrollPaneTo, Steps, tapAt, typeInto } from './helpers';
 
 async function openFirst(page: Page, desktop: boolean, rowName: RegExp, buttonName: RegExp) {
-  if (desktop) await tapAt(page, page.getByRole('row', { name: rowName }).first());
-  else await page.getByRole('button', { name: buttonName }).first().click();
+  // Список ленивый: новые записи других сценариев сдвигают нужную строку за край — сначала прокрутить.
+  const target = desktop ? page.getByRole('row', { name: rowName }) : page.getByRole('button', { name: buttonName });
+  await scrollPaneTo(page, target, Math.round((page.viewportSize()?.width ?? 1280) / 2));
+  if (desktop) await tapAt(page, target.first());
+  else await target.first().click();
 }
 
 test('карточки открываются; правка имени не трогает госномер', async ({ page }, info) => {

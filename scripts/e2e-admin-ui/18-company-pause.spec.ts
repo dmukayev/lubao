@@ -40,14 +40,15 @@ test('пауза публикации после жалоб: «Требует в
 
   await steps.step('карточка-компании-снять-паузу', async () => {
     await openRoute(page, `/companies/${companyId}`);
-    await expect(page.getByText(/Публикация на паузе: жалобы водителей — 2/).first()).toBeVisible();
+    // Flutter склеивает карточку в одну группу — ищем по её имени.
+    await expect(page.getByRole('group', { name: /Публикация на паузе: жалобы водителей — 2/ }).first()).toBeVisible();
     await page.getByRole('button', { name: 'Снять паузу' }).click();
     const dialog = page.getByRole('alertdialog');
     await typeInto(page, dialog.getByRole('textbox').first(), 'E2E: поговорили с компанией');
     await dialog.getByRole('button', { name: 'Снять паузу' }).click();
     await expect(dialog).toBeHidden();
     await expect.poll(async () => (await api('GET', `/admin/companies/${companyId}`, { token })).json.publishingPausedAt).toBeNull();
-    await expect(page.getByText(/Публикация на паузе/)).toHaveCount(0);
+    await expect(page.getByRole('group', { name: /Публикация на паузе/ })).toHaveCount(0);
     await expect(page.getByText('Что-то пошло не так')).toHaveCount(0);
   });
 });
