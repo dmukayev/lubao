@@ -700,6 +700,7 @@
     }
   },
   "adminReasonLabel": "Причина",
+  "adminFillRequiredFields": "Заполните обязательные поля выше",
   "adminVerifyDialogTitle": "Поставить «Проверен»",
   "adminUnverifyDialogTitle": "Снять «Проверен»",
   "adminForceVerifyCheckbox": "Я проверил документы лично",
@@ -1368,6 +1369,10 @@
   "legalOffer": "Оферта для компаний",
   "companyRegisterOfferAccept": "Я принимаю оферту: Lubao — информационная площадка, не перевозчик и не сторона договора перевозки",
   "companyRegisterOfferRequired": "Отметьте, что принимаете оферту",
+  "formPickOne": "Выберите вариант",
+  "formLinkHttps": "Вставьте ссылку, которая начинается с https://",
+  "pdConsentRequired": "Отметьте согласие, чтобы продолжить",
+  "inviteCargoPickRequired": "Отметьте груз, на который приглашаете",
   "legalLoginNotice": "Продолжая, вы принимаете {terms} и {privacy}",
   "@legalLoginNotice": {"placeholders": {"terms": {"type": "String"}, "privacy": {"type": "String"}}},
   "legalTermsLink": "Условия",

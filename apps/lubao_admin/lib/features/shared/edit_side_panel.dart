@@ -16,6 +16,8 @@ Future<String?> showEditSidePanel({
   bool Function()? canSave,
 }) {
   final reasonController = TextEditingController();
+  // 072: «Сохранить» активна всегда — при нажатии показываем, чего не хватает.
+  var showErrors = false;
   return showGeneralDialog<String>(
     context: context,
     barrierDismissible: true,
@@ -67,10 +69,16 @@ Future<String?> showEditSidePanel({
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              if (showErrors && !fieldsOk)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Text(t.adminFillRequiredFields, key: const Key('adminPanelFieldsError'), style: AppTextStyles.caption.copyWith(color: AppColors.error)),
+                                ),
                               AppTextField(
                                 label: t.adminReasonLabel,
                                 controller: reasonController,
                                 maxLines: 2,
+                                errorText: showErrors && !reasonOk ? t.garageFieldRequired : null,
                                 onChanged: (_) => setState(() {}),
                               ),
                               const SizedBox(height: 12),
@@ -82,7 +90,7 @@ Future<String?> showEditSidePanel({
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: FilledButton(
-                                      onPressed: reasonOk && fieldsOk ? () => Navigator.pop(context, reasonController.text.trim()) : null,
+                                      onPressed: () => reasonOk && fieldsOk ? Navigator.pop(context, reasonController.text.trim()) : setState(() => showErrors = true),
                                       child: Text(t.commonSave),
                                     ),
                                   ),

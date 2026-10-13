@@ -40,6 +40,7 @@ class _PdConsentSheet extends ConsumerStatefulWidget {
 
 class _PdConsentSheetState extends ConsumerState<_PdConsentSheet> {
   bool _checked = false;
+  bool _showError = false;
   bool _saving = false;
 
   Future<void> _continue() async {
@@ -85,12 +86,14 @@ class _PdConsentSheetState extends ConsumerState<_PdConsentSheet> {
             onChanged: _saving ? null : (v) => setState(() => _checked = v ?? false),
             title: Text(t.pdConsentCheckbox),
           ),
+          if (_showError && !_checked) Text(t.pdConsentRequired, key: const Key('pdConsentError'), style: AppTextStyles.caption.copyWith(color: AppColors.error)),
           const SizedBox(height: AppSpacing.md),
           PrimaryButton(
             key: const Key('pdConsentContinueButton'),
             label: t.pdConsentContinue,
             loading: _saving,
-            onPressed: _checked && !_saving ? _continue : null,
+            // 072: активна всегда — без галочки подсветим согласие.
+            onPressed: _saving ? null : () => _checked ? _continue() : setState(() => _showError = true),
           ),
         ],
       ),

@@ -46,6 +46,7 @@ class _InviteCargoPicker extends StatefulWidget {
 class _InviteCargoPickerState extends State<_InviteCargoPicker> {
   late final List<Cargo> _available = widget.cargos.where((c) => !widget.alreadyInvited.contains(c.id)).toList();
   late String? _selected = _available.length == 1 ? _available.first.id : null;
+  bool _showError = false;
 
   String _route(Cargo c, String locale) {
     final rd = widget.refData;
@@ -78,7 +79,13 @@ class _InviteCargoPickerState extends State<_InviteCargoPicker> {
                 children: [
                   const Icon(LucideIcons.mousePointerClick, size: 18, color: AppColors.primary),
                   const SizedBox(width: AppSpacing.xs),
-                  Expanded(child: Text(t.driversInvitePickHint, key: const Key('inviteCargoHint'), style: AppTextStyles.body.copyWith(color: AppColors.textSecondary))),
+                  Expanded(
+                    child: Text(
+                      _showError && _selected == null ? t.inviteCargoPickRequired : t.driversInvitePickHint,
+                      key: const Key('inviteCargoHint'),
+                      style: AppTextStyles.body.copyWith(color: _showError && _selected == null ? AppColors.error : AppColors.textSecondary),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -115,7 +122,8 @@ class _InviteCargoPickerState extends State<_InviteCargoPicker> {
                 key: const Key('inviteCargoSubmit'),
                 label: t.driversAtPointInviteShort,
                 icon: LucideIcons.send,
-                onPressed: _selected == null ? null : () => Navigator.of(context).pop(widget.cargos.firstWhere((c) => c.id == _selected)),
+                // 072: активна всегда — без выбора подсказка становится ошибкой.
+                onPressed: () => _selected == null ? setState(() => _showError = true) : Navigator.of(context).pop(widget.cargos.firstWhere((c) => c.id == _selected)),
               ),
             ),
           ],

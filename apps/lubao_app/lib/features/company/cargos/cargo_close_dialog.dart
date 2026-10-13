@@ -32,6 +32,7 @@ class _CargoCloseDialog extends StatefulWidget {
 
 class _CargoCloseDialogState extends State<_CargoCloseDialog> {
   String? _outcome;
+  bool _showErrors = false;
   String? _driverId;
   List<CargoCloseCandidate>? _candidates;
 
@@ -84,13 +85,16 @@ class _CargoCloseDialogState extends State<_CargoCloseDialog> {
               title: Text(t.cargoCloseCancelled),
               onChanged: (v) => setState(() => _outcome = v),
             ),
+            if (_showErrors && !canConfirm)
+              Text(t.formPickOne, key: const Key('cargoCloseError'), style: AppTextStyles.caption.copyWith(color: AppColors.error)),
           ],
         ),
       ),
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.commonCancel)),
         FilledButton(
-          onPressed: canConfirm ? () => Navigator.of(context).pop(CargoCloseResult(outcome: _outcome!, driverId: _driverId)) : null,
+          // 072: активна всегда — без выбора исхода ошибка под вариантами.
+          onPressed: () => canConfirm ? Navigator.of(context).pop(CargoCloseResult(outcome: _outcome!, driverId: _driverId)) : setState(() => _showErrors = true),
           child: Text(t.cargoCloseConfirm),
         ),
       ],

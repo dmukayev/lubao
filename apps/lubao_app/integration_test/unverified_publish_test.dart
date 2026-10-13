@@ -111,6 +111,13 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Тентованный').last);
       await tester.pumpAndSettle();
+      // 072: цена не заполнена (внизу формы) → «Опубликовать» → экран к цене,
+      // под ней ошибка, в поле фокус.
+      final publish = find.byKey(const Key('postCargoSubmit'));
+      await reveal(tester, publish);
+      await tester.tap(publish);
+      await tester.pumpAndSettle();
+      expectFieldShownWithError(tester, const Key('postCargoPrice'));
       final price = find.byKey(const Key('postCargoPrice'));
       await reveal(tester, price);
       await tester.enterText(price, '900');

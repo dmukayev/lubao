@@ -1703,6 +1703,10 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get adminReasonLabel => 'Себеп';
 
   @override
+  String get adminFillRequiredFields =>
+      'Жоғарыдағы міндетті өрістерді толтырыңыз';
+
+  @override
   String get adminVerifyDialogTitle => '«Тексерілген» деп белгілеу';
 
   @override
@@ -3484,6 +3488,18 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   @override
   String get companyRegisterOfferRequired =>
       'Офертаны қабылдайтыныңызды белгілеңіз';
+
+  @override
+  String get formPickOne => 'Нұсқаны таңдаңыз';
+
+  @override
+  String get formLinkHttps => 'https:// деп басталатын сілтемені қойыңыз';
+
+  @override
+  String get pdConsentRequired => 'Жалғастыру үшін келісімді белгілеңіз';
+
+  @override
+  String get inviteCargoPickRequired => 'Шақыратын жүкті белгілеңіз';
 
   @override
   String legalLoginNotice(String terms, String privacy) {

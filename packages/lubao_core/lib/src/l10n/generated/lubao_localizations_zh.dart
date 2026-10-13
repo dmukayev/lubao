@@ -1672,6 +1672,9 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get adminReasonLabel => '原因';
 
   @override
+  String get adminFillRequiredFields => '请填写上方的必填项';
+
+  @override
   String get adminVerifyDialogTitle => '标记为「已验证」';
 
   @override
@@ -3398,6 +3401,18 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
 
   @override
   String get companyRegisterOfferRequired => '请勾选接受要约';
+
+  @override
+  String get formPickOne => '请选择一项';
+
+  @override
+  String get formLinkHttps => '请粘贴以 https:// 开头的链接';
+
+  @override
+  String get pdConsentRequired => '请勾选同意后继续';
+
+  @override
+  String get inviteCargoPickRequired => '请选择要邀请的货物';
 
   @override
   String legalLoginNotice(String terms, String privacy) {

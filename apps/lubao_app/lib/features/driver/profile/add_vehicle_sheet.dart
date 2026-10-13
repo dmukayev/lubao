@@ -132,6 +132,8 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   String? _innerWidthError;
   String? _innerHeightError;
   bool _showSpecsRequired = false;
+  /// 072: прокрутка к первому неверному полю.
+  final _fields = FieldScroller();
 
   /// Проверка чисел до отправки (пределы те же, что на сервере).
   bool _validateSizes() {
@@ -178,6 +180,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   @override
   void dispose() {
     _plateController.dispose();
+    _fields.dispose();
     _vinController.dispose();
     _brandController.dispose();
     _capacityController.dispose();
@@ -204,11 +207,20 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
   Future<void> _submit() async {
     final t = context.l10n;
     final sizesOk = _validateSizes();
-    if (_photo == null) {
-      setState(() => _photoError = t.garagePhotoRequired);
+    if (_photo == null) setState(() => _photoError = t.garagePhotoRequired);
+    // 072: первое неверное поле — прокрутить к нему.
+    final invalid = {
+      if (_capacityError != null) 'capacityTons',
+      if (_lengthError != null) 'lengthM',
+      if (_innerLengthError != null) 'innerLengthM',
+      if (_innerWidthError != null) 'innerWidthM',
+      if (_innerHeightError != null) 'innerHeightM',
+      if (_photo == null) 'photo',
+    };
+    if (invalid.isNotEmpty || !sizesOk) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _fields.showFirstInvalid(const ['capacityTons', 'lengthM', 'innerLengthM', 'innerWidthM', 'innerHeightM', 'photo'], invalid));
       return;
     }
-    if (!sizesOk) return;
 
     setState(() {
       _submitting = true;
@@ -320,9 +332,9 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                     onChanged: (v) => setState(() => _specs = v),
                   ),
                 ] else ...[
-                AppTextField(key: const Key('addVehicleCapacity'), label: t.driverSetupCapacity, controller: _capacityController, errorText: _capacityError, onChanged: (_) => setState(() => _capacityError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                FieldAnchor(scroller: _fields, name: 'capacityTons', child: AppTextField(key: const Key('addVehicleCapacity'), focusNode: _fields.focusOf('capacityTons'), label: t.driverSetupCapacity, controller: _capacityController, errorText: _capacityError, onChanged: (_) => setState(() => _capacityError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true))),
                 const SizedBox(height: AppSpacing.md),
-                AppTextField(key: const Key('addVehicleLength'), label: t.garageLength, controller: _lengthController, errorText: _lengthError, onChanged: (_) => setState(() => _lengthError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                FieldAnchor(scroller: _fields, name: 'lengthM', child: AppTextField(key: const Key('addVehicleLength'), focusNode: _fields.focusOf('lengthM'), label: t.garageLength, controller: _lengthController, errorText: _lengthError, onChanged: (_) => setState(() => _lengthError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true))),
                 const SizedBox(height: AppSpacing.md),
                 // 045 п.6: размер/шаблоны — только у объёмных кузовов.
                 if (isVolumeBodyType(_bodyTypeId == null ? null : refData.bodyTypeById(_bodyTypeId!).code)) ...[
@@ -351,11 +363,11 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
                 ),
                 if (_customSize) ...[
                   const SizedBox(height: AppSpacing.md),
-                  AppTextField(key: const Key('addVehicleInnerLength'), label: t.garageSizeLength, controller: _innerLengthController, errorText: _innerLengthError, onChanged: (_) => setState(() => _innerLengthError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                  FieldAnchor(scroller: _fields, name: 'innerLengthM', child: AppTextField(key: const Key('addVehicleInnerLength'), focusNode: _fields.focusOf('innerLengthM'), label: t.garageSizeLength, controller: _innerLengthController, errorText: _innerLengthError, onChanged: (_) => setState(() => _innerLengthError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true))),
                   const SizedBox(height: AppSpacing.md),
-                  AppTextField(key: const Key('addVehicleInnerWidth'), label: t.garageSizeWidth, controller: _innerWidthController, errorText: _innerWidthError, onChanged: (_) => setState(() => _innerWidthError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                  FieldAnchor(scroller: _fields, name: 'innerWidthM', child: AppTextField(key: const Key('addVehicleInnerWidth'), focusNode: _fields.focusOf('innerWidthM'), label: t.garageSizeWidth, controller: _innerWidthController, errorText: _innerWidthError, onChanged: (_) => setState(() => _innerWidthError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true))),
                   const SizedBox(height: AppSpacing.md),
-                  AppTextField(key: const Key('addVehicleInnerHeight'), label: t.garageSizeHeight, controller: _innerHeightController, errorText: _innerHeightError, onChanged: (_) => setState(() => _innerHeightError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                  FieldAnchor(scroller: _fields, name: 'innerHeightM', child: AppTextField(key: const Key('addVehicleInnerHeight'), focusNode: _fields.focusOf('innerHeightM'), label: t.garageSizeHeight, controller: _innerHeightController, errorText: _innerHeightError, onChanged: (_) => setState(() => _innerHeightError = null), keyboardType: const TextInputType.numberWithOptions(decimal: true))),
                 ],
                 ],
                 ],
@@ -434,7 +446,7 @@ class _AddVehicleSheetState extends ConsumerState<_AddVehicleSheet> {
               ),
               if (_photoError != null) ...[
                 const SizedBox(height: AppSpacing.xs),
-                Text(_photoError!, style: AppTextStyles.caption.copyWith(color: AppColors.error)),
+                FieldAnchor(scroller: _fields, name: 'photo', child: Text(_photoError!, style: AppTextStyles.caption.copyWith(color: AppColors.error))),
               ],
               const SizedBox(height: AppSpacing.lg),
               PrimaryButton(key: const Key('addVehicleSubmit'), label: t.garageSubmit, loading: _submitting, onPressed: _submit),

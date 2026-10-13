@@ -3234,6 +3234,12 @@ abstract class LubaoLocalizations {
   /// **'Причина'**
   String get adminReasonLabel;
 
+  /// No description provided for @adminFillRequiredFields.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заполните обязательные поля выше'**
+  String get adminFillRequiredFields;
+
   /// No description provided for @adminVerifyDialogTitle.
   ///
   /// In ru, this message translates to:
@@ -6587,6 +6593,30 @@ abstract class LubaoLocalizations {
   /// In ru, this message translates to:
   /// **'Отметьте, что принимаете оферту'**
   String get companyRegisterOfferRequired;
+
+  /// No description provided for @formPickOne.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите вариант'**
+  String get formPickOne;
+
+  /// No description provided for @formLinkHttps.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вставьте ссылку, которая начинается с https://'**
+  String get formLinkHttps;
+
+  /// No description provided for @pdConsentRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отметьте согласие, чтобы продолжить'**
+  String get pdConsentRequired;
+
+  /// No description provided for @inviteCargoPickRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отметьте груз, на который приглашаете'**
+  String get inviteCargoPickRequired;
 
   /// No description provided for @legalLoginNotice.
   ///

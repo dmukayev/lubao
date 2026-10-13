@@ -14,6 +14,8 @@ Future<String?> showReasonDialog(
 }) async {
   final controller = TextEditingController();
   final t = context.l10n;
+  // 072: кнопка активна всегда — пустая причина подсвечивается.
+  var showError = false;
   final result = await showDialog<String>(
     context: context,
     builder: (dialogContext) => StatefulBuilder(
@@ -25,13 +27,14 @@ Future<String?> showReasonDialog(
             label: t.adminReasonLabel,
             controller: controller,
             maxLines: 3,
+            errorText: showError && !canConfirm ? t.garageFieldRequired : null,
             onChanged: (_) => setState(() {}),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
             FilledButton(
               style: danger ? FilledButton.styleFrom(backgroundColor: StatusBadge.danger) : null,
-              onPressed: canConfirm ? () => Navigator.pop(dialogContext, controller.text.trim()) : null,
+              onPressed: () => canConfirm ? Navigator.pop(dialogContext, controller.text.trim()) : setState(() => showError = true),
               child: Text(confirmLabel),
             ),
           ],
@@ -53,6 +56,7 @@ Future<({String reason, bool force})?> showVerifyDialog(
 }) async {
   final controller = TextEditingController();
   var force = false;
+  var showError = false;
   final t = context.l10n;
   return showDialog<({String reason, bool force})>(
     context: context,
@@ -65,7 +69,7 @@ Future<({String reason, bool force})?> showVerifyDialog(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppTextField(label: t.adminReasonLabel, controller: controller, maxLines: 3, onChanged: (_) => setState(() {})),
+              AppTextField(label: t.adminReasonLabel, controller: controller, maxLines: 3, errorText: showError && !canConfirm ? t.garageFieldRequired : null, onChanged: (_) => setState(() {})),
               if (settingVerified && offerForce) ...[
                 const SizedBox(height: 12),
                 CheckboxListTile(
@@ -81,7 +85,7 @@ Future<({String reason, bool force})?> showVerifyDialog(
           actions: [
             TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
             FilledButton(
-              onPressed: canConfirm ? () => Navigator.pop(dialogContext, (reason: controller.text.trim(), force: force)) : null,
+              onPressed: () => canConfirm ? Navigator.pop(dialogContext, (reason: controller.text.trim(), force: force)) : setState(() => showError = true),
               child: Text(t.commonDone),
             ),
           ],
@@ -138,6 +142,7 @@ Future<String?> showRejectReasonDialog(BuildContext context) async {
     t.adminRejectPresetMismatch,
     t.adminRejectPresetPlateMismatch,
   ];
+  var showError = false;
 
   return showDialog<String>(
     context: context,
@@ -163,13 +168,13 @@ Future<String?> showRejectReasonDialog(BuildContext context) async {
                     .toList(),
               ),
               const SizedBox(height: 12),
-              AppTextField(label: t.adminRejectPresetOther, controller: controller, maxLines: 3, onChanged: (_) => setState(() {})),
+              AppTextField(label: t.adminRejectPresetOther, controller: controller, maxLines: 3, errorText: showError && !canConfirm ? t.garageFieldRequired : null, onChanged: (_) => setState(() {})),
             ],
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
             FilledButton(
-              onPressed: canConfirm ? () => Navigator.pop(dialogContext, controller.text.trim()) : null,
+              onPressed: () => canConfirm ? Navigator.pop(dialogContext, controller.text.trim()) : setState(() => showError = true),
               child: Text(t.adminReject),
             ),
           ],

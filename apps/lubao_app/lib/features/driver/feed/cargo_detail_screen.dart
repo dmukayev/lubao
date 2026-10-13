@@ -601,27 +601,42 @@ class _CargoDetailBody extends ConsumerWidget {
 Future<void> _complainAboutCargo(BuildContext context, WidgetRef ref, String cargoId) async {
   final t = context.l10n;
   final controller = TextEditingController();
+  var showError = false;
   final text = await showDialog<String>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
-      key: const Key('cargoComplainDialog'),
-      title: Text(t.cargoComplainTitle),
-      // Узкий экран + крупный шрифт + клавиатура (iPhone SE): прокрутка, а не переполнение.
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(t.cargoComplainBody, style: AppTextStyles.body),
-            const SizedBox(height: AppSpacing.sm),
-            AppTextField(key: const Key('cargoComplainText'), label: t.complaintReasonLabel, controller: controller, maxLines: 3),
-          ],
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setDialogState) => AlertDialog(
+        key: const Key('cargoComplainDialog'),
+        title: Text(t.cargoComplainTitle),
+        // Узкий экран + крупный шрифт + клавиатура (iPhone SE): прокрутка, а не переполнение.
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.cargoComplainBody, style: AppTextStyles.body),
+              const SizedBox(height: AppSpacing.sm),
+              // 072: пустую жалобу не отправляем — ошибка под полем.
+              AppTextField(
+                key: const Key('cargoComplainText'),
+                label: t.complaintReasonLabel,
+                controller: controller,
+                maxLines: 3,
+                errorText: showError && controller.text.trim().isEmpty ? t.garageFieldRequired : null,
+                onChanged: (_) => setDialogState(() {}),
+              ),
+            ],
+          ),
         ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
+          FilledButton(
+            key: const Key('cargoComplainSubmit'),
+            onPressed: () => controller.text.trim().isEmpty ? setDialogState(() => showError = true) : Navigator.pop(dialogContext, controller.text),
+            child: Text(t.complaintSend),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
-        FilledButton(key: const Key('cargoComplainSubmit'), onPressed: () => Navigator.pop(dialogContext, controller.text), child: Text(t.complaintSend)),
-      ],
     ),
   );
   if (text == null || text.trim().isEmpty || !context.mounted) return;

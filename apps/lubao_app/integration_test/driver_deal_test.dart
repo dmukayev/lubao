@@ -235,10 +235,13 @@ void main() {
       await tester.tap(find.byKey(const Key('dealCancelButton')));
       await waitFor(tester, find.byKey(const Key('cancelReason_VEHICLE_BREAKDOWN')));
       expect(find.byKey(const Key('cancelReason_TOOK_OTHER_CARGO')), findsOneWidget);
-      expect(tester.widget<FilledButton>(find.byKey(const Key('cancelSubmit'))).onPressed, isNull);
+      // 072: «Отменить» активна всегда — без причины под чипами ошибка.
+      await tapInDialog(find.byKey(const Key('cancelSubmit')));
+      await waitFor(tester, find.byKey(const Key('cancelReasonError')));
       await tapInDialog(find.byKey(const Key('cancelReason_OTHER')));
       await waitFor(tester, find.byKey(const Key('cancelOtherText')));
-      expect(tester.widget<FilledButton>(find.byKey(const Key('cancelSubmit'))).onPressed, isNull);
+      // «Другое» без текста — ошибка у поля, диалог не закрылся.
+      expect(find.text(t.garageFieldRequired), findsOneWidget);
       expectInsideSafeZone(tester);
       expectNoOverflow(tester);
       await tapInDialog(find.byKey(const Key('cancelReason_TERMS_CHANGED')));

@@ -87,15 +87,18 @@ class GarageScreen extends ConsumerWidget {
     final lengthController = TextEditingController();
     final widthController = TextEditingController();
     final heightController = TextEditingController();
+    // 072: «Готово» активна всегда — пустые поля подсвечиваются при нажатии.
+    var showRequired = false;
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
           // Причина под полем сразу при вводе («Не больше 20»), пустое — без ошибки.
-          final lengthError = numberFieldError(t, lengthController.text, max: VehicleLimits.innerLengthM);
-          final widthError = numberFieldError(t, widthController.text, max: VehicleLimits.innerWidthM);
-          final heightError = numberFieldError(t, heightController.text, max: VehicleLimits.innerHeightM);
+          String? required(TextEditingController c) => showRequired && c.text.trim().isEmpty ? t.garageFieldRequired : null;
+          final lengthError = required(lengthController) ?? numberFieldError(t, lengthController.text, max: VehicleLimits.innerLengthM);
+          final widthError = required(widthController) ?? numberFieldError(t, widthController.text, max: VehicleLimits.innerWidthM);
+          final heightError = required(heightController) ?? numberFieldError(t, heightController.text, max: VehicleLimits.innerHeightM);
           final filled = [lengthController, widthController, heightController].every((c) => c.text.trim().isNotEmpty);
           final valid = filled && lengthError == null && widthError == null && heightError == null;
           return AlertDialog(
@@ -112,7 +115,7 @@ class GarageScreen extends ConsumerWidget {
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.commonCancel)),
-              FilledButton(onPressed: valid ? () => Navigator.pop(dialogContext, true) : null, child: Text(t.commonDone)),
+              FilledButton(onPressed: () => valid ? Navigator.pop(dialogContext, true) : setDialogState(() => showRequired = true), child: Text(t.commonDone)),
             ],
           );
         },

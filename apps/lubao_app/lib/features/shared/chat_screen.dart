@@ -203,6 +203,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _sendLoadingPlaceLink() async {
     final t = context.l10n;
     final controller = TextEditingController();
+    var showErrors = false;
     final link = await showDialog<String>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -215,12 +216,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               label: '',
               hintText: t.chatLoadingPlaceDialogHint,
               controller: controller,
+              errorText: showErrors && !valid ? t.formLinkHttps : null,
               onChanged: (_) => setDialogState(() {}),
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
               FilledButton(
-                onPressed: valid ? () => Navigator.pop(dialogContext, trimmed) : null,
+                onPressed: () => valid ? Navigator.pop(dialogContext, trimmed) : setDialogState(() => showErrors = true),
                 child: Text(t.commonDone),
               ),
             ],

@@ -567,6 +567,7 @@
     }
   },
   "adminReasonLabel": "Себеп",
+  "adminFillRequiredFields": "Жоғарыдағы міндетті өрістерді толтырыңыз",
   "adminVerifyDialogTitle": "«Тексерілген» деп белгілеу",
   "adminUnverifyDialogTitle": "«Тексерілген» белгісін алып тастау",
   "adminForceVerifyCheckbox": "Құжаттарды өзім тексердім",
@@ -1223,6 +1224,10 @@
   "legalOffer": "Компанияларға арналған оферта",
   "companyRegisterOfferAccept": "Офертаны қабылдаймын: Lubao — ақпараттық алаң, тасымалдаушы емес және тасымал шартының тарапы емес",
   "companyRegisterOfferRequired": "Офертаны қабылдайтыныңызды белгілеңіз",
+  "formPickOne": "Нұсқаны таңдаңыз",
+  "formLinkHttps": "https:// деп басталатын сілтемені қойыңыз",
+  "pdConsentRequired": "Жалғастыру үшін келісімді белгілеңіз",
+  "inviteCargoPickRequired": "Шақыратын жүкті белгілеңіз",
   "legalLoginNotice": "Жалғастыра отырып, сіз {terms} мен {privacy} қабылдайсыз",
   "legalTermsLink": "Шарттарды",
   "legalPrivacyLink": "Құпиялылық саясатын",

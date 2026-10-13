@@ -691,6 +691,10 @@ Future<void> vehiclePhotoViaApi(String phoneLocal, String vehicleId, {bool withA
 /// направление по умолчанию. После неё приложение уходит на главную.
 Future<void> completeDriverWizard(WidgetTester tester, String fullName) async {
   await waitFor(tester, find.byKey(const Key('driverSetupFullName')));
+  // 072: «Далее» с пустым именем — поле на экране, под ним ошибка, в поле фокус.
+  await tester.tap(find.byKey(const Key('driverSetupNext')));
+  await tester.pumpAndSettle();
+  expectFieldShownWithError(tester, const Key('driverSetupFullName'));
   await tester.enterText(find.byKey(const Key('driverSetupFullName')), fullName);
   await tester.enterText(find.byKey(const Key('driverSetupHomeCity')), 'Алматы');
   await tester.pumpAndSettle();
@@ -717,6 +721,23 @@ Future<void> completeDriverWizard(WidgetTester tester, String fullName) async {
   await reveal(tester, find.byKey(const Key('driverSetupNext')));
   await tester.tap(find.byKey(const Key('driverSetupNext')));
   await tester.pumpAndSettle();
+}
+
+/// 072: незаполненное поле — в видимой части экрана, с ошибкой и фокусом.
+void expectFieldShownWithError(WidgetTester tester, Key fieldKey, {bool focused = true}) {
+  final field = find.byKey(fieldKey);
+  expect(field, findsOneWidget);
+  final rect = tester.getRect(field);
+  final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+  expect(rect.top >= 0 && rect.bottom <= screen.height, isTrue, reason: 'поле $fieldKey на экране: $rect, экран $screen');
+  final decorator = find.descendant(of: field, matching: find.byType(InputDecorator));
+  if (decorator.evaluate().isNotEmpty) {
+    expect(tester.widget<InputDecorator>(decorator.first).decoration.errorText, isNotNull, reason: 'под полем $fieldKey ошибка');
+  }
+  if (focused) {
+    final editable = find.descendant(of: field, matching: find.byType(EditableText));
+    expect(tester.widget<EditableText>(editable.first).focusNode.hasFocus, isTrue, reason: 'фокус в поле $fieldKey');
+  }
 }
 
 /// Дождаться условия вне дерева виджетов (например, вызова подменённого share).
@@ -754,7 +775,10 @@ Future<void> acceptPdConsent(WidgetTester tester) async {
   expect(find.byKey(const Key('pdConsentPolicyLink')), findsOneWidget);
   final continueButton = find.byKey(const Key('pdConsentContinueButton'));
   await reveal(tester, continueButton);
-  expect(tester.widget<PrimaryButton>(continueButton).onPressed, isNull, reason: 'без галочки дальше нельзя');
+  // 072: «Продолжить» активна всегда — без галочки подсвечивается согласие.
+  await tester.tap(continueButton);
+  await tester.pumpAndSettle();
+  await waitFor(tester, find.byKey(const Key('pdConsentError')));
   final checkbox = find.byKey(const Key('pdConsentCheckbox'));
   await reveal(tester, checkbox);
   await tester.tap(checkbox);

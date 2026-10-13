@@ -1697,6 +1697,9 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get adminReasonLabel => 'Причина';
 
   @override
+  String get adminFillRequiredFields => 'Заполните обязательные поля выше';
+
+  @override
   String get adminVerifyDialogTitle => 'Поставить «Проверен»';
 
   @override
@@ -3475,6 +3478,18 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
 
   @override
   String get companyRegisterOfferRequired => 'Отметьте, что принимаете оферту';
+
+  @override
+  String get formPickOne => 'Выберите вариант';
+
+  @override
+  String get formLinkHttps => 'Вставьте ссылку, которая начинается с https://';
+
+  @override
+  String get pdConsentRequired => 'Отметьте согласие, чтобы продолжить';
+
+  @override
+  String get inviteCargoPickRequired => 'Отметьте груз, на который приглашаете';
 
   @override
   String legalLoginNotice(String terms, String privacy) {

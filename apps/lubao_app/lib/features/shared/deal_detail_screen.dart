@@ -121,6 +121,8 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
     final controller = TextEditingController();
     final codes = cancelReasonCodes.where((c) => isDriver || c != 'TOOK_OTHER_CARGO').toList();
     String? code;
+    // 072: кнопка активна всегда — без причины ошибка под выбором.
+    var showErrors = false;
     final submitted = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -152,6 +154,11 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                         ),
                     ],
                   ),
+                  if (showErrors && code == null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.xs),
+                      child: Text(t.formPickOne, key: const Key('cancelReasonError'), style: AppTextStyles.caption.copyWith(color: AppColors.error)),
+                    ),
                   if (code == 'OTHER') ...[
                     const SizedBox(height: AppSpacing.sm),
                     AppTextField(
@@ -159,6 +166,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                       label: t.dealCancelOtherHint,
                       controller: controller,
                       maxLines: 3,
+                      errorText: showErrors && controller.text.trim().isEmpty ? t.garageFieldRequired : null,
                       onChanged: (_) => setDialogState(() {}),
                     ),
                   ],
@@ -169,7 +177,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
               TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.commonCancel)),
               FilledButton(
                 key: const Key('cancelSubmit'),
-                onPressed: canSubmit ? () => Navigator.pop(dialogContext, true) : null,
+                onPressed: () => canSubmit ? Navigator.pop(dialogContext, true) : setDialogState(() => showErrors = true),
                 child: Text(deal.cancelNeedsConsent ? t.dealCancelRequestSend : t.dealCancel),
               ),
             ],
@@ -233,25 +241,40 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
   Future<void> _offerComplaint() async {
     final t = context.l10n;
     final controller = TextEditingController();
+    var showError = false;
     final text = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        key: const Key('complaintOffer'),
-        title: Text(t.complaintOfferTitle),
-        // Узкий экран + крупный шрифт + клавиатура (iPhone SE): прокрутка, а не переполнение.
-        content: SingleChildScrollView(child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(t.complaintOfferBody, style: AppTextStyles.body),
-            const SizedBox(height: AppSpacing.sm),
-            AppTextField(key: const Key('complaintText'), label: t.complaintReasonLabel, controller: controller, maxLines: 3),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          key: const Key('complaintOffer'),
+          title: Text(t.complaintOfferTitle),
+          // Узкий экран + крупный шрифт + клавиатура (iPhone SE): прокрутка, а не переполнение.
+          content: SingleChildScrollView(child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.complaintOfferBody, style: AppTextStyles.body),
+              const SizedBox(height: AppSpacing.sm),
+              // 072: пустую жалобу не отправляем — ошибка под полем.
+              AppTextField(
+                key: const Key('complaintText'),
+                label: t.complaintReasonLabel,
+                controller: controller,
+                maxLines: 3,
+                errorText: showError && controller.text.trim().isEmpty ? t.garageFieldRequired : null,
+                onChanged: (_) => setDialogState(() {}),
+              ),
+            ],
+          )),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
+            FilledButton(
+              key: const Key('complaintSubmit'),
+              onPressed: () => controller.text.trim().isEmpty ? setDialogState(() => showError = true) : Navigator.pop(dialogContext, controller.text),
+              child: Text(t.complaintSend),
+            ),
           ],
-        )),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.commonCancel)),
-          FilledButton(key: const Key('complaintSubmit'), onPressed: () => Navigator.pop(dialogContext, controller.text), child: Text(t.complaintSend)),
-        ],
+        ),
       ),
     );
     if (text == null || text.trim().isEmpty) return;

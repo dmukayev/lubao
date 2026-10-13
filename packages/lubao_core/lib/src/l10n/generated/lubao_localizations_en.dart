@@ -1707,6 +1707,9 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get adminReasonLabel => 'Reason';
 
   @override
+  String get adminFillRequiredFields => 'Fill in the required fields above';
+
+  @override
   String get adminVerifyDialogTitle => 'Mark as Verified';
 
   @override
@@ -3495,6 +3498,18 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
 
   @override
   String get companyRegisterOfferRequired => 'Tick that you accept the offer';
+
+  @override
+  String get formPickOne => 'Choose an option';
+
+  @override
+  String get formLinkHttps => 'Paste a link that starts with https://';
+
+  @override
+  String get pdConsentRequired => 'Tick the consent to continue';
+
+  @override
+  String get inviteCargoPickRequired => 'Pick the cargo you are inviting to';
 
   @override
   String legalLoginNotice(String terms, String privacy) {

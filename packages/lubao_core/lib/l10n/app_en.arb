@@ -692,6 +692,7 @@
     }
   },
   "adminReasonLabel": "Reason",
+  "adminFillRequiredFields": "Fill in the required fields above",
   "adminVerifyDialogTitle": "Mark as Verified",
   "adminUnverifyDialogTitle": "Remove Verified status",
   "adminForceVerifyCheckbox": "I verified the documents personally",
@@ -1348,6 +1349,10 @@
   "legalOffer": "Offer for companies",
   "companyRegisterOfferAccept": "I accept the offer: Lubao is an information platform, not a carrier and not a party to the transport contract",
   "companyRegisterOfferRequired": "Tick that you accept the offer",
+  "formPickOne": "Choose an option",
+  "formLinkHttps": "Paste a link that starts with https://",
+  "pdConsentRequired": "Tick the consent to continue",
+  "inviteCargoPickRequired": "Pick the cargo you are inviting to",
   "legalLoginNotice": "By continuing, you accept the {terms} and {privacy}",
   "legalTermsLink": "Terms",
   "legalPrivacyLink": "Privacy policy",

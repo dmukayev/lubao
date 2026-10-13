@@ -70,6 +70,14 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
   DateTime? _customDate;
   String? _pointId;
   bool _pointError = false;
+  /// 072: прокрутка к незаполненному полю.
+  final _fields = FieldScroller();
+
+  @override
+  void dispose() {
+    _fields.dispose();
+    super.dispose();
+  }
   late bool _anyCountry;
   late final Set<String> _countryIds;
   int _waitDays = 2;
@@ -168,6 +176,8 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
     final pointId = _pointId;
     if (pointId == null) {
       setState(() => _pointError = true);
+      // 072: город не выбран — прокрутить к нему и мигнуть рамкой.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _fields.reveal('pointId'));
       return;
     }
     setState(() => _saving = true);
@@ -230,13 +240,13 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
 
               Text(t.announceArrivalWhere, style: AppTextStyles.bodyStrong),
               const SizedBox(height: AppSpacing.sm),
-              CityField(
+              FieldAnchor(scroller: _fields, name: 'pointId', child: CityField(
                 key: const Key('announceCityField'),
                 label: t.cityPickerTitle,
                 value: _pointId == null ? null : widget.refData.pointOrNull(_pointId!)?.name.forLanguageCode(locale),
                 errorText: _pointError ? t.announceArrivalCityError : null,
                 onTap: _pickCity,
-              ),
+              )),
               const SizedBox(height: AppSpacing.lg),
 
               Text(t.announceArrivalWhen, style: AppTextStyles.bodyStrong),

@@ -73,11 +73,14 @@ void main() {
       final submit = find.byKey(const Key('inviteCargoSubmit'));
       final options = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('inviteCargo-') && (w.key! as ValueKey<String>).value != 'inviteCargoSubmit' && (w.key! as ValueKey<String>).value != 'inviteCargoHint');
       if (options.evaluate().length > 1) {
-        expect(tester.widget<PrimaryButton>(submit).onPressed, isNull, reason: 'пока груз не отмечен — «Пригласить» неактивна');
+        // 072: «Пригласить» активна всегда — без выбора подсказка становится ошибкой.
+        await tester.tap(submit);
+        await tester.pumpAndSettle();
+        expect(find.text(t.inviteCargoPickRequired), findsOneWidget);
       }
       await tester.tap(options.first);
       await tester.pumpAndSettle();
-      expect(tester.widget<PrimaryButton>(submit).onPressed, isNotNull);
+
       expectInsideSafeZone(tester);
       expectNoOverflow(tester);
       Navigator.of(tester.element(submit)).pop();
