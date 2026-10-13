@@ -63,7 +63,8 @@ class CargoResponsesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(t.responsesTitle),
+        // 071: на экране — груз целиком и отклики.
+        title: Text(t.cargoDetailTitle),
         actions: cargo == null
             ? null
             : [
@@ -219,7 +220,8 @@ class _CargoMeta extends ConsumerWidget {
         runSpacing: AppSpacing.xs,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          StatusBadge(label: statusLabel, color: statusColor),
+          // «Опубликован» и так в дате — плашка только у других статусов.
+          if (cargo.status != CargoStatus.published) StatusBadge(label: statusLabel, color: statusColor),
           Text(t.cargoPublishedAtFull(formatDateTime(cargo.publishedAt)), key: const Key('companyCargoPublishedAt'), style: AppTextStyles.caption),
           if (cargo.contactUserId != null && cargo.contactUserId != me && (cargo.contactName ?? '').isNotEmpty)
             Text(t.cargoPublishedBy(cargo.contactName!), key: const Key('companyCargoPublishedBy'), style: AppTextStyles.caption),
