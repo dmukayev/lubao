@@ -650,6 +650,36 @@ Future<void> approvedSelfieViaApi(String phoneLocal) async {
   if (review.statusCode! >= 300) fail('Админ не принял селфи: ${review.statusCode} ${review.data}');
 }
 
+/// 067: открыть карточку водителя нажатием по строке, не по имени и не по
+/// кнопкам — по строке машины/статуса (левый нижний край карточки).
+Future<void> openDriverCardByRow(WidgetTester tester, Key cardKey) async {
+  final card = find.byKey(cardKey);
+  await waitAndReveal(tester, card);
+  final icon = find.descendant(of: card, matching: find.byType(BodyTypeIcon));
+  if (icon.evaluate().isNotEmpty) {
+    await tester.tap(icon.first);
+  } else {
+    await tester.tapAt(tester.getBottomLeft(card) + const Offset(24, -12));
+  }
+  await waitFor(tester, find.byKey(const Key('driverCard')));
+}
+
+/// 067: фото машины спереди у водителя (синтетическая картинка) — чтобы в
+/// карточке водителя у логиста была галерея. Всё через API.
+Future<void> vehiclePhotoViaApi(String phoneLocal, String vehicleId) async {
+  final dio = Dio(BaseOptions(baseUrl: e2eApiBase, connectTimeout: e2eHttpTimeout, receiveTimeout: e2eHttpTimeout, validateStatus: (_) => true));
+  await dio.post('/auth/phone/request-code', data: {'phone': '+7$phoneLocal'});
+  final login = await dio.post('/auth/phone/verify', data: {'phone': '+7$phoneLocal', 'code': e2eDevCode, 'deviceName': 'e2e', 'platform': 'ios'});
+  if (login.statusCode! >= 300) fail('Вход водителя через API не удался: ${login.statusCode}');
+  dio.options.headers['Authorization'] = 'Bearer ${(login.data as Map)['accessToken']}';
+  await dio.post('/auth/me/pd-consent', data: {'version': '2026-10-08'});
+  final image = await makeSyntheticDocument('truck-front.png', ['SYNTHETIC TRUCK', 'FRONT', 'E2E']);
+  final upload = await dio.post('/uploads/document', data: FormData.fromMap({'file': MultipartFile.fromBytes(await image.readAsBytes(), filename: 'truck-front.png')}));
+  if (upload.statusCode! >= 300) fail('Загрузка фото машины не удалась: ${upload.statusCode}');
+  final doc = await dio.post('/drivers/me/verification-documents', data: {'type': 'VEHICLE_PHOTO_FRONT', 'fileUrl': (upload.data as Map)['key'], 'vehicleId': vehicleId});
+  if (doc.statusCode! >= 300) fail('Фото машины не сохранилось: ${doc.statusCode} ${doc.data}');
+}
+
 /// Анкета нового водителя (мастер 045): имя, домашний город Алматы, тент 20 т,
 /// направление по умолчанию. После неё приложение уходит на главную.
 Future<void> completeDriverWizard(WidgetTester tester, String fullName) async {

@@ -4881,6 +4881,33 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   String get driverCardChat => 'Жазу';
 
   @override
+  String driverCardOnSite(String city) {
+    return '$city қаласында орнында';
+  }
+
+  @override
+  String get driverCardVehicle => 'Көлік';
+
+  @override
+  String get driverCardRigid => 'Жүк көлігі';
+
+  @override
+  String driverCardPermits(String list) {
+    return 'Рұқсаттар: $list';
+  }
+
+  @override
+  String get driverCardReviews => 'Компаниялардың пікірлері';
+
+  @override
+  String driverCardAllReviews(int count) {
+    return 'Барлық пікірлер ($count)';
+  }
+
+  @override
+  String get driverCardClose => 'Жабу';
+
+  @override
   String get shareLinkPromptText => 'Сілтеме арқылы келдіңіз бе?';
 
   @override

@@ -409,7 +409,24 @@ class DriverCard {
     this.plannedDay,
     this.anyCountry = false,
     this.countryIds = const [],
+    this.onSite = false,
+    this.lastSeenAt,
+    this.vehicles = const [],
+    this.permitIds = const [],
+    this.cancelStats,
+    this.reviews = const [],
+    this.reviewsCount = 0,
   });
+
+  /// 067: полная карточка — «на месте» или едет, когда был в сети, связка
+  /// тягач + прицеп, допуски, отмены и последние отзывы компаний.
+  final bool onSite;
+  final DateTime? lastSeenAt;
+  final List<DriverCardVehicle> vehicles;
+  final List<String> permitIds;
+  final CancelStats? cancelStats;
+  final List<DriverCardReview> reviews;
+  final int reviewsCount;
 
   final String id;
   final String fullName;
@@ -444,6 +461,52 @@ class DriverCard {
       plannedDay: arrival?['plannedDay'] == null ? null : DateTime.parse(arrival!['plannedDay'] as String),
       anyCountry: arrival?['anyCountry'] as bool? ?? false,
       countryIds: ((arrival?['countryIds'] as List<dynamic>?) ?? const []).cast<String>(),
+      onSite: arrival?['status'] == 'ON_SITE',
+      lastSeenAt: json['lastSeenAt'] == null ? null : DateTime.parse(json['lastSeenAt'] as String),
+      vehicles: [for (final v in (json['vehicles'] as List<dynamic>? ?? const [])) DriverCardVehicle.fromJson(v as Map<String, dynamic>)],
+      permitIds: ((json['permitIds'] as List<dynamic>?) ?? const []).cast<String>(),
+      cancelStats: CancelStats.fromJson(json['cancelStats']),
+      reviews: [for (final r in (json['reviews'] as List<dynamic>? ?? const [])) DriverCardReview.fromJson(r as Map<String, dynamic>)],
+      reviewsCount: json['reviewsCount'] as int? ?? 0,
     );
   }
+}
+
+/// 067: машина из связки водителя в карточке (тягач / прицеп / одиночка).
+class DriverCardVehicle {
+  const DriverCardVehicle({required this.kind, this.brand, this.bodyTypeId, this.capacityTons, this.volumeM3});
+
+  /// TRACTOR / TRAILER / RIGID.
+  final String kind;
+  final String? brand;
+  final String? bodyTypeId;
+  final double? capacityTons;
+  final double? volumeM3;
+
+  factory DriverCardVehicle.fromJson(Map<String, dynamic> json) => DriverCardVehicle(
+        kind: json['kind'] as String? ?? '',
+        brand: json['brand'] as String?,
+        bodyTypeId: json['bodyTypeId'] as String?,
+        capacityTons: (json['capacityTons'] as num?)?.toDouble(),
+        volumeM3: (json['volumeM3'] as num?)?.toDouble(),
+      );
+}
+
+/// 067: отзыв компании о водителе.
+class DriverCardReview {
+  const DriverCardReview({required this.id, required this.rating, this.comment, required this.createdAt, this.companyName = ''});
+
+  final String id;
+  final int rating;
+  final String? comment;
+  final DateTime createdAt;
+  final String companyName;
+
+  factory DriverCardReview.fromJson(Map<String, dynamic> json) => DriverCardReview(
+        id: json['id'] as String,
+        rating: json['rating'] as int? ?? 0,
+        comment: json['comment'] as String?,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        companyName: json['companyName'] as String? ?? '',
+      );
 }

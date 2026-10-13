@@ -4897,6 +4897,33 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   String get driverCardChat => 'Message';
 
   @override
+  String driverCardOnSite(String city) {
+    return 'On site in $city';
+  }
+
+  @override
+  String get driverCardVehicle => 'Vehicle';
+
+  @override
+  String get driverCardRigid => 'Truck';
+
+  @override
+  String driverCardPermits(String list) {
+    return 'Permits: $list';
+  }
+
+  @override
+  String get driverCardReviews => 'Company reviews';
+
+  @override
+  String driverCardAllReviews(int count) {
+    return 'All reviews ($count)';
+  }
+
+  @override
+  String get driverCardClose => 'Close';
+
+  @override
   String get shareLinkPromptText => 'Came here via a link?';
 
   @override

@@ -4888,6 +4888,33 @@ class LubaoLocalizationsRu extends LubaoLocalizations {
   String get driverCardChat => 'Написать';
 
   @override
+  String driverCardOnSite(String city) {
+    return 'На месте в $city';
+  }
+
+  @override
+  String get driverCardVehicle => 'Машина';
+
+  @override
+  String get driverCardRigid => 'Грузовик';
+
+  @override
+  String driverCardPermits(String list) {
+    return 'Допуски: $list';
+  }
+
+  @override
+  String get driverCardReviews => 'Отзывы компаний';
+
+  @override
+  String driverCardAllReviews(int count) {
+    return 'Все отзывы ($count)';
+  }
+
+  @override
+  String get driverCardClose => 'Закрыть';
+
+  @override
   String get shareLinkPromptText => 'Пришли по ссылке?';
 
   @override

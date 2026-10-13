@@ -9,6 +9,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../providers/api_providers.dart';
 import '../../services/disk_bytes_cache.dart';
 import 'error_feedback.dart';
+import 'fullscreen_photos.dart';
 
 final _photosProvider = FutureProvider.autoDispose.family<List<({String documentId, String type, String? plateNumber})>, String>(
   (ref, driverId) => ref.watch(cargoRepositoryProvider).driverVehiclePhotos(driverId),
@@ -19,44 +20,10 @@ final _photoFileProvider = FutureProvider.autoDispose.family<Uint8List, (String,
   (ref, key) => DiskBytesCache.instance.getOrFetch('vphoto:${key.$2}', () => ref.read(cargoRepositoryProvider).driverVehiclePhotoFile(key.$1, key.$2)),
 );
 
-/// Фото машины водителя у логиста (044 п.7): «Кто свободен», отклик. Нет фото —
-/// «Фото нет»; для сделки фото не обязательны.
-Future<void> showDriverVehiclePhotos(BuildContext context, {required String driverId, required String driverName}) {
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    builder: (sheetContext) => SafeArea(top: false, child: _PhotosSheet(driverId: driverId, driverName: driverName)),
-  );
-}
-
-class _PhotosSheet extends StatelessWidget {
-  const _PhotosSheet({required this.driverId, required this.driverName});
-  final String driverId;
-  final String driverName;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      key: const Key('driverVehiclePhotosSheet'),
-      padding: const EdgeInsets.all(AppSpacing.screen),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(driverName, style: AppTextStyles.title),
-          const SizedBox(height: AppSpacing.md),
-          DriverVehiclePhotos(driverId: driverId),
-          const SizedBox(height: AppSpacing.lg),
-        ],
-      ),
-    );
-  }
-}
-
-/// Фото машин водителя (044 п.7) — блоком: в шторке фото и в карточке водителя.
-/// Сервер отказал — понятная причина вместо «Ошибка»: фото машин видит только
-/// проверенная компания, которой водитель виден; есть суточный лимит.
+/// Фото машин водителя (044 п.7) — блоком в карточке водителя. Сервер
+/// отказал — понятная причина вместо «Ошибка»: водитель компании не виден
+/// (нет анонса, отклика, сделки), суточный лимит. 067: нажатие на фото — на
+/// весь экран с листанием.
 class DriverVehiclePhotos extends ConsumerWidget {
   const DriverVehiclePhotos({super.key, required this.driverId});
   final String driverId;
@@ -86,13 +53,29 @@ class DriverVehiclePhotos extends ConsumerWidget {
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
               children: [
-                for (final p in list)
+                for (final (index, p) in list.indexed)
                   SizedBox(
                     width: 150,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ClipRRect(
+                        GestureDetector(
+                          key: Key('driverVehiclePhoto-${p.documentId}'),
+                          onTap: () => showFullScreenPhotos(
+                            context,
+                            initialIndex: index,
+                            photos: [
+                              for (final photo in list)
+                                Consumer(
+                                  builder: (context, ref, _) => ref.watch(_photoFileProvider((driverId, photo.documentId))).when(
+                                        loading: () => const CircularProgressIndicator(),
+                                        error: (e, st) => const Icon(LucideIcons.imageOff, color: Colors.white),
+                                        data: (bytes) => Image.memory(bytes, fit: BoxFit.contain),
+                                      ),
+                                ),
+                            ],
+                          ),
+                          child: ClipRRect(
                           borderRadius: BorderRadius.circular(AppRadius.field),
                           child: SizedBox(
                             width: 150,
@@ -103,6 +86,7 @@ class DriverVehiclePhotos extends ConsumerWidget {
                                   data: (bytes) => Image.memory(bytes, fit: BoxFit.cover, cacheWidth: (150 * MediaQuery.devicePixelRatioOf(context)).round()),
                                 ),
                           ),
+                        ),
                         ),
                         const SizedBox(height: 2),
                         Text(

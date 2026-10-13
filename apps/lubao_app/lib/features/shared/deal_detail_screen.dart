@@ -352,7 +352,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
                 Row(
                   children: [
                     if (!isDriver) ...[
-                      DriverAvatar(driverId: deal.driverId, name: deal.driverName, version: deal.driverAvatarVersion, radius: 22),
+                      DriverAvatar(driverId: deal.driverId, name: deal.driverName, version: deal.driverAvatarVersion, radius: 22, openCard: true),
                       const SizedBox(width: AppSpacing.sm),
                     ],
                     Expanded(child: Text(isDriver ? deal.companyName : deal.driverName, style: Theme.of(context).textTheme.titleLarge)),

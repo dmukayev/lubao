@@ -4768,6 +4768,33 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   String get driverCardChat => '发消息';
 
   @override
+  String driverCardOnSite(String city) {
+    return '已在$city';
+  }
+
+  @override
+  String get driverCardVehicle => '车辆';
+
+  @override
+  String get driverCardRigid => '单体货车';
+
+  @override
+  String driverCardPermits(String list) {
+    return '许可：$list';
+  }
+
+  @override
+  String get driverCardReviews => '公司评价';
+
+  @override
+  String driverCardAllReviews(int count) {
+    return '全部评价（$count）';
+  }
+
+  @override
+  String get driverCardClose => '关闭';
+
+  @override
   String get shareLinkPromptText => '是通过链接来的吗？';
 
   @override

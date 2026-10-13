@@ -8958,6 +8958,48 @@ abstract class LubaoLocalizations {
   /// **'Написать'**
   String get driverCardChat;
 
+  /// No description provided for @driverCardOnSite.
+  ///
+  /// In ru, this message translates to:
+  /// **'На месте в {city}'**
+  String driverCardOnSite(String city);
+
+  /// No description provided for @driverCardVehicle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Машина'**
+  String get driverCardVehicle;
+
+  /// No description provided for @driverCardRigid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грузовик'**
+  String get driverCardRigid;
+
+  /// No description provided for @driverCardPermits.
+  ///
+  /// In ru, this message translates to:
+  /// **'Допуски: {list}'**
+  String driverCardPermits(String list);
+
+  /// No description provided for @driverCardReviews.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отзывы компаний'**
+  String get driverCardReviews;
+
+  /// No description provided for @driverCardAllReviews.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все отзывы ({count})'**
+  String driverCardAllReviews(int count);
+
+  /// No description provided for @driverCardClose.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закрыть'**
+  String get driverCardClose;
+
   /// No description provided for @shareLinkPromptText.
   ///
   /// In ru, this message translates to:

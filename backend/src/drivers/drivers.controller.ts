@@ -14,6 +14,8 @@ import { DriversService } from './drivers.service';
 import { DriverAvatarService } from './driver-avatar.service';
 import { SetAvatarDto } from './dto/set-avatar.dto';
 import { avatarVersion } from './avatar-version';
+import { currentVehicleCombo } from '../deals/vehicle-combo';
+import { cancelStatsFor } from '../deals/cancel-policy';
 
 @Controller('drivers')
 export class DriversController {
@@ -60,18 +62,44 @@ export class DriversController {
   /// документов — номер по-прежнему только по «Позвонить».
   @Get(':id/card')
   async card(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    // 066/067: любой компании, проверка не нужна.
     if (!ctx.companyMember) throw new ForbiddenException('Only company accounts');
-    const driver = await this.prisma.driver.findUnique({ where: { id }, include: { user: { select: { deletedAt: true, isBlocked: true } } } });
+    const driver = await this.prisma.driver.findUnique({
+      where: { id },
+      include: { user: { select: { deletedAt: true, isBlocked: true, lastSeenAt: true } }, permits: { select: { permitId: true } } },
+    });
     if (!driver || driver.user.deletedAt) throw new NotFoundException('Driver not found');
-    const [arrival, trips] = await Promise.all([
-      this.prisma.arrival.findFirst({
-        where: { driverId: id, status: { in: ['PLANNED', 'ON_SITE'] } },
-        orderBy: { createdAt: 'desc' },
-        include: { directions: true, trailer: true, tractor: true },
-      }),
+    const arrivals = await this.prisma.arrival.findMany({
+      where: { driverId: id, status: { in: ['PLANNED', 'ON_SITE'] } },
+      orderBy: [{ plannedDay: 'asc' }, { createdAt: 'desc' }],
+      include: { directions: true, trailer: true, tractor: true },
+    });
+    // На месте — этот анонс, иначе ближайший по дате (как связка рейса).
+    const arrival = arrivals.find((a) => a.status === 'ON_SITE') ?? arrivals[0] ?? null;
+    const combo = await currentVehicleCombo(this.prisma, id);
+    const comboIds = [combo.tractorId, combo.trailerId].filter((v): v is string => !!v);
+    const [trips, vehicles, reviews, reviewsCount, cancelStats] = await Promise.all([
       this.prisma.deal.count({ where: { driverId: id, status: 'DELIVERED' } }),
+      comboIds.length ? this.prisma.vehicle.findMany({ where: { id: { in: comboIds } } }) : Promise.resolve([]),
+      // 067: последние отзывы компаний о водителе.
+      this.prisma.review.findMany({
+        where: { authorRole: 'COMPANY', deal: { driverId: id } },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: { id: true, rating: true, comment: true, createdAt: true, deal: { select: { company: { select: { name: true } } } } },
+      }),
+      this.prisma.review.count({ where: { authorRole: 'COMPANY', deal: { driverId: id } } }),
+      cancelStatsFor(this.prisma, 'DRIVER', [id]),
     ]);
     const vehicle = arrival?.trailer ?? arrival?.tractor ?? null;
+    const byId = new Map(vehicles.map((v) => [v.id, v]));
+    const vehicleDto = (v: (typeof vehicles)[number]) => ({
+      kind: v.kind,
+      brand: v.brand,
+      bodyTypeId: v.bodyTypeId,
+      capacityTons: v.capacityTons != null ? Number(v.capacityTons) : null,
+      volumeM3: v.volumeM3 != null ? Number(v.volumeM3) : null,
+    });
     return {
       id: driver.id,
       fullName: driver.fullName,
@@ -80,9 +108,16 @@ export class DriversController {
       ratingAvg: Number(driver.ratingAvg),
       ratingCount: driver.ratingCount,
       trips,
+      lastSeenAt: driver.user.lastSeenAt ?? null,
       bodyTypeId: vehicle?.bodyTypeId ?? driver.preferredBodyTypeId ?? null,
       capacityTons: vehicle?.capacityTons != null ? Number(vehicle.capacityTons) : driver.preferredCapacityTons != null ? Number(driver.preferredCapacityTons) : null,
       volumeM3: vehicle?.volumeM3 != null ? Number(vehicle.volumeM3) : null,
+      // 067: связка тягач + прицеп, допуски, отмены, отзывы.
+      vehicles: comboIds.map((vid) => byId.get(vid)).filter((v): v is (typeof vehicles)[number] => !!v).map(vehicleDto),
+      permitIds: driver.permits.map((p) => p.permitId),
+      cancelStats: cancelStats.get(id) ?? null,
+      reviews: reviews.map((r) => ({ id: r.id, rating: r.rating, comment: r.comment, createdAt: r.createdAt, companyName: r.deal.company.name })),
+      reviewsCount,
       arrival: arrival
         ? { pointId: arrival.pointId, status: arrival.status, plannedDay: arrival.plannedDay.toISOString().slice(0, 10), anyCountry: arrival.anyCountry, countryIds: arrival.directions.map((d) => d.countryId) }
         : null,

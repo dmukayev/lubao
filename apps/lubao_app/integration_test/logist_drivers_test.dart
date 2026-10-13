@@ -244,6 +244,28 @@ void main() {
       expectNoOverflow(tester);
     });
 
+    // 067: нажатие по строке (не по имени) — полная карточка водителя: фото
+    // водителя, фото машины, «Позвонить»; ✕ закрывает. Фото машины — на весь экран.
+    await run.step(tester, 'карточка-водителя-по-строке', () async {
+      await vehiclePhotoViaApi('7010000003', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa003');
+      await openDriverCardByRow(tester, _d3Card);
+      await waitFor(tester, find.descendant(of: find.byKey(const Key('driverCard')), matching: find.byKey(const Key('driverAvatar-$_d3Id-photo'))), timeout: const Duration(seconds: 30));
+      expect(find.byKey(const Key('driverCardStatus')), findsOneWidget);
+      final photo = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('driverVehiclePhoto-'));
+      await waitAndReveal(tester, photo, timeout: const Duration(seconds: 30));
+      expectNoOverflow(tester);
+      await tester.tap(photo.first);
+      await waitFor(tester, find.byKey(const Key('fullScreenPhotos')));
+      await tester.tap(find.byKey(const Key('fullScreenPhotosClose')));
+      await tester.pumpAndSettle();
+      await waitAndReveal(tester, find.byKey(const Key('driverCardCall')));
+      expectInsideSafeZone(tester);
+      expectNoOverflow(tester);
+      await tester.tap(find.byKey(const Key('driverCardClose')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('driverCard')), findsNothing, reason: '✕ закрывает шторку');
+    });
+
     // 061 п.11: повторное нажатие на «Грузы» у логиста — список наверх.
     await run.step(tester, 'грузы-логиста-повторное-нажатие-наверх', () async {
       await goTab(tester, t.navCargos);

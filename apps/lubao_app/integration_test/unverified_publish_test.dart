@@ -132,6 +132,26 @@ void main() {
       expectInsideSafeZone(tester);
     });
 
+    // 067: непроверенная компания видит карточку водителя целиком — фото
+    // водителя, фото машины (добавлены в logist_drivers), «Позвонить».
+    await run.step(tester, 'карточка-водителя-без-проверки', () async {
+      const d3 = 'dddddddd-dddd-4ddd-8ddd-ddddddddd003';
+      await goTab(tester, t.navDrivers);
+      await waitFor(tester, find.byKey(const Key('driversPointChip')));
+      await tester.tap(find.byKey(const Key('driversPointChip')));
+      await pickCityByName(tester, 'korg', 'Хоргос');
+      await openDriverCardByRow(tester, const Key('driversAtPointCard-$d3'));
+      await waitFor(tester, find.descendant(of: find.byKey(const Key('driverCard')), matching: find.byKey(const Key('driverAvatar-$d3-photo'))), timeout: const Duration(seconds: 30));
+      final photo = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('driverVehiclePhoto-'));
+      await waitAndReveal(tester, photo, timeout: const Duration(seconds: 30));
+      expect(find.byKey(const Key('driverVehiclePhotosUnavailable')), findsNothing, reason: 'фото машины без проверки компании');
+      await waitAndReveal(tester, find.byKey(const Key('driverCardCall')));
+      expectNoOverflow(tester);
+      await tester.tap(find.byKey(const Key('driverCardClose')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('driverCard')), findsNothing);
+    });
+
     await run.step(tester, 'водитель-видит-плашки', () async {
       final driverApi = await DriverApi.login('+77010000005');
       final feed = ((await driverApi.feed({'showOtherCities': 'true'}))['items'] as List).cast<Map>();

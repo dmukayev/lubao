@@ -11,7 +11,6 @@ import '../../shared/offer_sheet.dart';
 import '../../shared/status_helpers.dart';
 import '../haul_hint.dart';
 import 'cargo_close_dialog.dart';
-import '../../shared/driver_vehicle_photos.dart';
 import '../../shared/driver_avatar.dart';
 import '../drivers/driver_card_screen.dart' show showDriverInfoSheet;
 import '../../shared/share_action.dart';
@@ -313,9 +312,18 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
             readyDate: response.committedReadyDate,
           );
 
+    // 067: нажатие на строку — полная карточка водителя (в ожидающем отклике —
+    // с «Выбрать»); сделка открывается нажатием на её статус.
+    void openDriverCard() => showDriverInfoSheet(
+          context,
+          driverId: response.driverId,
+          cargoId: response.cargoId,
+          selectLabel: offer.hasDriverPrice && widget.cargo != null ? t.offerSelectFor(formatMoney(offer.proposedPrice!, widget.cargo!.currency)) : null,
+          onSelect: response.status == ResponseStatus.pending ? () => _select(haulHint) : null,
+        );
     return AppCard(
       key: Key('responseCard-${response.id}'),
-      onTap: response.dealId == null ? null : () => context.push('/deal/${response.dealId}'),
+      onTap: openDriverCard,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -336,14 +344,21 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    GestureDetector(key: Key('driverNameTap-${response.driverId}'), onTap: () => showDriverInfoSheet(context, driverId: response.driverId), child: Text(response.driverName, style: AppTextStyles.bodyStrong)),
+                    GestureDetector(key: Key('driverNameTap-${response.driverId}'), onTap: openDriverCard, child: Text(response.driverName, style: AppTextStyles.bodyStrong)),
                     // 058 п.7: «в сети» / «был сегодня в 20:15».
                     if (formatLastSeen(t, response.lastSeenAt) case final seen?)
                       Text(seen, key: Key('responseLastSeen-${response.id}'), style: AppTextStyles.caption.copyWith(color: seen == t.lastSeenOnline ? AppColors.success : AppColors.textSecondary)),
                   ],
                 ),
               ),
-              StatusBadge(label: statusLabel, color: statusColor),
+              if (response.dealId != null)
+                GestureDetector(
+                  key: Key('responseDealStatus-${response.id}'),
+                  onTap: () => context.push('/deal/${response.dealId}'),
+                  child: StatusBadge(label: statusLabel, color: statusColor),
+                )
+              else
+                StatusBadge(label: statusLabel, color: statusColor),
               const SizedBox(width: AppSpacing.sm),
               IconSquareButton(icon: LucideIcons.messageSquare, loading: _openingChat, onPressed: _chat),
             ],
@@ -356,11 +371,8 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
           // «20 т · 90 м³ · 33 пал.».
           if (response.bodyTypeId != null || response.capacityTons != null || response.volumeM3 != null || response.palletsEuro != null) ...[
             const SizedBox(height: AppSpacing.xs),
-            // 044 п.7: тап по строке машины — её фото.
-            InkWell(
-              key: Key('responsePhotos-${response.id}'),
-              onTap: () => showDriverVehiclePhotos(context, driverId: response.driverId, driverName: response.driverName),
-              child: Row(
+            // Фото машины — в карточке водителя (067).
+            Row(
                 children: [
                 // 045 п.4: миниатюра кузова водителя.
                 if (response.bodyTypeId != null) ...[
@@ -382,9 +394,7 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
                     style: AppTextStyles.caption,
                   ),
                 ),
-                  const Icon(LucideIcons.image, size: 16, color: AppColors.primary),
                 ],
-              ),
             ),
           ],
           if (haulHint != null) ...[

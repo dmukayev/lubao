@@ -7,6 +7,7 @@ import '../../../providers/api_providers.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/data_providers.dart';
 import '../../shared/driver_avatar.dart';
+import 'driver_card_screen.dart' show showDriverInfoSheet;
 import '../../shared/error_feedback.dart';
 import '../../shared/share_action.dart';
 import '../../shared/status_helpers.dart';
@@ -107,8 +108,11 @@ class _MyDriverCard extends ConsumerWidget {
       if (driver.onSite) t.myDriversOnSite else if (driver.searching) t.myDriversSearching,
       ?seen,
     ].join(' · ');
+    // 067: нажатие на строку — полная карточка водителя (кроме ещё не
+    // принявших приглашение: карточки у них нет).
     return AppCard(
       key: Key('myDriverCard-${driver.driverId ?? driver.rowId}'),
+      onTap: driver.driverId == null || driver.pending ? null : () => showDriverInfoSheet(context, driverId: driver.driverId!),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

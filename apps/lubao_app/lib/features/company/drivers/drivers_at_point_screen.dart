@@ -14,7 +14,6 @@ import '../../../providers/data_providers.dart';
 import '../../shared/city_picking.dart';
 import '../../shared/status_helpers.dart';
 import '../haul_hint.dart';
-import '../../shared/driver_vehicle_photos.dart';
 import '../../shared/driver_avatar.dart';
 import 'driver_card_screen.dart' show showDriverInfoSheet;
 import 'invite_cargo_picker.dart';
@@ -860,8 +859,11 @@ class _DriverCard extends StatelessWidget {
       ),
     );
 
+    // 067: нажатие на любое место строки — полная карточка водителя; кнопки
+    // в строке (звонок, чат, WhatsApp, «Предложить», ☆) работают сами по себе.
     return AppCard(
       key: Key('driversAtPointCard-${driver.driverId}'),
+      onTap: () => showDriverInfoSheet(context, driverId: driver.driverId),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -937,19 +939,14 @@ class _DriverCard extends StatelessWidget {
                     if (formatLastSeen(t, driver.lastSeenAt) case final seen?)
                       Text(seen, key: Key('driverLastSeen-${driver.driverId}'), style: AppTextStyles.caption.copyWith(color: seen == t.lastSeenOnline ? AppColors.success : AppColors.textSecondary)),
                     if (spec.isNotEmpty)
-                      // 045 п.4: миниатюра кузова (40 px) перед строкой машины.
-                      // 044 п.7: тап по строке машины — её фото («Фото нет», если не добавлены).
-                      InkWell(
-                        key: Key('driversAtPointPhotos-${driver.driverId}'),
-                        onTap: () => showDriverVehiclePhotos(context, driverId: driver.driverId, driverName: driver.driverName),
-                        child: Row(
-                          children: [
-                            BodyTypeIcon(bodyTypeCode: bodyType?.code, width: 40),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(child: Text(spec, style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                            const Icon(LucideIcons.image, size: 16, color: AppColors.primary),
-                          ],
-                        ),
+                      // 045 п.4: миниатюра кузова (40 px) перед строкой машины;
+                      // фото машины — в карточке водителя (067).
+                      Row(
+                        children: [
+                          BodyTypeIcon(bodyTypeCode: bodyType?.code, width: 40),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(child: Text(spec, style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        ],
                       ),
                   ],
                 ),
