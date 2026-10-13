@@ -1,6 +1,8 @@
 // Задача 034, сценарий 8: регистрация компании (email + пароль) → баннер
-// «Публикация откроется после проверки» → загрузка синтетического
-// свидетельства → «на проверке» → публикация груза заблокирована.
+// «Компания не проверена» → загрузка синтетического свидетельства →
+// «на проверке» → форма груза открыта (066: публикация без проверки; сам
+// груз публикует unverified_publish, здесь форма закрывается без публикации —
+// logist_publish начинает с пустой компании).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,7 +17,7 @@ const e2eNewCompanyEmail = 'e2e-new-logist@lubao-test.cn';
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('логист: регистрация компании → баннер → свидетельство → публикация заблокирована', (tester) async {
+  testWidgets('логист: регистрация компании → баннер → свидетельство → публикация доступна', (tester) async {
     final run = E2eRun(binding, 'company_register');
     await clearPersistedSession();
     await tester.pumpWidget(const ProviderScope(child: LubaoApp()));
@@ -91,16 +93,19 @@ void main() {
       await waitFor(tester, find.text(t.companyVerificationStatusPending));
     });
 
-    await run.step(tester, 'публикация-заблокирована', () async {
+    await run.step(tester, 'публикация-доступна-без-проверки', () async {
       await goTab(tester, t.navCargos);
       await waitFor(tester, find.byKey(const Key('companyPostCargoFab')));
       await tester.tap(find.byKey(const Key('companyPostCargoFab')));
-      await waitFor(tester, find.byKey(const Key('postCargoVerificationBanner')));
+      await waitFor(tester, find.byKey(const Key('postCargoPickupCity')));
+      expect(find.byKey(const Key('postCargoVerificationBanner')), findsNothing, reason: '066: баннер не блокирует «+ Груз»');
       final submit = find.byKey(const Key('postCargoSubmit'));
       await reveal(tester, submit);
       final button = tester.widget<PrimaryButton>(submit);
-      expect(button.onPressed, isNull, reason: 'кнопка «Опубликовать» должна быть заблокирована у непроверенной компании');
+      expect(button.onPressed, isNotNull, reason: '066: «Опубликовать» активна у непроверенной компании');
       expectInsideSafeZone(tester);
+      await tester.pageBack();
+      await waitFor(tester, find.byKey(const Key('companyPostCargoFab')));
     });
   });
 }
