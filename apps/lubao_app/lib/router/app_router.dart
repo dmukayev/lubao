@@ -30,6 +30,7 @@ import '../features/company/drivers/drivers_at_point_screen.dart';
 import '../features/company/profile/company_profile_screen.dart';
 import '../features/shared/deal_detail_screen.dart';
 import '../features/shared/chat_screen.dart';
+import '../features/shared/chat_opener.dart';
 import '../features/shared/my_chats_screen.dart';
 import '../features/shared/devices_screen.dart';
 import '../features/shared/notification_settings_screen.dart';
@@ -233,6 +234,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/deal/:id',
         builder: (context, state) => DealDetailScreen(dealId: state.pathParameters['id']!),
+      ),
+      // 078: «Написать» — экран чата сразу, тред ищется в фоне.
+      GoRoute(
+        path: '/chat/open',
+        builder: (context, state) => ChatOpeningScreen(target: state.extra! as ChatTarget),
       ),
       GoRoute(
         path: '/chat/:id',

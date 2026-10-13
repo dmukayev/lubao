@@ -16,6 +16,7 @@ import '../drivers/driver_card_screen.dart' show showDriverInfoSheet;
 import '../../shared/share_action.dart';
 import '../../shared/cargo_info.dart';
 import '../../../providers/auth_provider.dart';
+import '../../shared/chat_opener.dart';
 
 class CargoResponsesScreen extends ConsumerWidget {
   const CargoResponsesScreen({super.key, required this.cargoId});
@@ -341,7 +342,6 @@ class _ResponseCard extends ConsumerStatefulWidget {
 }
 
 class _ResponseCardState extends ConsumerState<_ResponseCard> {
-  bool _openingChat = false;
 
   /// Задача 038, п.9 — мягкое предупреждение перед «Выбрать», если по
   /// сводке «Уже везёт…» груз не помещается (водитель не сможет
@@ -379,27 +379,9 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
     ref.invalidate(cargoResponsesProvider(widget.response.cargoId));
   }
 
+  /// 078: чат открывается сразу, тред — в фоне.
   Future<void> _chat() async {
-    setState(() => _openingChat = true);
-    try {
-      final thread = await ref
-          .read(chatRepositoryProvider)
-          .findOrCreate(driverId: widget.response.driverId, cargoId: widget.response.cargoId);
-      if (mounted) context.push('/chat/${thread.id}');
-    } catch (e) {
-      debugPrint('CargoResponsesScreen: failed to open chat: $e');
-      if (mounted) {
-        final t = context.l10n;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(t.chatOpenFailed),
-          // С кнопкой Flutter не убирает SnackBar сам (persist) — висел до нажатия.
-          persist: false,
-          action: SnackBarAction(label: t.commonRetry, onPressed: _chat),
-        ));
-      }
-    } finally {
-      if (mounted) setState(() => _openingChat = false);
-    }
+    openChat(context, ChatTarget(driverId: widget.response.driverId, cargoId: widget.response.cargoId, title: widget.response.driverName));
   }
 
   @override
@@ -479,7 +461,7 @@ class _ResponseCardState extends ConsumerState<_ResponseCard> {
               else
                 StatusBadge(label: statusLabel, color: statusColor),
               const SizedBox(width: AppSpacing.sm),
-              IconSquareButton(icon: LucideIcons.messageSquare, loading: _openingChat, onPressed: _chat),
+              IconSquareButton(icon: LucideIcons.messageSquare, onPressed: _chat),
             ],
           ),
           // 033 п.9 / 038 п.14 — вместимость связки водителя в отклике:

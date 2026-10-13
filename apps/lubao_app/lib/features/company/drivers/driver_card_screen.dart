@@ -13,6 +13,7 @@ import '../../shared/status_helpers.dart';
 import '../../shared/driver_avatar.dart';
 import '../../shared/driver_vehicle_photos.dart';
 import '../../shared/error_feedback.dart';
+import '../../shared/chat_opener.dart';
 
 /// 078: открытая карточка водителя хранится сутки — повторно открывается сразу.
 final _driverCardProvider = StreamProvider.autoDispose.family<DriverCard, String>((ref, id) {
@@ -87,15 +88,12 @@ class DriverInfoView extends ConsumerWidget {
   final String? selectLabel;
   final VoidCallback? onSelect;
 
-  Future<void> _chat(BuildContext context, WidgetRef ref) async {
-    try {
-      final thread = await ref.read(chatRepositoryProvider).findOrCreate(driverId: driverId, cargoId: cargoId);
-      if (!context.mounted) return;
-      if (inSheet) Navigator.of(context).pop();
-      if (context.mounted) context.push('/chat/${thread.id}');
-    } catch (e) {
-      if (context.mounted) showApiError(context, e);
-    }
+  /// 078: чат открывается сразу (тред — в фоне), повторное нажатие — тот же
+  /// экран, без двойных запросов.
+  void _chat(BuildContext context, String name) {
+    final router = GoRouter.of(context);
+    if (inSheet) Navigator.of(context).pop();
+    router.push('/chat/open', extra: ChatTarget(driverId: driverId, cargoId: cargoId, title: name));
   }
 
   /// Номер — по нажатию (043 п.11): сервер пишет contact_event и считает лимит.
@@ -188,7 +186,7 @@ class DriverInfoView extends ConsumerWidget {
             ),
           OutlinedButton.icon(
             key: const Key('driverCardChat'),
-            onPressed: () => _chat(context, ref),
+            onPressed: () => _chat(context, d.fullName),
             icon: const Icon(LucideIcons.messageCircle, size: 18),
             label: Text(t.driverCardChat),
           ),

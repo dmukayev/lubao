@@ -998,6 +998,27 @@ class LubaoLocalizationsEn extends LubaoLocalizations {
   }
 
   @override
+  String get chatPendingSend => 'waiting to send';
+
+  @override
+  String get chatOpening => 'Opening chat…';
+
+  @override
+  String get offlineBanner => 'No connection — showing saved data';
+
+  @override
+  String get feedUpdating => 'updating…';
+
+  @override
+  String get draftContinueTitle => 'Continue the draft?';
+
+  @override
+  String get draftContinue => 'Continue';
+
+  @override
+  String get draftStartOver => 'Start over';
+
+  @override
   String get languageNameRu => 'Russian';
 
   @override

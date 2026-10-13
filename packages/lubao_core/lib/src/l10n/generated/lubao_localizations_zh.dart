@@ -972,6 +972,27 @@ class LubaoLocalizationsZh extends LubaoLocalizations {
   }
 
   @override
+  String get chatPendingSend => '等待发送';
+
+  @override
+  String get chatOpening => '正在打开聊天…';
+
+  @override
+  String get offlineBanner => '无网络连接，显示已保存的数据';
+
+  @override
+  String get feedUpdating => '正在更新…';
+
+  @override
+  String get draftContinueTitle => '继续编辑草稿？';
+
+  @override
+  String get draftContinue => '继续';
+
+  @override
+  String get draftStartOver => '重新开始';
+
+  @override
   String get languageNameRu => '俄语';
 
   @override

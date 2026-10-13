@@ -1914,6 +1914,48 @@ abstract class LubaoLocalizations {
   /// **'Язык пользователя — {language}'**
   String chatWritesIn(String language);
 
+  /// No description provided for @chatPendingSend.
+  ///
+  /// In ru, this message translates to:
+  /// **'ожидает отправки'**
+  String get chatPendingSend;
+
+  /// No description provided for @chatOpening.
+  ///
+  /// In ru, this message translates to:
+  /// **'Открываем чат…'**
+  String get chatOpening;
+
+  /// No description provided for @offlineBanner.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет связи — показаны сохранённые данные'**
+  String get offlineBanner;
+
+  /// No description provided for @feedUpdating.
+  ///
+  /// In ru, this message translates to:
+  /// **'обновляется…'**
+  String get feedUpdating;
+
+  /// No description provided for @draftContinueTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Продолжить черновик?'**
+  String get draftContinueTitle;
+
+  /// No description provided for @draftContinue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Продолжить'**
+  String get draftContinue;
+
+  /// No description provided for @draftStartOver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Начать заново'**
+  String get draftStartOver;
+
   /// No description provided for @languageNameRu.
   ///
   /// In ru, this message translates to:

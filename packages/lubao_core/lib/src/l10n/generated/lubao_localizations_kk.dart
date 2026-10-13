@@ -995,6 +995,27 @@ class LubaoLocalizationsKk extends LubaoLocalizations {
   }
 
   @override
+  String get chatPendingSend => 'жіберуді күтуде';
+
+  @override
+  String get chatOpening => 'Чат ашылуда…';
+
+  @override
+  String get offlineBanner => 'Байланыс жоқ — сақталған деректер көрсетілген';
+
+  @override
+  String get feedUpdating => 'жаңартылуда…';
+
+  @override
+  String get draftContinueTitle => 'Жобаны жалғастырасыз ба?';
+
+  @override
+  String get draftContinue => 'Жалғастыру';
+
+  @override
+  String get draftStartOver => 'Қайта бастау';
+
+  @override
   String get languageNameRu => 'орыс';
 
   @override
