@@ -460,7 +460,9 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
             final details = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(left[0], style: AppTextStyles.bodyStrong),
+                // 075: «что везут» добавило строке длины — как маршрут: сначала
+                // уменьшается до 60%, потом перенос (на 360 dp видно две карточки).
+                _RouteLine(text: left[0], textKey: Key('companyCargoWhat-${cargo.id}'), style: AppTextStyles.bodyStrong),
                 Text(left[1], style: grey),
                 Text(left[2], key: Key('companyCargoTrucks-${cargo.id}'), style: grey),
                 if (cargo.allowPartial) Text(t.feedBadgePartial, style: AppTextStyles.small.copyWith(color: AppColors.primary)),
@@ -611,14 +613,15 @@ bool kIsWebWide(BuildContext context) => MediaQuery.sizeOf(context).width >= 700
 /// 065: маршрут одной строкой — не помещается, уменьшается (не меньше ¾),
 /// дальше — многоточие: город назначения не пропадает, текст не становится мелким.
 class _RouteLine extends StatelessWidget {
-  const _RouteLine({required this.text, required this.textKey});
+  const _RouteLine({required this.text, required this.textKey, this.style});
 
   final String text;
   final Key textKey;
+  final TextStyle? style;
 
   @override
   Widget build(BuildContext context) {
-    final style = AppTextStyles.route.copyWith(fontSize: 18);
+    final style = this.style ?? AppTextStyles.route.copyWith(fontSize: 18);
     return LayoutBuilder(builder: (context, constraints) {
       final painter = TextPainter(
         text: TextSpan(text: text, style: style),

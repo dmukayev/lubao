@@ -735,6 +735,13 @@ Future<void> pickGoods(WidgetTester tester, String query, {bool addOwn = false})
   await tester.pumpAndSettle();
 }
 
+/// 075: текст поля «Что везёте?» — само поле после выбора может уйти за
+/// край экрана (find.text его не видит), поэтому — из контроллера.
+String goodsFieldText(WidgetTester tester) => tester
+    .widget<EditableText>(find.descendant(of: find.byKey(const Key('postCargoWhat'), skipOffstage: false), matching: find.byType(EditableText), skipOffstage: false))
+    .controller
+    .text;
+
 /// 072: незаполненное поле — в видимой части экрана, с ошибкой и фокусом.
 void expectFieldShownWithError(WidgetTester tester, Key fieldKey, {bool focused = true}) {
   final field = find.byKey(fieldKey);

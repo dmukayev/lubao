@@ -104,7 +104,7 @@ void main() {
       await tester.pumpAndSettle();
       // 075: «瓷砖» находит ту же плитку; а свой вариант — «Добавить: „…“».
       await pickGoods(tester, '瓷砖');
-      expect(find.text('Плитка керамическая'), findsWidgets);
+      expect(goodsFieldText(tester), 'Плитка керамическая');
       await pickGoods(tester, 'Тестовый груз 075', addOwn: true);
       final category = find.byKey(const Key('postCargoCategory-CONSTRUCTION'));
       await reveal(tester, category);
