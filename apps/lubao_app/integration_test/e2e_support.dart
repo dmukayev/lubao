@@ -728,6 +728,9 @@ Future<void> completeDriverWizard(WidgetTester tester, String fullName) async {
 Future<String> pickGoods(WidgetTester tester, String query, {bool addOwn = false}) async {
   final field = find.byKey(const Key('postCargoWhat'));
   await reveal(tester, field);
+  // Как пользователь: сначала нажать на поле (после выбора товара фокус снят).
+  await tester.tap(field);
+  await tester.pumpAndSettle();
   await tester.enterText(field, query);
   await tester.pump(const Duration(milliseconds: 400));
   final target = find.byKey(Key(addOwn ? 'postCargoWhatAdd' : 'goodsHit-0'));
