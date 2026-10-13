@@ -13,7 +13,10 @@ class DiskBytesCache {
   static final instance = DiskBytesCache._();
 
   /// Не больше этого — самые старые файлы удаляются уборкой (раз в несколько записей).
-  static const maxFiles = 400;
+  static const maxFiles = 1000;
+
+  /// 078: фото хранятся неделю — потом скачиваются заново.
+  static const maxAge = Duration(days: 7);
 
   Directory? _dir;
 
@@ -44,7 +47,9 @@ class DiskBytesCache {
     if (dir == null) return null;
     final file = File('${dir.path}/${fileName(key)}');
     try {
-      return await file.exists() ? await file.readAsBytes() : null;
+      if (!await file.exists()) return null;
+      if (DateTime.now().difference(await file.lastModified()) > maxAge) return null;
+      return await file.readAsBytes();
     } catch (_) {
       return null;
     }
@@ -84,6 +89,12 @@ class DiskBytesCache {
       await for (final e in dir.list()) {
         if (e is File) entries.add((e, (await e.stat()).modified));
       }
+      // Старше недели — удалить; сверх лимита — самые старые.
+      final now = DateTime.now();
+      for (final e in entries.where((e) => now.difference(e.$2) > maxAge).toList()) {
+        await e.$1.delete().catchError((_) => e.$1);
+        entries.remove(e);
+      }
       if (entries.length <= maxFiles) return;
       entries.sort((a, b) => a.$2.compareTo(b.$2));
       for (final old in entries.take(entries.length - maxFiles)) {
@@ -117,12 +128,30 @@ class DiskBytesCache {
     _writesSinceTrim = 0;
   }
 
-  /// Сначала диск, потом сеть; удачный ответ сети — на диск.
+  /// Сначала диск, потом сеть; удачный ответ сети — на диск. 078: сети нет,
+  /// а на диске есть фото старше недели — лучше старое, чем пусто.
   Future<Uint8List> getOrFetch(String key, Future<Uint8List> Function() fetch) async {
     final cached = await read(key);
     if (cached != null && cached.isNotEmpty) return cached;
-    final bytes = await fetch();
-    await write(key, bytes);
-    return bytes;
+    try {
+      final bytes = await fetch();
+      await write(key, bytes);
+      return bytes;
+    } catch (_) {
+      final stale = await _readAnyAge(key);
+      if (stale != null && stale.isNotEmpty) return stale;
+      rethrow;
+    }
+  }
+
+  Future<Uint8List?> _readAnyAge(String key) async {
+    final dir = await _directory();
+    if (dir == null) return null;
+    final file = File('${dir.path}/${fileName(key)}');
+    try {
+      return await file.exists() ? await file.readAsBytes() : null;
+    } catch (_) {
+      return null;
+    }
   }
 }

@@ -8,6 +8,7 @@ import 'package:lubao_app/features/shared/city_picking.dart';
 import 'package:lubao_app/providers/api_providers.dart';
 import 'package:lubao_app/providers/data_providers.dart';
 import 'package:lubao_app/providers/locale_provider.dart';
+import 'package:lubao_app/services/local_data.dart';
 
 const _kz = Country(id: 'kz-1', code: 'KZ', name: I18nText(kk: 'Қазақстан', ru: 'Казахстан', zh: '哈萨克斯坦'), isCisMember: true);
 const _uz = Country(id: 'uz-1', code: 'UZ', name: I18nText(kk: 'Өзбекстан', ru: 'Узбекистан', zh: '乌兹别克斯坦'), isCisMember: true);
@@ -84,6 +85,7 @@ void main() {
 
     await tester.pumpWidget(ProviderScope(
       overrides: [
+        localStoreProvider.overrideWithValue(MemoryCacheStore()),
         arrivalRepositoryProvider.overrideWithValue(fakeRepo),
         recentPointsStoreProvider.overrideWithValue(_FakeRecentPoints()),
         garageVehiclesProvider.overrideWith((ref) => Stream.value(const <GarageVehicle>[])),
@@ -130,6 +132,7 @@ void main() {
 
     await tester.pumpWidget(ProviderScope(
       overrides: [
+        localStoreProvider.overrideWithValue(MemoryCacheStore()),
         arrivalRepositoryProvider.overrideWithValue(fakeRepo),
         recentPointsStoreProvider.overrideWithValue(_FakeRecentPoints()),
         garageVehiclesProvider.overrideWith((ref) => Stream.value(const <GarageVehicle>[])),
@@ -167,6 +170,7 @@ void main() {
     late BuildContext capturedContext;
     await tester.pumpWidget(ProviderScope(
       overrides: [
+        localStoreProvider.overrideWithValue(MemoryCacheStore()),
         arrivalRepositoryProvider.overrideWithValue(fakeRepo),
         recentPointsStoreProvider.overrideWithValue(recent ?? _FakeRecentPoints()),
         garageVehiclesProvider.overrideWith((ref) => Stream.value(const <GarageVehicle>[])),

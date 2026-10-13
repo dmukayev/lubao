@@ -20,6 +20,7 @@ import '../../shared/error_feedback.dart';
 import '../../shared/status_helpers.dart';
 import '../../../services/push_service.dart';
 import '../../shared/cached_photo.dart';
+import '../../../services/local_data.dart';
 
 /// Телефон логиста сохранён из формы груза в этой сессии приложения — второй
 /// раз не спрашивать (профиль в сессии обновится при следующей загрузке).
@@ -123,10 +124,139 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
 
   bool get _isEditing => widget.cargo != null;
 
+  // --- 078: черновик новой формы («Продолжить черновик?») -------------------
+  static const _draftName = 'postCargo';
+  bool get _usesDraft => widget.cargo == null && widget.template == null;
+
+  /// Черновик сохраняется только после ответа на «Продолжить?» (или если его
+  /// не было) — иначе пустая форма перезаписала бы старый.
+  bool _draftReady = false;
+  Timer? _draftTimer;
+
+  /// Восстановили черновик — поля с начальным значением строятся заново.
+  int _formGeneration = 0;
+
+  Map<String, dynamic> _draftData() => {
+        'pointId': _pointId,
+        'countryId': _countryId,
+        'cityId': _cityId,
+        'goodsId': _goodsId,
+        'goodsText': _goodsText,
+        'goodsLabel': _goodsLabel,
+        'hsCode': _hsCode,
+        'categoryId': _categoryId,
+        'bodyTypeId': _bodyTypeId,
+        'specs': _specs,
+        'extraBodyTypeIds': _extraBodyTypeIds.toList(),
+        'currency': _currency.name,
+        'readyDate': _readyDate.toIso8601String(),
+        'weight': _weightController.text,
+        'weightUnit': _weightUnit.name,
+        'volume': _volumeController.text,
+        'pallets': _palletController.text,
+        'price': _priceController.text,
+        'description': _descriptionController.text,
+        'advance': _advanceController.text,
+        'delay': _delayController.text,
+        'restLater': _restLater,
+        'paymentForm': _paymentForm?.name,
+        'trucks': _trucksController.text,
+        'allowPartial': _allowPartial,
+        'photoUrls': _photoUrls,
+      };
+
+  /// Есть что продолжать: что-то, кроме значений по умолчанию.
+  static bool _draftHasContent(Map<String, dynamic> d) =>
+      [d['countryId'], d['goodsId'], d['goodsText'], d['bodyTypeId']].any((v) => v != null) ||
+      [d['price'], d['weight'], d['volume'], d['description']].any((v) => v is String && v.trim().isNotEmpty);
+
+  void _scheduleDraftSave() {
+    if (!_usesDraft || !_draftReady) return;
+    _draftTimer?.cancel();
+    _draftTimer = Timer(const Duration(seconds: 1), () {
+      final data = _draftData();
+      final local = ref.read(localDataProvider);
+      unawaited(_draftHasContent(data) ? local.saveDraft(_draftName, data) : local.clearDraft(_draftName));
+    });
+  }
+
+  Future<void> _offerDraft() async {
+    final local = ref.read(localDataProvider);
+    final draft = await local.draft(_draftName);
+    if (!mounted) return;
+    if (draft == null || !_draftHasContent(draft)) {
+      _draftReady = true;
+      return;
+    }
+    final t = context.l10n;
+    final resume = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        key: const Key('draftDialog'),
+        title: Text(t.draftContinueTitle),
+        actions: [
+          TextButton(key: const Key('draftStartOver'), onPressed: () => Navigator.of(context).pop(false), child: Text(t.draftStartOver)),
+          FilledButton(key: const Key('draftContinue'), onPressed: () => Navigator.of(context).pop(true), child: Text(t.draftContinue)),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (resume == true) {
+      _restoreDraft(draft);
+    } else {
+      await local.clearDraft(_draftName);
+    }
+    _draftReady = true;
+  }
+
+  void _restoreDraft(Map<String, dynamic> d) {
+    setState(() {
+      _pointId = d['pointId'] as String? ?? _pointId;
+      _countryId = d['countryId'] as String?;
+      _cityId = d['cityId'] as String?;
+      _goodsId = d['goodsId'] as String?;
+      _goodsText = d['goodsText'] as String?;
+      _goodsLabel = d['goodsLabel'] as String? ?? '';
+      _hsCode = d['hsCode'] as String?;
+      _categoryId = d['categoryId'] as String?;
+      _bodyTypeId = d['bodyTypeId'] as String?;
+      _specs = {...?(d['specs'] as Map<String, dynamic>?)};
+      _extraBodyTypeIds
+        ..clear()
+        ..addAll([for (final id in d['extraBodyTypeIds'] as List<dynamic>? ?? const []) id as String]);
+      _currency = Currency.values.where((c) => c.name == d['currency']).firstOrNull ?? _currency;
+      _readyDate = DateTime.tryParse(d['readyDate'] as String? ?? '') ?? _readyDate;
+      _weightUnit = WeightUnit.values.where((u) => u.name == d['weightUnit']).firstOrNull ?? _weightUnit;
+      _weightController.text = d['weight'] as String? ?? '';
+      _volumeController.text = d['volume'] as String? ?? '';
+      _palletController.text = d['pallets'] as String? ?? '';
+      _priceController.text = d['price'] as String? ?? '';
+      _descriptionController.text = d['description'] as String? ?? '';
+      _advanceController.text = d['advance'] as String? ?? '';
+      _delayController.text = d['delay'] as String? ?? '';
+      _restLater = d['restLater'] as bool? ?? false;
+      _paymentForm = PaymentForm.values.where((p) => p.name == d['paymentForm']).firstOrNull;
+      _trucksController.text = d['trucks'] as String? ?? '1';
+      _allowPartial = d['allowPartial'] as bool? ?? false;
+      _photoUrls
+        ..clear()
+        ..addAll([for (final u in d['photoUrls'] as List<dynamic>? ?? const []) u as String]);
+      _formGeneration++;
+    });
+    if (_countryId != null) unawaited(_loadMarket());
+  }
+
   @override
   void initState() {
     super.initState();
     final cargo = widget.cargo ?? widget.template;
+    if (_usesDraft) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _offerDraft());
+      for (final c in [_weightController, _volumeController, _palletController, _priceController, _descriptionController, _advanceController, _delayController, _trucksController]) {
+        c.addListener(_scheduleDraftSave);
+      }
+    }
     _pointId = cargo?.pointId;
     if (cargo == null) _defaultPointFromLastCargo();
     _loadWeightUnit();
@@ -221,6 +351,7 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
 
   @override
   void dispose() {
+    _draftTimer?.cancel();
     _marketDebounce?.cancel();
     _distanceRetry?.cancel();
     _volumeController.dispose();
@@ -498,6 +629,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
         ref.invalidate(cargoByIdProvider(widget.cargo!.id));
       } else {
         await ref.read(cargoRepositoryProvider).create(input, idempotencyKey: _publishKey);
+        // 078: опубликовано — черновик больше не нужен.
+        _draftTimer?.cancel();
+        _draftReady = false;
+        await ref.read(localDataProvider).clearDraft(_draftName);
         unawaited(ref.read(pushServiceProvider).requestPermissionAndRegister());
       }
       ref.invalidate(myCargosProvider);
@@ -639,7 +774,10 @@ class _PostCargoScreenState extends ConsumerState<PostCargoScreen> {
                 matches.isNotEmpty ? matches.first.label : refData.countryById(_countryId!).name.forLanguageCode(locale);
           }
 
+          // 078: черновик сохраняется через секунду после любой правки.
+          _scheduleDraftSave();
           return ListView(
+            key: ValueKey('postCargoForm-$_formGeneration'),
             // 072: поля за краем экрана уже построены — к ним можно прокрутить.
             cacheExtent: 20000,
             padding: const EdgeInsets.all(16),

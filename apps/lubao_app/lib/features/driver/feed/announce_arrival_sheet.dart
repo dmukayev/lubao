@@ -12,6 +12,7 @@ import '../../shared/city_picking.dart';
 import '../../shared/status_helpers.dart';
 import '../../shared/error_feedback.dart';
 import '../../../services/push_service.dart';
+import '../../../services/local_data.dart';
 
 const _waitDaysOptions = [1, 2, 3];
 
@@ -96,6 +97,7 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
         widget.refData.points.where((p) => p.cityId == widget.driverHomeCityId).map((p) => p.id).firstOrNull;
     _anyCountry = editing?.anyCountry ?? widget.driverAnyCountry;
     _countryIds = {...(editing?.countryIds ?? widget.driverDirectionCountryIds)};
+    if (editing == null) unawaited(_loadDraft());
     if (editing != null) {
       _waitDays = editing.waitDays;
       _tractorId = editing.tractorId;
@@ -104,6 +106,42 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
       _dayChoice = _dayChoiceFor(editing.plannedDay);
       if (_dayChoice == _DayChoice.custom) _customDate = DateTime(editing.plannedDay.year, editing.plannedDay.month, editing.plannedDay.day, 12);
     }
+  }
+
+  // --- 078: черновик нового анонса — закрыли шторку или приложение упало,
+  // при следующем открытии выбор на месте (шторка короткая — без вопроса).
+  static const _draftName = 'announce';
+  bool _draftLoaded = false;
+
+  Future<void> _loadDraft() async {
+    final draft = await ref.read(localDataProvider).draft(_draftName);
+    if (!mounted) return;
+    if (draft != null) {
+      setState(() {
+        _pointId = draft['pointId'] as String? ?? _pointId;
+        _dayChoice = _DayChoice.values.where((d) => d.name == draft['dayChoice']).firstOrNull ?? _dayChoice;
+        _customDate = DateTime.tryParse(draft['customDate'] as String? ?? '');
+        if (_dayChoice == _DayChoice.custom && (_customDate == null || _customDate!.isBefore(DateTime.now()))) _dayChoice = _DayChoice.today;
+        _anyCountry = draft['anyCountry'] as bool? ?? _anyCountry;
+        _countryIds
+          ..clear()
+          ..addAll([for (final id in draft['countryIds'] as List<dynamic>? ?? const []) id as String]);
+        _waitDays = draft['waitDays'] as int? ?? _waitDays;
+      });
+    }
+    _draftLoaded = true;
+  }
+
+  void _saveDraft() {
+    if (widget.editing != null || !_draftLoaded) return;
+    unawaited(ref.read(localDataProvider).saveDraft(_draftName, {
+      'pointId': _pointId,
+      'dayChoice': _dayChoice.name,
+      'customDate': _customDate?.toIso8601String(),
+      'anyCountry': _anyCountry,
+      'countryIds': _countryIds.toList(),
+      'waitDays': _waitDays,
+    }));
   }
 
   static _DayChoice _dayChoiceFor(DateTime plannedDay) {
@@ -192,6 +230,9 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
             tractorId: _tractorId,
             trailerId: _trailerId,
           );
+      // 078: анонс ушёл — черновик больше не нужен.
+      _draftLoaded = false;
+      await ref.read(localDataProvider).clearDraft(_draftName);
       // Первое осмысленное действие — спрашиваем разрешение на push (042 п.1).
       unawaited(ref.read(pushServiceProvider).requestPermissionAndRegister());
       if (mounted) Navigator.of(context).pop(true);
@@ -210,6 +251,8 @@ class _AnnounceArrivalSheetState extends ConsumerState<_AnnounceArrivalSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // 078: выбор сохраняется при каждом изменении (запись на диск — в фоне).
+    _saveDraft();
     final t = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
 
