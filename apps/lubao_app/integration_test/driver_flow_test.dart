@@ -307,16 +307,24 @@ void main() {
 
     await run.step(tester, 'анонс-отменить-и-повторить', () async {
       await tester.tap(find.byKey(const Key('anonsLeaveButton')));
-      // Лента перестраивается (порядок по домашнему городу) — карточка анонса
-      // уезжает наверх: возвращаемся к началу.
+      // Анонсов больше нет — синей карточки нет, статус «Не ищу» (045 п.11).
       await waitForCondition(tester, () => find.byKey(const Key('anonsLeaveButton')).evaluate().isEmpty);
       await tester.drag(find.byType(Scrollable).first, const Offset(0, 4000));
       await tester.pumpAndSettle();
-      await waitAndReveal(tester, find.byKey(const Key('driverAnnounceArrivalButton')));
+      await waitFor(tester, find.byKey(const Key('driverStatus-notLooking')));
       expect(find.byKey(const Key('anonsCityName')), findsNothing, reason: 'анонс снят');
-      // Вернуть анонс как был — следующим сценариям нужен водитель в Астане.
-      await waitAndReveal(tester, find.text(t.driverHomeRepeatButton));
-      await tester.tap(find.text(t.driverHomeRepeatButton));
+      // Вернуть анонс в Астане — следующим сценариям нужен водитель там.
+      await tester.tap(find.byKey(const Key('driverStatusBar')));
+      await waitFor(tester, find.byKey(const Key('whereNowSheet')));
+      await tester.tap(find.byKey(const Key('whereNowGoing')));
+      await tester.pumpAndSettle();
+      await waitAndReveal(tester, find.byKey(const Key('announceCityField')));
+      await tester.tap(find.byKey(const Key('announceCityField')));
+      await tester.pumpAndSettle();
+      await pickCityByName(tester, 'Astana', 'Астана');
+      final submitButton = find.byKey(const Key('announceArrivalSubmitButton'));
+      await reveal(tester, submitButton);
+      await tester.tap(submitButton);
       await tester.drag(find.byType(Scrollable).first, const Offset(0, 4000));
       await tester.pumpAndSettle();
       await waitFor(tester, find.byWidgetPredicate((w) => w is Text && w.key == const Key('anonsCityName') && w.data == 'Астана'));

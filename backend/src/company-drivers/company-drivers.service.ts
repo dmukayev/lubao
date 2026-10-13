@@ -5,6 +5,7 @@ import { RequestContext } from '../common/request-context';
 import { ShareService } from '../share/share.service';
 import { avatarVersion } from '../drivers/avatar-version';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { InvitedCargo, invitedCargosByDriver } from '../responses/invited-cargos';
 
 /// Лимит «Создать водителя» — на компанию в сутки (058 п.6).
 export const CREATE_DRIVER_DAILY_LIMIT = 50;
@@ -30,6 +31,8 @@ type ListEntry = {
   lastSeenAt: Date | null;
   searching: boolean;
   onSite: boolean;
+  /// 071 п.4: приглашён на опубликованный груз компании, ещё не ответил.
+  invitedCargos?: InvitedCargo[];
 };
 
 /// 058 п.6: «Мои водители» компании — с кем были сделки, сохранённые ☆ и
@@ -62,6 +65,7 @@ export class CompanyDriversService {
     const drivers = await this.prisma.driver.findMany({ where: { id: { in: [...driverIds] } }, include: { user: { select: { lastSeenAt: true } } } });
     const arrivals = await this.prisma.arrival.findMany({ where: { driverId: { in: [...driverIds] }, status: { in: ['PLANNED', 'ON_SITE'] } }, select: { driverId: true, status: true } });
     const dealSet = new Set(dealDrivers.map((d) => d.driverId));
+    const invited = await invitedCargosByDriver(this.prisma, companyId, [...driverIds]);
 
     const entries: ListEntry[] = [];
     for (const d of drivers) {
@@ -85,6 +89,7 @@ export class CompanyDriversService {
         lastSeenAt: pending ? null : d.user.lastSeenAt ?? null,
         searching: !pending && arrival.length > 0,
         onSite: !pending && arrival.some((a) => a.status === 'ON_SITE'),
+        invitedCargos: pending ? [] : invited.get(d.id) ?? [],
       });
     }
     // Заведены компанией, ещё не входили: только имя.

@@ -18,6 +18,7 @@ function setup(over: Record<string, any> = {}) {
     deal: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]) },
     driver: { findUnique: jest.fn().mockResolvedValue({ id: 'd1' }), findMany: jest.fn().mockResolvedValue([]) },
     arrival: { findMany: jest.fn().mockResolvedValue([]) },
+    response: { findMany: jest.fn().mockResolvedValue([]) },
     company: { findUnique: jest.fn().mockResolvedValue({ id: 'c1' }) },
     auditLog: { create: jest.fn(), count: jest.fn().mockResolvedValue(0) },
     $queryRaw: jest.fn().mockResolvedValue([]),

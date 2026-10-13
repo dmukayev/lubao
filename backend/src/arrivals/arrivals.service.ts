@@ -8,6 +8,7 @@ import { addDaysDateOnly, localDateOnly, parseDateOnly, toDateOnly } from '../co
 import { AnnounceArrivalDto } from './dto/arrival.dto';
 import { decideFreshness } from './arrival-freshness';
 import { avatarVersion } from '../drivers/avatar-version';
+import { invitedCargosByDriver } from '../responses/invited-cargos';
 
 const MAX_DAYS_AHEAD = 14;
 /// Несколько анонсов подряд разрешены («в Алматы до чт, потом в Астане»),
@@ -538,6 +539,7 @@ export class ArrivalsService {
     const dealsTotalMap = new Map(totalsByDriver.map((g) => [g.driverId, g._count as unknown as number]));
     // 046 п.3: «отменил 1 из 15 · после загрузки 1».
     const cancelStats = await cancelStatsFor(this.prisma, 'DRIVER', driverIds);
+    const invited = await invitedCargosByDriver(this.prisma, companyId, driverIds);
     const dealsCancelledMap = new Map(cancelledByDriver.map((g) => [g.driverId, g._count as unknown as number]));
 
     return filtered.map((r) => ({
@@ -576,6 +578,8 @@ export class ArrivalsService {
       cancelStats: cancelStats.get(r.arrival.driver.id) ?? null,
       anyCountry: r.arrival.anyCountry,
       directionCountryIds: r.arrival.directions.map((d) => d.countryId),
+      // 071 п.4: «Приглашён: Хоргос → Алматы».
+      invitedCargos: invited.get(r.arrival.driver.id) ?? [],
     }));
   }
 

@@ -234,6 +234,8 @@ export class ResponsesService {
         driverRatingCount: r.driver.ratingCount,
         onSiteAtPoint: onSite.has(r.driverId),
         isNew: r.status === 'PENDING' && (!seen || r.updatedAt > seen.seenAt),
+        // 071 п.4: «ждём ответа · осталось 18 ч» в блоке «Приглашены».
+        inviteExpiresAt: r.status === 'INVITED' ? new Date(r.updatedAt.getTime() + INVITATION_TTL_HOURS * 3600 * 1000) : null,
       };
     });
   }

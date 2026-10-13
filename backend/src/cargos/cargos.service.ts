@@ -691,13 +691,19 @@ export class CargosService {
     }
 
     const ids = cargos.map((c) => c.id);
+    // 071 п.4: отклики и приглашённые — отдельно («Отклики: 3 · Приглашено: 2»).
     const responseGroups = ids.length
-      ? await this.prisma.response.groupBy({ by: ['cargoId'], where: { cargoId: { in: ids }, status: { in: ['PENDING', 'INVITED', 'SELECTED'] } }, _count: { _all: true } })
+      ? await this.prisma.response.groupBy({ by: ['cargoId', 'status'], where: { cargoId: { in: ids }, status: { in: ['PENDING', 'INVITED', 'SELECTED'] } }, _count: { _all: true } })
       : [];
-    const responsesByCargo = new Map(responseGroups.map((g) => [g.cargoId, g._count._all]));
+    const responsesByCargo = new Map<string, number>();
+    const invitedByCargo = new Map<string, number>();
+    for (const g of responseGroups) {
+      const target = g.status === 'INVITED' ? invitedByCargo : responsesByCargo;
+      target.set(g.cargoId, (target.get(g.cargoId) ?? 0) + g._count._all);
+    }
     const [items, counts] = await Promise.all([this.withActiveDeals(cargos), this.companyTabCounts(companyId, params.userId)]);
     return {
-      items: items.map((c) => ({ ...c, responsesCount: responsesByCargo.get(c.id) ?? 0, newResponsesCount: newByCargo.get(c.id) ?? 0 })),
+      items: items.map((c) => ({ ...c, responsesCount: responsesByCargo.get(c.id) ?? 0, invitedCount: invitedByCargo.get(c.id) ?? 0, newResponsesCount: newByCargo.get(c.id) ?? 0 })),
       total,
       limit,
       offset,
