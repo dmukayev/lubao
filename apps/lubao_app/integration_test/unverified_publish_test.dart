@@ -133,15 +133,17 @@ void main() {
     });
 
     // 067: непроверенная компания видит карточку водителя целиком — фото
-    // водителя, фото машины (добавлены в logist_drivers), «Позвонить».
+    // водителя, фото машины, «Позвонить». D4 стоит в Хоргосе (D3 к этому
+    // моменту уже в рейсе); фото — синтетические, через API.
     await run.step(tester, 'карточка-водителя-без-проверки', () async {
-      const d3 = 'dddddddd-dddd-4ddd-8ddd-ddddddddd003';
+      const d4 = 'dddddddd-dddd-4ddd-8ddd-ddddddddd004';
+      await vehiclePhotoViaApi('7010000004', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa004', withAvatar: true);
       await goTab(tester, t.navDrivers);
       await waitFor(tester, find.byKey(const Key('driversPointChip')));
       await tester.tap(find.byKey(const Key('driversPointChip')));
       await pickCityByName(tester, 'korg', 'Хоргос');
-      await openDriverCardByRow(tester, const Key('driversAtPointCard-$d3'));
-      await waitFor(tester, find.descendant(of: find.byKey(const Key('driverCard')), matching: find.byKey(const Key('driverAvatar-$d3-photo'))), timeout: const Duration(seconds: 30));
+      await openDriverCardByRow(tester, const Key('driversAtPointCard-$d4'));
+      await waitFor(tester, find.descendant(of: find.byKey(const Key('driverCard')), matching: find.byKey(const Key('driverAvatar-$d4-photo'))), timeout: const Duration(seconds: 30));
       final photo = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('driverVehiclePhoto-'));
       await waitAndReveal(tester, photo, timeout: const Duration(seconds: 30));
       expect(find.byKey(const Key('driverVehiclePhotosUnavailable')), findsNothing, reason: 'фото машины без проверки компании');

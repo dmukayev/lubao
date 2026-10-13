@@ -666,7 +666,7 @@ Future<void> openDriverCardByRow(WidgetTester tester, Key cardKey) async {
 
 /// 067: фото машины спереди у водителя (синтетическая картинка) — чтобы в
 /// карточке водителя у логиста была галерея. Всё через API.
-Future<void> vehiclePhotoViaApi(String phoneLocal, String vehicleId) async {
+Future<void> vehiclePhotoViaApi(String phoneLocal, String vehicleId, {bool withAvatar = false}) async {
   final dio = Dio(BaseOptions(baseUrl: e2eApiBase, connectTimeout: e2eHttpTimeout, receiveTimeout: e2eHttpTimeout, validateStatus: (_) => true));
   await dio.post('/auth/phone/request-code', data: {'phone': '+7$phoneLocal'});
   final login = await dio.post('/auth/phone/verify', data: {'phone': '+7$phoneLocal', 'code': e2eDevCode, 'deviceName': 'e2e', 'platform': 'ios'});
@@ -678,6 +678,13 @@ Future<void> vehiclePhotoViaApi(String phoneLocal, String vehicleId) async {
   if (upload.statusCode! >= 300) fail('Загрузка фото машины не удалась: ${upload.statusCode}');
   final doc = await dio.post('/drivers/me/verification-documents', data: {'type': 'VEHICLE_PHOTO_FRONT', 'fileUrl': (upload.data as Map)['key'], 'vehicleId': vehicleId});
   if (doc.statusCode! >= 300) fail('Фото машины не сохранилось: ${doc.statusCode} ${doc.data}');
+  if (!withAvatar) return;
+  // Фото профиля — тоже синтетическая картинка, не лицо.
+  final face = await makeSyntheticDocument('avatar.png', ['SYNTHETIC AVATAR', 'E2E']);
+  final avatarUpload = await dio.post('/uploads/document', data: FormData.fromMap({'file': MultipartFile.fromBytes(await face.readAsBytes(), filename: 'avatar.png')}));
+  if (avatarUpload.statusCode! >= 300) fail('Загрузка фото профиля не удалась: ${avatarUpload.statusCode}');
+  final avatar = await dio.post('/drivers/me/avatar', data: {'fileKey': (avatarUpload.data as Map)['key']});
+  if (avatar.statusCode! >= 300) fail('Фото профиля не сохранилось: ${avatar.statusCode} ${avatar.data}');
 }
 
 /// Анкета нового водителя (мастер 045): имя, домашний город Алматы, тент 20 т,
