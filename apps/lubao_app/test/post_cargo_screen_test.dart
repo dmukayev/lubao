@@ -6,6 +6,7 @@ import 'package:lubao_core/lubao_core.dart';
 import 'package:lubao_app/features/company/cargos/post_cargo_screen.dart';
 import 'package:lubao_app/features/shared/city_picking.dart';
 import 'package:lubao_app/providers/api_providers.dart';
+import 'package:lubao_app/services/local_data.dart';
 import 'package:lubao_app/providers/data_providers.dart';
 import 'package:lubao_app/providers/locale_provider.dart';
 
@@ -83,6 +84,7 @@ Future<_FakeCargoRepository> _pump(WidgetTester tester, {List<Cargo> previous = 
   final repo = _FakeCargoRepository()..distanceKm = distanceKm;
   await tester.pumpWidget(ProviderScope(
     overrides: [
+      localStoreProvider.overrideWithValue(MemoryCacheStore()),
       cargoRepositoryProvider.overrideWithValue(repo),
       recentPointsStoreProvider.overrideWithValue(_FakeRecentPoints()),
       referenceDataProvider.overrideWith((ref) => Stream.value(_refDataWith(partialLoads: partialLoads))),
