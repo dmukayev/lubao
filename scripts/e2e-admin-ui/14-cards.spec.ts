@@ -38,7 +38,8 @@ test('карточки открываются; правка имени не тр
   });
 
   await steps.step('карточка-груза', async () => {
-    await openRoute(page, '/cargos');
+    // Только сидовые грузы (id 11111111-…-11111111100x): грузы других сценариев не сдвигают строку.
+    await openRoute(page, '/cargos?q=11111111-1111-4111-8111-1111111110');
     await openFirst(page, desktop, /Хоргос → Алматы/, /Хоргос → Алматы/);
     await expect(page.getByRole('button', { name: 'Назад' })).toBeVisible();
     await expect(page.getByText('Что-то пошло не так')).toHaveCount(0);
