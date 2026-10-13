@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { I18nName } from './notification-events';
 import { companyLatin } from '../companies/latin-name';
+import { goodsLabel } from '../goods/goods-label';
 
 /// 053 п.6а: суть груза для push водителю («Приглашение», «Вас выбрали») —
 /// маршрут из справочника, цена, вес, кузов, дата погрузки, компания.
@@ -22,6 +23,8 @@ export interface CargoPushSummary {
   paymentDelayDays: number | null;
   weightKg: number | null;
   bodyType: I18nName | null;
+  /// 075: что везут — товар или свой текст логиста.
+  goods: I18nName | null;
   /// YYYY-MM-DD — дата готовности (погрузки).
   readyDate: string;
 }
@@ -53,6 +56,10 @@ async function load(prisma: Pick<PrismaService, 'cargo'>, cargoId: string): Prom
       destinationCity: { select: { name: true } },
       destinationCountry: { select: { name: true } },
       bodyType: { select: { name: true } },
+      goods: { select: { name: true } },
+      goodsText: true,
+      goodsTextLocale: true,
+      goodsTextTranslations: true,
     },
   });
   if (!cargo || cargo.price == null) return null;
@@ -71,6 +78,7 @@ async function load(prisma: Pick<PrismaService, 'cargo'>, cargoId: string): Prom
     paymentDelayDays: cargo.paymentDelayDays ?? null,
     weightKg: num(cargo.weightKg),
     bodyType: (cargo.bodyType?.name as I18nName | undefined) ?? null,
+    goods: (goodsLabel(cargo) as I18nName | null) ?? null,
     readyDate: cargo.readyDate.toISOString().slice(0, 10),
   };
 }

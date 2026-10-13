@@ -15,6 +15,7 @@ import { CompanyDriversModule } from './company-drivers/company-drivers.module';
 import { ArrivalsModule } from './arrivals/arrivals.module';
 import { CompaniesModule } from './companies/companies.module';
 import { CargosModule } from './cargos/cargos.module';
+import { GoodsModule } from './goods/goods.module';
 import { ResponsesModule } from './responses/responses.module';
 import { DealsModule } from './deals/deals.module';
 import { ChatsModule } from './chats/chats.module';
@@ -56,6 +57,7 @@ import { IdentifiersModule } from './identifiers/identifiers.module';
     ArrivalsModule,
     CompaniesModule,
     CargosModule,
+    GoodsModule,
     ResponsesModule,
     DealsModule,
     ChatsModule,

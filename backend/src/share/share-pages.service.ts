@@ -6,12 +6,14 @@ import { I18nName } from '../notifications/notification-events';
 import { PageCargo, PageDriver, PageLinks, PageLocale, renderCargoPage, renderCompanyPage, renderDriverPage } from './share-page';
 import { SHARE_PATH, ShareService, shareBaseUrl } from './share.service';
 import { companyLatin } from '../companies/latin-name';
+import { goodsLabel } from '../goods/goods-label';
 
 const cargoInclude = {
   point: { select: { name: true, city: { select: { country: { select: { code: true } } } } } },
   destinationCity: { select: { name: true } },
   destinationCountry: { select: { name: true, code: true } },
   category: { select: { name: true } },
+  goods: { select: { name: true } },
   bodyType: { select: { name: true } },
   company: { select: { name: true, nameRu: true, nameLatin: true, ratingAvg: true, ratingCount: true, isBlocked: true, isVerified: true } },
 } as const;
@@ -53,7 +55,8 @@ function toPageCargo(c: CargoRow): PageCargo {
     number: c.number,
     origin: (c.point?.name as I18nName) ?? null,
     destination: ((c.destinationCity?.name ?? c.destinationCountry?.name) as I18nName) ?? null,
-    category: (c.category?.name as I18nName) ?? null,
+    // 075: товар (или свой текст логиста) вместо категории; старые грузы — категория.
+    category: (goodsLabel(c) as I18nName | null) ?? (c.category?.name as I18nName) ?? null,
     bodyType: (c.bodyType?.name as I18nName) ?? null,
     weightKg: c.weightKg != null ? Number(c.weightKg) : null,
     volumeM3: c.volumeM3 != null ? Number(c.volumeM3) : null,

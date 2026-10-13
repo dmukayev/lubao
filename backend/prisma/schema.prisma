@@ -344,20 +344,20 @@ model Point {
 }
 
 model BodyType {
-  id        String          @id @default(uuid())
-  code      String          @unique
-  name      Json
-  sortOrder Int             @default(0)
-  isActive  Boolean         @default(true)
+  id          String          @id @default(uuid())
+  code        String          @unique
+  name        Json
+  sortOrder   Int             @default(0)
+  isActive    Boolean         @default(true)
   /// 048: профиль и поля (JSON: [{key, kind, unit, label, forVehicle, forCargo,
   /// required, primary, min, max, options}]) — правятся в админке без релиза.
-  profile   BodyTypeProfile @default(VOLUME)
-  fields    Json            @default("[]")
+  profile     BodyTypeProfile @default(VOLUME)
+  fields      Json            @default("[]")
   /// 068: поле паллет у этого кузова — показывать и учитывать в подборе и
   /// догрузе. По умолчанию выключено у всех; включается галочкой в админке.
-  showPallets Boolean       @default(false)
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  showPallets Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
   vehicles           Vehicle[]
   preferredByDrivers Driver[]  @relation("DriverPreferredBodyType")
@@ -498,22 +498,22 @@ model Session {
 }
 
 model Driver {
-  id                     String    @id @default(uuid())
-  userId                 String    @unique
-  user                   User      @relation(fields: [userId], references: [id])
+  id                     String          @id @default(uuid())
+  userId                 String          @unique
+  user                   User            @relation(fields: [userId], references: [id])
   /// 058 п.8: ☆ грузы водителя.
   favoriteCargos         CargoFavorite[]
   /// 058 п.6: компании, где водитель в списке «Мои водители».
   companyLists           CompanyDriver[]
   fullName               String
   homeCityId             String
-  homeCity               City      @relation(fields: [homeCityId], references: [id])
-  anyCountry             Boolean   @default(false)
+  homeCity               City            @relation(fields: [homeCityId], references: [id])
+  anyCountry             Boolean         @default(false)
   /// Кузов и тоннаж из регистрации (045 п.5) — предпочтение для ленты и «Кто
   /// свободен», пока в гараже нет настоящей машины; машины при регистрации не создаются.
   preferredBodyTypeId    String?
-  preferredBodyType      BodyType? @relation("DriverPreferredBodyType", fields: [preferredBodyTypeId], references: [id])
-  preferredCapacityTons  Decimal?  @db.Decimal(6, 2)
+  preferredBodyType      BodyType?       @relation("DriverPreferredBodyType", fields: [preferredBodyTypeId], references: [id])
+  preferredCapacityTons  Decimal?        @db.Decimal(6, 2)
   /// 048 п.7: «основа» кузова из регистрации по профилю (литры, места, контейнеры).
   preferredSpecs         Json?
   /// ФИО из водительского удостоверения (045 п.10) — при регистрации водитель
@@ -526,17 +526,17 @@ model Driver {
   avatarUpdatedAt        DateTime?
   /// «Не сейчас» на предложении поставить селфи в профиль — больше не предлагаем.
   avatarOfferDismissedAt DateTime?
-  isVerified             Boolean   @default(false)
-  ratingAvg              Decimal   @default(0) @db.Decimal(3, 2)
-  ratingCount            Int       @default(0)
+  isVerified             Boolean         @default(false)
+  ratingAvg              Decimal         @default(0) @db.Decimal(3, 2)
+  ratingCount            Int             @default(0)
   /// 049 п.9: штраф за отмены, пока отзывов нет (ratingCount = 0), — копится
   /// и применяется к среднему с первым отзывом.
-  pendingPenalty         Decimal   @default(0) @db.Decimal(6, 2)
-  currentLat             Decimal?  @db.Decimal(9, 6)
-  currentLng             Decimal?  @db.Decimal(9, 6)
+  pendingPenalty         Decimal         @default(0) @db.Decimal(6, 2)
+  currentLat             Decimal?        @db.Decimal(9, 6)
+  currentLng             Decimal?        @db.Decimal(9, 6)
   locationUpdatedAt      DateTime?
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
 
   directions            DriverDirection[]
   permits               DriverPermit[]
@@ -633,43 +633,43 @@ model Vehicle {
 }
 
 model Company {
-  id              String    @id @default(uuid())
-  name            String
-  nameRu          String?
+  id                 String      @id @default(uuid())
+  name               String
+  nameRu             String?
   /// 069: название латиницей — обязательно, если в `name` иероглифы; водитель
   /// видит его вместо оригинала (у логиста и в китайском интерфейсе — оригинал).
-  nameLatin       String?
-  countryId       String
-  country         Country   @relation(fields: [countryId], references: [id])
-  city            String?
-  legalAddress    String?
-  taxId           String?
+  nameLatin          String?
+  countryId          String
+  country            Country     @relation(fields: [countryId], references: [id])
+  city               String?
+  legalAddress       String?
+  taxId              String?
   /// Вебхук группового бота WeCom (задача 011, п.2) — владелец вставляет
   /// адрес в профиле компании; «Проверить» шлёт туда тестовое сообщение.
-  wecomWebhookUrl String?
-  isVerified      Boolean   @default(false)
+  wecomWebhookUrl    String?
+  isVerified         Boolean     @default(false)
   /// 058 п.8а: грузовладелец / экспедитор / перевозчик — метка в карточке.
-  kind            CompanyKind @default(FORWARDER)
+  kind               CompanyKind @default(FORWARDER)
   /// Оферта для компании (043 п.2) принята при регистрации — версия текста
   /// `/legal/offer`; у компаний до 043 — null.
-  offerAcceptedAt DateTime?
-  offerVersion    String?
+  offerAcceptedAt    DateTime?
+  offerVersion       String?
   /// Блокировка компании целиком (задача 026, п.5) — отдельно от
   /// User.isBlocked у каждого сотрудника: блокировка компании блокирует
   /// всех её участников И скрывает активные грузы из ленты водителя.
-  isBlocked       Boolean   @default(false)
+  isBlocked          Boolean     @default(false)
   /// 066 п.5: две жалобы водителей на непроверенную компанию — публикация на
   /// паузе (новые грузы нельзя, активные скрыты из ленты) до проверки или
   /// до снятия паузы админом. null — не на паузе.
   publishingPausedAt DateTime?
   /// Админ снял паузу — жалобы до этого момента больше не считаются.
   complaintsResetAt  DateTime?
-  ratingAvg       Decimal   @default(0) @db.Decimal(3, 2)
-  ratingCount     Int       @default(0)
+  ratingAvg          Decimal     @default(0) @db.Decimal(3, 2)
+  ratingCount        Int         @default(0)
   /// 049 п.9: см. Driver.pendingPenalty.
-  pendingPenalty  Decimal   @default(0) @db.Decimal(6, 2)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  pendingPenalty     Decimal     @default(0) @db.Decimal(6, 2)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
   members               CompanyMember[]
   cargos                Cargo[]
@@ -920,66 +920,74 @@ model DocumentRecognition {
 }
 
 model Cargo {
-  id                   String             @id @default(uuid())
-  companyId            String
-  company              Company            @relation(fields: [companyId], references: [id])
+  id                    String             @id @default(uuid())
+  companyId             String
+  company               Company            @relation(fields: [companyId], references: [id])
   /// Логист, опубликовавший груз (decisions.md «Компания: проверка, роли,
   /// контакты», задача 012: «водитель звонит конкретному логисту, а не
   /// компании») — водитель видит и звонит именно ему, не владельцу
   /// компании. `NULL` у грузов, опубликованных до задачи 017 — на чтении
   /// падаем на владельца компании.
-  publishedByUserId    String?
-  publishedBy          User?              @relation("CargoPublishedBy", fields: [publishedByUserId], references: [id])
-  pointId              String
-  point                Point              @relation(fields: [pointId], references: [id])
-  destinationCountryId String
-  destinationCountry   Country            @relation(fields: [destinationCountryId], references: [id])
-  destinationCityId    String?
-  destinationCity      City?              @relation(fields: [destinationCityId], references: [id])
-  bodyTypeId           String
-  bodyType             BodyType           @relation(fields: [bodyTypeId], references: [id])
-  weightKg             Decimal?           @db.Decimal(10, 2)
-  volumeM3             Decimal?           @db.Decimal(7, 2)
+  publishedByUserId     String?
+  publishedBy           User?              @relation("CargoPublishedBy", fields: [publishedByUserId], references: [id])
+  pointId               String
+  point                 Point              @relation(fields: [pointId], references: [id])
+  destinationCountryId  String
+  destinationCountry    Country            @relation(fields: [destinationCountryId], references: [id])
+  destinationCityId     String?
+  destinationCity       City?              @relation(fields: [destinationCityId], references: [id])
+  bodyTypeId            String
+  bodyType              BodyType           @relation(fields: [bodyTypeId], references: [id])
+  weightKg              Decimal?           @db.Decimal(10, 2)
+  volumeM3              Decimal?           @db.Decimal(7, 2)
   /// Паллеты (задача 033) — логист может указать вместо/вместе с объёмом.
-  palletCount          Int?
+  palletCount           Int?
   /// 048: другие подходящие кузова (кроме основного bodyTypeId) и параметры
   /// груза по профилю (продукт и литры, тип контейнера, число машин…).
-  extraBodyTypeIds     String[]           @default([])
-  specs                Json?
-  photoUrls            String[]           @default([])
+  extraBodyTypeIds      String[]           @default([])
+  specs                 Json?
+  photoUrls             String[]           @default([])
   /// 047: категория груза (справочник), обязательна при публикации.
-  categoryId           String
-  category             CargoCategory      @relation(fields: [categoryId], references: [id])
+  /// 075: что везут — товар из справочника, свой текст логиста (с переводами,
+  /// как сообщения чата) и код HS-6; старые грузы — только категория.
+  goodsId               String?
+  goods                 Goods?             @relation(fields: [goodsId], references: [id])
+  goodsText             String?
+  goodsTextLocale       Locale?
+  goodsTextTranslations Json?
+  hsCode                String?
+  categoryId            String
+  category              CargoCategory      @relation(fields: [categoryId], references: [id])
   /// 047: расстояние по дороге (OSRM, кэш пар городов) и цена за км в валюте
   /// груза; `NULL` — нет города назначения или OSRM был недоступен.
-  distanceKm           Int?
-  pricePerKm           Decimal?           @db.Decimal(12, 2)
-  price                Decimal            @db.Decimal(12, 2)
-  currency             Currency
+  distanceKm            Int?
+  pricePerKm            Decimal?           @db.Decimal(12, 2)
+  price                 Decimal            @db.Decimal(12, 2)
+  currency              Currency
   /// 058 п.1: условия оплаты — аванс (в валюте груза), форма, отсрочка в днях.
-  advanceAmount        Decimal?           @db.Decimal(12, 2)
-  paymentForm          PaymentForm?
-  paymentDelayDays     Int?
+  advanceAmount         Decimal?           @db.Decimal(12, 2)
+  paymentForm           PaymentForm?
+  paymentDelayDays      Int?
   /// 058 п.2: сколько машин нужно (1–20). Груз в поиске, пока сделок (кроме
   /// отменённых) меньше этого числа; каждый выбор водителя — своя сделка.
-  trucksNeeded         Int                @default(1)
-  favoritedBy          CargoFavorite[]
-  readyDate            DateTime           @db.Date
+  trucksNeeded          Int                @default(1)
+  favoritedBy           CargoFavorite[]
+  readyDate             DateTime           @db.Date
   /// «Можно догрузом» (задача 040, п.6): груз не на всю машину, сборный.
-  allowPartial         Boolean            @default(false)
-  description          String?
-  status               CargoStatus        @default(PUBLISHED)
-  publishedAt          DateTime           @default(now())
-  expiresAt            DateTime
-  archivedAt           DateTime?
+  allowPartial          Boolean            @default(false)
+  description           String?
+  status                CargoStatus        @default(PUBLISHED)
+  publishedAt           DateTime           @default(now())
+  expiresAt             DateTime
+  archivedAt            DateTime?
   /// Исход закрытия (задача 017, п.6/7) — метрика утечки сделок мимо
   /// приложения, тот же смысл, что у аналогичной метрики анонсов (014).
-  closeOutcome         CargoCloseOutcome?
-  closedAt             DateTime?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  closeOutcome          CargoCloseOutcome?
+  closedAt              DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
   /// 062: короткий номер для людей — 6 цифр, не по порядку (выдаёт база).
-  number               Int                @unique @default(dbgenerated("lubao_cargo_number()"))
+  number                Int                @unique @default(dbgenerated("lubao_cargo_number()"))
 
   responses     Response[]
   deals         Deal[]
@@ -1007,9 +1015,57 @@ model CargoCategory {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  cargos Cargo[]
+  cargos     Cargo[]
+  goods      Goods[]
+  hsChapters HsChapter[]
 
   @@map("cargo_categories")
+}
+
+/// 075: HS 2022, 6 знаков — официальные названия {ru, zh, en} (kk нет — ru).
+/// `searchText` — названия в нижнем регистре для поиска (pg_trgm).
+model HsCode {
+  code       String   @id
+  chapter    String
+  heading    String
+  name       Json
+  searchText String   @default("")
+  updatedAt  DateTime @updatedAt
+
+  @@index([chapter])
+  @@map("hs_codes")
+}
+
+/// 075: глава HS → категория груза (правится в админке).
+model HsChapter {
+  chapter    String        @id
+  categoryId String
+  category   CargoCategory @relation(fields: [categoryId], references: [id])
+
+  @@map("hs_chapters")
+}
+
+/// 075: популярные товары — простые названия и синонимы на 4 языках, код HS,
+/// категория, подсказка кузова, ADR. Правятся в админке.
+model Goods {
+  id                  String        @id @default(uuid())
+  slug                String        @unique
+  name                Json
+  synonyms            Json          @default("{}")
+  hsCode              String?
+  categoryId          String
+  category            CargoCategory @relation(fields: [categoryId], references: [id])
+  suggestedBodyTypeId String?
+  isDangerous         Boolean       @default(false)
+  sortOrder           Int           @default(0)
+  isActive            Boolean       @default(true)
+  searchText          String        @default("")
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  cargos Cargo[]
+
+  @@map("goods")
 }
 
 /// Расстояние по дороге между городами (047 п.2) — пара хранится один раз
@@ -1069,22 +1125,22 @@ model RoutePriceStat {
 }
 
 model Response {
-  id          String               @id @default(uuid())
-  cargoId     String
-  cargo       Cargo                @relation(fields: [cargoId], references: [id])
-  driverId    String
-  driver      Driver               @relation(fields: [driverId], references: [id])
-  message     String?
-  status      ResponseStatus       @default(PENDING)
-  closeReason ResponseCloseReason?
+  id              String               @id @default(uuid())
+  cargoId         String
+  cargo           Cargo                @relation(fields: [cargoId], references: [id])
+  driverId        String
+  driver          Driver               @relation(fields: [driverId], references: [id])
+  message         String?
+  status          ResponseStatus       @default(PENDING)
+  closeReason     ResponseCloseReason?
   /// 058 п.5: своя цена водителя (в валюте груза) и комментарий; один
   /// встречный ход логиста — counterPrice и ответ водителя на него.
-  proposedPrice   Decimal?        @db.Decimal(12, 2)
+  proposedPrice   Decimal?             @db.Decimal(12, 2)
   proposedComment String?
-  counterPrice    Decimal?        @db.Decimal(12, 2)
+  counterPrice    Decimal?             @db.Decimal(12, 2)
   counterStatus   CounterStatus?
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
   deal Deal?
 
@@ -1574,4 +1630,3 @@ model CompanyDriver {
   @@index([phone])
   @@map("company_drivers")
 }
-

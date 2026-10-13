@@ -215,6 +215,8 @@ export function cargoLine(p: NotificationPayload, locale: Loc): string {
     formatMoney(Number(p.price), p.currency, locale),
     // 063: сразу после цены — когда и как платят всю сумму; аванс — строкой ниже.
     paymentWhenHow(p, locale),
+    // 075: «Плитка · 20 т · тент».
+    p.goods ? pickLocaleText(p.goods, locale) : '',
     p.weightKg != null ? formatCargoWeight(Number(p.weightKg), locale) : '',
     locale === 'zh' || !body ? body : body.toLocaleLowerCase(locale),
     p.readyDate ? LOADING[locale](shortDate(p.readyDate, locale)) : '',

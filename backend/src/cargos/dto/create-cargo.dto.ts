@@ -1,7 +1,21 @@
-import { ArrayMaxSize, IsArray, IsBoolean, IsISO8601, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsISO8601, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 import { CARGO_CURRENCIES, CargoCurrency, PAYMENT_FORMS, PaymentFormCode } from '../../common/currencies';
 
 export class CreateCargoDto {
+  /// 075: товар из справочника, свой текст логиста, код HS-6.
+  @IsOptional()
+  @IsString()
+  goodsId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  goodsText?: string | null;
+
+  @IsOptional()
+  @Matches(/^\d{6}$/)
+  hsCode?: string | null;
+
   /// 047: категория груза из справочника — обязательна при публикации.
   @IsString()
   categoryId!: string;

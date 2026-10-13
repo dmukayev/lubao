@@ -1,6 +1,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { BODY_TYPE_PROFILES } from './body-type-profiles';
 import { CARGO_CATEGORIES } from './cargo-categories';
+import { seedGoods } from './seed-goods';
 
 const prisma = new PrismaClient();
 
@@ -495,6 +496,9 @@ async function main() {
       create: { key: 'defaultPointCityId', value: defaultPointCity.id },
     });
   }
+
+  // 075: коды HS, главы, товары — после категорий и типов кузова.
+  await seedGoods(prisma);
 
   console.log('Seed завершён.');
 }

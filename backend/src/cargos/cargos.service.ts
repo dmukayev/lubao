@@ -22,6 +22,7 @@ import { newResponsesByCargo } from '../responses/new-responses';
 import { VISIBLE_COMPANY } from './visible-company';
 import { pauseAfterComplaints } from '../companies/publishing-pause';
 import { companyLatin } from '../companies/latin-name';
+import { GoodsService } from '../goods/goods.service';
 
 /// 056 п.2: вкладки «Грузов» логиста по статусу груза. Доставленный груз
 /// архивируется (deals.service: DELIVERED → ARCHIVED), сделка в работе — IN_DEAL.
@@ -42,7 +43,12 @@ type GeoCity = { id: string; regionId: string | null; lat: unknown; lng: unknown
 type GeoPoint = { cityId: string; lat: unknown; lng: unknown; city: GeoCity };
 export type FeedOrigin = { cityId: string; regionId: string | null; lat: number | null; lng: number | null };
 
-type CargoWithCompany = Cargo & { company: Company & { country: { code: string } }; publishedBy?: { id: string; name: string | null; phone: string | null; lastSeenAt?: Date | null } | null };
+type CargoWithCompany = Cargo & {
+  company: Company & { country: { code: string } };
+  publishedBy?: { id: string; name: string | null; phone: string | null; lastSeenAt?: Date | null } | null;
+  /// 075: товар из справочника (не у всех путей загрузки — тогда его нет).
+  goods?: { id: string; name: Prisma.JsonValue; hsCode: string | null; isDangerous: boolean } | null;
+};
 
 interface CargoContact {
   id: string;
@@ -78,6 +84,7 @@ export class CargosService {
     private readonly contactPolicy: ContactPolicyService,
     @Optional() private readonly pricing?: PricingService,
     @Optional() private readonly redis?: RedisService,
+    @Optional() private readonly goods?: GoodsService,
   ) {}
 
   private readonly logger = new Logger(CargosService.name);
@@ -224,6 +231,12 @@ export class CargosService {
       bodyTypeId: cargo.bodyTypeId,
       // 047: категория, расстояние по дороге и цена за км (в валюте груза).
       categoryId: cargo.categoryId,
+      // 075: что везут — товар (название на 4 языках), свой текст с переводами, код HS.
+      goods: cargo.goods ? { id: cargo.goods.id, name: cargo.goods.name, hsCode: cargo.goods.hsCode, isDangerous: cargo.goods.isDangerous } : null,
+      goodsText: cargo.goodsText ?? null,
+      goodsTextLocale: cargo.goodsTextLocale ?? null,
+      goodsTextTranslations: cargo.goodsTextTranslations ?? null,
+      hsCode: cargo.hsCode ?? null,
       distanceKm: cargo.distanceKm ?? null,
       pricePerKm: cargo.pricePerKm != null ? Number(cargo.pricePerKm) : null,
       extraBodyTypeIds: cargo.extraBodyTypeIds ?? [],
@@ -269,7 +282,7 @@ export class CargosService {
   }
 
   private get includeForDto() {
-    return { company: { include: { country: { select: { code: true } } } }, publishedBy: { select: { id: true, name: true, phone: true, lastSeenAt: true } } } as const;
+    return { company: { include: { country: { select: { code: true } } } }, publishedBy: { select: { id: true, name: true, phone: true, lastSeenAt: true } }, goods: { select: { id: true, name: true, hsCode: true, isDangerous: true } } } as const;
   }
 
   /// Кузов связки водителя для отсева грузов (задача 033, п.8) — прицеп
@@ -909,6 +922,10 @@ export class CargosService {
     const expiresAt = new Date(readyDate.getTime() + CARGO_ARCHIVE_AFTER_MS);
     const bodyData = await this.cargoBodyData(dto.bodyTypeId, dto.specs, dto.extraBodyTypeIds);
     await this.assertCategory(dto.categoryId);
+    // 075: что везут — товар, свой текст (язык логиста — для перевода), код HS.
+    const goods = this.goods ? await this.goods.resolveForCargo(dto) : { goodsId: null, hsCode: null };
+    const goodsText = dto.goodsText?.trim() || null;
+    const goodsTextLocale = goodsText ? (await this.prisma.user.findUnique({ where: { id: userId }, select: { locale: true } }))?.locale ?? 'ru' : null;
 
     const created = await this.prisma.cargo.create({
       data: {
@@ -931,6 +948,10 @@ export class CargosService {
         // 049 п.1: при выключенном догрузе пометка игнорируется.
         allowPartial: (dto.allowPartial ?? false) && (await this.partialEnabled()),
         description: dto.description,
+        goodsId: goods.goodsId,
+        hsCode: goods.hsCode,
+        goodsText,
+        goodsTextLocale,
         status: 'PUBLISHED',
         publishedAt: new Date(),
         expiresAt,
@@ -940,6 +961,7 @@ export class CargosService {
     });
     // 066: в статистику цен — только грузы проверенных компаний (как в fillMissingDistances).
     await this.applyPricingBounded(created.id, companyIsVerified);
+    if (goodsText && goodsTextLocale) void this.goods?.translateGoodsText(created.id, goodsText, goodsTextLocale, userId).catch(() => undefined);
     return this.toDto(await this.findEntity(created.id));
   }
 
@@ -996,6 +1018,11 @@ export class CargosService {
         : {};
 
     if (dto.categoryId !== undefined) await this.assertCategory(dto.categoryId);
+    // 075: сменили товар / код / свой текст.
+    const goodsChanged = dto.goodsId !== undefined || dto.hsCode !== undefined;
+    const goods = goodsChanged && this.goods ? await this.goods.resolveForCargo(dto) : null;
+    const goodsText = dto.goodsText === undefined ? undefined : dto.goodsText?.trim() || null;
+    const goodsTextLocale = goodsText ? (await this.prisma.user.findUnique({ where: { id: userId }, select: { locale: true } }))?.locale ?? 'ru' : goodsText === null ? null : undefined;
     // 061 п.5: валюта при откликах со своей ценой или живых сделках не меняется —
     // иначе $9 500 стал бы ₸9 500.
     if (dto.currency !== undefined && dto.currency !== existing.currency) {
@@ -1035,9 +1062,12 @@ export class CargosService {
         readyDate,
         expiresAt,
         description: dto.description,
+        ...(goods ? { goodsId: goods.goodsId, hsCode: goods.hsCode } : {}),
+        ...(goodsText !== undefined ? { goodsText, goodsTextLocale, goodsTextTranslations: Prisma.DbNull } : {}),
         ...bodyData,
       },
     });
+    if (goodsText && goodsTextLocale) void this.goods?.translateGoodsText(id, goodsText, goodsTextLocale, userId).catch(() => undefined);
     // 061 п.4г: места набраны правкой — ждущим «ушёл другому», не «груз снят».
     if (filledByEdit) await this.responses.closeForCargo(id, 'TAKEN_BY_OTHER');
     // Сменился маршрут или цена — заново км и ₸/км.
