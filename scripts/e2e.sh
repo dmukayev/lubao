@@ -423,10 +423,22 @@ if [[ -n "${E2E_ONLY:-}" ]]; then
   read -r -a PHASE1 <<<"$E2E_ONLY"; PHASE3=(); PHASE4=(); PARTIAL=1
 fi
 
+# Админка в Chrome не зависит от телефона — за полный прогон один раз, на
+# первом устройстве. На следующих — только решения админа для сценариев части 2
+# (компания одобрена) через API. Упала на первом — запускается снова.
+ADMIN_UI_DONE=""
 run_admin_ui() {
   if [[ -n "${E2E_SKIP_ADMIN_UI:-}" ]]; then
     row "админка в Chrome (10–14)" "⏭ не запускалась" "E2E_SKIP_ADMIN_UI=${E2E_SKIP_ADMIN_UI}"
     PARTIAL=1; return
+  fi
+  if [[ -n "$ADMIN_UI_DONE" ]]; then
+    if run_with_timeout 120 "$RESULTS/$DEVICE_SLUG-admin-approve.log" node scripts/e2e-admin-approve.mjs; then
+      row "админка в Chrome" "✅ (на $ADMIN_UI_DONE)" "здесь — решения админа через API: $(grep -o '^ok .*' "$RESULTS/$DEVICE_SLUG-admin-approve.log" | cut -c4-)"
+    else
+      row "решения админа через API" "❌" "см. $DEVICE_SLUG-admin-approve.log"; FAILED=$((FAILED + 1))
+    fi
+    return
   fi
   local log="$RESULTS/$DEVICE_SLUG-admin-ui.log"
   RWT_DIR=scripts/e2e-admin-ui run_with_timeout 900 "$log" env E2E_API_URL="$E2E_API_URL" \
@@ -435,6 +447,7 @@ run_admin_ui() {
   local code=$?
   if [[ $code -eq 0 ]]; then
     row "админка в Chrome (10–14, ширина 1280 и 390)" "✅" "$(grep -oE '[0-9]+ passed' "$log" | tail -1)"
+    ADMIN_UI_DONE="$DEVICE_SLUG"
   elif [[ $code -eq 124 ]]; then
     row "админка в Chrome" "❌ TIMEOUT" "лимит 15 мин (см. $(basename "$log"))"; TIMEOUTS=$((TIMEOUTS + 1)); FAILED=$((FAILED + 1))
   else
