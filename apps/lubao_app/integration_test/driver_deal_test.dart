@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:lubao_app/providers/data_providers.dart';
+import 'package:lubao_app/providers/api_providers.dart';
+import 'package:lubao_app/features/shared/chat_screen.dart';
 import 'package:lubao_app/app.dart';
 import 'package:lubao_app/providers/tracking_provider.dart';
 import 'package:lubao_core/lubao_core.dart';
@@ -71,6 +74,67 @@ void main() {
       expect(find.byKey(const Key('feedCargoCard-$e2eCargo2')), findsNothing);
       await goTab(tester, t.navTrips);
       await waitAndReveal(tester, find.byKey(Key('driverDealCard-$deal1')));
+    });
+
+    // 078 п.1: «Написать» — экран чата сразу (тред ищется в фоне); повторное
+    // открытие — без запроса (связь «груз → чат» запомнена на телефоне).
+    await run.step(tester, 'чат-сразу-и-повторно-без-запроса', () async {
+      final api = ProviderScope.containerOf(tester.element(find.byType(LubaoApp))).read(apiClientProvider);
+      final card = find.byKey(Key('driverDealCard-$deal1'));
+      await reveal(tester, card);
+      await tester.tap(card);
+      await waitFor(tester, find.byKey(const Key('dealChatButton')));
+      await tester.tap(find.byKey(const Key('dealChatButton')));
+      // Без ожидания сервера: через 300 мс — уже экран чата с полем ввода.
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byKey(const Key('chatMessageInput')), findsOneWidget);
+      await waitFor(tester, find.byType(ChatScreen));
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      final before = api.requestLog.length;
+      await tester.tap(find.byKey(const Key('dealChatButton')));
+      await waitFor(tester, find.byType(ChatScreen));
+      expect(api.requestLog.skip(before).where((r) => r == 'POST /chats'), isEmpty, reason: 'повторно — без запроса: ${api.requestLog.skip(before).toList()}');
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+    });
+
+    // 078 п.3: без связи — «Мои рейсы», сделка и чат читаются из сохранённого,
+    // сообщение встаёт в очередь «ожидает отправки»; сверху полоса «Нет связи».
+    await run.step(tester, 'нет-связи-рейсы-и-чат', () async {
+      final container = ProviderScope.containerOf(tester.element(find.byType(LubaoApp)));
+      container.read(apiClientProvider).simulateOffline = true;
+      container.invalidate(dealsMineProvider);
+      await goTab(tester, t.navTrips);
+      await waitFor(tester, find.byKey(const Key('offlineBanner')));
+      final card = find.byKey(Key('driverDealCard-$deal1'));
+      await waitAndReveal(tester, card);
+      await tester.tap(card);
+      await waitFor(tester, find.byKey(const Key('dealChatButton')));
+      await tester.tap(find.byKey(const Key('dealChatButton')));
+      await waitFor(tester, find.byType(ChatScreen));
+      await tester.enterText(find.byKey(const Key('chatMessageInput')), 'Без связи 078');
+      await tester.tap(find.byKey(const Key('chatSendButton')));
+      await tester.pumpAndSettle();
+      await waitFor(tester, find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('chatPendingMessage-')));
+      expect(find.text(t.chatPendingSend), findsOneWidget);
+      expect(find.text(t.offlineBanner), findsOneWidget);
+      expectNoOverflow(tester);
+    });
+
+    await run.step(tester, 'связь-вернулась-сообщение-ушло', () async {
+      final container = ProviderScope.containerOf(tester.element(find.byType(LubaoApp)));
+      container.read(apiClientProvider).simulateOffline = false;
+      // Очередь уходит сама (опрос раз в 10 с / переподключение) — без нажатий.
+      await waitForCondition(tester, () => find.text(t.chatPendingSend).evaluate().isEmpty, timeout: const Duration(seconds: 30));
+      await waitFor(tester, find.text('Без связи 078'));
+      await waitForCondition(tester, () => find.byKey(const Key('offlineBanner')).evaluate().isEmpty, timeout: const Duration(seconds: 15));
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
     });
 
     Future<void> openDeal(String dealId) async {

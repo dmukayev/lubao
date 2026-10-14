@@ -319,6 +319,42 @@ void main() {
       expectNoOverflow(tester);
     });
 
+    // 078 п.2: начатую форму груза закрыли — при следующем открытии
+    // «Продолжить черновик?», и введённое на месте.
+    await run.step(tester, 'черновик-продолжить', () async {
+      await tester.tap(find.byKey(const Key('companyPostCargoFab')));
+      await waitFor(tester, find.byKey(const Key('postCargoPickupCity')));
+      final price = find.byKey(const Key('postCargoPrice'));
+      await reveal(tester, price);
+      await tester.enterText(price, '777');
+      await tester.pumpAndSettle();
+      // Черновик пишется через секунду после правки.
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('companyPostCargoFab')));
+      await waitFor(tester, find.byKey(const Key('draftDialog')));
+      expect(find.text(t.draftContinueTitle), findsOneWidget);
+      expectNoOverflow(tester);
+    });
+
+    await run.step(tester, 'черновик-восстановлен', () async {
+      await tester.tap(find.byKey(const Key('draftContinue')));
+      await tester.pumpAndSettle();
+      final price = find.byKey(const Key('postCargoPrice'));
+      await waitAndReveal(tester, price);
+      expect(find.descendant(of: price, matching: find.text('777')), findsOneWidget);
+      // Начать заново — черновик стёрт, следующие сценарии открывают чистую форму.
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('companyPostCargoFab')));
+      await waitFor(tester, find.byKey(const Key('draftDialog')));
+      await tester.tap(find.byKey(const Key('draftStartOver')));
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+    });
+
     await run.step(tester, 'логист-выбирает-согласившегося', () async {
       // Водитель написал в чат — у логиста цифра непрочитанных на «Чатах».
       await (await DriverApi.login('+77010000003')).sendToCompanyChat('E2E Test Logistics', 'Готов, жду');
