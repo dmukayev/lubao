@@ -771,6 +771,8 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
     final cargo = await showModalBottomSheet<Cargo>(
       context: context,
       isScrollControlled: true,
+      // Высокая шторка — не под вырезом и статус-баром (iPhone с Dynamic Island).
+      useSafeArea: true,
       builder: (_) => _CargoPickerSheet(refData: widget.refData),
     );
     if (cargo == null || !mounted) return;
