@@ -153,6 +153,19 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
                       child: DriverStatusBar(refData: refData),
                     ),
+                    // 078: лента из сохранённого старше часа — пока не пришла свежая.
+                    if (ref.watch(feedFromCacheAtProvider) != null)
+                      Padding(
+                        key: const Key('feedUpdating'),
+                        padding: const EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.xs, AppSpacing.screen, 0),
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1.5)),
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(t.feedUpdating, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      ),
                     // Под ней — «нужно действие», только пока актуально:
                     // пригласили / выбрали (045 п.3), затем анонс с вопросами
                     // «вы на месте?» и «ещё ищете?».

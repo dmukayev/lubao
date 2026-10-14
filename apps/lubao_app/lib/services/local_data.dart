@@ -25,6 +25,12 @@ class LocalData {
 
   Future<void> forgetChat({String? driverId, String? cargoId}) => _store.remove(_chatKey(driverId: driverId, cargoId: cargoId));
 
+  // Телефон логиста по текущей сделке — открыт по нажатию и нужен без связи
+  // (decisions.md 2026-10-14). Только пока сделка идёт; стирается при выходе.
+  Future<String?> dealPhone(String cargoId) => _store.read('dealPhone|$cargoId');
+
+  Future<void> rememberDealPhone(String cargoId, String phone) => _store.write('dealPhone|$cargoId', phone);
+
   // Черновики форм («Продолжить черновик?»).
   Future<Map<String, dynamic>?> draft(String name) async {
     final raw = await _store.read('draft|$name');
