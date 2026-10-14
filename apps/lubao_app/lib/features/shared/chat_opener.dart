@@ -82,7 +82,7 @@ class _ChatOpeningScreenState extends ConsumerState<ChatOpeningScreen> {
   @override
   Widget build(BuildContext context) {
     final chatId = _chatId;
-    if (chatId != null) return ChatScreen(key: ValueKey(chatId), chatId: chatId);
+    if (chatId != null) return ChatScreen(key: ValueKey(chatId), chatId: chatId, initialText: _controller.text);
     final t = context.l10n;
     return Scaffold(
       key: const Key('chatOpening'),

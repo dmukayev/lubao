@@ -32,9 +32,12 @@ String? _languageName(LubaoLocalizations t, String? code) => switch (code) {
 /// п.1): экран открывается по `chatId`, а не по `dealId` — сделка (если
 /// есть) подгружается отдельно через `thread.dealId`.
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key, required this.chatId});
+  const ChatScreen({super.key, required this.chatId, this.initialText});
 
   final String chatId;
+
+  /// 078: начатое на экране «Открываем чат…» — не теряется.
+  final String? initialText;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -74,6 +77,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialText != null) _controller.text = widget.initialText!;
     _realtime = ref.read(realtimeServiceProvider);
     final realtime = _realtime;
     realtime.joinChat(widget.chatId);

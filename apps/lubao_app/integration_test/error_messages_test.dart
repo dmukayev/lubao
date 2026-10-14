@@ -45,6 +45,9 @@ void main() {
         handler.next(options);
       });
       final dio = container.read(apiClientProvider).dio;
+      // 078: сохранённая лента показалась бы без ошибки — проверяем случай,
+      // когда сохранённого нет: тогда «Нет интернета», не «Что-то пошло не так».
+      await container.read(apiClientProvider).clearCache();
       dio.interceptors.insert(0, offline);
       try {
         container.invalidate(cargoFeedProvider);

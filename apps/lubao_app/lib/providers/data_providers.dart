@@ -45,15 +45,19 @@ final feedFilterProvider = StateNotifierProvider<FeedFilterNotifier, FeedFilter>
 final cargoFeedProvider = StreamProvider.autoDispose<CargoFeedPage>((ref) async* {
   // Сначала — сохранённый фильтр, потом подписка на него: один запрос при старте.
   await ref.read(feedFilterProvider.notifier).ready;
+  // Все обращения к ref — здесь, до следующих await: фильтр могут сменить,
+  // пока идёт запрос, и ref после этого трогать нельзя.
   final filter = ref.watch(feedFilterProvider);
   final repo = ref.watch(cargoRepositoryProvider);
+  final api = ref.watch(apiClientProvider);
+  final fromCacheAt = ref.read(feedFromCacheAtProvider.notifier);
   // 078: сохранённая лента — не старше 6 ч (CachePolicy); старше часа — с
   // пометкой «обновляется», пока не пришла свежая.
-  final cached = await ref.watch(apiClientProvider).peek('/cargos', query: {'limit': 30, 'offset': 0, ...filter.toQuery()});
+  final cached = await api.peek('/cargos', query: {'limit': 30, 'offset': 0, ...filter.toQuery()});
   if (cached != null) {
     try {
       final page = CargoFeedPage.fromJson(cached.data as Map<String, dynamic>);
-      if (cached.age > const Duration(hours: 1)) ref.read(feedFromCacheAtProvider.notifier).state = cached.savedAt;
+      if (cached.age > const Duration(hours: 1)) fromCacheAt.state = cached.savedAt;
       yield page;
     } catch (_) {}
   }
@@ -64,7 +68,7 @@ final cargoFeedProvider = StreamProvider.autoDispose<CargoFeedPage>((ref) async*
     if (cached == null) rethrow;
   }
   if (fresh != null) {
-    ref.read(feedFromCacheAtProvider.notifier).state = null;
+    fromCacheAt.state = null;
     yield fresh;
   }
 });

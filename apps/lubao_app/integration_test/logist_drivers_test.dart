@@ -330,7 +330,7 @@ void main() {
       await tester.pumpAndSettle();
       // Черновик пишется через секунду после правки.
       await tester.pump(const Duration(milliseconds: 1500));
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('companyPostCargoFab')));
       await waitFor(tester, find.byKey(const Key('draftDialog')));
@@ -345,13 +345,13 @@ void main() {
       await waitAndReveal(tester, price);
       expect(find.descendant(of: price, matching: find.text('777')), findsOneWidget);
       // Начать заново — черновик стёрт, следующие сценарии открывают чистую форму.
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('companyPostCargoFab')));
       await waitFor(tester, find.byKey(const Key('draftDialog')));
       await tester.tap(find.byKey(const Key('draftStartOver')));
       await tester.pumpAndSettle();
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
     });
 

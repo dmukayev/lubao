@@ -89,15 +89,15 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.byKey(const Key('chatMessageInput')), findsOneWidget);
       await waitFor(tester, find.byType(ChatScreen));
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
       final before = api.requestLog.length;
       await tester.tap(find.byKey(const Key('dealChatButton')));
       await waitFor(tester, find.byType(ChatScreen));
       expect(api.requestLog.skip(before).where((r) => r == 'POST /chats'), isEmpty, reason: 'повторно — без запроса: ${api.requestLog.skip(before).toList()}');
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
     });
 
@@ -131,9 +131,9 @@ void main() {
       await waitForCondition(tester, () => find.text(t.chatPendingSend).evaluate().isEmpty, timeout: const Duration(seconds: 30));
       await waitFor(tester, find.text('Без связи 078'));
       await waitForCondition(tester, () => find.byKey(const Key('offlineBanner')).evaluate().isEmpty, timeout: const Duration(seconds: 15));
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
     });
 
