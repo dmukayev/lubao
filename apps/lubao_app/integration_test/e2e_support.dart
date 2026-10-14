@@ -14,6 +14,7 @@ import 'package:url_launcher_platform_interface/link.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:lubao_app/services/data_cache_store.dart';
 import 'package:lubao_app/features/shared/photo_picker.dart';
 import 'package:lubao_core/lubao_core.dart';
 import 'package:lubao_app/providers/api_providers.dart';
@@ -128,6 +129,10 @@ Future<void> clearPersistedSession() async {
   } finally {
     container.dispose();
   }
+  // 078: сохранённые ответы и данные телефона прошлого сценария/прогона —
+  // база e2e пересоздаётся, а id в сиде те же: старое не должно мелькнуть.
+  await DataCacheStore().clear();
+  await DataCacheStore(folder: 'lubao_local').clear();
   // Согласия на геопозицию тоже в Keychain и переживают `uninstall` (041, п.11):
   // без чистки согласие прошлого сценария скрыло бы шторку в следующем.
   await TrackingConsentStore().clear().timeout(e2eHttpTimeout, onTimeout: () => debugPrint('E2E: TrackingConsentStore.clear — таймаут'));

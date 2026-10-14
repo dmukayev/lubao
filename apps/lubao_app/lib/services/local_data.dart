@@ -3,13 +3,38 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 
+import '../providers/api_providers.dart';
 import 'data_cache_store.dart';
 
 /// 078: данные самого телефона (не копия ответов сервера): связи
 /// «водитель/груз → чат», черновики форм, очередь неотправленных сообщений.
 /// Стирается при выходе из аккаунта.
 final localStoreProvider = Provider<CacheStore>((ref) => DataCacheStore(folder: 'lubao_local'));
-final localDataProvider = Provider<LocalData>((ref) => LocalData(ref.watch(localStoreProvider)));
+final localDataProvider = Provider<LocalData>((ref) {
+  final api = ref.watch(apiClientProvider);
+  return LocalData(_ScopedStore(ref.watch(localStoreProvider), () => api.cacheScope));
+});
+
+/// Ключи — свои у каждого пользователя (на одном телефоне могут войти разные).
+class _ScopedStore implements CacheStore {
+  _ScopedStore(this._inner, this._scope);
+  final CacheStore _inner;
+  final String? Function() _scope;
+
+  String _key(String key) => '${_scope() ?? '-'}|$key';
+
+  @override
+  Future<String?> read(String key) => _inner.read(_key(key));
+
+  @override
+  Future<void> write(String key, String value) => _inner.write(_key(key), value);
+
+  @override
+  Future<void> remove(String key) => _inner.remove(_key(key));
+
+  @override
+  Future<void> clear() => _inner.clear();
+}
 
 class LocalData {
   LocalData(this._store);

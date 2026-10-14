@@ -341,6 +341,7 @@ class _DealDetailScreenState extends ConsumerState<DealDetailScreen> {
         actions: [
           if (deal != null)
             IconButton(
+              key: const Key('dealChatButton'),
               icon: const Icon(LucideIcons.messageCircle),
               onPressed: () => _openChat(deal),
             ),
