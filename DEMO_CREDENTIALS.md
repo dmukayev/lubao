@@ -28,6 +28,7 @@
 | Horgos Silk Bridge Trading 霍尔果斯丝路桥贸易 | owner@silkbridge-trade.cn | — |
 | Beijing Trans-Eurasia Cargo 北京欧亚货运 | owner@transeurasia-cargo.cn | — |
 | Nurly Zhol Terminal Logistics | owner@nurlyzhol-terminal.kz | — |
+| Xinjiang Tianshan Silk Road International Logistics 新疆天山丝路国际物流有限公司 (проверена, 20 грузов из Хоргоса; создана через API 2026-10-14, не из сида) | demo@tianshan-silkroad.cn | — |
 
 ## Водители (lubao_app → «Водитель»)
 
