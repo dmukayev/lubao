@@ -117,9 +117,11 @@ void main() {
       await waitFor(tester, find.byType(ChatScreen));
       await tester.enterText(find.byKey(const Key('chatMessageInput')), 'Без связи 078');
       await tester.tap(find.byKey(const Key('chatSendButton')));
+      FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
-      await waitFor(tester, find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('chatPendingMessage-')));
-      expect(find.text(t.chatPendingSend), findsOneWidget);
+      final pending = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('chatPendingMessage-'));
+      await waitAndReveal(tester, pending);
+      expect(find.descendant(of: pending, matching: find.text(t.chatPendingSend)), findsOneWidget);
       expect(find.text(t.offlineBanner), findsOneWidget);
       expectNoOverflow(tester);
     });
@@ -127,9 +129,13 @@ void main() {
     await run.step(tester, 'связь-вернулась-сообщение-ушло', () async {
       final container = ProviderScope.containerOf(tester.element(find.byType(LubaoApp)));
       container.read(apiClientProvider).simulateOffline = false;
+      // Клавиатура и карточка «Подтвердите» на узком экране закрывают ленту —
+      // убираем клавиатуру, сообщение ищем прокруткой.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
       // Очередь уходит сама (опрос раз в 10 с / переподключение) — без нажатий.
-      await waitForCondition(tester, () => find.text(t.chatPendingSend).evaluate().isEmpty, timeout: const Duration(seconds: 30));
-      await waitFor(tester, find.text('Без связи 078'));
+      await waitForCondition(tester, () => find.text(t.chatPendingSend, skipOffstage: false).evaluate().isEmpty, timeout: const Duration(seconds: 30));
+      await waitAndReveal(tester, find.text('Без связи 078'));
       await waitForCondition(tester, () => find.byKey(const Key('offlineBanner')).evaluate().isEmpty, timeout: const Duration(seconds: 15));
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
