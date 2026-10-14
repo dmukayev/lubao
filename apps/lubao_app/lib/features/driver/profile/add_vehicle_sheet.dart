@@ -22,6 +22,8 @@ Future<GarageVehicle?> showAddVehicleSheet(BuildContext context, WidgetRef ref) 
   final result = await showModalBottomSheet<GarageVehicle>(
     context: context,
     isScrollControlled: true,
+    // Высокая шторка — не под вырезом и статус-баром (iPhone с Dynamic Island).
+    useSafeArea: true,
     backgroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge))),
     builder: (context) => const _AddVehicleSheet(),

@@ -127,6 +127,8 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     final picked = await showModalBottomSheet<DateTime>(
       context: context,
       isScrollControlled: true,
+      // Высокая шторка — не под вырезом и статус-баром (iPhone с Dynamic Island).
+      useSafeArea: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
@@ -253,6 +255,8 @@ class _DriversAtPointScreenState extends ConsumerState<DriversAtPointScreen> {
     return showModalBottomSheet<Object?>(
       context: context,
       isScrollControlled: true,
+      // Высокая шторка — не под вырезом и статус-баром (iPhone с Dynamic Island).
+      useSafeArea: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.cardLarge)),
