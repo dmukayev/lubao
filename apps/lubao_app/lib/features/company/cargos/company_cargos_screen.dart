@@ -225,17 +225,31 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
       _loading = true;
       _error = null;
     });
+    final offset = reset ? 0 : _items.length;
+    // 078: первая страница без фильтров — сразу из сохранённого, свежая — следом.
+    if (offset == 0 && _items.isEmpty && _city == null && _period == null) {
+      try {
+        final cached = await ref.read(apiClientProvider).peek('/cargos/company', query: {'tab': widget.tab.name, 'offset': 0, 'limit': 20});
+        if (cached != null && mounted && _items.isEmpty) {
+          final page = CompanyCargoPage.fromJson(cached.data as Map<String, dynamic>);
+          setState(() {
+            _items.addAll(page.items);
+            _total = page.total;
+          });
+        }
+      } catch (_) {}
+    }
     try {
       final page = await ref.read(cargoRepositoryProvider).companyTab(
             widget.tab,
-            offset: reset ? 0 : _items.length,
+            offset: offset,
             cityId: _city?.cityId,
             from: _period == null ? null : _date(_period!.start),
             to: _period == null ? null : _date(_period!.end),
           );
       if (!mounted) return;
       setState(() {
-        if (reset) _items.clear();
+        if (offset == 0) _items.clear();
         _items.addAll(page.items);
         _total = page.total;
       });

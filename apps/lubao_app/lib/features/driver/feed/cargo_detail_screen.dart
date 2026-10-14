@@ -21,6 +21,7 @@ import 'favorite_button.dart';
 import '../../shared/company_verified_badge.dart';
 import '../../shared/cargo_info.dart';
 import '../../shared/chat_opener.dart';
+import '../../../services/local_data.dart';
 
 class CargoDetailScreen extends ConsumerStatefulWidget {
   const CargoDetailScreen({super.key, required this.cargoId});
@@ -186,9 +187,19 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
   /// Номер логиста — по нажатию (043 п.11): сервер проверяет правила и
   /// лимит, сам пишет contact_event и только тогда отдаёт номер.
   Future<String?> _revealPhone(Cargo cargo, String type) async {
+    // 078: телефон логиста по текущей сделке — и без связи (открыт ранее по нажатию).
+    final dealActive = (ref.read(dealsMineProvider).valueOrNull ?? const <Deal>[])
+        .any((d) => d.cargoId == cargo.id && !const {DealStatus.delivered, DealStatus.cancelled}.contains(d.status));
+    final local = ref.read(localDataProvider);
     try {
-      return await ref.read(cargoRepositoryProvider).revealCargoContact(cargo.id, type: type);
+      final phone = await ref.read(cargoRepositoryProvider).revealCargoContact(cargo.id, type: type);
+      if (dealActive) unawaited(local.rememberDealPhone(cargo.id, phone));
+      return phone;
     } catch (e) {
+      if (dealActive && e is DioException && ApiClient.isConnectivityError(e)) {
+        final saved = await local.dealPhone(cargo.id);
+        if (saved != null) return saved;
+      }
       debugPrint('CargoDetailScreen: reveal contact: $e');
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(contactErrorText(context.l10n, e))));
       return null;
