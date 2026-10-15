@@ -71,13 +71,27 @@ class ApiClient {
     final now = DateTime.now();
     if (_lastProbeAt != null && now.difference(_lastProbeAt!) < const Duration(seconds: 5)) return;
     _lastProbeAt = now;
-    if (simulateOffline) return;
+    await checkConnection();
+  }
+
+  /// Есть ли связь с сервером — короткий запрос к /health (до 4 с). Без
+  /// ответа — полоса «Нет связи», ответ — убрать. Приложение проверяет это
+  /// само в фоне, а не только когда экран что-то запрашивает.
+  Future<bool> checkConnection() async {
+    if (simulateOffline) {
+      offline.value = true;
+      return false;
+    }
     try {
       _probeDio ??= Dio(BaseOptions(baseUrl: dio.options.baseUrl, connectTimeout: const Duration(seconds: 4), receiveTimeout: const Duration(seconds: 4)));
       await _probeDio!.get<dynamic>('/health');
       offline.value = false;
+      return true;
+    } on DioException catch (e) {
+      if (isConnectivityError(e)) offline.value = true;
+      return false;
     } catch (_) {
-      // Всё ещё нет связи.
+      return false;
     }
   }
 
