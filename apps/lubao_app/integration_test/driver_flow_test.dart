@@ -207,7 +207,21 @@ void main() {
       expect(find.byKey(const Key('feedCargoPerKm-$e2eCargo1')), findsOneWidget);
       expect(find.descendant(of: cargoCard, matching: find.textContaining('Стройматериалы', findRichText: true)), findsOneWidget);
       expect(find.descendant(of: cargoCard, matching: find.text(t.cargoStatusPublished)), findsNothing);
-      await tester.tap(cargoCard);
+      // 079: сервер «медленный» (2 с) — карточка всё равно сразу, из строки ленты.
+      ApiClient.simulateLatency = const Duration(seconds: 2);
+      try {
+        await tester.tap(cargoCard);
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(find.byKey(const Key('cargoDetailPrice-$e2eCargo1')), findsOneWidget, reason: '079: цена — в том же кадре, без ожидания сети');
+        expect(find.byKey(const Key('cargoDetailChatButton')), findsOneWidget, reason: '079: кнопки — сразу');
+        expect(find.byType(LoadingView), findsNothing, reason: '079: без крутилки');
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+      } finally {
+        ApiClient.simulateLatency = null;
+      }
+    });
+
+    await run.step(tester, 'карточка-груза-дорисована', () async {
       await waitFor(tester, find.byKey(const Key('cargoDetailChatButton')));
       expectInsideSafeZone(tester);
       // 062: номер груза «№ 482 915»; нажатие — копирует номер.

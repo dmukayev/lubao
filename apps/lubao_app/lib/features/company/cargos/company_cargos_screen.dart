@@ -295,7 +295,7 @@ class _CargoTabListState extends ConsumerState<_CargoTabList> with AutomaticKeep
     if (widget.tab != CompanyCargoTab.active && deal != null) {
       await context.push('/deal/${deal.id}');
     } else {
-      await context.push('/company/cargos/${cargo.id}/responses');
+      await context.push('/company/cargos/${cargo.id}/responses', extra: cargo);
     }
     // 057 п.17: открыл отклики — «новые» погасли на сервере; список и цифра на
     // вкладке «Грузы» — заново, без ухода с вкладки.

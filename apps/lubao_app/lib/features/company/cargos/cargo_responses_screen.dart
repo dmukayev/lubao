@@ -19,9 +19,12 @@ import '../../../providers/auth_provider.dart';
 import '../../shared/chat_opener.dart';
 
 class CargoResponsesScreen extends ConsumerWidget {
-  const CargoResponsesScreen({super.key, required this.cargoId});
+  const CargoResponsesScreen({super.key, required this.cargoId, this.initial});
 
   final String cargoId;
+
+  /// 079: груз из строки «Грузов» — экран рисуется из него сразу.
+  final Cargo? initial;
 
   Future<void> _updateStatus(BuildContext context, WidgetRef ref, String responseId, String status, {double? expectedPrice}) async {
     try {
@@ -60,7 +63,9 @@ class CargoResponsesScreen extends ConsumerWidget {
     final responses = ref.watch(cargoResponsesProvider(cargoId));
     final cargoAsync = ref.watch(cargoByIdProvider(cargoId));
     final referenceData = ref.watch(referenceDataProvider);
-    final cargo = cargoAsync.valueOrNull;
+    // 079: без крутилки — груз сразу (из строки списка или сохранённого),
+    // отклики и приглашения появляются, когда пришли.
+    final cargo = cargoAsync.valueOrNull ?? initial;
 
     return Scaffold(
       appBar: AppBar(
@@ -86,13 +91,14 @@ class CargoResponsesScreen extends ConsumerWidget {
                 ),
               ],
       ),
-      body: responses.when(
-        loading: () => const LoadingView(),
-        error: (e, st) {
-          debugPrint('CargoResponsesScreen: $e');
-          return ErrorView(message: errorMessage(t, e), onRetry: () => ref.invalidate(cargoResponsesProvider(cargoId)));
-        },
-        data: (list) {
+      body: Builder(
+        builder: (context) {
+          if (responses.hasError && !responses.hasValue && cargo == null) {
+            debugPrint('CargoResponsesScreen: ${responses.error}');
+            return ErrorView(message: errorMessage(t, responses.error!), onRetry: () => ref.invalidate(cargoResponsesProvider(cargoId)));
+          }
+          final list = responses.valueOrNull ?? const <CargoResponse>[];
+          final responsesLoaded = responses.hasValue;
           // 071 п.4: приглашения — своим блоком: ждём ответа, отказался, истекло.
           bool inviteClosed(CargoResponse r) =>
               r.status == ResponseStatus.cancelled && (r.closeReason == ResponseCloseReason.inviteDeclined || r.closeReason == ResponseCloseReason.inviteExpired);
@@ -157,19 +163,20 @@ class CargoResponsesScreen extends ConsumerWidget {
                   _InvitedBlock(responses: invited, cargoId: cargoId),
                   const SizedBox(height: AppSpacing.md),
                 ],
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-                  child: Text(
-                    [
-                      active.isEmpty ? t.cargoNoResponses : t.cargoResponsesCount(active.length),
-                      if (newCount > 0) t.cargoResponsesNew(newCount),
-                    ].join(' · '),
-                    key: const Key('companyCargoResponsesTitle'),
-                    style: AppTextStyles.title,
+                if (responsesLoaded)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                    child: Text(
+                      [
+                        active.isEmpty ? t.cargoNoResponses : t.cargoResponsesCount(active.length),
+                        if (newCount > 0) t.cargoResponsesNew(newCount),
+                      ].join(' · '),
+                      key: const Key('companyCargoResponsesTitle'),
+                      style: AppTextStyles.title,
+                    ),
                   ),
-                ),
                 const SizedBox(height: AppSpacing.sm),
-                if (active.isEmpty && invited.isEmpty)
+                if (responsesLoaded && active.isEmpty && invited.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
                     child: EmptyState(message: t.responsesEmpty),
@@ -289,7 +296,7 @@ class _InvitedBlock extends StatelessWidget {
           for (final r in responses)
             InkWell(
               key: Key('companyCargoInvited-${r.driverId}'),
-              onTap: () => showDriverInfoSheet(context, driverId: r.driverId, cargoId: cargoId),
+              onTap: () => showDriverInfoSheet(context, driverId: r.driverId, cargoId: cargoId, initial: DriverCard(id: r.driverId, fullName: r.driverName, avatarVersion: r.avatarVersion, bodyTypeId: r.bodyTypeId, capacityTons: r.capacityTons, volumeM3: r.volumeM3)),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                 child: Row(

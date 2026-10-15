@@ -24,9 +24,13 @@ import '../../shared/chat_opener.dart';
 import '../../../services/local_data.dart';
 
 class CargoDetailScreen extends ConsumerStatefulWidget {
-  const CargoDetailScreen({super.key, required this.cargoId});
+  const CargoDetailScreen({super.key, required this.cargoId, this.initial});
 
   final String cargoId;
+
+  /// 079: груз, который уже был на экране (строка ленты, рейса, сделки, чата),
+  /// — карточка рисуется из него сразу, ответ сервера тихо дорисовывает.
+  final Cargo? initial;
 
   @override
   ConsumerState<CargoDetailScreen> createState() => _CargoDetailScreenState();
@@ -41,12 +45,12 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
     try {
       await ref.read(cargoRepositoryProvider).respond(widget.cargoId);
       unawaited(ref.read(pushServiceProvider).requestPermissionAndRegister());
-      ref.invalidate(myCargoResponseProvider(widget.cargoId));
+      ref.invalidate(cargoByIdProvider(widget.cargoId));
       // 045 п.2: плашка «Вы откликнулись» в ленте — по свежим данным.
       ref.invalidate(cargoFeedProvider);
       ref.invalidate(myResponsesProvider);
     } on DioException catch (e) {
-      ref.invalidate(myCargoResponseProvider(widget.cargoId));
+      ref.invalidate(cargoByIdProvider(widget.cargoId));
       if (e.response?.statusCode != 409 && mounted) {
         ScaffoldMessenger.of(
           context,
@@ -58,7 +62,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
   }
 
   void _refreshMine() {
-    ref.invalidate(myCargoResponseProvider(widget.cargoId));
+    ref.invalidate(cargoByIdProvider(widget.cargoId));
     ref.invalidate(cargoFeedProvider);
     ref.invalidate(myResponsesProvider);
   }
@@ -177,7 +181,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
         ).showSnackBar(SnackBar(content: Text(responseConflictText(context.l10n, e) ?? errorMessage(context.l10n, e))));
       }
     } finally {
-      ref.invalidate(myCargoResponseProvider(widget.cargoId));
+      ref.invalidate(cargoByIdProvider(widget.cargoId));
       ref.invalidate(cargoFeedProvider);
       ref.invalidate(myResponsesProvider);
       if (mounted) setState(() => _responding = false);
@@ -280,9 +284,11 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
   Widget build(BuildContext context) {
     final t = context.l10n;
     final cargoAsync = ref.watch(cargoByIdProvider(widget.cargoId));
-    final referenceData = ref.watch(referenceDataProvider);
+    // 079: без крутилки — сразу из того, что уже есть; свежий ответ заменит на месте.
+    final cargo = cargoAsync.valueOrNull ?? widget.initial;
+    final refData = ref.watch(referenceDataProvider).valueOrNull;
     final contactLocked = !_contactUnlocked();
-    final canContact = !contactLocked && (cargoAsync.valueOrNull?.hasContactPhone ?? false);
+    final canContact = !contactLocked && (cargo?.hasContactPhone ?? false);
 
     return Scaffold(
       appBar: AppBar(
@@ -291,35 +297,29 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
           // 058 п.8: ☆ — в «Избранное».
           FavoriteCargoButton(cargoId: widget.cargoId),
           // 052 п.4: водитель делится любым грузом из ленты («брат, глянь»).
-          if (cargoAsync.valueOrNull != null && ref.watch(referenceDataProvider).valueOrNull != null)
+          if (cargo != null && refData != null)
             IconButton(
               key: const Key('cargoDetailShare'),
               tooltip: t.shareButton,
               icon: const Icon(LucideIcons.share),
               onPressed: () => shareContent(context, ref,
                   kind: ShareKind.cargo,
-                  targetId: cargoAsync.value!.id,
+                  targetId: cargo.id,
                   dialogTitle: t.shareDialogCargo,
-                  buildText: (url) => cargoShareText(t, ref.read(referenceDataProvider).value!, cargoAsync.value!, url, Localizations.localeOf(context).languageCode)),
+                  buildText: (url) => cargoShareText(t, refData, cargo, url, Localizations.localeOf(context).languageCode)),
             ),
         ],
       ),
-      body: cargoAsync.when(
-        loading: () => const LoadingView(),
-        error: (e, st) {
-          debugPrint('CargoDetailScreen (cargo): $e');
-          return ErrorView(message: errorMessage(t, e));
-        },
-        data: (cargo) => referenceData.when(
-          loading: () => const LoadingView(),
-          error: (e, st) {
-            debugPrint('CargoDetailScreen (referenceData): $e');
-            return ErrorView(message: errorMessage(t, e));
-          },
-          data: (refData) => _CargoDetailBody(cargo: cargo, refData: refData),
-        ),
-      ),
-      bottomNavigationBar: cargoAsync.valueOrNull == null
+      body: cargo != null
+          ? (refData != null ? _CargoDetailBody(cargo: cargo, refData: refData) : const SizedBox.shrink())
+          : cargoAsync.hasError
+              ? Builder(builder: (context) {
+                  debugPrint('CargoDetailScreen (cargo): ${cargoAsync.error}');
+                  return ErrorView(message: errorMessage(t, cargoAsync.error!));
+                })
+              // Ещё ничего нет (открыли по ссылке) — пустой экран, без индикатора.
+              : const SizedBox.shrink(),
+      bottomNavigationBar: cargo == null
           ? null
           : SafeArea(
               child: Padding(
@@ -327,7 +327,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    ?_offerBlock(cargoAsync.value!, t),
+                    ?_offerBlock(cargo, t),
                     // Новичок откликается и без проверки; подтвердить перевозку —
                     // только после неё (041, п.1) — мягкая подсказка, не запрет.
                     if (!(ref.watch(sessionProvider)?.driver?.isVerified ?? false))
@@ -341,7 +341,7 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
                         ),
                       ),
                     // Логист не указал телефон — «Позвонить» и WhatsApp неактивны: сказать почему.
-                    if (!contactLocked && !(cargoAsync.value!.hasContactPhone))
+                    if (!contactLocked && !(cargo.hasContactPhone))
                       Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                         child: Text(t.contactNoPhone, key: const Key('cargoNoPhoneHint'), style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
@@ -352,28 +352,28 @@ class _CargoDetailScreenState extends ConsumerState<CargoDetailScreen> {
                           key: const Key('cargoDetailCallButton'),
                           icon: LucideIcons.phone,
                           size: AppSizes.buttonHeight,
-                          onPressed: canContact ? () => _call(cargoAsync.value!) : null,
+                          onPressed: canContact ? () => _call(cargo) : null,
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         IconSquareButton(
                           key: const Key('cargoDetailChatButton'),
                           icon: LucideIcons.messageSquare,
                           size: AppSizes.buttonHeight,
-                          onPressed: () => _chat(cargoAsync.value!),
+                          onPressed: () => _chat(cargo),
                         ),
                         const SizedBox(width: AppSpacing.sm),
-                        if (!cargoAsync.value!.isWhatsappBlocked) ...[
+                        if (!cargo.isWhatsappBlocked) ...[
                           IconSquareButton(
                             key: const Key('cargoDetailWhatsappButton'),
                             child: const WhatsAppIcon(),
                             background: WhatsAppIcon.whatsappSoft,
                             semanticLabel: t.commonWhatsApp,
                             size: AppSizes.buttonHeight,
-                            onPressed: canContact ? () => _whatsapp(cargoAsync.value!) : null,
+                            onPressed: canContact ? () => _whatsapp(cargo) : null,
                           ),
                           const SizedBox(width: AppSpacing.sm),
                         ],
-                        Expanded(child: _respondArea(cargoAsync.value!, t)),
+                        Expanded(child: _respondArea(cargo, t)),
                       ],
                     ),
                   ],

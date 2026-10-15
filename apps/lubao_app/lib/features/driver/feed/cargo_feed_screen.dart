@@ -284,7 +284,7 @@ class _CargoFeedScreenState extends ConsumerState<CargoFeedScreen> {
 
     return AppCard(
       key: Key('feedCargoCard-${cargo.id}'),
-      onTap: () => context.push('/driver/cargo/${cargo.id}'),
+      onTap: () => context.push('/driver/cargo/${cargo.id}', extra: cargo),
       borderColor: accent ? AppColors.accent : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

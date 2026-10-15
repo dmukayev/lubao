@@ -30,6 +30,10 @@ class ApiClient {
   /// приложение: так проверяется и запуск без связи (новый ApiClient).
   static bool simulateOffline = false;
 
+  /// e2e (079): сервер «медленный» — каждый запрос ждёт столько перед отправкой.
+  /// Карточки должны показываться сразу, не дожидаясь ответа.
+  static Duration? simulateLatency;
+
   /// e2e: журнал запросов «МЕТОД путь» — проверить, что повторно не ходим.
   final requestLog = <String>[];
 
@@ -158,6 +162,8 @@ class ApiClient {
 
   Future<void> _onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     if (kDebugMode) requestLog.add('${options.method} ${options.path}');
+    final latency = simulateLatency;
+    if (latency != null) await Future<void>.delayed(latency);
     if (simulateOffline) {
       handler.reject(DioException(requestOptions: options, type: DioExceptionType.connectionError, message: 'e2e: offline'), true);
       return;

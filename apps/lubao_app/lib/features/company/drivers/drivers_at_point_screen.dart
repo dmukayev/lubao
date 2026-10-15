@@ -868,7 +868,7 @@ class _DriverCard extends StatelessWidget {
     // в строке (звонок, чат, WhatsApp, «Предложить», ☆) работают сами по себе.
     return AppCard(
       key: Key('driversAtPointCard-${driver.driverId}'),
-      onTap: () => showDriverInfoSheet(context, driverId: driver.driverId),
+      onTap: () => showDriverInfoSheet(context, driverId: driver.driverId, initial: _initialCard(driver)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -900,7 +900,7 @@ class _DriverCard extends StatelessWidget {
                         Flexible(
                           child: GestureDetector(
                             key: Key('driverNameTap-${driver.driverId}'),
-                            onTap: () => showDriverInfoSheet(context, driverId: driver.driverId),
+                            onTap: () => showDriverInfoSheet(context, driverId: driver.driverId, initial: _initialCard(driver)),
                             child: Text(
                               _shortName(driver.driverName),
                               style: AppTextStyles.bodyStrong,
@@ -1196,3 +1196,19 @@ String _monthLabel(String locale, DateTime month) {
 extension _FirstOrNull<T> on Iterable<T> {
   T? get firstOrNull => isEmpty ? null : first;
 }
+
+/// 079: шторка водителя открывается сразу с тем, что есть в строке списка.
+DriverCard _initialCard(ArrivalListing d) => DriverCard(
+      id: d.driverId,
+      fullName: d.driverName,
+      avatarVersion: d.avatarVersion,
+      isVerified: d.isVerified,
+      ratingAvg: d.ratingAvg,
+      ratingCount: d.ratingCount,
+      bodyTypeId: d.bodyTypeId,
+      capacityTons: d.capacityTons,
+      volumeM3: d.volumeM3,
+      pointId: d.pointId,
+      plannedDay: d.plannedDay,
+      onSite: d.status == ArrivalStatus.onSite,
+    );

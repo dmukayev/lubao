@@ -169,7 +169,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/driver/cargo/:id',
-        builder: (context, state) => CargoDetailScreen(cargoId: state.pathParameters['id']!),
+        // 079: груз из строки списка — карточка рисуется из него сразу.
+        builder: (context, state) => CargoDetailScreen(cargoId: state.pathParameters['id']!, initial: state.extra is Cargo ? state.extra as Cargo : null),
       ),
       GoRoute(
         path: '/driver/setup',
@@ -229,7 +230,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/company/driver/:id', builder: (context, state) => DriverCardScreen(driverId: state.pathParameters['id']!)),
       GoRoute(
         path: '/company/cargos/:id/responses',
-        builder: (context, state) => CargoResponsesScreen(cargoId: state.pathParameters['id']!),
+        builder: (context, state) => CargoResponsesScreen(cargoId: state.pathParameters['id']!, initial: state.extra is Cargo ? state.extra as Cargo : null),
       ),
       GoRoute(
         path: '/deal/:id',

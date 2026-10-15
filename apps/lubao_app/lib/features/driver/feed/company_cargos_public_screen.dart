@@ -66,7 +66,7 @@ class CompanyCargosPublicScreen extends ConsumerWidget {
                   bodyTypeLabel: refData?.bodyTypeById(c.bodyTypeId).name.forLanguageCode(locale) ?? '',
                   priceLabel: formatMoney(c.price, c.currency),
                   readyDateLabel: formatDate(c.readyDate),
-                  onTap: () => context.push('/driver/cargo/${c.id}'),
+                  onTap: () => context.push('/driver/cargo/${c.id}', extra: c),
                 ),
             ],
           );

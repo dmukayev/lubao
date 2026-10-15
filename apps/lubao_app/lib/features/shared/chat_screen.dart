@@ -953,8 +953,8 @@ class _CargoActionBarState extends ConsumerState<_CargoActionBar> {
         // Тап по карточке — к самой карточке груза (038, п.13): водителю —
         // его экран груза, логисту — свои отклики по грузу.
         onTap: () => widget.isDriver
-            ? context.push('/driver/cargo/${cargo.id}')
-            : context.push('/company/cargos/${cargo.id}/responses'),
+            ? context.push('/driver/cargo/${cargo.id}', extra: cargo)
+            : context.push('/company/cargos/${cargo.id}/responses', extra: cargo),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen, vertical: AppSpacing.sm),

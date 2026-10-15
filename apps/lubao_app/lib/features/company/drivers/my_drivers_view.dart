@@ -113,7 +113,7 @@ class _MyDriverCard extends ConsumerWidget {
     // принявших приглашение: карточки у них нет).
     return AppCard(
       key: Key('myDriverCard-${driver.driverId ?? driver.rowId}'),
-      onTap: driver.driverId == null || driver.pending ? null : () => showDriverInfoSheet(context, driverId: driver.driverId!),
+      onTap: driver.driverId == null || driver.pending ? null : () => showDriverInfoSheet(context, driverId: driver.driverId!, initial: DriverCard(id: driver.driverId!, fullName: driver.name, avatarVersion: driver.avatarVersion, isVerified: driver.isVerified, ratingAvg: driver.ratingAvg, ratingCount: driver.ratingCount, lastSeenAt: driver.lastSeenAt, onSite: driver.onSite)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -80,8 +80,12 @@ final cargoFeedProvider = StreamProvider.autoDispose<CargoFeedPage>((ref) async*
 });
 
 /// «Помещается к текущему» (040, п.6): есть только у водителя с активной сделкой.
-final partialHintProvider = FutureProvider.autoDispose.family<PartialHint?, String>((ref, cargoId) {
-  return ref.watch(cargoRepositoryProvider).partialHint(cargoId);
+/// 079: приходит вместе с карточкой груза (один запрос).
+final partialHintProvider = Provider.autoDispose.family<AsyncValue<PartialHint?>, String>((ref, cargoId) {
+  final cargo = ref.watch(cargoByIdProvider(cargoId));
+  final c = cargo.valueOrNull;
+  if (c != null && !c.driverExtrasLoaded) return const AsyncLoading();
+  return cargo.whenData((c) => c.partialHint);
 });
 
 final myCargosProvider = StreamProvider.autoDispose<List<Cargo>>((ref) {
@@ -89,8 +93,14 @@ final myCargosProvider = StreamProvider.autoDispose<List<Cargo>>((ref) {
 });
 
 /// Мой отклик на груз — состояние кнопки в карточке водителя (041).
-final myCargoResponseProvider = StreamProvider.autoDispose.family<MyCargoResponse?, String>((ref, cargoId) {
-  return _cached(ref, '/cargos/$cargoId/my-response', (d) => (d as Map<String, dynamic>)['response'] == null ? null : MyCargoResponse.fromJson(d['response'] as Map<String, dynamic>), () => ref.watch(cargoRepositoryProvider).myResponse(cargoId));
+/// 079: приходит вместе с карточкой груза (один запрос); обновить — обновить
+/// карточку (`cargoByIdProvider`).
+final myCargoResponseProvider = Provider.autoDispose.family<AsyncValue<MyCargoResponse?>, String>((ref, cargoId) {
+  final cargo = ref.watch(cargoByIdProvider(cargoId));
+  final c = cargo.valueOrNull;
+  // Сохранённая/старая карточка без отклика — ещё не известно (не «нет отклика»).
+  if (c != null && !c.driverExtrasLoaded) return const AsyncLoading();
+  return cargo.whenData((c) => c.myResponse);
 });
 
 final cargoByIdProvider = StreamProvider.autoDispose.family<Cargo, String>((ref, id) {

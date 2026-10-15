@@ -319,6 +319,58 @@ void main() {
       expectNoOverflow(tester);
     });
 
+    // 079: свой груз из списка — карточка сразу (сервер «медленный», 2 с).
+    await run.step(tester, 'груз-логиста-сразу', () async {
+      final list = find.byKey(const Key('companyCargosList-active'));
+      await waitFor(tester, list);
+      final card = find.descendant(of: list, matching: find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('companyCargoCard-'))).first;
+      final id = (tester.widget(card).key! as ValueKey<String>).value.substring('companyCargoCard-'.length);
+      ApiClient.simulateLatency = const Duration(seconds: 2);
+      try {
+        await tester.tap(card);
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(find.byKey(Key('cargoDetailPrice-$id')), findsOneWidget, reason: '079: груз — в том же кадре');
+        expect(find.byType(LoadingView), findsNothing);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+      } finally {
+        ApiClient.simulateLatency = null;
+      }
+    });
+
+    await run.step(tester, 'груз-логиста-отклики-дорисованы', () async {
+      await waitFor(tester, find.byKey(const Key('companyCargoResponsesTitle')));
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+    });
+
+    // 079: шторка водителя — сразу с тем, что есть в строке «Водителей».
+    await run.step(tester, 'шторка-водителя-сразу', () async {
+      await goTab(tester, t.navDrivers);
+      final row = find.byKey(_d3Card);
+      await waitAndReveal(tester, row);
+      final icon = find.descendant(of: row, matching: find.byType(BodyTypeIcon));
+      ApiClient.simulateLatency = const Duration(seconds: 2);
+      try {
+        if (icon.evaluate().isNotEmpty) {
+          await tester.tap(icon.first);
+        } else {
+          await tester.tapAt(tester.getBottomLeft(row) + const Offset(24, -12));
+        }
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(find.byKey(const Key('driverCardName')), findsOneWidget, reason: '079: имя — сразу');
+        expect(find.byType(LoadingView), findsNothing);
+      } finally {
+        ApiClient.simulateLatency = null;
+      }
+    });
+
+    await run.step(tester, 'шторка-водителя-дорисована', () async {
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('driverCardClose')));
+      await tester.pumpAndSettle();
+      await goTab(tester, t.navCargos);
+    });
+
     // 078 п.2: начатую форму груза закрыли — при следующем открытии
     // «Продолжить черновик?», и введённое на месте.
     await run.step(tester, 'черновик-продолжить', () async {

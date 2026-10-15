@@ -1,5 +1,6 @@
 import '../utils/date_only.dart';
 import 'common.dart';
+import 'response.dart';
 
 class Cargo {
   const Cargo({
@@ -32,6 +33,9 @@ class Cargo {
     this.contactUserId,
     this.contactName,
     this.hasContactPhone = false,
+    this.myResponse,
+    this.partialHint,
+    this.driverExtrasLoaded = false,
     this.contactWechatId,
     this.isWhatsappBlocked = false,
     this.closeOutcome,
@@ -121,6 +125,12 @@ class Cargo {
   /// Номер логиста не приходит в карточке (043 п.11) — только по нажатию
   /// «Позвонить»/WhatsApp через `CargoRepository.revealContact`.
   final bool hasContactPhone;
+
+  /// 079: карточка груза у водителя — одним запросом и его отклик, и подсказка
+  /// догруза. [driverExtrasLoaded] — пришли ли они (в строке ленты их нет).
+  final MyCargoResponse? myResponse;
+  final PartialHint? partialHint;
+  final bool driverExtrasLoaded;
   final String? contactWechatId;
 
   /// WhatsApp заблокирован в Китае — показываем чат Lubao вместо кнопки,
@@ -201,6 +211,11 @@ class Cargo {
         contactUserId: json['contactUserId'] as String?,
         contactName: json['contactName'] as String?,
         hasContactPhone: json['hasContactPhone'] as bool? ?? false,
+        myResponse: json['myResponse'] is Map<String, dynamic> ? MyCargoResponse.fromJson(json['myResponse'] as Map<String, dynamic>) : null,
+        partialHint: json['partialHint'] is Map<String, dynamic> && (json['partialHint'] as Map<String, dynamic>)['hint'] is Map<String, dynamic>
+            ? PartialHint.fromJson((json['partialHint'] as Map<String, dynamic>)['hint'] as Map<String, dynamic>)
+            : null,
+        driverExtrasLoaded: json.containsKey('myResponse'),
         contactWechatId: json['contactWechatId'] as String?,
         contactLastSeenAt: json['contactLastSeenAt'] == null ? null : DateTime.parse(json['contactLastSeenAt'] as String),
         isWhatsappBlocked: json['isWhatsappBlocked'] as bool? ?? false,

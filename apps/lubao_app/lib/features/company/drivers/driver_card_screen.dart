@@ -40,7 +40,10 @@ class DriverCardScreen extends StatelessWidget {
 /// Нажатие на строку, фото или имя водителя у логиста (067) — шторка с полной
 /// карточкой. Закрыть: свайп вниз, затемнение, «Назад» и ✕ в углу (не уезжает
 /// при прокрутке). `onSelect` — в откликах кнопка «Выбрать» внизу шторки.
-Future<void> showDriverInfoSheet(BuildContext context, {required String driverId, String? cargoId, String? selectLabel, VoidCallback? onSelect}) {
+/// 079: `initial` — то, что уже известно из строки списка (имя, фото,
+/// «Проверен», рейтинг, машина): шторка открывается сразу с этим, полная
+/// карточка (фото машины, отзывы, допуски) дорисовывается.
+Future<void> showDriverInfoSheet(BuildContext context, {required String driverId, String? cargoId, String? selectLabel, VoidCallback? onSelect, DriverCard? initial}) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -55,7 +58,7 @@ Future<void> showDriverInfoSheet(BuildContext context, {required String driverId
       maxChildSize: 0.95,
       builder: (sheetContext, controller) => Stack(
         children: [
-          DriverInfoView(driverId: driverId, controller: controller, inSheet: true, cargoId: cargoId, selectLabel: selectLabel, onSelect: onSelect),
+          DriverInfoView(driverId: driverId, controller: controller, inSheet: true, cargoId: cargoId, selectLabel: selectLabel, onSelect: onSelect, initial: initial),
           Positioned(
             top: 0,
             right: AppSpacing.sm,
@@ -79,9 +82,12 @@ Future<void> showDriverInfoSheet(BuildContext context, {required String driverId
 /// «Выбрать»). Видна и непроверенной компании (066). Документов здесь нет —
 /// только при обоюдной сделке (044).
 class DriverInfoView extends ConsumerWidget {
-  const DriverInfoView({super.key, required this.driverId, this.controller, this.inSheet = false, this.cargoId, this.selectLabel, this.onSelect});
+  const DriverInfoView({super.key, required this.driverId, this.controller, this.inSheet = false, this.cargoId, this.selectLabel, this.onSelect, this.initial});
 
   final String driverId;
+
+  /// 079: из строки списка — показать сразу, без крутилки.
+  final DriverCard? initial;
   final ScrollController? controller;
   final bool inSheet;
   final String? cargoId;
@@ -131,10 +137,14 @@ class DriverInfoView extends ConsumerWidget {
     final refData = ref.watch(referenceDataProvider).valueOrNull;
     final companyCountryId = ref.watch(sessionProvider)?.company?.countryId;
     final isChinaCompany = refData?.countries.where((c) => c.id == companyCountryId).firstOrNull?.code == 'CN';
-    return card.when(
-      loading: () => const LoadingView(),
-      error: (e, st) => ErrorView(message: errorMessage(t, e), onRetry: () => ref.invalidate(_driverCardProvider(driverId))),
-      data: (d) {
+    // 079: без крутилки — сразу из того, что известно; полная карточка дорисует.
+    final shown = card.valueOrNull ?? initial;
+    if (shown == null) {
+      return card.hasError
+          ? ErrorView(message: errorMessage(t, card.error!), onRetry: () => ref.invalidate(_driverCardProvider(driverId)))
+          : const SizedBox.shrink();
+    }
+    return ((DriverCard d) {
         // Неразрывный пробел: «20 т» не разрывается на две строки.
         String tons(double v) => '${v.toStringAsFixed(v % 1 == 0 ? 0 : 1)}\u00A0${t.unitTon}';
         String? bodyName(String? id) => id == null || refData == null ? null : refData.bodyTypeById(id).name.forLanguageCode(locale);
@@ -282,8 +292,7 @@ class DriverInfoView extends ConsumerWidget {
             ),
           ],
         );
-      },
-    );
+    })(shown);
   }
 }
 

@@ -146,9 +146,17 @@ export class CargosController {
     return this.cargos.publishedByCompany(companyId);
   }
 
+  /// 079: карточка груза одним запросом — водителю сразу и его отклик, и
+  /// подсказка догруза (раньше три запроса подряд).
   @Get(':id')
-  byId(@Param('id') id: string) {
-    return this.cargos.byId(id);
+  async byId(@CurrentUser() ctx: RequestContext, @Param('id') id: string) {
+    const cargo = await this.cargos.byId(id);
+    if (!ctx?.driver) return cargo;
+    const [myResponse, partialHint] = await Promise.all([
+      this.responses.findMine(id, ctx.driver.id),
+      this.cargos.partialHint(ctx.driver.id, id).catch(() => null),
+    ]);
+    return { ...cargo, myResponse: myResponse ?? null, partialHint: partialHint ?? null };
   }
 
   @Post()

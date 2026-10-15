@@ -174,7 +174,7 @@ class DriverTripsScreen extends ConsumerWidget {
                   key: Key('favoriteTripCard-${c.id}'),
                   refData: refData,
                   cargo: _TripCargo.fromCargo(c),
-                  onTap: () => context.push('/driver/cargo/${c.id}'),
+                  onTap: () => context.push('/driver/cargo/${c.id}', extra: c),
                 ),
             ],
           ],

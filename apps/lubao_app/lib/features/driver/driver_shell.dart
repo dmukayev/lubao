@@ -58,7 +58,7 @@ class _DriverShellState extends ConsumerState<DriverShell> {
       ref.invalidate(dealsMineProvider);
       ref.invalidate(myResponsesProvider);
       // 058 п.5: встречная цена — карточка груза обновится сама.
-      ref.invalidate(myCargoResponseProvider);
+      ref.invalidate(cargoByIdProvider);
       // 058 п.6: «Компания X добавила вас» — без перезапуска.
       ref.invalidate(driverCompaniesProvider);
     }
