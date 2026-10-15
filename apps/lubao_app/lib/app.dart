@@ -11,7 +11,6 @@ import 'services/realtime_connector.dart';
 import 'services/push_service.dart';
 import 'services/share_links.dart';
 import 'services/stale_refresh.dart';
-import 'services/connection_watcher.dart';
 
 class LubaoApp extends ConsumerWidget {
   const LubaoApp({super.key});
@@ -26,8 +25,6 @@ class LubaoApp extends ConsumerWidget {
     ref.watch(realtimeConnectorProvider);
     // 061 п.10: после фона и переподключения — тихое обновление списков.
     ref.watch(staleRefreshWatcherProvider);
-    // 078: связь проверяется в фоне — полоса «Нет связи» и без действий на экране.
-    ref.watch(connectionWatcherProvider);
     // 052: ссылки «Поделиться» — после входа открыть нужный экран.
     ref.watch(shareLinkHandlerProvider);
     ref.watch(locationReporterProvider);
