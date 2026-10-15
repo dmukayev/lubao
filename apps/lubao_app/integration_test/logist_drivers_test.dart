@@ -338,7 +338,8 @@ void main() {
     });
 
     await run.step(tester, 'груз-логиста-отклики-дорисованы', () async {
-      await waitFor(tester, find.byKey(const Key('companyCargoResponsesTitle')));
+      // Отклики — под полной карточкой груза, за краем экрана.
+      await waitAndReveal(tester, find.byKey(const Key('companyCargoResponsesTitle')));
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
     });
