@@ -64,7 +64,8 @@ class _ChatOpeningScreenState extends ConsumerState<ChatOpeningScreen> {
         chatId = thread.id;
         await local.rememberChat(chatId, driverId: target.driverId, cargoId: target.cargoId);
       }
-      if (_queued.isNotEmpty) await local.saveOutbox(chatId, [...await local.outbox(chatId), ..._queued]);
+      // Написанное до этого момента передаётся чату целиком при переходе (build),
+      // — не здесь: между проверкой и переходом могли отправить ещё.
       if (mounted) setState(() => _chatId = chatId);
     } catch (e) {
       debugPrint('ChatOpeningScreen: $e');
@@ -82,7 +83,9 @@ class _ChatOpeningScreenState extends ConsumerState<ChatOpeningScreen> {
   @override
   Widget build(BuildContext context) {
     final chatId = _chatId;
-    if (chatId != null) return ChatScreen(key: ValueKey(chatId), chatId: chatId, initialText: _controller.text);
+    if (chatId != null) {
+      return ChatScreen(key: ValueKey(chatId), chatId: chatId, initialText: _controller.text, initialOutbox: List.of(_queued));
+    }
     final t = context.l10n;
     return Scaffold(
       key: const Key('chatOpening'),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 
 import '../services/data_cache_store.dart';
+import 'auth_provider.dart';
 
 /// На физическом устройстве (не симулятор/эмулятор) "localhost" указывает
 /// на само устройство, а не на Mac с бэкендом — поэтому базовый URL можно
@@ -46,6 +47,20 @@ final realtimeServiceProvider = Provider<RealtimeService>((ref) {
 
 /// 078: справочники — из сохранённого сразу, свежие — в фоне.
 final referenceDataProvider = StreamProvider<ReferenceData>((ref) {
-  return cacheFirst(ref.watch(apiClientProvider), '/reference-data',
-      parse: ReferenceDataRepository.parse, fetch: () => ref.watch(referenceDataRepositoryProvider).fetch());
+  // 078: пока восстанавливается сессия, неизвестно, чьё сохранённое брать
+  // (запуск без связи) — ждём её, иначе справочники остались бы с ошибкой.
+  if (ref.watch(sessionRestoringProvider)) return const Stream.empty();
+  final api = ref.watch(apiClientProvider);
+  // Не загрузились (не было связи и сохранённого) — загрузить, когда связь вернётся.
+  var failed = false;
+  void retry() {
+    if (failed && !api.offline.value) ref.invalidateSelf();
+  }
+  api.offline.addListener(retry);
+  ref.onDispose(() => api.offline.removeListener(retry));
+  return cacheFirst(api, '/reference-data', parse: ReferenceDataRepository.parse, fetch: () => ref.read(referenceDataRepositoryProvider).fetch())
+      .handleError((Object e, StackTrace st) {
+    failed = true;
+    throw e;
+  });
 });

@@ -32,12 +32,15 @@ String? _languageName(LubaoLocalizations t, String? code) => switch (code) {
 /// п.1): экран открывается по `chatId`, а не по `dealId` — сделка (если
 /// есть) подгружается отдельно через `thread.dealId`.
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key, required this.chatId, this.initialText});
+  const ChatScreen({super.key, required this.chatId, this.initialText, this.initialOutbox = const []});
 
   final String chatId;
 
   /// 078: начатое на экране «Открываем чат…» — не теряется.
   final String? initialText;
+
+  /// 078: отправленное на экране «Открываем чат…» — уходит первым.
+  final List<OutgoingMessage> initialOutbox;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -78,6 +81,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void initState() {
     super.initState();
     if (widget.initialText != null) _controller.text = widget.initialText!;
+    _outbox = [...widget.initialOutbox];
     _realtime = ref.read(realtimeServiceProvider);
     final realtime = _realtime;
     realtime.joinChat(widget.chatId);
@@ -126,10 +130,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _markRead();
     _api = ref.read(apiClientProvider);
     _api.offline.addListener(_onConnectivity);
-    unawaited(ref.read(localDataProvider).outbox(widget.chatId).then((saved) {
-      if (!mounted || saved.isEmpty) return;
-      setState(() => _outbox = [...saved, ..._outbox]);
-      unawaited(_flush());
+    unawaited(ref.read(localDataProvider).outbox(widget.chatId).then((saved) async {
+      if (!mounted) return;
+      if (saved.isNotEmpty) setState(() => _outbox = [...saved, ..._outbox]);
+      if (_outbox.isNotEmpty) {
+        await ref.read(localDataProvider).saveOutbox(widget.chatId, _outbox);
+        unawaited(_flush());
+      }
     }));
   }
 
