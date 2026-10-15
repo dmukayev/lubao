@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -38,6 +39,17 @@ class ApiClient {
   /// сохранённое не показывалось бы почти никогда. Без связи — всегда.
   DateTime? _lastMutationAt;
   final _freshKeys = <String>{};
+
+  /// Последний ответ сервера по адресу (как сохранён) — сравнить с показанным
+  /// сохранённым: не изменился — экран не перерисовывать.
+  final _lastRaw = <String, String>{};
+
+  /// Свежий ответ по адресу совпал с [shownRaw] (тем, что показано из сохранённого).
+  bool sameAsShown(String path, Map<String, dynamic>? query, String shownRaw) {
+    final scope = cacheScope;
+    if (scope == null) return false;
+    return _lastRaw[cacheKey(scope, path, query)] == shownRaw;
+  }
   static const _mutationWindow = Duration(seconds: 20);
 
   bool get _justMutated => _lastMutationAt != null && DateTime.now().difference(_lastMutationAt!) < _mutationWindow;
@@ -119,6 +131,7 @@ class ApiClient {
         final keep = policy.keepLast;
         if (keep != null && data is List && data.length > keep) data = data.sublist(data.length - keep);
         _freshKeys.add(key);
+        _lastRaw[key] = jsonEncode(data);
         unawaited(cacheStore.write(key, CachedResponse(data, DateTime.now()).encode()).catchError((Object _) {}));
       }
     }

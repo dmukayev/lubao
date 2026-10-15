@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lubao_core/lubao_core.dart';
 
@@ -53,7 +55,8 @@ final cargoFeedProvider = StreamProvider.autoDispose<CargoFeedPage>((ref) async*
   final fromCacheAt = ref.read(feedFromCacheAtProvider.notifier);
   // 078: сохранённая лента — не старше 6 ч (CachePolicy); старше часа — с
   // пометкой «обновляется», пока не пришла свежая.
-  final cached = await api.peek('/cargos', query: {'limit': 30, 'offset': 0, ...filter.toQuery()});
+  final query = {'limit': 30, 'offset': 0, ...filter.toQuery()};
+  final cached = await api.peek('/cargos', query: query);
   if (cached != null) {
     try {
       final page = CargoFeedPage.fromJson(cached.data as Map<String, dynamic>);
@@ -69,6 +72,9 @@ final cargoFeedProvider = StreamProvider.autoDispose<CargoFeedPage>((ref) async*
   }
   if (fresh != null) {
     fromCacheAt.state = null;
+    // Ничего не изменилось — ленту не перестраивать (прокрутка и догруженные
+    // страницы не сбрасываются).
+    if (cached != null && api.sameAsShown('/cargos', query, jsonEncode(cached.data))) return;
     yield fresh;
   }
 });
