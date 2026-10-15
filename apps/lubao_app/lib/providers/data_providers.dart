@@ -91,8 +91,8 @@ final cargoByIdProvider = StreamProvider.autoDispose.family<Cargo, String>((ref,
   return _cached(ref, '/cargos/$id', (d) => Cargo.fromJson(d as Map<String, dynamic>), () => ref.watch(cargoRepositoryProvider).byId(id));
 });
 
-final cargoResponsesProvider = FutureProvider.autoDispose.family<List<CargoResponse>, String>((ref, cargoId) {
-  return ref.watch(cargoRepositoryProvider).responsesFor(cargoId);
+final cargoResponsesProvider = StreamProvider.autoDispose.family<List<CargoResponse>, String>((ref, cargoId) {
+  return _cached(ref, '/cargos/$cargoId/responses', (d) => _list(d, CargoResponse.fromJson), () => ref.watch(cargoRepositoryProvider).responsesFor(cargoId));
 });
 
 final dealsMineProvider = StreamProvider.autoDispose<List<Deal>>((ref) {

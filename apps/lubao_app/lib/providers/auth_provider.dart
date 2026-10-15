@@ -32,7 +32,10 @@ class SessionController extends StateNotifier<Session?> {
 
   Future<void> _restore() async {
     try {
-      final session = await _ref.read(authRepositoryProvider).restore();
+      // 078: без связи при запуске — сессия и экраны из сохранённого: заранее
+      // известно, чей кэш (последний вошедший на этом телефоне).
+      final store = _ref.read(localStoreProvider);
+      final session = await _ref.read(authRepositoryProvider).restore(lastUserId: () => store.read(lastUserKey));
       state = session;
       if (session != null) _applyUserLocale(session.user.locale);
     } finally {

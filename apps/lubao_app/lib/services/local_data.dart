@@ -10,6 +10,10 @@ import 'data_cache_store.dart';
 /// «водитель/груз → чат», черновики форм, очередь неотправленных сообщений.
 /// Стирается при выходе из аккаунта.
 final localStoreProvider = Provider<CacheStore>((ref) => DataCacheStore(folder: 'lubao_local'));
+
+/// Кто входил последним на этом телефоне — запуск без связи открывает его
+/// сохранённое (ключ без привязки к пользователю; стирается при выходе).
+const lastUserKey = 'lastUser';
 final localDataProvider = Provider<LocalData>((ref) {
   final api = ref.watch(apiClientProvider);
   return LocalData(_ScopedStore(ref.watch(localStoreProvider), () => api.cacheScope));

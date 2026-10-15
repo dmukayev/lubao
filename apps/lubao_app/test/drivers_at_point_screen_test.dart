@@ -16,7 +16,7 @@ import 'package:lubao_app/providers/locale_provider.dart';
 class _FakeAuthRepository extends AuthRepository {
   _FakeAuthRepository() : super(ApiClient(baseUrl: 'http://localhost'));
   @override
-  Future<Session?> restore() async => null;
+  Future<Session?> restore({Future<String?> Function()? lastUserId}) async => null;
 }
 
 class _FakeArrivalRepository extends ArrivalRepository {

@@ -34,7 +34,7 @@ class _FakeAuthRepository extends AuthRepository {
   CompanyKind? lastKind;
 
   @override
-  Future<Session?> restore() async => null;
+  Future<Session?> restore({Future<String?> Function()? lastUserId}) async => null;
 
   @override
   Future<Session> registerCompany({

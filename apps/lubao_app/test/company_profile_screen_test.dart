@@ -18,7 +18,7 @@ class _FakeAuthRepository extends AuthRepository {
   final Session session;
 
   @override
-  Future<Session?> restore() async => session;
+  Future<Session?> restore({Future<String?> Function()? lastUserId}) async => session;
 }
 
 Session _session({required bool isVerified, String? memberFullName}) {

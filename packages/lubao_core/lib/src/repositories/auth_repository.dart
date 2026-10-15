@@ -172,9 +172,16 @@ class AuthRepository {
   /// Восстановление сессии при запуске приложения — если в secure storage
   /// есть валидный access/refresh токен, возвращает текущий профиль без
   /// повторного ввода логина/кода.
-  Future<Session?> restore() async {
+  /// [lastUserId] (078) — кто входил последним на этом телефоне: без связи
+  /// сессия и экраны берутся из его сохранённого.
+  Future<Session?> restore({Future<String?> Function()? lastUserId}) async {
     final access = await _client.tokenStorage.readAccess();
     if (access == null) return null;
+    if (_client.cacheScope == null && lastUserId != null) {
+      try {
+        _client.cacheScope = await lastUserId();
+      } catch (_) {}
+    }
     try {
       final res = await _client.dio.get('/auth/me');
       return Session.fromJson(res.data as Map<String, dynamic>);

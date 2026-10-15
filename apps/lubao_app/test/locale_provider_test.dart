@@ -17,7 +17,7 @@ class _FakeAuthRepository extends AuthRepository {
   String? lastUpdatedLocale;
 
   @override
-  Future<Session?> restore() async => _restoreResult;
+  Future<Session?> restore({Future<String?> Function()? lastUserId}) async => _restoreResult;
 
   @override
   Future<void> updateLocale(String locale) async {

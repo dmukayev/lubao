@@ -105,7 +105,7 @@ void main() {
     // сообщение встаёт в очередь «ожидает отправки»; сверху полоса «Нет связи».
     await run.step(tester, 'нет-связи-рейсы-и-чат', () async {
       final container = ProviderScope.containerOf(tester.element(find.byType(LubaoApp)));
-      container.read(apiClientProvider).simulateOffline = true;
+      ApiClient.simulateOffline = true;
       container.invalidate(dealsMineProvider);
       await goTab(tester, t.navTrips);
       await waitFor(tester, find.byKey(const Key('offlineBanner')));
@@ -128,7 +128,7 @@ void main() {
 
     await run.step(tester, 'связь-вернулась-сообщение-ушло', () async {
       final container = ProviderScope.containerOf(tester.element(find.byType(LubaoApp)));
-      container.read(apiClientProvider).simulateOffline = false;
+      ApiClient.simulateOffline = false;
       // Клавиатура и карточка «Подтвердите» на узком экране закрывают ленту —
       // убираем клавиатуру, сообщение ищем прокруткой.
       FocusManager.instance.primaryFocus?.unfocus();
@@ -141,6 +141,35 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
+    });
+
+    // Владелец: «связь обрывается — приложение невозможно просмотреть». Запуск
+    // приложения вообще без связи: не экран входа, а вкладки водителя с
+    // сохранённым — «Мои рейсы», сделка, чаты; сверху «Нет связи».
+    await run.step(tester, 'запуск-без-связи', () async {
+      ApiClient.simulateOffline = true;
+      try {
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(ProviderScope(
+          overrides: [osLocationPermissionRequestProvider.overrideWithValue(() async {})],
+          child: const LubaoApp(),
+        ));
+        await waitFor(tester, find.text(t.navTrips), timeout: const Duration(seconds: 30));
+        expect(find.byKey(const Key('roleSelectDriverButton')), findsNothing, reason: 'без связи — не экран входа');
+        await goTab(tester, t.navTrips);
+        await waitAndReveal(tester, find.byKey(Key('driverDealCard-$deal1')));
+        await waitFor(tester, find.byKey(const Key('offlineBanner')));
+        await goTab(tester, t.navChats);
+        await waitFor(tester, find.text('E2E Test Logistics'));
+        expectNoOverflow(tester);
+      } finally {
+        ApiClient.simulateOffline = false;
+      }
+      // Связь вернулась — полоса уходит сама (проверка связи в фоне).
+      await goTab(tester, t.navTrips);
+      ProviderScope.containerOf(tester.element(find.byType(LubaoApp))).invalidate(dealsMineProvider);
+      await waitForCondition(tester, () => find.byKey(const Key('offlineBanner')).evaluate().isEmpty, timeout: const Duration(seconds: 30));
+      await waitAndReveal(tester, find.byKey(Key('driverDealCard-$deal1')));
     });
 
     Future<void> openDeal(String dealId) async {

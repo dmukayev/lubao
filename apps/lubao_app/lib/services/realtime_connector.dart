@@ -5,6 +5,7 @@ import 'package:lubao_core/lubao_core.dart';
 
 import '../providers/api_providers.dart';
 import '../providers/auth_provider.dart';
+import 'local_data.dart';
 
 /// Держит один Socket.IO-сокет на сессию (задача 011, п.6) — подключается,
 /// когда есть сессия, отключается при логауте. По аналогии с
@@ -17,8 +18,14 @@ import '../providers/auth_provider.dart';
 class RealtimeConnector {
   RealtimeConnector(this._ref) {
     _ref.listen<Session?>(sessionProvider, (previous, next) {
-      // 078: сохранённые ответы — свои у каждого пользователя.
-      _ref.read(apiClientProvider).cacheScope = next?.user.id;
+      // 078: сохранённые ответы — свои у каждого пользователя; кто вошёл —
+      // запоминаем, и его сессию сохраняем (запуск без связи).
+      final api = _ref.read(apiClientProvider);
+      api.cacheScope = next?.user.id;
+      if (next != null) {
+        unawaited(_ref.read(localStoreProvider).write(lastUserKey, next.user.id));
+        if (previous == null) unawaited(api.dio.get<dynamic>('/auth/me').then<void>((_) {}, onError: (Object _) {}));
+      }
       if (next != null) {
         _ref.read(realtimeServiceProvider).connect();
         unawaited(_ref.read(cargoRepositoryProvider).flushPendingContactEvents());

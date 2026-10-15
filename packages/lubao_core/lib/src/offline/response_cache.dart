@@ -40,23 +40,23 @@ class CachePolicy {
   static const _day = Duration(days: 1);
   static const _week = Duration(days: 7);
 
+  /// Что НЕ сохраняем: выдача номера телефона (по нажатию, с учётом),
+  /// документы людей и распознавание, вход/сессии, админка, разовые подсказки.
+  static final _never = RegExp(
+    r'(/contact|phone|driver-documents|/recognition|verification-documents/|^/auth/(?!me$)|^/admin|^/share/|^/app/|^/companies/invites/|latin-name|fit-count|market-hint|^/goods/search|/access-log)',
+  );
+
   static CachePolicy? forPath(String path) {
-    if (path.contains('/contact') || path.contains('phone') || path.contains('driver-documents') || path.contains('/recognition')) return null;
-    if (path == '/reference-data') return const CachePolicy(_week);
-    if (path == '/chats' || RegExp(r'^/chats/[^/]+$').hasMatch(path)) return const CachePolicy(_week);
+    if (_never.hasMatch(path)) return null;
+    // Лента: старше 6 ч не показываем (решение 078).
+    if (path == '/cargos') return const CachePolicy(Duration(hours: 6));
     if (RegExp(r'^/chats/[^/]+/messages$').hasMatch(path)) return const CachePolicy(_week, keepLast: 50);
     if (RegExp(r'^/drivers/[^/]+/card$').hasMatch(path)) return const CachePolicy(_day);
-    if (path == '/cargos') return const CachePolicy(Duration(hours: 6));
-    const own = {
-      '/auth/me', '/drivers/me', '/drivers/me/vehicles', '/drivers/me/verification-documents', '/drivers/me/companies',
-      '/companies/me', '/deals/mine', '/responses/mine', '/arrivals/me', '/cargos/mine', '/cargos/company',
-      '/cargos/company/counts', '/cargos/favorites', '/company-drivers',
-    };
-    if (own.contains(path)) return const CachePolicy(_week);
-    if (RegExp(r'^/deals/[^/]+$').hasMatch(path) || RegExp(r'^/cargos/[^/]+$').hasMatch(path)) return const CachePolicy(_week);
-    if (RegExp(r'^/cargos/[^/]+/my-response$').hasMatch(path) || RegExp(r'^/cargos/[^/]+/responses$').hasMatch(path)) return const CachePolicy(_week);
-    return null;
+    // Остальное (свой профиль и документы-список, сделки, рейсы, чаты, грузы,
+    // «Кто свободен», справочники, отклики, отзывы…) — неделю; без связи — и старше.
+    return const CachePolicy(_week);
   }
+
 }
 
 /// Сохранённый ответ: данные и когда получены.

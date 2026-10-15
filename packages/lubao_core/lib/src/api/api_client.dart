@@ -25,16 +25,22 @@ class ApiClient {
   /// Нет связи с сервером: последний запрос не долетел. Любой ответ — снова есть.
   final offline = ValueNotifier<bool>(false);
 
-  /// e2e: «выключить сеть» — запросы падают, как без связи.
-  bool simulateOffline = false;
+  /// e2e: «выключить сеть» — запросы падают, как без связи. Общий на всё
+  /// приложение: так проверяется и запуск без связи (новый ApiClient).
+  static bool simulateOffline = false;
 
   /// e2e: журнал запросов «МЕТОД путь» — проверить, что повторно не ходим.
   final requestLog = <String>[];
 
-  /// Изменений (POST/PATCH/…) за этот запуск; после изменения сохранённое
-  /// показываем только если оно уже обновлено после него — без мигания старым.
-  int _mutations = 0;
+  /// Сразу после изменения (POST/PATCH/…) сохранённое показываем, только если
+  /// оно уже обновлено после него, — чтобы не мигнуло старое. Только 20 с:
+  /// приложение шлёт изменения постоянно («прочитано», геопозиция), и иначе
+  /// сохранённое не показывалось бы почти никогда. Без связи — всегда.
+  DateTime? _lastMutationAt;
   final _freshKeys = <String>{};
+  static const _mutationWindow = Duration(seconds: 20);
+
+  bool get _justMutated => _lastMutationAt != null && DateTime.now().difference(_lastMutationAt!) < _mutationWindow;
 
   static bool isConnectivityError(DioException e) =>
       e.type == DioExceptionType.connectionError ||
@@ -49,11 +55,30 @@ class ApiClient {
     final policy = CachePolicy.forPath(path);
     if (scope == null || policy == null) return null;
     final key = cacheKey(scope, path, query);
-    if (_mutations > 0 && !_freshKeys.contains(key)) return null;
+    if (!offline.value && _justMutated && !_freshKeys.contains(key)) return null;
     final raw = await cacheStore.read(key);
     final cached = raw == null ? null : CachedResponse.decode(raw);
-    if (cached == null || cached.age > policy.maxAge) return null;
+    // Без связи — и старше срока: лучше старое, чем пустой экран.
+    if (cached == null || (!offline.value && cached.age > policy.maxAge)) return null;
     return cached;
+  }
+
+  DateTime? _lastProbeAt;
+  Dio? _probeDio;
+
+  /// Связь вернулась? Короткий запрос к /health не чаще раза в 5 с.
+  Future<void> _probe() async {
+    final now = DateTime.now();
+    if (_lastProbeAt != null && now.difference(_lastProbeAt!) < const Duration(seconds: 5)) return;
+    _lastProbeAt = now;
+    if (simulateOffline) return;
+    try {
+      _probeDio ??= Dio(BaseOptions(baseUrl: dio.options.baseUrl, connectTimeout: const Duration(seconds: 4), receiveTimeout: const Duration(seconds: 4)));
+      await _probeDio!.get<dynamic>('/health');
+      offline.value = false;
+    } catch (_) {
+      // Всё ещё нет связи.
+    }
   }
 
   /// Выход / смена пользователя — всё сохранённое стереть.
@@ -68,7 +93,7 @@ class ApiClient {
     final status = response.statusCode ?? 0;
     if (options.method != 'GET') {
       if (status >= 200 && status < 300) {
-        _mutations++;
+        _lastMutationAt = DateTime.now();
         _freshKeys.clear();
       }
     } else if (status == 200 && options.extra['fromCache'] != true) {
@@ -109,6 +134,20 @@ class ApiClient {
     if (simulateOffline) {
       handler.reject(DioException(requestOptions: options, type: DioExceptionType.connectionError, message: 'e2e: offline'), true);
       return;
+    }
+    // Связи уже нет — не ждать таймаута (10–20 с) на каждом экране: сохранённое
+    // сразу, а связь проверяется в фоне коротким запросом.
+    if (offline.value && options.method == 'GET') {
+      final scope = cacheScope;
+      if (scope != null && CachePolicy.forPath(options.path) != null) {
+        final raw = await cacheStore.read(cacheKey(scope, options.path, options.queryParameters));
+        final cached = raw == null ? null : CachedResponse.decode(raw);
+        if (cached != null) {
+          unawaited(_probe());
+          handler.resolve(Response(requestOptions: options..extra['fromCache'] = true, data: cached.data, statusCode: 200));
+          return;
+        }
+      }
     }
     final token = await tokenStorage.readAccess();
     if (token != null) {
