@@ -34,7 +34,8 @@ class DriverVehiclePhotos extends ConsumerWidget {
     final photos = ref.watch(_photosProvider(driverId));
     final muted = AppTextStyles.body.copyWith(color: AppColors.textSecondary);
     return photos.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      // 079: без крутилки — блок появится, когда фото пришли.
+      loading: () => const SizedBox.shrink(),
       error: (e, st) {
         final response = e is DioException ? e.response : null;
         final code = response?.data is Map ? (response!.data as Map)['code'] : null;
@@ -68,7 +69,7 @@ class DriverVehiclePhotos extends ConsumerWidget {
                               for (final photo in list)
                                 Consumer(
                                   builder: (context, ref, _) => ref.watch(_photoFileProvider((driverId, photo.documentId))).when(
-                                        loading: () => const CircularProgressIndicator(),
+                                        loading: () => const SizedBox.shrink(),
                                         error: (e, st) => const Icon(LucideIcons.imageOff, color: Colors.white),
                                         data: (bytes) => Image.memory(bytes, fit: BoxFit.contain),
                                       ),
@@ -81,7 +82,8 @@ class DriverVehiclePhotos extends ConsumerWidget {
                             width: 150,
                             height: 100,
                             child: ref.watch(_photoFileProvider((driverId, p.documentId))).when(
-                                  loading: () => const Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))),
+                                  // 079: пока грузится — фон плитки, без индикатора.
+                                  loading: () => const ColoredBox(color: AppColors.divider),
                                   error: (e, st) => const Icon(LucideIcons.imageOff),
                                   data: (bytes) => Image.memory(bytes, fit: BoxFit.cover, cacheWidth: (150 * MediaQuery.devicePixelRatioOf(context)).round()),
                                 ),

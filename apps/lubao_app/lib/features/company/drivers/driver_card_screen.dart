@@ -123,7 +123,7 @@ class DriverInfoView extends ConsumerWidget {
       Consumer(
         builder: (context, ref, _) => switch (ref.watch(driverAvatarProvider((driverId: d.id, version: version))).valueOrNull) {
           final bytes? => Image.memory(bytes, fit: BoxFit.contain),
-          null => const CircularProgressIndicator(),
+          null => const SizedBox.shrink(),
         },
       ),
     ]);

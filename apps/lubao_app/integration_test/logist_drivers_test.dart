@@ -360,6 +360,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 400));
         expect(find.byKey(const Key('driverCardName')), findsOneWidget, reason: '079: имя — сразу');
         expect(find.byType(LoadingView), findsNothing);
+        expect(find.byType(CircularProgressIndicator), findsNothing, reason: '079: крутилок нет — блоки появляются, когда пришли');
       } finally {
         ApiClient.simulateLatency = null;
       }
